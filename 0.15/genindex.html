@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+ee7fd31 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+96bdbe0 ) &#x25BC</a>
     </div>
     
 
@@ -249,6 +249,7 @@
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datapoints.html">Datapoints</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
@@ -524,18 +525,26 @@
 </li>
       <li><a href="generated/torchvision.transforms.functional.adjust_sharpness.html#torchvision.transforms.functional.adjust_sharpness">adjust_sharpness() (in module torchvision.transforms.functional)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.transforms.functional.affine.html#torchvision.transforms.functional.affine">affine() (in module torchvision.transforms.functional)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.alexnet.html#torchvision.models.alexnet">alexnet() (in module torchvision.models)</a>
 </li>
       <li><a href="models/generated/torchvision.models.alexnet.html#torchvision.models.AlexNet_Weights">AlexNet_Weights (class in torchvision.models)</a>
 </li>
       <li><a href="generated/torchvision.transforms.AugMix.html#torchvision.transforms.AugMix">AugMix (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.AugMix.html#torchvision.transforms.v2.AugMix">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.AutoAugment.html#torchvision.transforms.AutoAugment">AutoAugment (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.AutoAugment.html#torchvision.transforms.v2.AutoAugment">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.AutoAugmentPolicy.html#torchvision.transforms.AutoAugmentPolicy">AutoAugmentPolicy (class in torchvision.transforms)</a>
 </li>
       <li><a href="generated/torchvision.transforms.functional.autocontrast.html#torchvision.transforms.functional.autocontrast">autocontrast() (in module torchvision.transforms.functional)</a>
@@ -548,10 +557,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.ops.batched_nms.html#torchvision.ops.batched_nms">batched_nms() (in module torchvision.ops)</a>
 </li>
-      <li><a href="generated/torchvision.ops.box_area.html#torchvision.ops.box_area">box_area() (in module torchvision.ops)</a>
+      <li><a href="generated/torchvision.datapoints.BoundingBox.html#torchvision.datapoints.BoundingBox">BoundingBox (class in torchvision.datapoints)</a>
+</li>
+      <li><a href="generated/torchvision.datapoints.BoundingBoxFormat.html#torchvision.datapoints.BoundingBoxFormat">BoundingBoxFormat (class in torchvision.datapoints)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/torchvision.ops.box_area.html#torchvision.ops.box_area">box_area() (in module torchvision.ops)</a>
+</li>
       <li><a href="generated/torchvision.ops.box_convert.html#torchvision.ops.box_convert">box_convert() (in module torchvision.ops)</a>
 </li>
       <li><a href="generated/torchvision.ops.box_iou.html#torchvision.ops.box_iou">box_iou() (in module torchvision.ops)</a>
@@ -575,12 +588,18 @@
       <li><a href="generated/torchvision.transforms.functional.center_crop.html#torchvision.transforms.functional.center_crop">center_crop() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="generated/torchvision.transforms.CenterCrop.html#torchvision.transforms.CenterCrop">CenterCrop (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.CenterCrop.html#torchvision.transforms.v2.CenterCrop">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.datasets.CIFAR10.html#torchvision.datasets.CIFAR10">CIFAR10 (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.datasets.CIFAR100.html#torchvision.datasets.CIFAR100">CIFAR100 (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.datasets.Cityscapes.html#torchvision.datasets.Cityscapes">Cityscapes (class in torchvision.datasets)</a>
+</li>
+      <li><a href="generated/torchvision.transforms.v2.ClampBoundingBox.html#torchvision.transforms.v2.ClampBoundingBox">ClampBoundingBox (class in torchvision.transforms.v2)</a>
 </li>
       <li><a href="generated/torchvision.ops.clip_boxes_to_image.html#torchvision.ops.clip_boxes_to_image">clip_boxes_to_image() (in module torchvision.ops)</a>
 </li>
@@ -589,23 +608,39 @@
       <li><a href="generated/torchvision.datasets.CocoDetection.html#torchvision.datasets.CocoDetection">CocoDetection (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter">ColorJitter (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.ColorJitter.html#torchvision.transforms.v2.ColorJitter">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.ops.complete_box_iou.html#torchvision.ops.complete_box_iou">complete_box_iou() (in module torchvision.ops)</a>
 </li>
       <li><a href="generated/torchvision.ops.complete_box_iou_loss.html#torchvision.ops.complete_box_iou_loss">complete_box_iou_loss() (in module torchvision.ops)</a>
 </li>
+      <li><a href="generated/torchvision.transforms.Compose.html#torchvision.transforms.Compose">Compose (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.Compose.html#torchvision.transforms.v2.Compose">(class in torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/torchvision.transforms.Compose.html#torchvision.transforms.Compose">Compose (class in torchvision.transforms)</a>
-</li>
       <li><a href="generated/torchvision.ops.Conv2dNormActivation.html#torchvision.ops.Conv2dNormActivation">Conv2dNormActivation (class in torchvision.ops)</a>
 </li>
       <li><a href="generated/torchvision.ops.Conv3dNormActivation.html#torchvision.ops.Conv3dNormActivation">Conv3dNormActivation (class in torchvision.ops)</a>
 </li>
       <li><a href="generated/torchvision.transforms.functional.convert_image_dtype.html#torchvision.transforms.functional.convert_image_dtype">convert_image_dtype() (in module torchvision.transforms.functional)</a>
 </li>
-      <li><a href="generated/torchvision.transforms.ConvertImageDtype.html#torchvision.transforms.ConvertImageDtype">ConvertImageDtype (class in torchvision.transforms)</a>
+      <li><a href="generated/torchvision.transforms.v2.ConvertBoundingBoxFormat.html#torchvision.transforms.v2.ConvertBoundingBoxFormat">ConvertBoundingBoxFormat (class in torchvision.transforms.v2)</a>
 </li>
+      <li><a href="generated/torchvision.transforms.v2.ConvertDtype.html#torchvision.transforms.v2.ConvertDtype">ConvertDtype (class in torchvision.transforms.v2)</a>
+</li>
+      <li><a href="generated/torchvision.transforms.ConvertImageDtype.html#torchvision.transforms.ConvertImageDtype">ConvertImageDtype (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.ConvertImageDtype.html#torchvision.transforms.v2.ConvertImageDtype">(in module torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
       <li><a href="models/generated/torchvision.models.convnext_base.html#torchvision.models.convnext_base">convnext_base() (in module torchvision.models)</a>
 </li>
       <li><a href="models/generated/torchvision.models.convnext_base.html#torchvision.models.ConvNeXt_Base_Weights">ConvNeXt_Base_Weights (class in torchvision.models)</a>
@@ -732,14 +767,14 @@
 </li>
       <li><a href="models/generated/torchvision.models.efficientnet_b6.html#torchvision.models.EfficientNet_B6_Weights">EfficientNet_B6_Weights (class in torchvision.models)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.efficientnet_b7.html#torchvision.models.efficientnet_b7">efficientnet_b7() (in module torchvision.models)</a>
 </li>
       <li><a href="models/generated/torchvision.models.efficientnet_b7.html#torchvision.models.EfficientNet_B7_Weights">EfficientNet_B7_Weights (class in torchvision.models)</a>
 </li>
       <li><a href="models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.efficientnet_v2_l">efficientnet_v2_l() (in module torchvision.models)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.EfficientNet_V2_L_Weights">EfficientNet_V2_L_Weights (class in torchvision.models)</a>
 </li>
       <li><a href="models/generated/torchvision.models.efficientnet_v2_m.html#torchvision.models.efficientnet_v2_m">efficientnet_v2_m() (in module torchvision.models)</a>
@@ -750,6 +785,12 @@
 </li>
       <li><a href="models/generated/torchvision.models.efficientnet_v2_s.html#torchvision.models.EfficientNet_V2_S_Weights">EfficientNet_V2_S_Weights (class in torchvision.models)</a>
 </li>
+      <li><a href="generated/torchvision.transforms.ElasticTransform.html#torchvision.transforms.ElasticTransform">ElasticTransform (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.ElasticTransform.html#torchvision.transforms.v2.ElasticTransform">(class in torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
       <li><a href="generated/torchvision.datasets.EMNIST.html#torchvision.datasets.EMNIST">EMNIST (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg">encode_jpeg() (in module torchvision.io)</a>
@@ -764,6 +805,14 @@
 </li>
       <li><a href="generated/torchvision.datasets.EuroSAT.html#torchvision.datasets.EuroSAT">EuroSAT (class in torchvision.datasets)</a>
 </li>
+      <li><a href="generated/torchvision.transforms.v2.Compose.html#torchvision.transforms.v2.Compose.extra_repr">extra_repr() (torchvision.transforms.v2.Compose method)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.Lambda.html#torchvision.transforms.v2.Lambda.extra_repr">(torchvision.transforms.v2.Lambda method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomApply.html#torchvision.transforms.v2.RandomApply.extra_repr">(torchvision.transforms.v2.RandomApply method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -815,7 +864,11 @@
       <li><a href="generated/torchvision.transforms.functional.five_crop.html#torchvision.transforms.functional.five_crop">five_crop() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="generated/torchvision.transforms.FiveCrop.html#torchvision.transforms.FiveCrop">FiveCrop (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.FiveCrop.html#torchvision.transforms.v2.FiveCrop">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.datasets.Flickr30k.html#torchvision.datasets.Flickr30k">Flickr30k (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.datasets.Flickr8k.html#torchvision.datasets.Flickr8k">Flickr8k (class in torchvision.datasets)</a>
@@ -866,6 +919,8 @@
         <li><a href="generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter.forward">(torchvision.transforms.ColorJitter method)</a>
 </li>
         <li><a href="generated/torchvision.transforms.ConvertImageDtype.html#torchvision.transforms.ConvertImageDtype.forward">(torchvision.transforms.ConvertImageDtype method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.ElasticTransform.html#torchvision.transforms.ElasticTransform.forward">(torchvision.transforms.ElasticTransform method)</a>
 </li>
         <li><a href="generated/torchvision.transforms.FiveCrop.html#torchvision.transforms.FiveCrop.forward">(torchvision.transforms.FiveCrop method)</a>
 </li>
@@ -919,6 +974,24 @@
 </li>
         <li><a href="generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide.forward">(torchvision.transforms.TrivialAugmentWide method)</a>
 </li>
+        <li><a href="generated/torchvision.transforms.v2.AugMix.html#torchvision.transforms.v2.AugMix.forward">(torchvision.transforms.v2.AugMix method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.AutoAugment.html#torchvision.transforms.v2.AutoAugment.forward">(torchvision.transforms.v2.AutoAugment method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.Compose.html#torchvision.transforms.v2.Compose.forward">(torchvision.transforms.v2.Compose method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandAugment.html#torchvision.transforms.v2.RandAugment.forward">(torchvision.transforms.v2.RandAugment method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomApply.html#torchvision.transforms.v2.RandomApply.forward">(torchvision.transforms.v2.RandomApply method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomChoice.html#torchvision.transforms.v2.RandomChoice.forward">(torchvision.transforms.v2.RandomChoice method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomOrder.html#torchvision.transforms.v2.RandomOrder.forward">(torchvision.transforms.v2.RandomOrder method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.SanitizeBoundingBox.html#torchvision.transforms.v2.SanitizeBoundingBox.forward">(torchvision.transforms.v2.SanitizeBoundingBox method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.TrivialAugmentWide.html#torchvision.transforms.v2.TrivialAugmentWide.forward">(torchvision.transforms.v2.TrivialAugmentWide method)</a>
+</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -933,7 +1006,11 @@
       <li><a href="generated/torchvision.transforms.functional.gaussian_blur.html#torchvision.transforms.functional.gaussian_blur">gaussian_blur() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="generated/torchvision.transforms.GaussianBlur.html#torchvision.transforms.GaussianBlur">GaussianBlur (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.GaussianBlur.html#torchvision.transforms.v2.GaussianBlur">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.ops.generalized_box_iou.html#torchvision.ops.generalized_box_iou">generalized_box_iou() (in module torchvision.ops)</a>
 </li>
       <li><a href="generated/torchvision.ops.generalized_box_iou_loss.html#torchvision.ops.generalized_box_iou_loss">generalized_box_iou_loss() (in module torchvision.ops)</a>
@@ -973,6 +1050,24 @@
 </li>
         <li><a href="generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation.get_params">(torchvision.transforms.RandomRotation static method)</a>
 </li>
+        <li><a href="generated/torchvision.transforms.v2.AutoAugment.html#torchvision.transforms.v2.AutoAugment.get_params">(torchvision.transforms.v2.AutoAugment static method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.ColorJitter.html#torchvision.transforms.v2.ColorJitter.get_params">(torchvision.transforms.v2.ColorJitter static method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.GaussianBlur.html#torchvision.transforms.v2.GaussianBlur.get_params">(torchvision.transforms.v2.GaussianBlur static method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomAffine.html#torchvision.transforms.v2.RandomAffine.get_params">(torchvision.transforms.v2.RandomAffine static method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomCrop.html#torchvision.transforms.v2.RandomCrop.get_params">(torchvision.transforms.v2.RandomCrop static method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomErasing.html#torchvision.transforms.v2.RandomErasing.get_params">(torchvision.transforms.v2.RandomErasing static method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomPerspective.html#torchvision.transforms.v2.RandomPerspective.get_params">(torchvision.transforms.v2.RandomPerspective static method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomResizedCrop.html#torchvision.transforms.v2.RandomResizedCrop.get_params">(torchvision.transforms.v2.RandomResizedCrop static method)</a>
+</li>
+        <li><a href="generated/torchvision.transforms.v2.RandomRotation.html#torchvision.transforms.v2.RandomRotation.get_params">(torchvision.transforms.v2.RandomRotation static method)</a>
+</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -995,7 +1090,11 @@
       <li><a href="models/generated/torchvision.models.googlenet.html#torchvision.models.GoogLeNet_Weights">GoogLeNet_Weights (class in torchvision.models)</a>
 </li>
       <li><a href="generated/torchvision.transforms.Grayscale.html#torchvision.transforms.Grayscale">Grayscale (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.Grayscale.html#torchvision.transforms.v2.Grayscale">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.datasets.GTSRB.html#torchvision.datasets.GTSRB">GTSRB (class in torchvision.datasets)</a>
 </li>
   </ul></td>
@@ -1018,6 +1117,8 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image">Image (class in torchvision.datapoints)</a>
+</li>
       <li><a href="generated/torchvision.datasets.ImageFolder.html#torchvision.datasets.ImageFolder">ImageFolder (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.datasets.ImageNet.html#torchvision.datasets.ImageNet">ImageNet (class in torchvision.datasets)</a>
@@ -1026,14 +1127,14 @@
 </li>
       <li><a href="generated/torchvision.datasets.INaturalist.html#torchvision.datasets.INaturalist">INaturalist (class in torchvision.datasets)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.inception_v3.html#torchvision.models.inception_v3">inception_v3() (in module torchvision.models)</a>
 
       <ul>
         <li><a href="models/generated/torchvision.models.quantization.inception_v3.html#torchvision.models.quantization.inception_v3">(in module torchvision.models.quantization)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.quantization.inception_v3.html#torchvision.models.quantization.Inception_V3_QuantizedWeights">Inception_V3_QuantizedWeights (class in torchvision.models.quantization)</a>
 </li>
       <li><a href="models/generated/torchvision.models.inception_v3.html#torchvision.models.Inception_V3_Weights">Inception_V3_Weights (class in torchvision.models)</a>
@@ -1073,13 +1174,21 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.transforms.Lambda.html#torchvision.transforms.Lambda">Lambda (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.Lambda.html#torchvision.transforms.v2.Lambda">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.datasets.LFWPairs.html#torchvision.datasets.LFWPairs">LFWPairs (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.datasets.LFWPeople.html#torchvision.datasets.LFWPeople">LFWPeople (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.transforms.LinearTransformation.html#torchvision.transforms.LinearTransformation">LinearTransformation (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.LinearTransformation.html#torchvision.transforms.v2.LinearTransformation">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.models.list_models.html#torchvision.models.list_models">list_models() (in module torchvision.models)</a>
@@ -1099,6 +1208,8 @@
       <li><a href="generated/torchvision.datasets.DatasetFolder.html#torchvision.datasets.DatasetFolder.make_dataset">make_dataset() (torchvision.datasets.DatasetFolder static method)</a>
 </li>
       <li><a href="generated/torchvision.utils.make_grid.html#torchvision.utils.make_grid">make_grid() (in module torchvision.utils)</a>
+</li>
+      <li><a href="generated/torchvision.datapoints.Mask.html#torchvision.datapoints.Mask">Mask (class in torchvision.datapoints)</a>
 </li>
       <li><a href="models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html#torchvision.models.detection.maskrcnn_resnet50_fpn">maskrcnn_resnet50_fpn() (in module torchvision.models.detection)</a>
 </li>
@@ -1134,10 +1245,10 @@
 </li>
       <li><a href="models/generated/torchvision.models.mnasnet1_0.html#torchvision.models.MNASNet1_0_Weights">MNASNet1_0_Weights (class in torchvision.models)</a>
 </li>
-      <li><a href="models/generated/torchvision.models.mnasnet1_3.html#torchvision.models.mnasnet1_3">mnasnet1_3() (in module torchvision.models)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models/generated/torchvision.models.mnasnet1_3.html#torchvision.models.mnasnet1_3">mnasnet1_3() (in module torchvision.models)</a>
+</li>
       <li><a href="models/generated/torchvision.models.mnasnet1_3.html#torchvision.models.MNASNet1_3_Weights">MNASNet1_3_Weights (class in torchvision.models)</a>
 </li>
       <li><a href="generated/torchvision.datasets.MNIST.html#torchvision.datasets.MNIST">MNIST (class in torchvision.datasets)</a>
@@ -1193,10 +1304,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.ops.nms.html#torchvision.ops.nms">nms() (in module torchvision.ops)</a>
 </li>
+      <li><a href="generated/torchvision.transforms.Normalize.html#torchvision.transforms.Normalize">Normalize (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize">(class in torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/torchvision.transforms.Normalize.html#torchvision.transforms.Normalize">Normalize (class in torchvision.transforms)</a>
-</li>
       <li><a href="generated/torchvision.transforms.functional.normalize.html#torchvision.transforms.functional.normalize">normalize() (in module torchvision.transforms.functional)</a>
 </li>
   </ul></td>
@@ -1218,7 +1333,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.transforms.Pad.html#torchvision.transforms.Pad">Pad (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.Pad.html#torchvision.transforms.v2.Pad">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.functional.pad.html#torchvision.transforms.functional.pad">pad() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="generated/torchvision.datasets.PCAM.html#torchvision.datasets.PCAM">PCAM (class in torchvision.datasets)</a>
@@ -1234,7 +1353,11 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.transforms.PILToTensor.html#torchvision.transforms.PILToTensor">PILToTensor (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.PILToTensor.html#torchvision.transforms.v2.PILToTensor">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.datasets.Places365.html#torchvision.datasets.Places365">Places365 (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.transforms.functional.posterize.html#torchvision.transforms.functional.posterize">posterize() (in module torchvision.transforms.functional)</a>
@@ -1278,42 +1401,128 @@
       <li><a href="models/generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.Raft_Small_Weights">Raft_Small_Weights (class in torchvision.models.optical_flow)</a>
 </li>
       <li><a href="generated/torchvision.transforms.RandAugment.html#torchvision.transforms.RandAugment">RandAugment (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandAugment.html#torchvision.transforms.v2.RandAugment">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomAdjustSharpness.html#torchvision.transforms.RandomAdjustSharpness">RandomAdjustSharpness (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomAdjustSharpness.html#torchvision.transforms.v2.RandomAdjustSharpness">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomAffine.html#torchvision.transforms.RandomAffine">RandomAffine (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomAffine.html#torchvision.transforms.v2.RandomAffine">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomApply.html#torchvision.transforms.RandomApply">RandomApply (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomApply.html#torchvision.transforms.v2.RandomApply">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomAutocontrast.html#torchvision.transforms.RandomAutocontrast">RandomAutocontrast (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomAutocontrast.html#torchvision.transforms.v2.RandomAutocontrast">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomChoice.html#torchvision.transforms.RandomChoice">RandomChoice (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomChoice.html#torchvision.transforms.v2.RandomChoice">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomCrop.html#torchvision.transforms.RandomCrop">RandomCrop (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomCrop.html#torchvision.transforms.v2.RandomCrop">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomEqualize.html#torchvision.transforms.RandomEqualize">RandomEqualize (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomEqualize.html#torchvision.transforms.v2.RandomEqualize">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomErasing.html#torchvision.transforms.RandomErasing">RandomErasing (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomErasing.html#torchvision.transforms.v2.RandomErasing">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomGrayscale.html#torchvision.transforms.RandomGrayscale">RandomGrayscale (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomGrayscale.html#torchvision.transforms.v2.RandomGrayscale">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomHorizontalFlip.html#torchvision.transforms.RandomHorizontalFlip">RandomHorizontalFlip (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomHorizontalFlip.html#torchvision.transforms.v2.RandomHorizontalFlip">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomInvert.html#torchvision.transforms.RandomInvert">RandomInvert (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomInvert.html#torchvision.transforms.v2.RandomInvert">(class in torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/torchvision.transforms.v2.RandomIoUCrop.html#torchvision.transforms.v2.RandomIoUCrop">RandomIoUCrop (class in torchvision.transforms.v2)</a>
 </li>
       <li><a href="generated/torchvision.transforms.RandomOrder.html#torchvision.transforms.RandomOrder">RandomOrder (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomOrder.html#torchvision.transforms.v2.RandomOrder">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomPerspective.html#torchvision.transforms.RandomPerspective">RandomPerspective (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomPerspective.html#torchvision.transforms.v2.RandomPerspective">(class in torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/torchvision.transforms.v2.RandomPhotometricDistort.html#torchvision.transforms.v2.RandomPhotometricDistort">RandomPhotometricDistort (class in torchvision.transforms.v2)</a>
 </li>
       <li><a href="generated/torchvision.transforms.RandomPosterize.html#torchvision.transforms.RandomPosterize">RandomPosterize (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomPosterize.html#torchvision.transforms.v2.RandomPosterize">(class in torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/torchvision.transforms.v2.RandomResize.html#torchvision.transforms.v2.RandomResize">RandomResize (class in torchvision.transforms.v2)</a>
 </li>
       <li><a href="generated/torchvision.transforms.RandomResizedCrop.html#torchvision.transforms.RandomResizedCrop">RandomResizedCrop (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomResizedCrop.html#torchvision.transforms.v2.RandomResizedCrop">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation">RandomRotation (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomRotation.html#torchvision.transforms.v2.RandomRotation">(class in torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/torchvision.transforms.v2.RandomShortestSize.html#torchvision.transforms.v2.RandomShortestSize">RandomShortestSize (class in torchvision.transforms.v2)</a>
 </li>
       <li><a href="generated/torchvision.transforms.RandomSolarize.html#torchvision.transforms.RandomSolarize">RandomSolarize (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomSolarize.html#torchvision.transforms.v2.RandomSolarize">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.RandomVerticalFlip.html#torchvision.transforms.RandomVerticalFlip">RandomVerticalFlip (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.RandomVerticalFlip.html#torchvision.transforms.v2.RandomVerticalFlip">(class in torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/torchvision.transforms.v2.RandomZoomOut.html#torchvision.transforms.v2.RandomZoomOut">RandomZoomOut (class in torchvision.transforms.v2)</a>
 </li>
       <li><a href="generated/torchvision.io.read_file.html#torchvision.io.read_file">read_file() (in module torchvision.io)</a>
 </li>
@@ -1337,6 +1546,8 @@
 </li>
       <li><a href="models/generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.regnet_x_3_2gf">regnet_x_3_2gf() (in module torchvision.models)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.RegNet_X_3_2GF_Weights">RegNet_X_3_2GF_Weights (class in torchvision.models)</a>
 </li>
       <li><a href="models/generated/torchvision.models.regnet_x_400mf.html#torchvision.models.regnet_x_400mf">regnet_x_400mf() (in module torchvision.models)</a>
@@ -1361,8 +1572,6 @@
 </li>
       <li><a href="models/generated/torchvision.models.regnet_y_1_6gf.html#torchvision.models.regnet_y_1_6gf">regnet_y_1_6gf() (in module torchvision.models)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.regnet_y_1_6gf.html#torchvision.models.RegNet_Y_1_6GF_Weights">RegNet_Y_1_6GF_Weights (class in torchvision.models)</a>
 </li>
       <li><a href="models/generated/torchvision.models.regnet_y_32gf.html#torchvision.models.regnet_y_32gf">regnet_y_32gf() (in module torchvision.models)</a>
@@ -1390,7 +1599,11 @@
       <li><a href="generated/torchvision.datasets.RenderedSST2.html#torchvision.datasets.RenderedSST2">RenderedSST2 (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.transforms.Resize.html#torchvision.transforms.Resize">Resize (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.Resize.html#torchvision.transforms.v2.Resize">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.functional.resize.html#torchvision.transforms.functional.resize">resize() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="generated/torchvision.transforms.functional.resized_crop.html#torchvision.transforms.functional.resized_crop">resized_crop() (in module torchvision.transforms.functional)</a>
@@ -1481,11 +1694,15 @@
 </li>
       <li><a href="models/generated/torchvision.models.video.s3d.html#torchvision.models.video.S3D_Weights">S3D_Weights (class in torchvision.models.video)</a>
 </li>
+      <li><a href="generated/torchvision.transforms.v2.SanitizeBoundingBox.html#torchvision.transforms.v2.SanitizeBoundingBox">SanitizeBoundingBox (class in torchvision.transforms.v2)</a>
+</li>
       <li><a href="generated/torchvision.utils.save_image.html#torchvision.utils.save_image">save_image() (in module torchvision.utils)</a>
 </li>
       <li><a href="generated/torchvision.datasets.SBDataset.html#torchvision.datasets.SBDataset">SBDataset (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.datasets.SBU.html#torchvision.datasets.SBU">SBU (class in torchvision.datasets)</a>
+</li>
+      <li><a href="generated/torchvision.transforms.v2.ScaleJitter.html#torchvision.transforms.v2.ScaleJitter">ScaleJitter (class in torchvision.transforms.v2)</a>
 </li>
       <li><a href="generated/torchvision.datasets.SceneFlowStereo.html#torchvision.datasets.SceneFlowStereo">SceneFlowStereo (class in torchvision.datasets)</a>
 </li>
@@ -1547,10 +1764,10 @@
 </li>
       <li><a href="generated/torchvision.transforms.functional.solarize.html#torchvision.transforms.functional.solarize">solarize() (in module torchvision.transforms.functional)</a>
 </li>
-      <li><a href="generated/torchvision.ops.SqueezeExcitation.html#torchvision.ops.SqueezeExcitation">SqueezeExcitation (class in torchvision.ops)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/torchvision.ops.SqueezeExcitation.html#torchvision.ops.SqueezeExcitation">SqueezeExcitation (class in torchvision.ops)</a>
+</li>
       <li><a href="models/generated/torchvision.models.squeezenet1_0.html#torchvision.models.squeezenet1_0">squeezenet1_0() (in module torchvision.models)</a>
 </li>
       <li><a href="models/generated/torchvision.models.squeezenet1_0.html#torchvision.models.SqueezeNet1_0_Weights">SqueezeNet1_0_Weights (class in torchvision.models)</a>
@@ -1624,17 +1841,31 @@
       <li><a href="generated/torchvision.transforms.functional.ten_crop.html#torchvision.transforms.functional.ten_crop">ten_crop() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="generated/torchvision.transforms.TenCrop.html#torchvision.transforms.TenCrop">TenCrop (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.TenCrop.html#torchvision.transforms.v2.TenCrop">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.functional.to_grayscale.html#torchvision.transforms.functional.to_grayscale">to_grayscale() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="generated/torchvision.transforms.functional.to_pil_image.html#torchvision.transforms.functional.to_pil_image">to_pil_image() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="generated/torchvision.transforms.functional.to_tensor.html#torchvision.transforms.functional.to_tensor">to_tensor() (in module torchvision.transforms.functional)</a>
 </li>
+      <li><a href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype">ToDtype (class in torchvision.transforms.v2)</a>
+</li>
+      <li><a href="generated/torchvision.transforms.v2.ToImagePIL.html#torchvision.transforms.v2.ToImagePIL">ToImagePIL (class in torchvision.transforms.v2)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/torchvision.transforms.ToPILImage.html#torchvision.transforms.ToPILImage">ToPILImage (class in torchvision.transforms)</a>
+      <li><a href="generated/torchvision.transforms.v2.ToImageTensor.html#torchvision.transforms.v2.ToImageTensor">ToImageTensor (class in torchvision.transforms.v2)</a>
 </li>
+      <li><a href="generated/torchvision.transforms.ToPILImage.html#torchvision.transforms.ToPILImage">ToPILImage (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.ToPILImage.html#torchvision.transforms.v2.ToPILImage">(in module torchvision.transforms.v2)</a>
+</li>
+      </ul></li>
       <li>
     torchvision
 
@@ -1643,9 +1874,17 @@
 </li>
       </ul></li>
       <li><a href="generated/torchvision.transforms.ToTensor.html#torchvision.transforms.ToTensor">ToTensor (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.ToTensor.html#torchvision.transforms.v2.ToTensor">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
       <li><a href="generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide">TrivialAugmentWide (class in torchvision.transforms)</a>
+
+      <ul>
+        <li><a href="generated/torchvision.transforms.v2.TrivialAugmentWide.html#torchvision.transforms.v2.TrivialAugmentWide">(class in torchvision.transforms.v2)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -1656,6 +1895,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/torchvision.transforms.v2.UniformTemporalSubsample.html#torchvision.transforms.v2.UniformTemporalSubsample">UniformTemporalSubsample (class in torchvision.transforms.v2)</a>
+</li>
       <li><a href="generated/torchvision.datasets.USPS.html#torchvision.datasets.USPS">USPS (class in torchvision.datasets)</a>
 </li>
   </ul></td>
@@ -1694,11 +1935,13 @@
 </li>
       <li><a href="models/generated/torchvision.models.vgg19_bn.html#torchvision.models.vgg19_bn">vgg19_bn() (in module torchvision.models)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.vgg19_bn.html#torchvision.models.VGG19_BN_Weights">VGG19_BN_Weights (class in torchvision.models)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models/generated/torchvision.models.vgg19.html#torchvision.models.VGG19_Weights">VGG19_Weights (class in torchvision.models)</a>
+</li>
+      <li><a href="generated/torchvision.datapoints.Video.html#torchvision.datapoints.Video">Video (class in torchvision.datapoints)</a>
 </li>
       <li><a href="generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader">VideoReader (class in torchvision.io)</a>
 </li>
@@ -1742,9 +1985,13 @@
 </li>
       <li><a href="models/generated/torchvision.models.wide_resnet50_2.html#torchvision.models.Wide_ResNet50_2_Weights">Wide_ResNet50_2_Weights (class in torchvision.models)</a>
 </li>
+      <li><a href="generated/torchvision.datasets.WIDERFace.html#torchvision.datasets.WIDERFace">WIDERFace (class in torchvision.datasets)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/torchvision.datasets.WIDERFace.html#torchvision.datasets.WIDERFace">WIDERFace (class in torchvision.datasets)</a>
+      <li><a href="generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2">wrap_dataset_for_transforms_v2() (in module torchvision.datasets)</a>
+</li>
+      <li><a href="generated/torchvision.datapoints.BoundingBox.html#torchvision.datapoints.BoundingBox.wrap_like">wrap_like() (torchvision.datapoints.BoundingBox class method)</a>
 </li>
       <li><a href="generated/torchvision.io.write_file.html#torchvision.io.write_file">write_file() (in module torchvision.io)</a>
 </li>

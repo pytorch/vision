@@ -33,7 +33,7 @@ The following example illustrates how torchvision can be used to predict flows
 using our implementation of the RAFT model. We will also see how to convert the
 predicted flows to RGB images for visualization.
 
-.. GENERATED FROM PYTHON SOURCE LINES 17-45
+.. GENERATED FROM PYTHON SOURCE LINES 17-44
 
 .. code-block:: default
 
@@ -45,7 +45,6 @@ predicted flows to RGB images for visualization.
 
 
     plt.rcParams["savefig.bbox"] = "tight"
-    # sphinx_gallery_thumbnail_number = 2
 
 
     def plot(imgs, **imshow_kwargs):
@@ -356,7 +355,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  7.449 seconds)
+   **Total running time of the script:** ( 0 minutes  10.382 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:

@@ -28,12 +28,11 @@ segmentation masks into object localization annotations for different tasks
 (e.g. transforming masks used by instance and panoptic segmentation
 methods into bounding boxes used by object detection methods).
 
-.. GENERATED FROM PYTHON SOURCE LINES 12-39
+.. GENERATED FROM PYTHON SOURCE LINES 12-38
 
 .. code-block:: default
 
 
-    # sphinx_gallery_thumbnail_path = "../../gallery/assets/repurposing_annotations_thumbnail.png"
 
     import os
     import numpy as np
@@ -421,7 +420,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.639 seconds)
+   **Total running time of the script:** ( 0 minutes  1.881 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_repurposing_annotations.py:

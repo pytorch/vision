@@ -25,12 +25,11 @@ Illustration of transforms
 This example illustrates the various transforms available in :ref:`the
 torchvision.transforms module <transforms>`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 9-53
+.. GENERATED FROM PYTHON SOURCE LINES 9-52
 
 .. code-block:: default
 
 
-    # sphinx_gallery_thumbnail_path = "../../gallery/assets/transforms_thumbnail.png"
 
     from PIL import Image
     from pathlib import Path
@@ -818,7 +817,7 @@ randomly applies a list of transforms, with a given probability.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.971 seconds)
+   **Total running time of the script:** ( 0 minutes  9.364 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms.py:
