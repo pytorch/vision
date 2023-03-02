@@ -29,6 +29,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@windows-generic-conda
     with:
       repository: pytorch/vision
+      test-infra-ref: windows-generic-conda
       runner: ${{ matrix.runner }}
       timeout: 120
       script: |
