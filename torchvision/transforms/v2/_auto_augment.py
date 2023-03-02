@@ -76,12 +76,24 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_or_video_transform(
         self,
-        inpt: Union[datapoints._ImageType, datapoints._VideoType],
+        image: Union[datapoints._ImageType, datapoints._VideoType],
         transform_id: str,
         magnitude: float,
         interpolation: Union[InterpolationMode, int],
         fill: Dict[Type, datapoints._FillTypeJIT],
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
+        return self._apply_transform(
+            image, transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill
+        )
+
+    def _apply_transform(
+        self,
+        inpt: datapoints.InputType,
+        transform_id: str,
+        magnitude: float,
+        interpolation: InterpolationMode,
+        fill: Dict[Type, datapoints.FillTypeJIT],
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         fill_ = fill[type(inpt)]
 
         if transform_id == "Identity":
