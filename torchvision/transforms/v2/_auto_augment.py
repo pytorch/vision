@@ -15,6 +15,36 @@ from ._utils import _setup_fill_arg
 from .utils import check_type, is_simple_tensor
 
 
+def solarize_add(
+    image: Union[datapoints._ImageType, datapoints._VideoType], addition: int = 0, threshold: int = 128
+) -> torch.Tensor:
+    # TODO: ? datapoints._datapoint.Datapoint
+    # TODO: ? threshold max value: bound = _FT._max_value(inpt.dtype)
+    if isinstance(image, PIL.Image.Image):
+        raise NotImplementedError()
+    added_image = image.add(addition).clip(0, 255)
+    return torch.where(image < threshold, added_image, image)
+
+
+def cutout(image: Union[datapoints._ImageType, datapoints._VideoType], pad_size: int, replace: int = 0) -> torch.Tensor:
+    # TODO: ? datapoints._datapoint.Datapoint
+    # TODO: ? return type
+    img_c, img_h, img_w = F.get_dimensions(image)
+
+    # Sample the center location in the image where the zero mask will be applied.
+    cutout_center_height = torch.randint(0, img_h, size=(1,)).item()
+    cutout_center_width = torch.randint(0, img_w, size=(1,)).item()
+
+    lower_pad = max(0, cutout_center_height - pad_size)
+    upper_pad = max(0, img_h - cutout_center_height - pad_size)
+    left_pad = max(0, cutout_center_width - pad_size)
+    right_pad = max(0, img_w - cutout_center_width - pad_size)
+
+    cutout_shape = [img_h - (lower_pad + upper_pad), img_w - (left_pad + right_pad)]
+    v = torch.tensor(replace)[:, None, None]
+    return F.erase(image, lower_pad, left_pad, cutout_shape[0], cutout_shape[1], v)
+
+
 class _AutoAugmentBase(Transform):
     def __init__(
         self,
@@ -88,12 +118,12 @@ class _AutoAugmentBase(Transform):
 
     def _apply_transform(
         self,
-        inpt: datapoints.InputType,
+        inpt: datapoints._InputType,
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, datapoints.FillTypeJIT],
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+        fill: Dict[Type, datapoints._FillTypeJIT],
+    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
         fill_ = fill[type(inpt)]
 
         if transform_id == "Identity":
@@ -172,6 +202,14 @@ class _AutoAugmentBase(Transform):
             return F.equalize(inpt)
         elif transform_id == "Invert":
             return F.invert(inpt)
+        elif transform_id == "SolarizeAdd":
+            if check_type(inpt, datapoints.BoundingBox):
+                return inpt
+            return solarize_add(inpt, int(magnitude))
+        elif transform_id == "Flip":
+            return F.horizontal_flip(inpt)
+        elif transform_id == "Cutout":
+            return cutout(inpt, int(magnitude))
         else:
             raise ValueError(f"No transform available for {transform_id}")
 
@@ -644,7 +682,9 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         inputs: Any,
         unsupported_types: Tuple[Type, ...] = (datapoints.Mask,),
     ) -> Tuple[
-        Tuple[List[Any], TreeSpec, int, int], Union[datapoints.ImageType, datapoints.VideoType], datapoints.BoundingBox
+        Tuple[List[Any], TreeSpec, int, int],
+        Union[datapoints._ImageType, datapoints._VideoType],
+        datapoints.BoundingBox,
     ]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
@@ -667,7 +707,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
 
         if not image_or_videos:
-            raise TypeError("Found no image in the sample.")
+            raise TypeError("Found no image or video in the sample.")
         if len(image_or_videos) > 1:
             raise TypeError(
                 f"Auto augment transformations are only properly defined for a single image or video, "
@@ -688,7 +728,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     def _unflatten_and_insert_image_or_video_and_bboxes(
         self,
         flat_inputs_with_spec: Tuple[List[Any], TreeSpec, int, int],
-        image_or_video: Union[datapoints.ImageType, datapoints.VideoType],
+        image_or_video: Union[datapoints._ImageType, datapoints._VideoType],
         bboxes: datapoints.BoundingBox,
     ) -> Any:
         flat_inputs, spec, idx1, idx2 = flat_inputs_with_spec
@@ -710,23 +750,21 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
 
     def _apply_image_or_video_and_bboxes_transform(
         self,
-        image: Any,
+        image: Union[datapoints._ImageType, datapoints._VideoType],
         bboxes: datapoints.BoundingBox,
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, datapoints.FillTypeJIT],
+        fill: Dict[Type, datapoints._FillTypeJIT],
     ) -> Tuple[Any, datapoints.BoundingBox]:
-        # TODO: SolarizeAdd, Cutout, BBox_Cutout, Flip_Only_BBoxes, Cutout_Only_BBoxes
-
-        if transform_id.endswith("_Only_BBoxes"):
+        if transform_id == "BBox_Cutout":
+            raise NotImplementedError()
+        elif transform_id.endswith("_Only_BBoxes"):
             transform_id = transform_id.replace("_Only_BBoxes", "")
             fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
             image = self._transform_image_or_video_in_bboxes(
                 self._apply_image_or_video_transform, fn_kwargs, image, bboxes
             )
-        elif transform_id == "BBox_Cutout":
-            raise NotImplementedError()
         else:
             image = self._apply_transform(image, transform_id, magnitude, interpolation, fill)
             bboxes = self._apply_transform(bboxes, transform_id, magnitude, interpolation, fill)
@@ -788,7 +826,7 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         self,
         policy: str = "v0",
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy

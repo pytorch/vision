@@ -82,6 +82,28 @@ def auto_augment_adapter(transform, input, device):
     return adapted_input
 
 
+def auto_augment_detection_adapter(transform, input, device):
+    adapted_input = {}
+    image_or_video_found = False
+    bounding_box_found = False
+    for key, value in input.items():
+        if isinstance(value, datapoints.Mask):
+            # AA detection transforms don't support masks
+            continue
+        elif isinstance(value, datapoints.BoundingBox):
+            if bounding_box_found:
+                # AA detection transforms only support a single bounding box tensor
+                continue
+            bounding_box_found = True
+        elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor, PIL.Image.Image)):
+            if image_or_video_found:
+                # AA transforms only support a single image or video
+                continue
+            image_or_video_found = True
+        adapted_input[key] = value
+    return adapted_input
+
+
 def linear_transformation_adapter(transform, input, device):
     flat_inputs = list(input.values())
     c, h, w = query_chw(
@@ -119,6 +141,7 @@ class TestSmoke:
             (transforms.AutoAugment(), auto_augment_adapter),
             (transforms.RandAugment(), auto_augment_adapter),
             (transforms.TrivialAugmentWide(), auto_augment_adapter),
+            (transforms.AutoAugmentDetection(), auto_augment_detection_adapter),
             (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
             (transforms.Grayscale(), None),
             (transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1.0), None),
