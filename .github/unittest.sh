@@ -7,6 +7,7 @@ CONDA_PATH=$(which conda)
 eval "$(${CONDA_PATH} shell.bash hook)"
 conda config --set channel_priority strict
 
+# Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in
   Linux)
     OS_TYPE=linux
@@ -20,8 +21,9 @@ case $(uname) in
     ;;
 esac
 
-if [[ "${OS_TYPE}" == "macos" ]]; then
-  uname -a
+# The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG libraries installed by default
+# that interfere with our build. We uninstall them here and use the one from conda below.
+if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
   JPEG_LIBS=$(brew list | grep jpeg)
   echo $JPEG_LIBS
   for lib in $JPEG_LIBS; do
