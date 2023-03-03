@@ -36,7 +36,7 @@ def solarize_add(
 
 def cutout(
     image: Union[datapoints._ImageType, datapoints._VideoType],
-    pad_size: Union[int, Tuple[int, int], None],
+    pad_size: Union[int, Tuple[int, int], None] = None,
     pad_fraction: float = 0.0,
     replace: int = 0,
 ) -> Union[datapoints._ImageType, datapoints._VideoType]:
@@ -138,9 +138,9 @@ class _AutoAugmentBase(Transform):
         inpt: datapoints._InputType,
         transform_id: str,
         magnitude: float,
-        interpolation: InterpolationMode,
+        interpolation: Union[InterpolationMode, int],
         fill: Dict[Type, datapoints._FillTypeJIT],
-    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
+    ) -> Union[datapoints._ImageType, datapoints._VideoType, datapoints.BoundingBox]:
         # TODO: magnitude is not always float, it could be int (e.g., posterize).
         fill_ = fill[type(inpt)]
 
@@ -221,18 +221,20 @@ class _AutoAugmentBase(Transform):
             return F.equalize(inpt)
         elif transform_id == "Invert":
             return F.invert(inpt)
+        elif transform_id == "Flip":
+            return F.horizontal_flip(inpt)
         elif transform_id == "SolarizeAdd":
             if isinstance(inpt, datapoints.BoundingBox):
                 return inpt
             return solarize_add(inpt, int(magnitude))
-        elif transform_id == "Flip":
-            return F.horizontal_flip(inpt)
         elif transform_id == "Cutout":
             if isinstance(inpt, datapoints.BoundingBox):
                 return inpt
             return cutout(inpt, pad_size=int(magnitude))
         elif transform_id == "BBox_Cutout":
             # TODO: Is there a better way?
+            if isinstance(inpt, datapoints.BoundingBox):
+                return inpt
             return cutout(inpt, pad_fraction=magnitude)
         else:
             raise ValueError(f"No transform available for {transform_id}")
