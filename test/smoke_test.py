@@ -27,12 +27,14 @@ def smoke_test_torchvision_read_decode() -> None:
     if img_png.ndim != 3 or img_png.numel() < 100:
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
 
+
 def smoke_test_compile() -> None:
     model = resnet50().cuda()
     model = torch.compile(model)
     x = torch.randn(1, 3, 224, 224, device="cuda")
     out = model(x)
     print(f"torch.compile model output: {out.shape}")
+
 
 def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
@@ -71,7 +73,6 @@ def main() -> None:
 
     if torch.backends.mps.is_available():
         smoke_test_torchvision_resnet50_classify("mps")
-
 
 
 if __name__ == "__main__":
