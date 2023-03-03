@@ -1189,10 +1189,10 @@ class YOLOV7Network(nn.Module):
                 widths=widths, depth=2, block_depth=2, activation=activation, normalization=normalization
             )
 
-        w3 = widths[-4]  # 256
-        w4 = widths[-3]  # 512
-        w5 = widths[-2]  # 768
-        w6 = widths[-1]  # 1024
+        w3 = widths[-4]
+        w4 = widths[-3]
+        w5 = widths[-2]
+        w6 = widths[-1]
 
         self.spp = spp(w6, w6 // 2)
 
