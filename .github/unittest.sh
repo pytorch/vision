@@ -20,7 +20,7 @@ case $(uname) in
     ;;
 esac
 
-if [[ "${OS_TYPE}" != "macos" ]]; then
+if [[ "${OS_TYPE}" == "macos" ]]; then
   JPEG_LIBS=$(brew list | grep jpeg)
   echo $JPEG_LIBS
   for lib in $JPEG_LIBS; do
