@@ -1,0 +1,35 @@
+on:
+  pull-request:
+
+jobs:
+  smoke-test:
+    strategy:
+      matrix:
+        os:
+          - windows-2022  # windows-latest
+          - windows-2019
+          - ubuntu-22.04  # ubuntu-latest
+          - ubuntu-20.04
+          - macos-12  # macos-latest
+          - macos-11
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install nightly torchvision
+        run: pip install --progress-bar=off --pre torchvision --index-url=https://download.pytorch.org/whl/nightly/cpu
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run smoke test
+        run: python test/smoke_test.py
