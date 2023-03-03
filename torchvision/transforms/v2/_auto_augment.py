@@ -20,8 +20,10 @@ def solarize_add(
 ) -> Union[datapoints._ImageType, datapoints._VideoType]:
     # TODO: ? threshold max value: bound = _FT._max_value(inpt.dtype)
     if isinstance(image, PIL.Image.Image):
+
         def pixel_fn(pixel: int) -> int:
             return max(0, min(pixel + addition, 255)) if pixel < threshold else pixel
+
         return PIL.Image.eval(image, pixel_fn)
 
     added_image = image.add(addition).clip(0, 255)
@@ -806,17 +808,19 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
         "Posterize": (
-            lambda num_bins, height, width: torch.linspace(0, 4, num_bins + 1, dtype=torch.long),
+            lambda num_bins, height, width: torch.linspace(8, 4, num_bins + 1, dtype=torch.long),
             False,
         ),
         "Solarize": (
-            lambda num_bins, height, width: torch.linspace(0, 256, num_bins + 1, dtype=torch.long),
+            # TODO: this is extremely ugly because 255 is multiplied in _apply_transform
+            lambda num_bins, height, width: torch.linspace(256 / 255, 0, num_bins + 1),
             False,
-        ),
+        ),  # TODO: it's previously [255, 0], now [256, 0]
         "SolarizeAdd": (
             lambda num_bins, height, width: torch.linspace(0, 110, num_bins + 1, dtype=torch.long),
             False,
         ),
+        # TODO: it's previously [0, 0.9] (10 piece) with random negate, now [-0.9, 0.9] (11 piece)
         "Color": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
         "Contrast": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
         "Brightness": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
@@ -826,11 +830,11 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "TranslateX": (
             lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins + 1),
             True,
-        ),
+        ),  # TODO: it's previously [0, 150.0 / 331.0 * width], now [0, 250]
         "TranslateY": (
             lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins + 1),
             True,
-        ),
+        ),  # TODO: it's previously [0, 150.0 / 331.0 * width], now [0, 250]
         "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
         "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
         "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins + 1), True),
@@ -846,7 +850,10 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
             True,
         ),
         "Flip_Only_BBoxes": (lambda num_bins, height, width: None, False),
-        "Solarize_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0, 256, num_bins + 1, dtype=torch.long), False),
+        "Solarize_Only_BBoxes": (
+            lambda num_bins, height, width: torch.linspace(256 / 255, 0, num_bins + 1, dtype=torch.long),
+            False,
+        ),  # TODO: the same as "Solarize"
         "Equalize_Only_BBoxes": (lambda num_bins, height, width: None, False),
         "Cutout_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0, 50, num_bins + 1), False),
     }
