@@ -17,28 +17,43 @@ from .utils import check_type, is_simple_tensor
 
 def solarize_add(
     image: Union[datapoints._ImageType, datapoints._VideoType], addition: int = 0, threshold: int = 128
-) -> torch.Tensor:
-    # TODO: ? datapoints._datapoint.Datapoint
+) -> Union[datapoints._ImageType, datapoints._VideoType]:
     # TODO: ? threshold max value: bound = _FT._max_value(inpt.dtype)
     if isinstance(image, PIL.Image.Image):
-        raise NotImplementedError()
+        def pixel_fn(pixel: int) -> int:
+            return max(0, min(pixel + addition, 255)) if pixel < threshold else pixel
+        return PIL.Image.eval(image, pixel_fn)
+
     added_image = image.add(addition).clip(0, 255)
-    return torch.where(image < threshold, added_image, image)
+    result = torch.where(image < threshold, added_image, image)
+    # TODO: check if this is appropriate way
+    if isinstance(image, datapoints._datapoint.Datapoint):
+        result = image.wrap_like(image, result)
+    return result
 
 
-def cutout(image: Union[datapoints._ImageType, datapoints._VideoType], pad_size: int, replace: int = 0) -> torch.Tensor:
-    # TODO: ? datapoints._datapoint.Datapoint
-    # TODO: ? return type
+def cutout(
+    image: Union[datapoints._ImageType, datapoints._VideoType],
+    pad_size: Union[int, Tuple[int, int], None],
+    pad_fraction: float = 0.0,
+    replace: int = 0,
+) -> Union[datapoints._ImageType, datapoints._VideoType]:
     img_c, img_h, img_w = F.get_dimensions(image)
 
     # Sample the center location in the image where the zero mask will be applied.
-    cutout_center_height = torch.randint(0, img_h, size=(1,)).item()
-    cutout_center_width = torch.randint(0, img_w, size=(1,)).item()
+    cutout_center_height = int(torch.randint(img_h, ()))
+    cutout_center_width = int(torch.randint(img_w, ()))
 
-    lower_pad = max(0, cutout_center_height - pad_size)
-    upper_pad = max(0, img_h - cutout_center_height - pad_size)
-    left_pad = max(0, cutout_center_width - pad_size)
-    right_pad = max(0, img_w - cutout_center_width - pad_size)
+    if isinstance(pad_size, int):
+        pad_size = (pad_size, pad_size)
+    elif pad_size is None:
+        assert pad_fraction > 0.0
+        pad_size = (int(pad_fraction * img_h), int(pad_fraction * img_w))
+
+    lower_pad = max(0, cutout_center_height - pad_size[0])
+    upper_pad = max(0, img_h - cutout_center_height - pad_size[0])
+    left_pad = max(0, cutout_center_width - pad_size[1])
+    right_pad = max(0, img_w - cutout_center_width - pad_size[1])
 
     cutout_shape = [img_h - (lower_pad + upper_pad), img_w - (left_pad + right_pad)]
     v = torch.tensor(replace)[:, None, None]
@@ -124,6 +139,7 @@ class _AutoAugmentBase(Transform):
         interpolation: InterpolationMode,
         fill: Dict[Type, datapoints._FillTypeJIT],
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
+        # TODO: magnitude is not always float, it could be int (e.g., posterize).
         fill_ = fill[type(inpt)]
 
         if transform_id == "Identity":
@@ -189,6 +205,7 @@ class _AutoAugmentBase(Transform):
         elif transform_id == "Sharpness":
             return F.adjust_sharpness(inpt, sharpness_factor=1.0 + magnitude)
         elif transform_id == "Posterize":
+            # TODO: we don't need to convert magnitude to int because it's already int format.
             return F.posterize(inpt, bits=int(magnitude))
         elif transform_id == "Solarize":
             if check_type(inpt, (datapoints.Image, is_simple_tensor, datapoints.Video)):
@@ -203,15 +220,18 @@ class _AutoAugmentBase(Transform):
         elif transform_id == "Invert":
             return F.invert(inpt)
         elif transform_id == "SolarizeAdd":
-            if check_type(inpt, datapoints.BoundingBox):
+            if isinstance(inpt, datapoints.BoundingBox):
                 return inpt
             return solarize_add(inpt, int(magnitude))
         elif transform_id == "Flip":
             return F.horizontal_flip(inpt)
         elif transform_id == "Cutout":
-            if check_type(inpt, datapoints.BoundingBox):
+            if isinstance(inpt, datapoints.BoundingBox):
                 return inpt
-            return cutout(inpt, int(magnitude))
+            return cutout(inpt, pad_size=int(magnitude))
+        elif transform_id == "BBox_Cutout":
+            # TODO: Is there a better way?
+            return cutout(inpt, pad_fraction=magnitude)
         else:
             raise ValueError(f"No transform available for {transform_id}")
 
@@ -742,6 +762,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     def _transform_image_or_video_in_bboxes(
         fn: Callable[..., torch.Tensor], fn_kwrgs: dict, image: torch.Tensor, bboxes: torch.Tensor
     ) -> torch.Tensor:
+        # TODO: ? Do we need to assert bboxes format is XYXY?
         new_img = image.clone()
         int_bboxes = bboxes.to(torch.long)
         for bbox in int_bboxes:
@@ -760,7 +781,13 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         fill: Dict[Type, datapoints._FillTypeJIT],
     ) -> Tuple[Any, datapoints.BoundingBox]:
         if transform_id == "BBox_Cutout":
-            raise NotImplementedError()
+            random_index = int(torch.randint(len(bboxes), ()))
+            # TODO: this wrap_like solution seems very complex
+            chosen_bbox = bboxes.wrap_like(bboxes, bboxes[random_index].unsqueeze(0))
+            fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
+            image = self._transform_image_or_video_in_bboxes(
+                self._apply_image_or_video_transform, fn_kwargs, image, chosen_bbox
+            )
         elif transform_id.endswith("_Only_BBoxes"):
             transform_id = transform_id.replace("_Only_BBoxes", "")
             fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
@@ -779,49 +806,49 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
         "Posterize": (
-            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6))).round().int(),
+            lambda num_bins, height, width: torch.linspace(0, 4, num_bins + 1, dtype=torch.long),
             False,
-        ),  # TODO: tf repo is (0 -> 4) while this seems to be (8 -> 4)
+        ),
         "Solarize": (
-            lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins),
+            lambda num_bins, height, width: torch.linspace(0, 256, num_bins + 1, dtype=torch.long),
             False,
-        ),  # TODO: check order and 255.0 rather than 256.0
+        ),
         "SolarizeAdd": (
-            lambda num_bins, height, width: torch.linspace(0.0, 110.0, num_bins),
+            lambda num_bins, height, width: torch.linspace(0, 110, num_bins + 1, dtype=torch.long),
             False,
-        ),  # TODO: check 110.0
-        "Color": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
-        "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
-        "Brightness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
-        "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
-        "Cutout": (lambda num_bins, height, width: torch.linspace(0.0, 100.0, num_bins, dtype=torch.long), False),
-        "BBox_Cutout": (lambda num_bins, height, width: torch.linspace(0.0, 0.75, num_bins), False),
-        "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
+        ),
+        "Color": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
+        "Contrast": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
+        "Brightness": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
+        "Sharpness": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
+        "Cutout": (lambda num_bins, height, width: torch.linspace(0, 100, num_bins + 1, dtype=torch.long), False),
+        "BBox_Cutout": (lambda num_bins, height, width: torch.linspace(0.0, 0.75, num_bins + 1), False),
         "TranslateX": (
-            lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins),
+            lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins + 1),
             True,
-        ),  # TODO: check 250.0
+        ),
         "TranslateY": (
-            lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins),
+            lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins + 1),
             True,
-        ),  # TODO: check 250.0
-        "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
-        "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
-        "Rotate_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
-        "ShearX_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
-        "ShearY_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        ),
+        "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
+        "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
+        "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins + 1), True),
+        "Rotate_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins + 1), True),
+        "ShearX_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
+        "ShearY_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
         "TranslateX_Only_BBoxes": (
-            lambda num_bins, height, width: torch.linspace(0.0, 120.0, num_bins),
+            lambda num_bins, height, width: torch.linspace(0.0, 120.0, num_bins + 1),
             True,
         ),  # TODO: check 120.0
         "TranslateY_Only_BBoxes": (
-            lambda num_bins, height, width: torch.linspace(0.0, 120.0, num_bins),
+            lambda num_bins, height, width: torch.linspace(0.0, 120.0, num_bins + 1),
             True,
         ),  # TODO: check 120.0
         "Flip_Only_BBoxes": (lambda num_bins, height, width: None, False),
-        "Solarize_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
+        "Solarize_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0, 256, num_bins + 1, dtype=torch.long), False),
         "Equalize_Only_BBoxes": (lambda num_bins, height, width: None, False),
-        "Cutout_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 50.0, num_bins), False),
+        "Cutout_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0, 50, num_bins + 1), False),
     }
 
     def __init__(
@@ -866,7 +893,7 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
                 [("ShearX", 0.2, 6), ("TranslateY_Only_BBoxes", 0.2, 10)],
                 [("SolarizeAdd", 0.6, 8), ("Brightness", 0.8, 10)],
             ]
-        elif policy == "vtest":
+        elif policy == "test":
             return [
                 [("TranslateX", 1.0, 4), ("Equalize", 1.0, 10)],
             ]

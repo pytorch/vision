@@ -91,11 +91,13 @@ def auto_augment_detection_adapter(transform, input, device):
             # AA detection transforms don't support masks
             continue
         elif isinstance(value, datapoints.BoundingBox):
+            # TODO: this will only test the first bbox
             if bounding_box_found:
                 # AA detection transforms only support a single bounding box tensor
                 continue
             bounding_box_found = True
         elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor, PIL.Image.Image)):
+            # TODO: this will only test the first image_or_video
             if image_or_video_found:
                 # AA transforms only support a single image or video
                 continue
@@ -141,7 +143,10 @@ class TestSmoke:
             (transforms.AutoAugment(), auto_augment_adapter),
             (transforms.RandAugment(), auto_augment_adapter),
             (transforms.TrivialAugmentWide(), auto_augment_adapter),
-            (transforms.AutoAugmentDetection(), auto_augment_detection_adapter),
+            (transforms.AutoAugmentDetection("v0"), auto_augment_detection_adapter),
+            (transforms.AutoAugmentDetection("v1"), auto_augment_detection_adapter),
+            (transforms.AutoAugmentDetection("v2"), auto_augment_detection_adapter),
+            (transforms.AutoAugmentDetection("v3"), auto_augment_detection_adapter),
             (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
             (transforms.Grayscale(), None),
             (transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1.0), None),
