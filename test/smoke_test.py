@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from sys import platform
 
 import torch
 import torch.nn as nn
@@ -69,7 +70,8 @@ def main() -> None:
     smoke_test_torchvision_resnet50_classify()
     if torch.cuda.is_available():
         smoke_test_torchvision_resnet50_classify("cuda")
-        smoke_test_compile()
+        if platform == "linux" or platform == "linux2":
+            smoke_test_compile()
 
     if torch.backends.mps.is_available():
         smoke_test_torchvision_resnet50_classify("mps")
