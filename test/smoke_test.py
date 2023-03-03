@@ -38,9 +38,10 @@ def smoke_test_compile() -> None:
         print(f"torch.compile model output: {out.shape}")
     except RuntimeError:
         if platform == "win32":
-            print(f"Successfully caught torch.compile RuntimeError on win")
+            print("Successfully caught torch.compile RuntimeError on win")
         else:
             raise
+
 
 def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
