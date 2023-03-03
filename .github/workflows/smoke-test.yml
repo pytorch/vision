@@ -1,5 +1,5 @@
 on:
-  pull-request:
+  pull_request:
 
 jobs:
   smoke-test:
