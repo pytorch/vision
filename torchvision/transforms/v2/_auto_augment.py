@@ -209,6 +209,8 @@ class _AutoAugmentBase(Transform):
         elif transform_id == "Flip":
             return F.horizontal_flip(inpt)
         elif transform_id == "Cutout":
+            if check_type(inpt, datapoints.BoundingBox):
+                return inpt
             return cutout(inpt, int(magnitude))
         else:
             raise ValueError(f"No transform available for {transform_id}")
