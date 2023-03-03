@@ -840,11 +840,11 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "TranslateX_Only_BBoxes": (
             lambda num_bins, height, width: torch.linspace(0.0, 120.0, num_bins + 1),
             True,
-        ),  # TODO: check 120.0
+        ),
         "TranslateY_Only_BBoxes": (
             lambda num_bins, height, width: torch.linspace(0.0, 120.0, num_bins + 1),
             True,
-        ),  # TODO: check 120.0
+        ),
         "Flip_Only_BBoxes": (lambda num_bins, height, width: None, False),
         "Solarize_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0, 256, num_bins + 1, dtype=torch.long), False),
         "Equalize_Only_BBoxes": (lambda num_bins, height, width: None, False),
