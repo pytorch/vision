@@ -21,6 +21,7 @@ case $(uname) in
     ;;
 esac
 
+echo '::group::Uninstall system JPEG libraries on macOS'
 # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG libraries installed by default
 # that interfere with our build. We uninstall them here and use the one from conda below.
 if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
@@ -30,6 +31,7 @@ if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
     brew uninstall --ignore-dependencies --force $lib || true
   done
 fi
+echo '::endgroup::'
 
 echo '::group::Set PyTorch conda channel and wheel index'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
