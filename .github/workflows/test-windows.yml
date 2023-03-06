@@ -26,10 +26,10 @@ jobs:
             gpu-arch-type: "cuda"
             gpu-arch-version: "11.7"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/windows_job.yml@windows-generic-conda
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@setup-miniconda
     with:
       repository: pytorch/vision
-      test-infra-ref: windows-generic-conda
+      test-infra-ref: setup-miniconda
       runner: ${{ matrix.runner }}
       timeout: 120
       script: |
