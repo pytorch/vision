@@ -55,6 +55,10 @@ jobs:
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
         
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off pytest
+        echo '::endgroup::'
+        
         echo '::group::Run torchhub tests'
         pytest --durations=25 -v test/test_hub.py
         echo '::endgroup::'
@@ -76,6 +80,10 @@ jobs:
         
         echo '::group::Install ONNX'
         pip install --progress-bar=off onnx onnxruntime
+        echo '::endgroup::'
+        
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off pytest
         echo '::endgroup::'
         
         echo '::group::Run torchhub tests'
@@ -102,6 +110,10 @@ jobs:
         mkdir -p ~/.cache/torch/hub/checkpoints
         python scripts/collect_model_urls.py torchvision/models \
                 | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
+        echo '::endgroup::'
+        
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off pytest
         echo '::endgroup::'
         
         echo '::group::Run torchhub tests'
