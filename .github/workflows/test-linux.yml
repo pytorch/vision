@@ -1,4 +1,4 @@
-name: Unit-tests on Linux
+name: Tests on Linux
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests:
+  unittests:
     strategy:
       matrix:
         python-version:
@@ -38,4 +38,73 @@ jobs:
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
-        ./.github/unittest.sh
+        ./.github/scripts/unittest.sh
+
+  torchhub:
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      script: |
+        export PYTHON_VERSION=3.8
+        export GPU_ARCH_TYPE=cpu
+
+        ./.github/scripts/setup-env.sh
+        
+        # Prepare conda
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda activate ci
+        
+        echo '::group::Run torchhub tests'
+        pytest --durations=25 -v test/test_hub.py
+        echo '::endgroup::'
+
+  onnx:
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      script: |
+        export PYTHON_VERSION=3.8
+        export GPU_ARCH_TYPE=cpu
+
+        ./.github/scripts/setup-env.sh
+        
+        # Prepare conda
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda activate ci
+        
+        echo '::group::Install ONNX'
+        pip install --progress-bar=off onnx onnxruntime
+        echo '::endgroup::'
+        
+        echo '::group::Run torchhub tests'
+        pytest --durations=25 -v test/test_hub.py
+        echo '::endgroup::'
+
+  unittests-extended:
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      script: |
+        export PYTHON_VERSION=3.8
+        export GPU_ARCH_TYPE=cpu
+
+        ./.github/scripts/setup-env.sh
+        
+        # Prepare conda
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda activate ci
+        
+        echo '::group::Pre-download model weights'
+        conda install wget parallel
+        mkdir -p ~/.cache/torch/hub/checkpoints
+        python scripts/collect_model_urls.py torchvision/models \
+                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
+        echo '::endgroup::'
+        
+        echo '::group::Run torchhub tests'
+        export PYTORCH_TEST_WITH_EXTENDED=1
+        pytest --durations=25 -v test/test_extended_*.py
+        echo '::endgroup::'
