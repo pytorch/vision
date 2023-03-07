@@ -106,10 +106,8 @@ jobs:
         conda activate ci
         
         echo '::group::Pre-download model weights'
-        conda install wget parallel
-        mkdir -p ~/.cache/torch/hub/checkpoints
-        python scripts/collect_model_urls.py torchvision/models \
-                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
+        pip install --progress-bar=off aiohttp aiofiles tqdm
+        python scripts/download_model_urls.py
         echo '::endgroup::'
         
         echo '::group::Install testing utilities'
