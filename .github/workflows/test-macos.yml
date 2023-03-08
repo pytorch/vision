@@ -1,4 +1,4 @@
-name: Unit-tests on macOS
+name: Tests on macOS
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests:
+  unittests:
     strategy:
       matrix:
         python-version:
