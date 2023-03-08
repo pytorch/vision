@@ -95,11 +95,3 @@ echo '::endgroup::'
 echo '::group::Collect PyTorch environment information'
 python -m torch.utils.collect_env
 echo '::endgroup::'
-
-echo '::group::Install testing utilities'
-pip install --progress-bar=off pytest pytest-mock pytest-cov
-echo '::endgroup::'
-
-echo '::group::Run tests'
-pytest --durations=25
-echo '::endgroup::'
