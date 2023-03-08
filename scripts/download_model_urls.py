@@ -10,6 +10,7 @@ from tqdm.asyncio import tqdm
 
 
 async def main(download_root):
+    print(f"Downloading model weights to {download_root}")
     download_root.mkdir(parents=True, exist_ok=True)
     urls = {weight.url for name in models.list_models() for weight in iter(models.get_model_weights(name))}
     async with aiohttp.ClientSession() as session:
@@ -26,5 +27,7 @@ async def download(download_root, session, url):
 
 
 if __name__ == "__main__":
-    download_root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("~/.cache/torch/hub/checkpoints")
+    download_root = (
+        (Path(sys.argv[1]) if len(sys.argv) > 1 else Path("~/.cache/torch/hub/checkpoints")).expanduser().resolve()
+    )
     asyncio.get_event_loop().run_until_complete(main(download_root))
