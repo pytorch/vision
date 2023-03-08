@@ -114,7 +114,7 @@ jobs:
         conda activate ci
         
         echo '::group::Pre-download model weights'
-        pip install --progress-bar=off aiohttp aiofiles tqdm
+        pip install --progress-bar=off requests tqdm
         python scripts/download_model_urls.py
         echo '::endgroup::'
         

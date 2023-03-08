@@ -1,32 +1,40 @@
-import asyncio
 import sys
+from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
 from time import perf_counter
 from urllib.parse import urlsplit
 
-import aiofiles
-import aiohttp
+import requests
+import tqdm
 from torchvision import models
-from tqdm.asyncio import tqdm
 
 
-async def main(download_root):
+def main(download_root):
     download_root.mkdir(parents=True, exist_ok=True)
     urls = {weight.url for name in models.list_models() for weight in iter(models.get_model_weights(name))}
 
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None)) as session:
-        await tqdm.gather(*[download(download_root, session, url) for url in urls])
+    with requests.Session() as session, tqdm.tqdm(total=len(urls)) as progress_bar:
+        session.params = dict(source="ci")
+
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(download, download_root, session, url) for url in sorted(urls)]
+            for future in as_completed(futures):
+                file_name = future.result()
+                progress_bar.set_description(file_name)
+                progress_bar.update()
 
 
-async def download(download_root, session, url):
-    response = await session.get(url, params=dict(source="ci"))
+def download(download_root, session, url):
+    response = session.get(url)
 
     assert response.ok
 
     file_name = Path(urlsplit(url).path).name
-    async with aiofiles.open(download_root / file_name, "wb") as f:
-        async for data in response.content.iter_any():
-            await f.write(data)
+    with open(download_root / file_name, "wb") as file:
+        for data in response.iter_content(32 * 1024):
+            file.write(data)
+
+    return file_name
 
 
 if __name__ == "__main__":
@@ -35,7 +43,7 @@ if __name__ == "__main__":
     )
     print(f"Downloading model weights to {download_root}")
     start = perf_counter()
-    asyncio.get_event_loop().run_until_complete(main(download_root))
+    main(download_root)
     stop = perf_counter()
     minutes, seconds = divmod(stop - start, 60)
     print(f"Download took {minutes:2.0f}m {seconds:2.0f}s")
