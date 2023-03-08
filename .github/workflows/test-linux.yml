@@ -34,6 +34,8 @@ jobs:
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
       script: |
+        set -euo pipefail
+
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
@@ -45,6 +47,8 @@ jobs:
     with:
       repository: pytorch/vision
       script: |
+        set -euo pipefail
+
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
 
@@ -68,6 +72,8 @@ jobs:
     with:
       repository: pytorch/vision
       script: |
+        set -euo pipefail
+
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
 
@@ -95,6 +101,8 @@ jobs:
     with:
       repository: pytorch/vision
       script: |
+        set -euo pipefail
+
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
 
