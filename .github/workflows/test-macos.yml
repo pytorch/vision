@@ -31,7 +31,7 @@ jobs:
       timeout: 240
       runner: ${{ matrix.runner }}
       script: |
-        set -euxo pipefail
+        set -euo pipefail
 
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=cpu
