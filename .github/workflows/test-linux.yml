@@ -86,8 +86,8 @@ jobs:
         pip install --progress-bar=off pytest
         echo '::endgroup::'
         
-        echo '::group::Run torchhub tests'
-        pytest --durations=25 -v test/test_hub.py
+        echo '::group::Run ONNX tests'
+        pytest --durations=25 -v test/test_onnx.py
         echo '::endgroup::'
 
   unittests-extended:
@@ -114,7 +114,7 @@ jobs:
         pip install --progress-bar=off pytest
         echo '::endgroup::'
         
-        echo '::group::Run torchhub tests'
+        echo '::group::Run extended unittests'
         export PYTORCH_TEST_WITH_EXTENDED=1
         pytest --durations=25 -v test/test_extended_*.py
         echo '::endgroup::'
