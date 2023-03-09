@@ -61,6 +61,10 @@ jobs:
         export GPU_ARCH_TYPE=cpu
         ./.github/scripts/setup-env.sh
         
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda config --set channel_priority strict
+        
         pip install --progress-bar=off mypy
         
         mypy --install-types --non-interactive --config-file mypy.ini
