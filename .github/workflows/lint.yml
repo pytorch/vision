@@ -50,9 +50,9 @@ jobs:
         eval "$(${CONDA_PATH} shell.bash hook)"
         # clang-format needs some shared libraries that conflict with the system ones. Thus, we install them from conda
         # and prepend the libraries to linker path to prioritize them
-        conda create --name ci --quiet --yes python=3.8 ncurses libgcc
+        conda create --name ci --quiet --yes python=3.8 ncurses=5 libgcc
         conda activate ci
-        export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib"
+        export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
         echo '::endgroup::'
         
         echo '::group::Install lint tools'
