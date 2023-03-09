@@ -1,4 +1,4 @@
-name: Unit-tests on macOS
+name: Tests on macOS
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests:
+  unittests:
     strategy:
       matrix:
         python-version:
@@ -31,7 +31,9 @@ jobs:
       timeout: 240
       runner: ${{ matrix.runner }}
       script: |
+        set -euo pipefail
+
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=cpu
 
-        ./.github/unittest.sh
+        ./.github/scripts/unittest.sh
