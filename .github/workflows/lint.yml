@@ -19,8 +19,6 @@ jobs:
 
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
-        conda config --set channel_priority strict
-        
         conda create --name ci --quiet --yes python=3.8 pip
         conda activate ci
         
@@ -69,7 +67,7 @@ jobs:
         
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
-        conda config --set channel_priority strict
+        conda activate ci
         
         pip install --progress-bar=off mypy
         
