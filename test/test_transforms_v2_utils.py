@@ -4,7 +4,7 @@ import pytest
 import torch
 
 import torchvision.transforms.v2.utils
-from prototype_common_utils import make_bounding_box, make_detection_mask, make_image
+from common_utils import make_bounding_box, make_detection_mask, make_image
 
 from torchvision import datapoints
 from torchvision.transforms.v2.functional import to_image_pil

@@ -11,15 +11,16 @@ import pytest
 
 import torch
 
-from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
-from prototype_common_utils import (
+from common_utils import (
     assert_close,
+    cache,
+    cpu_and_gpu,
     DEFAULT_SQUARE_SPATIAL_SIZE,
     make_bounding_boxes,
+    needs_cuda,
     parametrized_error_message,
+    set_rng_seed,
 )
-from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
-from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
 from torchvision import datapoints
 from torchvision.transforms.functional import _get_perspective_coeffs
@@ -27,6 +28,8 @@ from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
 from torchvision.transforms.v2.functional._meta import clamp_bounding_box, convert_format_bounding_box
 from torchvision.transforms.v2.utils import is_simple_tensor
+from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
+from transforms_v2_kernel_infos import KERNEL_INFOS
 
 
 KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
@@ -143,7 +146,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*([actual, expected] + other_args), **kwargs),
+            msg=parametrized_error_message(input, other_args, **kwargs),
         )
 
     def _unbatch(self, batch, *, data_dims):
@@ -201,7 +204,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=batched_input.dtype, device=batched_input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(batched_input, *other_args, **kwargs),
         )
 
     @sample_inputs
@@ -233,7 +236,7 @@ class TestKernels:
             output_cpu,
             check_device=False,
             **info.get_closeness_kwargs(test_id, dtype=input_cuda.dtype, device=input_cuda.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(input_cpu, *other_args, **kwargs),
         )
 
     @sample_inputs
@@ -291,7 +294,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=torch.float32, device=input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(input, *other_args, **kwargs),
         )
 
 
@@ -508,6 +511,22 @@ class TestDispatchers:
         with pytest.raises(TypeError, match=re.escape(str(type(unkown_input)))):
             info.dispatcher(unkown_input, *other_args, **kwargs)
 
+    @make_info_args_kwargs_parametrization(
+        [
+            info
+            for info in DISPATCHER_INFOS
+            if datapoints.BoundingBox in info.kernels and info.dispatcher is not F.convert_format_bounding_box
+        ],
+        args_kwargs_fn=lambda info: info.sample_inputs(datapoints.BoundingBox),
+    )
+    def test_bounding_box_format_consistency(self, info, args_kwargs):
+        (bounding_box, *other_args), kwargs = args_kwargs.load()
+        format = bounding_box.format
+
+        output = info.dispatcher(bounding_box, *other_args, **kwargs)
+
+        assert output.format == format
+
 
 @pytest.mark.parametrize(
     ("alias", "target"),
@@ -619,7 +638,7 @@ class TestConvertFormatBoundingBox:
 
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
-#  `prototype_transforms_kernel_infos.py`
+#  `transforms_v2_kernel_infos.py`
 
 
 def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):

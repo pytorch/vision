@@ -14,7 +14,7 @@ class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
@@ -22,7 +22,8 @@ class FixedSizeCrop(Transform):
         self.crop_height = size[0]
         self.crop_width = size[1]
 
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
 
         self.padding_mode = padding_mode
 
@@ -118,7 +119,7 @@ class FixedSizeCrop(Transform):
                 )
 
         if params["needs_pad"]:
-            fill = self.fill[type(inpt)]
+            fill = self._fill[type(inpt)]
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt

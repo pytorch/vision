@@ -5,10 +5,22 @@ from typing import Any, List, Optional, Tuple, Union
 import torch
 from torchvision.transforms.functional import InterpolationMode
 
-from ._datapoint import Datapoint, FillTypeJIT
+from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class Video(Datapoint):
+    """[BETA] :class:`torch.Tensor` subclass for videos.
+
+    Args:
+        data (tensor-like): Any data that can be turned into a tensor with :func:`torch.as_tensor`.
+        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
+            ``data``.
+        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
+            :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.
+        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and
+            ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
+    """
+
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Video:
         video = tensor.as_subclass(cls)
@@ -115,7 +127,7 @@ class Video(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Video:
         output = self._F.rotate_video(
             self.as_subclass(torch.Tensor), angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -129,7 +141,7 @@ class Video(Datapoint):
         scale: float,
         shear: List[float],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Video:
         output = self._F.affine_video(
@@ -149,7 +161,7 @@ class Video(Datapoint):
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Video:
         output = self._F.perspective_video(
@@ -166,7 +178,7 @@ class Video(Datapoint):
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Video:
         output = self._F.elastic_video(
             self.as_subclass(torch.Tensor), displacement, interpolation=interpolation, fill=fill
@@ -232,7 +244,7 @@ class Video(Datapoint):
         return Video.wrap_like(self, output)
 
 
-VideoType = Union[torch.Tensor, Video]
-VideoTypeJIT = torch.Tensor
-TensorVideoType = Union[torch.Tensor, Video]
-TensorVideoTypeJIT = torch.Tensor
+_VideoType = Union[torch.Tensor, Video]
+_VideoTypeJIT = torch.Tensor
+_TensorVideoType = Union[torch.Tensor, Video]
+_TensorVideoTypeJIT = torch.Tensor

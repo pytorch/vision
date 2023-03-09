@@ -6,10 +6,23 @@ import PIL.Image
 import torch
 from torchvision.transforms.functional import InterpolationMode
 
-from ._datapoint import Datapoint, FillTypeJIT
+from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class Image(Datapoint):
+    """[BETA] :class:`torch.Tensor` subclass for images.
+
+    Args:
+        data (tensor-like, PIL.Image.Image): Any data that can be turned into a tensor with :func:`torch.as_tensor` as
+            well as PIL images.
+        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
+            ``data``.
+        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
+            :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.
+        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and
+            ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
+    """
+
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Image:
         image = tensor.as_subclass(cls)
@@ -116,7 +129,7 @@ class Image(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Image:
         output = self._F.rotate_image_tensor(
             self.as_subclass(torch.Tensor), angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -130,7 +143,7 @@ class Image(Datapoint):
         scale: float,
         shear: List[float],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Image:
         output = self._F.affine_image_tensor(
@@ -150,7 +163,7 @@ class Image(Datapoint):
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Image:
         output = self._F.perspective_image_tensor(
@@ -167,7 +180,7 @@ class Image(Datapoint):
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Image:
         output = self._F.elastic_image_tensor(
             self.as_subclass(torch.Tensor), displacement, interpolation=interpolation, fill=fill
@@ -241,7 +254,7 @@ class Image(Datapoint):
         return Image.wrap_like(self, output)
 
 
-ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
-ImageTypeJIT = torch.Tensor
-TensorImageType = Union[torch.Tensor, Image]
-TensorImageTypeJIT = torch.Tensor
+_ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
+_ImageTypeJIT = torch.Tensor
+_TensorImageType = Union[torch.Tensor, Image]
+_TensorImageTypeJIT = torch.Tensor

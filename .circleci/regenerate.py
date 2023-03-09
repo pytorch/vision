@@ -76,13 +76,6 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                         if os_type != "win" and btype == "conda":
                             continue
 
-                        # Not supporting Python 3.11 conda packages at the
-                        # moment since the necessary dependencies are not
-                        # available. Windows 3.11 Wheels will be built from
-                        # CircleCI here, however.
-                        if python_version == "3.11" and btype == "conda":
-                            continue
-
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
                         )
@@ -262,13 +255,17 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows", "macos"]:
+    for os_type in ["windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
-            if os_type == "linux" and device_type == "cpu":
-                continue
+
             for i, python_version in enumerate(PYTHON_VERSIONS):
+
+                # Turn off unit tests for 3.11, unit test are not setup properly
+                if python_version == "3.11":
+                    continue
+
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
                     "python_version": python_version,
@@ -297,7 +294,7 @@ def cmake_workflows(indentation=6):
 
             job["cu_version"] = "cu117" if device == "gpu" else "cpu"
             if device == "gpu" and os_type == "linux":
-                job["wheel_docker_image"] = "pytorch/manylinux-cuda116"
+                job["wheel_docker_image"] = "pytorch/manylinux-cuda117"
             jobs.append({f"cmake_{os_type}_{device}": job})
     return indent(indentation, jobs)
 

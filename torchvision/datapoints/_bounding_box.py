@@ -1,21 +1,44 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
-from ._datapoint import Datapoint, FillTypeJIT
+from ._datapoint import _FillTypeJIT, Datapoint
 
 
-class BoundingBoxFormat(StrEnum):
-    XYXY = StrEnum.auto()
-    XYWH = StrEnum.auto()
-    CXCYWH = StrEnum.auto()
+class BoundingBoxFormat(Enum):
+    """[BETA] Coordinate format of a bounding box.
+
+    Available formats are
+
+    * ``XYXY``
+    * ``XYWH``
+    * ``CXCYWH``
+    """
+
+    XYXY = "XYXY"
+    XYWH = "XYWH"
+    CXCYWH = "CXCYWH"
 
 
 class BoundingBox(Datapoint):
+    """[BETA] :class:`torch.Tensor` subclass for bounding boxes.
+
+    Args:
+        data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
+        format (BoundingBoxFormat, str): Format of the bounding box.
+        spatial_size (two-tuple of ints): Height and width of the corresponding image or video.
+        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
+            ``data``.
+        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
+            :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.
+        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and
+            ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
+    """
+
     format: BoundingBoxFormat
     spatial_size: Tuple[int, int]
 
@@ -39,7 +62,7 @@ class BoundingBox(Datapoint):
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
         if isinstance(format, str):
-            format = BoundingBoxFormat.from_str(format.upper())
+            format = BoundingBoxFormat[format.upper()]
 
         return cls._wrap(tensor, format=format, spatial_size=spatial_size)
 
@@ -52,6 +75,20 @@ class BoundingBox(Datapoint):
         format: Optional[BoundingBoxFormat] = None,
         spatial_size: Optional[Tuple[int, int]] = None,
     ) -> BoundingBox:
+        """Wrap a :class:`torch.Tensor` as :class:`BoundingBox` from a reference.
+
+        Args:
+            other (BoundingBox): Reference bounding box.
+            tensor (Tensor): Tensor to be wrapped as :class:`BoundingBox`
+            format (BoundingBoxFormat, str, optional): Format of the bounding box.  If omitted, it is taken from the
+                reference.
+            spatial_size (two-tuple of ints, optional): Height and width of the corresponding image or video. If
+                omitted, it is taken from the reference.
+
+        """
+        if isinstance(format, str):
+            format = BoundingBoxFormat[format.upper()]
+
         return cls._wrap(
             tensor,
             format=format if format is not None else other.format,
@@ -136,7 +173,7 @@ class BoundingBox(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.rotate_bounding_box(
             self.as_subclass(torch.Tensor),
@@ -155,7 +192,7 @@ class BoundingBox(Datapoint):
         scale: float,
         shear: List[float],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.affine_bounding_box(
@@ -175,7 +212,7 @@ class BoundingBox(Datapoint):
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.perspective_bounding_box(
@@ -192,7 +229,7 @@ class BoundingBox(Datapoint):
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> BoundingBox:
         output = self._F.elastic_bounding_box(
             self.as_subclass(torch.Tensor), self.format, self.spatial_size, displacement=displacement
