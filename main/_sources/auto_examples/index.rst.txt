@@ -19,7 +19,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_datapoints_thumb.png
-    :alt: Datapoints FAQ
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_datapoints.py`
 
@@ -36,7 +36,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
-    :alt: Tensor transforms and JIT
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py`
 
@@ -53,7 +53,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_transforms_v2_thumb.png
-    :alt: Getting started with transforms v2
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_transforms_v2.py`
 
@@ -70,7 +70,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_transforms_v2_e2e_thumb.png
-    :alt: Transforms v2: End-to-end object detection example
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`
 
@@ -87,7 +87,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_optical_flow_thumb.png
-    :alt: Optical Flow: Predicting movement with the RAFT model
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_optical_flow.py`
 
@@ -104,7 +104,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_repurposing_annotations_thumb.png
-    :alt: Repurposing masks into bounding boxes
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_repurposing_annotations.py`
 
@@ -121,7 +121,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_transforms_thumb.png
-    :alt: Illustration of transforms
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_transforms.py`
 
@@ -138,7 +138,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
-    :alt: Visualization utilities
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_visualization_utils.py`
 
@@ -155,7 +155,7 @@ Below is a gallery of examples
 .. only:: html
 
   .. image:: /auto_examples/images/thumb/sphx_glr_plot_video_api_thumb.png
-    :alt: Video API
+    :alt:
 
   :ref:`sphx_glr_auto_examples_plot_video_api.py`
 
@@ -182,7 +182,6 @@ Below is a gallery of examples
    /auto_examples/plot_transforms
    /auto_examples/plot_visualization_utils
    /auto_examples/plot_video_api
-
 
 .. only:: html
 
