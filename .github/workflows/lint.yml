@@ -36,7 +36,6 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
-      timeout: 240
       script: |
         set -euo pipefail
         
