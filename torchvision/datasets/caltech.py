@@ -116,7 +116,7 @@ class Caltech101(VisionDataset):
 
         return img, target
 
-    def _check_integrity(self) -> str:
+    def _check_integrity(self) -> bool:
         # can be more robust and check hash of files
         return os.path.exists(os.path.join(self.root, "101_ObjectCategories"))
 
