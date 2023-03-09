@@ -33,20 +33,21 @@ jobs:
 
   c-source:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
-    repository: pytorch/vision
-    script: |
-      set -euo pipefail
-      
-      curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o ./clang-format
-      chmod +x ./clang-format
-      
-      # FIXME: debug
-      sleep 1800
-      
-      ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format
-      
-      # FIXME: show diff on failure
-      # git --no-pager diff
+    with:
+      repository: pytorch/vision
+      script: |
+        set -euo pipefail
+        
+        curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o ./clang-format
+        chmod +x ./clang-format
+        
+        # FIXME: debug
+        sleep 1800
+        
+        ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format
+        
+        # FIXME: show diff on failure
+        # git --no-pager diff
 
 
   python-types:
