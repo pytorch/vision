@@ -3,7 +3,7 @@ import warnings
 from modulefinder import Module
 
 import torch
-from torchvision import datasets, io, models, ops, transforms, utils
+from torchvision import utils, datasets, io, models, ops, transforms
 
 from .extension import _HAS_OPS
 

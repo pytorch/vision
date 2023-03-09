@@ -28,6 +28,11 @@ PyMODINIT_FUNC PyInit__C(void) {
 
 namespace vision {
 int64_t cuda_version() {
+
+
+
+
+
 #ifdef WITH_CUDA
   return CUDA_VERSION;
 #else
