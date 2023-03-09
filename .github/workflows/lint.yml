@@ -36,6 +36,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
+      timeout: 240
       script: |
         set -euo pipefail
         
@@ -43,7 +44,7 @@ jobs:
         chmod +x ./clang-format
         
         # FIXME: debug
-        sleep 1800
+        sleep 14400
         
         set +e
         ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format
