@@ -1,4 +1,4 @@
-name: Unit-tests on Linux
+name: Tests on Linux
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests:
+  unittests:
     strategy:
       matrix:
         python-version:
@@ -34,8 +34,70 @@ jobs:
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
       script: |
+        set -euo pipefail
+
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
-        ./.github/unittest.sh
+        ./.github/scripts/unittest.sh
+
+  onnx:
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=3.8
+        export GPU_ARCH_TYPE=cpu
+
+        ./.github/scripts/setup-env.sh
+        
+        # Prepare conda
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda activate ci
+        
+        echo '::group::Install ONNX'
+        pip install --progress-bar=off onnx onnxruntime
+        echo '::endgroup::'
+        
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off pytest
+        echo '::endgroup::'
+        
+        echo '::group::Run ONNX tests'
+        pytest --durations=25 -v test/test_onnx.py
+        echo '::endgroup::'
+
+  unittests-extended:
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=3.8
+        export GPU_ARCH_TYPE=cpu
+
+        ./.github/scripts/setup-env.sh
+        
+        # Prepare conda
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda activate ci
+        
+        echo '::group::Pre-download model weights'
+        pip install --progress-bar=off aiohttp aiofiles tqdm
+        python scripts/download_model_urls.py
+        echo '::endgroup::'
+        
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off pytest
+        echo '::endgroup::'
+        
+        echo '::group::Run extended unittests'
+        export PYTORCH_TEST_WITH_EXTENDED=1
+        pytest --durations=25 -v test/test_extended_*.py
+        echo '::endgroup::'

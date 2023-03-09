@@ -324,15 +324,6 @@ jobs:
           name: Check Python types statically
           command: mypy --install-types --non-interactive --config-file mypy.ini
 
-  unittest_torchhub:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - checkout
-      - install_torchvision
-      - run_tests_selective:
-          file_or_dir: test/test_hub.py
-
   unittest_onnx:
     docker:
       - image: cimg/python:3.8
@@ -1257,7 +1248,6 @@ workflows:
 
   unittest:
     jobs:
-      - unittest_torchhub
       - unittest_onnx
       - unittest_extended
       - unittest_windows_cpu:
