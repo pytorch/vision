@@ -26,10 +26,13 @@ jobs:
         
         pip install --progress-bar=off pre-commit
         
+        set +e
         pre-commit run --all-files
         
-        # FIXME: show diff on failure
-        # git --no-pager diff
+        if [ $? -ne 0 ]; then
+          git --no-pager diff
+          exit 1
+        fi
 
   c-source:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
@@ -44,10 +47,13 @@ jobs:
         # FIXME: debug
         sleep 1800
         
+        set +e
         ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format
         
-        # FIXME: show diff on failure
-        # git --no-pager diff
+        if [ $? -ne 0 ]; then
+          git --no-pager diff
+          exit 1
+        fi
 
 
   python-types:
