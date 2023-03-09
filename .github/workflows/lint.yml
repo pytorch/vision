@@ -40,12 +40,17 @@ jobs:
       script: |
         set -euo pipefail
         
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        # clang-format needs some shared libraries that conflict with the system ones. Thus, we install them from conda
+        # and prepend the libraries to linker path to prioritize them
+        conda create --name ci --quiet --yes python=3.8 ncurses libgcc
+        conda activate ci
+        export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib"
+        
         curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o ./clang-format
         chmod +x ./clang-format
-        
-        # FIXME: debug
-        sleep 14400
-        
+
         set +e
         ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format
         
