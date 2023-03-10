@@ -14,6 +14,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
+      runner: linux.24xlarge
       upload-artifact: docs
       timeout: 120
       script: |
