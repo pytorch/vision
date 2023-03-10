@@ -183,6 +183,7 @@ Below is a gallery of examples
    /auto_examples/plot_visualization_utils
    /auto_examples/plot_video_api
 
+
 .. only:: html
 
   .. container:: sphx-glr-footer sphx-glr-footer-gallery
