@@ -22,7 +22,6 @@ jobs:
         echo "DIR: $(pwd)"
         echo "ANDROID_HOME=${ANDROID_HOME}"
         echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME}"
-        echo "JAVA_HOME=${JAVA_HOME}"
         
         WORKSPACE=./workspace
         mkdir -p $"{WORKSPACE}"
