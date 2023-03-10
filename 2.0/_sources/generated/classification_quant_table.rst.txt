@@ -1,0 +1,23 @@
+.. rst-class:: table-weights
+.. table::
+    :widths: 110 18 18 18 18 10 
+
+    ========================================================================================================  ===========  ===========  ============  ==========  ===============================================================================================================
+    **Weight**                                                                                                  **Acc@1**    **Acc@5**  **Params**      **GIPS**  **Recipe**
+    ========================================================================================================  ===========  ===========  ============  ==========  ===============================================================================================================
+    :class:`GoogLeNet_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <GoogLeNet_QuantizedWeights>`                          69.826       89.404  6.6M                1.5   `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <Inception_V3_QuantizedWeights>`                    77.176       93.354  27.2M               5.71  `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1 <MobileNet_V2_QuantizedWeights>`                   71.658       90.15   3.5M                0.3   `link <https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv2>`__
+    :class:`MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1 <MobileNet_V3_Large_QuantizedWeights>`       73.004       90.858  5.5M                0.22  `link <https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3>`__
+    :class:`ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <ResNeXt101_32X8D_QuantizedWeights>`            78.986       94.48   88.8M              16.41  `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V2 <ResNeXt101_32X8D_QuantizedWeights>`            82.574       96.132  88.8M              16.41  `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`ResNeXt101_64X4D_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <ResNeXt101_64X4D_QuantizedWeights>`            82.898       96.326  83.5M              15.46  `link <https://github.com/pytorch/vision/pull/5935>`__
+    :class:`ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <ResNet18_QuantizedWeights>`                            69.494       88.882  11.7M               1.81  `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <ResNet50_QuantizedWeights>`                            75.92        92.814  25.6M               4.09  `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2 <ResNet50_QuantizedWeights>`                            80.282       94.976  25.6M               4.09  `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <ShuffleNet_V2_X0_5_QuantizedWeights>`        57.972       79.78   1.4M                0.04  `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <ShuffleNet_V2_X1_0_QuantizedWeights>`        68.36        87.582  2.3M                0.14  `link <https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models>`__
+    :class:`ShuffleNet_V2_X1_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <ShuffleNet_V2_X1_5_QuantizedWeights>`        72.052       90.7    3.5M                0.3   `link <https://github.com/pytorch/vision/pull/5906>`__
+    :class:`ShuffleNet_V2_X2_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1 <ShuffleNet_V2_X2_0_QuantizedWeights>`        75.354       92.488  7.4M                0.58  `link <https://github.com/pytorch/vision/pull/5906>`__
+    ========================================================================================================  ===========  ===========  ============  ==========  ===============================================================================================================
+

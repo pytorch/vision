@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+InStereo2k
+==========
+
+.. autoclass:: InStereo2k
+    :members:
+        __getitem__,
+        
+    :special-members:

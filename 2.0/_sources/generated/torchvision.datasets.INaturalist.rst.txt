@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+INaturalist
+===========
+
+.. autoclass:: INaturalist
+    :members:
+        __getitem__,
+         category_name 
+    :special-members:

@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.ops
+
+
+complete_box_iou_loss
+=====================
+
+.. autofunction:: complete_box_iou_loss
