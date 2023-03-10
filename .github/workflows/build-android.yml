@@ -1,0 +1,45 @@
+name: Build android
+
+on:
+  pull_request:
+  push:
+    branches:
+      - nightly
+      - main
+      - release/*
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      docker-image: cimg/android:2021.08-ndk
+      upload-artifact: android
+      script: |
+        set -euo pipefail
+        
+        echo "DIR: $(pwd)"
+        echo "ANDROID_HOME=${ANDROID_HOME}"
+        echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME}"
+        echo "JAVA_HOME=${JAVA_HOME}"
+        
+        WORKSPACE=./workspace
+        mkdir -p $"{WORKSPACE}"
+        VISION_ANDROID=./android
+        
+        source .circleci/unittest/android/scripts/install_gradle.sh
+        
+        GRADLE_LOCAL_PROPERTIES=${VISION_ANDROID}/local.properties
+        rm -f $GRADLE_LOCAL_PROPERTIES
+        
+        echo "sdk.dir=${ANDROID_HOME}" >> $GRADLE_LOCAL_PROPERTIES
+        echo "ndk.dir=${ANDROID_NDK_HOME}" >> $GRADLE_LOCAL_PROPERTIES
+        
+        echo "GRADLE_PATH $GRADLE_PATH"
+        echo "GRADLE_HOME $GRADLE_HOME"
+        
+        ${GRADLE_PATH} --scan --stacktrace --debug --no-daemon -p ${VISION_ANDROID} assemble || true
+        
+        find . -type f -name *aar -print | xargs tar cfvz "${RUNNER_ARTIFACT_DIR}/aars.tgz"
+        find . -type f -name *apk -print | xargs tar cfvz "${RUNNER_ARTIFACT_DIR}/apks.tgz"
