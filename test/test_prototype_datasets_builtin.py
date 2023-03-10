@@ -123,7 +123,7 @@ class TestCommon:
     def test_stream_closing(self, log_session_streams, dataset_mock, config):
         def make_msg_and_close(head):
             unclosed_streams = []
-            for stream in StreamWrapper.session_streams.keys():
+            for stream in list(StreamWrapper.session_streams.keys()):
                 unclosed_streams.append(repr(stream.file_obj))
                 stream.close()
             unclosed_streams = "\n".join(unclosed_streams)
