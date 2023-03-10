@@ -23,11 +23,10 @@ jobs:
         echo "ANDROID_HOME=${ANDROID_HOME}"
         echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME}"
         
-        WORKSPACE=./workspace
-        mkdir -p $"{WORKSPACE}"
-        VISION_ANDROID=./android
+        WORKSPACE=/home/circleci/workspace
+        VISION_ANDROID=/home/circleci/project/android
         
-        source .circleci/unittest/android/scripts/install_gradle.sh
+        . /home/circleci/project/.circleci/unittest/android/scripts/install_gradle.sh
         
         GRADLE_LOCAL_PROPERTIES=${VISION_ANDROID}/local.properties
         rm -f $GRADLE_LOCAL_PROPERTIES
@@ -40,5 +39,8 @@ jobs:
         
         ${GRADLE_PATH} --scan --stacktrace --debug --no-daemon -p ${VISION_ANDROID} assemble || true
         
-        find . -type f -name *aar -print | xargs tar cfvz "${RUNNER_ARTIFACT_DIR}/aars.tgz"
-        find . -type f -name *apk -print | xargs tar cfvz "${RUNNER_ARTIFACT_DIR}/apks.tgz"
+        mkdir -p ~/workspace/artifacts
+        find . -type f -name *aar -print | xargs tar cfvz ~/workspace/artifacts/artifacts-aars.tgz
+        find . -type f -name *apk -print | xargs tar cfvz ~/workspace/artifacts/artifacts-apks.tgz
+        
+        mv ~/workspace/artifacts/* "${RUNNER_ARTIFACT_DIR}"
