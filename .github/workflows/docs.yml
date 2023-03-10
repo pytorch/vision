@@ -12,7 +12,6 @@ on:
 jobs:
   build:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
-    id: build
     with:
       repository: pytorch/vision
       upload-artifact: docs
