@@ -52,7 +52,8 @@ fi
 echo '::endgroup::'
 
 echo '::group::Install PyTorch'
-eval "${PIP_INSTALL_TORCH}"
+pip install --progress-bar=off light-the-torch
+ltt install --progress-bar=off --pytorch-computation-backend="${$GPU_ARCH_TYPE}${GPU_ARCH_VERSION}" --pytorch-channel=nightly torch
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python3 -c "import torch; exit(not torch.cuda.is_available())"
