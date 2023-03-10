@@ -370,6 +370,13 @@ def test_decode_jpeg_cuda(mode, img_path, scripted):
 
 
 @needs_cuda
+def test_decode_image_cuda_raises():
+    data = torch.randint(0, 127, size=(255,), device="cuda", dtype=torch.uint8)
+    with pytest.raises(RuntimeError):
+        decode_image(data)
+
+
+@needs_cuda
 @pytest.mark.parametrize("cuda_device", ("cuda", "cuda:0", torch.device("cuda")))
 def test_decode_jpeg_cuda_device_param(cuda_device):
     """Make sure we can pass a string or a torch.device as device param"""
