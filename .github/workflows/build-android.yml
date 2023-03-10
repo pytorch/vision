@@ -14,20 +14,23 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
-      docker-image: cimg/android:2021.08-ndk
       upload-artifact: android
       timeout: 60
       script: |
         set -euo pipefail
         
+        wget https://dl.google.com/android/repository/android-ndk-r23c-linux.zip
+        
+        sleep 3600
+        
         echo "DIR: $(pwd)"
         echo "ANDROID_HOME=${ANDROID_HOME}"
         echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME}"
         
-        sleep 3600
+        
         
         WORKSPACE=/home/circleci/workspace
-        VISION_ANDROID=/home/circleci/project/android
+        VISION_ANDROID=./android
         
         . /home/circleci/project/.circleci/unittest/android/scripts/install_gradle.sh
         
