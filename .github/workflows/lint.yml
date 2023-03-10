@@ -49,8 +49,9 @@ jobs:
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         # clang-format needs some shared libraries that conflict with the system ones. Thus, we install them from conda
-        # and prepend the libraries to linker path to prioritize them
-        conda create --name ci --quiet --yes python=3.8 ncurses=5 libgcc
+        # and prepend the libraries to linker path to prioritize them. `ncurses=5` is only available on the conda-forge
+        # channel. Since we are not building or testing here, this is fine.
+        conda create --name ci --quiet --yes -c conda-forge python=3.8 ncurses=5 libgcc
         conda activate ci
         export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
         echo '::endgroup::'
