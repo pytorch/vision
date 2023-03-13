@@ -17,35 +17,27 @@ jobs:
       upload-artifact: android
       script: |
         set -euo pipefail
-        
-        ANDROID_VERSION=28
-        ANDROID_NDK_VERSION=21.4.7075529
-        GRADLE_VERSION=6.8.3
-        
-        echo '::group::Setup Java'
-        yum install -y java-11-openjdk-devel
-        echo '::endgroup::'
+
+        VISION_ANDROID="${PWD}/android"
         
         echo '::group::Setup Android SDK'
+        export ANDROID_SDK_ROOT="${PWD}/android-sdk"
         wget --no-verbose https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        mkdir -p android-sdk/cmdline-tools
-        export ANDROID_SDK_ROOT=$PWD/android-sdk
-        unzip cmdline-tools.zip -d android-sdk/cmdline-tools
-        mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
-        SDKMANAGER="./android-sdk/cmdline-tools/latest/bin/sdkmanager"
-        yes | "${SDKMANAGER}" --licenses || true
-        "${SDKMANAGER}" --install "platforms;android-${ANDROID_VERSION}" "ndk;${ANDROID_NDK_VERSION}"
-        echo "ndk.dir=${ANDROID_SDK_ROOT}/ndk" > $android/local.properties
+        mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools"
+        unzip cmdline-tools.zip -d "${ANDROID_SDK_ROOT}/cmdline-tools"
+        mv "${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools" "${ANDROID_SDK_ROOT}/cmdline-tools/latest"
+        yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses || true
         echo '::endgroup::'
-
+        
         echo '::group::Setup gradle'
+        GRADLE_VERSION=6.8.3
         wget --no-verbose "https://downloads.gradle-dn.com/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O gradle.zip
         unzip gradle.zip
-        GRADLE="./gradle-${GRADLE_VERSION}/bin/gradle"
+        GRADLE="${PWD}/gradle-${GRADLE_VERSION}/bin/gradle"
         echo '::endgroup::'
         
         echo '::group::Build'
-        ${GRADLE} --no-daemon -p android assemble
-        find android -type f -name "*aar" | xargs tar -cfv "${RUNNER_ARTIFACT_DIR}/aars.tar"
-        find android -type f -name "*apk" | xargs tar -cfv "${RUNNER_ARTIFACT_DIR}/apks.tar"
+        ${GRADLE} --no-daemon -p "${VISION_ANDROID}" assemble
+        find "${VISION_ANDROID}" -type f -name "*aar" | xargs tar -cvf "${RUNNER_ARTIFACT_DIR}/aars.tar"
+        find "${VISION_ANDROID}" -type f -name "*apk" | xargs tar -cvf "${RUNNER_ARTIFACT_DIR}/apks.tar"
         echo '::endgroup::'

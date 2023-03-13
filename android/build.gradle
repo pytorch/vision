@@ -4,6 +4,7 @@ allprojects {
             minSdkVersion = 21
             targetSdkVersion = 28
             compileSdkVersion = 28
+            buildToolsVersion = '29.0.2'
 
             coreVersion = "1.2.0"
             extJUnitVersion = "1.1.1"
