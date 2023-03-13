@@ -19,7 +19,7 @@ jobs:
         set -euo pipefail
         
         ANDROID_VERSION=28
-        ANDROID_NDK_VERSION=21.1.6352462
+        ANDROID_NDK_VERSION=21.4.7075529
         GRADLE_VERSION=6.8.3
         
         echo '::group::Setup Java'
@@ -29,18 +29,18 @@ jobs:
         echo '::group::Setup Android SDK'
         wget --no-verbose https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
         mkdir -p android-sdk/cmdline-tools
+        export ANDROID_SDK_ROOT=$PWD/android-sdk
         unzip cmdline-tools.zip -d android-sdk/cmdline-tools
         mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
         SDKMANAGER="./android-sdk/cmdline-tools/latest/bin/sdkmanager"
         yes | "${SDKMANAGER}" --licenses || true
         "${SDKMANAGER}" --install "platforms;android-${ANDROID_VERSION}" "ndk;${ANDROID_NDK_VERSION}"
+        echo "ndk.dir=${ANDROID_SDK_ROOT}/ndk" > $android/local.properties
         echo '::endgroup::'
 
         echo '::group::Setup gradle'
         wget --no-verbose "https://downloads.gradle-dn.com/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O gradle.zip
         unzip gradle.zip
-        export ANDROID_SDK_ROOT=android-sdk
-        export ANDROID_NDK_ROOT=android-sdk/ndk
         GRADLE="./gradle-${GRADLE_VERSION}/bin/gradle"
         echo '::endgroup::'
         
