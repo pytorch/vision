@@ -28,6 +28,7 @@ jobs:
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@test-results
     with:
+      test-infra-ref: test-results
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
@@ -43,8 +44,9 @@ jobs:
         ./.github/scripts/unittest.sh
 
   onnx:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@test-results
     with:
+      test-infra-ref: test-results
       repository: pytorch/vision
       script: |
         set -euo pipefail
@@ -73,8 +75,9 @@ jobs:
         echo '::endgroup::'
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@test-results
     with:
+      test-infra-ref: test-results
       repository: pytorch/vision
       script: |
         set -euo pipefail
