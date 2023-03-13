@@ -28,7 +28,7 @@ echo "signing.password=${ANDROID_SIGN_PASS}" >> $GRADLE_PROPERTIES
 
 cat /home/circleci/project/android/gradle.properties | grep VERSION
 
-${GRADLE_PATH} --scan --stacktrace --debug --no-daemon -p ${VISION_ANDROID} ops:uploadArchives
+${GRADLE_PATH} --no-daemon -p ${VISION_ANDROID} ops:uploadArchives
 
 mkdir -p ~/workspace/artifacts
 find . -type f -name *aar -print | xargs tar cfvz ~/workspace/artifacts/artifacts-aars.tgz

@@ -20,7 +20,7 @@ echo "ndk.dir=${ANDROID_NDK_HOME}" >> $GRADLE_LOCAL_PROPERTIES
 echo "GRADLE_PATH $GRADLE_PATH"
 echo "GRADLE_HOME $GRADLE_HOME"
 
-${GRADLE_PATH} --scan --stacktrace --debug --no-daemon -p ${VISION_ANDROID} assemble || true
+${GRADLE_PATH} --no-daemon -p ${VISION_ANDROID} assemble || true
 
 mkdir -p ~/workspace/artifacts
 find . -type f -name *aar -print | xargs tar cfvz ~/workspace/artifacts/artifacts-aars.tgz
