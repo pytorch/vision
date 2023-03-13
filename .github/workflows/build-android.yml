@@ -23,7 +23,6 @@ jobs:
         GRADLE_VERSION=6.8.3
         
         echo '::group::Setup Java'
-        yum update -y
         yum install -y java-11-openjdk-devel
         echo '::endgroup::'
         
