@@ -32,7 +32,7 @@ jobs:
         unzip cmdline-tools.zip -d android-sdk/cmdline-tools
         mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
         SDKMANAGER="./android-sdk/cmdline-tools/latest/bin/sdkmanager"
-        yes | "${SDKMANAGER}" --licenses
+        yes | "${SDKMANAGER}" --licenses || true
         "${SDKMANAGER}" --install "platforms;android-${ANDROID_VERSION}" "ndk;${ANDROID_NDK_VERSION}"
         echo '::endgroup::'
 
