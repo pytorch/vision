@@ -21,6 +21,10 @@ jobs:
         VISION_ANDROID="${PWD}/android"
         
         echo '::group::Setup Android SDK'
+        yum install -y java-11-openjdk-devel
+        echo '::endgroup::'
+        
+        echo '::group::Setup Android SDK'
         export ANDROID_SDK_ROOT="${PWD}/android-sdk"
         wget --no-verbose https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
         mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools"
