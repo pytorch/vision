@@ -47,3 +47,27 @@ jobs:
         echo '::endgroup::'
         
         mv build/html "${RUNNER_ARTIFACT_DIR}"
+
+  upload-preview:
+    if: github.event_name == 'pull_request'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: docs
+
+      - name: Debug
+        run: |
+          sudo apt -y update && sudo apt -y install tree
+          ls -la
+          tree docs
+
+      - name: Upload docs preview
+        uses: seemethere/upload-artifact-s3@v5
+        with:
+          retention-days: 14
+          s3-bucket: doc-previews
+          if-no-files-found: error
+          path: docs/build/html
+          s3-prefix: pytorch/vision/${{ github.event.pull_request.number }}
