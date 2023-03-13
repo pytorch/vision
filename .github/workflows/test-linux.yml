@@ -32,7 +32,6 @@ jobs:
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
-      pytest-results: test-results.xml
       timeout: 120
       script: |
         set -euo pipefail
