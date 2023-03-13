@@ -17,8 +17,6 @@ jobs:
       upload-artifact: android
       script: |
         set -euo pipefail
-
-        VISION_ANDROID="${PWD}/android"
         
         echo '::group::Setup Android SDK'
         yum install -y java-11-openjdk-devel
@@ -41,7 +39,7 @@ jobs:
         echo '::endgroup::'
         
         echo '::group::Build'
-        ${GRADLE} --no-daemon -p "${VISION_ANDROID}" assemble
-        find "${VISION_ANDROID}" -type f -name "*aar" | xargs tar -cvf "${RUNNER_ARTIFACT_DIR}/aars.tar"
-        find "${VISION_ANDROID}" -type f -name "*apk" | xargs tar -cvf "${RUNNER_ARTIFACT_DIR}/apks.tar"
+        ${GRADLE} --console=plain --no-daemon -p "${PWD}/android" assemble
+        find . -type f -name "*aar" | xargs tar -cvf "${RUNNER_ARTIFACT_DIR}/aars.tar"
+        find . -type f -name "*apk" | xargs tar -cvf "${RUNNER_ARTIFACT_DIR}/apks.tar"
         echo '::endgroup::'
