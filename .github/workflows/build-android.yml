@@ -1,4 +1,4 @@
-name: Build android
+name: Build Android
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
       script: |
         set -euo pipefail
         
-        echo '::group::Setup Android SDK'
+        echo '::group::Setup Java'
         yum install -y java-11-openjdk-devel
         echo '::endgroup::'
         
