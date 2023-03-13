@@ -62,7 +62,7 @@ jobs:
         run: |
           sudo apt -y update && sudo apt -y install tree
           ls -la
-          tree docs
+          tree html
 
       - name: Upload docs preview
         uses: seemethere/upload-artifact-s3@v5
@@ -70,5 +70,5 @@ jobs:
           retention-days: 14
           s3-bucket: doc-previews
           if-no-files-found: error
-          path: docs/build/html
+          path: html
           s3-prefix: pytorch/vision/${{ github.event.pull_request.number }}
