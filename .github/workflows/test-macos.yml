@@ -23,9 +23,8 @@ jobs:
           - python-version: "3.8"
             runner: macos-m1-12
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml@test-results
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
-      test-infra-ref: test-results
       repository: pytorch/vision
       # We need an increased timeout here, since the macos-12 runner is the free one from GH
       # and needs roughly 2 hours to just run the test suite
