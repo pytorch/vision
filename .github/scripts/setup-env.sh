@@ -38,7 +38,7 @@ conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
-  ninja \
+  ninja cmake \
   libpng jpeg \
   'ffmpeg<4.3'
 conda activate ci
