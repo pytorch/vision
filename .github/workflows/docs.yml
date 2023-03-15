@@ -52,7 +52,7 @@ jobs:
   upload-preview:
     if: github.event_name == 'pull_request'
     needs: [build]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux.2xlarge]
     steps:
       - uses: actions/download-artifact@v3
         with:
