@@ -58,12 +58,6 @@ jobs:
         with:
           name: docs
 
-      - name: Debug
-        run: |
-          sudo apt -y update && sudo apt -y install tree
-          ls -la
-          tree html
-
       - name: Upload docs preview
         uses: seemethere/upload-artifact-s3@v5
         with:
