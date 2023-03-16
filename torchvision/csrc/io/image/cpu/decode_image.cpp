@@ -7,6 +7,8 @@ namespace vision {
 namespace image {
 
 torch::Tensor decode_image(const torch::Tensor& data, ImageReadMode mode) {
+  // Check that tensor is a CPU tensor
+  TORCH_CHECK(data.device() == torch::kCPU, "Expected a CPU tensor");
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional

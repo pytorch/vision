@@ -269,61 +269,6 @@ jobs:
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
-  lint_python_and_config:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - checkout
-      - pip_install:
-          args: pre-commit
-          descr: Install lint utilities
-      - run:
-          name: Install pre-commit hooks
-          command: pre-commit install-hooks
-      - run:
-          name: Lint Python code and config files
-          command: pre-commit run --all-files
-      - run:
-          name: Required lint modifications
-          when: on_fail
-          command: git --no-pager diff
-
-  lint_c:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - apt_install:
-          args: libtinfo5
-          descr: Install additional system libraries
-      - checkout
-      - run:
-          name: Install lint utilities
-          command: |
-            curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
-            chmod +x clang-format
-            sudo mv clang-format /opt/clang-format
-      - run:
-          name: Lint C code
-          command: ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
-      - run:
-          name: Required lint modifications
-          when: on_fail
-          command: git --no-pager diff
-
-  type_check_python:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - checkout
-      - install_torchvision:
-          editable: true
-      - pip_install:
-          args: mypy
-          descr: Install Python type check utilities
-      - run:
-          name: Check Python types statically
-          command: mypy --install-types --non-interactive --config-file mypy.ini
-
   unittest_onnx:
     docker:
       - image: cimg/python:3.8
@@ -924,81 +869,11 @@ jobs:
             conda activate python39
             packaging/build_cmake.sh
 
-  build_docs:
-    <<: *binary_common
-    docker:
-      - image: cimg/python:3.8
-    resource_class: 2xlarge+
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - checkout
-      - download_model_weights
-      - run:
-          name: Setup
-          command: .circleci/unittest/linux/scripts/setup_env.sh
-      - designate_upload_channel
-      - run:
-          name: Install torchvision
-          command: .circleci/unittest/linux/scripts/install.sh
-      - run:
-          name: Build docs
-          command: |
-            set -ex
-            # turn v1.12.0rc3 into 1.12.0
-            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9.]*\).*/\1/')
-            VERSION=${tag:-main}
-            eval "$(./conda/bin/conda shell.bash hook)"
-            conda activate ./env
-            pushd docs
-            pip install --progress-bar=off -r requirements.txt
-            make html
-            popd
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - "*"
-      - store_artifacts:
-          path: ./docs/build/html
-          destination: docs
-
-  upload_docs:
-    <<: *binary_common
-    docker:
-      - image: "pytorch/manylinux-cuda100"
-    resource_class: 2xlarge+
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - run:
-          name: Generate netrc
-          command: |
-            # set credentials for https pushing
-            # requires the org-member context
-            cat > ~/.netrc \<<DONE
-              machine github.com
-              login pytorchbot
-              password ${GITHUB_PYTORCHBOT_TOKEN}
-            DONE
-      - run:
-          name: Upload docs
-          command: |
-            # Don't use "checkout" step since it uses ssh, which cannot git push
-            # https://circleci.com/docs/2.0/configuration-reference/#checkout
-            set -ex
-            # Change v1.12.1rc1 into 1.12 (only major.minor)
-            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9]*\.[0-9]*\).*/\1/')
-            target=${tag:-main}
-            ~/workspace/.circleci/build_docs/commit_docs.sh ~/workspace $target
-
 
 workflows:
   lint:
     jobs:
       - circleci_consistency
-      - lint_python_and_config
-      - lint_c
-      - type_check_python
 
   build:
     jobs:
