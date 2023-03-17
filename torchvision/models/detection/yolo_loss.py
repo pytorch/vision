@@ -75,27 +75,27 @@ def _pairwise_confidence_loss(
 
     Args:
         preds: An ``[N]`` vector of predicted confidences.
-        overlap: An ``[M, N]`` matrix of overlaps between all target and predicted bounding boxes.
+        overlap: An ``[N, M]`` matrix of overlaps between all predicted and target bounding boxes.
         bce_func: A function for calculating binary cross entropy.
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
             confidence is one if there's an object, and 1.0 means that the target confidence is the overlap.
 
     Returns:
-        An ``[M, N]`` matrix of confidence losses between all targets and predictions.
+        An ``[N, M]`` matrix of confidence losses between all predictions and targets.
     """
     if predict_overlap is not None:
         # When predicting overlap, target confidence is different for each pair of a prediction and a target. The
-        # tensors have to be broadcasted to [M, N].
-        preds = preds.unsqueeze(0).expand(overlap.shape)
+        # tensors have to be broadcasted to [N, M].
+        preds = preds.unsqueeze(1).expand(overlap.shape)
         targets = torch.ones_like(preds) - predict_overlap
         # Distance-IoU may return negative "overlaps", so we have to make sure that the targets are not negative.
         targets += predict_overlap * overlap.detach().clamp(min=0)
         return bce_func(preds, targets, reduction="none")
     else:
-        # When not predicting overlap, target confidence is the same for every target, but we should still return a
+        # When not predicting overlap, target confidence is the same for every prediction, but we should still return a
         # matrix.
         targets = torch.ones_like(preds)
-        return bce_func(preds, targets, reduction="none").unsqueeze(0).expand(overlap.shape)
+        return bce_func(preds, targets, reduction="none").unsqueeze(1).expand(overlap.shape)
 
 
 def _foreground_confidence_loss(
@@ -216,28 +216,36 @@ class YOLOLoss:
         This method is called for obtaining costs for SimOTA matching.
 
         Args:
-            preds: A dictionary of predictions, containing "boxes", "confidences", and "classprobs".
-            targets: A dictionary of training targets, containing "boxes" and "labels".
+            preds: A dictionary of predictions, containing "boxes", "confidences", and "classprobs". Each tensor
+                contains `N` rows.
+            targets: A dictionary of training targets, containing "boxes" and "labels". Each tensor contains `M` rows.
             input_is_normalized: If ``False``, input is logits, if ``True``, input is normalized to `0..1`.
 
         Returns:
-            Loss matrices and an overlap matrix.
+            Loss matrices and an overlap matrix. Each matrix is shaped ``[N, M]``.
         """
+        loss_shape = torch.Size([len(preds["boxes"]), len(targets["boxes"])])
+
         if input_is_normalized:
             bce_func = binary_cross_entropy
         else:
             bce_func = binary_cross_entropy_with_logits
 
-        overlap = self._pairwise_overlap(targets["boxes"], preds["boxes"])
+        overlap = self._pairwise_overlap(preds["boxes"], targets["boxes"])
+        assert overlap.shape == loss_shape
+
         overlap_loss = 1.0 - overlap
+        assert overlap_loss.shape == loss_shape
 
         confidence_loss = _pairwise_confidence_loss(preds["confidences"], overlap, bce_func, self.predict_overlap)
+        assert confidence_loss.shape == loss_shape
 
-        pred_probs = preds["classprobs"].unsqueeze(0)  # [1, preds, classes]
+        pred_probs = preds["classprobs"].unsqueeze(1)  # [N, 1, classes]
         target_probs = _target_labels_to_probs(targets["labels"], pred_probs.shape[-1], pred_probs.dtype)
-        target_probs = target_probs.unsqueeze(1)  # [targets, 1, classes]
+        target_probs = target_probs.unsqueeze(0)  # [1, M, classes]
         pred_probs, target_probs = torch.broadcast_tensors(pred_probs, target_probs)
         class_loss = bce_func(pred_probs, target_probs, reduction="none").sum(-1)
+        assert class_loss.shape == loss_shape
 
         losses = Losses(
             overlap_loss * self.overlap_multiplier,

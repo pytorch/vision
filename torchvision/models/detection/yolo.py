@@ -16,14 +16,13 @@ TARGET = Dict[str, Any]
 TARGETS = List[TARGET]
 
 
-def validate_batch(images: List[Tensor], targets: TARGETS) -> None:
-    """Reads a batch of data, validates the format, and stacks the images into a single tensor.
+def validate_batch(images: List[Tensor], targets: Optional[TARGETS]) -> None:
+    """Validates the format of a batch of data.
 
     Args:
-        batch: The batch of data read by the :class:`~torch.utils.data.DataLoader`.
-
-    Returns:
-        The input batch with images stacked into a single tensor.
+        images: A list of image tensors.
+        targets: A list of target dictionaries or ``None``. If a list is provided, there should be as many target
+            dictionaries as there are images.
     """
     if not images:
         raise ValueError("No images in batch.")
@@ -80,19 +79,21 @@ class YOLO(nn.Module):
     have different image sizes, as long as the size is divisible by the ratio in which the network downsamples the
     input.
 
-    During training, the model expects both the image tensors and a list of targets. *Each target is a dictionary
-    containing the following tensors*:
+    During training, the model expects both the image tensors and a list of targets. It's possible to train a model
+    using one integer class label per box, but the YOLO model supports also multiple classes per box. For multi-class
+    training, simply use a boolean matrix that indicates which classes are assigned to which boxes, in place of the
+    class labels. *Each target is a dictionary containing the following tensors*:
 
     - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in `(x1, y1, x2, y2)` format
     - labels (``Int64Tensor[N]`` or ``BoolTensor[N, classes]``): the class label or a boolean class mask for each
       ground-truth box
 
-    :func:`~.yolo_module.YOLO.forward` method returns all predictions from all detection layers in one tensor with shape
+    :func:`~.yolo.YOLO.forward` method returns all predictions from all detection layers in one tensor with shape
     ``[N, anchors, classes + 5]``, where ``anchors`` is the total number of anchors in all detection layers. The
     coordinates are scaled to the input image size. During training it also returns a dictionary containing the
     classification, box overlap, and confidence losses.
 
-    During inference, the model requires only the image tensor. :func:`~.yolo_module.YOLO.infer` method filters and
+    During inference, the model requires only the image tensor. :func:`~.yolo.YOLO.infer` method filters and
     processes the predictions. If a prediction has a high score for more than one class, it will be duplicated. *The
     processed output is returned in a dictionary containing the following tensors*:
 
@@ -147,11 +148,7 @@ class YOLO(nn.Module):
         self.nms_threshold = nms_threshold
         self.detections_per_image = detections_per_image
 
-    def forward(
-        self,
-        images: List[Tensor],
-        targets: Optional[TARGETS] = None,
-    ) -> Union[Tensor, Tuple[Tensor, Tensor]]:
+    def forward(self, images: List[Tensor], targets: Optional[TARGETS] = None) -> Union[Tensor, Tuple[Tensor, Tensor]]:
         """Runs a forward pass through the network (all layers listed in ``self.network``), and if training targets
         are provided, computes the losses from the detection layers.
 
@@ -159,10 +156,9 @@ class YOLO(nn.Module):
         that depends on the size of the feature map and the number of anchors per feature map cell.
 
         Args:
-            images: Images to be processed. Tensor of size
-                ``[batch_size, channels, height, width]``.
-            targets: If set, computes losses from detection layers against these targets. A list of
-                target dictionaries, one for each image.
+            images: Images to be processed. Tensor of size ``[batch_size, channels, height, width]``.
+            targets: If given, computes losses from detection layers against these targets. A list of target
+                dictionaries, one for each image.
 
         Returns:
             detections (:class:`~torch.Tensor`), losses (:class:`~torch.Tensor`): Detections, and if targets were

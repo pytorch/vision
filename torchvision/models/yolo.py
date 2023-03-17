@@ -256,7 +256,7 @@ class TinyStage(nn.Module):
         self.conv2 = Conv(hidden_channels, hidden_channels, kernel_size=3, stride=1, activation=activation, norm=norm)
         self.mix = Conv(num_channels, num_channels, kernel_size=1, stride=1, activation=activation, norm=norm)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor]:
         partial = torch.chunk(x, 2, dim=1)[1]
         y1 = self.conv1(partial)
         y2 = self.conv2(y1)

@@ -4,68 +4,10 @@ from typing import Dict, List, Sequence, Tuple, Union
 import torch
 from torch import Tensor
 
-from ...ops import box_convert, box_iou
+from ...ops import box_convert
 from .anchor_utils import grid_centers
+from .box_utils import aligned_iou, iou_below, is_inside_box, compare_box_sizes
 from .yolo_loss import YOLOLoss
-
-
-def aligned_iou(dims1: Tensor, dims2: Tensor) -> Tensor:
-    """Calculates a matrix of intersections over union from box dimensions, assuming that the boxes are located at
-    the same coordinates.
-
-    Args:
-        dims1: Width and height of `N` boxes. Tensor of size ``[N, 2]``.
-        dims2: Width and height of `M` boxes. Tensor of size ``[M, 2]``.
-
-    Returns:
-        Tensor of size ``[N, M]`` containing the pairwise IoU values for every element in ``dims1`` and ``dims2``
-    """
-    area1 = dims1[:, 0] * dims1[:, 1]  # [N]
-    area2 = dims2[:, 0] * dims2[:, 1]  # [M]
-
-    inter_wh = torch.min(dims1[:, None, :], dims2)  # [N, M, 2]
-    inter = inter_wh[:, :, 0] * inter_wh[:, :, 1]  # [N, M]
-    union = area1[:, None] + area2 - inter  # [N, M]
-
-    return inter / union
-
-
-def iou_below(pred_boxes: Tensor, target_boxes: Tensor, threshold: float) -> Tensor:
-    """Creates a binary mask whose value will be ``True``, unless the predicted box overlaps any target
-    significantly (IoU greater than ``threshold``).
-
-    Args:
-        pred_boxes: The predicted corner coordinates. Tensor of size ``[height, width, boxes_per_cell, 4]``.
-        target_boxes: Corner coordinates of the target boxes. Tensor of size ``[height, width, boxes_per_cell, 4]``.
-
-    Returns:
-        A boolean tensor sized ``[height, width, boxes_per_cell]``, with ``False`` where the predicted box overlaps a
-        target significantly and ``True`` elsewhere.
-    """
-    shape = pred_boxes.shape[:-1]
-    pred_boxes = pred_boxes.view(-1, 4)
-    ious = box_iou(pred_boxes, target_boxes)
-    best_iou = ious.max(-1).values
-    below_threshold = best_iou <= threshold
-    return below_threshold.view(shape)
-
-
-def is_inside_box(points: Tensor, boxes: Tensor) -> Tensor:
-    """Get pairwise truth values of whether the point is inside the box.
-
-    Args:
-        points: point (x, y) coordinates, [points, 2]
-        boxes: box (x1, y1, x2, y2) coordinates, [boxes, 4]
-
-    Returns:
-        A tensor shaped ``[boxes, points]`` containing pairwise truth values of whether the points are inside the boxes.
-    """
-    points = points.unsqueeze(0)  # [1, points, 2]
-    boxes = boxes.unsqueeze(1)  # [boxes, 1, 4]
-    lt = points - boxes[..., :2]  # [boxes, points, 2]
-    rb = boxes[..., 2:] - points  # [boxes, points, 2]
-    deltas = torch.cat((lt, rb), -1)  # [boxes, points, 4]
-    return deltas.min(-1).values > 0.0  # [boxes, points]
 
 
 class ShapeMatching(ABC):
@@ -249,12 +191,7 @@ class SizeRatioMatching(ShapeMatching):
 
     def match(self, wh: Tensor) -> Union[Tuple[Tensor, Tensor], Tensor]:
         prior_wh = torch.tensor(self.prior_shapes, dtype=wh.dtype, device=wh.device)
-
-        wh_ratio = wh[:, None, :] / prior_wh[None, :, :]  # [num_targets, num_anchors, 2]
-        wh_ratio = torch.max(wh_ratio, 1.0 / wh_ratio)
-        wh_ratio = wh_ratio.max(2).values  # [num_targets, num_anchors]
-        below_threshold = (wh_ratio < self.threshold).nonzero()
-        return below_threshold.T
+        return compare_box_sizes(wh, prior_wh, self.threshold).nonzero().T
 
 
 def _sim_ota_match(costs: Tensor, ious: Tensor) -> Tuple[Tensor, Tensor]:
@@ -265,35 +202,38 @@ def _sim_ota_match(costs: Tensor, ious: Tensor) -> Tuple[Tensor, Tensor]:
     predicted boxes.
 
     Args:
-        costs: Sum of losses for (prediction, target) pairs: ``[targets, predictions]``
-        ious: IoUs for (prediction, target) pairs: ``[targets, predictions]``
+        costs: A ``[predictions, targets]`` matrix of losses.
+        ious: A ``[predictions, targets]`` matrix of IoUs.
 
     Returns:
         A mask of predictions that were matched, and the indices of the matched targets. The latter contains as many
         elements as there are ``True`` values in the mask.
     """
+    num_preds, num_targets = ious.shape
+
     matching_matrix = torch.zeros_like(costs, dtype=torch.bool)
 
     if ious.numel() > 0:
         # For each target, define k as the sum of the 10 highest IoUs.
-        top10_iou = torch.topk(ious, min(10, ious.shape[1])).values.sum(1)
+        top10_iou = torch.topk(ious, min(10, num_preds), dim=0).values.sum(0)
         ks = torch.clip(top10_iou.int(), min=1)
+        assert len(ks) == num_targets
 
-        # For each target, select k predictions with lowest cost.
-        for target_idx, (cost, k) in enumerate(zip(costs, ks)):
-            prediction_idx = torch.topk(cost, k, largest=False).indices
-            matching_matrix[target_idx, prediction_idx] = True
+        # For each target, select k predictions with the lowest cost.
+        for target_idx, (target_costs, k) in enumerate(zip(costs.T, ks)):
+            pred_idx = torch.topk(target_costs, k, largest=False).indices
+            matching_matrix[pred_idx, target_idx] = True
 
         # If there's more than one match for some prediction, match it with the best target. Now we consider all
         # targets, regardless of whether they were originally matched with the prediction or not.
-        more_than_one_match = matching_matrix.sum(0) > 1
-        best_targets = costs[:, more_than_one_match].argmin(0)
-        matching_matrix[:, more_than_one_match] = False
-        matching_matrix[best_targets, more_than_one_match] = True
+        more_than_one_match = matching_matrix.sum(1) > 1
+        best_targets = costs[more_than_one_match, :].argmin(1)
+        matching_matrix[more_than_one_match, :] = False
+        matching_matrix[more_than_one_match, best_targets] = True
 
     # For those predictions that were matched, get the index of the target.
-    pred_mask = matching_matrix.sum(0) > 0
-    target_selector = matching_matrix[:, pred_mask].int().argmax(0)
+    pred_mask = matching_matrix.sum(1) > 0
+    target_selector = matching_matrix[pred_mask, :].int().argmax(1)
     return pred_mask, target_selector
 
 
@@ -303,14 +243,29 @@ class SimOTAMatching:
     This is the matching rule used by YOLOX.
 
     Args:
+        prior_shapes: A list of all the prior box dimensions. The list should contain (width, height) tuples in the
+            network input resolution.
+        prior_shape_idxs: List of indices to ``prior_shapes`` that is used to select the (usually 3) prior shapes that
+            this layer uses.
         loss_func: A ``LossFunction`` object that can be used to calculate the pairwise costs.
-        range: For each target, restrict to the anchors that are within an `N x N` grid cell are centered at the target,
-            where `N` is the value of this parameter.
+        spatial_range: For each target, restrict to the anchors that are within an `N × N` grid cell are centered at the
+            target, where `N` is the value of this parameter.
+        size_range: For each target, restrict to the anchors whose prior dimensions are not larger than the target
+            dimensions multiplied by this value and not smaller than the target dimensions divided by this value.
     """
 
-    def __init__(self, loss_func: YOLOLoss, range: float = 5.0) -> None:
+    def __init__(
+        self,
+        prior_shapes: Sequence[Tuple[int, int]],
+        prior_shape_idxs: Sequence[int],
+        loss_func: YOLOLoss,
+        spatial_range: float,
+        size_range: float,
+    ) -> None:
+        self.prior_shapes = [prior_shapes[idx] for idx in prior_shape_idxs]
         self.loss_func = loss_func
-        self.range = range
+        self.spatial_range = spatial_range
+        self.size_range = size_range
 
     def __call__(
         self,
@@ -329,47 +284,89 @@ class SimOTAMatching:
             A mask of predictions that were matched, background mask (inverse of the first mask), and the indices of the
             matched targets. The last tensor contains as many elements as there are ``True`` values in the first mask.
         """
-        height, width, boxes_per_cell, num_classes = preds["classprobs"].shape
-        device = preds["boxes"].device
-
-        # A multiplier for scaling feature map coordinates to image coordinates
-        grid_size = torch.tensor([width, height], device=device)
-        grid_to_image = torch.true_divide(image_size, grid_size)
-
-        # Create a matrix for selecting the anchors that are inside the target bounding boxes.
-        centers = grid_centers(grid_size).view(-1, 2) * grid_to_image
-        inside_matrix = is_inside_box(centers, targets["boxes"])
-
-        # Set the width and height of all target bounding boxes to self.range grid cells and create a matrix for
-        # selecting the anchors that are now inside the boxes. If a small target has no anchors inside its bounding
-        # box, it will be matched to one of these anchors, but a high penalty will ensure that anchors that are inside
-        # the bounding box will be preferred.
-        xywh = box_convert(targets["boxes"], in_fmt="xyxy", out_fmt="cxcywh")
-        xy = xywh[:, :2]
-        wh = self.range * grid_to_image * torch.ones_like(xy)
-        xywh = torch.cat((xy, wh), -1)
-        boxes = box_convert(xywh, in_fmt="cxcywh", out_fmt="xyxy")
-        close_matrix = is_inside_box(centers, boxes)
-
-        # In the first step we restrict ourselves to the grid cells whose center is inside or close enough to one or
-        # more targets. The prediction grids are flattened and masked using a [height * width] boolean vector.
-        mask = (inside_matrix | close_matrix).sum(0) > 0
-        shape = (height * width, boxes_per_cell)
-        fg_preds = {
-            "boxes": preds["boxes"].view(*shape, 4)[mask].view(-1, 4),
-            "confidences": preds["confidences"].view(shape)[mask].view(-1),
-            "classprobs": preds["classprobs"].view(*shape, num_classes)[mask].view(-1, num_classes),
+        height, width, boxes_per_cell, _ = preds["boxes"].shape
+        prior_mask, anchor_inside_target = self._get_prior_mask(targets, image_size, width, height, boxes_per_cell)
+        prior_preds = {
+            "boxes": preds["boxes"][prior_mask],
+            "confidences": preds["confidences"][prior_mask],
+            "classprobs": preds["classprobs"][prior_mask],
         }
 
-        losses, ious = self.loss_func.pairwise(fg_preds, targets, input_is_normalized=False)
+        losses, ious = self.loss_func.pairwise(prior_preds, targets, input_is_normalized=False)
         costs = losses.overlap + losses.confidence + losses.classification
-        costs += 100000.0 * ~inside_matrix[:, mask].repeat_interleave(boxes_per_cell, 1)
+        costs += 100000.0 * ~anchor_inside_target
         pred_mask, target_selector = _sim_ota_match(costs, ious)
 
         # Add the anchor dimension to the mask and replace True values with the results of the actual SimOTA matching.
-        mask = mask.view(height, width).unsqueeze(-1).repeat(1, 1, boxes_per_cell)
-        mask[mask.nonzero().T.tolist()] = pred_mask
+        prior_mask[prior_mask.nonzero().T.tolist()] = pred_mask
 
-        background_mask = torch.logical_not(mask)
+        background_mask = torch.logical_not(prior_mask)
 
-        return mask, background_mask, target_selector
+        return prior_mask, background_mask, target_selector
+
+    def _get_prior_mask(
+        self,
+        targets: Dict[str, Tensor],
+        image_size: Tensor,
+        grid_width: int,
+        grid_height: int,
+        boxes_per_cell: int,
+    ) -> Tuple[Tensor, Tensor]:
+        """Creates a mask for selecting the "center prior" anchors.
+
+        In the first step we restrict ourselves to the grid cells whose center is inside or close enough to one or more
+        targets.
+
+        Args:
+            targets: Training targets for a single image.
+            image_size: Input image width and height.
+            grid_width: Width of the feature grid.
+            grid_height: Height of the feature grid.
+            boxes_per_cell: Number of boxes that will be predicted per feature grid cell.
+
+        Returns:
+            Two masks, a ``[grid_height, grid_width, boxes_per_cell]`` mask for selecting anchors that are close and
+            similar in shape to a target, and an ``[anchors, targets]`` matrix that indicates which targets are inside
+            those anchors.
+        """
+        # A multiplier for scaling feature map coordinates to image coordinates
+        grid_size = torch.tensor([grid_width, grid_height], device=targets["boxes"].device)
+        grid_to_image = torch.true_divide(image_size, grid_size)
+
+        # Get target center coordinates and dimensions.
+        xywh = box_convert(targets["boxes"], in_fmt="xyxy", out_fmt="cxcywh")
+        xy = xywh[:, :2]
+        wh = xywh[:, 2:]
+
+        # Create a [boxes_per_cell, targets] tensor for selecting prior shapes that are close enough to the target
+        # dimensions.
+        prior_wh = torch.tensor(self.prior_shapes, device=targets["boxes"].device)  # XXX Enable size filtering.
+        shape_selector = compare_box_sizes(prior_wh, wh, self.size_range)  # XXX Enable size filtering.
+
+        # Create a [grid_cells, targets] tensor for selecting spatial locations that are inside target bounding boxes.
+        centers = grid_centers(grid_size).view(-1, 2) * grid_to_image
+        inside_selector = is_inside_box(centers, targets["boxes"])
+
+        # Combine the above selectors into a [grid_cells, boxes_per_cell, targets] tensor for selecting anchors that are
+        # inside target bounding boxes and close enough shape.
+        inside_selector = inside_selector[:, None, :].repeat(1, boxes_per_cell, 1)
+        inside_selector = torch.logical_and(inside_selector, shape_selector)  # XXX Enable size filtering.
+
+        # Set the width and height of all target bounding boxes to self.range grid cells and create a selector for
+        # anchors that are now inside the boxes. If a small target has no anchors inside its bounding box, it will be
+        # matched to one of these anchors, but a high penalty will ensure that anchors that are inside the bounding box
+        # will be preferred.
+        wh = self.spatial_range * grid_to_image * torch.ones_like(xy)
+        xywh = torch.cat((xy, wh), -1)
+        boxes = box_convert(xywh, in_fmt="cxcywh", out_fmt="xyxy")
+        close_selector = is_inside_box(centers, boxes)
+
+        # Create a [grid_cells, boxes_per_cell, targets] tensor for selecting anchors that are spatially close to a
+        # target and whose shape is close enough to the target.
+        close_selector = close_selector[:, None, :].repeat(1, boxes_per_cell, 1)
+        close_selector = torch.logical_and(close_selector, shape_selector)  # XXX Enable size filtering.
+
+        mask = torch.logical_or(inside_selector, close_selector).sum(-1) > 0
+        mask = mask.view(grid_height, grid_width, boxes_per_cell)
+        inside_selector = inside_selector.view(grid_height, grid_width, boxes_per_cell, -1)
+        return mask, inside_selector[mask]
