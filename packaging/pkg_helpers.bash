@@ -166,8 +166,8 @@ setup_wheel_python() {
     # Install libpng from Anaconda (defaults)
     conda install ${CONDA_CHANNEL_FLAGS} libpng "jpeg<=9b" -y
   else
-    # Install native CentOS libJPEG, freetype and GnuTLS
-    yum install -y libjpeg-turbo-devel freetype gnutls
+    # Install native CentOS libPNG, libJPEG, freetype and GnuTLS
+    yum install -y libpng-devel libjpeg-turbo-devel freetype gnutls
     case "$PYTHON_VERSION" in
       3.8) python_abi=cp38-cp38 ;;
       3.9) python_abi=cp39-cp39 ;;
