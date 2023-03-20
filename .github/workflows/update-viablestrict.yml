@@ -1,4 +1,4 @@
-name: Test the update viable/strict
+name: Update viable/strict
 
 on:
   schedule:
