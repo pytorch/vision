@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  test:
+  do_update_viablestrict:
     uses: pytorch/test-infra/.github/workflows/update-viablestrict.yml
     with:
       repository: pytorch/vision
