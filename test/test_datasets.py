@@ -1512,7 +1512,7 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
         data = np.concatenate(
             [
                 np.zeros((config["split_ratio"], num_samples, 64, 64)),
-                np.ones((_N_FRAMES - config["split_ratio"], num_samples, 64, 64)),
+                np.ones((self._N_FRAMES - config["split_ratio"], num_samples, 64, 64)),
             ]
         )
         np.save(os.path.join(base_folder, "mnist_test_seq.npy"), data)
@@ -1526,7 +1526,7 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
             elif config["split"] == "test":
                 assert (dataset.data == 1).all()
             else:
-                assert dataset.data.size[1] == _N_FRAMES
+                assert dataset.data.size()[1] == self._N_FRAMES
 
 
 class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
