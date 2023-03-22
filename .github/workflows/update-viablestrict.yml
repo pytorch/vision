@@ -1,6 +1,9 @@
 name: Update viable/strict
 
 on:
+  pull_request:
+    paths:
+      - .github/workflows/update-viablestrict.yml
   schedule:
     - cron: 10,40 * * * *
   workflow_dispatch:
