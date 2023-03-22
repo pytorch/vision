@@ -90,7 +90,7 @@ class RandomErasing(_RandomApplyTransform):
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any], *, generator: torch.Generator) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(flat_inputs)
 
         if self.value is not None and not (len(self.value) in (1, img_c)):
@@ -102,13 +102,16 @@ class RandomErasing(_RandomApplyTransform):
 
         log_ratio = self._log_ratio
         for _ in range(10):
-            erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
-            aspect_ratio = torch.exp(
-                torch.empty(1).uniform_(
-                    log_ratio[0],  # type: ignore[arg-type]
-                    log_ratio[1],  # type: ignore[arg-type]
+            erase_area = area * float(torch.empty(1).uniform_(self.scale[0], self.scale[1], generator=generator))
+            aspect_ratio = float(
+                torch.exp(
+                    torch.empty(1).uniform_(
+                        log_ratio[0],  # type: ignore[arg-type]
+                        log_ratio[1],  # type: ignore[arg-type]
+                        generator=generator,
+                    )
                 )
-            ).item()
+            )
 
             h = int(round(math.sqrt(erase_area * aspect_ratio)))
             w = int(round(math.sqrt(erase_area / aspect_ratio)))
@@ -120,8 +123,8 @@ class RandomErasing(_RandomApplyTransform):
             else:
                 v = torch.tensor(self.value)[:, None, None]
 
-            i = torch.randint(0, img_h - h + 1, size=(1,)).item()
-            j = torch.randint(0, img_w - w + 1, size=(1,)).item()
+            i = int(torch.randint(0, img_h - h + 1, size=(1,), generator=generator))
+            j = int(torch.randint(0, img_w - w + 1, size=(1,), generator=generator))
             break
         else:
             i, j, h, w, v = 0, 0, img_h, img_w, None

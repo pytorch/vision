@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
-from torch import nn
+from torch import default_generator, nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints
 from torchvision.transforms.v2.utils import check_type, has_any, is_simple_tensor
@@ -13,7 +13,6 @@ from torchvision.utils import _log_api_usage_once
 
 
 class Transform(nn.Module):
-
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
     _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor, PIL.Image.Image)
@@ -25,20 +24,21 @@ class Transform(nn.Module):
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         pass
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any], *, generator: torch.Generator) -> Dict[str, Any]:
         return dict()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         raise NotImplementedError
 
-    def forward(self, *inputs: Any) -> Any:
+    def forward(self, *inputs: Any, generator=default_generator) -> Any:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
         self._check_inputs(flat_inputs)
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
         params = self._get_params(
-            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
+            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform],
+            generator=generator,
         )
 
         flat_outputs = [
@@ -144,7 +144,7 @@ class _RandomApplyTransform(Transform):
         super().__init__()
         self.p = p
 
-    def forward(self, *inputs: Any) -> Any:
+    def forward(self, *inputs: Any, generator=default_generator) -> Any:
         # We need to almost duplicate `Transform.forward()` here since we always want to check the inputs, but return
         # early afterwards in case the random check triggers. The same result could be achieved by calling
         # `super().forward()` after the random check, but that would call `self._check_inputs` twice.
@@ -154,12 +154,13 @@ class _RandomApplyTransform(Transform):
 
         self._check_inputs(flat_inputs)
 
-        if torch.rand(1) >= self.p:
+        if torch.rand(1, generator=generator).sum() >= self.p:
             return inputs
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
         params = self._get_params(
-            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
+            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform],
+            generator=generator,
         )
 
         flat_outputs = [

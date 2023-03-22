@@ -65,7 +65,7 @@ class RandomGrayscale(_RandomApplyTransform):
     def __init__(self, p: float = 0.1) -> None:
         super().__init__(p=p)
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any], *, generator: torch.Generator) -> Dict[str, Any]:
         num_input_channels, *_ = query_chw(flat_inputs)
         return dict(num_input_channels=num_input_channels)
 
@@ -146,16 +146,16 @@ class ColorJitter(Transform):
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
     @staticmethod
-    def _generate_value(left: float, right: float) -> float:
-        return torch.empty(1).uniform_(left, right).item()
+    def _generate_value(left: float, right: float, generator: torch.Generator) -> float:
+        return float(torch.empty(1).uniform_(left, right, generator=generator))
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        fn_idx = torch.randperm(4)
+    def _get_params(self, flat_inputs: List[Any], *, generator: torch.Generator) -> Dict[str, Any]:
+        fn_idx = torch.randperm(4, generator=generator)
 
-        b = None if self.brightness is None else self._generate_value(self.brightness[0], self.brightness[1])
-        c = None if self.contrast is None else self._generate_value(self.contrast[0], self.contrast[1])
-        s = None if self.saturation is None else self._generate_value(self.saturation[0], self.saturation[1])
-        h = None if self.hue is None else self._generate_value(self.hue[0], self.hue[1])
+        b = None if self.brightness is None else self._generate_value(self.brightness[0], self.brightness[1], generator)
+        c = None if self.contrast is None else self._generate_value(self.contrast[0], self.contrast[1], generator)
+        s = None if self.saturation is None else self._generate_value(self.saturation[0], self.saturation[1], generator)
+        h = None if self.hue is None else self._generate_value(self.hue[0], self.hue[1], generator)
 
         return dict(fn_idx=fn_idx, brightness_factor=b, contrast_factor=c, saturation_factor=s, hue_factor=h)
 
@@ -226,21 +226,22 @@ class RandomPhotometricDistort(Transform):
         self.saturation = saturation
         self.p = p
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any], *, generator: torch.Generator) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],
-                (torch.rand(5) < self.p).tolist(),
+                (torch.rand(5, generator=generator) < self.p).tolist(),
             ),
-            contrast_before=bool(torch.rand(()) < 0.5),
-            channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
+            contrast_before=bool(torch.rand(1, generator=generator) < 0.5),
+            channel_permutation=torch.randperm(num_channels, generator=generator)
+            if torch.rand(1, generator=generator) < self.p
+            else None,
         )
 
     def _permute_channels(
         self, inpt: Union[datapoints._ImageType, datapoints._VideoType], permutation: torch.Tensor
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-
         orig_inpt = inpt
         if isinstance(orig_inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)

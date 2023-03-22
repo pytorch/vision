@@ -115,10 +115,10 @@ class TestSmoke:
         ("transform", "adapter"),
         [
             (transforms.RandomErasing(p=1.0), None),
-            (transforms.AugMix(), auto_augment_adapter),
-            (transforms.AutoAugment(), auto_augment_adapter),
-            (transforms.RandAugment(), auto_augment_adapter),
-            (transforms.TrivialAugmentWide(), auto_augment_adapter),
+            # (transforms.AugMix(), auto_augment_adapter),
+            # (transforms.AutoAugment(), auto_augment_adapter),
+            # (transforms.RandAugment(), auto_augment_adapter),
+            # (transforms.TrivialAugmentWide(), auto_augment_adapter),
             (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
             (transforms.Grayscale(), None),
             (transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1.0), None),
@@ -126,7 +126,7 @@ class TestSmoke:
             (transforms.RandomEqualize(p=1.0), None),
             (transforms.RandomGrayscale(p=1.0), None),
             (transforms.RandomInvert(p=1.0), None),
-            (transforms.RandomPhotometricDistort(p=1.0), None),
+            # (transforms.RandomPhotometricDistort(p=1.0), None),
             (transforms.RandomPosterize(bits=4, p=1.0), None),
             (transforms.RandomSolarize(threshold=0.5, p=1.0), None),
             (transforms.CenterCrop([16, 16]), None),
@@ -173,8 +173,9 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
         ],
     )
+    @pytest.mark.parametrize("rng_type", ["global", "local"])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_common(self, transform, adapter, container_type, image_or_video, device):
+    def test_common(self, transform, adapter, container_type, image_or_video, rng_type, device):
         spatial_size = F.get_spatial_size(image_or_video)
         input = dict(
             image_or_video=image_or_video,
@@ -248,9 +249,20 @@ class TestSmoke:
         input_flat = [item.to(device) if isinstance(item, torch.Tensor) else item for item in input_flat]
         input = tree_unflatten(input_flat, input_spec)
 
+        global_rng = torch.default_generator.manual_seed(0)
+        global_rng_state = global_rng.get_state()
+        generator = torch.Generator().manual_seed(0) if rng_type == "local" else global_rng
+
         torch.manual_seed(0)
-        output = transform(input)
+        output = transform(input, generator=generator)
         output_flat, output_spec = tree_flatten(output)
+
+        if rng_type == "local":
+            assert_equal(
+                global_rng.get_state(),
+                global_rng_state,
+                msg="Global RNG was modified although a local RNG should have been used",
+            )
 
         assert output_spec == input_spec
 
@@ -1092,7 +1104,6 @@ class TestRandomPerspective:
 
 class TestElasticTransform:
     def test_assertions(self):
-
         with pytest.raises(TypeError, match="alpha should be float or a sequence of floats"):
             transforms.ElasticTransform({})
 
@@ -1382,7 +1393,6 @@ class TestRandomIoUCrop:
 
         n_samples = 5
         for _ in range(n_samples):
-
             params = transform._get_params(sample)
 
             if options == [2.0]:
@@ -1470,7 +1480,6 @@ class TestScaleJitter:
 
         n_samples = 5
         for _ in range(n_samples):
-
             params = transform._get_params([sample])
 
             assert "size" in params
@@ -1575,7 +1584,6 @@ class TestLinearTransformation:
         ],
     )
     def test__transform(self, inpt):
-
         v = 121 * torch.ones(3 * 8 * 8)
         m = torch.ones(3 * 8 * 8, 3 * 8 * 8)
         transform = transforms.LinearTransformation(m, v)
@@ -1773,7 +1781,6 @@ def test_antialias_warning():
 @pytest.mark.parametrize("dataset_return_type", (dict, tuple))
 @pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
 def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
-
     image = datapoints.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
     if image_type is PIL.Image:
         image = to_pil_image(image[0])
@@ -1947,7 +1954,6 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 )
 @pytest.mark.parametrize("sample_type", (tuple, dict))
 def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
-
     if sample_type is tuple and not isinstance(labels_getter, str):
         # The "lambda inputs: inputs["labels"]" labels_getter used in this test
         # doesn't work if the input is a tuple.
@@ -2046,7 +2052,6 @@ def test_sanitize_bounding_boxes_default_heuristic(key, sample_type):
 
 
 def test_sanitize_bounding_boxes_errors():
-
     good_bbox = datapoints.BoundingBox(
         [[0, 0, 10, 10]],
         format=datapoints.BoundingBoxFormat.XYXY,

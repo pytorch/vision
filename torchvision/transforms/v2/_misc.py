@@ -214,8 +214,8 @@ class GaussianBlur(Transform):
 
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
+    def _get_params(self, flat_inputs: List[Any], *, generator: torch.Generator) -> Dict[str, Any]:
+        sigma = float(torch.empty(1).uniform_(self.sigma[0], self.sigma[1], generator=generator))
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -397,7 +397,6 @@ class SanitizeBoundingBox(Transform):
         return tree_unflatten(flat_outputs, spec)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-
         if (inpt is not None and inpt is params["labels"]) or isinstance(
             inpt, (datapoints.BoundingBox, datapoints.Mask)
         ):
