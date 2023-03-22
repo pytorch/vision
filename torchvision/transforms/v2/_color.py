@@ -228,7 +228,7 @@ class RandomPhotometricDistort(Transform):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
-        params = {
+        params: Dict[str, Any] = {
             key: ColorJitter._generate_value(range[0], range[1]) if torch.rand(1) < self.p else None
             for key, range in [
                 ("brightness_factor", self.brightness),
