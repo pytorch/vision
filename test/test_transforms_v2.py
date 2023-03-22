@@ -115,10 +115,10 @@ class TestSmoke:
         ("transform", "adapter"),
         [
             (transforms.RandomErasing(p=1.0), None),
-            # (transforms.AugMix(), auto_augment_adapter),
-            # (transforms.AutoAugment(), auto_augment_adapter),
-            # (transforms.RandAugment(), auto_augment_adapter),
-            # (transforms.TrivialAugmentWide(), auto_augment_adapter),
+            (transforms.AugMix(), auto_augment_adapter),
+            (transforms.AutoAugment(), auto_augment_adapter),
+            (transforms.RandAugment(), auto_augment_adapter),
+            (transforms.TrivialAugmentWide(), auto_augment_adapter),
             (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
             (transforms.Grayscale(), None),
             (transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1.0), None),
@@ -598,7 +598,7 @@ class TestRandomZoomOut:
         image = mocker.MagicMock(spec=datapoints.Image)
         h, w = image.spatial_size = (24, 32)
 
-        params = transform._get_params([image])
+        params = transform._get_params([image], generator=torch.Generator())
 
         assert len(params["padding"]) == 4
         assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
@@ -619,11 +619,13 @@ class TestRandomZoomOut:
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        torch.rand(1)  # random apply changes random state
-        params = transform._get_params([inpt])
+        generator = torch.Generator()
+        state = generator.get_state()
+        _ = transform(inpt, generator=generator)
+
+        generator.set_state(state)
+        torch.rand(1, generator=generator)  # emulate random apply sampling
+        params = transform._get_params([inpt], generator=generator)
 
         fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, fill=fill)
@@ -637,11 +639,13 @@ class TestRandomZoomOut:
         mask = datapoints.Mask(torch.randint(0, 5, size=(32, 32)))
         inpt = [image, mask]
 
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        torch.rand(1)  # random apply changes random state
-        params = transform._get_params(inpt)
+        generator = torch.Generator()
+        state = generator.get_state()
+        _ = transform(inpt, generator=generator)
+
+        generator.set_state(state)
+        torch.rand(1, generator=generator)  # emulate random apply sampling
+        params = transform._get_params(inpt, generator=generator)
 
         if isinstance(fill, int):
             fill = transforms._utils._convert_fill_arg(fill)
@@ -681,13 +685,13 @@ class TestRandomRotation:
         angle_bound = 34
         transform = transforms.RandomRotation(angle_bound)
 
-        params = transform._get_params(None)
+        params = transform._get_params(None, generator=torch.Generator())
         assert -angle_bound <= params["angle"] <= angle_bound
 
         angle_bounds = [12, 34]
         transform = transforms.RandomRotation(angle_bounds)
 
-        params = transform._get_params(None)
+        params = transform._get_params(None, generator=torch.Generator())
         assert angle_bounds[0] <= params["angle"] <= angle_bounds[1]
 
     @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
@@ -710,10 +714,12 @@ class TestRandomRotation:
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params(inpt)
+        generator = torch.Generator()
+        state = generator.get_state()
+        _ = transform(inpt, generator=generator)
+
+        generator.set_state(state)
+        params = transform._get_params(inpt, generator=generator)
 
         fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, interpolation=interpolation, expand=expand, fill=fill, center=center)
@@ -784,7 +790,7 @@ class TestRandomAffine:
         h, w = image.spatial_size
 
         transform = transforms.RandomAffine(degrees, translate=translate, scale=scale, shear=shear)
-        params = transform._get_params([image])
+        params = transform._get_params([image], generator=torch.Generator())
 
         if not isinstance(degrees, (list, tuple)):
             assert -degrees <= params["angle"] <= degrees
@@ -848,10 +854,12 @@ class TestRandomAffine:
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params([inpt])
+        generator = torch.Generator()
+        state = generator.get_state()
+        _ = transform(inpt, generator=generator)
+
+        generator.set_state(state)
+        params = transform._get_params([inpt], generator=generator)
 
         fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, interpolation=interpolation, fill=fill, center=center)
@@ -883,7 +891,7 @@ class TestRandomCrop:
         h, w = image.spatial_size
 
         transform = transforms.RandomCrop(size, padding=padding, pad_if_needed=pad_if_needed)
-        params = transform._get_params([image])
+        params = transform._get_params([image], generator=torch.Generator())
 
         if padding is not None:
             if isinstance(padding, int):
@@ -951,10 +959,13 @@ class TestRandomCrop:
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params([inpt])
+        generator = torch.Generator()
+        state = generator.get_state()
+        _ = transform(inpt, generator=generator)
+
+        generator.set_state(state)
+        params = transform._get_params([inpt], generator=generator)
+
         if padding is None and not pad_if_needed:
             fn_crop.assert_called_once_with(
                 inpt, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
@@ -993,7 +1004,7 @@ class TestGaussianBlur:
     @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0]])
     def test__get_params(self, sigma):
         transform = transforms.GaussianBlur(3, sigma=sigma)
-        params = transform._get_params([])
+        params = transform._get_params([], generator=torch.Generator())
 
         if isinstance(sigma, float):
             assert params["sigma"][0] == params["sigma"][1] == 10
@@ -1025,10 +1036,12 @@ class TestGaussianBlur:
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params([inpt])
+        generator = torch.Generator()
+        state = generator.get_state()
+        _ = transform(inpt, generator=generator)
+
+        generator.set_state(state)
+        params = transform._get_params([inpt], generator=generator)
 
         fn.assert_called_once_with(inpt, kernel_size, **params)
 
@@ -1073,7 +1086,7 @@ class TestRandomPerspective:
         image.num_channels = 3
         image.spatial_size = (24, 32)
 
-        params = transform._get_params([image])
+        params = transform._get_params([image], generator=torch.Generator())
 
         h, w = image.spatial_size
         assert "coefficients" in params
@@ -1092,11 +1105,13 @@ class TestRandomPerspective:
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        torch.rand(1)  # random apply changes random state
-        params = transform._get_params([inpt])
+        generator = torch.Generator()
+        state = generator.get_state()
+        _ = transform(inpt, generator=generator)
+
+        generator.set_state(state)
+        torch.rand(1, generator=generator)  # emulate random apply sampling
+        params = transform._get_params([inpt], generator=generator)
 
         fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, None, None, **params, fill=fill, interpolation=interpolation)
@@ -1133,7 +1148,7 @@ class TestElasticTransform:
         image.num_channels = 3
         image.spatial_size = (24, 32)
 
-        params = transform._get_params([image])
+        params = transform._get_params([image], generator=torch.Generator())
 
         h, w = image.spatial_size
         displacement = params["displacement"]
@@ -1195,7 +1210,7 @@ class TestRandomErasing:
         transform = transforms.RandomErasing(value=[1, 2, 3, 4])
 
         with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
-            transform._get_params([image])
+            transform._get_params([image], generator=torch.Generator())
 
     @pytest.mark.parametrize("value", [5.0, [1, 2, 3], "random"])
     def test__get_params(self, value, mocker):
@@ -1204,7 +1219,7 @@ class TestRandomErasing:
         image.spatial_size = (24, 32)
 
         transform = transforms.RandomErasing(value=value)
-        params = transform._get_params([image])
+        params = transform._get_params([image], generator=torch.Generator())
 
         v = params["v"]
         h, w = params["h"], params["w"]
@@ -1393,7 +1408,7 @@ class TestRandomIoUCrop:
 
         n_samples = 5
         for _ in range(n_samples):
-            params = transform._get_params(sample)
+            params = transform._get_params(sample, generator=torch.Generator())
 
             if options == [2.0]:
                 assert len(params) == 0
@@ -1480,7 +1495,7 @@ class TestScaleJitter:
 
         n_samples = 5
         for _ in range(n_samples):
-            params = transform._get_params([sample])
+            params = transform._get_params([sample], generator=torch.Generator())
 
             assert "size" in params
             size = params["size"]
@@ -1526,7 +1541,7 @@ class TestRandomShortestSize:
         transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size, antialias=True)
 
         sample = mocker.MagicMock(spec=datapoints.Image, num_channels=3, spatial_size=spatial_size)
-        params = transform._get_params([sample])
+        params = transform._get_params([sample], generator=torch.Generator())
 
         assert "size" in params
         size = params["size"]
@@ -1606,7 +1621,7 @@ class TestRandomResize:
         transform = transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
 
         for _ in range(10):
-            params = transform._get_params([])
+            params = transform._get_params([], generator=torch.Generator())
 
             assert isinstance(params["size"], list) and len(params["size"]) == 1
             size = params["size"][0]

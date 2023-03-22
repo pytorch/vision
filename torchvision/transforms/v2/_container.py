@@ -45,10 +45,10 @@ class Compose(Transform):
             raise TypeError("Argument transforms should be a sequence of callables")
         self.transforms = transforms
 
-    def forward(self, *inputs: Any) -> Any:
+    def forward(self, *inputs: Any, generator: torch.Generator = torch.default_generator) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         for transform in self.transforms:
-            sample = transform(sample)
+            sample = transform(sample, generator=generator)
         return sample
 
     def extra_repr(self) -> str:
@@ -96,14 +96,14 @@ class RandomApply(Transform):
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
         return {"transforms": self.transforms, "p": self.p}
 
-    def forward(self, *inputs: Any) -> Any:
+    def forward(self, *inputs: Any, generator: torch.Generator = torch.default_generator) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        if torch.rand(1) >= self.p:
+        if torch.rand(1, generator=generator) >= self.p:
             return sample
 
         for transform in self.transforms:
-            sample = transform(sample)
+            sample = transform(sample, generator=generator)
         return sample
 
     def extra_repr(self) -> str:
@@ -146,10 +146,10 @@ class RandomChoice(Transform):
         total = sum(p)
         self.p = [prob / total for prob in p]
 
-    def forward(self, *inputs: Any) -> Any:
-        idx = int(torch.multinomial(torch.tensor(self.p), 1))
+    def forward(self, *inputs: Any, generator: torch.Generator = torch.default_generator) -> Any:
+        idx = int(torch.multinomial(torch.tensor(self.p), 1, generator=generator))
         transform = self.transforms[idx]
-        return transform(*inputs)
+        return transform(*inputs, generator=generator)
 
 
 class RandomOrder(Transform):
@@ -169,9 +169,9 @@ class RandomOrder(Transform):
         super().__init__()
         self.transforms = transforms
 
-    def forward(self, *inputs: Any) -> Any:
+    def forward(self, *inputs: Any, generator: torch.Generator = torch.default_generator) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        for idx in torch.randperm(len(self.transforms)):
+        for idx in torch.randperm(len(self.transforms), generator=generator):
             transform = self.transforms[idx]
-            sample = transform(sample)
+            sample = transform(sample, generator=generator)
         return sample

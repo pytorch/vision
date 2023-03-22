@@ -347,7 +347,7 @@ class SanitizeBoundingBox(Transform):
             )
         return inputs[candidate_key]
 
-    def forward(self, *inputs: Any) -> Any:
+    def forward(self, *inputs: Any, generator: torch.Generator = torch.default_generator) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
 
         if self._labels_getter is None:
