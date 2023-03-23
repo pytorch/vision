@@ -83,7 +83,7 @@ Instead of relying directly on `black` however, we rely on
 [ufmt](https://github.com/omnilib/ufmt), for compatibility reasons with Facebook
 internal infrastructure.
 
-To format your code, install `ufmt` with `pip install ufmt==1.3.2 black==22.3.0 usort==1.0.2` and use e.g.:
+To format your code, install `ufmt` with `pip install ufmt==1.3.3 black==22.3.0 usort==1.0.2` and use e.g.:
 
 ```bash
 ufmt format torchvision
