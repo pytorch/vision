@@ -278,6 +278,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, (dict, PIL.Image.Image))
 
     def inject_fake_data(self, tmpdir, config):
+
         tmpdir = pathlib.Path(tmpdir)
 
         mode_to_splits = {
@@ -1512,7 +1513,7 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
         data = np.concatenate(
             [
                 np.zeros((config["split_ratio"], num_samples, 64, 64)),
-                np.ones((self._N_FRAMES - config["split_ratio"], num_samples, 64, 64)),
+                np.ones((self._NUM_FRAMES - config["split_ratio"], num_samples, 64, 64)),
             ]
         )
         np.save(os.path.join(base_folder, "mnist_test_seq.npy"), data)
@@ -1526,7 +1527,7 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
             elif config["split"] == "test":
                 assert (dataset.data == 1).all()
             else:
-                assert dataset.data.size()[1] == self._N_FRAMES
+                assert dataset.data.size()[1] == self._NUM_FRAMES
 
 
 class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1941,6 +1942,7 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     def inject_fake_data(self, tmpdir, config):
+
         root = pathlib.Path(tmpdir) / "KittiFlow"
 
         num_examples = 2 if config["split"] == "train" else 3
