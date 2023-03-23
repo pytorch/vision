@@ -58,7 +58,7 @@ class MovingMNIST(VisionDataset):
         data = torch.from_numpy(np.load(os.path.join(self._base_folder, self._filename)))
         if self.split == "train":
             data = data[: self.split_ratio]
-        else:
+        elif self.split == "test":
             data = data[self.split_ratio :]
         self.data = data.transpose(0, 1).unsqueeze(2).contiguous()
 
