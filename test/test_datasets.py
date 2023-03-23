@@ -1503,7 +1503,7 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
 
     ADDITIONAL_CONFIGS = combinations_grid(split=(None, "train", "test"), split_ratio=(10, 1, 19))
 
-    _N_FRAMES = 20
+    _NUM_FRAMES = 20
 
     def inject_fake_data(self, tmpdir, config):
         base_folder = os.path.join(tmpdir, self.DATASET_CLASS.__name__)
