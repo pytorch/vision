@@ -28,7 +28,7 @@ def meta_roi_align(input, rois, spatial_scale, pooled_height, pooled_width, samp
 
 @register_meta(vision._roi_align_backward.default)
 def meta_roi_align(grad, rois, spatial_scale, pooled_height, pooled_width, batch_size, channels, height, width, sampling_ratio, aligned):
-    check(input.dtype == rois.dtype, lambda: (
+    check(grad.dtype == rois.dtype, lambda: (
         "Expected tensor for grad to have the same type as tensor for rois; "
         f"but type {grad.dtype} does not equal {rois.dtype}"
     ))
