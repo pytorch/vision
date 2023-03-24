@@ -1,6 +1,7 @@
 import torch
 import torch.library
-import torchvision.extension
+# Ensure that torch.ops.torchvision is visible
+import torchvision.extension  # noqa: F401
 
 from torch._prims_common import check
 
