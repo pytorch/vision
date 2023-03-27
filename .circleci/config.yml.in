@@ -743,49 +743,6 @@ jobs:
       - store_test_results:
           path: test-results
 
-  unittest_macos_cpu:
-    <<: *binary_common
-    macos:
-      xcode: "14.0"
-    resource_class: large
-    steps:
-      - checkout
-      - designate_upload_channel
-      - run:
-          name: Install wget
-          command: HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
-          # Disable brew auto update which is very slow
-      - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - env-v3-macos-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-      - run:
-          name: Setup
-          command: .circleci/unittest/linux/scripts/setup_env.sh
-      - save_cache:
-          {% raw %}
-          key: env-v3-macos-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-          paths:
-            - conda
-            - env
-      - run:
-          name: Install torchvision
-          command: .circleci/unittest/linux/scripts/install.sh
-      - run:
-          name: Run tests
-          command: .circleci/unittest/linux/scripts/run_test.sh
-      - run:
-          name: Post process
-          command: .circleci/unittest/linux/scripts/post_process.sh
-      - store_test_results:
-          path: test-results
-
   cmake_linux_cpu:
     <<: *binary_common
     docker:
