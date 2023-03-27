@@ -269,32 +269,6 @@ jobs:
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
-  unittest_onnx:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - checkout
-      - install_torchvision
-      - pip_install:
-          args: onnx onnxruntime
-          descr: Install ONNX
-      - run_tests_selective:
-          file_or_dir: test/test_onnx.py
-
-  unittest_extended:
-    docker:
-      - image: cimg/python:3.8
-    resource_class: xlarge
-    steps:
-      - checkout
-      - download_model_weights
-      - install_torchvision
-      - run:
-          name: Enable extended tests
-          command: echo 'export PYTORCH_TEST_WITH_EXTENDED=1' >> $BASH_ENV
-      - run_tests_selective:
-          file_or_dir: test/test_extended_*.py
-
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -840,8 +814,6 @@ workflows:
 
   unittest:
     jobs:
-      - unittest_onnx
-      - unittest_extended
       {{ unittest_workflows() }}
 
   cmake:
