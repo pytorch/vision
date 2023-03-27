@@ -2,8 +2,8 @@ version: 2.1
 
 # How to test the Linux jobs:
 #   - Install CircleCI local CLI: https://circleci.com/docs/2.0/local-cli/
-#   - circleci config process .circleci/config.yml > gen.yml && circleci local execute -c gen.yml --job binary_linux_wheel_py3.8
-#     - Replace binary_linux_wheel_py3.8 with the name of the job you want to test.
+#   - circleci config process .circleci/config.yml > gen.yml && circleci local execute -c gen.yml --job binary_win_wheel_py3.8
+#     - Replace binary_win_wheel_py3.8 with the name of the job you want to test.
 #       Job names are 'name:' key.
 
 executors:
@@ -99,25 +99,6 @@ commands:
       - brew_install:
           formulae: libtool
 
-  apt_install:
-    parameters:
-      args:
-        type: string
-      descr:
-        type: string
-        default: ""
-      update:
-        type: boolean
-        default: true
-    steps:
-      - run:
-          name: >
-            <<^ parameters.descr >> apt install << parameters.args >> <</ parameters.descr >>
-            <<# parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
-          command: |
-            <<# parameters.update >> sudo apt update -qy  <</ parameters.update >>
-            sudo apt install << parameters.args >>
-
   pip_install:
     parameters:
       args:
@@ -138,55 +119,6 @@ commands:
             <<# parameters.user >> --user <</ parameters.user >>
             --progress-bar=off
             << parameters.args >>
-
-  install_torchvision:
-    parameters:
-      editable:
-        type: boolean
-        default: true
-    steps:
-      - pip_install:
-          args: --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu
-          descr: Install PyTorch from nightly releases
-      - pip_install:
-          args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
-          descr: Install torchvision <<# parameters.editable >> in editable mode <</ parameters.editable >>
-
-  # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
-  # This command can be used if only a selection of tests need to be run, for ad-hoc files.
-  run_tests_selective:
-    parameters:
-      file_or_dir:
-        type: string
-    steps:
-      - run:
-          name: Install test utilities
-          command: pip install --progress-bar=off pytest pytest-mock
-      - run:
-          name: Run tests
-          command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
-      - store_test_results:
-          path: test-results
-
-  download_model_weights:
-    parameters:
-      extract_roots:
-        type: string
-        default: "torchvision/models"
-      background:
-        type: boolean
-        default: true
-    steps:
-      - apt_install:
-          args: parallel wget
-          descr: Install download utilitites
-      - run:
-          name: Download model weights
-          background: << parameters.background >>
-          command: |
-            mkdir -p ~/.cache/torch/hub/checkpoints
-            python scripts/collect_model_urls.py << parameters.extract_roots >> \
-                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
 
 binary_common: &binary_common
   parameters:
@@ -268,50 +200,6 @@ jobs:
           command: |
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
-
-  binary_linux_wheel:
-    <<: *binary_common
-    docker:
-      - image: << parameters.wheel_docker_image >>
-    resource_class: 2xlarge+
-    steps:
-      - checkout_merge
-      - designate_upload_channel
-      - run:
-          name: Build conda packages
-          no_output_timeout: 30m
-          command: |
-              set -ex
-              packaging/build_wheel.sh
-      - store_artifacts:
-          path: dist
-      - persist_to_workspace:
-          root: dist
-          paths:
-            - "*"
-
-  binary_linux_conda:
-    <<: *binary_common
-    docker:
-      - image: "<< parameters.conda_docker_image >>"
-    resource_class: 2xlarge+
-    steps:
-      - checkout_merge
-      - designate_upload_channel
-      - run:
-          name: Build conda packages
-          no_output_timeout: 30m
-          command: |
-              set -ex
-              packaging/build_conda.sh
-      - store_artifacts:
-          path: /opt/conda/conda-bld/linux-64
-      - persist_to_workspace:
-          root: /opt/conda/conda-bld/linux-64
-          paths:
-            - "*"
-      - store_test_results:
-          path: build_results/
 
   binary_win_conda:
     <<: *binary_common
@@ -524,44 +412,6 @@ jobs:
               aws s3 cp "$pkg" "s3://pytorch/whl/${UPLOAD_CHANNEL}/<< parameters.subfolder >>" --acl public-read
             done
 
-  smoke_test_linux_conda:
-    <<: *smoke_test_common
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - designate_upload_channel
-      - run:
-          name: install binaries
-          command: |
-            set -x
-            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            conda install -v -y -c pytorch-nightly pytorch
-            conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
-      - run:
-          name: smoke test
-          command: |
-            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            python -c "import torchvision"
-
-  smoke_test_linux_pip:
-    <<: *smoke_test_common
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - designate_upload_channel
-      - run:
-          name: install binaries
-          command: |
-            set -x
-            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-      - pip_install:
-          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
-      - run:
-          name: smoke test
-          command: |
-            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            python -c "import torchvision"
-
   smoke_test_docker_image_build:
     machine:
       image: ubuntu-2004:202104-01
@@ -582,55 +432,6 @@ jobs:
             docker tag ${image_name}:${CIRCLE_WORKFLOW_ID} ${image_name}:latest
             docker push ${image_name}:${CIRCLE_WORKFLOW_ID}
             docker push ${image_name}:latest
-
-  smoke_test_win_conda:
-    <<: *binary_common
-    executor:
-      name: windows-cpu
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - designate_upload_channel
-      - run:
-          name: install binaries
-          command: |
-            set -x
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda env remove -n python${PYTHON_VERSION} || true
-            conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
-            conda activate python${PYTHON_VERSION}
-            conda install -v -y -c pytorch-nightly pytorch
-            conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
-      - run:
-          name: smoke test
-          command: |
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda activate python${PYTHON_VERSION}
-            python -c "import torchvision"
-
-  smoke_test_win_pip:
-    <<: *binary_common
-    executor:
-      name: windows-cpu
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - designate_upload_channel
-      - run:
-          name: install binaries
-          command: |
-            set -x
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
-            conda activate python${PYTHON_VERSION}
-      - pip_install:
-          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
-      - run:
-          name: smoke test
-          command: |
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda activate python${PYTHON_VERSION}
-            python -c "import torchvision"
 
   unittest_windows_cpu:
     <<: *binary_common
