@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -209,12 +209,9 @@ def convert_format_bounding_box(
     return bounding_box
 
 
-def clamp_bounding_box(
+def _clamp_bounding_box(
     bounding_box: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(clamp_bounding_box)
-
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
     xyxy_boxes = convert_format_bounding_box(
@@ -223,6 +220,29 @@ def clamp_bounding_box(
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
     return convert_format_bounding_box(xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True)
+
+
+def clamp_bounding_box(
+    inpt: datapoints.InputTypeJIT,
+    format: Optional[BoundingBoxFormat] = None,
+    spatial_size: Optional[Tuple[int, int]] = None,
+) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(clamp_bounding_box)
+
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        if format is None or spatial_size is None:
+            raise ValueError("For simple tensor inputs, `format` and `spatial_size` has to be passed.")
+        return _clamp_bounding_box(inpt, format=format, spatial_size=spatial_size)
+    elif isinstance(inpt, datapoints.BoundingBox):
+        if format is not None or spatial_size is not None:
+            raise ValueError("For bounding box datapoint inputs, `format` and `spatial_size` must not be passed.")
+        output = _clamp_bounding_box(inpt, format=inpt.format, spatial_size=inpt.spatial_size)
+        return datapoints.BoundingBox.wrap_like(inpt, output)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor or a bounding box datapoint, but got {type(inpt)} instead."
+        )
 
 
 def _num_value_bits(dtype: torch.dtype) -> int:
