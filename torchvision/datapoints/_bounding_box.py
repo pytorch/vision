@@ -6,7 +6,7 @@ import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
-from ._datapoint import Datapoint, FillTypeJIT
+from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class BoundingBoxFormat(StrEnum):
@@ -136,7 +136,7 @@ class BoundingBox(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.rotate_bounding_box(
             self.as_subclass(torch.Tensor),
@@ -155,7 +155,7 @@ class BoundingBox(Datapoint):
         scale: float,
         shear: List[float],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.affine_bounding_box(
@@ -175,7 +175,7 @@ class BoundingBox(Datapoint):
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.perspective_bounding_box(
@@ -192,7 +192,7 @@ class BoundingBox(Datapoint):
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> BoundingBox:
         output = self._F.elastic_bounding_box(
             self.as_subclass(torch.Tensor), self.format, self.spatial_size, displacement=displacement

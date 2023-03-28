@@ -13,5 +13,5 @@ class UniformTemporalSubsample(Transform):
         super().__init__()
         self.num_samples = num_samples
 
-    def _transform(self, inpt: datapoints.VideoType, params: Dict[str, Any]) -> datapoints.VideoType:
+    def _transform(self, inpt: datapoints._VideoType, params: Dict[str, Any]) -> datapoints._VideoType:
         return F.uniform_temporal_subsample(inpt, self.num_samples)

@@ -71,7 +71,7 @@ def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image_tensor(video)
 
 
-def horizontal_flip(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+def horizontal_flip(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(horizontal_flip)
 
@@ -120,7 +120,7 @@ def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image_tensor(video)
 
 
-def vertical_flip(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+def vertical_flip(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(vertical_flip)
 
@@ -255,12 +255,12 @@ def resize_video(
 
 
 def resize(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[Union[str, bool]] = "warn",
-) -> datapoints.InputTypeJIT:
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(resize)
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
@@ -428,7 +428,7 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
 
 
 def _apply_grid_transform(
-    img: torch.Tensor, grid: torch.Tensor, mode: str, fill: datapoints.FillTypeJIT
+    img: torch.Tensor, grid: torch.Tensor, mode: str, fill: datapoints._FillTypeJIT
 ) -> torch.Tensor:
 
     # We are using context knowledge that grid should have float dtype
@@ -470,7 +470,7 @@ def _assert_grid_transform_inputs(
     image: torch.Tensor,
     matrix: Optional[List[float]],
     interpolation: str,
-    fill: datapoints.FillTypeJIT,
+    fill: datapoints._FillTypeJIT,
     supported_interpolation_modes: List[str],
     coeffs: Optional[List[float]] = None,
 ) -> None:
@@ -533,7 +533,7 @@ def affine_image_tensor(
     scale: float,
     shear: List[float],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     interpolation = _check_interpolation(interpolation)
@@ -585,7 +585,7 @@ def affine_image_pil(
     scale: float,
     shear: List[float],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     interpolation = _check_interpolation(interpolation)
@@ -721,7 +721,7 @@ def affine_mask(
     translate: List[float],
     scale: float,
     shear: List[float],
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
@@ -754,7 +754,7 @@ def affine_video(
     scale: float,
     shear: List[float],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     return affine_image_tensor(
@@ -770,15 +770,15 @@ def affine_video(
 
 
 def affine(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     center: Optional[List[float]] = None,
-) -> datapoints.InputTypeJIT:
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(affine)
 
@@ -822,7 +822,7 @@ def rotate_image_tensor(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[List[float]] = None,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
 ) -> torch.Tensor:
     interpolation = _check_interpolation(interpolation)
 
@@ -867,7 +867,7 @@ def rotate_image_pil(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[List[float]] = None,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
 ) -> PIL.Image.Image:
     interpolation = _check_interpolation(interpolation)
 
@@ -910,7 +910,7 @@ def rotate_mask(
     angle: float,
     expand: bool = False,
     center: Optional[List[float]] = None,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -939,19 +939,19 @@ def rotate_video(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[List[float]] = None,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
 ) -> torch.Tensor:
     return rotate_image_tensor(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 
 def rotate(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     angle: float,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[List[float]] = None,
-    fill: datapoints.FillTypeJIT = None,
-) -> datapoints.InputTypeJIT:
+    fill: datapoints._FillTypeJIT = None,
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(rotate)
 
@@ -1156,11 +1156,11 @@ def pad_video(
 
 
 def pad(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     padding: List[int],
     fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
-) -> datapoints.InputTypeJIT:
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(pad)
 
@@ -1239,7 +1239,7 @@ def crop_video(video: torch.Tensor, top: int, left: int, height: int, width: int
     return crop_image_tensor(video, top, left, height, width)
 
 
-def crop(inpt: datapoints.InputTypeJIT, top: int, left: int, height: int, width: int) -> datapoints.InputTypeJIT:
+def crop(inpt: datapoints._InputTypeJIT, top: int, left: int, height: int, width: int) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(crop)
 
@@ -1308,7 +1308,7 @@ def perspective_image_tensor(
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
@@ -1355,7 +1355,7 @@ def perspective_image_pil(
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BICUBIC,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
@@ -1461,7 +1461,7 @@ def perspective_mask(
     mask: torch.Tensor,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
@@ -1485,7 +1485,7 @@ def perspective_video(
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
     return perspective_image_tensor(
@@ -1494,13 +1494,13 @@ def perspective_video(
 
 
 def perspective(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
-) -> datapoints.InputTypeJIT:
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(perspective)
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
@@ -1526,7 +1526,7 @@ def elastic_image_tensor(
     image: torch.Tensor,
     displacement: torch.Tensor,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
 ) -> torch.Tensor:
     interpolation = _check_interpolation(interpolation)
 
@@ -1583,7 +1583,7 @@ def elastic_image_pil(
     image: PIL.Image.Image,
     displacement: torch.Tensor,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(image)
     output = elastic_image_tensor(t_img, displacement, interpolation=interpolation, fill=fill)
@@ -1656,7 +1656,7 @@ def elastic_bounding_box(
 def elastic_mask(
     mask: torch.Tensor,
     displacement: torch.Tensor,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -1676,17 +1676,17 @@ def elastic_video(
     video: torch.Tensor,
     displacement: torch.Tensor,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    fill: datapoints.FillTypeJIT = None,
+    fill: datapoints._FillTypeJIT = None,
 ) -> torch.Tensor:
     return elastic_image_tensor(video, displacement, interpolation=interpolation, fill=fill)
 
 
 def elastic(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     displacement: torch.Tensor,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    fill: datapoints.FillTypeJIT = None,
-) -> datapoints.InputTypeJIT:
+    fill: datapoints._FillTypeJIT = None,
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(elastic)
 
@@ -1802,7 +1802,7 @@ def center_crop_video(video: torch.Tensor, output_size: List[int]) -> torch.Tens
     return center_crop_image_tensor(video, output_size)
 
 
-def center_crop(inpt: datapoints.InputTypeJIT, output_size: List[int]) -> datapoints.InputTypeJIT:
+def center_crop(inpt: datapoints._InputTypeJIT, output_size: List[int]) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(center_crop)
 
@@ -1888,7 +1888,7 @@ def resized_crop_video(
 
 
 def resized_crop(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     top: int,
     left: int,
     height: int,
@@ -1896,7 +1896,7 @@ def resized_crop(
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[Union[str, bool]] = "warn",
-) -> datapoints.InputTypeJIT:
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(resized_crop)
 
@@ -1972,7 +1972,7 @@ def five_crop_video(
     return five_crop_image_tensor(video, size)
 
 
-ImageOrVideoTypeJIT = Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]
+ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
 
 
 def five_crop(
@@ -2069,7 +2069,7 @@ def ten_crop_video(
 
 
 def ten_crop(
-    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], size: List[int], vertical_flip: bool = False
+    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], size: List[int], vertical_flip: bool = False
 ) -> Tuple[
     ImageOrVideoTypeJIT,
     ImageOrVideoTypeJIT,

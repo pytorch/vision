@@ -6,7 +6,7 @@ import PIL.Image
 import torch
 from torchvision.transforms import InterpolationMode
 
-from ._datapoint import Datapoint, FillTypeJIT
+from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class Mask(Datapoint):
@@ -96,7 +96,7 @@ class Mask(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Mask:
         output = self._F.rotate_mask(self.as_subclass(torch.Tensor), angle, expand=expand, center=center, fill=fill)
         return Mask.wrap_like(self, output)
@@ -108,7 +108,7 @@ class Mask(Datapoint):
         scale: float,
         shear: List[float],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Mask:
         output = self._F.affine_mask(
@@ -127,7 +127,7 @@ class Mask(Datapoint):
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Mask:
         output = self._F.perspective_mask(
@@ -139,7 +139,7 @@ class Mask(Datapoint):
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Mask:
         output = self._F.elastic_mask(self.as_subclass(torch.Tensor), displacement, fill=fill)
         return Mask.wrap_like(self, output)

@@ -97,8 +97,8 @@ class RandomErasing(_RandomApplyTransform):
         return dict(i=i, j=j, h=h, w=w, v=v)
 
     def _transform(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
+    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 

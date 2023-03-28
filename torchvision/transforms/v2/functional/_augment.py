@@ -36,14 +36,14 @@ def erase_video(
 
 
 def erase(
-    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT],
+    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT],
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
+) -> Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]:
     if not torch.jit.is_scripting():
         _log_api_usage_once(erase)
 

@@ -20,7 +20,7 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
     ) -> None:
         super().__init__()
         self.interpolation = _check_interpolation(interpolation)
@@ -35,7 +35,7 @@ class _AutoAugmentBase(Transform):
         self,
         inputs: Any,
         unsupported_types: Tuple[Type, ...] = (datapoints.BoundingBox, datapoints.Mask),
-    ) -> Tuple[Tuple[List[Any], TreeSpec, int], Union[datapoints.ImageType, datapoints.VideoType]]:
+    ) -> Tuple[Tuple[List[Any], TreeSpec, int], Union[datapoints._ImageType, datapoints._VideoType]]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
@@ -68,7 +68,7 @@ class _AutoAugmentBase(Transform):
     def _unflatten_and_insert_image_or_video(
         self,
         flat_inputs_with_spec: Tuple[List[Any], TreeSpec, int],
-        image_or_video: Union[datapoints.ImageType, datapoints.VideoType],
+        image_or_video: Union[datapoints._ImageType, datapoints._VideoType],
     ) -> Any:
         flat_inputs, spec, idx = flat_inputs_with_spec
         flat_inputs[idx] = image_or_video
@@ -76,12 +76,12 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_or_video_transform(
         self,
-        image: Union[datapoints.ImageType, datapoints.VideoType],
+        image: Union[datapoints._ImageType, datapoints._VideoType],
         transform_id: str,
         magnitude: float,
         interpolation: Union[InterpolationMode, int],
-        fill: Dict[Type, datapoints.FillTypeJIT],
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+        fill: Dict[Type, datapoints._FillTypeJIT],
+    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
         fill_ = fill[type(image)]
 
         if transform_id == "Identity":
@@ -194,7 +194,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -351,7 +351,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -404,7 +404,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -462,7 +462,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10

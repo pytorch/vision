@@ -14,7 +14,7 @@ def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int) -> t
     return torch.index_select(video, -4, indices)
 
 
-def uniform_temporal_subsample(inpt: datapoints.VideoTypeJIT, num_samples: int) -> datapoints.VideoTypeJIT:
+def uniform_temporal_subsample(inpt: datapoints._VideoTypeJIT, num_samples: int) -> datapoints._VideoTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(uniform_temporal_subsample)
 
