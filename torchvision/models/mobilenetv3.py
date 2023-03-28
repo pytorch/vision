@@ -421,15 +421,3 @@ def mobilenet_v3_small(
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "mobilenet_v3_large": MobileNet_V3_Large_Weights.IMAGENET1K_V1.url,
-        "mobilenet_v3_small": MobileNet_V3_Small_Weights.IMAGENET1K_V1.url,
-    }
-)

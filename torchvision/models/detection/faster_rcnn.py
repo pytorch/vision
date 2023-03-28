@@ -841,16 +841,3 @@ def fasterrcnn_mobilenet_v3_large_fpn(
         trainable_backbone_layers=trainable_backbone_layers,
         **kwargs,
     )
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "fasterrcnn_resnet50_fpn_coco": FasterRCNN_ResNet50_FPN_Weights.COCO_V1.url,
-        "fasterrcnn_mobilenet_v3_large_320_fpn_coco": FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1.url,
-        "fasterrcnn_mobilenet_v3_large_fpn_coco": FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1.url,
-    }
-)

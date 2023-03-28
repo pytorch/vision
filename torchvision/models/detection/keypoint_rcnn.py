@@ -470,16 +470,3 @@ def keypointrcnn_resnet50_fpn(
             overwrite_eps(model, 0.0)
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        # legacy model for BC reasons, see https://github.com/pytorch/vision/issues/1606
-        "keypointrcnn_resnet50_fpn_coco_legacy": KeypointRCNN_ResNet50_FPN_Weights.COCO_LEGACY.url,
-        "keypointrcnn_resnet50_fpn_coco": KeypointRCNN_ResNet50_FPN_Weights.COCO_V1.url,
-    }
-)

@@ -446,16 +446,3 @@ def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool
     weights = DenseNet201_Weights.verify(weights)
 
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-model_urls = _ModelURLs(
-    {
-        "densenet121": DenseNet121_Weights.IMAGENET1K_V1.url,
-        "densenet169": DenseNet169_Weights.IMAGENET1K_V1.url,
-        "densenet201": DenseNet201_Weights.IMAGENET1K_V1.url,
-        "densenet161": DenseNet161_Weights.IMAGENET1K_V1.url,
-    }
-)

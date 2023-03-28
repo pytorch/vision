@@ -509,21 +509,3 @@ def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = Tru
     weights = VGG19_BN_Weights.verify(weights)
 
     return _vgg("E", True, weights, progress, **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "vgg11": VGG11_Weights.IMAGENET1K_V1.url,
-        "vgg13": VGG13_Weights.IMAGENET1K_V1.url,
-        "vgg16": VGG16_Weights.IMAGENET1K_V1.url,
-        "vgg19": VGG19_Weights.IMAGENET1K_V1.url,
-        "vgg11_bn": VGG11_BN_Weights.IMAGENET1K_V1.url,
-        "vgg13_bn": VGG13_BN_Weights.IMAGENET1K_V1.url,
-        "vgg16_bn": VGG16_BN_Weights.IMAGENET1K_V1.url,
-        "vgg19_bn": VGG19_BN_Weights.IMAGENET1K_V1.url,
-    }
-)

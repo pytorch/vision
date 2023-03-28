@@ -271,16 +271,3 @@ def inception_v3(
             model.AuxLogits = None
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-from ..inception import model_urls  # noqa: F401
-
-
-quant_model_urls = _ModelURLs(
-    {
-        # fp32 weights ported from TensorFlow, quantized in PyTorch
-        "inception_v3_google_fbgemm": Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
-    }
-)

@@ -476,15 +476,3 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
             model.AuxLogits = None
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        # Inception v3 ported from TensorFlow
-        "inception_v3_google": Inception_V3_Weights.IMAGENET1K_V1.url,
-    }
-)

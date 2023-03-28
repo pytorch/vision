@@ -585,14 +585,3 @@ def maskrcnn_resnet50_fpn_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "maskrcnn_resnet50_fpn_coco": MaskRCNN_ResNet50_FPN_Weights.COCO_V1.url,
-    }
-)

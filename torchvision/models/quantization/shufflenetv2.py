@@ -425,16 +425,3 @@ def shufflenet_v2_x2_0(
     return _shufflenetv2(
         [4, 8, 4], [24, 244, 488, 976, 2048], weights=weights, progress=progress, quantize=quantize, **kwargs
     )
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-from ..shufflenetv2 import model_urls  # noqa: F401
-
-
-quant_model_urls = _ModelURLs(
-    {
-        "shufflenetv2_x0.5_fbgemm": ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
-        "shufflenetv2_x1.0_fbgemm": ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
-    }
-)

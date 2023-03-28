@@ -2,7 +2,6 @@ import colorsys
 import itertools
 import math
 import os
-import re
 from functools import partial
 from typing import Sequence
 
@@ -143,20 +142,6 @@ class TestRotate:
 
         center = (20, 22)
         _test_fn_on_batch(batch_tensors, F.rotate, angle=32, interpolation=NEAREST, expand=True, center=center)
-
-    def test_rotate_interpolation_type(self):
-        tensor, _ = _create_data(26, 26)
-        # assert changed type warning
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-                "Please use InterpolationMode enum."
-            ),
-        ):
-            res1 = F.rotate(tensor, 45, interpolation=2)
-            res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
-            assert_equal(res1, res2)
 
 
 class TestAffine:
@@ -364,22 +349,6 @@ class TestAffine:
 
         _test_fn_on_batch(batch_tensors, F.affine, angle=-43, translate=[-3, 4], scale=1.2, shear=[4.0, 5.0])
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_warnings(self, device):
-        tensor, pil_img = _create_data(26, 26, device=device)
-
-        # assert changed type warning
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-                "Please use InterpolationMode enum."
-            ),
-        ):
-            res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
-            res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
-            assert_equal(res1, res2)
-
 
 def _get_data_dims_and_points_for_perspective():
     # Ideally we would parametrize independently over data dims and points, but
@@ -478,23 +447,6 @@ def test_perspective_batch(device, dims_and_points, dt):
     )
 
 
-def test_perspective_interpolation_warning():
-    # assert changed type warning
-    spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
-    epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
-    tensor = torch.randint(0, 256, (3, 26, 26))
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
-        res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
-        assert_equal(res1, res2)
-
-
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize(
@@ -567,19 +519,6 @@ def test_resize(device, dt, size, max_size, interpolation):
 def test_resize_asserts(device):
 
     tensor, pil_img = _create_data(26, 36, device=device)
-
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        res1 = F.resize(tensor, size=32, interpolation=2)
-
-    res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
-    assert_equal(res1, res2)
 
     for img in (tensor, pil_img):
         exp_msg = "max_size should only be passed if size specifies the length of the smaller edge"

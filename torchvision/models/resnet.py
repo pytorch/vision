@@ -983,22 +983,3 @@ def wide_resnet101_2(
 
     _ovewrite_named_param(kwargs, "width_per_group", 64 * 2)
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "resnet18": ResNet18_Weights.IMAGENET1K_V1.url,
-        "resnet34": ResNet34_Weights.IMAGENET1K_V1.url,
-        "resnet50": ResNet50_Weights.IMAGENET1K_V1.url,
-        "resnet101": ResNet101_Weights.IMAGENET1K_V1.url,
-        "resnet152": ResNet152_Weights.IMAGENET1K_V1.url,
-        "resnext50_32x4d": ResNeXt50_32X4D_Weights.IMAGENET1K_V1.url,
-        "resnext101_32x8d": ResNeXt101_32X8D_Weights.IMAGENET1K_V1.url,
-        "wide_resnet50_2": Wide_ResNet50_2_Weights.IMAGENET1K_V1.url,
-        "wide_resnet101_2": Wide_ResNet101_2_Weights.IMAGENET1K_V1.url,
-    }
-)
