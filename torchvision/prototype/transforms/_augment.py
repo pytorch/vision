@@ -10,6 +10,7 @@ from torchvision import transforms as _transforms
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
+from torchvision.prototype.transforms.functional._geometry import _check_interpolation
 
 from ._transform import _RandomApplyTransform
 from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
@@ -203,11 +204,11 @@ class SimpleCopyPaste(Transform):
     def __init__(
         self,
         blending: bool = True,
-        resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR,
+        resize_interpolation: Union[int, InterpolationMode] = F.InterpolationMode.BILINEAR,
         antialias: Optional[bool] = None,
     ) -> None:
         super().__init__()
-        self.resize_interpolation = resize_interpolation
+        self.resize_interpolation = _check_interpolation(resize_interpolation)
         self.blending = blending
         self.antialias = antialias
 

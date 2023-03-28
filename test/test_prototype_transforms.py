@@ -1534,7 +1534,7 @@ class TestScaleJitter:
             assert int(spatial_size[1] * r_min) <= width <= int(spatial_size[1] * r_max)
 
     def test__transform(self, mocker):
-        interpolation_sentinel = mocker.MagicMock()
+        interpolation_sentinel = mocker.MagicMock(spec=InterpolationMode)
         antialias_sentinel = mocker.MagicMock()
 
         transform = transforms.ScaleJitter(
@@ -1581,7 +1581,7 @@ class TestRandomShortestSize:
             assert shorter in min_size
 
     def test__transform(self, mocker):
-        interpolation_sentinel = mocker.MagicMock()
+        interpolation_sentinel = mocker.MagicMock(spec=InterpolationMode)
         antialias_sentinel = mocker.MagicMock()
 
         transform = transforms.RandomShortestSize(
@@ -1945,7 +1945,7 @@ class TestRandomResize:
             assert min_size <= size < max_size
 
     def test__transform(self, mocker):
-        interpolation_sentinel = mocker.MagicMock()
+        interpolation_sentinel = mocker.MagicMock(spec=InterpolationMode)
         antialias_sentinel = mocker.MagicMock()
 
         transform = transforms.RandomResize(

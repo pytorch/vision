@@ -10,6 +10,7 @@ from torchvision import transforms as _transforms
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
+from torchvision.prototype.transforms.functional._geometry import _check_interpolation
 from torchvision.transforms.functional import _get_perspective_coeffs
 
 from ._transform import _RandomApplyTransform
@@ -45,7 +46,7 @@ class Resize(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
@@ -61,7 +62,7 @@ class Resize(Transform):
             )
         self.size = size
 
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.max_size = max_size
         self.antialias = antialias
 
@@ -94,7 +95,7 @@ class RandomResizedCrop(Transform):
         size: Union[int, Sequence[int]],
         scale: Tuple[float, float] = (0.08, 1.0),
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
         super().__init__()
@@ -111,7 +112,7 @@ class RandomResizedCrop(Transform):
 
         self.scale = scale
         self.ratio = ratio
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
@@ -317,14 +318,14 @@ class RandomRotation(Transform):
     def __init__(
         self,
         degrees: Union[numbers.Number, Sequence],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.expand = expand
 
         self.fill = _setup_fill_arg(fill)
@@ -359,7 +360,7 @@ class RandomAffine(Transform):
         translate: Optional[Sequence[float]] = None,
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
@@ -383,7 +384,7 @@ class RandomAffine(Transform):
         else:
             self.shear = shear
 
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = _setup_fill_arg(fill)
 
         if center is not None:
@@ -546,7 +547,7 @@ class RandomPerspective(_RandomApplyTransform):
         self,
         distortion_scale: float = 0.5,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         p: float = 0.5,
     ) -> None:
         super().__init__(p=p)
@@ -555,7 +556,7 @@ class RandomPerspective(_RandomApplyTransform):
             raise ValueError("Argument distortion_scale value should be between 0 and 1")
 
         self.distortion_scale = distortion_scale
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -608,13 +609,13 @@ class ElasticTransform(Transform):
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
         self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -760,13 +761,13 @@ class ScaleJitter(Transform):
         self,
         target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
     ):
         super().__init__()
         self.target_size = target_size
         self.scale_range = scale_range
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -788,13 +789,13 @@ class RandomShortestSize(Transform):
         self,
         min_size: Union[List[int], Tuple[int], int],
         max_size: Optional[int] = None,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
     ):
         super().__init__()
         self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
         self.max_size = max_size
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -935,13 +936,13 @@ class RandomResize(Transform):
         self,
         min_size: int,
         max_size: int,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
         super().__init__()
         self.min_size = min_size
         self.max_size = max_size
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:

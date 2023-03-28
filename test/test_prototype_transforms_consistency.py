@@ -88,6 +88,9 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs((32, 29)),
             ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
             ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+            ArgsKwargs((30, 27), interpolation=PIL.Image.NEAREST),
+            ArgsKwargs((35, 29), interpolation=PIL.Image.BILINEAR),
+            ArgsKwargs((34, 25), interpolation=PIL.Image.BICUBIC),
             NotScriptableArgsKwargs(31, max_size=32),
             ArgsKwargs([31], max_size=32),
             NotScriptableArgsKwargs(30, max_size=100),
@@ -305,6 +308,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(25, ratio=(0.5, 1.5)),
             ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
             ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+            ArgsKwargs((31, 28), interpolation=PIL.Image.NEAREST),
+            ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC),
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
@@ -352,6 +357,8 @@ CONSISTENCY_CONFIGS = [
                 ArgsKwargs(sigma=(2.5, 3.9)),
                 ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.NEAREST),
                 ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+                ArgsKwargs(interpolation=PIL.Image.NEAREST),
+                ArgsKwargs(interpolation=PIL.Image.BICUBIC),
                 ArgsKwargs(fill=1),
             ],
             # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
@@ -386,6 +393,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(degrees=0.0, shear=(4, 5, 4, 13)),
             ArgsKwargs(degrees=(-20.0, 10.0), translate=(0.4, 0.6), scale=(0.3, 0.8), shear=(4, 5, 4, 13)),
             ArgsKwargs(degrees=30.0, interpolation=prototype_transforms.InterpolationMode.NEAREST),
+            ArgsKwargs(degrees=30.0, interpolation=PIL.Image.NEAREST),
             ArgsKwargs(degrees=30.0, fill=1),
             ArgsKwargs(degrees=30.0, fill=(2, 3, 4)),
             ArgsKwargs(degrees=30.0, center=(0, 0)),
@@ -420,6 +428,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=1),
             ArgsKwargs(p=1, distortion_scale=0.3),
             ArgsKwargs(p=1, distortion_scale=0.2, interpolation=prototype_transforms.InterpolationMode.NEAREST),
+            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=PIL.Image.NEAREST),
             ArgsKwargs(p=1, distortion_scale=0.1, fill=1),
             ArgsKwargs(p=1, distortion_scale=0.4, fill=(1, 2, 3)),
         ],
@@ -432,6 +441,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(degrees=30.0),
             ArgsKwargs(degrees=(-20.0, 10.0)),
             ArgsKwargs(degrees=30.0, interpolation=prototype_transforms.InterpolationMode.BILINEAR),
+            ArgsKwargs(degrees=30.0, interpolation=PIL.Image.BILINEAR),
             ArgsKwargs(degrees=30.0, expand=True),
             ArgsKwargs(degrees=30.0, center=(0, 0)),
             ArgsKwargs(degrees=30.0, fill=1),
@@ -851,7 +861,11 @@ class TestAATransforms:
     )
     @pytest.mark.parametrize(
         "interpolation",
-        [prototype_transforms.InterpolationMode.NEAREST, prototype_transforms.InterpolationMode.BILINEAR],
+        [
+            prototype_transforms.InterpolationMode.NEAREST,
+            prototype_transforms.InterpolationMode.BILINEAR,
+            PIL.Image.NEAREST,
+        ],
     )
     def test_randaug(self, inpt, interpolation, mocker):
         t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1)
@@ -889,7 +903,11 @@ class TestAATransforms:
     )
     @pytest.mark.parametrize(
         "interpolation",
-        [prototype_transforms.InterpolationMode.NEAREST, prototype_transforms.InterpolationMode.BILINEAR],
+        [
+            prototype_transforms.InterpolationMode.NEAREST,
+            prototype_transforms.InterpolationMode.BILINEAR,
+            PIL.Image.NEAREST,
+        ],
     )
     def test_trivial_aug(self, inpt, interpolation, mocker):
         t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation)
@@ -937,7 +955,11 @@ class TestAATransforms:
     )
     @pytest.mark.parametrize(
         "interpolation",
-        [prototype_transforms.InterpolationMode.NEAREST, prototype_transforms.InterpolationMode.BILINEAR],
+        [
+            prototype_transforms.InterpolationMode.NEAREST,
+            prototype_transforms.InterpolationMode.BILINEAR,
+            PIL.Image.NEAREST,
+        ],
     )
     def test_augmix(self, inpt, interpolation, mocker):
         t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
@@ -986,7 +1008,11 @@ class TestAATransforms:
     )
     @pytest.mark.parametrize(
         "interpolation",
-        [prototype_transforms.InterpolationMode.NEAREST, prototype_transforms.InterpolationMode.BILINEAR],
+        [
+            prototype_transforms.InterpolationMode.NEAREST,
+            prototype_transforms.InterpolationMode.BILINEAR,
+            PIL.Image.NEAREST,
+        ],
     )
     def test_aa(self, inpt, interpolation):
         aa_policy = legacy_transforms.AutoAugmentPolicy("imagenet")
@@ -1264,13 +1290,13 @@ class TestRefSegTransforms:
         (legacy_F.convert_image_dtype, {}),
         (legacy_F.to_pil_image, {}),
         (legacy_F.normalize, {}),
-        (legacy_F.resize, {}),
+        (legacy_F.resize, {"interpolation"}),
         (legacy_F.pad, {"padding", "fill"}),
         (legacy_F.crop, {}),
         (legacy_F.center_crop, {}),
-        (legacy_F.resized_crop, {}),
+        (legacy_F.resized_crop, {"interpolation"}),
         (legacy_F.hflip, {}),
-        (legacy_F.perspective, {"startpoints", "endpoints", "fill"}),
+        (legacy_F.perspective, {"startpoints", "endpoints", "fill", "interpolation"}),
         (legacy_F.vflip, {}),
         (legacy_F.five_crop, {}),
         (legacy_F.ten_crop, {}),
@@ -1279,8 +1305,8 @@ class TestRefSegTransforms:
         (legacy_F.adjust_saturation, {}),
         (legacy_F.adjust_hue, {}),
         (legacy_F.adjust_gamma, {}),
-        (legacy_F.rotate, {"center", "fill"}),
-        (legacy_F.affine, {"angle", "translate", "center", "fill"}),
+        (legacy_F.rotate, {"center", "fill", "interpolation"}),
+        (legacy_F.affine, {"angle", "translate", "center", "fill", "interpolation"}),
         (legacy_F.to_grayscale, {}),
         (legacy_F.rgb_to_grayscale, {}),
         (legacy_F.to_tensor, {}),
@@ -1292,7 +1318,7 @@ class TestRefSegTransforms:
         (legacy_F.adjust_sharpness, {}),
         (legacy_F.autocontrast, {}),
         (legacy_F.equalize, {}),
-        (legacy_F.elastic_transform, {"fill"}),
+        (legacy_F.elastic_transform, {"fill", "interpolation"}),
     ],
 )
 def test_dispatcher_signature_consistency(legacy_dispatcher, name_only_params):
