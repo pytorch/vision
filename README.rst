@@ -11,7 +11,7 @@ torchvision
 The torchvision package consists of popular datasets, model architectures, and common image transformations for computer vision.
 
 
-Installation
+Installation test
 ============
 
 We recommend Anaconda as Python package management system. Please refer to `pytorch.org <https://pytorch.org/>`_
