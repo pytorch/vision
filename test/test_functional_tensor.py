@@ -524,7 +524,7 @@ def test_resize(device, dt, size, max_size, interpolation):
             resized_tensor_f = resized_tensor_f.to(torch.float)
 
         # Pay attention to high tolerance for MAE
-        _assert_approx_equal_tensor_to_pil(resized_tensor_f, resized_pil_img, tol=8.0)
+        _assert_approx_equal_tensor_to_pil(resized_tensor_f, resized_pil_img, tol=3.0)
 
     if isinstance(size, int):
         script_size = [size]
