@@ -14,7 +14,7 @@ import torch
 import torch.testing
 from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
-from torch.testing._comparison import assert_equal as _assert_equal, BooleanPair, NonePair, NumberPair, TensorLikePair
+from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
@@ -73,7 +73,7 @@ class ImagePair(TensorLikePair):
             actual, expected = self._promote_for_comparison(actual, expected)
             mae = float(torch.abs(actual - expected).float().mean())
             if mae > self.atol:
-                raise self._make_error_meta(
+                self._fail(
                     AssertionError,
                     f"The MAE of the images is {mae}, but only {self.atol} is allowed.",
                 )
@@ -99,7 +99,7 @@ def assert_close(
     """Superset of :func:`torch.testing.assert_close` with support for PIL vs. tensor image comparison"""
     __tracebackhide__ = True
 
-    _assert_equal(
+    error_metas = not_close_error_metas(
         actual,
         expected,
         pair_types=(
@@ -117,9 +117,11 @@ def assert_close(
         check_dtype=check_dtype,
         check_layout=check_layout,
         check_stride=check_stride,
-        msg=msg,
         **kwargs,
     )
+
+    if error_metas:
+        raise error_metas[0].to_error(msg)
 
 
 assert_equal = functools.partial(assert_close, rtol=0, atol=0)
