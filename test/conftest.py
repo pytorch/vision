@@ -3,7 +3,7 @@ import random
 import numpy as np
 import pytest
 import torch
-from common_utils import CIRCLECI_GPU_NO_CUDA_MSG, CUDA_NOT_AVAILABLE_MSG, IN_CIRCLE_CI, IN_FBCODE, IN_RE_WORKER
+from common_utils import CUDA_NOT_AVAILABLE_MSG, IN_FBCODE, IN_OSS_CI, IN_RE_WORKER, OSS_CI_GPU_NO_CUDA_MSG
 
 
 def pytest_configure(config):
@@ -18,7 +18,7 @@ def pytest_collection_modifyitems(items):
     #
     # Typically, here, we try to optimize CI time. In particular, the GPU CI instances don't need to run the
     # tests that don't need CUDA, because those tests are extensively tested in the CPU CI instances already.
-    # This is true for both CircleCI and the fbcode internal CI.
+    # This is true for both OSS CI and the fbcode internal CI.
     # In the fbcode CI, we have an additional constraint: we try to avoid skipping tests. So instead of relying on
     # pytest.mark.skip, in fbcode we literally just remove those tests from the `items` list, and it's as if
     # these tests never existed.
@@ -49,12 +49,12 @@ def pytest_collection_modifyitems(items):
                 # TODO: something more robust would be to do that only in a sandcastle instance,
                 # so that we can still see the test being skipped when testing locally from a devvm
                 continue
-        elif IN_CIRCLE_CI:
+        elif IN_OSS_CI:
             # Here we're not in fbcode, so we can safely collect and skip tests.
             if not needs_cuda and torch.cuda.is_available():
-                # Similar to what happens in RE workers: we don't need the CircleCI GPU machines
+                # Similar to what happens in RE workers: we don't need the OSS CI GPU machines
                 # to run the CPU-only tests.
-                item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
+                item.add_marker(pytest.mark.skip(reason=OSS_CI_GPU_NO_CUDA_MSG))
 
         if item.get_closest_marker("dont_collect") is not None:
             # currently, this is only used for some tests we're sure we don't want to run on fbcode
