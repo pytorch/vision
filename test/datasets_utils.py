@@ -584,8 +584,8 @@ class DatasetTestCase(unittest.TestCase):
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
-        from torchvision.datapoints import wrap_dataset_for_transforms_v2
         from torchvision.datapoints._datapoint import Datapoint
+        from torchvision.datasets import wrap_dataset_for_transforms_v2
 
         try:
             with self.create_dataset(config) as (dataset, _):

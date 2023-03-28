@@ -41,7 +41,7 @@ jobs:
         # Create Conda Env
         conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
         conda activate /work/ci_env
-        
+
         # Install PyTorch, Torchvision, and testing libraries
         set -ex
         conda install \
@@ -55,3 +55,9 @@ jobs:
         # Run Tests
         python3 -m torch.utils.collect_env
         python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+
+        # Specific test for warnings on "from torchvision.datasets import wrap_dataset_for_transforms_v2"
+        # We keep them separate to avoid any side effects due to warnings / imports.
+        # TODO: Remove this and add proper tests (possibly using a sub-process solution as described
+        # in https://github.com/pytorch/vision/pull/7269).
+        python3 -m pytest -v test/check_v2_dataset_warnings.py

@@ -8,6 +8,7 @@ import os
 import pathlib
 import pickle
 import random
+import re
 import shutil
 import string
 import unittest
@@ -3307,6 +3308,48 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
+
+
+class TestDatasetWrapper:
+    def test_unknown_type(self):
+        unknown_object = object()
+        with pytest.raises(
+            TypeError, match=re.escape("is meant for subclasses of `torchvision.datasets.VisionDataset`")
+        ):
+            datasets.wrap_dataset_for_transforms_v2(unknown_object)
+
+    def test_unknown_dataset(self):
+        class MyVisionDataset(datasets.VisionDataset):
+            pass
+
+        dataset = MyVisionDataset("root")
+
+        with pytest.raises(TypeError, match="No wrapper exist"):
+            datasets.wrap_dataset_for_transforms_v2(dataset)
+
+    def test_missing_wrapper(self):
+        dataset = datasets.FakeData()
+
+        with pytest.raises(TypeError, match="please open an issue"):
+            datasets.wrap_dataset_for_transforms_v2(dataset)
+
+    def test_subclass(self, mocker):
+        from torchvision import datapoints
+
+        sentinel = object()
+        mocker.patch.dict(
+            datapoints._dataset_wrapper.WRAPPER_FACTORIES,
+            clear=False,
+            values={datasets.FakeData: lambda dataset: lambda idx, sample: sentinel},
+        )
+
+        class MyFakeData(datasets.FakeData):
+            pass
+
+        dataset = MyFakeData()
+        wrapped_dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
+
+        assert wrapped_dataset[0] is sentinel
 
 
 if __name__ == "__main__":
