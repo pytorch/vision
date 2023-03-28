@@ -34,7 +34,7 @@ class TestONNXExporter:
         opset_version: Optional[int] = None,
     ):
         if opset_version is None:
-            opset_version = _register_onnx_ops.base_onnx_opset_version
+            opset_version = _register_onnx_ops.BASE_ONNX_OPSET_VERSION
 
         model.eval()
 
@@ -139,7 +139,7 @@ class TestONNXExporter:
         self.run_model(model, [(x, single_roi)])
 
     def test_roi_align_aligned(self):
-        supported_onnx_version = _register_onnx_ops._onnx_opset_version_16
+        supported_onnx_version = _register_onnx_ops._ONNX_OPSET_VERSION_16
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 1.5, 1.5, 3, 3]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2, aligned=True)
@@ -166,7 +166,7 @@ class TestONNXExporter:
         self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
     def test_roi_align_malformed_boxes(self):
-        supported_onnx_version = _register_onnx_ops._onnx_opset_version_16
+        supported_onnx_version = _register_onnx_ops._ONNX_OPSET_VERSION_16
         x = torch.randn(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 2, 0.3, 1.5, 1.5]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 1, aligned=True)
