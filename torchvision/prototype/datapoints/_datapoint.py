@@ -29,26 +29,9 @@ class Datapoint(torch.Tensor):
             requires_grad = data.requires_grad if isinstance(data, torch.Tensor) else False
         return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
-    # FIXME: this is just here for BC with the prototype datasets. Some datasets use the Datapoint directly to have a
-    #  a no-op input for the prototype transforms. For this use case, we can't use plain tensors, since they will be
-    #  interpreted as images. We should decide if we want a public no-op datapoint like `GenericDatapoint` or make this
-    #  one public again.
-    def __new__(
-        cls,
-        data: Any,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: Optional[bool] = None,
-    ) -> Datapoint:
-        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return tensor.as_subclass(Datapoint)
-
     @classmethod
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
-        # FIXME: this is just here for BC with the prototype datasets. See __new__ for details. If that is resolved,
-        #  this method should be made abstract
-        # raise NotImplementedError
-        return tensor.as_subclass(cls)
+        raise NotImplementedError
 
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),

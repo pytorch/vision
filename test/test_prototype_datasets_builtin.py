@@ -21,6 +21,7 @@ from torchdata.datapipes.iter import ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints, datasets, transforms
+from torchvision.prototype.datasets.utils import EncodedImage
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
 
@@ -136,18 +137,21 @@ class TestCommon:
             raise AssertionError(make_msg_and_close("The following streams were not closed after a full iteration:"))
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_no_simple_tensors(self, dataset_mock, config):
+    def test_no_unaccompanied_simple_tensors(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
+        sample = next_consume(iter(dataset))
 
         simple_tensors = {
-            key
-            for key, value in next_consume(iter(dataset)).items()
-            if torchvision.prototype.transforms.utils.is_simple_tensor(value)
+            key for key, value in sample.items() if torchvision.prototype.transforms.utils.is_simple_tensor(value)
         }
-        if simple_tensors:
+
+        if simple_tensors and not any(
+            isinstance(item, (datapoints.Image, datapoints.Video, EncodedImage)) for item in sample.values()
+        ):
             raise AssertionError(
                 f"The values of key(s) "
-                f"{sequence_to_str(sorted(simple_tensors), separate_last='and ')} contained simple tensors."
+                f"{sequence_to_str(sorted(simple_tensors), separate_last='and ')} contained simple tensors, "
+                f"but didn't find any (encoded) image or video."
             )
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
