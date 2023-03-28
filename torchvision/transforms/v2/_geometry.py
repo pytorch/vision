@@ -721,8 +721,6 @@ class RandomIoUCrop(Transform):
                 if left == right or top == bottom:
                     continue
 
-                # FIXME: I think we can stop here?
-
                 # check for any valid boxes with centers within the crop area
                 xyxy_bboxes = F.convert_format_bounding_box(
                     bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
@@ -745,23 +743,16 @@ class RandomIoUCrop(Transform):
                 return dict(top=top, left=left, height=new_h, width=new_w, is_within_crop_area=is_within_crop_area)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # FIXME: refactor this to not remove anything
 
         if len(params) < 1:
             return inpt
 
-        is_within_crop_area = params["is_within_crop_area"]
-
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
         if isinstance(output, datapoints.BoundingBox):
-            bboxes = output[is_within_crop_area]
-            bboxes = F.clamp_bounding_box(bboxes, output.format, output.spatial_size)
-            output = datapoints.BoundingBox.wrap_like(output, bboxes)
-        elif isinstance(output, datapoints.Mask):
-            # apply is_within_crop_area if mask is one-hot encoded
-            masks = output[is_within_crop_area]
-            output = datapoints.Mask.wrap_like(output, masks)
+            # We "mark" the invalid boxes as degenreate, and they can be
+            # removed by a later call to SanitizeBoundingBoxes()
+            output[~params["is_within_crop_area"]] = 0
 
         return output
 

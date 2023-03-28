@@ -1090,13 +1090,16 @@ class TestRefDetTransforms:
         "t_ref, t, data_kwargs",
         [
             (det_transforms.RandomHorizontalFlip(p=1.0), v2_transforms.RandomHorizontalFlip(p=1.0), {}),
-            # FIXME: make
-            #  v2_transforms.Compose([
-            #      v2_transforms.RandomIoUCrop(),
-            #      v2_transforms.SanitizeBoundingBoxes()
-            #  ])
-            #  work
-            # (det_transforms.RandomIoUCrop(), v2_transforms.RandomIoUCrop(), {"with_mask": False}),
+            (
+                det_transforms.RandomIoUCrop(),
+                v2_transforms.Compose(
+                    [
+                        v2_transforms.RandomIoUCrop(),
+                        v2_transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
+                    ]
+                ),
+                {"with_mask": False},
+            ),
             (det_transforms.RandomZoomOut(), v2_transforms.RandomZoomOut(), {"with_mask": False}),
             (det_transforms.ScaleJitter((1024, 1024)), v2_transforms.ScaleJitter((1024, 1024)), {}),
             (

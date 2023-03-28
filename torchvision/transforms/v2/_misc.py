@@ -265,14 +265,14 @@ class SanitizeBoundingBoxes(Transform):
             ),
         )
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
-        mask = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
+        valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
         image_h, image_w = boxes.spatial_size
-        mask &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
-        mask &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
+        valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
+        valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
-        params = dict(mask=mask, labels=labels)
+        params = dict(valid=valid, labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
             # _transform() will only care about BoundingBoxes and the labels
@@ -284,7 +284,9 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
 
-        if (inpt is not None and inpt is params["labels"]) or isinstance(inpt, datapoints.BoundingBox):
-            inpt = inpt[params["mask"]]
+        if (inpt is not None and inpt is params["labels"]) or isinstance(
+            inpt, (datapoints.BoundingBox, datapoints.Mask)
+        ):
+            inpt = inpt[params["valid"]]
 
         return inpt
