@@ -1,5 +1,6 @@
 import itertools
 import pathlib
+import random
 import re
 import warnings
 from collections import defaultdict
@@ -2355,3 +2356,118 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
 
     out["label"] = torch.tensor(out["label"])
     assert out["boxes"].shape[0] == out["masks"].shape[0] == out["label"].shape[0] == num_boxes
+
+
+@pytest.mark.parametrize("min_size", (1, 10))
+@pytest.mark.parametrize(
+    "labels_getter", ("default", "labels", lambda inputs: inputs["labels"], None, lambda inputs: None)
+)
+def test_sanitize_bounding_boxes(min_size, labels_getter):
+    H, W = 256, 128
+
+    boxes_and_validity = [
+        ([0, 1, 10, 1], False),  # Y1 == Y2
+        ([0, 1, 0, 20], False),  # X1 == X2
+        ([0, 0, min_size - 1, 10], False),  # H < min_size
+        ([0, 0, 10, min_size - 1], False),  # W < min_size
+        ([0, 0, 10, H + 1], False),  # Y2 > H
+        ([0, 0, W + 1, 10], False),  # X2 > W
+        ([-1, 1, 10, 20], False),  # any < 0
+        ([0, 0, -1, 20], False),  # any < 0
+        ([0, 0, -10, -1], False),  # any < 0
+        ([0, 0, min_size, 10], True),  # H < min_size
+        ([0, 0, 10, min_size], True),  # W < min_size
+        ([0, 0, W, H], True),  # TODO: Is that actually OK?? Should it be -1?
+        ([1, 1, 30, 20], True),
+        ([0, 0, 10, 10], True),
+        ([1, 1, 30, 20], True),
+    ]
+
+    random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
+    boxes, is_valid_mask = zip(*boxes_and_validity)
+    valid_indices = [i for (i, is_valid) in enumerate(is_valid_mask) if is_valid]
+
+    boxes = torch.tensor(boxes)
+    labels = torch.arange(boxes.shape[-2])
+
+    boxes = datapoints.BoundingBox(
+        boxes,
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=(H, W),
+    )
+
+    sample = {
+        "image": torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8),
+        "labels": labels,
+        "boxes": boxes,
+        "whatever": torch.rand(10),
+        "None": None,
+    }
+
+    out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
+
+    assert out["image"] is sample["image"]
+    assert out["whatever"] is sample["whatever"]
+
+    if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
+        assert out["labels"] is sample["labels"]
+    else:
+        assert isinstance(out["labels"], torch.Tensor)
+        assert out["boxes"].shape[:-1] == out["labels"].shape
+        # This works because we conveniently set labels to arange(num_boxes)
+        assert out["labels"].tolist() == valid_indices
+
+
+@pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
+def test_sanitize_bounding_boxes_default_heuristic(key):
+    labels = torch.arange(10)
+    d = {key: labels}
+    assert transforms.SanitizeBoundingBoxes._find_labels_default_heuristic(d) is labels
+
+    if key.lower() != "labels":
+        # If "labels" is in the dict (case-insensitive),
+        # it takes precedence over other keys which would otherwise be a match
+        d = {key: "something_else", "labels": labels}
+        assert transforms.SanitizeBoundingBoxes._find_labels_default_heuristic(d) is labels
+
+
+def test_sanitize_bounding_boxes_errors():
+
+    good_bbox = datapoints.BoundingBox(
+        [[0, 0, 10, 10]],
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=(20, 20),
+    )
+
+    with pytest.raises(ValueError, match="min_size must be >= 1"):
+        transforms.SanitizeBoundingBoxes(min_size=0)
+    with pytest.raises(ValueError, match="labels_getter should either be a str"):
+        transforms.SanitizeBoundingBoxes(labels_getter=12)
+
+    with pytest.raises(ValueError, match="Could not infer where the labels are"):
+        bad_labels_key = {"bbox": good_bbox, "BAD_KEY": torch.arange(good_bbox.shape[0])}
+        transforms.SanitizeBoundingBoxes()(bad_labels_key)
+
+    with pytest.raises(ValueError, match="If labels_getter is a str or 'default'"):
+        not_a_dict = (good_bbox, torch.arange(good_bbox.shape[0]))
+        transforms.SanitizeBoundingBoxes()(not_a_dict)
+
+    with pytest.raises(ValueError, match="must be a tensor"):
+        not_a_tensor = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0]).tolist()}
+        transforms.SanitizeBoundingBoxes()(not_a_tensor)
+
+    with pytest.raises(ValueError, match="Number of boxes"):
+        different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
+        transforms.SanitizeBoundingBoxes()(different_sizes)
+
+    with pytest.raises(ValueError, match="boxes must be of shape"):
+        bad_bbox = datapoints.BoundingBox(  # batch with 2 elements
+            [
+                [[0, 0, 10, 10]],
+                [[0, 0, 10, 10]],
+            ],
+            format=datapoints.BoundingBoxFormat.XYXY,
+            spatial_size=(20, 20),
+        )
+        different_sizes = {"bbox": bad_bbox, "labels": torch.arange(bad_bbox.shape[0])}
+        transforms.SanitizeBoundingBoxes()(different_sizes)
