@@ -23,7 +23,8 @@ requirements:
 
   run:
     - python
-    - defaults::numpy >=1.11
+    - defaults::numpy >=1.11 # [py <= 310]
+    - numpy >=1.23.5 # [py >= 311]
     - requests
     - libpng
     - ffmpeg >=4.2  # [not win]
