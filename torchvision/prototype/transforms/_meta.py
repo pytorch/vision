@@ -19,12 +19,7 @@ class ConvertBoundingBoxFormat(Transform):
         self.format = format
 
     def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
-        # We need to unwrap here to avoid unnecessary `__torch_function__` calls,
-        # since `convert_format_bounding_box` does not have a dispatcher function that would do that for us
-        output = F.convert_format_bounding_box(
-            inpt.as_subclass(torch.Tensor), old_format=inpt.format, new_format=params["format"]
-        )
-        return datapoints.BoundingBox.wrap_like(inpt, output, format=params["format"])
+        return F.convert_format_bounding_box(inpt, new_format=self.format)  # type: ignore[return-value]
 
 
 class ConvertDtype(Transform):

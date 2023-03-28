@@ -237,6 +237,13 @@ class TensorLoader:
     def load(self, device):
         return self.fn(self.shape, self.dtype, device)
 
+    def unwrap(self):
+        return TensorLoader(
+            fn=lambda shape, dtype, device: self.fn(shape, dtype, device).as_subclass(torch.Tensor),
+            shape=self.shape,
+            dtype=self.dtype,
+        )
+
 
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):

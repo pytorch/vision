@@ -572,7 +572,7 @@ class TestClampBoundingBox:
     def test_simple_tensor_insufficient_metadata(self, metadata):
         simple_tensor = next(make_bounding_boxes()).as_subclass(torch.Tensor)
 
-        with pytest.raises(ValueError, match="simple tensor"):
+        with pytest.raises(ValueError, match=re.escape("`format` and `spatial_size` has to be passed")):
             F.clamp_bounding_box(simple_tensor, **metadata)
 
     @pytest.mark.parametrize(
@@ -586,8 +586,35 @@ class TestClampBoundingBox:
     def test_datapoint_explicit_metadata(self, metadata):
         datapoint = next(make_bounding_boxes())
 
-        with pytest.raises(ValueError, match="bounding box datapoint"):
+        with pytest.raises(ValueError, match=re.escape("`format` and `spatial_size` must not be passed")):
             F.clamp_bounding_box(datapoint, **metadata)
+
+
+class TestConvertFormatBoundingBox:
+    @pytest.mark.parametrize(
+        ("inpt", "old_format"),
+        [
+            (next(make_bounding_boxes()), None),
+            (next(make_bounding_boxes()).as_subclass(torch.Tensor), datapoints.BoundingBoxFormat.XYXY),
+        ],
+    )
+    def test_missing_new_format(self, inpt, old_format):
+        with pytest.raises(TypeError, match=re.escape("missing 1 required argument: 'new_format'")):
+            F.convert_format_bounding_box(inpt, old_format)
+
+    def test_simple_tensor_insufficient_metadata(self):
+        simple_tensor = next(make_bounding_boxes()).as_subclass(torch.Tensor)
+
+        with pytest.raises(ValueError, match=re.escape("`old_format` has to be passed")):
+            F.convert_format_bounding_box(simple_tensor, new_format=datapoints.BoundingBoxFormat.CXCYWH)
+
+    def test_datapoint_explicit_metadata(self):
+        datapoint = next(make_bounding_boxes())
+
+        with pytest.raises(ValueError, match=re.escape("`old_format` must not be passed")):
+            F.convert_format_bounding_box(
+                datapoint, old_format=datapoint.format, new_format=datapoints.BoundingBoxFormat.CXCYWH
+            )
 
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in

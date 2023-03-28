@@ -26,7 +26,6 @@ from prototype_common_utils import (
     make_video_loader,
     make_video_loaders,
     mark_framework_limitation,
-    TensorLoader,
     TestMark,
 )
 from torch.utils._pytree import tree_map
@@ -660,7 +659,8 @@ KERNEL_INFOS.extend(
 def sample_inputs_convert_format_bounding_box():
     formats = list(datapoints.BoundingBoxFormat)
     for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
-        yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
+        yield ArgsKwargs(bounding_box_loader, new_format=new_format)
+        yield ArgsKwargs(bounding_box_loader.unwrap(), old_format=bounding_box_loader.format, new_format=new_format)
 
 
 def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
@@ -671,8 +671,14 @@ def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
 
 def reference_inputs_convert_format_bounding_box():
     for args_kwargs in sample_inputs_convert_format_bounding_box():
-        if len(args_kwargs.args[0].shape) == 2:
-            yield args_kwargs
+        if len(args_kwargs.args[0].shape) != 2:
+            continue
+
+        (loader, *other_args), kwargs = args_kwargs
+        if isinstance(loader, BoundingBoxLoader):
+            kwargs["old_format"] = loader.format
+            loader = loader.unwrap()
+        yield ArgsKwargs(loader, *other_args, **kwargs)
 
 
 KERNEL_INFOS.append(
@@ -682,6 +688,18 @@ KERNEL_INFOS.append(
         reference_fn=reference_convert_format_bounding_box,
         reference_inputs_fn=reference_inputs_convert_format_bounding_box,
         logs_usage=True,
+        test_marks=[
+            mark_framework_limitation(
+                ("TestKernels", "test_scripted_vs_eager"),
+                reason=(
+                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
+                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
+                    "`spatial_size` was passed"
+                ),
+                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
+                and arg_kwargs.kwargs.get("old_format") is None,
+            )
+        ],
     ),
 )
 
@@ -2014,13 +2032,10 @@ def sample_inputs_clamp_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         yield ArgsKwargs(bounding_box_loader)
 
-        simple_tensor_loader = TensorLoader(
-            fn=lambda shape, dtype, device: bounding_box_loader.fn(shape, dtype, device).as_subclass(torch.Tensor),
-            shape=bounding_box_loader.shape,
-            dtype=bounding_box_loader.dtype,
-        )
         yield ArgsKwargs(
-            simple_tensor_loader, format=bounding_box_loader.format, spatial_size=bounding_box_loader.spatial_size
+            bounding_box_loader.unwrap(),
+            format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
         )
 
 
