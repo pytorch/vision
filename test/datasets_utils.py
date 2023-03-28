@@ -596,7 +596,7 @@ class DatasetTestCase(unittest.TestCase):
                 wrapped_sample = wrapped_dataset[0]
                 assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
         except TypeError as error:
-            if str(error).startswith(f"No wrapper exist for dataset class {type(dataset).__name__}"):
+            if str(error).startswith(f"No wrapper exists for dataset class {type(dataset).__name__}"):
                 return
             raise error
         except RuntimeError as error:
