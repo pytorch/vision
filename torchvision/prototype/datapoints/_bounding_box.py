@@ -118,7 +118,7 @@ class BoundingBox(Datapoint):
     def pad(
         self,
         padding: Union[int, Sequence[int]],
-        fill: FillTypeJIT = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> BoundingBox:
         output, spatial_size = self._F.pad_bounding_box(

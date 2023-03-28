@@ -3,7 +3,7 @@ import collections.abc
 import pytest
 import torchvision.prototype.transforms.functional as F
 from prototype_common_utils import InfoBase, TestMark
-from prototype_transforms_kernel_infos import KERNEL_INFOS
+from prototype_transforms_kernel_infos import KERNEL_INFOS, pad_xfail_jit_fill_condition
 from torchvision.prototype import datapoints
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
@@ -96,25 +96,6 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
     )
 
 
-def xfail_jit_tuple_instead_of_list(name, *, reason=None):
-    return xfail_jit(
-        reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
-        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
-    )
-
-
-def is_list_of_ints(args_kwargs):
-    fill = args_kwargs.kwargs.get("fill")
-    return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
-
-
-def xfail_jit_list_of_ints(name, *, reason=None):
-    return xfail_jit(
-        reason or f"Passing a list of integers for `{name}` is not supported when scripting",
-        condition=is_list_of_ints,
-    )
-
-
 skip_dispatch_datapoint = TestMark(
     ("TestDispatchers", "test_dispatch_datapoint"),
     pytest.mark.skip(reason="Dispatcher doesn't support arbitrary datapoint dispatch."),
@@ -130,6 +111,13 @@ multi_crop_skips = [
 multi_crop_skips.append(skip_dispatch_datapoint)
 
 
+def xfails_pil(reason, *, condition=None):
+    return [
+        TestMark(("TestDispatchers", test_name), pytest.mark.xfail(reason=reason), condition=condition)
+        for test_name in ["test_dispatch_pil", "test_pil_output_type"]
+    ]
+
+
 def fill_sequence_needs_broadcast(args_kwargs):
     (image_loader, *_), kwargs = args_kwargs
     try:
@@ -143,11 +131,8 @@ def fill_sequence_needs_broadcast(args_kwargs):
     return image_loader.num_channels > 1
 
 
-xfail_dispatch_pil_if_fill_sequence_needs_broadcast = TestMark(
-    ("TestDispatchers", "test_dispatch_pil"),
-    pytest.mark.xfail(
-        reason="PIL kernel doesn't support sequences of length 1 for `fill` if the number of color channels is larger."
-    ),
+xfails_pil_if_fill_sequence_needs_broadcast = xfails_pil(
+    "PIL kernel doesn't support sequences of length 1 for `fill` if the number of color channels is larger.",
     condition=fill_sequence_needs_broadcast,
 )
 
@@ -186,11 +171,9 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.affine_image_pil),
         test_marks=[
-            xfail_dispatch_pil_if_fill_sequence_needs_broadcast,
+            *xfails_pil_if_fill_sequence_needs_broadcast,
             xfail_jit_python_scalar_arg("shear"),
-            xfail_jit_tuple_instead_of_list("fill"),
-            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-            xfail_jit_list_of_ints("fill"),
+            xfail_jit_python_scalar_arg("fill"),
         ],
     ),
     DispatcherInfo(
@@ -213,9 +196,8 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.rotate_image_pil),
         test_marks=[
-            xfail_jit_tuple_instead_of_list("fill"),
-            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-            xfail_jit_list_of_ints("fill"),
+            xfail_jit_python_scalar_arg("fill"),
+            *xfails_pil_if_fill_sequence_needs_broadcast,
         ],
     ),
     DispatcherInfo(
@@ -248,21 +230,16 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.pad_image_pil, kernel_name="pad_image_pil"),
         test_marks=[
-            TestMark(
-                ("TestDispatchers", "test_dispatch_pil"),
-                pytest.mark.xfail(
-                    reason=(
-                        "PIL kernel doesn't support sequences of length 1 for argument `fill` and "
-                        "`padding_mode='constant'`, if the number of color channels is larger."
-                    )
+            *xfails_pil(
+                reason=(
+                    "PIL kernel doesn't support sequences of length 1 for argument `fill` and "
+                    "`padding_mode='constant'`, if the number of color channels is larger."
                 ),
                 condition=lambda args_kwargs: fill_sequence_needs_broadcast(args_kwargs)
                 and args_kwargs.kwargs.get("padding_mode", "constant") == "constant",
             ),
-            xfail_jit_tuple_instead_of_list("padding"),
-            xfail_jit_tuple_instead_of_list("fill"),
-            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-            xfail_jit_list_of_ints("fill"),
+            xfail_jit("F.pad only supports vector fills for list of floats", condition=pad_xfail_jit_fill_condition),
+            xfail_jit_python_scalar_arg("padding"),
         ],
     ),
     DispatcherInfo(
@@ -275,7 +252,8 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.perspective_image_pil),
         test_marks=[
-            xfail_dispatch_pil_if_fill_sequence_needs_broadcast,
+            *xfails_pil_if_fill_sequence_needs_broadcast,
+            xfail_jit_python_scalar_arg("fill"),
         ],
     ),
     DispatcherInfo(
@@ -287,6 +265,7 @@ DISPATCHER_INFOS = [
             datapoints.Mask: F.elastic_mask,
         },
         pil_kernel_info=PILKernelInfo(F.elastic_image_pil),
+        test_marks=[xfail_jit_python_scalar_arg("fill")],
     ),
     DispatcherInfo(
         F.center_crop,
