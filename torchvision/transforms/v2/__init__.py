@@ -45,3 +45,10 @@ from ._temporal import UniformTemporalSubsample
 from ._type_conversion import PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
 from ._deprecated import ToTensor  # usort: skip
+
+from torchvision import _BETA_TRANSFORMS_WARNING, _WARN_ABOUT_BETA_TRANSFORMS
+
+if _WARN_ABOUT_BETA_TRANSFORMS:
+    import warnings
+
+    warnings.warn(_BETA_TRANSFORMS_WARNING)

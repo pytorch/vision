@@ -3,7 +3,11 @@ import random
 import numpy as np
 import pytest
 import torch
+import torchvision
 from common_utils import CUDA_NOT_AVAILABLE_MSG, IN_FBCODE, IN_OSS_CI, IN_RE_WORKER, OSS_CI_GPU_NO_CUDA_MSG
+
+
+torchvision.disable_beta_transforms_warning()
 
 
 def pytest_configure(config):
