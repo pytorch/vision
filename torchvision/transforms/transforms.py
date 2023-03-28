@@ -1078,6 +1078,11 @@ class LinearTransformation(torch.nn.Module):
                 f"Input tensors should be on the same device. Got {transformation_matrix.device} and {mean_vector.device}"
             )
 
+        if transformation_matrix.dtype != mean_vector.dtype:
+            raise ValueError(
+                f"Input tensors should have the same dtype. Got {transformation_matrix.dtype} and {mean_vector.dtype}"
+            )
+
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
@@ -1105,9 +1110,10 @@ class LinearTransformation(torch.nn.Module):
             )
 
         flat_tensor = tensor.view(-1, n) - self.mean_vector
-        transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        tensor = transformed_tensor.view(shape)
-        return tensor
+
+        transformation_matrix = self.transformation_matrix.to(flat_tensor.dtype)
+        transformed_tensor = torch.mm(flat_tensor, transformation_matrix)
+        return transformed_tensor.view(shape)
 
     def __repr__(self) -> str:
         s = (

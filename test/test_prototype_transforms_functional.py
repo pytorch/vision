@@ -142,7 +142,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(*([actual, expected] + other_args), **kwargs),
         )
 
     def _unbatch(self, batch, *, data_dims):
