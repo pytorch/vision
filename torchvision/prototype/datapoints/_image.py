@@ -23,6 +23,11 @@ class Image(Datapoint):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> Image:
+        if isinstance(data, PIL.Image.Image):
+            from torchvision.prototype.transforms import functional as F
+
+            data = F.pil_to_tensor(data)
+
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if tensor.ndim < 2:
             raise ValueError
