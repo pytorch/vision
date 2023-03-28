@@ -249,7 +249,7 @@ def resize(
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, PIL.Image.Image):
-        if antialias is not None and not antialias:
+        if antialias is False:
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
         return resize_image_pil(inpt, size, interpolation=interpolation, max_size=max_size)
     else:

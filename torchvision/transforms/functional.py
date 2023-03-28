@@ -484,7 +484,7 @@ def resize(
     antialias = _check_antialias(img, antialias, interpolation)
 
     if not isinstance(img, torch.Tensor):
-        if antialias is not None and not antialias:
+        if antialias is False:
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.resize(img, size=output_size, interpolation=pil_interpolation)
