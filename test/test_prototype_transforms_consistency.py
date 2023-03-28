@@ -676,7 +676,7 @@ get_params_parametrization = pytest.mark.parametrize(
 )
 
 
-@get_paramsl_parametrization
+@get_params_parametrization
 def test_get_params_alias(config, get_params_args_kwargs):
     assert config.prototype_cls.get_params is config.legacy_cls.get_params
 
@@ -689,7 +689,7 @@ def test_get_params_alias(config, get_params_args_kwargs):
     assert prototype_transform.get_params is legacy_transform.get_params
 
 
-@get_paramsl_parametrization
+@get_params_parametrization
 def test_get_params_jit(config, get_params_args_kwargs):
     get_params_args, get_params_kwargs = get_params_args_kwargs
 
