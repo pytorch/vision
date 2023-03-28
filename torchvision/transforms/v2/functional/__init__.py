@@ -1,5 +1,3 @@
-# TODO: Add _log_api_usage_once() in all mid-level kernels. If they remain not jit-scriptable we can use decorators
-
 from torchvision.transforms import InterpolationMode  # usort: skip
 
 from ._utils import is_simple_tensor  # usort: skip
