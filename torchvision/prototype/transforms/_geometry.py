@@ -234,7 +234,18 @@ class TenCrop(Transform):
 
     def _transform(
         self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
-    ) -> Union[List[datapoints.ImageTypeJIT], List[datapoints.VideoTypeJIT]]:
+    ) -> Tuple[
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+    ]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
 
