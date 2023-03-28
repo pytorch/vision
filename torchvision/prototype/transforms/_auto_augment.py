@@ -37,10 +37,11 @@ class _AutoAugmentBase(Transform):
         unsupported_types: Tuple[Type, ...] = (datapoints.BoundingBox, datapoints.Mask),
     ) -> Tuple[Tuple[List[Any], TreeSpec, int], Union[datapoints.ImageType, datapoints.VideoType]]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
+        needs_transform_list = self._needs_transform_list(flat_inputs)
 
         image_or_videos = []
-        for idx, inpt in enumerate(flat_inputs):
-            if check_type(
+        for idx, (inpt, needs_transform) in enumerate(zip(flat_inputs, needs_transform_list)):
+            if needs_transform and check_type(
                 inpt,
                 (
                     datapoints.Image,

@@ -1,5 +1,6 @@
 import itertools
 import re
+from collections import defaultdict
 
 import numpy as np
 
@@ -1988,3 +1989,154 @@ class TestUniformTemporalSubsample:
         assert type(output) is type(inpt)
         assert output.shape[-4] == num_samples
         assert output.dtype == inpt.dtype
+
+
+@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
+@pytest.mark.parametrize("label_type", (torch.Tensor, int))
+@pytest.mark.parametrize("dataset_return_type", (dict, tuple))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
+
+    image = datapoints.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
+    if image_type is PIL.Image:
+        image = to_pil_image(image[0])
+    elif image_type is torch.Tensor:
+        image = image.as_subclass(torch.Tensor)
+        assert is_simple_tensor(image)
+
+    label = 1 if label_type is int else torch.tensor([1])
+
+    if dataset_return_type is dict:
+        sample = {
+            "image": image,
+            "label": label,
+        }
+    else:
+        sample = image, label
+
+    t = transforms.Compose(
+        [
+            transforms.RandomResizedCrop((224, 224)),
+            transforms.RandomHorizontalFlip(p=1),
+            transforms.RandAugment(),
+            transforms.TrivialAugmentWide(),
+            transforms.AugMix(),
+            transforms.AutoAugment(),
+            to_tensor(),
+            # TODO: ConvertImageDtype is a pass-through on PIL images, is that
+            # intended?  This results in a failure if we convert to tensor after
+            # it, because the image would still be uint8 which make Normalize
+            # fail.
+            transforms.ConvertImageDtype(torch.float),
+            transforms.Normalize(mean=[0, 0, 0], std=[1, 1, 1]),
+            transforms.RandomErasing(p=1),
+        ]
+    )
+
+    out = t(sample)
+
+    assert type(out) == type(sample)
+
+    if dataset_return_type is tuple:
+        out_image, out_label = out
+    else:
+        assert out.keys() == sample.keys()
+        out_image, out_label = out.values()
+
+    assert out_image.shape[-2:] == (224, 224)
+    assert out_label == label
+
+
+@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
+@pytest.mark.parametrize("label_type", (torch.Tensor, list))
+@pytest.mark.parametrize("data_augmentation", ("hflip", "lsj", "multiscale", "ssd", "ssdlite"))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
+    if data_augmentation == "hflip":
+        t = [
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    elif data_augmentation == "lsj":
+        t = [
+            transforms.ScaleJitter(target_size=(1024, 1024), antialias=True),
+            # Note: replaced FixedSizeCrop with RandomCrop, becuase we're
+            # leaving FixedSizeCrop in prototype for now, and it expects Label
+            # classes which we won't release yet.
+            # transforms.FixedSizeCrop(
+            #     size=(1024, 1024), fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})
+            # ),
+            transforms.RandomCrop((1024, 1024), pad_if_needed=True),
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    elif data_augmentation == "multiscale":
+        t = [
+            transforms.RandomShortestSize(
+                min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333, antialias=True
+            ),
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    elif data_augmentation == "ssd":
+        t = [
+            transforms.RandomPhotometricDistort(p=1),
+            transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})),
+            # TODO: put back IoUCrop once we remove its hard requirement for Labels
+            # transforms.RandomIoUCrop(),
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    elif data_augmentation == "ssdlite":
+        t = [
+            # TODO: put back IoUCrop once we remove its hard requirement for Labels
+            # transforms.RandomIoUCrop(),
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    t = transforms.Compose(t)
+
+    num_boxes = 5
+    H = W = 250
+
+    image = datapoints.Image(torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8))
+    if image_type is PIL.Image:
+        image = to_pil_image(image[0])
+    elif image_type is torch.Tensor:
+        image = image.as_subclass(torch.Tensor)
+        assert is_simple_tensor(image)
+
+    label = torch.randint(0, 10, size=(num_boxes,))
+    if label_type is list:
+        label = label.tolist()
+
+    # TODO: is the shape of the boxes OK? Should it be (1, num_boxes, 4)?? Same for masks
+    boxes = torch.randint(0, min(H, W) // 2, size=(num_boxes, 4))
+    boxes[:, 2:] += boxes[:, :2]
+    boxes = boxes.clamp(min=0, max=min(H, W))
+    boxes = datapoints.BoundingBox(boxes, format="XYXY", spatial_size=(H, W))
+
+    masks = datapoints.Mask(torch.randint(0, 2, size=(num_boxes, H, W), dtype=torch.uint8))
+
+    sample = {
+        "image": image,
+        "label": label,
+        "boxes": boxes,
+        "masks": masks,
+    }
+
+    out = t(sample)
+
+    if to_tensor is transforms.ToTensor and image_type is not datapoints.Image:
+        assert is_simple_tensor(out["image"])
+    else:
+        assert isinstance(out["image"], datapoints.Image)
+    assert isinstance(out["label"], type(sample["label"]))
+
+    out["label"] = torch.tensor(out["label"])
+    assert out["boxes"].shape[0] == out["masks"].shape[0] == out["label"].shape[0] == num_boxes
