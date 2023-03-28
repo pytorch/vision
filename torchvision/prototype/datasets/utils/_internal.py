@@ -104,7 +104,7 @@ class PicklerDataPipe(IterDataPipe):
                 yield d
 
 
-class SharderDataPipe(torch.utils.data.datapipes.iter.grouping.ShardingFilterIterDataPipe):
+class SharderDataPipe(ShardingFilter):
     def __init__(self, source_datapipe: IterDataPipe) -> None:
         super().__init__(source_datapipe)
         self.rank = 0

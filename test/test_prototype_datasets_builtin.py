@@ -10,9 +10,14 @@ import torch
 import torchvision.prototype.transforms.utils
 from builtin_dataset_mocks import DATASET_MOCKS, parametrize_dataset_mocks
 from torch.testing._comparison import assert_equal, ObjectPair, TensorLikePair
+
+# TODO: replace with torchdata.dataloader2.DataLoader2 as soon as it is stable-ish
 from torch.utils.data import DataLoader
-from torch.utils.data.graph import traverse_dps
+
+# TODO: replace with torchdata equivalent as soon as it is available
 from torch.utils.data.graph_settings import get_all_graph_pipes
+
+from torchdata.dataloader2.graph.utils import traverse_dps
 from torchdata.datapipes.iter import ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 from torchvision._utils import sequence_to_str
