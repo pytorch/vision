@@ -1,9 +1,10 @@
 import warnings
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import torch
 
 from torch import nn
+from torchvision import transforms as _transforms
 from torchvision.prototype.transforms import Transform
 
 
@@ -28,6 +29,8 @@ class Compose(Transform):
 
 
 class RandomApply(Transform):
+    _v1_transform_cls = _transforms.RandomApply
+
     def __init__(self, transforms: Union[Sequence[Callable], nn.ModuleList], p: float = 0.5) -> None:
         super().__init__()
 
@@ -38,6 +41,9 @@ class RandomApply(Transform):
         if not (0.0 <= p <= 1.0):
             raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
         self.p = p
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        return {"transforms": self.transforms, "p": self.p}
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
