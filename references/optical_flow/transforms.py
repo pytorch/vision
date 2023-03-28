@@ -196,8 +196,12 @@ class RandomResizeAndCrop(torch.nn.Module):
 
         if torch.rand(1).item() < self.resize_prob:
             # rescale the images
-            img1 = F.resize(img1, size=(new_h, new_w))
-            img2 = F.resize(img2, size=(new_h, new_w))
+            # We hard-code antialias=False to preserve results after we changed
+            # its default from None to True (see
+            # https://github.com/pytorch/vision/pull/7160)
+            # TODO: we could re-train the OF models with antialias=True?
+            img1 = F.resize(img1, size=(new_h, new_w), antialias=False)
+            img2 = F.resize(img2, size=(new_h, new_w), antialias=False)
             if valid_flow_mask is None:
                 flow = F.resize(flow, size=(new_h, new_w))
                 flow = flow * torch.tensor([scale_x, scale_y])[:, None, None]

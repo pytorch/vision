@@ -64,7 +64,7 @@ class Image(Datapoint):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Image:
         output = self._F.resize_image_tensor(
             self.as_subclass(torch.Tensor), size, interpolation=interpolation, max_size=max_size, antialias=antialias
@@ -87,7 +87,7 @@ class Image(Datapoint):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Image:
         output = self._F.resized_crop_image_tensor(
             self.as_subclass(torch.Tensor),

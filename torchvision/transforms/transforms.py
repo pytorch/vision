@@ -306,13 +306,27 @@ class Resize(torch.nn.Module):
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
-        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
-            This can help making the output for PIL images and tensors closer.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=None):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias="warn"):
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(size, (int, Sequence)):
@@ -847,10 +861,24 @@ class RandomResizedCrop(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
-        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
-            This can help making the output for PIL images and tensors closer.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -859,7 +887,7 @@ class RandomResizedCrop(torch.nn.Module):
         scale=(0.08, 1.0),
         ratio=(3.0 / 4.0, 4.0 / 3.0),
         interpolation=InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -874,6 +902,7 @@ class RandomResizedCrop(torch.nn.Module):
 
         self.interpolation = interpolation
         self.antialias = antialias
+        self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio
 

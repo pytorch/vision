@@ -47,7 +47,7 @@ class Resize(Transform):
         size: Union[int, Sequence[int]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
         super().__init__()
 
@@ -95,7 +95,7 @@ class RandomResizedCrop(Transform):
         scale: Tuple[float, float] = (0.08, 1.0),
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -761,7 +761,7 @@ class ScaleJitter(Transform):
         target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ):
         super().__init__()
         self.target_size = target_size
@@ -789,7 +789,7 @@ class RandomShortestSize(Transform):
         min_size: Union[List[int], Tuple[int], int],
         max_size: Optional[int] = None,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ):
         super().__init__()
         self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
@@ -936,7 +936,7 @@ class RandomResize(Transform):
         min_size: int,
         max_size: int,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
         super().__init__()
         self.min_size = min_size

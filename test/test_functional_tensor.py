@@ -2,6 +2,7 @@ import colorsys
 import itertools
 import math
 import os
+import warnings
 from functools import partial
 from typing import Sequence
 
@@ -483,8 +484,8 @@ def test_resize(device, dt, size, max_size, interpolation):
         tensor = tensor.to(dt)
         batch_tensors = batch_tensors.to(dt)
 
-    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, max_size=max_size)
-    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size)
+    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, max_size=max_size, antialias=True)
+    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size, antialias=True)
 
     assert resized_tensor.size()[1:] == resized_pil_img.size[::-1]
 
@@ -509,10 +510,12 @@ def test_resize(device, dt, size, max_size, interpolation):
     else:
         script_size = size
 
-    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, max_size=max_size)
+    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, max_size=max_size, antialias=True)
     assert_equal(resized_tensor, resize_result)
 
-    _test_fn_on_batch(batch_tensors, F.resize, size=script_size, interpolation=interpolation, max_size=max_size)
+    _test_fn_on_batch(
+        batch_tensors, F.resize, size=script_size, interpolation=interpolation, max_size=max_size, antialias=True
+    )
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -547,7 +550,7 @@ def test_resize_antialias(device, dt, size, interpolation):
         tensor = tensor.to(dt)
 
     resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, antialias=True)
-    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation)
+    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, antialias=True)
 
     assert resized_tensor.size()[1:] == resized_pil_img.size[::-1]
 
@@ -594,6 +597,23 @@ def test_assert_resize_antialias(interpolation):
     # with pytest.raises(RuntimeError, match=r"Provided interpolation parameters can not be handled"):
     with pytest.raises(RuntimeError, match=r"Too much shared memory required"):
         F.resize(tensor, size=(5, 5), interpolation=interpolation, antialias=True)
+
+
+def test_resize_antialias_default_warning():
+
+    img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
+
+    match = "The default value of the antialias"
+    with pytest.warns(UserWarning, match=match):
+        F.resize(img, size=(20, 20))
+    with pytest.warns(UserWarning, match=match):
+        F.resized_crop(img, 0, 0, 10, 10, size=(20, 20))
+
+    # For modes that aren't bicubic or bilinear, don't throw a warning
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        F.resize(img, size=(20, 20), interpolation=NEAREST)
+        F.resized_crop(img, 0, 0, 10, 10, size=(20, 20), interpolation=NEAREST)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -924,7 +944,9 @@ def test_resized_crop(device, mode):
     # 1) resize to the same size, crop to the same size => should be identity
     tensor, _ = _create_data(26, 36, device=device)
 
-    out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=mode)
+    out_tensor = F.resized_crop(
+        tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=mode, antialias=True
+    )
     assert_equal(tensor, out_tensor, msg=f"{out_tensor[0, :5, :5]} vs {tensor[0, :5, :5]}")
 
     # 2) resize by half and crop a TL corner
@@ -939,7 +961,14 @@ def test_resized_crop(device, mode):
 
     batch_tensors = _create_data_batch(26, 36, num_samples=4, device=device)
     _test_fn_on_batch(
-        batch_tensors, F.resized_crop, top=1, left=2, height=20, width=30, size=[10, 15], interpolation=NEAREST
+        batch_tensors,
+        F.resized_crop,
+        top=1,
+        left=2,
+        height=20,
+        width=30,
+        size=[10, 15],
+        interpolation=NEAREST,
     )
 
 
