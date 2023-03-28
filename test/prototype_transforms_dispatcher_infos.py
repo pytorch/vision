@@ -1,10 +1,10 @@
 import collections.abc
 
 import pytest
-import torchvision.prototype.transforms.functional as F
+import torchvision.transforms.v2.functional as F
 from prototype_common_utils import InfoBase, TestMark
 from prototype_transforms_kernel_infos import KERNEL_INFOS, pad_xfail_jit_fill_condition
-from torchvision.prototype import datapoints
+from torchvision import datapoints
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 

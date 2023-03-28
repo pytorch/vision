@@ -105,7 +105,7 @@ class Datapoint(torch.Tensor):
         # the class. This approach avoids the DataLoader issue described at
         # https://github.com/pytorch/vision/pull/6476#discussion_r953588621
         if Datapoint.__F is None:
-            from ..transforms import functional
+            from ..transforms.v2 import functional
 
             Datapoint.__F = functional
         return Datapoint.__F

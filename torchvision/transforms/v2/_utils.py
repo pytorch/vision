@@ -3,8 +3,8 @@ import numbers
 from collections import defaultdict
 from typing import Any, Dict, Literal, Sequence, Type, TypeVar, Union
 
-from torchvision.prototype import datapoints
-from torchvision.prototype.datapoints._datapoint import FillType, FillTypeJIT
+from torchvision import datapoints
+from torchvision.datapoints._datapoint import FillType, FillTypeJIT
 
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 

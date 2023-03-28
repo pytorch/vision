@@ -3,12 +3,12 @@ import pytest
 
 import torch
 
-import torchvision.prototype.transforms.utils
+import torchvision.transforms.v2.utils
 from prototype_common_utils import make_bounding_box, make_detection_mask, make_image
 
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms.functional import to_image_pil
-from torchvision.prototype.transforms.utils import has_all, has_any
+from torchvision import datapoints
+from torchvision.transforms.v2.functional import to_image_pil
+from torchvision.transforms.v2.utils import has_all, has_any
 
 
 IMAGE = make_image(color_space="RGB")
@@ -37,15 +37,15 @@ MASK = make_detection_mask(size=IMAGE.spatial_size)
         ((IMAGE, BOUNDING_BOX, MASK), (lambda obj: isinstance(obj, datapoints.Image),), True),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: False,), False),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: True,), True),
-        ((IMAGE,), (datapoints.Image, PIL.Image.Image, torchvision.prototype.transforms.utils.is_simple_tensor), True),
+        ((IMAGE,), (datapoints.Image, PIL.Image.Image, torchvision.transforms.v2.utils.is_simple_tensor), True),
         (
             (torch.Tensor(IMAGE),),
-            (datapoints.Image, PIL.Image.Image, torchvision.prototype.transforms.utils.is_simple_tensor),
+            (datapoints.Image, PIL.Image.Image, torchvision.transforms.v2.utils.is_simple_tensor),
             True,
         ),
         (
             (to_image_pil(IMAGE),),
-            (datapoints.Image, PIL.Image.Image, torchvision.prototype.transforms.utils.is_simple_tensor),
+            (datapoints.Image, PIL.Image.Image, torchvision.transforms.v2.utils.is_simple_tensor),
             True,
         ),
     ],

@@ -9,9 +9,9 @@ import PIL.Image
 import torch
 from torch import Tensor
 
-from torchvision.prototype.transforms.functional._geometry import _check_interpolation
+from torchvision.transforms.v2 import functional as F, InterpolationMode
 
-from . import functional as F, InterpolationMode
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
 __all__ = ["StereoMatching"]
 

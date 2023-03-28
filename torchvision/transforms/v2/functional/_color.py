@@ -3,7 +3,7 @@ from typing import Union
 import PIL.Image
 import torch
 from torch.nn.functional import conv2d
-from torchvision.prototype import datapoints
+from torchvision import datapoints
 from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional_tensor import _max_value
 

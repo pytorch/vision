@@ -5,7 +5,7 @@ import torch
 
 from torch import nn
 from torchvision import transforms as _transforms
-from torchvision.prototype.transforms import Transform
+from torchvision.transforms.v2 import Transform
 
 
 class Compose(Transform):
