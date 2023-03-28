@@ -21,7 +21,7 @@ import yaml
 from jinja2 import select_autoescape
 
 
-PYTHON_VERSIONS = ["3.8", "3.9", "3.10"]
+PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
@@ -62,7 +62,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
 
                         # Disable all Linux Wheels Workflows from CircleCI
                         # since those will now be done through Nova. We'll keep
-                        # around the py3.8 cpu Linux Wheels build since the docs
+                        # around the py3.8 CPU Linux Wheels build since the docs
                         # job depends on it.
                         if os_type == "linux" and btype == "wheel":
                             if not (python_version == "3.8" and cu_version == "cpu"):
@@ -74,6 +74,13 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
 
                         # Disable all non-Windows Conda workflows
                         if os_type != "win" and btype == "conda":
+                            continue
+
+                        # Not supporting Python 3.11 conda packages at the
+                        # moment since the necessary dependencies are not
+                        # available. Windows 3.11 Wheels will be built from
+                        # CircleCI here, however.
+                        if python_version == "3.11" and btype == "conda":
                             continue
 
                         w += workflow_pair(
