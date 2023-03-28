@@ -421,6 +421,7 @@ def resize(
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
             supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
@@ -454,8 +455,12 @@ def resize(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(resize)
 
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise TypeError(
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
+        )
 
     if isinstance(size, (list, tuple)):
         if len(size) not in [1, 2]:
@@ -630,6 +635,7 @@ def resized_crop(
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
             supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
             It only affects **tensors** with bilinear or bicubic modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
@@ -726,6 +732,7 @@ def perspective(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
 
@@ -741,8 +748,12 @@ def perspective(
 
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
 
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise TypeError(
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
+        )
 
     if not isinstance(img, torch.Tensor):
         pil_interpolation = pil_modes_mapping[interpolation]
@@ -1076,6 +1087,7 @@ def rotate(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -1097,14 +1109,18 @@ def rotate(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(rotate)
 
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise TypeError(
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
+        )
+
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
 
     if center is not None and not isinstance(center, (list, tuple)):
         raise TypeError("Argument center should be a sequence")
-
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if not isinstance(img, torch.Tensor):
         pil_interpolation = pil_modes_mapping[interpolation]
@@ -1147,6 +1163,7 @@ def affine(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
 
@@ -1162,6 +1179,13 @@ def affine(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(affine)
 
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise TypeError(
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
+        )
+
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
 
@@ -1176,9 +1200,6 @@ def affine(
 
     if not isinstance(shear, (numbers.Number, (list, tuple))):
         raise TypeError("Shear should be either a single value or a sequence of two values")
-
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if isinstance(angle, int):
         angle = float(angle)
@@ -1524,7 +1545,7 @@ def elastic_transform(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``.
-            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
