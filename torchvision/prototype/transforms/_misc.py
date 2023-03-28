@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
@@ -155,6 +156,12 @@ class ToDtype(Transform):
         super().__init__()
         if not isinstance(dtype, dict):
             dtype = _get_defaultdict(dtype)
+        if torch.Tensor in dtype and any(cls in dtype for cls in [datapoints.Image, datapoints.Video]):
+            warnings.warn(
+                "Got `dtype` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
+            )
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -171,6 +178,12 @@ class PermuteDimensions(Transform):
         super().__init__()
         if not isinstance(dims, dict):
             dims = _get_defaultdict(dims)
+        if torch.Tensor in dims and any(cls in dims for cls in [datapoints.Image, datapoints.Video]):
+            warnings.warn(
+                "Got `dims` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
+            )
         self.dims = dims
 
     def _transform(
@@ -189,6 +202,12 @@ class TransposeDimensions(Transform):
         super().__init__()
         if not isinstance(dims, dict):
             dims = _get_defaultdict(dims)
+        if torch.Tensor in dims and any(cls in dims for cls in [datapoints.Image, datapoints.Video]):
+            warnings.warn(
+                "Got `dims` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
+            )
         self.dims = dims
 
     def _transform(
