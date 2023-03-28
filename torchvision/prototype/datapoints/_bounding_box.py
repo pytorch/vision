@@ -81,7 +81,10 @@ class BoundingBox(Datapoint):
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> BoundingBox:
         output, spatial_size = self._F.resize_bounding_box(
-            self.as_subclass(torch.Tensor), spatial_size=self.spatial_size, size=size, max_size=max_size
+            self.as_subclass(torch.Tensor),
+            spatial_size=self.spatial_size,
+            size=size,
+            max_size=max_size,
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
@@ -178,6 +181,7 @@ class BoundingBox(Datapoint):
         output = self._F.perspective_bounding_box(
             self.as_subclass(torch.Tensor),
             format=self.format,
+            spatial_size=self.spatial_size,
             startpoints=startpoints,
             endpoints=endpoints,
             coefficients=coefficients,
@@ -190,5 +194,7 @@ class BoundingBox(Datapoint):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> BoundingBox:
-        output = self._F.elastic_bounding_box(self.as_subclass(torch.Tensor), self.format, displacement)
+        output = self._F.elastic_bounding_box(
+            self.as_subclass(torch.Tensor), self.format, self.spatial_size, displacement=displacement
+        )
         return BoundingBox.wrap_like(self, output)
