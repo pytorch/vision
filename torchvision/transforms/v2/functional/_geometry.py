@@ -832,10 +832,10 @@ def rotate_image_tensor(
     center_f = [0.0, 0.0]
     if center is not None:
         if expand:
+            # TODO: Do we actually want to warn, or just document this?
             warnings.warn("The provided center argument has no effect on the result if expand is True")
-        else:
-            # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-            center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
