@@ -130,7 +130,7 @@ class Transform(nn.Module):
         # is around.
         if self._v1_transform_cls is None:
             raise RuntimeError(
-                f"Transform {type(self.__name__)} cannot be JIT scripted. "
+                f"Transform {type(self).__name__} cannot be JIT scripted. "
                 f"This is only support for backward compatibility with transforms which already in v1."
                 f"For torchscript support (on tensors only), you can use the functional API instead."
             )
