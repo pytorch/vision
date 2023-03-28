@@ -6,7 +6,7 @@ import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
 from torchvision import datapoints, transforms as _transforms
-from torchvision.transforms import functional_tensor as _FT
+from torchvision.transforms import _functional_tensor as _FT
 from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._meta import get_spatial_size
