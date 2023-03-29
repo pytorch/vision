@@ -39,7 +39,7 @@ jobs:
         fi
 
         # Create Conda Env
-        conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy 'ffmpeg<4.3'
+        conda create -yp ci_env --quiet python="${PYTHON_VERSION}" numpy libpng jpeg scipy 'ffmpeg<4.3'
         conda activate /work/ci_env
 
         # Install PyTorch, Torchvision, and testing libraries
@@ -50,8 +50,8 @@ jobs:
           -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
           "${CUDATOOLKIT}"
         python3 setup.py develop
-        python3 -m pip install pytest pytest-mock 'av<10'
+        python3 -m pip install --progress-bar=off pytest pytest-mock 'av<10'
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+        python3 -m pytest --junitxml=test-results/junit.xml --durations 20
