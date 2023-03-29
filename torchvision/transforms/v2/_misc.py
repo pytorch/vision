@@ -246,7 +246,7 @@ class ToDtype(Transform):
         return inpt.to(dtype=dtype)
 
 
-class SanitizeBoundingBoxes(Transform):
+class SanitizeBoundingBox(Transform):
     # This removes boxes and their corresponding labels:
     # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
     # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
@@ -269,7 +269,7 @@ class SanitizeBoundingBoxes(Transform):
         elif callable(labels_getter):
             self._labels_getter = labels_getter
         elif isinstance(labels_getter, str):
-            self._labels_getter = lambda inputs: SanitizeBoundingBoxes._get_dict_or_second_tuple_entry(inputs)[
+            self._labels_getter = lambda inputs: SanitizeBoundingBox._get_dict_or_second_tuple_entry(inputs)[
                 labels_getter  # type: ignore[index]
             ]
         elif labels_getter is None:
@@ -300,7 +300,7 @@ class SanitizeBoundingBoxes(Transform):
     def _find_labels_default_heuristic(inputs: Dict[str, Any]) -> Optional[torch.Tensor]:
         # Tries to find a "labels" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
-        inputs = SanitizeBoundingBoxes._get_dict_or_second_tuple_entry(inputs)
+        inputs = SanitizeBoundingBox._get_dict_or_second_tuple_entry(inputs)
         candidate_key = None
         with suppress(StopIteration):
             candidate_key = next(key for key in inputs.keys() if key.lower() == "labels")
