@@ -21,6 +21,16 @@ class Identity(Transform):
 
 
 class Lambda(Transform):
+    """[BETA] Apply a user-defined lambda as a transform.
+
+    .. betastatus:: Lambda transform
+
+    This transform does not support torchscript.
+
+    Args:
+        lambd (function): Lambda/function to be used for transform.
+    """
+
     def __init__(self, lambd: Callable[[Any], Any], *types: Type):
         super().__init__()
         self.lambd = lambd
@@ -42,6 +52,26 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
+    """[BETA] Transform a tensor image with a square transformation matrix and a mean_vector computed offline.
+
+    .. betastatus:: LinearTransformation transform
+
+    This transform does not support PIL Image.
+    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
+    subtract mean_vector from it which is then followed by computing the dot
+    product with the transformation matrix and then reshaping the tensor to its
+    original shape.
+
+    Applications:
+        whitening transformation: Suppose X is a column vector zero-centered data.
+        Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+        perform SVD on this matrix and pass it as transformation_matrix.
+
+    Args:
+        transformation_matrix (Tensor): tensor [D x D], D = C x H x W
+        mean_vector (Tensor): tensor [D], D = C x H x W
+    """
+
     _v1_transform_cls = _transforms.LinearTransformation
 
     _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
@@ -105,6 +135,26 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
+    """[BETA] Normalize a tensor image with mean and standard deviation.
+
+    .. betastatus:: Normalize transform
+
+    This transform does not support PIL Image.
+    Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
+    channels, this transform will normalize each channel of the input
+    ``torch.*Tensor`` i.e.,
+    ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
+
+    .. note::
+        This transform acts out of place, i.e., it does not mutate the input tensor.
+
+    Args:
+        mean (sequence): Sequence of means for each channel.
+        std (sequence): Sequence of standard deviations for each channel.
+        inplace(bool,optional): Bool to make this operation in-place.
+
+    """
+
     _v1_transform_cls = _transforms.Normalize
     _transformed_types = (datapoints.Image, is_simple_tensor, datapoints.Video)
 
@@ -125,6 +175,24 @@ class Normalize(Transform):
 
 
 class GaussianBlur(Transform):
+    """[BETA] Blurs image with randomly chosen Gaussian blur.
+
+    .. betastatus:: GausssianBlur transform
+
+    If the image is torch Tensor, it is expected
+    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        kernel_size (int or sequence): Size of the Gaussian kernel.
+        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+            creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
+            of float (min, max), sigma is chosen uniformly at random to lie in the
+            given range.
+
+    Returns:
+        PIL Image or Tensor: Gaussian blurred version of the input image.
+    """
+
     _v1_transform_cls = _transforms.GaussianBlur
 
     def __init__(

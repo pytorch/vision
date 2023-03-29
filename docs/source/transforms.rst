@@ -98,17 +98,29 @@ Geometry
     :template: class.rst
 
     Resize
+    v2.Resize
     RandomCrop
+    v2.RandomCrop
     RandomResizedCrop
+    v2.RandomResizedCrop
     CenterCrop
+    v2.CenterCrop
     FiveCrop
+    v2.FiveCrop
     TenCrop
+    v2.TenCrop
     Pad
+    v2.Pad
     RandomAffine
+    v2.RandomAffine
     RandomPerspective
+    v2.RandomPerspective
     RandomRotation
+    v2.RandomRotation
     RandomHorizontalFlip
+    v2.RandomHorizontalFlip
     RandomVerticalFlip
+    v2.RandomVerticalFlip
 
 Color
 -----
@@ -118,15 +130,25 @@ Color
     :template: class.rst
 
     ColorJitter
+    v2.ColorJitter
     Grayscale
+    v2.Grayscale
     RandomGrayscale
+    v2.RandomGrayscale
     GaussianBlur
+    v2.GaussianBlur
     RandomInvert
+    v2.RandomInvert
     RandomPosterize
+    v2.RandomPosterize
     RandomSolarize
+    v2.RandomSolarize
     RandomAdjustSharpness
+    v2.RandomAdjustSharpness
     RandomAutocontrast
+    v2.RandomAutocontrast
     RandomEqualize
+    v2.RandomEqualize
 
 Composition
 -----------
@@ -136,9 +158,13 @@ Composition
     :template: class.rst
 
     Compose
+    v2.Compose
     RandomApply
+    v2.RandomApply
     RandomChoice
+    v2.RandomChoice
     RandomOrder
+    v2.RandomOrder
 
 Miscellaneous
 -------------
@@ -148,9 +174,13 @@ Miscellaneous
     :template: class.rst
 
     LinearTransformation
+    v2.LinearTransformation
     Normalize
+    v2.Normalize
     RandomErasing
+    v2.RandomErasing
     Lambda
+    v2.Lambda
 
 .. _conversion_transforms:
 
@@ -162,9 +192,15 @@ Conversion
     :template: class.rst
 
     ToPILImage
+    v2.ToPILImage
+    v2.ToImagePIL
     ToTensor
+    v2.ToTensor
     PILToTensor
+    v2.PILToTensor
     ConvertImageDtype
+    v2.ConvertImageDtype
+    v2.ConvertDtype
 
 Auto-Augmentation
 -----------------
@@ -181,9 +217,13 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 
     AutoAugmentPolicy
     AutoAugment
+    v2.AutoAugment
     RandAugment
+    v2.RandAugment
     TrivialAugmentWide
+    v2.TrivialAugmentWide
     AugMix
+    v2.AugMix
 
 .. _functional_transforms:
 

@@ -33,6 +33,8 @@ from tabulate import tabulate
 
 sys.path.append(os.path.abspath("."))
 
+torchvision.disable_beta_transforms_warning()
+
 # -- General configuration ------------------------------------------------
 
 # Required version of sphinx is set from docs/requirements.txt
