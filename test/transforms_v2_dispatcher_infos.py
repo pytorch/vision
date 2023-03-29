@@ -2,9 +2,9 @@ import collections.abc
 
 import pytest
 import torchvision.transforms.v2.functional as F
-from prototype_common_utils import InfoBase, TestMark
-from prototype_transforms_kernel_infos import KERNEL_INFOS, pad_xfail_jit_fill_condition
+from common_utils import InfoBase, TestMark
 from torchvision import datapoints
+from transforms_v2_kernel_infos import KERNEL_INFOS, pad_xfail_jit_fill_condition
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 
@@ -49,7 +49,7 @@ class DispatcherInfo(InfoBase):
             if not kernel_info:
                 raise pytest.UsageError(
                     f"Can't register {kernel.__name__} for type {datapoint_type} since there is no `KernelInfo` for it. "
-                    f"Please add a `KernelInfo` for it in `prototype_transforms_kernel_infos.py`."
+                    f"Please add a `KernelInfo` for it in `transforms_v2_kernel_infos.py`."
                 )
             kernel_infos[datapoint_type] = kernel_info
         self.kernel_infos = kernel_infos
