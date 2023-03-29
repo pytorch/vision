@@ -131,6 +131,7 @@ Color
 
     ColorJitter
     v2.ColorJitter
+    v2.RandomPhotometricDistort
     Grayscale
     v2.Grayscale
     RandomGrayscale
