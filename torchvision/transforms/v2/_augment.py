@@ -13,7 +13,7 @@ from .utils import is_simple_tensor, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
-    """[BETA] Randomly selects a rectangle region in the input image or video and erases its pixels.
+    """[BETA] Randomly select a rectangle region in the input image or video and erase its pixels.
 
     .. betastatus:: RandomErasing transform
 
@@ -21,14 +21,14 @@ class RandomErasing(_RandomApplyTransform):
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
 
     Args:
-         p: probability that the random erasing operation will be performed.
-         scale: range of proportion of erased area against input image.
-         ratio: range of aspect ratio of erased area.
-         value: erasing value. Default is 0. If a single int, it is used to
+        p (float, optional): probability that the random erasing operation will be performed.
+        scale (tuple of float, optional): range of proportion of erased area against input image.
+        ratio (tuple of float, optional): range of aspect ratio of erased area.
+        value (number or tuple of numbers): erasing value. Default is 0. If a single int, it is used to
             erase all pixels. If a tuple of length 3, it is used to erase
             R, G, B channels respectively.
             If a str of 'random', erasing each pixel with random values.
-         inplace: boolean to make this transform inplace. Default set to False.
+        inplace (bool, optional): boolean to make this transform inplace. Default set to False.
 
     Returns:
         Erased input.
