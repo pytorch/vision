@@ -15,17 +15,11 @@ class Grayscale(Transform):
 
     .. betastatus:: Grayscale transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+    If the input is a :class:`torch.Tensor`, it is expected
+    to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         num_output_channels (int): (1 or 3) number of channels desired for output image
-
-    Returns:
-        PIL Image: Grayscale version of the input.
-
-        - If ``num_output_channels == 1`` : returned image is single channel
-        - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
     """
 
     _v1_transform_cls = _transforms.Grayscale
@@ -50,18 +44,13 @@ class RandomGrayscale(_RandomApplyTransform):
 
     .. betastatus:: RandomGrayscale transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+    If the input is a :class:`torch.Tensor`, it is expected to have [..., 3 or 1, H, W] shape,
+    where ... means an arbitrary number of leading dimensions
+
+    The output has the same number of channels as the input.
 
     Args:
         p (float): probability that image should be converted to grayscale.
-
-    Returns:
-        PIL Image or Tensor: Grayscale version of the input image with probability p and unchanged
-        with probability (1-p).
-        - If input image is 1 channel: grayscale version is 1 channel
-        - If input image is 3 channel: grayscale version is 3 channel with r == g == b
-
     """
 
     _v1_transform_cls = _transforms.RandomGrayscale
@@ -89,7 +78,7 @@ class ColorJitter(Transform):
 
     .. betastatus:: ColorJitter transform
 
-    If the image is torch Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
 
@@ -295,7 +284,7 @@ class RandomEqualize(_RandomApplyTransform):
 
     .. betastatus:: RandomEqualize transform
 
-    If the image is torch Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
 
@@ -334,7 +323,7 @@ class RandomPosterize(_RandomApplyTransform):
 
     .. betastatus:: RandomPosterize transform
 
-    If the image is torch Tensor, it should be of type torch.uint8,
+    If the input is a :class:`torch.Tensor`, it should be of type torch.uint8,
     and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
@@ -383,7 +372,7 @@ class RandomAutocontrast(_RandomApplyTransform):
 
     .. betastatus:: RandomAutocontrast transform
 
-    If the image is torch Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
@@ -402,7 +391,7 @@ class RandomAdjustSharpness(_RandomApplyTransform):
 
     .. betastatus:: RandomAdjustSharpness transform
 
-    If the image is torch Tensor,
+    If the input is a :class:`torch.Tensor`,
     it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:

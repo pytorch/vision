@@ -15,13 +15,14 @@ from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size
 from .utils import has_any, is_simple_tensor, query_bounding_box
 
 
+# TODO: do we want/need to expose this?
 class Identity(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return inpt
 
 
 class Lambda(Transform):
-    """[BETA] Apply a user-defined lambda as a transform.
+    """[BETA] Apply a user-defined function as a transform.
 
     .. betastatus:: Lambda transform
 
@@ -52,7 +53,7 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-    """[BETA] Transform a tensor image with a square transformation matrix and a mean_vector computed offline.
+    """[BETA] Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
 
     .. betastatus:: LinearTransformation transform
 
@@ -135,7 +136,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    """[BETA] Normalize a tensor image with mean and standard deviation.
+    """[BETA] Normalize a tensor image or video with mean and standard deviation.
 
     .. betastatus:: Normalize transform
 
@@ -179,7 +180,7 @@ class GaussianBlur(Transform):
 
     .. betastatus:: GausssianBlur transform
 
-    If the image is torch Tensor, it is expected
+    If the input is a Tensor, it is expected
     to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
@@ -188,9 +189,6 @@ class GaussianBlur(Transform):
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
-
-    Returns:
-        PIL Image or Tensor: Gaussian blurred version of the input image.
     """
 
     _v1_transform_cls = _transforms.GaussianBlur
@@ -225,6 +223,15 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
+    """[BETA] Converts the input to a specific dtype.
+
+    .. betastatus:: ToDtype transform
+
+    Args:
+        dtype (dtype or dict of Datapoint -> dtype): The dtype to convert to. A dict can be passed to specify
+            per-datapoint conversions, e.g. ``dtype={datapoints.Image: torch.float32, datapoints.Video: torch.float64}``.
+    """
+
     _transformed_types = (torch.Tensor,)
 
     def __init__(self, dtype: Union[torch.dtype, Dict[Type, Optional[torch.dtype]]]) -> None:
@@ -247,9 +254,33 @@ class ToDtype(Transform):
 
 
 class SanitizeBoundingBox(Transform):
-    # This removes boxes and their corresponding labels:
-    # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
-    # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
+    """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
+
+    .. betastatus:: SanitizeBoundingBox transform
+
+    This transform removes bounding boxes and their associated labels/masks that:
+
+    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - have any coordinate outside of their corresponding image. You may want to
+      call :class:`~torchvision.transforms.v2.ClampBoundingBox` first to avoid undesired removals.
+
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models. It is critical to call this transform if
+    :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.
+    If you want to be extra careful, you may call it after all transforms that
+    may modify bounding boxes but once at the end should be enough in most
+    cases.
+
+    Args:
+        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
+        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.
+            It can be a str in which case the input is expected to be a dict, and ``labels_getter`` then specifies
+            the key whose value corresponds to the labels. It can also be a callable that takes the same input
+            as the transform, and returns the labels.
+            By default, this will try to find a "labels" key in the input, if
+            the input is a dict or it is a tuple whose second element is a dict.
+            This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
+    """
 
     def __init__(
         self,
