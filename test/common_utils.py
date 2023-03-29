@@ -8,8 +8,10 @@ import os
 import pathlib
 import random
 import shutil
+import sys
 import tempfile
 from collections import defaultdict
+from subprocess import CalledProcessError, check_output, STDOUT
 from typing import Callable, Sequence, Tuple, Union
 
 import numpy as np
@@ -838,3 +840,22 @@ class InfoBase:
         if isinstance(device, torch.device):
             device = device.type
         return self.closeness_kwargs.get((test_id, dtype, device), dict())
+
+
+def assert_run_python_script(source_code):
+    """Utility to check assertions in an independent Python subprocess.
+    The script provided in the source code should return 0 and not print
+    anything on stderr or stdout. Taken from scikit-learn test utils.
+    source_code (str): The Python source code to execute.
+    """
+    with tempfile.NamedTemporaryFile(mode="wb") as f:
+        f.write(source_code.encode())
+        f.flush()
+
+        cmd = [sys.executable, f.name]
+        try:
+            out = check_output(cmd, stderr=STDOUT)
+        except CalledProcessError as e:
+            raise RuntimeError(f"script errored with output:\n{e.output.decode()}")
+        if out != b"":
+            raise AssertionError(out.decode())
