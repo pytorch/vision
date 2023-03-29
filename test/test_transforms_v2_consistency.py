@@ -822,7 +822,7 @@ class TestContainerTransforms:
                 v2_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            probabilities=probabilities,
+            p=probabilities,
         )
         legacy_transform = legacy_transforms.RandomChoice(
             [

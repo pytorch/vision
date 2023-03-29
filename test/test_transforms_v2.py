@@ -1359,7 +1359,7 @@ class TestContainers:
 
 class TestRandomChoice:
     def test_assertions(self):
-        with pytest.raises(ValueError, match="The number of probabilities doesn't match the number of transforms"):
+        with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
             transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1])
 
 

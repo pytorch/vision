@@ -139,7 +139,7 @@ class RandomChoice(Transform):
             p = [1] * len(transforms)
         elif len(p) != len(transforms):
             raise ValueError(
-                f"The number of p doesn't match the number of transforms: " f"{len(p)} != {len(transforms)}"
+                f"Length of p doesn't match the number of transforms: " f"{len(p)} != {len(transforms)}"
             )
 
         super().__init__()
