@@ -27,6 +27,13 @@ class PILToTensor(Transform):
 
 
 class ToImageTensor(Transform):
+    """[BETA] Convert a tensor or an ndarray or PIL Image to :class:`~torchvision.datapoints.Image`.
+
+    .. betastatus:: ToImageTensor transform
+
+    This transform does not support torchscript.
+    """
+
     _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(
