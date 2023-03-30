@@ -23,17 +23,17 @@ case $(uname) in
     ;;
 esac
 
-echo '::group::Uninstall system JPEG libraries on macOS'
-# The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG libraries installed by default
-# that interfere with our build. We uninstall them here and use the one from conda below.
 if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
+  echo '::group::Uninstall system JPEG libraries on macOS'
+  # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG libraries installed by
+  # default that interfere with our build. We uninstall them here and use the one from conda below.
   JPEG_LIBS=$(brew list | grep jpeg)
   echo $JPEG_LIBS
   for lib in $JPEG_LIBS; do
     brew uninstall --ignore-dependencies --force $lib || true
   done
+  echo '::endgroup::'
 fi
-echo '::endgroup::'
 
 echo '::group::Create build environment'
 # See https://github.com/pytorch/vision/issues/7296 for ffmpeg
@@ -54,12 +54,15 @@ fi
 
 echo '::endgroup::'
 
-echo '::group::Install third party dependencies prior to TorchVision install on Windows'
 if [[ "${OS_TYPE}" == "windows" ]]; then
-  # easy install doesn't work
+  echo '::group::Install third party dependencies prior to TorchVision install on Windows'
+  # `easy_install`, i.e. `python setup.py` has problems downloading the dependencies due to SSL.
+  # Thus, we install them upfront with `pip` to avoid that.
+  # Instead of fixing the SSL error, we can probably maintain this special case until we switch away from the deprecated
+  # `easy_install` anyway.
   pip install --progress-bar=off 'Pillow>=5.3.0,!=8.3.*' numpy requests
+  echo '::endgroup::'
 fi
-echo '::endgroup::'
 
 echo '::group::Install PyTorch'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
