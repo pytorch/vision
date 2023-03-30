@@ -20,11 +20,11 @@ jobs:
           - "3.11"
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
-      include:
-        - python-version: "3.8"
-          runner: windows.8xlarge.nvidia.gpu
-          gpu-arch-type: cuda
-          gpu-arch-version: "11.7"
+        include:
+          - python-version: "3.8"
+            runner: windows.8xlarge.nvidia.gpu
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.7"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
