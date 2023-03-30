@@ -995,6 +995,10 @@ jobs:
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            conda create -yn python39 python=3.9
+            conda activate python39
             packaging/build_cmake.sh
 
   cmake_windows_gpu:
@@ -1012,6 +1016,11 @@ jobs:
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
             packaging/windows/internal/cuda_install.bat
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate
+            conda update -y conda
+            conda create -yn python39 python=3.9
+            conda activate python39
             packaging/build_cmake.sh
 
   build_docs:
