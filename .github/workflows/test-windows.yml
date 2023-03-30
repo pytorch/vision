@@ -33,16 +33,18 @@ jobs:
       timeout: 120
       script: |
         set -euo pipefail
+
+        export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
         
         # FIXME: Port this to pytorch/test-infra/.github/workflows/windows_job.yml
         export PATH="/c/Jenkins/Miniconda3/Scripts:${PATH}"
         
         # TODO: This should be inputs to the generic Windows job the same as for the Linux one
-        export CUDA_HOME='/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-type }}'
-        export CUDA_PATH="${CUDA_HOME}"
-
-        export PYTHON_VERSION=${{ matrix.python-version }}
-        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
-        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
+          export CUDA_HOME='/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-type }}'
+          export CUDA_PATH="${CUDA_HOME}"
+        fi
         
         ./.github/scripts/unittest.sh
