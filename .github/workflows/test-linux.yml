@@ -51,6 +51,7 @@ jobs:
 
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
+        export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
         
@@ -80,6 +81,7 @@ jobs:
 
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
+        export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
         
