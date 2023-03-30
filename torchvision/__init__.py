@@ -105,7 +105,7 @@ _BETA_TRANSFORMS_WARNING = (
     "this issue: https://github.com/pytorch/vision/issues/6753, and you can also "
     "check out https://github.com/pytorch/vision/issues/7319 to learn more about "
     "the APIs that we suspect might involve future changes. "
-    "You can silence this warning by calling torchvision.disable_beta_transform_warning()."
+    "You can silence this warning by calling torchvision.disable_beta_transforms_warning()."
 )
 
 
