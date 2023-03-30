@@ -14,6 +14,9 @@ case $(uname) in
   Darwin)
     OS_TYPE=macos
     ;;
+  MSYS*)
+    OS_TYPE=windows
+    ;;
   *)
     echo "Unknown OS type:" $(uname)
     exit 1

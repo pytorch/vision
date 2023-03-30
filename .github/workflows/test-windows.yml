@@ -26,9 +26,11 @@ jobs:
       script: |
         set -euo pipefail
         
-        which conda || true
-        sleep 3600
+        export PATH="/c/Jenkins/Miniconda3/Scripts:${PATH}"
+        echo $PATH
 
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        
+        ./.github/scripts/unittest.sh
