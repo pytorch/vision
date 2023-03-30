@@ -2,7 +2,6 @@ import math
 import os
 import random
 import re
-import sys
 import textwrap
 import warnings
 from functools import partial
@@ -2279,10 +2278,6 @@ def test_random_grayscale_with_grayscale_input():
     ),
 )
 @pytest.mark.parametrize("from_private", (True, False))
-@pytest.mark.skipif(
-    sys.platform in ("win32", "cygwin"),
-    reason="assert_run_python_script is broken on Windows. Possible fix in https://github.com/pytorch/vision/pull/7346",
-)
 def test_functional_deprecation_warning(import_statement, from_private):
     if from_private:
         import_statement = import_statement.replace("functional", "_functional")
