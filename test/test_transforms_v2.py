@@ -136,14 +136,14 @@ class TestSmoke:
             (transforms.RandomCrop([16, 16], pad_if_needed=True), None),
             (transforms.RandomHorizontalFlip(p=1.0), None),
             (transforms.RandomPerspective(p=1.0), None),
-            (transforms.RandomResize(min_size=10, max_size=20), None),
-            (transforms.RandomResizedCrop([16, 16]), None),
+            (transforms.RandomResize(min_size=10, max_size=20, antialias=True), None),
+            (transforms.RandomResizedCrop([16, 16], antialias=True), None),
             (transforms.RandomRotation(degrees=30), None),
-            (transforms.RandomShortestSize(min_size=10), None),
+            (transforms.RandomShortestSize(min_size=10, antialias=True), None),
             (transforms.RandomVerticalFlip(p=1.0), None),
             (transforms.RandomZoomOut(p=1.0), None),
             (transforms.Resize([16, 16], antialias=True), None),
-            (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2)), None),
+            (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
             (transforms.ClampBoundingBox(), None),
             (transforms.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.CXCYWH), None),
             (transforms.ConvertDtype(), None),
@@ -1514,7 +1514,7 @@ class TestRandomShortestSize:
     def test__get_params(self, min_size, max_size, mocker):
         spatial_size = (3, 10)
 
-        transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
+        transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size, antialias=True)
 
         sample = mocker.MagicMock(spec=datapoints.Image, num_channels=3, spatial_size=spatial_size)
         params = transform._get_params([sample])
@@ -1595,7 +1595,7 @@ class TestRandomResize:
         min_size = 3
         max_size = 6
 
-        transform = transforms.RandomResize(min_size=min_size, max_size=max_size)
+        transform = transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
 
         for _ in range(10):
             params = transform._get_params([])
@@ -1791,15 +1791,21 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
     else:
         sample = image, label
 
+    if to_tensor is transforms.ToTensor:
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            to_tensor = to_tensor()
+    else:
+        to_tensor = to_tensor()
+
     t = transforms.Compose(
         [
-            transforms.RandomResizedCrop((224, 224)),
+            transforms.RandomResizedCrop((224, 224), antialias=True),
             transforms.RandomHorizontalFlip(p=1),
             transforms.RandAugment(),
             transforms.TrivialAugmentWide(),
             transforms.AugMix(),
             transforms.AutoAugment(),
-            to_tensor(),
+            to_tensor,
             # TODO: ConvertImageDtype is a pass-through on PIL images, is that
             # intended?  This results in a failure if we convert to tensor after
             # it, because the image would still be uint8 which make Normalize
@@ -1830,10 +1836,17 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
 @pytest.mark.parametrize("sanitize", (True, False))
 def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     torch.manual_seed(0)
+
+    if to_tensor is transforms.ToTensor:
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            to_tensor = to_tensor()
+    else:
+        to_tensor = to_tensor()
+
     if data_augmentation == "hflip":
         t = [
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     elif data_augmentation == "lsj":
@@ -1847,7 +1860,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
             # ),
             transforms.RandomCrop((1024, 1024), pad_if_needed=True),
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     elif data_augmentation == "multiscale":
@@ -1856,7 +1869,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
                 min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333, antialias=True
             ),
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     elif data_augmentation == "ssd":
@@ -1865,14 +1878,14 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
             transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})),
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     elif data_augmentation == "ssdlite":
         t = [
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     if sanitize:
@@ -1907,7 +1920,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 
     out = t(sample)
 
-    if to_tensor is transforms.ToTensor and image_type is not datapoints.Image:
+    if isinstance(to_tensor, transforms.ToTensor) and image_type is not datapoints.Image:
         assert is_simple_tensor(out["image"])
     else:
         assert isinstance(out["image"], datapoints.Image)
