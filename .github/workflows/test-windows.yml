@@ -26,10 +26,9 @@ jobs:
       script: |
         set -euo pipefail
         
+        which conda || true
         sleep 3600
 
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-
-        which conda
