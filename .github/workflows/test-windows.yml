@@ -24,7 +24,10 @@ jobs:
           - python-version: "3.8"
             runner: windows.8xlarge.nvidia.gpu
             gpu-arch-type: cuda
-            gpu-arch-version: "11.7"
+            # For now the Windows job only supports CUDA 11.8. We want to test the "stable" CUDA here,
+            # i.e. CUDA 11.7, as we do for Linux, but testing any CUDA is better than none.
+            # FIXME: Switch this to "11.7" as soon the the Windows job supports selecting a CUDA version
+            gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
