@@ -767,7 +767,7 @@ jobs:
       image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.medium
     environment:
-      image_name: "pytorch/manylinux-cuda116"
+      image_name: "pytorch/manylinux-cuda117"
       CU_VERSION: << parameters.cu_version >>
       PYTHON_VERSION: << parameters.python_version >>
     steps:
@@ -1363,15 +1363,6 @@ workflows:
               - nightly
           name: unittest_linux_gpu_py3.10
           python_version: '3.10'
-      - unittest_linux_gpu:
-          cu_version: cu117
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_linux_gpu_py3.11
-          python_version: '3.11'
       - unittest_windows_cpu:
           cu_version: cpu
           name: unittest_windows_cpu_py3.8
@@ -1384,10 +1375,6 @@ workflows:
           cu_version: cpu
           name: unittest_windows_cpu_py3.10
           python_version: '3.10'
-      - unittest_windows_cpu:
-          cu_version: cpu
-          name: unittest_windows_cpu_py3.11
-          python_version: '3.11'
       - unittest_windows_gpu:
           cu_version: cu117
           name: unittest_windows_gpu_py3.8
@@ -1410,15 +1397,6 @@ workflows:
               - nightly
           name: unittest_windows_gpu_py3.10
           python_version: '3.10'
-      - unittest_windows_gpu:
-          cu_version: cu117
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_windows_gpu_py3.11
-          python_version: '3.11'
       - unittest_macos_cpu:
           cu_version: cpu
           name: unittest_macos_cpu_py3.8
@@ -1431,10 +1409,6 @@ workflows:
           cu_version: cpu
           name: unittest_macos_cpu_py3.10
           python_version: '3.10'
-      - unittest_macos_cpu:
-          cu_version: cpu
-          name: unittest_macos_cpu_py3.11
-          python_version: '3.11'
 
   cmake:
     jobs:
@@ -1446,7 +1420,7 @@ workflows:
           cu_version: cu117
           name: cmake_linux_gpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda116
+          wheel_docker_image: pytorch/manylinux-cuda117
       - cmake_windows_cpu:
           cu_version: cpu
           name: cmake_windows_cpu

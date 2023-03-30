@@ -767,7 +767,7 @@ jobs:
       image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.medium
     environment:
-      image_name: "pytorch/manylinux-cuda116"
+      image_name: "pytorch/manylinux-cuda117"
       CU_VERSION: << parameters.cu_version >>
       PYTHON_VERSION: << parameters.python_version >>
     steps:
