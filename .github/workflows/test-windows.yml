@@ -25,6 +25,8 @@ jobs:
       timeout: 120
       script: |
         set -euo pipefail
+        
+        sleep 3600
 
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
