@@ -59,6 +59,8 @@ def main() -> None:
     smoke_test_torchvision_resnet50_classify()
     if torch.cuda.is_available():
         smoke_test_torchvision_resnet50_classify("cuda")
+    if torch.backends.mps.is_available():
+        smoke_test_torchvision_resnet50_classify("mps")
 
 
 if __name__ == "__main__":
