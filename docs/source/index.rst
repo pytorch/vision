@@ -31,6 +31,7 @@ architectures, and common image transformations for computer vision.
    :maxdepth: 2
    :caption: Package Reference
 
+   datapoints
    transforms
    models
    datasets
