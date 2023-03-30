@@ -54,6 +54,13 @@ fi
 
 echo '::endgroup::'
 
+echo '::group::Install third party dependencies prior to TorchVision install on Windows'
+if [[ "${OS_TYPE}" == "windows" ]]; then
+  # easy install doesn't work
+  pip install --progress-bar=off 'Pillow>=5.3.0,!=8.3.*' numpy requests
+fi
+echo '::endgroup::'
+
 echo '::group::Install PyTorch'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
 if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
