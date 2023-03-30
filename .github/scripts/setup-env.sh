@@ -79,7 +79,7 @@ ltt install --progress-bar=off \
   torch
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
-  python3 -c "import torch; exit(not torch.cuda.is_available())"
+  python -c "import torch; exit(not torch.cuda.is_available())"
 fi
 echo '::endgroup::'
 
