@@ -1,4 +1,4 @@
-name: Tests on Linux
+name: Tests on Windows
 
 on:
   pull_request:
@@ -22,8 +22,6 @@ jobs:
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
-      gpu-arch-type: ${{ matrix.gpu-arch-type }}
-      gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
       script: |
         set -euo pipefail
