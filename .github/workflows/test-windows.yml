@@ -24,10 +24,7 @@ jobs:
           - python-version: "3.8"
             runner: windows.8xlarge.nvidia.gpu
             gpu-arch-type: cuda
-            # For now the Windows job only supports CUDA 11.8. We want to test the "stable" CUDA here,
-            # i.e. CUDA 11.7, as we do for Linux, but testing any CUDA is better than none.
-            # FIXME: Switch this to "11.7" as soon the the Windows job supports selecting a CUDA version
-            gpu-arch-version: "11.8"
+            gpu-arch-version: "11.7"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
@@ -39,6 +36,10 @@ jobs:
         
         # FIXME: Port this to pytorch/test-infra/.github/workflows/windows_job.yml
         export PATH="/c/Jenkins/Miniconda3/Scripts:${PATH}"
+        
+        # TODO: This should be inputs to the generic Windows job the same as for the Linux one
+        export CUDA_HOME='/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-type }}'
+        export CUDA_PATH="${CUDA_HOME}"
 
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
