@@ -38,7 +38,7 @@ jobs:
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
         
-        # FIXME: Port this to pytorch/test-infra/.github/workflows/windows_job.yml
+        # TODO: Port this to pytorch/test-infra/.github/workflows/windows_job.yml
         export PATH="/c/Jenkins/Miniconda3/Scripts:${PATH}"
         
         # TODO: This should be inputs to the generic Windows job the same as for the Linux one
