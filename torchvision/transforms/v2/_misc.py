@@ -24,7 +24,7 @@ class Identity(Transform):
 class Lambda(Transform):
     """[BETA] Apply a user-defined function as a transform.
 
-    .. betastatus:: Lambda transform
+    .. v2betastatus:: Lambda transform
 
     This transform does not support torchscript.
 
@@ -55,7 +55,7 @@ class Lambda(Transform):
 class LinearTransformation(Transform):
     """[BETA] Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
 
-    .. betastatus:: LinearTransformation transform
+    .. v2betastatus:: LinearTransformation transform
 
     This transform does not support PIL Image.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
@@ -138,7 +138,7 @@ class LinearTransformation(Transform):
 class Normalize(Transform):
     """[BETA] Normalize a tensor image or video with mean and standard deviation.
 
-    .. betastatus:: Normalize transform
+    .. v2betastatus:: Normalize transform
 
     This transform does not support PIL Image.
     Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
@@ -178,7 +178,7 @@ class Normalize(Transform):
 class GaussianBlur(Transform):
     """[BETA] Blurs image with randomly chosen Gaussian blur.
 
-    .. betastatus:: GausssianBlur transform
+    .. v2betastatus:: GausssianBlur transform
 
     If the input is a Tensor, it is expected
     to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -225,7 +225,7 @@ class GaussianBlur(Transform):
 class ToDtype(Transform):
     """[BETA] Converts the input to a specific dtype - this does not scale values.
 
-    .. betastatus:: ToDtype transform
+    .. v2betastatus:: ToDtype transform
 
     Args:
         dtype (``torch.dtype`` or dict of ``Datapoint`` -> ``torch.dtype``): The dtype to convert to.
@@ -258,7 +258,7 @@ class ToDtype(Transform):
 class SanitizeBoundingBox(Transform):
     """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
-    .. betastatus:: SanitizeBoundingBox transform
+    .. v2betastatus:: SanitizeBoundingBox transform
 
     This transform removes bounding boxes and their associated labels/masks that:
 

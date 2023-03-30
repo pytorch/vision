@@ -28,7 +28,7 @@ from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query
 class RandomHorizontalFlip(_RandomApplyTransform):
     """[BETA] Horizontally flip the input with a given probability.
 
-    .. betastatus:: RandomHorizontalFlip transform
+    .. v2betastatus:: RandomHorizontalFlip transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -48,7 +48,7 @@ class RandomHorizontalFlip(_RandomApplyTransform):
 class RandomVerticalFlip(_RandomApplyTransform):
     """[BETA] Vertically flip the input with a given probability.
 
-    .. betastatus:: RandomVerticalFlip transform
+    .. v2betastatus:: RandomVerticalFlip transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -68,7 +68,7 @@ class RandomVerticalFlip(_RandomApplyTransform):
 class Resize(Transform):
     """[BETA] Resize the input to the given size.
 
-    .. betastatus:: Resize transform
+    .. v2betastatus:: Resize transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -162,7 +162,7 @@ class Resize(Transform):
 class CenterCrop(Transform):
     """[BETA] Crop the input at the center.
 
-    .. betastatus:: CenterCrop transform
+    .. v2betastatus:: CenterCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -190,7 +190,7 @@ class CenterCrop(Transform):
 class RandomResizedCrop(Transform):
     """[BETA] Crop a random portion of the input and resize it to a given size.
 
-    .. betastatus:: RandomResizedCrop transform
+    .. v2betastatus:: RandomResizedCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -316,7 +316,7 @@ ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
 class FiveCrop(Transform):
     """[BETA] Crop the image or video into four corners and the central crop.
 
-    .. betastatus:: FiveCrop transform
+    .. v2betastatus:: FiveCrop transform
 
     If the input is a :class:`torch.Tensor` or a :class:`~torchvision.datapoints.Image` or a
     :class:`~torchvision.datapoints.Video` it can have arbitrary number of leading batch dimensions.
@@ -379,7 +379,7 @@ class TenCrop(Transform):
     """[BETA] Crop the image or video into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default).
 
-    .. betastatus:: TenCrop transform
+    .. v2betastatus:: TenCrop transform
 
     If the input is a :class:`torch.Tensor` or a :class:`~torchvision.datapoints.Image` or a
     :class:`~torchvision.datapoints.Video` it can have arbitrary number of leading batch dimensions.
@@ -437,7 +437,7 @@ class TenCrop(Transform):
 class Pad(Transform):
     """[BETA] Pad the input on all sides with the given "pad" value.
 
-    .. betastatus:: Pad transform
+    .. v2betastatus:: Pad transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -512,7 +512,7 @@ class RandomZoomOut(_RandomApplyTransform):
     """[BETA] "Zoom out" transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
-    .. betastatus:: RandomZoomOut transform
+    .. v2betastatus:: RandomZoomOut transform
 
     This transformation randomly pads images, videos, bounding boxes and masks creating a zoom out effect.
     Output spatial size is randomly sampled from original size up to a maximum size configured
@@ -581,7 +581,7 @@ class RandomZoomOut(_RandomApplyTransform):
 class RandomRotation(Transform):
     """[BETA] Rotate the input by angle.
 
-    .. betastatus:: RandomRotation transform
+    .. v2betastatus:: RandomRotation transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -654,7 +654,7 @@ class RandomRotation(Transform):
 class RandomAffine(Transform):
     """[BETA] Random affine transformation the input keeping center invariant.
 
-    .. betastatus:: RandomAffine transform
+    .. v2betastatus:: RandomAffine transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -775,7 +775,7 @@ class RandomAffine(Transform):
 class RandomCrop(Transform):
     """[BETA] Crop the input at a random location.
 
-    .. betastatus:: RandomCrop transform
+    .. v2betastatus:: RandomCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -930,7 +930,7 @@ class RandomCrop(Transform):
 class RandomPerspective(_RandomApplyTransform):
     """[BETA] Perform a random perspective transformation of the input with a given probability.
 
-    .. betastatus:: RandomPerspective transform
+    .. v2betastatus:: RandomPerspective transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -1016,7 +1016,7 @@ class RandomPerspective(_RandomApplyTransform):
 class ElasticTransform(Transform):
     """[BETA] Transform the input with elastic transformations.
 
-    .. betastatus:: RandomPerspective transform
+    .. v2betastatus:: RandomPerspective transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -1108,7 +1108,7 @@ class RandomIoUCrop(Transform):
     """[BETA] Random IoU crop transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
-    .. betastatus:: RandomIoUCrop transform
+    .. v2betastatus:: RandomIoUCrop transform
 
     This transformation requires an image or video data and ``datapoints.BoundingBox`` in the input.
 
@@ -1232,7 +1232,7 @@ class ScaleJitter(Transform):
     """[BETA] Perform Large Scale Jitter on the input according to
     `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
 
-    .. betastatus:: ScaleJitter transform
+    .. v2betastatus:: ScaleJitter transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -1298,7 +1298,7 @@ class ScaleJitter(Transform):
 class RandomShortestSize(Transform):
     """[BETA] Randomly resize the input.
 
-    .. betastatus:: RandomShortestSize transform
+    .. v2betastatus:: RandomShortestSize transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
     :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
@@ -1366,7 +1366,7 @@ class RandomShortestSize(Transform):
 class RandomResize(Transform):
     """[BETA] Randomly resize the input.
 
-    .. betastatus:: RandomResize transform
+    .. v2betastatus:: RandomResize transform
 
     This transformation can be used together with ``RandomCrop`` as data augmentations to train
     models on image segmentation task.

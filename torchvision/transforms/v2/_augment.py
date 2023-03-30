@@ -15,7 +15,7 @@ from .utils import is_simple_tensor, query_chw
 class RandomErasing(_RandomApplyTransform):
     """[BETA] Randomly select a rectangle region in the input image or video and erase its pixels.
 
-    .. betastatus:: RandomErasing transform
+    .. v2betastatus:: RandomErasing transform
 
     This transform does not support PIL Image.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896

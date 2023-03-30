@@ -16,10 +16,10 @@ Transforming and augmenting images
     :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`.
     Note that these transforms are still BETA, and while we don't expect major
     breaking changes in the future, some APIs may still change according to user
-    feedback. Please submit any feedback you may have in
-    https://github.com/pytorch/vision/issues/6753, and you can also check out
-    https://github.com/pytorch/vision/issues/7319 to learn more about the APIs
-    that we suspect might involve future changes.
+    feedback. Please submit any feedback you may have `here
+    <https://github.com/pytorch/vision/issues/6753>`_, and you can also check
+    out `this issue <https://github.com/pytorch/vision/issues/7319>`_ to learn
+    more about the APIs that we suspect might involve future changes.
 
 Transforms are common image transformations available in the
 ``torchvision.transforms`` module. They can be chained together using

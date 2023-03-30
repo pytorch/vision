@@ -11,7 +11,7 @@ from .utils import is_simple_tensor
 class ConvertBoundingBoxFormat(Transform):
     """[BETA] Convert bounding box coordinates to the given ``format``, eg from "CXCYWH" to "XYXY".
 
-    .. betastatus:: ConvertBoundingBoxFormat transform
+    .. v2betastatus:: ConvertBoundingBoxFormat transform
 
     Args:
         format (str or datapoints.BoundingBoxFormat): output bounding box format.
@@ -34,7 +34,7 @@ class ConvertBoundingBoxFormat(Transform):
 class ConvertDtype(Transform):
     """[BETA] Convert input image or video to the given ``dtype`` and scale the values accordingly.
 
-    .. betastatus:: ConvertDtype transform
+    .. v2betastatus:: ConvertDtype transform
 
     This function does not support PIL Image.
 
@@ -77,7 +77,7 @@ class ClampBoundingBox(Transform):
 
     The clamping is done according to the bounding boxes' ``spatial_size`` meta-data.
 
-    .. betastatus:: ClampBoundingBox transform
+    .. v2betastatus:: ClampBoundingBox transform
 
     """
 
