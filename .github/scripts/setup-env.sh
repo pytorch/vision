@@ -54,18 +54,6 @@ fi
 
 echo '::endgroup::'
 
-if [[ "${OS_TYPE}" == "windows" ]]; then
-  echo '::group::Install third party dependencies prior to TorchVision install on Windows'
-  # `easy_install`, i.e. `python setup.py` has problems downloading the dependencies due to SSL.
-  # Thus, we install them upfront with `pip` to avoid that.
-  # Instead of fixing the SSL error, we can probably maintain this special case until we switch away from the deprecated
-  # `easy_install` anyway.
-  python setup.py egg_info
-  REQUIREMENTS=$(sed -e '/^$/,$d' *.egg-info/requires.txt | tr '\n' ' ')
-  pip install --progress-bar=off "${REQUIREMENTS}"
-  echo '::endgroup::'
-fi
-
 echo '::group::Install PyTorch'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
 if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
@@ -84,6 +72,18 @@ if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python -c "import torch; exit(not torch.cuda.is_available())"
 fi
 echo '::endgroup::'
+
+if [[ "${OS_TYPE}" == "windows" ]]; then
+  echo '::group::Install third party dependencies prior to TorchVision install on Windows'
+  # `easy_install`, i.e. `python setup.py` has problems downloading the dependencies due to SSL.
+  # Thus, we install them upfront with `pip` to avoid that.
+  # Instead of fixing the SSL error, we can probably maintain this special case until we switch away from the deprecated
+  # `easy_install` anyway.
+  python setup.py egg_info
+  REQUIREMENTS=$(sed -e '/^$/,$d' *.egg-info/requires.txt | tr '\n' ' ')
+  pip install --progress-bar=off "${REQUIREMENTS}"
+  echo '::endgroup::'
+fi
 
 echo '::group::Install TorchVision'
 python setup.py develop
