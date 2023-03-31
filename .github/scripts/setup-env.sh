@@ -60,7 +60,9 @@ if [[ "${OS_TYPE}" == "windows" ]]; then
   # Thus, we install them upfront with `pip` to avoid that.
   # Instead of fixing the SSL error, we can probably maintain this special case until we switch away from the deprecated
   # `easy_install` anyway.
-  pip install --progress-bar=off 'Pillow>=5.3.0,!=8.3.*' numpy requests
+  python setup.py egg_info
+  REQUIREMENTS=$(sed -e '/^$/,$d' *.egg-info/requires.txt | tr '\n' ' ')
+  pip install --progress-bar=off "${REQUIREMENTS}"
   echo '::endgroup::'
 fi
 
