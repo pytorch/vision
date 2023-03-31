@@ -80,8 +80,10 @@ if [[ "${OS_TYPE}" == "windows" ]]; then
   # Instead of fixing the SSL error, we can probably maintain this special case until we switch away from the deprecated
   # `easy_install` anyway.
   python setup.py egg_info
-  REQUIREMENTS=$(sed -e '/^$/,$d' *.egg-info/requires.txt | tr '\n' ' ')
-  pip install --progress-bar=off "${REQUIREMENTS}"
+  # The requires.txt cannot be used with `pip install -r` directly. The requirements are listed at the top and the
+  # optional dependencies come in non-standard syntax after a blank line. Thus, we just extract the header.
+  sed -e '/^$/,$d' *.egg-info/requires.txt > requirements.txt
+  pip install --progress-bar=off -r requirements.txt
   echo '::endgroup::'
 fi
 
