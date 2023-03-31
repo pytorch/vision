@@ -283,7 +283,7 @@ class Normalize(torch.nn.Module):
 class Resize(torch.nn.Module):
     """Resize the input image to the given size.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means a maximum of two leading dimensions
 
     .. warning::
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
