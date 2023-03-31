@@ -1,1 +1,8 @@
 tracking_issue: 2447
+allowed_workflows:
+- lint
+- Build Linux
+- Build Macos
+- Build M1
+- Tests on Linux
+- Tests on macOS
