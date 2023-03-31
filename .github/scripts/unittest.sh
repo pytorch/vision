@@ -4,9 +4,8 @@ set -euo pipefail
 
 ./.github/scripts/setup-env.sh
 
-# Prepare conda
-eval "$($(which conda) shell.bash hook)"
-conda deactivate && conda activate ci
+# Activate conda environment
+eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
 
 python test/smoke_test.py
 
