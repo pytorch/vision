@@ -359,7 +359,7 @@ def main(args):
         evaluate(model, criterion, data_loader_test, device=device)
         if model_ema:
             evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
-        if args.output_dir and (epoch + 1) % args.output_freq == 0:
+        if args.output_dir and ((epoch + 1) % args.output_freq == 0) or (epoch == args.epochs - 1)):
             checkpoint = {
                 "model": model_without_ddp.state_dict(),
                 "optimizer": optimizer.state_dict(),
