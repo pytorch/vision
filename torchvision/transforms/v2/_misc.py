@@ -397,10 +397,15 @@ class SanitizeBoundingBox(Transform):
         return tree_unflatten(flat_outputs, spec)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        is_label = inpt is not None and inpt is params["labels"]
+        is_bounding_box_or_mask = isinstance(inpt, (datapoints.BoundingBox, datapoints.Mask))
 
-        if (inpt is not None and inpt is params["labels"]) or isinstance(
-            inpt, (datapoints.BoundingBox, datapoints.Mask)
-        ):
-            inpt = inpt[params["valid"]]
+        if not (is_label or is_bounding_box_or_mask):
+            return inpt
 
-        return inpt
+        output = inpt[params["valid"]]
+
+        if is_label:
+            return output
+
+        return type(inpt).wrap_like(inpt, output)

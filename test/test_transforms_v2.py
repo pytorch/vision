@@ -2020,6 +2020,9 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
     assert out_image is input_img
     assert out_whatever is whatever
 
+    assert isinstance(out_boxes, datapoints.BoundingBox)
+    assert isinstance(out_masks, datapoints.Mask)
+
     if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
         assert out_labels is labels
     else:
