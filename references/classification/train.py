@@ -359,7 +359,7 @@ def main(args):
         evaluate(model, criterion, data_loader_test, device=device)
         if model_ema:
             evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
-        if args.output_dir and ((epoch + 1) % args.output_freq == 0) or (epoch == args.epochs - 1)):
+        if args.output_dir and ((epoch + 1) % args.checkpoint_freq == 0) or (epoch == args.epochs - 1)):
             checkpoint = {
                 "model": model_without_ddp.state_dict(),
                 "optimizer": optimizer.state_dict(),
@@ -440,7 +440,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-min", default=0.0, type=float, help="minimum lr of lr schedule (default: 0.0)")
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
     parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
-    parser.add_argument("--output-freq", default=1, type=int, help="output frequency")
+    parser.add_argument("--checkpoint-freq", default=1, type=int, help="checkpoint frequency")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
     parser.add_argument("--start-epoch", default=0, type=int, metavar="N", help="start epoch")
     parser.add_argument(
