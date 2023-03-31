@@ -41,9 +41,9 @@ jobs:
         # TODO: Port this to pytorch/test-infra/.github/workflows/windows_job.yml
         export PATH="/c/Jenkins/Miniconda3/Scripts:${PATH}"
         
-        # TODO: This handled by the generic Windows job the same as its done by the Linux generic job one
+        # TODO: This handled by the generic Windows job the same as its done by the generic Linux job
         if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
-          export CUDA_HOME="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${{ matrix.gpu-arch-type }}"
+          export CUDA_HOME='/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-type }}'
           export CUDA_PATH="${CUDA_HOME}"
         fi
         
