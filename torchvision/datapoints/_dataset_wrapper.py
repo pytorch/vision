@@ -14,7 +14,7 @@ from torchvision.transforms.v2 import functional as F
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
 
-def wrap_dataset_for_transforms_v2(dataset):
+def wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels")):
     """[BETA] Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.
 
     .. v2betastatus:: wrap_dataset_for_transforms_v2 function
@@ -78,8 +78,9 @@ def wrap_dataset_for_transforms_v2(dataset):
 
     Args:
         dataset: the dataset instance to wrap for compatibility with transforms v2.
+        target_keys: TODO
     """
-    return VisionDatasetDatapointWrapper(dataset)
+    return VisionDatasetDatapointWrapper(dataset, target_keys)
 
 
 class WrapperFactories(dict):
@@ -99,7 +100,7 @@ WRAPPER_FACTORIES = WrapperFactories()
 
 
 class VisionDatasetDatapointWrapper(Dataset):
-    def __init__(self, dataset):
+    def __init__(self, dataset, target_keys):
         dataset_cls = type(dataset)
 
         if not isinstance(dataset, datasets.VisionDataset):
@@ -123,7 +124,8 @@ class VisionDatasetDatapointWrapper(Dataset):
                 raise TypeError(msg)
 
         self._dataset = dataset
-        self._wrapper = wrapper_factory(dataset)
+        self._target_keys = target_keys
+        self._wrapper = wrapper_factory(dataset, target_keys)
 
         # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
         # Although internally, `datasets.VisionDataset` merges `transform` and `target_transform` into the joint
@@ -170,7 +172,7 @@ def identity(item):
     return item
 
 
-def identity_wrapper_factory(dataset):
+def identity_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         return sample
 
@@ -203,8 +205,8 @@ def wrap_target_by_type(target, *, target_types, type_wrappers):
     return wrapped_target
 
 
-def classification_wrapper_factory(dataset):
-    return identity_wrapper_factory(dataset)
+def classification_wrapper_factory(dataset, target_keys):
+    return identity_wrapper_factory(dataset, target_keys)
 
 
 for dataset_cls in [
@@ -221,7 +223,7 @@ for dataset_cls in [
     WRAPPER_FACTORIES.register(dataset_cls)(classification_wrapper_factory)
 
 
-def segmentation_wrapper_factory(dataset):
+def segmentation_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, mask = sample
         return image, pil_image_to_mask(mask)
@@ -235,7 +237,7 @@ for dataset_cls in [
     WRAPPER_FACTORIES.register(dataset_cls)(segmentation_wrapper_factory)
 
 
-def video_classification_wrapper_factory(dataset):
+def video_classification_wrapper_factory(dataset, target_keys):
     if dataset.video_clips.output_format == "THWC":
         raise RuntimeError(
             f"{type(dataset).__name__} with `output_format='THWC'` is not supported by this wrapper, "
@@ -261,15 +263,15 @@ for dataset_cls in [
 
 
 @WRAPPER_FACTORIES.register(datasets.Caltech101)
-def caltech101_wrapper_factory(dataset):
+def caltech101_wrapper_factory(dataset, target_keys):
     if "annotation" in dataset.target_type:
         raise_not_supported("Caltech101 dataset with `target_type=['annotation', ...]`")
 
-    return classification_wrapper_factory(dataset)
+    return classification_wrapper_factory(dataset, target_keys)
 
 
 @WRAPPER_FACTORIES.register(datasets.CocoDetection)
-def coco_dectection_wrapper_factory(dataset):
+def coco_dectection_wrapper_factory(dataset, target_keys):
     def segmentation_to_mask(segmentation, *, spatial_size):
         from pycocotools import mask
 
@@ -288,30 +290,40 @@ def coco_dectection_wrapper_factory(dataset):
         if not target:
             return image, dict(image_id=image_id)
 
-        batched_target = list_of_dicts_to_dict_of_lists(target)
-
-        batched_target["image_id"] = image_id
-
         spatial_size = tuple(F.get_spatial_size(image))
-        batched_target["boxes"] = F.convert_format_bounding_box(
-            datapoints.BoundingBox(
-                batched_target["bbox"],
-                format=datapoints.BoundingBoxFormat.XYWH,
-                spatial_size=spatial_size,
-            ),
-            new_format=datapoints.BoundingBoxFormat.XYXY,
-        )
-        batched_target["masks"] = datapoints.Mask(
-            torch.stack(
-                [
-                    segmentation_to_mask(segmentation, spatial_size=spatial_size)
-                    for segmentation in batched_target["segmentation"]
-                ]
-            ),
-        )
-        batched_target["labels"] = torch.tensor(batched_target["category_id"])
+        batched_target = list_of_dicts_to_dict_of_lists(target)
+        target = {}
 
-        return image, batched_target
+        if "image_id" in target_keys:
+            target["image_id"] = image_id
+
+        if "boxes" in target_keys:
+            target["boxes"] = F.convert_format_bounding_box(
+                datapoints.BoundingBox(
+                    batched_target["bbox"],
+                    format=datapoints.BoundingBoxFormat.XYWH,
+                    spatial_size=spatial_size,
+                ),
+                new_format=datapoints.BoundingBoxFormat.XYXY,
+            )
+
+        if "masks" in target_keys:
+            target["masks"] = datapoints.Mask(
+                torch.stack(
+                    [
+                        segmentation_to_mask(segmentation, spatial_size=spatial_size)
+                        for segmentation in batched_target["segmentation"]
+                    ]
+                ),
+            )
+
+        if "labels" in target_keys:
+            target["labels"] = torch.tensor(batched_target["category_id"])
+
+        for target_key in set(target_keys) - {"image_id", "boxes", "masks", "labels"}:
+            target[target_key] = batched_target[target_key]
+
+        return image, target
 
     return wrapper
 
@@ -346,7 +358,7 @@ VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC
 
 
 @WRAPPER_FACTORIES.register(datasets.VOCDetection)
-def voc_detection_wrapper_factory(dataset):
+def voc_detection_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
 
@@ -370,15 +382,15 @@ def voc_detection_wrapper_factory(dataset):
 
 
 @WRAPPER_FACTORIES.register(datasets.SBDataset)
-def sbd_wrapper(dataset):
+def sbd_wrapper(dataset, target_keys):
     if dataset.mode == "boundaries":
         raise_not_supported("SBDataset with mode='boundaries'")
 
-    return segmentation_wrapper_factory(dataset)
+    return segmentation_wrapper_factory(dataset, target_keys)
 
 
 @WRAPPER_FACTORIES.register(datasets.CelebA)
-def celeba_wrapper_factory(dataset):
+def celeba_wrapper_factory(dataset, target_keys):
     if any(target_type in dataset.target_type for target_type in ["attr", "landmarks"]):
         raise_not_supported("`CelebA` dataset with `target_type=['attr', 'landmarks', ...]`")
 
@@ -410,7 +422,7 @@ KITTI_CATEGORY_TO_IDX = dict(zip(KITTI_CATEGORIES, range(len(KITTI_CATEGORIES)))
 
 
 @WRAPPER_FACTORIES.register(datasets.Kitti)
-def kitti_wrapper_factory(dataset):
+def kitti_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
 
@@ -428,7 +440,7 @@ def kitti_wrapper_factory(dataset):
 
 
 @WRAPPER_FACTORIES.register(datasets.OxfordIIITPet)
-def oxford_iiit_pet_wrapper_factor(dataset):
+def oxford_iiit_pet_wrapper_factor(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
 
@@ -447,7 +459,7 @@ def oxford_iiit_pet_wrapper_factor(dataset):
 
 
 @WRAPPER_FACTORIES.register(datasets.Cityscapes)
-def cityscapes_wrapper_factory(dataset):
+def cityscapes_wrapper_factory(dataset, target_keys):
     if any(target_type in dataset.target_type for target_type in ["polygon", "color"]):
         raise_not_supported("`Cityscapes` dataset with `target_type=['polygon', 'color', ...]`")
 
@@ -482,7 +494,7 @@ def cityscapes_wrapper_factory(dataset):
 
 
 @WRAPPER_FACTORIES.register(datasets.WIDERFace)
-def widerface_wrapper(dataset):
+def widerface_wrapper(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
 
