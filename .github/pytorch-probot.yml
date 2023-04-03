@@ -1,6 +1,7 @@
 tracking_issue: 2447
+
+# List of workflows that will be re-run in case of failures
 allowed_workflows:
-- lint
 - Build Linux
 - Build Macos
 - Build M1
