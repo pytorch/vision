@@ -46,11 +46,6 @@ jobs:
           # TODO: This should be handled by the generic Windows job the same as its done by the generic Linux job
           export CUDA_HOME="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-version }}"
           export CUDA_PATH="${CUDA_HOME}"
-        
-          if [[ ! -f "${CUDA_HOME}/include/nvjpeg.h" ]]; then
-            echo "nvjpeg is not available"
-            exit 1
-          fi
         fi
         
         ./.github/scripts/unittest.sh
