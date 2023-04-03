@@ -767,7 +767,9 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
 def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
     """
     Constructs a small MViTV2 architecture from
-    `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__.
+    `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__
+    and `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
+<https://arxiv.org/abs/2112.01526>`__.
 
     .. betastatus:: video module
 
