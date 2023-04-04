@@ -493,7 +493,9 @@ class YOLOV4TinyBackbone(nn.Module):
             return Conv(num_channels, num_channels, kernel_size=3, stride=1, activation=activation, norm=normalization)
 
         def downsample(in_channels: int, out_channels: int) -> nn.Module:
-            conv_module = Conv(in_channels, out_channels, kernel_size=3, stride=2, activation=activation, norm=normalization)
+            conv_module = Conv(
+                in_channels, out_channels, kernel_size=3, stride=2, activation=activation, norm=normalization
+            )
             return nn.Sequential(OrderedDict([("downsample", conv_module), ("smooth", smooth(out_channels))]))
 
         def maxpool(out_channels: int) -> nn.Module:

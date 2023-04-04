@@ -12,31 +12,38 @@ from ..yolo import YOLOV4Backbone
 from .backbone_utils import _validate_trainable_layers
 from .yolo_networks import DarknetNetwork, YOLOV4Network
 
+IMAGES = Union[Tuple[Tensor, ...], List[Tensor]]
+PRED = Dict[str, Any]
+PREDS = Union[Tuple[PRED, ...], List[PRED]]
 TARGET = Dict[str, Any]
-TARGETS = List[TARGET]
+TARGETS = Union[Tuple[TARGET, ...], List[TARGET]]
 
 
-def validate_batch(images: List[Tensor], targets: Optional[TARGETS]) -> None:
+def validate_batch(images: Union[Tensor, IMAGES], targets: Optional[TARGETS]) -> None:
     """Validates the format of a batch of data.
 
     Args:
-        images: A list of image tensors.
+        images: A tensor containing a batch of images or a list of image tensors.
         targets: A list of target dictionaries or ``None``. If a list is provided, there should be as many target
             dictionaries as there are images.
     """
-    if not images:
-        raise ValueError("No images in batch.")
-
-    shape = images[0].shape
-    for image in images:
-        if not isinstance(image, Tensor):
-            raise ValueError(f"Expected image to be of type Tensor, got {type(image).__name__}.")
-        if image.shape != shape:
-            raise ValueError(f"Images with different shapes in one batch: {shape} and {image.shape}")
+    if not isinstance(images, Tensor):
+        if not isinstance(images, (tuple, list)):
+            raise TypeError(f"Expected images to be a Tensor, tuple, or a list, got {type(images).__name__}.")
+        if not images:
+            raise ValueError("No images in batch.")
+        shape = images[0].shape
+        for image in images:
+            if not isinstance(image, Tensor):
+                raise ValueError(f"Expected image to be of type Tensor, got {type(image).__name__}.")
+            if image.shape != shape:
+                raise ValueError(f"Images with different shapes in one batch: {shape} and {image.shape}")
 
     if targets is None:
         return
 
+    if not isinstance(targets, (tuple, list)):
+        raise TypeError(f"Expected targets to be a tuple or a list, got {type(images).__name__}.")
     if len(images) != len(targets):
         raise ValueError(f"Got {len(images)} images, but targets for {len(targets)} images.")
 
@@ -80,7 +87,7 @@ class YOLO(nn.Module):
     input.
 
     During training, the model expects both the image tensors and a list of targets. It's possible to train a model
-    using one integer class label per box, but the YOLO model supports also multiple classes per box. For multi-class
+    using one integer class label per box, but the YOLO model supports also multiple labels per box. For multi-label
     training, simply use a boolean matrix that indicates which classes are assigned to which boxes, in place of the
     class labels. *Each target is a dictionary containing the following tensors*:
 
@@ -148,7 +155,9 @@ class YOLO(nn.Module):
         self.nms_threshold = nms_threshold
         self.detections_per_image = detections_per_image
 
-    def forward(self, images: List[Tensor], targets: Optional[TARGETS] = None) -> Union[Tensor, Tuple[Tensor, Tensor]]:
+    def forward(
+        self, images: Union[Tensor, IMAGES], targets: Optional[TARGETS] = None
+    ) -> Union[Tensor, Tuple[Tensor, Tensor]]:
         """Runs a forward pass through the network (all layers listed in ``self.network``), and if training targets
         are provided, computes the losses from the detection layers.
 
@@ -156,7 +165,8 @@ class YOLO(nn.Module):
         that depends on the size of the feature map and the number of anchors per feature map cell.
 
         Args:
-            images: Images to be processed. Tensor of size ``[batch_size, channels, height, width]``.
+            images: A tensor of size ``[batch_size, channels, height, width]`` containing a batch of images or a list of
+                image tensors.
             targets: If given, computes losses from detection layers against these targets. A list of target
                 dictionaries, one for each image.
 
@@ -167,7 +177,8 @@ class YOLO(nn.Module):
             coordinates are in `(x1, y1, x2, y2)` format and scaled to the input image size.
         """
         validate_batch(images, targets)
-        detections, losses, hits = self.network(torch.stack(images), targets)
+        images_tensor = images if isinstance(images, Tensor) else torch.stack(images)
+        detections, losses, hits = self.network(images_tensor, targets)
 
         detections = torch.cat(detections, 1)
         if targets is None:
@@ -176,7 +187,7 @@ class YOLO(nn.Module):
         losses = torch.stack(losses).sum(0)
         return detections, losses, hits
 
-    def infer(self, image: Tensor) -> Dict[str, Tensor]:
+    def infer(self, image: Tensor) -> PRED:
         """Feeds an image to the network and returns the detected bounding boxes, confidence scores, and class
         labels.
 
@@ -204,7 +215,7 @@ class YOLO(nn.Module):
             self.train()
         return detections
 
-    def process_detections(self, preds: Tensor) -> List[Dict[str, Tensor]]:
+    def process_detections(self, preds: Tensor) -> List[PRED]:
         """Splits the detection tensor returned by a forward pass into a list of prediction dictionaries, and
         filters them based on confidence threshold, non-maximum suppression (NMS), and maximum number of
         predictions.
@@ -241,7 +252,7 @@ class YOLO(nn.Module):
 
         return [process(p[..., :4], p[..., 4], p[..., 5:]) for p in preds]
 
-    def process_targets(self, targets: TARGETS) -> TARGETS:
+    def process_targets(self, targets: TARGETS) -> List[TARGET]:
         """Duplicates multi-label targets to create one target for each label.
 
         Args:
@@ -333,8 +344,8 @@ def yolov4(
         nms_threshold: Non-maximum suppression will remove bounding boxes whose IoU with a higher confidence box is
             higher than this threshold, if the predicted categories are equal.
         detections_per_image: Keep at most this number of highest-confidence detections per image.
-        **kwargs: Parameters passed to the ``.YOLOV4Network`` class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/yolo_networks.py>`_
+        **kwargs: Parameters passed to the ``torchvision.models.detection.YOLOV4Network`` class. Please refer to the
+            `source code <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/yolo_networks.py>`_
             for more details about this class.
 
     .. autoclass:: .YOLOV4_Weights
@@ -402,9 +413,9 @@ def yolo_darknet(
         nms_threshold: Non-maximum suppression will remove bounding boxes whose IoU with a higher confidence box is
             higher than this threshold, if the predicted categories are equal.
         detections_per_image: Keep at most this number of highest-confidence detections per image.
-        **kwargs: Parameters passed to the ``.YOLOV4Network`` class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/yolo_networks.py>`_
+        **kwargs: Parameters passed to the ``torchvision.models.detection.DarknetNetwork`` class. Please refer to the
+            `source code <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/yolo_networks.py>`_
             for more details about this class.
     """
-    network = DarknetNetwork(config_path, weights_path)
+    network = DarknetNetwork(config_path, weights_path, **kwargs)
     return YOLO(network, confidence_threshold, nms_threshold, detections_per_image)

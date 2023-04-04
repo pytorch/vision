@@ -61,23 +61,20 @@ def is_inside_box(points: Tensor, boxes: Tensor) -> Tensor:
     return deltas.min(-1).values > 0.0  # [points, boxes]
 
 
-def compare_box_sizes(wh1: Tensor, wh2: Tensor, threshold: float) -> Tensor:
-    """Compares the dimensions of the boxes pairwise and returns a mask that indicates which pairs have similar
-    sizes.
+def box_size_ratio(wh1: Tensor, wh2: Tensor) -> Tensor:
+    """Compares the dimensions of the boxes pairwise.
 
     For each pair of boxes, calculates the largest ratio that can be obtained by dividing the widths with each other or
-    dividing the heights with each other. Returns a mask that indicates which pairs have a ratio less than the given
-    threshold.
+    dividing the heights with each other.
 
     Args:
         wh1: An ``[N, 2]`` matrix of box shapes (width and height).
         wh2: An ``[M, 2]`` matrix of box shapes (width and height).
-        threshold: A threshold for the size ratio.
 
     Returns:
-        An ``[N, M]`` matrix of truth values indicating which box pairs have the maximum size ratio below the threshold.
+        An ``[N, M]`` matrix of ratios of width or height dimensions, whichever is larger.
     """
     wh_ratio = wh1[:, None, :] / wh2[None, :, :]  # [M, N, 2]
     wh_ratio = torch.max(wh_ratio, 1.0 / wh_ratio)
     wh_ratio = wh_ratio.max(2).values  # [M, N]
-    return wh_ratio < threshold
+    return wh_ratio

@@ -3,16 +3,16 @@ from typing import Callable, Dict, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
-from torch.nn.functional import binary_cross_entropy, binary_cross_entropy_with_logits
+from torch.nn.functional import binary_cross_entropy, binary_cross_entropy_with_logits, one_hot
 
 from torchvision.ops import (
     box_iou,
-    generalized_box_iou,
-    generalized_box_iou_loss,
-    distance_box_iou,
-    distance_box_iou_loss,
     complete_box_iou,
     complete_box_iou_loss,
+    distance_box_iou,
+    distance_box_iou_loss,
+    generalized_box_iou,
+    generalized_box_iou_loss,
 )
 
 
@@ -70,15 +70,16 @@ def _pairwise_confidence_loss(
 ) -> Tensor:
     """Calculates the confidence loss for every pair of a foreground anchor and a target.
 
-    If ``predict_overlap`` is ``True``, ``overlap`` will be used as the target confidence. Otherwise the target
-    confidence is 1. The method returns a matrix of losses for target/prediction pairs.
+    If ``predict_overlap`` is ``None``, the target confidence will be 1. If ``predict_overlap`` is 1.0, ``overlap`` will
+    be used as the target confidence. Otherwise this parameter defines a balance between these two targets. The method
+    returns a vector of losses for each foreground anchor.
 
     Args:
         preds: An ``[N]`` vector of predicted confidences.
         overlap: An ``[N, M]`` matrix of overlaps between all predicted and target bounding boxes.
         bce_func: A function for calculating binary cross entropy.
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the overlap.
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the overlap.
 
     Returns:
         An ``[N, M]`` matrix of confidence losses between all predictions and targets.
@@ -103,15 +104,16 @@ def _foreground_confidence_loss(
 ) -> Tensor:
     """Calculates the sum of the confidence losses for foreground anchors and their matched targets.
 
-    If ``predict_overlap`` is ``True``, ``overlap`` will be used as the target confidence. Otherwise the target
-    confidence is 1. The method returns a vector of losses for each foreground anchor.
+    If ``predict_overlap`` is ``None``, the target confidence will be 1. If ``predict_overlap`` is 1.0, ``overlap`` will
+    be used as the target confidence. Otherwise this parameter defines a balance between these two targets. The method
+    returns a vector of losses for each foreground anchor.
 
     Args:
         preds: A vector of predicted confidences.
         overlap: A vector of overlaps between matched target and predicted bounding boxes.
         bce_func: A function for calculating binary cross entropy.
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the overlap.
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1, and 1.0 means that the target confidence is the overlap.
 
     Returns:
         The sum of the confidence losses for foreground anchors.
@@ -138,14 +140,22 @@ def _background_confidence_loss(preds: Tensor, bce_func: Callable) -> Tensor:
     return bce_func(preds, targets, reduction="sum")
 
 
-def _target_labels_to_probs(targets: Tensor, num_classes: int, dtype: torch.dtype) -> Tensor:
+def _target_labels_to_probs(
+    targets: Tensor, num_classes: int, dtype: torch.dtype, label_smoothing: Optional[float] = None
+) -> Tensor:
     """If ``targets`` is a vector of class labels, converts it to a matrix of one-hot class probabilities.
+
+    If label smoothing is disabled, the returned target probabilities will be binary. If label smoothing is enabled, the
+    target probabilities will be, ``(label_smoothing / 2)`` or ``(label_smoothing / 2) + (1.0 - label_smoothing)``. That
+    corresponds to label smoothing with two categories, since the YOLO model does multi-label classification.
 
     Args:
         targets: An ``[M, C]`` matrix of target class probabilities or an ``[M]`` vector of class labels.
         num_classes: The number of classes (C dimension) for the new targets. If ``targets`` is already two-dimensional,
             checks that the length of the second dimension matches this number.
         dtype: Floating-point data type to be used for the one-hot targets.
+        label_smoothing: The epsilon parameter (weight) for label smoothing. 0.0 means no smoothing (binary targets),
+            and 1.0 means that the target probabilities are always 0.5.
 
     Returns:
         An ``[M, C]`` matrix of target class probabilities.
@@ -155,13 +165,16 @@ def _target_labels_to_probs(targets: Tensor, num_classes: int, dtype: torch.dtyp
         # greater than the number of predicted classes, it will be mapped to the last class.
         last_class = torch.tensor(num_classes - 1, device=targets.device)
         targets = torch.min(targets, last_class)
-        targets = torch.nn.functional.one_hot(targets, num_classes)
+        targets = one_hot(targets, num_classes)
     elif targets.shape[-1] != num_classes:
         raise ValueError(
             f"The number of classes in the data ({targets.shape[-1]}) doesn't match the number of classes "
             f"predicted by the model ({num_classes})."
         )
-    return targets.to(dtype=dtype)
+    targets = targets.to(dtype=dtype)
+    if label_smoothing is not None:
+        targets = (label_smoothing / 2) + targets * (1.0 - label_smoothing)
+    return targets
 
 
 @dataclass
@@ -174,13 +187,19 @@ class Losses:
 class YOLOLoss:
     """A class for calculating the YOLO losses from predictions and targets.
 
+    If label smoothing is enabled, the target class probabilities will be ``(label_smoothing / 2)`` or
+    ``(label_smoothing / 2) + (1.0 - label_smoothing)``, instead of 0 or 1. That corresponds to label smoothing with two
+    categories, since the YOLO model does multi-label classification.
+
     Args:
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou" (default).
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -190,6 +209,7 @@ class YOLOLoss:
         self,
         overlap_func: Union[str, Callable] = "ciou",
         predict_overlap: Optional[float] = None,
+        label_smoothing: Optional[float] = None,
         overlap_multiplier: float = 5.0,
         confidence_multiplier: float = 1.0,
         class_multiplier: float = 1.0,
@@ -201,6 +221,7 @@ class YOLOLoss:
             self._pairwise_overlap, self._elementwise_overlap_loss = _get_iou_and_loss_functions(overlap_func)
 
         self.predict_overlap = predict_overlap
+        self.label_smoothing = label_smoothing
         self.overlap_multiplier = overlap_multiplier
         self.confidence_multiplier = confidence_multiplier
         self.class_multiplier = class_multiplier
@@ -241,7 +262,9 @@ class YOLOLoss:
         assert confidence_loss.shape == loss_shape
 
         pred_probs = preds["classprobs"].unsqueeze(1)  # [N, 1, classes]
-        target_probs = _target_labels_to_probs(targets["labels"], pred_probs.shape[-1], pred_probs.dtype)
+        target_probs = _target_labels_to_probs(
+            targets["labels"], pred_probs.shape[-1], pred_probs.dtype, self.label_smoothing
+        )
         target_probs = target_probs.unsqueeze(0)  # [1, M, classes]
         pred_probs, target_probs = torch.broadcast_tensors(pred_probs, target_probs)
         class_loss = bce_func(pred_probs, target_probs, reduction="none").sum(-1)
@@ -287,7 +310,9 @@ class YOLOLoss:
         confidence_loss += _background_confidence_loss(preds["bg_confidences"], bce_func)
 
         pred_probs = preds["classprobs"]
-        target_probs = _target_labels_to_probs(targets["labels"], pred_probs.shape[-1], pred_probs.dtype)
+        target_probs = _target_labels_to_probs(
+            targets["labels"], pred_probs.shape[-1], pred_probs.dtype, self.label_smoothing
+        )
         class_loss = bce_func(pred_probs, target_probs, reduction="sum")
 
         losses = Losses(

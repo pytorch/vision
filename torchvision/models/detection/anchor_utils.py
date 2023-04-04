@@ -279,7 +279,7 @@ def grid_offsets(grid_size: Tensor) -> Tensor:
     """
     x_range = torch.arange(grid_size[0].item(), device=grid_size.device)
     y_range = torch.arange(grid_size[1].item(), device=grid_size.device)
-    grid_y, grid_x = torch.meshgrid((y_range, x_range), indexing="ij")
+    grid_y, grid_x = torch.meshgrid([y_range, x_range], indexing="ij")
     return torch.stack((grid_x, grid_y), -1)
 
 

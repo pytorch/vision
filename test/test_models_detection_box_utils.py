@@ -1,7 +1,7 @@
 import pytest
 import torch
 from torchvision.models.detection.anchor_utils import grid_centers
-from torchvision.models.detection.box_utils import aligned_iou, compare_box_sizes, iou_below, is_inside_box
+from torchvision.models.detection.box_utils import aligned_iou, box_size_ratio, iou_below, is_inside_box
 
 
 @pytest.mark.parametrize(
@@ -62,16 +62,16 @@ def test_is_inside_box():
     assert torch.all(is_inside[4, 7:9, 1])
 
 
-def test_compare_box_sizes():
+def test_box_size_ratio():
     wh1 = torch.tensor([[24, 11], [12, 25], [26, 27], [15, 17]])
     wh2 = torch.tensor([[10, 30], [15, 9]])
-    result = compare_box_sizes(wh1, wh2, 2.0)
+    result = box_size_ratio(wh1, wh2)
     assert result.shape == (4, 2)
-    assert not result[0, 0]  # 24 / 10 >= 2
-    assert result[0, 1]  # 24 / 15 < 2, 11 / 9 < 2
-    assert result[1, 0]  # 12 / 10 < 2, 30 / 25 < 2
-    assert not result[1, 1]  # 25 / 9 >= 2
-    assert not result[2, 0]  # 26 / 10 >= 2
-    assert not result[2, 1]  # 27 / 9 >= 2
-    assert result[3, 0]  # 15 / 10 < 2, 30 / 17 < 2
-    assert result[3, 1]  # 15 / 15 < 2, 17 / 9 < 2
+    assert result[0, 0] == 30 / 11
+    assert result[0, 1] == 24 / 15
+    assert result[1, 0] == 12 / 10
+    assert result[1, 1] == 25 / 9
+    assert result[2, 0] == 26 / 10
+    assert result[2, 1] == 27 / 9
+    assert result[3, 0] == 30 / 17
+    assert result[3, 1] == 17 / 9

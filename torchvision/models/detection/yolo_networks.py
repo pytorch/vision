@@ -25,19 +25,15 @@ from ..yolo import (
     YOLOV7Backbone,
 )
 from .anchor_utils import global_xy
-from .target_matching import (
-    HighestIoUMatching,
-    IoUThresholdMatching,
-    ShapeMatching,
-    SimOTAMatching,
-    SizeRatioMatching,
-)
+from .target_matching import HighestIoUMatching, IoUThresholdMatching, ShapeMatching, SimOTAMatching, SizeRatioMatching
 from .yolo_loss import YOLOLoss
 
 CONFIG = Dict[str, Any]
 CREATE_LAYER_OUTPUT = Tuple[nn.Module, int]  # layer, num_outputs
+PRED = Dict[str, Any]
+PREDS = Union[Tuple[PRED, ...], List[PRED]]
 TARGET = Dict[str, Any]
-TARGETS = List[TARGET]
+TARGETS = Union[Tuple[TARGET, ...], List[TARGET]]
 NETWORK_OUTPUT = Tuple[List[Tensor], List[Tensor], List[int]]  # detections, losses, hits
 
 
@@ -51,7 +47,7 @@ class DetectionLayer(nn.Module):
         prior_shapes: A list of prior box dimensions for this layer, used for scaling the predicted dimensions. The list
             should contain (width, height) tuples in the network input resolution.
         matching_func: The matching algorithm to be used for assigning targets to anchors.
-        loss_func: ``LossFunction`` object for calculating the losses.
+        loss_func: ``YOLOLoss`` object for calculating the losses.
         xy_scale: Eliminate "grid sensitivity" by scaling the box coordinates by this factor. Using a value > 1.0 helps
             to produce coordinate values close to one.
         input_is_normalized: The input is normalized by logistic activation in the previous layer. In this case the
@@ -78,7 +74,7 @@ class DetectionLayer(nn.Module):
         self.xy_scale = xy_scale
         self.input_is_normalized = input_is_normalized
 
-    def forward(self, x: Tensor, image_size: Tensor) -> Tuple[Tensor, List[Dict[str, Tensor]]]:
+    def forward(self, x: Tensor, image_size: Tensor) -> Tuple[Tensor, PREDS]:
         """Runs a forward pass through this YOLO detection layer.
 
         Maps cell-local coordinates to global coordinates in the image space, scales the bounding boxes with the
@@ -147,11 +143,11 @@ class DetectionLayer(nn.Module):
 
     def match_targets(
         self,
-        preds: List[Dict[str, Tensor]],
-        return_preds: List[Dict[str, Tensor]],
-        targets: List[Dict[str, Tensor]],
+        preds: PREDS,
+        return_preds: PREDS,
+        targets: TARGETS,
         image_size: Tensor,
-    ) -> Tuple[Dict[str, Tensor], Dict[str, Tensor]]:
+    ) -> Tuple[PRED, TARGET]:
         """Matches the predictions to targets.
 
         Args:
@@ -187,16 +183,15 @@ class DetectionLayer(nn.Module):
                     "labels": image_targets["labels"][target_selector],
                 }
             else:
-                device = image_preds["confidences"].device
                 matched_preds = {
-                    "boxes": torch.empty((0, 4), device=device),
-                    "confidences": torch.empty(0, device=device),
-                    "bg_confidences": image_preds["confidences"].flatten(),
-                    "classprobs": torch.empty((0, self.num_classes), device=device),
+                    "boxes": torch.empty((0, 4), device=image_return_preds["boxes"].device),
+                    "confidences": torch.empty(0, device=image_return_preds["confidences"].device),
+                    "bg_confidences": image_return_preds["confidences"].flatten(),
+                    "classprobs": torch.empty((0, self.num_classes), device=image_return_preds["classprobs"].device),
                 }
                 matched_targets = {
-                    "boxes": torch.empty((0, 4), device=device),
-                    "labels": torch.empty(0, dtype=torch.int64, device=device),
+                    "boxes": torch.empty((0, 4), device=image_targets["boxes"].device),
+                    "labels": torch.empty(0, dtype=torch.int64, device=image_targets["labels"].device),
                 }
             matches.append((matched_preds, matched_targets))
 
@@ -214,10 +209,10 @@ class DetectionLayer(nn.Module):
 
     def calculate_losses(
         self,
-        preds: List[Dict[str, Tensor]],
-        targets: List[Dict[str, Tensor]],
+        preds: PREDS,
+        targets: TARGETS,
         image_size: Tensor,
-        loss_preds: Optional[List[Dict[str, Tensor]]] = None,
+        loss_preds: Optional[PREDS] = None,
     ) -> Tuple[Tensor, int]:
         """Matches the predictions to targets and computes the losses.
 
@@ -247,7 +242,7 @@ class DetectionLayer(nn.Module):
         return losses, hits
 
 
-def _create_detection_layer(
+def create_detection_layer(
     prior_shapes: Sequence[Tuple[int, int]],
     prior_shape_idxs: Sequence[int],
     matching_algorithm: Optional[str] = None,
@@ -256,7 +251,8 @@ def _create_detection_layer(
     size_range: float = 4.0,
     ignore_bg_threshold: float = 0.7,
     overlap_func: Union[str, Callable] = "ciou",
-    predict_overlap: float = 1.0,
+    predict_overlap: Optional[float] = None,
+    label_smoothing: Optional[float] = None,
     overlap_loss_multiplier: float = 5.0,
     confidence_loss_multiplier: float = 1.0,
     class_loss_multiplier: float = 1.0,
@@ -285,9 +281,11 @@ def _create_detection_layer(
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou" (default).
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -302,7 +300,7 @@ def _create_detection_layer(
     matching_func: Union[ShapeMatching, SimOTAMatching]
     if matching_algorithm == "simota":
         loss_func = YOLOLoss(
-            overlap_func, None, overlap_loss_multiplier, confidence_loss_multiplier, class_loss_multiplier
+            overlap_func, None, None, overlap_loss_multiplier, confidence_loss_multiplier, class_loss_multiplier
         )
         matching_func = SimOTAMatching(prior_shapes, prior_shape_idxs, loss_func, spatial_range, size_range)
     elif matching_algorithm == "size":
@@ -319,17 +317,21 @@ def _create_detection_layer(
         raise ValueError(f"Matching algorithm `{matching_algorithm}´ is unknown.")
 
     loss_func = YOLOLoss(
-        overlap_func, predict_overlap, overlap_loss_multiplier, confidence_loss_multiplier, class_loss_multiplier
+        overlap_func,
+        predict_overlap,
+        label_smoothing,
+        overlap_loss_multiplier,
+        confidence_loss_multiplier,
+        class_loss_multiplier,
     )
-
     layer_shapes = [prior_shapes[i] for i in prior_shape_idxs]
     return DetectionLayer(prior_shapes=layer_shapes, matching_func=matching_func, loss_func=loss_func, **kwargs)
 
 
-def _run_detection(
+def run_detection(
     detection_layer: DetectionLayer,
     layer_input: Tensor,
-    targets: Optional[List[Dict[str, Tensor]]],
+    targets: Optional[TARGETS],
     image_size: Tensor,
     detections: List[Tensor],
     losses: List[Tensor],
@@ -357,12 +359,12 @@ def _run_detection(
         hits.append(layer_hits)
 
 
-def _run_detection_with_aux_head(
+def run_detection_with_aux_head(
     detection_layer: DetectionLayer,
     aux_detection_layer: DetectionLayer,
     layer_input: Tensor,
     aux_input: Tensor,
-    targets: Optional[List[Dict[str, Tensor]]],
+    targets: Optional[TARGETS],
     image_size: Tensor,
     aux_weight: float,
     detections: List[Tensor],
@@ -405,7 +407,7 @@ def _run_detection_with_aux_head(
 
 
 @torch.jit.script
-def _get_image_size(images: Tensor) -> Tensor:
+def get_image_size(images: Tensor) -> Tensor:
     """Get the image size from an input tensor.
 
     The function needs the ``@torch.jit.script`` decorator in order for ONNX generation to work. The tracing based
@@ -454,9 +456,11 @@ class YOLOV4TinyNetwork(nn.Module):
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou" (default).
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -509,7 +513,7 @@ class YOLOV4TinyNetwork(nn.Module):
 
         def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
             assert prior_shapes is not None
-            return _create_detection_layer(
+            return create_detection_layer(
                 prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
             )
 
@@ -542,7 +546,7 @@ class YOLOV4TinyNetwork(nn.Module):
         losses: List[Tensor] = []  # Losses from detection layers
         hits: List[int] = []  # Number of targets each detection layer was responsible for
 
-        image_size = _get_image_size(x)
+        image_size = get_image_size(x)
 
         c3, c4, c5 = self.backbone(x)[-3:]
 
@@ -552,9 +556,9 @@ class YOLOV4TinyNetwork(nn.Module):
         x = torch.cat((self.upsample4(p4), c3), dim=1)
         p3 = self.fpn3(x)
 
-        _run_detection(self.detect5, self.out5(p5), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect4, self.out4(p4), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect3, self.out3(p3), targets, image_size, detections, losses, hits)
+        run_detection(self.detect5, self.out5(p5), targets, image_size, detections, losses, hits)
+        run_detection(self.detect4, self.out4(p4), targets, image_size, detections, losses, hits)
+        run_detection(self.detect3, self.out3(p3), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -588,9 +592,11 @@ class YOLOV4Network(nn.Module):
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou" (default).
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -661,7 +667,7 @@ class YOLOV4Network(nn.Module):
 
         def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
             assert prior_shapes is not None
-            return _create_detection_layer(
+            return create_detection_layer(
                 prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
             )
 
@@ -703,7 +709,7 @@ class YOLOV4Network(nn.Module):
         losses: List[Tensor] = []  # Losses from detection layers
         hits: List[int] = []  # Number of targets each detection layer was responsible for
 
-        image_size = _get_image_size(x)
+        image_size = get_image_size(x)
 
         c3, c4, x = self.backbone(x)[-3:]
         c5 = self.spp(x)
@@ -717,9 +723,9 @@ class YOLOV4Network(nn.Module):
         x = torch.cat((self.downsample4(n4), c5), dim=1)
         n5 = self.pan5(x)
 
-        _run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
+        run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
+        run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
+        run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -753,9 +759,11 @@ class YOLOV4P6Network(nn.Module):
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou" (default).
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -833,7 +841,7 @@ class YOLOV4P6Network(nn.Module):
 
         def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
             assert prior_shapes is not None
-            return _create_detection_layer(
+            return create_detection_layer(
                 prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
             )
 
@@ -887,7 +895,7 @@ class YOLOV4P6Network(nn.Module):
         losses: List[Tensor] = []  # Losses from detection layers
         hits: List[int] = []  # Number of targets each detection layer was responsible for
 
-        image_size = _get_image_size(x)
+        image_size = get_image_size(x)
 
         c3, c4, c5, x = self.backbone(x)[-4:]
         c6 = self.spp(x)
@@ -905,10 +913,10 @@ class YOLOV4P6Network(nn.Module):
         x = torch.cat((self.downsample5(n5), c6), dim=1)
         n6 = self.pan6(x)
 
-        _run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect6, self.out6(n6), targets, image_size, detections, losses, hits)
+        run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
+        run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
+        run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
+        run_detection(self.detect6, self.out6(n6), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -947,9 +955,11 @@ class YOLOV5Network(nn.Module):
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou" (default).
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -1015,7 +1025,7 @@ class YOLOV5Network(nn.Module):
 
         def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
             assert prior_shapes is not None
-            return _create_detection_layer(
+            return create_detection_layer(
                 prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
             )
 
@@ -1057,7 +1067,7 @@ class YOLOV5Network(nn.Module):
         losses: List[Tensor] = []  # Losses from detection layers
         hits: List[int] = []  # Number of targets each detection layer was responsible for
 
-        image_size = _get_image_size(x)
+        image_size = get_image_size(x)
 
         c3, c4, x = self.backbone(x)[-3:]
         c5 = self.spp(x)
@@ -1073,9 +1083,9 @@ class YOLOV5Network(nn.Module):
         x = torch.cat((self.downsample4(n4), p5), dim=1)
         n5 = self.pan5(x)
 
-        _run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
+        run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
+        run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
+        run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -1108,9 +1118,11 @@ class YOLOV7Network(nn.Module):
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou" (default).
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -1122,7 +1134,7 @@ class YOLOV7Network(nn.Module):
         self,
         num_classes: int,
         backbone: Optional[nn.Module] = None,
-        widths: Sequence[int] = (32, 64, 128, 256, 512, 1024, 1024),
+        widths: Sequence[int] = (64, 128, 256, 512, 768, 1024),
         activation: Optional[str] = "silu",
         normalization: Optional[str] = "batchnorm",
         prior_shapes: Optional[List[Tuple[int, int]]] = None,
@@ -1194,7 +1206,7 @@ class YOLOV7Network(nn.Module):
 
         def detect(prior_shape_idxs: Sequence[int], range: float) -> DetectionLayer:
             assert prior_shapes is not None
-            return _create_detection_layer(
+            return create_detection_layer(
                 prior_shapes,
                 prior_shape_idxs,
                 spatial_range=range,
@@ -1261,7 +1273,7 @@ class YOLOV7Network(nn.Module):
         losses: List[Tensor] = []  # Losses from detection layers
         hits: List[int] = []  # Number of targets each detection layer was responsible for
 
-        image_size = _get_image_size(x)
+        image_size = get_image_size(x)
 
         c3, c4, c5, x = self.backbone(x)[-4:]
         c6 = self.spp(x)
@@ -1279,7 +1291,7 @@ class YOLOV7Network(nn.Module):
         x = torch.cat((self.downsample5(n5), c6), dim=1)
         n6 = self.pan6(x)
 
-        _run_detection_with_aux_head(
+        run_detection_with_aux_head(
             self.detect3,
             self.aux_detect3,
             self.out3(n3),
@@ -1291,7 +1303,7 @@ class YOLOV7Network(nn.Module):
             losses,
             hits,
         )
-        _run_detection_with_aux_head(
+        run_detection_with_aux_head(
             self.detect4,
             self.aux_detect4,
             self.out4(n4),
@@ -1303,7 +1315,7 @@ class YOLOV7Network(nn.Module):
             losses,
             hits,
         )
-        _run_detection_with_aux_head(
+        run_detection_with_aux_head(
             self.detect5,
             self.aux_detect5,
             self.out5(n5),
@@ -1315,7 +1327,7 @@ class YOLOV7Network(nn.Module):
             losses,
             hits,
         )
-        _run_detection_with_aux_head(
+        run_detection_with_aux_head(
             self.detect6,
             self.aux_detect6,
             self.out6(n6),
@@ -1422,9 +1434,11 @@ class YOLOXNetwork(nn.Module):
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou" (default).
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -1485,7 +1499,7 @@ class YOLOXNetwork(nn.Module):
 
         def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
             assert prior_shapes is not None
-            return _create_detection_layer(
+            return create_detection_layer(
                 prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
             )
 
@@ -1527,7 +1541,7 @@ class YOLOXNetwork(nn.Module):
         losses: List[Tensor] = []  # Losses from detection layers
         hits: List[int] = []  # Number of targets each detection layer was responsible for
 
-        image_size = _get_image_size(x)
+        image_size = get_image_size(x)
 
         c3, c4, x = self.backbone(x)[-3:]
         c5 = self.spp(x)
@@ -1543,9 +1557,9 @@ class YOLOXNetwork(nn.Module):
         x = torch.cat((self.downsample4(n4), p5), dim=1)
         n5 = self.pan5(x)
 
-        _run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
-        _run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
+        run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
+        run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
+        run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -1574,9 +1588,11 @@ class DarknetNetwork(nn.Module):
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou".
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -1621,7 +1637,7 @@ class DarknetNetwork(nn.Module):
         losses: List[Tensor] = []  # Losses from detection layers
         hits: List[int] = []  # Number of targets each detection layer was responsible for
 
-        image_size = _get_image_size(x)
+        image_size = get_image_size(x)
 
         for layer in self.layers:
             if isinstance(layer, (RouteLayer, ShortcutLayer)):
@@ -1933,7 +1949,8 @@ def _create_yolo(
     size_range: float = 4.0,
     ignore_bg_threshold: Optional[float] = None,
     overlap_func: Optional[Union[str, Callable]] = None,
-    predict_overlap: float = 1.0,
+    predict_overlap: Optional[float] = None,
+    label_smoothing: Optional[float] = None,
     overlap_loss_multiplier: Optional[float] = None,
     confidence_loss_multiplier: Optional[float] = None,
     class_loss_multiplier: Optional[float] = None,
@@ -1964,9 +1981,11 @@ def _create_yolo(
         overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
             function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
             "ciou".
-        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that target
-            confidence is one if there's an object, and 1.0 means that the target confidence is the output of
+        predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
+            confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
+        label_smoothing: The epsilon parameter (weight) for class label smoothing. 0.0 means no smoothing (binary
+            targets), and 1.0 means that the target probabilities are always 0.5.
         overlap_loss_multiplier: Overlap loss will be scaled by this value.
         confidence_loss_multiplier: Confidence loss will be scaled by this value.
         class_loss_multiplier: Classification loss will be scaled by this value.
@@ -1995,7 +2014,7 @@ def _create_yolo(
         class_loss_multiplier = config.get("cls_normalizer", 1.0)
         assert isinstance(class_loss_multiplier, float)
 
-    layer = _create_detection_layer(
+    layer = create_detection_layer(
         num_classes=config["classes"],
         prior_shapes=prior_shapes,
         prior_shape_idxs=config["mask"],
@@ -2006,6 +2025,7 @@ def _create_yolo(
         ignore_bg_threshold=ignore_bg_threshold,
         overlap_func=overlap_func,
         predict_overlap=predict_overlap,
+        label_smoothing=label_smoothing,
         overlap_loss_multiplier=overlap_loss_multiplier,
         confidence_loss_multiplier=confidence_loss_multiplier,
         class_loss_multiplier=class_loss_multiplier,
