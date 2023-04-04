@@ -85,11 +85,6 @@ if [[ "${OS_TYPE}" == "windows" ]]; then
   sed -e '/^$/,$d' *.egg-info/requires.txt > requirements.txt
   pip install --progress-bar=off -r requirements.txt
   echo '::endgroup::'
-
-  # FIXME: remove this as soon as libnvjpeg is available through the runner
-  if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
-    conda install -c nvidia libnvjpeg="${GPU_ARCH_VERSION}"
-  fi
 fi
 
 echo '::group::Install TorchVision'
