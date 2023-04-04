@@ -338,9 +338,12 @@ class Resize(torch.nn.Module):
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(size, (int, Sequence)):
-            raise TypeError(f"Size should be int or sequence. Got {type(size)}")
-        if isinstance(size, Sequence) and len(size) not in (1, 2):
-            raise ValueError("If size is a sequence, it should have 1 or 2 values")
+            raise TypeError(f"Size should be int or sequence of ints. Got {type(size)}")
+        if isinstance(size, Sequence):
+            if len(size) not in (1, 2):
+                raise ValueError("If size is a sequence, it should have 1 or 2 values")
+            if not all([isinstance(i, int) for i in size]):
+                raise TypeError(f"Size should be int or sequence of ints. Got {type(size)}")
         self.size = size
         self.max_size = max_size
 
