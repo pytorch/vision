@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+import warnings
 from torch import Tensor
 
 from ...ops import batched_nms
@@ -157,7 +158,7 @@ class YOLO(nn.Module):
 
     def forward(
         self, images: Union[Tensor, IMAGES], targets: Optional[TARGETS] = None
-    ) -> Union[Tensor, Tuple[Tensor, Tensor]]:
+    ) -> Union[Tensor, Tuple[Tensor, Tensor, List[int]]]:
         """Runs a forward pass through the network (all layers listed in ``self.network``), and if training targets
         are provided, computes the losses from the detection layers.
 
@@ -171,10 +172,10 @@ class YOLO(nn.Module):
                 dictionaries, one for each image.
 
         Returns:
-            detections (:class:`~torch.Tensor`), losses (:class:`~torch.Tensor`): Detections, and if targets were
-            provided, a dictionary of losses. Detections are shaped ``[batch_size, anchors, classes + 5]``, where
-            ``anchors`` is the feature map size (width * height) times the number of anchors per cell. The predicted box
-            coordinates are in `(x1, y1, x2, y2)` format and scaled to the input image size.
+            detections (:class:`~torch.Tensor`), losses (:class:`~torch.Tensor`), hits (List[int]): Detections, and if
+            targets were provided, a dictionary of losses. Detections are shaped ``[batch_size, anchors, classes + 5]``,
+            where ``anchors`` is the feature map size (width * height) times the number of anchors per cell. The
+            predicted box coordinates are in `(x1, y1, x2, y2)` format and scaled to the input image size.
         """
         validate_batch(images, targets)
         images_tensor = images if isinstance(images, Tensor) else torch.stack(images)
@@ -289,7 +290,9 @@ def freeze_backbone_layers(backbone: nn.Module, trainable_layers: Optional[int],
         is_trained: Set to ``True`` when using pre-trained weights. Otherwise will issue a warning if
             ``trainable_layers`` is set.
     """
-    num_layers = len(backbone.stages)
+    if not hasattr(backbone, "stages"):
+        warnings.warn("Cannot freeze backbone layers. Backbone object has no 'stages' attribute.")
+    num_layers = len(backbone.stages)  # type: ignore
     trainable_layers = _validate_trainable_layers(is_trained, trainable_layers, num_layers, 3)
 
     layers_to_train = [f"stages.{idx}" for idx in range(num_layers - trainable_layers, num_layers)]
@@ -370,7 +373,7 @@ def yolov4(
     freeze_backbone_layers(backbone, trainable_backbone_layers, is_trained)
 
     if weights_backbone is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        backbone.load_state_dict(weights_backbone.get_state_dict(progress=progress))
 
     network = YOLOV4Network(num_classes, backbone, **kwargs)
     model = YOLO(network, confidence_threshold, nms_threshold, detections_per_image)
