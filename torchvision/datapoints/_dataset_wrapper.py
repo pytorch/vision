@@ -190,6 +190,25 @@ def pil_image_to_mask(pil_image):
     return datapoints.Mask(pil_image)
 
 
+def check_target_keys(*available_target_keys):
+    available_target_keys = set(available_target_keys)
+
+    def outer_wrapper(fn):
+        def inner_wrapper(dataset, target_keys):
+            if target_keys == "all":
+                target_keys = available_target_keys
+            else:
+                extra = target_keys - available_target_keys
+                if extra:
+                    raise ValueError(f"Target keys {extra} are not available!")
+
+            return fn(dataset, target_keys)
+
+        return inner_wrapper
+
+    return outer_wrapper
+
+
 def list_of_dicts_to_dict_of_lists(list_of_dicts):
     dict_of_lists = defaultdict(list)
     for dct in list_of_dicts:
@@ -278,27 +297,20 @@ def caltech101_wrapper_factory(dataset, target_keys):
 
 
 @WRAPPER_FACTORIES.register(datasets.CocoDetection)
+@check_target_keys(
+    # natively from COCO
+    "segmentation",
+    "area",
+    "iscrowd",
+    "image_id",
+    "bbox",
+    "category_id",
+    # added by the wrapper
+    "boxes",
+    "masks",
+    "labels",
+)
 def coco_dectection_wrapper_factory(dataset, target_keys):
-    available_target_keys = {
-        # natively from COCO
-        "segmentation",
-        "area",
-        "iscrowd",
-        "image_id",
-        "bbox",
-        "category_id",
-        # added by the wrapper
-        "boxes",
-        "masks",
-        "labels",
-    }
-    if target_keys == "all":
-        target_keys = available_target_keys
-    else:
-        extra = target_keys - available_target_keys
-        if extra:
-            raise ValueError(f"Target keys {extra} are not available!")
-
     def segmentation_to_mask(segmentation, *, spatial_size):
         from pycocotools import mask
 
