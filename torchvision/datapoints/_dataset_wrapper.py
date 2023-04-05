@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import collections.abc
+
 import contextlib
 from collections import defaultdict
 
@@ -80,6 +82,11 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels")):
         dataset: the dataset instance to wrap for compatibility with transforms v2.
         target_keys: TODO
     """
+    if isinstance(target_keys, collections.abc.Collection) and not isinstance(target_keys, str):
+        target_keys = set(target_keys)
+    elif target_keys != "all":
+        raise TypeError("FIXME")
+
     return VisionDatasetDatapointWrapper(dataset, target_keys)
 
 
@@ -272,6 +279,26 @@ def caltech101_wrapper_factory(dataset, target_keys):
 
 @WRAPPER_FACTORIES.register(datasets.CocoDetection)
 def coco_dectection_wrapper_factory(dataset, target_keys):
+    available_target_keys = {
+        # natively from COCO
+        "segmentation",
+        "area",
+        "iscrowd",
+        "image_id",
+        "bbox",
+        "category_id",
+        # added by the wrapper
+        "boxes",
+        "masks",
+        "labels",
+    }
+    if target_keys == "all":
+        target_keys = available_target_keys
+    else:
+        extra = target_keys - available_target_keys
+        if extra:
+            raise ValueError(f"Target keys {extra} are not available!")
+
     def segmentation_to_mask(segmentation, *, spatial_size):
         from pycocotools import mask
 
@@ -320,7 +347,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         if "labels" in target_keys:
             target["labels"] = torch.tensor(batched_target["category_id"])
 
-        for target_key in set(target_keys) - {"image_id", "boxes", "masks", "labels"}:
+        for target_key in target_keys - {"image_id", "boxes", "masks", "labels"}:
             target[target_key] = batched_target[target_key]
 
         return image, target
