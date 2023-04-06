@@ -3338,7 +3338,7 @@ class TestDatasetWrapper:
         mocker.patch.dict(
             datapoints._dataset_wrapper.WRAPPER_FACTORIES,
             clear=False,
-            values={datasets.FakeData: lambda dataset: lambda idx, sample: sentinel},
+            values={datasets.FakeData: lambda dataset, target_keys: lambda idx, sample: sentinel},
         )
 
         class MyFakeData(datasets.FakeData):
