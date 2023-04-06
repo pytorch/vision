@@ -1,3 +1,5 @@
+import functools
+
 import torch
 import torch.library
 
