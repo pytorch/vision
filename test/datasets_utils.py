@@ -25,7 +25,7 @@ import torch
 import torchvision.datasets
 import torchvision.io
 from common_utils import disable_console_output, get_tmp_dir
-from torch.utils._pytree import tree_any
+from torch.utils._pytree import tree_flatten
 from torchvision.transforms.functional import get_dimensions
 
 
@@ -572,9 +572,22 @@ class DatasetTestCase(unittest.TestCase):
 
         try:
             with self.create_dataset(config) as (dataset, _):
-                wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
-                wrapped_sample = wrapped_dataset[0]
-                assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
+                for target_keys in [None, "all"]:
+                    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                    wrapped_sample = wrapped_dataset[0]
+
+                    flat_sample, _ = tree_flatten(wrapped_sample)
+
+                    for item in flat_sample:
+                        if isinstance(item, (Datapoint, PIL.Image.Image)):
+                            break
+                        elif isinstance(item, torch.Tensor):
+                            raise AssertionError(
+                                "Found a plain tensor before an explicit image or video. "
+                                "This is not compatible with the tensor fallback heuristic."
+                            )
+                    else:
+                        raise AssertionError("Found no image or video in sample.")
         except TypeError as error:
             msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
             if str(error).startswith(msg):

@@ -16,7 +16,7 @@ from torchvision.transforms.v2 import functional as F
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
 
-def wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels")):
+def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
     """[BETA] Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.
 
     .. v2betastatus:: wrap_dataset_for_transforms_v2 function
@@ -38,15 +38,17 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels")):
         * :class:`~torchvision.datasets.CocoDetection`: Instead of returning the target as list of dicts, the wrapper
           returns a dict of lists. In addition, the key-value-pairs ``"boxes"`` (in ``XYXY`` coordinate format),
           ``"masks"`` and ``"labels"`` are added and wrap the data in the corresponding ``torchvision.datapoints``.
-          The original keys are preserved.
+          The original keys are preserved. If ``target_keys`` is ommitted, returns only the values for the ``"boxes"``
+          and ``"labels"``.
         * :class:`~torchvision.datasets.VOCDetection`: The key-value-pairs ``"boxes"`` and ``"labels"`` are added to
           the target and wrap the data in the corresponding ``torchvision.datapoints``. The original keys are
-          preserved.
+          preserved. If ``target_keys`` is ommitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`~torchvision.datasets.CelebA`: The target for ``target_type="bbox"`` is converted to the ``XYXY``
           coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBox` datapoint.
-        * :class:`~torchvision.datasets.Kitti`: Instead returning the target as list of dictsthe wrapper returns a dict
-          of lists. In addition, the key-value-pairs ``"boxes"`` and ``"labels"`` are added and wrap the data
-          in the corresponding ``torchvision.datapoints``. The original keys are preserved.
+        * :class:`~torchvision.datasets.Kitti`: Instead returning the target as list of dicts, the wrapper returns a
+          dict of lists. In addition, the key-value-pairs ``"boxes"`` and ``"labels"`` are added and wrap the data
+          in the corresponding ``torchvision.datapoints``. The original keys are preserved. If ``target_keys`` is
+          ommitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`~torchvision.datasets.OxfordIIITPet`: The target for ``target_type="segmentation"`` is wrapped into a
           :class:`~torchvision.datapoints.Mask` datapoint.
         * :class:`~torchvision.datasets.Cityscapes`: The target for ``target_type="semantic"`` is wrapped into a
@@ -63,13 +65,13 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels")):
 
     Segmentation datasets
 
-        Segmentation datasets, e.g. :class:`~torchvision.datasets.VOCSegmentation` return a two-tuple of
+        Segmentation datasets, e.g. :class:`~torchvision.datasets.VOCSegmentation`, return a two-tuple of
         :class:`PIL.Image.Image`'s. This wrapper leaves the image as is (first item), while wrapping the
         segmentation mask into a :class:`~torchvision.datapoints.Mask` (second item).
 
     Video classification datasets
 
-        Video classification datasets, e.g. :class:`~torchvision.datasets.Kinetics` return a three-tuple containing a
+        Video classification datasets, e.g. :class:`~torchvision.datasets.Kinetics`, return a three-tuple containing a
         :class:`torch.Tensor` for the video and audio and a :class:`int` as label. This wrapper wraps the video into a
         :class:`~torchvision.datapoints.Video` while leaving the other items as is.
 
@@ -80,12 +82,19 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels")):
 
     Args:
         dataset: the dataset instance to wrap for compatibility with transforms v2.
-        target_keys: TODO
+        target_keys: Target keys to return in case the target is a dictionary. If ``None`` (default), selected keys are
+            specific to the dataset. See above for details. If ``"all"``, returns the full target. Can also be a
+            collection of strings for fine grained access.
     """
-    if isinstance(target_keys, collections.abc.Collection) and not isinstance(target_keys, str):
-        target_keys = set(target_keys)
-    elif target_keys != "all":
-        raise TypeError("FIXME")
+    if not (
+        target_keys is None
+        or target_keys == "all"
+        or (isinstance(target_keys, collections.abc.Collection) and all(isinstance(key, str) for key in target_keys))
+    ):
+        raise ValueError(
+            f"`target_keys` can be None, 'all', or a collection of strings denoting the keys to be returned, "
+            f"but got {target_keys}"
+        )
 
     return VisionDatasetDatapointWrapper(dataset, target_keys)
 
@@ -190,17 +199,18 @@ def pil_image_to_mask(pil_image):
     return datapoints.Mask(pil_image)
 
 
-def check_target_keys(*available_target_keys):
-    available_target_keys = set(available_target_keys)
-
+def parse_target_keys(*, available, default):
     def outer_wrapper(fn):
         def inner_wrapper(dataset, target_keys):
+            if target_keys is None:
+                target_keys = default
             if target_keys == "all":
-                target_keys = available_target_keys
+                target_keys = available
             else:
-                extra = target_keys - available_target_keys
+                target_keys = set(target_keys)
+                extra = target_keys - available
                 if extra:
-                    raise ValueError(f"Target keys {extra} are not available!")
+                    raise ValueError(f"Target keys {extra} are not available for dataset {type(dataset).__name__}")
 
             return fn(dataset, target_keys)
 
@@ -297,18 +307,21 @@ def caltech101_wrapper_factory(dataset, target_keys):
 
 
 @WRAPPER_FACTORIES.register(datasets.CocoDetection)
-@check_target_keys(
-    # natively from COCO
-    "segmentation",
-    "area",
-    "iscrowd",
-    "image_id",
-    "bbox",
-    "category_id",
-    # added by the wrapper
-    "boxes",
-    "masks",
-    "labels",
+@parse_target_keys(
+    available={
+        # native
+        "segmentation",
+        "area",
+        "iscrowd",
+        "image_id",
+        "bbox",
+        "category_id",
+        # added by the wrapper
+        "boxes",
+        "masks",
+        "labels",
+    },
+    default={"boxes", "labels"},
 )
 def coco_dectection_wrapper_factory(dataset, target_keys):
     def segmentation_to_mask(segmentation, *, spatial_size):
@@ -330,6 +343,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             return image, dict(image_id=image_id)
 
         spatial_size = tuple(F.get_spatial_size(image))
+
         batched_target = list_of_dicts_to_dict_of_lists(target)
         target = {}
 
@@ -397,23 +411,39 @@ VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC
 
 
 @WRAPPER_FACTORIES.register(datasets.VOCDetection)
+@parse_target_keys(
+    available={
+        # native
+        "annotation",
+        # added by the wrapper
+        "boxes",
+        "labels",
+    },
+    default={"boxes", "labels"},
+)
 def voc_detection_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
 
         batched_instances = list_of_dicts_to_dict_of_lists(target["annotation"]["object"])
 
-        target["boxes"] = datapoints.BoundingBox(
-            [
-                [int(bndbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")]
-                for bndbox in batched_instances["bndbox"]
-            ],
-            format=datapoints.BoundingBoxFormat.XYXY,
-            spatial_size=(image.height, image.width),
-        )
-        target["labels"] = torch.tensor(
-            [VOC_DETECTION_CATEGORY_TO_IDX[category] for category in batched_instances["name"]]
-        )
+        if "annotation" not in target_keys:
+            target = {}
+
+        if "boxes" in target_keys:
+            target["boxes"] = datapoints.BoundingBox(
+                [
+                    [int(bndbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")]
+                    for bndbox in batched_instances["bndbox"]
+                ],
+                format=datapoints.BoundingBoxFormat.XYXY,
+                spatial_size=(image.height, image.width),
+            )
+
+        if "labels" in target_keys:
+            target["labels"] = torch.tensor(
+                [VOC_DETECTION_CATEGORY_TO_IDX[category] for category in batched_instances["name"]]
+            )
 
         return image, target
 
@@ -461,17 +491,45 @@ KITTI_CATEGORY_TO_IDX = dict(zip(KITTI_CATEGORIES, range(len(KITTI_CATEGORIES)))
 
 
 @WRAPPER_FACTORIES.register(datasets.Kitti)
+@parse_target_keys(
+    available={
+        # native
+        "type",
+        "truncated",
+        "occluded",
+        "alpha",
+        "bbox",
+        "dimensions",
+        "location",
+        "rotation_y",
+        # added by the wrapper
+        "boxes",
+        "labels",
+    },
+    default={"boxes", "labels"},
+)
 def kitti_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
 
-        if target is not None:
-            target = list_of_dicts_to_dict_of_lists(target)
+        if target is None:
+            return image, target
 
+        batched_target = list_of_dicts_to_dict_of_lists(target)
+        target = {}
+
+        if "boxes" in target_keys:
             target["boxes"] = datapoints.BoundingBox(
-                target["bbox"], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(image.height, image.width)
+                batched_target["bbox"],
+                format=datapoints.BoundingBoxFormat.XYXY,
+                spatial_size=(image.height, image.width),
             )
-            target["labels"] = torch.tensor([KITTI_CATEGORY_TO_IDX[category] for category in target["type"]])
+
+        if "labels" in target_keys:
+            target["labels"] = torch.tensor([KITTI_CATEGORY_TO_IDX[category] for category in batched_target["type"]])
+
+        for target_key in target_keys - {"boxes", "labels"}:
+            target[target_key] = batched_target[target_key]
 
         return image, target
 
@@ -533,11 +591,28 @@ def cityscapes_wrapper_factory(dataset, target_keys):
 
 
 @WRAPPER_FACTORIES.register(datasets.WIDERFace)
+@parse_target_keys(
+    available={
+        "bbox",
+        "blur",
+        "expression",
+        "illumination",
+        "occlusion",
+        "pose",
+        "invalid",
+    },
+    default="all",
+)
 def widerface_wrapper(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
 
-        if target is not None:
+        if target is None:
+            return image, target
+
+        target = {key: target[key] for key in target_keys}
+
+        if "bbox" in target_keys:
             target["bbox"] = F.convert_format_bounding_box(
                 datapoints.BoundingBox(
                     target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
