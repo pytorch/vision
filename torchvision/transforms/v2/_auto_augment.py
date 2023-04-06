@@ -899,10 +899,6 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
                 [("ShearX", 0.2, 6), ("TranslateY_Only_BBoxes", 0.2, 10)],
                 [("SolarizeAdd", 0.6, 8), ("Brightness", 0.8, 10)],
             ]
-        elif policy == "test":
-            return [
-                [("TranslateX", 1.0, 4), ("Equalize", 1.0, 10)],
-            ]
         elif policy == "v2":
             return [
                 [("Color", 0.0, 6), ("Cutout", 0.6, 8), ("Sharpness", 0.4, 8)],
