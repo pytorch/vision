@@ -83,8 +83,10 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
     Args:
         dataset: the dataset instance to wrap for compatibility with transforms v2.
         target_keys: Target keys to return in case the target is a dictionary. If ``None`` (default), selected keys are
-            specific to the dataset. See above for details. If ``"all"``, returns the full target. Can also be a
-            collection of strings for fine grained access.
+            specific to the dataset. If ``"all"``, returns the full target. Can also be a collection of strings for
+            fine grained access. Currently only supported for :class:`~torchvision.datasets.CocoDetection`,
+            :class:`~torchvision.datasets.VOCDetection`, :class:`~torchvision.datasets.Kitti`, and
+            :class:`~torchvision.datasets.WIDERFace`. See above for details.
     """
     if not (
         target_keys is None
@@ -128,6 +130,16 @@ class VisionDatasetDatapointWrapper(Dataset):
         for cls in dataset_cls.mro():
             if cls in WRAPPER_FACTORIES:
                 wrapper_factory = WRAPPER_FACTORIES[cls]
+                if target_keys is not None and cls not in {
+                    datasets.CocoDetection,
+                    datasets.VOCDetection,
+                    datasets.Kitti,
+                    datasets.WIDERFace,
+                }:
+                    raise ValueError(
+                        f"`target_keys` is currently only supported for `CocoDetection`, `VOCDetection`, `Kitti`, "
+                        f"and `WIDERFace`, but got {cls.__name__}."
+                    )
                 break
             elif cls is datasets.VisionDataset:
                 # TODO: If we have documentation on how to do that, put a link in the error message.
@@ -140,7 +152,6 @@ class VisionDatasetDatapointWrapper(Dataset):
                 raise TypeError(msg)
 
         self._dataset = dataset
-        self._target_keys = target_keys
         self._wrapper = wrapper_factory(dataset, target_keys)
 
         # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
@@ -199,24 +210,18 @@ def pil_image_to_mask(pil_image):
     return datapoints.Mask(pil_image)
 
 
-def parse_target_keys(*, available, default):
-    def outer_wrapper(fn):
-        def inner_wrapper(dataset, target_keys):
-            if target_keys is None:
-                target_keys = default
-            if target_keys == "all":
-                target_keys = available
-            else:
-                target_keys = set(target_keys)
-                extra = target_keys - available
-                if extra:
-                    raise ValueError(f"Target keys {extra} are not available for dataset {type(dataset).__name__}")
+def parse_target_keys(target_keys, *, available, default):
+    if target_keys is None:
+        target_keys = default
+    if target_keys == "all":
+        target_keys = available
+    else:
+        target_keys = set(target_keys)
+        extra = target_keys - available
+        if extra:
+            raise ValueError(f"Target keys {sorted(extra)} are not available")
 
-            return fn(dataset, target_keys)
-
-        return inner_wrapper
-
-    return outer_wrapper
+    return target_keys
 
 
 def list_of_dicts_to_dict_of_lists(list_of_dicts):
@@ -307,23 +312,25 @@ def caltech101_wrapper_factory(dataset, target_keys):
 
 
 @WRAPPER_FACTORIES.register(datasets.CocoDetection)
-@parse_target_keys(
-    available={
-        # native
-        "segmentation",
-        "area",
-        "iscrowd",
-        "image_id",
-        "bbox",
-        "category_id",
-        # added by the wrapper
-        "boxes",
-        "masks",
-        "labels",
-    },
-    default={"boxes", "labels"},
-)
 def coco_dectection_wrapper_factory(dataset, target_keys):
+    target_keys = parse_target_keys(
+        target_keys,
+        available={
+            # native
+            "segmentation",
+            "area",
+            "iscrowd",
+            "image_id",
+            "bbox",
+            "category_id",
+            # added by the wrapper
+            "boxes",
+            "masks",
+            "labels",
+        },
+        default={"boxes", "labels"},
+    )
+
     def segmentation_to_mask(segmentation, *, spatial_size):
         from pycocotools import mask
 
@@ -411,17 +418,19 @@ VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC
 
 
 @WRAPPER_FACTORIES.register(datasets.VOCDetection)
-@parse_target_keys(
-    available={
-        # native
-        "annotation",
-        # added by the wrapper
-        "boxes",
-        "labels",
-    },
-    default={"boxes", "labels"},
-)
 def voc_detection_wrapper_factory(dataset, target_keys):
+    target_keys = parse_target_keys(
+        target_keys,
+        available={
+            # native
+            "annotation",
+            # added by the wrapper
+            "boxes",
+            "labels",
+        },
+        default={"boxes", "labels"},
+    )
+
     def wrapper(idx, sample):
         image, target = sample
 
@@ -491,24 +500,26 @@ KITTI_CATEGORY_TO_IDX = dict(zip(KITTI_CATEGORIES, range(len(KITTI_CATEGORIES)))
 
 
 @WRAPPER_FACTORIES.register(datasets.Kitti)
-@parse_target_keys(
-    available={
-        # native
-        "type",
-        "truncated",
-        "occluded",
-        "alpha",
-        "bbox",
-        "dimensions",
-        "location",
-        "rotation_y",
-        # added by the wrapper
-        "boxes",
-        "labels",
-    },
-    default={"boxes", "labels"},
-)
 def kitti_wrapper_factory(dataset, target_keys):
+    target_keys = parse_target_keys(
+        target_keys,
+        available={
+            # native
+            "type",
+            "truncated",
+            "occluded",
+            "alpha",
+            "bbox",
+            "dimensions",
+            "location",
+            "rotation_y",
+            # added by the wrapper
+            "boxes",
+            "labels",
+        },
+        default={"boxes", "labels"},
+    )
+
     def wrapper(idx, sample):
         image, target = sample
 
@@ -591,19 +602,21 @@ def cityscapes_wrapper_factory(dataset, target_keys):
 
 
 @WRAPPER_FACTORIES.register(datasets.WIDERFace)
-@parse_target_keys(
-    available={
-        "bbox",
-        "blur",
-        "expression",
-        "illumination",
-        "occlusion",
-        "pose",
-        "invalid",
-    },
-    default="all",
-)
 def widerface_wrapper(dataset, target_keys):
+    target_keys = parse_target_keys(
+        target_keys,
+        available={
+            "bbox",
+            "blur",
+            "expression",
+            "illumination",
+            "occlusion",
+            "pose",
+            "invalid",
+        },
+        default="all",
+    )
+
     def wrapper(idx, sample):
         image, target = sample
 
