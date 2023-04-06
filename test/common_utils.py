@@ -28,7 +28,7 @@ from torchvision.transforms._functional_tensor import _max_value as get_max_valu
 from torchvision.transforms.v2.functional import convert_dtype_image_tensor, to_image_tensor
 
 
-IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
+IN_OSS_CI = bool(os.getenv('CI'))
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
