@@ -51,6 +51,7 @@ jobs:
 
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
+        export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
         
@@ -68,7 +69,7 @@ jobs:
         echo '::endgroup::'
         
         echo '::group::Run ONNX tests'
-        pytest --durations=25 -v test/test_onnx.py
+        pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_onnx.py
         echo '::endgroup::'
 
   unittests-extended:
@@ -80,6 +81,7 @@ jobs:
 
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
+        export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
         
@@ -99,5 +101,5 @@ jobs:
         
         echo '::group::Run extended unittests'
         export PYTORCH_TEST_WITH_EXTENDED=1
-        pytest --durations=25 -v test/test_extended_*.py
+        pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_extended_*.py
         echo '::endgroup::'

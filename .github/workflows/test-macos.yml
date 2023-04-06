@@ -35,5 +35,6 @@ jobs:
 
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=cpu
+        export GPU_ARCH_VERSION=''
 
         ./.github/scripts/unittest.sh
