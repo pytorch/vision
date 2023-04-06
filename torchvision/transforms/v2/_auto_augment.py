@@ -16,19 +16,25 @@ from .utils import check_type, is_simple_tensor
 
 
 def solarize_add(
-    image: Union[datapoints._ImageType, datapoints._VideoType], addition: int = 0, threshold: int = 128
+    image: Union[datapoints._ImageType, datapoints._VideoType], addition: float = 0.0, threshold: float = 128 / 255
 ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-    # TODO: ? threshold max value: bound = _FT._max_value(inpt.dtype)
+    if check_type(image, (datapoints.Image, is_simple_tensor, datapoints.Video)):
+        bound = _FT._max_value(image.dtype)
+    else:
+        bound = 255
+    if bound != 1:
+        addition = round(addition * bound)
+        threshold = round(threshold * bound)
+
     if isinstance(image, PIL.Image.Image):
 
         def pixel_fn(pixel: int) -> int:
-            return max(0, min(pixel + addition, 255)) if pixel < threshold else pixel
+            return max(0, min(pixel + int(addition), bound)) if pixel < int(threshold) else pixel
 
         return PIL.Image.eval(image, pixel_fn)
 
-    added_image = image.add(addition).clip(0, 255)
+    added_image = image.add(addition).clip(0, bound)
     result = torch.where(image < threshold, added_image, image)
-    # TODO: check if this is appropriate way
     if isinstance(image, datapoints._datapoint.Datapoint):
         result = image.wrap_like(image, result)
     return result
@@ -141,7 +147,6 @@ class _AutoAugmentBase(Transform):
         interpolation: Union[InterpolationMode, int],
         fill: Dict[Type, datapoints._FillTypeJIT],
     ) -> Union[datapoints._ImageType, datapoints._VideoType, datapoints.BoundingBox]:
-        # TODO: magnitude is not always float, it could be int (e.g., posterize).
         fill_ = fill[type(inpt)]
 
         if transform_id == "Identity":
@@ -207,7 +212,6 @@ class _AutoAugmentBase(Transform):
         elif transform_id == "Sharpness":
             return F.adjust_sharpness(inpt, sharpness_factor=1.0 + magnitude)
         elif transform_id == "Posterize":
-            # TODO: we don't need to convert magnitude to int because it's already int format.
             return F.posterize(inpt, bits=int(magnitude))
         elif transform_id == "Solarize":
             if check_type(inpt, (datapoints.Image, is_simple_tensor, datapoints.Video)):
@@ -223,18 +227,13 @@ class _AutoAugmentBase(Transform):
             return F.invert(inpt)
         elif transform_id == "Flip":
             return F.horizontal_flip(inpt)
+        elif isinstance(inpt, datapoints.BoundingBox):
+            return inpt
         elif transform_id == "SolarizeAdd":
-            if isinstance(inpt, datapoints.BoundingBox):
-                return inpt
-            return solarize_add(inpt, int(magnitude))
+            return solarize_add(inpt, magnitude)
         elif transform_id == "Cutout":
-            if isinstance(inpt, datapoints.BoundingBox):
-                return inpt
             return cutout(inpt, pad_size=int(magnitude))
         elif transform_id == "BBox_Cutout":
-            # TODO: Is there a better way?
-            if isinstance(inpt, datapoints.BoundingBox):
-                return inpt
             return cutout(inpt, pad_fraction=magnitude)
         else:
             raise ValueError(f"No transform available for {transform_id}")
@@ -764,12 +763,11 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
 
     @staticmethod
     def _transform_image_or_video_in_bboxes(
-        fn: Callable[..., torch.Tensor], fn_kwrgs: dict, image: torch.Tensor, bboxes: torch.Tensor
+        fn: Callable[..., torch.Tensor], fn_kwrgs: dict, image: torch.Tensor, bboxes: datapoints.BoundingBox
     ) -> torch.Tensor:
-        # TODO: ? Do we need to assert bboxes format is XYXY?
         new_img = image.clone()
-        int_bboxes = bboxes.to(torch.long)
-        for bbox in int_bboxes:
+        xyxy_bboxes = F.convert_format_bounding_box(bboxes, new_format=datapoints.BoundingBoxFormat.XYXY)
+        for bbox in xyxy_bboxes:
             bbox_img = new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]]
             out_bbox_img = fn(bbox_img, **fn_kwrgs)
             new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]] = out_bbox_img
@@ -786,7 +784,6 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     ) -> Tuple[Any, datapoints.BoundingBox]:
         if transform_id == "BBox_Cutout":
             random_index = int(torch.randint(len(bboxes), ()))
-            # TODO: this wrap_like solution seems very complex
             chosen_bbox = bboxes.wrap_like(bboxes, bboxes[random_index].unsqueeze(0))
             fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
             image = self._transform_image_or_video_in_bboxes(
@@ -800,7 +797,9 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
             )
         else:
             image = self._apply_transform(image, transform_id, magnitude, interpolation, fill)
-            bboxes = self._apply_transform(bboxes, transform_id, magnitude, interpolation, fill)
+            result = self._apply_transform(bboxes, transform_id, magnitude, interpolation, fill)
+            assert isinstance(result, datapoints.BoundingBox)
+            bboxes = result
 
         return image, bboxes
 
@@ -810,33 +809,31 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
         "Posterize": (
-            lambda num_bins, height, width: torch.linspace(8, 4, num_bins + 1, dtype=torch.long),
+            lambda num_bins, height, width: torch.linspace(8, 4, num_bins + 1).round().int(),
             False,
         ),
         "Solarize": (
-            # TODO: this is extremely ugly because 255 is multiplied in _apply_transform
             lambda num_bins, height, width: torch.linspace(256 / 255, 0, num_bins + 1),
             False,
-        ),  # TODO: it's previously [255, 0], now [256, 0]
+        ),
         "SolarizeAdd": (
-            lambda num_bins, height, width: torch.linspace(0, 110, num_bins + 1, dtype=torch.long),
+            lambda num_bins, height, width: torch.linspace(0, 110 / 255, num_bins + 1),
             False,
         ),
-        # TODO: it's previously [0, 0.9] (10 piece) with random negate, now [-0.9, 0.9] (11 piece)
         "Color": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
         "Contrast": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
         "Brightness": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
         "Sharpness": (lambda num_bins, height, width: torch.linspace(-0.9, 0.9, num_bins + 1), False),
-        "Cutout": (lambda num_bins, height, width: torch.linspace(0, 100, num_bins + 1, dtype=torch.long), False),
+        "Cutout": (lambda num_bins, height, width: torch.linspace(0, 100, num_bins + 1).round().int(), False),
         "BBox_Cutout": (lambda num_bins, height, width: torch.linspace(0.0, 0.75, num_bins + 1), False),
         "TranslateX": (
             lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins + 1),
             True,
-        ),  # TODO: it's previously [0, 150.0 / 331.0 * width], now [0, 250]
+        ),
         "TranslateY": (
             lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins + 1),
             True,
-        ),  # TODO: it's previously [0, 150.0 / 331.0 * width], now [0, 250]
+        ),
         "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
         "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
         "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins + 1), True),
@@ -853,9 +850,9 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         ),
         "Flip_Only_BBoxes": (lambda num_bins, height, width: None, False),
         "Solarize_Only_BBoxes": (
-            lambda num_bins, height, width: torch.linspace(256 / 255, 0, num_bins + 1, dtype=torch.long),
+            lambda num_bins, height, width: torch.linspace(256 / 255, 0, num_bins + 1).round().int(),
             False,
-        ),  # TODO: the same as "Solarize"
+        ),
         "Equalize_Only_BBoxes": (lambda num_bins, height, width: None, False),
         "Cutout_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0, 50, num_bins + 1), False),
     }
