@@ -475,7 +475,7 @@ _model_tests_values = {
     },
     "yolov4": {
         "max_trainable": 5,
-        "n_trn_params_per_layer": [1, 1, 1, 1, 1, 1],  # TODO: Fill the correct values.
+        "n_trn_params_per_layer": [138, 174, 234, 294, 318, 339],
     },
 }
 
@@ -793,7 +793,7 @@ def test_segmentation_model(model_fn, dev):
     _check_input_backprop(model, x)
 
 
-def check_model_output(out):
+def check_model_output(out, model_name):
     assert len(out) == 1
 
     def compact(tensor):
@@ -874,7 +874,7 @@ def test_detection_model(model_fn, dev):
         out = model(model_input)
     assert model_input[0] is x
 
-    full_validation = check_model_output(out)
+    full_validation = check_model_output(out, model_name)
     _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
     if dev == "cuda":
@@ -900,8 +900,9 @@ def test_detection_model(model_fn, dev):
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_yolo_darknet(dev):
     set_rng_seed(0)
+    model_name = "yolo_darknet"
     dtype = torch.get_default_dtype()
-    input_shape = (3, 300, 300)
+    input_shape = (3, 224, 224)
 
     model = yolo_darknet(DARKNET_CONFIG)
     model.eval().to(device=dev, dtype=dtype)
@@ -911,13 +912,13 @@ def test_yolo_darknet(dev):
         out = model(model_input)
     assert model_input[0] is x
 
-    full_validation = check_model_output(out)
+    full_validation = check_model_output(out, model_name)
     _check_jit_scriptable(model, ([x],), unwrapper=None, eager_out=out)
 
     if dev == "cuda":
         with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
             out = model(model_input)
-            full_validation &= check_model_output(out)
+            full_validation &= check_model_output(out, model_name)
 
     if not full_validation:
         msg = (
@@ -936,28 +937,28 @@ def test_yolo_darknet(dev):
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
     model = model_fn(num_classes=50, weights=None, weights_backbone=None)
-    input_shape = (3, 300, 300)
+    input_shape = (3, 256, 256)  # YOLO models expect the input dimensions to be a multiple of 32 or 64.
     x = [torch.rand(input_shape)]
 
     # validate that targets are present in training
-    with pytest.raises(AssertionError):
+    with pytest.raises((AssertionError, ValueError)):
         model(x)
 
     # validate type
     targets = [{"boxes": 0.0}]
-    with pytest.raises(AssertionError):
+    with pytest.raises((AssertionError, TypeError)):
         model(x, targets=targets)
 
     # validate boxes shape
     for boxes in (torch.rand((4,)), torch.rand((1, 5))):
         targets = [{"boxes": boxes}]
-        with pytest.raises(AssertionError):
+        with pytest.raises((AssertionError, ValueError)):
             model(x, targets=targets)
 
     # validate that no degenerate boxes are present
     boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
     targets = [{"boxes": boxes}]
-    with pytest.raises(AssertionError):
+    with pytest.raises((AssertionError, ValueError)):
         model(x, targets=targets)
 
 

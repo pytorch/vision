@@ -7,7 +7,7 @@ from torch import Tensor
 
 from ...ops import batched_nms
 from ...transforms import functional as F
-from .._api import register_model, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._utils import _ovewrite_value_param
 from ..yolo import YOLOV4Backbone
 from .backbone_utils import _validate_trainable_layers
@@ -20,63 +20,20 @@ TARGET = Dict[str, Any]
 TARGETS = Union[Tuple[TARGET, ...], List[TARGET]]
 
 
-def validate_batch(images: Union[Tensor, IMAGES], targets: Optional[TARGETS]) -> None:
-    """Validates the format of a batch of data.
-
-    Args:
-        images: A tensor containing a batch of images or a list of image tensors.
-        targets: A list of target dictionaries or ``None``. If a list is provided, there should be as many target
-            dictionaries as there are images.
-    """
-    if not isinstance(images, Tensor):
-        if not isinstance(images, (tuple, list)):
-            raise TypeError(f"Expected images to be a Tensor, tuple, or a list, got {type(images).__name__}.")
-        if not images:
-            raise ValueError("No images in batch.")
-        shape = images[0].shape
-        for image in images:
-            if not isinstance(image, Tensor):
-                raise ValueError(f"Expected image to be of type Tensor, got {type(image).__name__}.")
-            if image.shape != shape:
-                raise ValueError(f"Images with different shapes in one batch: {shape} and {image.shape}")
-
-    if targets is None:
-        return
-
-    if not isinstance(targets, (tuple, list)):
-        raise TypeError(f"Expected targets to be a tuple or a list, got {type(images).__name__}.")
-    if len(images) != len(targets):
-        raise ValueError(f"Got {len(images)} images, but targets for {len(targets)} images.")
-
-    for target in targets:
-        boxes = target["boxes"]
-        if not isinstance(boxes, Tensor):
-            raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes).__name__}.")
-        if (boxes.ndim != 2) or (boxes.shape[-1] != 4):
-            raise ValueError(f"Expected target boxes to be tensors of shape [N, 4], got {list(boxes.shape)}.")
-        labels = target["labels"]
-        if not isinstance(labels, Tensor):
-            raise ValueError(f"Expected target labels to be of type Tensor, got {type(labels).__name__}.")
-        if (labels.ndim < 1) or (labels.ndim > 2) or (len(labels) != len(boxes)):
-            raise ValueError(
-                f"Expected target labels to be tensors of shape [N] or [N, num_classes], got {list(labels.shape)}."
-            )
-
-
 class YOLO(nn.Module):
     """YOLO implementation that supports the most important features of YOLOv3, YOLOv4, YOLOv5, YOLOv7, Scaled-YOLOv4,
     and YOLOX.
 
-    *YOLOv3 paper*: `Joseph Redmon and Ali Farhadi <https://arxiv.org/abs/1804.02767>`_
+    *YOLOv3 paper*: `Joseph Redmon and Ali Farhadi <https://arxiv.org/abs/1804.02767>`__
 
-    *YOLOv4 paper*: `Alexey Bochkovskiy, Chien-Yao Wang, and Hong-Yuan Mark Liao <https://arxiv.org/abs/2004.10934>`_
+    *YOLOv4 paper*: `Alexey Bochkovskiy, Chien-Yao Wang, and Hong-Yuan Mark Liao <https://arxiv.org/abs/2004.10934>`__
 
-    *YOLOv7 paper*: `Chien-Yao Wang, Alexey Bochkovskiy, and Hong-Yuan Mark Liao <https://arxiv.org/abs/2207.02696>`_
+    *YOLOv7 paper*: `Chien-Yao Wang, Alexey Bochkovskiy, and Hong-Yuan Mark Liao <https://arxiv.org/abs/2207.02696>`__
 
     *Scaled-YOLOv4 paper*: `Chien-Yao Wang, Alexey Bochkovskiy, and Hong-Yuan Mark Liao
-    <https://arxiv.org/abs/2011.08036>`_
+    <https://arxiv.org/abs/2011.08036>`__
 
-    *YOLOX paper*: `Zheng Ge, Songtao Liu, Feng Wang, Zeming Li, and Jian Sun <https://arxiv.org/abs/2107.08430>`_
+    *YOLOX paper*: `Zheng Ge, Songtao Liu, Feng Wang, Zeming Li, and Jian Sun <https://arxiv.org/abs/2107.08430>`__
 
     The network architecture can be written in PyTorch, or read from a Darknet configuration file using the
     :class:`~.yolo_networks.DarknetNetwork` class. ``DarknetNetwork`` is also able to read weights that have been saved
@@ -177,7 +134,7 @@ class YOLO(nn.Module):
             where ``anchors`` is the feature map size (width * height) times the number of anchors per cell. The
             predicted box coordinates are in `(x1, y1, x2, y2)` format and scaled to the input image size.
         """
-        validate_batch(images, targets)
+        self.validate_batch(images, targets)
         images_tensor = images if isinstance(images, Tensor) else torch.stack(images)
         detections, losses, hits = self.network(images_tensor, targets)
 
@@ -272,13 +229,72 @@ class YOLO(nn.Module):
 
         return [process(**t) for t in targets]
 
+    def validate_batch(self, images: Union[Tensor, IMAGES], targets: Optional[TARGETS]) -> None:
+        """Validates the format of a batch of data.
+
+        Args:
+            images: A tensor containing a batch of images or a list of image tensors.
+            targets: A list of target dictionaries or ``None``. If a list is provided, there should be as many target
+                dictionaries as there are images.
+        """
+        if not isinstance(images, Tensor):
+            if not isinstance(images, (tuple, list)):
+                raise TypeError(f"Expected images to be a Tensor, tuple, or a list, got {type(images).__name__}.")
+            if not images:
+                raise ValueError("No images in batch.")
+            shape = images[0].shape
+            for image in images:
+                if not isinstance(image, Tensor):
+                    raise ValueError(f"Expected image to be of type Tensor, got {type(image).__name__}.")
+                if image.shape != shape:
+                    raise ValueError(f"Images with different shapes in one batch: {shape} and {image.shape}")
+
+        if targets is None:
+            if self.training:
+                raise ValueError("Targets should be given in training mode.")
+            else:
+                return
+
+        if not isinstance(targets, (tuple, list)):
+            raise TypeError(f"Expected targets to be a tuple or a list, got {type(images).__name__}.")
+        if len(images) != len(targets):
+            raise ValueError(f"Got {len(images)} images, but targets for {len(targets)} images.")
+
+        for target in targets:
+            if "boxes" not in target:
+                raise ValueError("Target dictionary doesn't contain boxes.")
+            boxes = target["boxes"]
+            if not isinstance(boxes, Tensor):
+                raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes).__name__}.")
+            if (boxes.ndim != 2) or (boxes.shape[-1] != 4):
+                raise ValueError(f"Expected target boxes to be tensors of shape [N, 4], got {list(boxes.shape)}.")
+            if "labels" not in target:
+                raise ValueError("Target dictionary doesn't contain labels.")
+            labels = target["labels"]
+            if not isinstance(labels, Tensor):
+                raise ValueError(f"Expected target labels to be of type Tensor, got {type(labels).__name__}.")
+            if (labels.ndim < 1) or (labels.ndim > 2) or (len(labels) != len(boxes)):
+                raise ValueError(
+                    f"Expected target labels to be tensors of shape [N] or [N, num_classes], got {list(labels.shape)}."
+                )
+
 
 class YOLOV4_Backbone_Weights(WeightsEnum):
-    DEFAULT = None
+    # TODO: Create pretrained weights.
+    DEFAULT = Weights(
+        url="",
+        transforms=lambda x: x,
+        meta={},
+    )
 
 
 class YOLOV4_Weights(WeightsEnum):
-    DEFAULT = None
+    # TODO: Create pretrained weights.
+    DEFAULT = Weights(
+        url="",
+        transforms=lambda x: x,
+        meta={},
+    )
 
 
 def freeze_backbone_layers(backbone: nn.Module, trainable_layers: Optional[int], is_trained: bool) -> None:
