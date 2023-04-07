@@ -14,6 +14,7 @@ jobs:
     strategy:
       matrix:
         python-version:
+          # Test against the most popular version of Python (at the time of commit 40% of torch downloads use 3.8)
           - "3.8"
         runner: ["macos-12", "macos-m1-12"]
       fail-fast: false
