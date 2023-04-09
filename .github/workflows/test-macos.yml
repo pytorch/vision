@@ -13,10 +13,13 @@ jobs:
   unittests:
     strategy:
       matrix:
-        python-version:
+        include:
           # Test against the most popular version of Python (at the time of commit 40% of torch downloads use 3.8)
-          - "3.8"
-        runner: ["macos-12", "macos-m1-12"]
+          - python-version: "3.8"
+            runner: "macos-12"
+          # Minimum version available for Apple Silicon is 3.9, so just use that
+          - python-version: "3.9"
+            runner: "macos-m1-12"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
