@@ -13,19 +13,13 @@ from .utils import is_simple_tensor, query_chw
 class Grayscale(Transform):
     """[BETA] Convert images or videos to grayscale.
 
-    .. betastatus:: Grayscale transform
+    .. v2betastatus:: Grayscale transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+    If the input is a :class:`torch.Tensor`, it is expected
+    to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         num_output_channels (int): (1 or 3) number of channels desired for output image
-
-    Returns:
-        PIL Image: Grayscale version of the input.
-
-        - If ``num_output_channels == 1`` : returned image is single channel
-        - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
     """
 
     _v1_transform_cls = _transforms.Grayscale
@@ -46,22 +40,17 @@ class Grayscale(Transform):
 
 
 class RandomGrayscale(_RandomApplyTransform):
-    """[BETA] Randomly convert image to grayscale with a probability of p (default 0.1).
+    """[BETA] Randomly convert image or videos to grayscale with a probability of p (default 0.1).
 
-    .. betastatus:: RandomGrayscale transform
+    .. v2betastatus:: RandomGrayscale transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+    If the input is a :class:`torch.Tensor`, it is expected to have [..., 3 or 1, H, W] shape,
+    where ... means an arbitrary number of leading dimensions
+
+    The output has the same number of channels as the input.
 
     Args:
         p (float): probability that image should be converted to grayscale.
-
-    Returns:
-        PIL Image or Tensor: Grayscale version of the input image with probability p and unchanged
-        with probability (1-p).
-        - If input image is 1 channel: grayscale version is 1 channel
-        - If input image is 3 channel: grayscale version is 3 channel with r == g == b
-
     """
 
     _v1_transform_cls = _transforms.RandomGrayscale
@@ -85,11 +74,11 @@ class RandomGrayscale(_RandomApplyTransform):
 
 
 class ColorJitter(Transform):
-    """[BETA] Randomly change the brightness, contrast, saturation and hue of an image.
+    """[BETA] Randomly change the brightness, contrast, saturation and hue of an image or video.
 
-    .. betastatus:: ColorJitter transform
+    .. v2betastatus:: ColorJitter transform
 
-    If the image is torch Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
 
@@ -190,6 +179,31 @@ class ColorJitter(Transform):
 
 # TODO: This class seems to be untested
 class RandomPhotometricDistort(Transform):
+    """[BETA] Randomly distorts the image or video as used in `SSD: Single Shot
+    MultiBox Detector <https://arxiv.org/abs/1512.02325>`_.
+
+    .. v2betastatus:: RandomPhotometricDistort transform
+
+    This transform relies on :class:`~torchvision.transforms.v2.ColorJitter`
+    under the hood to adjust the contrast, saturation, hue, brightness, and also
+    randomly permutes channels.
+
+    Args:
+        brightness (tuple of float (min, max), optional): How much to jitter brightness.
+            brightness_factor is chosen uniformly from [min, max]. Should be non negative numbers.
+        contrast tuple of float (min, max), optional): How much to jitter contrast.
+            contrast_factor is chosen uniformly from [min, max]. Should be non-negative numbers.
+        saturation (tuple of float (min, max), optional): How much to jitter saturation.
+            saturation_factor is chosen uniformly from [min, max]. Should be non negative numbers.
+        hue (tuple of float (min, max), optional): How much to jitter hue.
+            hue_factor is chosen uniformly from [min, max].  Should have -0.5 <= min <= max <= 0.5.
+            To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
+            thus it does not work if you normalize your image to an interval with negative values,
+            or use an interpolation that generates negative values before using this function.
+        p (float, optional) probability each distortion operation (contrast, saturation, ...) to be applied.
+            Default is 0.5.
+    """
+
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,
@@ -199,10 +213,10 @@ class RandomPhotometricDistort(Transform):
 
     def __init__(
         self,
+        brightness: Tuple[float, float] = (0.875, 1.125),
         contrast: Tuple[float, float] = (0.5, 1.5),
         saturation: Tuple[float, float] = (0.5, 1.5),
         hue: Tuple[float, float] = (-0.05, 0.05),
-        brightness: Tuple[float, float] = (0.875, 1.125),
         p: float = 0.5,
     ):
         super().__init__()
@@ -214,19 +228,22 @@ class RandomPhotometricDistort(Transform):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
-        return dict(
-            zip(
-                ["brightness", "contrast1", "saturation", "hue", "contrast2"],
-                (torch.rand(5) < self.p).tolist(),
-            ),
-            contrast_before=bool(torch.rand(()) < 0.5),
-            channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
-        )
+        params: Dict[str, Any] = {
+            key: ColorJitter._generate_value(range[0], range[1]) if torch.rand(1) < self.p else None
+            for key, range in [
+                ("brightness_factor", self.brightness),
+                ("contrast_factor", self.contrast),
+                ("saturation_factor", self.saturation),
+                ("hue_factor", self.hue),
+            ]
+        }
+        params["contrast_before"] = bool(torch.rand(()) < 0.5)
+        params["channel_permutation"] = torch.randperm(num_channels) if torch.rand(1) < self.p else None
+        return params
 
     def _permute_channels(
         self, inpt: Union[datapoints._ImageType, datapoints._VideoType], permutation: torch.Tensor
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-
         orig_inpt = inpt
         if isinstance(orig_inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
@@ -242,35 +259,27 @@ class RandomPhotometricDistort(Transform):
     def _transform(
         self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-        if params["brightness"]:
-            inpt = F.adjust_brightness(
-                inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])
-            )
-        if params["contrast1"] and params["contrast_before"]:
-            inpt = F.adjust_contrast(
-                inpt, contrast_factor=ColorJitter._generate_value(self.contrast[0], self.contrast[1])
-            )
-        if params["saturation"]:
-            inpt = F.adjust_saturation(
-                inpt, saturation_factor=ColorJitter._generate_value(self.saturation[0], self.saturation[1])
-            )
-        if params["hue"]:
-            inpt = F.adjust_hue(inpt, hue_factor=ColorJitter._generate_value(self.hue[0], self.hue[1]))
-        if params["contrast2"] and not params["contrast_before"]:
-            inpt = F.adjust_contrast(
-                inpt, contrast_factor=ColorJitter._generate_value(self.contrast[0], self.contrast[1])
-            )
+        if params["brightness_factor"] is not None:
+            inpt = F.adjust_brightness(inpt, brightness_factor=params["brightness_factor"])
+        if params["contrast_factor"] is not None and params["contrast_before"]:
+            inpt = F.adjust_contrast(inpt, contrast_factor=params["contrast_factor"])
+        if params["saturation_factor"] is not None:
+            inpt = F.adjust_saturation(inpt, saturation_factor=params["saturation_factor"])
+        if params["hue_factor"] is not None:
+            inpt = F.adjust_hue(inpt, hue_factor=params["hue_factor"])
+        if params["contrast_factor"] is not None and not params["contrast_before"]:
+            inpt = F.adjust_contrast(inpt, contrast_factor=params["contrast_factor"])
         if params["channel_permutation"] is not None:
             inpt = self._permute_channels(inpt, permutation=params["channel_permutation"])
         return inpt
 
 
 class RandomEqualize(_RandomApplyTransform):
-    """[BETA] Equalize the histogram of the given image randomly with a given probability.
+    """[BETA] Equalize the histogram of the given image or video with a given probability.
 
-    .. betastatus:: RandomEqualize transform
+    .. v2betastatus:: RandomEqualize transform
 
-    If the image is torch Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
 
@@ -285,9 +294,9 @@ class RandomEqualize(_RandomApplyTransform):
 
 
 class RandomInvert(_RandomApplyTransform):
-    """[BETA] Inverts the colors of the given image randomly with a given probability.
+    """[BETA] Inverts the colors of the given image or video with a given probability.
 
-    .. betastatus:: RandomInvert transform
+    .. v2betastatus:: RandomInvert transform
 
     If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
     where ... means it can have an arbitrary number of leading dimensions.
@@ -304,12 +313,12 @@ class RandomInvert(_RandomApplyTransform):
 
 
 class RandomPosterize(_RandomApplyTransform):
-    """[BETA] Posterize the image randomly with a given probability by reducing the
+    """[BETA] Posterize the image or video with a given probability by reducing the
     number of bits for each color channel.
 
-    .. betastatus:: RandomPosterize transform
+    .. v2betastatus:: RandomPosterize transform
 
-    If the image is torch Tensor, it should be of type torch.uint8,
+    If the input is a :class:`torch.Tensor`, it should be of type torch.uint8,
     and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
@@ -329,10 +338,10 @@ class RandomPosterize(_RandomApplyTransform):
 
 
 class RandomSolarize(_RandomApplyTransform):
-    """[BETA] Solarize the image randomly with a given probability by inverting all pixel
+    """[BETA] Solarize the image or video with a given probability by inverting all pixel
     values above a threshold.
 
-    .. betastatus:: RandomSolarize transform
+    .. v2betastatus:: RandomSolarize transform
 
     If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
     where ... means it can have an arbitrary number of leading dimensions.
@@ -354,11 +363,11 @@ class RandomSolarize(_RandomApplyTransform):
 
 
 class RandomAutocontrast(_RandomApplyTransform):
-    """[BETA] Autocontrast the pixels of the given image randomly with a given probability.
+    """[BETA] Autocontrast the pixels of the given image or video with a given probability.
 
-    .. betastatus:: RandomAutocontrast transform
+    .. v2betastatus:: RandomAutocontrast transform
 
-    If the image is torch Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
@@ -373,11 +382,11 @@ class RandomAutocontrast(_RandomApplyTransform):
 
 
 class RandomAdjustSharpness(_RandomApplyTransform):
-    """[BETA] Adjust the sharpness of the image randomly with a given probability.
+    """[BETA] Adjust the sharpness of the image or video with a given probability.
 
-    .. betastatus:: RandomAdjustSharpness transform
+    .. v2betastatus:: RandomAdjustSharpness transform
 
-    If the image is torch Tensor,
+    If the input is a :class:`torch.Tensor`,
     it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:

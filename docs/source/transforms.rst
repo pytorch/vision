@@ -5,6 +5,22 @@ Transforming and augmenting images
 
 .. currentmodule:: torchvision.transforms
 
+
+.. note::
+    In 0.15, we released a new set of transforms available in the
+    ``torchvision.transforms.v2`` namespace, which add support for transforming
+    not just images but also bounding boxes, masks, or videos. These transforms
+    are fully backward compatible with the current ones, and you'll see them
+    documented below with a `v2.` prefix. To get started with those new
+    transforms, you can check out
+    :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`.
+    Note that these transforms are still BETA, and while we don't expect major
+    breaking changes in the future, some APIs may still change according to user
+    feedback. Please submit any feedback you may have `here
+    <https://github.com/pytorch/vision/issues/6753>`_, and you can also check
+    out `this issue <https://github.com/pytorch/vision/issues/7319>`_ to learn
+    more about the APIs that we suspect might involve future changes.
+
 Transforms are common image transformations available in the
 ``torchvision.transforms`` module. They can be chained together using
 :class:`Compose`.
@@ -99,10 +115,14 @@ Geometry
 
     Resize
     v2.Resize
+    v2.ScaleJitter
+    v2.RandomShortestSize
+    v2.RandomResize
     RandomCrop
     v2.RandomCrop
     RandomResizedCrop
     v2.RandomResizedCrop
+    v2.RandomIoUCrop
     CenterCrop
     v2.CenterCrop
     FiveCrop
@@ -111,16 +131,20 @@ Geometry
     v2.TenCrop
     Pad
     v2.Pad
+    v2.RandomZoomOut
+    RandomRotation
+    v2.RandomRotation
     RandomAffine
     v2.RandomAffine
     RandomPerspective
     v2.RandomPerspective
-    RandomRotation
-    v2.RandomRotation
+    ElasticTransform
+    v2.ElasticTransform
     RandomHorizontalFlip
     v2.RandomHorizontalFlip
     RandomVerticalFlip
     v2.RandomVerticalFlip
+
 
 Color
 -----
@@ -131,6 +155,7 @@ Color
 
     ColorJitter
     v2.ColorJitter
+    v2.RandomPhotometricDistort
     Grayscale
     v2.Grayscale
     RandomGrayscale
@@ -181,12 +206,21 @@ Miscellaneous
     v2.RandomErasing
     Lambda
     v2.Lambda
+    v2.SanitizeBoundingBox
+    v2.ClampBoundingBox
+    v2.UniformTemporalSubsample
 
 .. _conversion_transforms:
 
 Conversion
 ----------
 
+.. note::
+    Beware, some of these conversion transforms below will scale the values
+    while performing the conversion, while some may not do any scaling. By
+    scaling, we mean e.g. that a ``uint8`` -> ``float32`` would map the [0,
+    255] range into [0, 1] (and vice-versa).
+    
 .. autosummary::
     :toctree: generated/
     :template: class.rst
@@ -198,9 +232,12 @@ Conversion
     v2.ToTensor
     PILToTensor
     v2.PILToTensor
+    v2.ToImageTensor
     ConvertImageDtype
-    v2.ConvertImageDtype
     v2.ConvertDtype
+    v2.ConvertImageDtype
+    v2.ToDtype
+    v2.ConvertBoundingBoxFormat
 
 Auto-Augmentation
 -----------------
@@ -231,6 +268,14 @@ Functional Transforms
 ---------------------
 
 .. currentmodule:: torchvision.transforms.functional
+
+
+.. note::
+    You'll find below the documentation for the existing
+    ``torchvision.transforms.functional`` namespace. The
+    ``torchvision.transforms.v2.functional`` namespace exists as well and can be
+    used! The same functionals are present, so you simply need to change your
+    import to rely on the ``v2`` namespace.
 
 Functional transforms give you fine-grained control of the transformation pipeline.
 As opposed to the transformations above, functional transforms don't contain a random number

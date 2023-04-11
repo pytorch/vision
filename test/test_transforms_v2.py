@@ -136,14 +136,14 @@ class TestSmoke:
             (transforms.RandomCrop([16, 16], pad_if_needed=True), None),
             (transforms.RandomHorizontalFlip(p=1.0), None),
             (transforms.RandomPerspective(p=1.0), None),
-            (transforms.RandomResize(min_size=10, max_size=20), None),
-            (transforms.RandomResizedCrop([16, 16]), None),
+            (transforms.RandomResize(min_size=10, max_size=20, antialias=True), None),
+            (transforms.RandomResizedCrop([16, 16], antialias=True), None),
             (transforms.RandomRotation(degrees=30), None),
-            (transforms.RandomShortestSize(min_size=10), None),
+            (transforms.RandomShortestSize(min_size=10, antialias=True), None),
             (transforms.RandomVerticalFlip(p=1.0), None),
             (transforms.RandomZoomOut(p=1.0), None),
             (transforms.Resize([16, 16], antialias=True), None),
-            (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2)), None),
+            (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
             (transforms.ClampBoundingBox(), None),
             (transforms.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.CXCYWH), None),
             (transforms.ConvertDtype(), None),
@@ -275,7 +275,7 @@ class TestSmoke:
                 boxes=datapoints.BoundingBox([[0, 0, 0, 0]], format=format, spatial_size=(224, 244)),
                 labels=torch.tensor([3]),
             )
-            assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
+            assert transforms.SanitizeBoundingBox()(sample)["boxes"].shape == (0, 4)
 
     @parametrize(
         [
@@ -1359,11 +1359,8 @@ class TestContainers:
 
 class TestRandomChoice:
     def test_assertions(self):
-        with pytest.warns(UserWarning, match="Argument p is deprecated and will be removed"):
-            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1, 2])
-
-        with pytest.raises(ValueError, match="The number of probabilities doesn't match the number of transforms"):
-            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], probabilities=[1])
+        with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1])
 
 
 class TestRandomIoUCrop:
@@ -1517,7 +1514,7 @@ class TestRandomShortestSize:
     def test__get_params(self, min_size, max_size, mocker):
         spatial_size = (3, 10)
 
-        transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
+        transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size, antialias=True)
 
         sample = mocker.MagicMock(spec=datapoints.Image, num_channels=3, spatial_size=spatial_size)
         params = transform._get_params([sample])
@@ -1598,7 +1595,7 @@ class TestRandomResize:
         min_size = 3
         max_size = 6
 
-        transform = transforms.RandomResize(min_size=min_size, max_size=max_size)
+        transform = transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
 
         for _ in range(10):
             params = transform._get_params([])
@@ -1794,15 +1791,21 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
     else:
         sample = image, label
 
+    if to_tensor is transforms.ToTensor:
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            to_tensor = to_tensor()
+    else:
+        to_tensor = to_tensor()
+
     t = transforms.Compose(
         [
-            transforms.RandomResizedCrop((224, 224)),
+            transforms.RandomResizedCrop((224, 224), antialias=True),
             transforms.RandomHorizontalFlip(p=1),
             transforms.RandAugment(),
             transforms.TrivialAugmentWide(),
             transforms.AugMix(),
             transforms.AutoAugment(),
-            to_tensor(),
+            to_tensor,
             # TODO: ConvertImageDtype is a pass-through on PIL images, is that
             # intended?  This results in a failure if we convert to tensor after
             # it, because the image would still be uint8 which make Normalize
@@ -1833,10 +1836,17 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
 @pytest.mark.parametrize("sanitize", (True, False))
 def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     torch.manual_seed(0)
+
+    if to_tensor is transforms.ToTensor:
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            to_tensor = to_tensor()
+    else:
+        to_tensor = to_tensor()
+
     if data_augmentation == "hflip":
         t = [
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     elif data_augmentation == "lsj":
@@ -1850,7 +1860,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
             # ),
             transforms.RandomCrop((1024, 1024), pad_if_needed=True),
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     elif data_augmentation == "multiscale":
@@ -1859,27 +1869,27 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
                 min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333, antialias=True
             ),
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     elif data_augmentation == "ssd":
         t = [
             transforms.RandomPhotometricDistort(p=1),
-            transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})),
+            transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0}), p=1),
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     elif data_augmentation == "ssdlite":
         t = [
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(p=1),
-            to_tensor(),
+            to_tensor,
             transforms.ConvertImageDtype(torch.float),
         ]
     if sanitize:
-        t += [transforms.SanitizeBoundingBoxes()]
+        t += [transforms.SanitizeBoundingBox()]
     t = transforms.Compose(t)
 
     num_boxes = 5
@@ -1910,7 +1920,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 
     out = t(sample)
 
-    if to_tensor is transforms.ToTensor and image_type is not datapoints.Image:
+    if isinstance(to_tensor, transforms.ToTensor) and image_type is not datapoints.Image:
         assert is_simple_tensor(out["image"])
     else:
         assert isinstance(out["image"], datapoints.Image)
@@ -1920,11 +1930,11 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
         # ssd and ssdlite contain RandomIoUCrop which may "remove" some bbox. It
         # doesn't remove them strictly speaking, it just marks some boxes as
         # degenerate and those boxes will be later removed by
-        # SanitizeBoundingBoxes(), which we add to the pipelines if the sanitize
+        # SanitizeBoundingBox(), which we add to the pipelines if the sanitize
         # param is True.
         # Note that the values below are probably specific to the random seed
         # set above (which is fine).
-        (True, "ssd"): 4,
+        (True, "ssd"): 5,
         (True, "ssdlite"): 4,
     }.get((sanitize, data_augmentation), num_boxes)
 
@@ -1935,7 +1945,14 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 @pytest.mark.parametrize(
     "labels_getter", ("default", "labels", lambda inputs: inputs["labels"], None, lambda inputs: None)
 )
-def test_sanitize_bounding_boxes(min_size, labels_getter):
+@pytest.mark.parametrize("sample_type", (tuple, dict))
+def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
+
+    if sample_type is tuple and not isinstance(labels_getter, str):
+        # The "lambda inputs: inputs["labels"]" labels_getter used in this test
+        # doesn't work if the input is a tuple.
+        return
+
     H, W = 256, 128
 
     boxes_and_validity = [
@@ -1970,41 +1987,65 @@ def test_sanitize_bounding_boxes(min_size, labels_getter):
     )
 
     masks = datapoints.Mask(torch.randint(0, 2, size=(boxes.shape[0], H, W)))
-
+    whatever = torch.rand(10)
+    input_img = torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8)
     sample = {
-        "image": torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8),
+        "image": input_img,
         "labels": labels,
         "boxes": boxes,
-        "whatever": torch.rand(10),
+        "whatever": whatever,
         "None": None,
         "masks": masks,
     }
 
-    out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
+    if sample_type is tuple:
+        img = sample.pop("image")
+        sample = (img, sample)
 
-    assert out["image"] is sample["image"]
-    assert out["whatever"] is sample["whatever"]
+    out = transforms.SanitizeBoundingBox(min_size=min_size, labels_getter=labels_getter)(sample)
+
+    if sample_type is tuple:
+        out_image = out[0]
+        out_labels = out[1]["labels"]
+        out_boxes = out[1]["boxes"]
+        out_masks = out[1]["masks"]
+        out_whatever = out[1]["whatever"]
+    else:
+        out_image = out["image"]
+        out_labels = out["labels"]
+        out_boxes = out["boxes"]
+        out_masks = out["masks"]
+        out_whatever = out["whatever"]
+
+    assert out_image is input_img
+    assert out_whatever is whatever
+
+    assert isinstance(out_boxes, datapoints.BoundingBox)
+    assert isinstance(out_masks, datapoints.Mask)
 
     if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
-        assert out["labels"] is sample["labels"]
+        assert out_labels is labels
     else:
-        assert isinstance(out["labels"], torch.Tensor)
-        assert out["boxes"].shape[0] == out["labels"].shape[0] == out["masks"].shape[0]
+        assert isinstance(out_labels, torch.Tensor)
+        assert out_boxes.shape[0] == out_labels.shape[0] == out_masks.shape[0]
         # This works because we conveniently set labels to arange(num_boxes)
-        assert out["labels"].tolist() == valid_indices
+        assert out_labels.tolist() == valid_indices
 
 
 @pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
-def test_sanitize_bounding_boxes_default_heuristic(key):
+@pytest.mark.parametrize("sample_type", (tuple, dict))
+def test_sanitize_bounding_boxes_default_heuristic(key, sample_type):
     labels = torch.arange(10)
-    d = {key: labels}
-    assert transforms.SanitizeBoundingBoxes._find_labels_default_heuristic(d) is labels
+    sample = {key: labels, "another_key": "whatever"}
+    if sample_type is tuple:
+        sample = (None, sample, "whatever_again")
+    assert transforms.SanitizeBoundingBox._find_labels_default_heuristic(sample) is labels
 
     if key.lower() != "labels":
         # If "labels" is in the dict (case-insensitive),
         # it takes precedence over other keys which would otherwise be a match
         d = {key: "something_else", "labels": labels}
-        assert transforms.SanitizeBoundingBoxes._find_labels_default_heuristic(d) is labels
+        assert transforms.SanitizeBoundingBox._find_labels_default_heuristic(d) is labels
 
 
 def test_sanitize_bounding_boxes_errors():
@@ -2016,25 +2057,25 @@ def test_sanitize_bounding_boxes_errors():
     )
 
     with pytest.raises(ValueError, match="min_size must be >= 1"):
-        transforms.SanitizeBoundingBoxes(min_size=0)
+        transforms.SanitizeBoundingBox(min_size=0)
     with pytest.raises(ValueError, match="labels_getter should either be a str"):
-        transforms.SanitizeBoundingBoxes(labels_getter=12)
+        transforms.SanitizeBoundingBox(labels_getter=12)
 
     with pytest.raises(ValueError, match="Could not infer where the labels are"):
         bad_labels_key = {"bbox": good_bbox, "BAD_KEY": torch.arange(good_bbox.shape[0])}
-        transforms.SanitizeBoundingBoxes()(bad_labels_key)
+        transforms.SanitizeBoundingBox()(bad_labels_key)
 
     with pytest.raises(ValueError, match="If labels_getter is a str or 'default'"):
         not_a_dict = (good_bbox, torch.arange(good_bbox.shape[0]))
-        transforms.SanitizeBoundingBoxes()(not_a_dict)
+        transforms.SanitizeBoundingBox()(not_a_dict)
 
     with pytest.raises(ValueError, match="must be a tensor"):
         not_a_tensor = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0]).tolist()}
-        transforms.SanitizeBoundingBoxes()(not_a_tensor)
+        transforms.SanitizeBoundingBox()(not_a_tensor)
 
     with pytest.raises(ValueError, match="Number of boxes"):
         different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
-        transforms.SanitizeBoundingBoxes()(different_sizes)
+        transforms.SanitizeBoundingBox()(different_sizes)
 
     with pytest.raises(ValueError, match="boxes must be of shape"):
         bad_bbox = datapoints.BoundingBox(  # batch with 2 elements
@@ -2046,7 +2087,7 @@ def test_sanitize_bounding_boxes_errors():
             spatial_size=(20, 20),
         )
         different_sizes = {"bbox": bad_bbox, "labels": torch.arange(bad_bbox.shape[0])}
-        transforms.SanitizeBoundingBoxes()(different_sizes)
+        transforms.SanitizeBoundingBox()(different_sizes)
 
 
 @pytest.mark.parametrize(

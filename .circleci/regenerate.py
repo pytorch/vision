@@ -61,12 +61,8 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                             fb = "/.*/"
 
                         # Disable all Linux Wheels Workflows from CircleCI
-                        # since those will now be done through Nova. We'll keep
-                        # around the py3.8 CPU Linux Wheels build since the docs
-                        # job depends on it.
                         if os_type == "linux" and btype == "wheel":
-                            if not (python_version == "3.8" and cu_version == "cpu"):
-                                continue
+                            continue
 
                         # Disable all Macos Wheels Workflows from CircleCI.
                         if os_type == "macos" and btype == "wheel":
@@ -80,10 +76,6 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                             btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
                         )
 
-    if not filter_branch:
-        # Build on every pull request, but upload only on nightly and tags
-        w += build_doc_job("/.*/")
-        w += upload_doc_job("nightly")
     return indent(indentation, w)
 
 
@@ -112,35 +104,6 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=""
         #     w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
 
     return w
-
-
-def build_doc_job(filter_branch):
-    job = {
-        "name": "build_docs",
-        "python_version": "3.8",
-        "requires": [
-            "binary_linux_wheel_py3.8_cpu",
-        ],
-    }
-
-    if filter_branch:
-        job["filters"] = gen_filter_branch_tree(filter_branch, tags_list=RC_PATTERN)
-    return [{"build_docs": job}]
-
-
-def upload_doc_job(filter_branch):
-    job = {
-        "name": "upload_docs",
-        "context": "org-member",
-        "python_version": "3.8",
-        "requires": [
-            "build_docs",
-        ],
-    }
-
-    if filter_branch:
-        job["filters"] = gen_filter_branch_tree(filter_branch, tags_list=RC_PATTERN)
-    return [{"upload_docs": job}]
 
 
 manylinux_images = {
@@ -255,13 +218,17 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows", "macos"]:
+    for os_type in ["windows"]:
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
-            if os_type == "linux" and device_type == "cpu":
-                continue
+
             for i, python_version in enumerate(PYTHON_VERSIONS):
+
+                # Turn off unit tests for 3.11, unit test are not setup properly
+                if python_version == "3.11":
+                    continue
+
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
                     "python_version": python_version,
@@ -290,7 +257,7 @@ def cmake_workflows(indentation=6):
 
             job["cu_version"] = "cu117" if device == "gpu" else "cpu"
             if device == "gpu" and os_type == "linux":
-                job["wheel_docker_image"] = "pytorch/manylinux-cuda116"
+                job["wheel_docker_image"] = "pytorch/manylinux-cuda117"
             jobs.append({f"cmake_{os_type}_{device}": job})
     return indent(indentation, jobs)
 

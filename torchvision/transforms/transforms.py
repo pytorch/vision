@@ -105,7 +105,9 @@ class Compose:
 
 
 class ToTensor:
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor. This transform does not support torchscript.
+    """Convert a PIL Image or ndarray to tensor and scale the values accordingly.
+
+    This transform does not support torchscript.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
     [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
@@ -139,7 +141,9 @@ class ToTensor:
 
 
 class PILToTensor:
-    """Convert a ``PIL Image`` to a tensor of the same type. This transform does not support torchscript.
+    """Convert a PIL Image to a tensor of the same type - this does not scale values.
+
+    This transform does not support torchscript.
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
@@ -166,7 +170,8 @@ class PILToTensor:
 
 
 class ConvertImageDtype(torch.nn.Module):
-    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly.
+
     This function does not support PIL Image.
 
     Args:
@@ -194,7 +199,9 @@ class ConvertImageDtype(torch.nn.Module):
 
 
 class ToPILImage:
-    """Convert a tensor or an ndarray to PIL Image. This transform does not support torchscript.
+    """Convert a tensor or an ndarray to PIL Image - this does not scale values.
+
+    This transform does not support torchscript.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
     H x W x C to a PIL Image while preserving the value range.
@@ -276,7 +283,7 @@ class Normalize(torch.nn.Module):
 class Resize(torch.nn.Module):
     """Resize the input image to the given size.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means a maximum of two leading dimensions
 
     .. warning::
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images

@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import torch
@@ -11,7 +10,7 @@ from torchvision.transforms.v2 import Transform
 class Compose(Transform):
     """[BETA] Composes several transforms together.
 
-    .. betastatus:: Compose transform
+    .. v2betastatus:: Compose transform
 
     This transform does not support torchscript.
     Please, see the note below.
@@ -62,7 +61,7 @@ class Compose(Transform):
 class RandomApply(Transform):
     """[BETA] Apply randomly a list of transformations with a given probability.
 
-    .. betastatus:: RandomApply transform
+    .. v2betastatus:: RandomApply transform
 
     .. note::
         In order to script the transformation, please use ``torch.nn.ModuleList`` as input instead of list/tuple of
@@ -78,7 +77,7 @@ class RandomApply(Transform):
 
     Args:
         transforms (sequence or torch.nn.Module): list of transformations
-        p (float): probability
+        p (float): probability of applying the list of transforms
     """
 
     _v1_transform_cls = _transforms.RandomApply
@@ -117,41 +116,38 @@ class RandomApply(Transform):
 class RandomChoice(Transform):
     """[BETA] Apply single transformation randomly picked from a list.
 
-    .. betastatus:: RandomChoice transform
+    .. v2betastatus:: RandomChoice transform
 
-    This transform does not support torchscript."""
+    This transform does not support torchscript.
+
+    Args:
+        transforms (sequence or torch.nn.Module): list of transformations
+        p (list of floats or None, optional): probability of each transform being picked.
+            If ``p`` doesn't sum to 1, it is automatically normalized. If ``None``
+            (default), all transforms have the same probability.
+    """
 
     def __init__(
         self,
         transforms: Sequence[Callable],
-        probabilities: Optional[List[float]] = None,
         p: Optional[List[float]] = None,
     ) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
-        if p is not None:
-            warnings.warn(
-                "Argument p is deprecated and will be removed in a future release. "
-                "Please use probabilities argument instead."
-            )
-            probabilities = p
 
-        if probabilities is None:
-            probabilities = [1] * len(transforms)
-        elif len(probabilities) != len(transforms):
-            raise ValueError(
-                f"The number of probabilities doesn't match the number of transforms: "
-                f"{len(probabilities)} != {len(transforms)}"
-            )
+        if p is None:
+            p = [1] * len(transforms)
+        elif len(p) != len(transforms):
+            raise ValueError(f"Length of p doesn't match the number of transforms: {len(p)} != {len(transforms)}")
 
         super().__init__()
 
         self.transforms = transforms
-        total = sum(probabilities)
-        self.probabilities = [prob / total for prob in probabilities]
+        total = sum(p)
+        self.p = [prob / total for prob in p]
 
     def forward(self, *inputs: Any) -> Any:
-        idx = int(torch.multinomial(torch.tensor(self.probabilities), 1))
+        idx = int(torch.multinomial(torch.tensor(self.p), 1))
         transform = self.transforms[idx]
         return transform(*inputs)
 
@@ -159,9 +155,12 @@ class RandomChoice(Transform):
 class RandomOrder(Transform):
     """[BETA] Apply a list of transformations in a random order.
 
-    .. betastatus:: RandomOrder transform
+    .. v2betastatus:: RandomOrder transform
 
     This transform does not support torchscript.
+
+    Args:
+        transforms (sequence or torch.nn.Module): list of transformations
     """
 
     def __init__(self, transforms: Sequence[Callable]) -> None:

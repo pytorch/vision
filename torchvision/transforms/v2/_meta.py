@@ -9,6 +9,16 @@ from .utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
+    """[BETA] Convert bounding box coordinates to the given ``format``, eg from "CXCYWH" to "XYXY".
+
+    .. v2betastatus:: ConvertBoundingBoxFormat transform
+
+    Args:
+        format (str or datapoints.BoundingBoxFormat): output bounding box format.
+            Possible values are defined by :class:`~torchvision.datapoints.BoundingBoxFormat` and
+            string values match the enums, e.g. "XYXY" or "XYWH" etc.
+    """
+
     _transformed_types = (datapoints.BoundingBox,)
 
     def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
@@ -26,9 +36,9 @@ class ConvertBoundingBoxFormat(Transform):
 # Tensor at the very end: PIL images are passed-through so instead of getting a
 # float tensor we actually get a uint8 which raises an error
 class ConvertDtype(Transform):
-    """[BETA] Convert a tensor image/box/mask to the given ``dtype`` and scale the values accordingly
+    """[BETA] Convert input image or video to the given ``dtype`` and scale the values accordingly.
 
-    .. betastatus:: ConvertDtype transform
+    .. v2betastatus:: ConvertDtype transform
 
     This function does not support PIL Image.
 
@@ -67,6 +77,14 @@ ConvertImageDtype = ConvertDtype
 
 
 class ClampBoundingBox(Transform):
+    """[BETA] Clamp bounding boxes to their corresponding image dimensions.
+
+    The clamping is done according to the bounding boxes' ``spatial_size`` meta-data.
+
+    .. v2betastatus:: ClampBoundingBox transform
+
+    """
+
     _transformed_types = (datapoints.BoundingBox,)
 
     def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:

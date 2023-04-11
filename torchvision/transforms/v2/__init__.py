@@ -40,7 +40,7 @@ from ._geometry import (
     TenCrop,
 )
 from ._meta import ClampBoundingBox, ConvertBoundingBoxFormat, ConvertDtype, ConvertImageDtype
-from ._misc import GaussianBlur, Identity, Lambda, LinearTransformation, Normalize, SanitizeBoundingBoxes, ToDtype
+from ._misc import GaussianBlur, Identity, Lambda, LinearTransformation, Normalize, SanitizeBoundingBox, ToDtype
 from ._temporal import UniformTemporalSubsample
 from ._type_conversion import PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
