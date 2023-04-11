@@ -65,9 +65,7 @@ class DetectionPresetTrain(T.Compose):
         transforms += [
             T.ConvertImageDtype(torch.float),
             T.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.XYXY),
-            T.SanitizeBoundingBoxes(
-                labels_getter=lambda sample: sample[1]["labels"]
-            ),  # TODO: sad it's not the default!
+            T.SanitizeBoundingBox(),
         ]
 
         super().__init__(transforms)
