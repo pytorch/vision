@@ -208,7 +208,8 @@ def get_coco(root, image_set, transforms, mode="instances"):
     ann_file = os.path.join(root, ann_file)
 
     dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
-    dataset = wrap_dataset_for_transforms_v2(dataset)
+    # TODO: need to update target_keys to handle masks for segmentation!
+    dataset = wrap_dataset_for_transforms_v2(dataset, target_keys={"boxes", "labels", "image_id"})
 
     if image_set == "train":
         dataset = _coco_remove_images_without_annotations(dataset)
