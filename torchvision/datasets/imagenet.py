@@ -22,8 +22,9 @@ class ImageNet(ImageFolder):
     """`ImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
 
     Before using this class, it is required to download `ImageNet 2012` dataset from
-    `here<https://image-net.org/challenges/LSVRC/2012/2012-downloads.php>`_ and
-    place them in the root directory.
+    `here <https://image-net.org/challenges/LSVRC/2012/2012-downloads.php>`_ and
+    place ILSVRC2012_devkit_t12.tar.gz, ILSVRC2012_img_train.tar or
+    ILSVRC2012_img_val.tar based on split in the root directory.
 
     Args:
         root (string): Root directory of the ImageNet Dataset.
