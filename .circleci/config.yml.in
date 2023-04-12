@@ -2,8 +2,8 @@ version: 2.1
 
 # How to test the Linux jobs:
 #   - Install CircleCI local CLI: https://circleci.com/docs/2.0/local-cli/
-#   - circleci config process .circleci/config.yml > gen.yml && circleci local execute -c gen.yml --job binary_linux_wheel_py3.8
-#     - Replace binary_linux_wheel_py3.8 with the name of the job you want to test.
+#   - circleci config process .circleci/config.yml > gen.yml && circleci local execute -c gen.yml --job binary_win_wheel_py3.8
+#     - Replace binary_win_wheel_py3.8 with the name of the job you want to test.
 #       Job names are 'name:' key.
 
 executors:
@@ -99,25 +99,6 @@ commands:
       - brew_install:
           formulae: libtool
 
-  apt_install:
-    parameters:
-      args:
-        type: string
-      descr:
-        type: string
-        default: ""
-      update:
-        type: boolean
-        default: true
-    steps:
-      - run:
-          name: >
-            <<^ parameters.descr >> apt install << parameters.args >> <</ parameters.descr >>
-            <<# parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
-          command: |
-            <<# parameters.update >> sudo apt update -qy  <</ parameters.update >>
-            sudo apt install << parameters.args >>
-
   pip_install:
     parameters:
       args:
@@ -138,55 +119,6 @@ commands:
             <<# parameters.user >> --user <</ parameters.user >>
             --progress-bar=off
             << parameters.args >>
-
-  install_torchvision:
-    parameters:
-      editable:
-        type: boolean
-        default: true
-    steps:
-      - pip_install:
-          args: --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu
-          descr: Install PyTorch from nightly releases
-      - pip_install:
-          args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
-          descr: Install torchvision <<# parameters.editable >> in editable mode <</ parameters.editable >>
-
-  # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
-  # This command can be used if only a selection of tests need to be run, for ad-hoc files.
-  run_tests_selective:
-    parameters:
-      file_or_dir:
-        type: string
-    steps:
-      - run:
-          name: Install test utilities
-          command: pip install --progress-bar=off pytest pytest-mock
-      - run:
-          name: Run tests
-          command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
-      - store_test_results:
-          path: test-results
-
-  download_model_weights:
-    parameters:
-      extract_roots:
-        type: string
-        default: "torchvision/models"
-      background:
-        type: boolean
-        default: true
-    steps:
-      - apt_install:
-          args: parallel wget
-          descr: Install download utilitites
-      - run:
-          name: Download model weights
-          background: << parameters.background >>
-          command: |
-            mkdir -p ~/.cache/torch/hub/checkpoints
-            python scripts/collect_model_urls.py << parameters.extract_roots >> \
-                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
 
 binary_common: &binary_common
   parameters:
@@ -268,140 +200,6 @@ jobs:
           command: |
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
-
-  lint_python_and_config:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - checkout
-      - pip_install:
-          args: pre-commit
-          descr: Install lint utilities
-      - run:
-          name: Install pre-commit hooks
-          command: pre-commit install-hooks
-      - run:
-          name: Lint Python code and config files
-          command: pre-commit run --all-files
-      - run:
-          name: Required lint modifications
-          when: on_fail
-          command: git --no-pager diff
-
-  lint_c:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - apt_install:
-          args: libtinfo5
-          descr: Install additional system libraries
-      - checkout
-      - run:
-          name: Install lint utilities
-          command: |
-            curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
-            chmod +x clang-format
-            sudo mv clang-format /opt/clang-format
-      - run:
-          name: Lint C code
-          command: ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
-      - run:
-          name: Required lint modifications
-          when: on_fail
-          command: git --no-pager diff
-
-  type_check_python:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - checkout
-      - install_torchvision:
-          editable: true
-      - pip_install:
-          args: mypy
-          descr: Install Python type check utilities
-      - run:
-          name: Check Python types statically
-          command: mypy --install-types --non-interactive --config-file mypy.ini
-
-  unittest_torchhub:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - checkout
-      - install_torchvision
-      - run_tests_selective:
-          file_or_dir: test/test_hub.py
-
-  unittest_onnx:
-    docker:
-      - image: cimg/python:3.8
-    steps:
-      - checkout
-      - install_torchvision
-      - pip_install:
-          args: onnx onnxruntime
-          descr: Install ONNX
-      - run_tests_selective:
-          file_or_dir: test/test_onnx.py
-
-  unittest_extended:
-    docker:
-      - image: cimg/python:3.8
-    resource_class: xlarge
-    steps:
-      - checkout
-      - download_model_weights
-      - install_torchvision
-      - run:
-          name: Enable extended tests
-          command: echo 'export PYTORCH_TEST_WITH_EXTENDED=1' >> $BASH_ENV
-      - run_tests_selective:
-          file_or_dir: test/test_extended_*.py
-
-  binary_linux_wheel:
-    <<: *binary_common
-    docker:
-      - image: << parameters.wheel_docker_image >>
-    resource_class: 2xlarge+
-    steps:
-      - checkout_merge
-      - designate_upload_channel
-      - run:
-          name: Build conda packages
-          no_output_timeout: 30m
-          command: |
-              set -ex
-              packaging/build_wheel.sh
-      - store_artifacts:
-          path: dist
-      - persist_to_workspace:
-          root: dist
-          paths:
-            - "*"
-
-  binary_linux_conda:
-    <<: *binary_common
-    docker:
-      - image: "<< parameters.conda_docker_image >>"
-    resource_class: 2xlarge+
-    steps:
-      - checkout_merge
-      - designate_upload_channel
-      - run:
-          name: Build conda packages
-          no_output_timeout: 30m
-          command: |
-              set -ex
-              packaging/build_conda.sh
-      - store_artifacts:
-          path: /opt/conda/conda-bld/linux-64
-      - persist_to_workspace:
-          root: /opt/conda/conda-bld/linux-64
-          paths:
-            - "*"
-      - store_test_results:
-          path: build_results/
 
   binary_win_conda:
     <<: *binary_common
@@ -614,44 +412,6 @@ jobs:
               aws s3 cp "$pkg" "s3://pytorch/whl/${UPLOAD_CHANNEL}/<< parameters.subfolder >>" --acl public-read
             done
 
-  smoke_test_linux_conda:
-    <<: *smoke_test_common
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - designate_upload_channel
-      - run:
-          name: install binaries
-          command: |
-            set -x
-            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            conda install -v -y -c pytorch-nightly pytorch
-            conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
-      - run:
-          name: smoke test
-          command: |
-            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            python -c "import torchvision"
-
-  smoke_test_linux_pip:
-    <<: *smoke_test_common
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - designate_upload_channel
-      - run:
-          name: install binaries
-          command: |
-            set -x
-            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-      - pip_install:
-          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
-      - run:
-          name: smoke test
-          command: |
-            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            python -c "import torchvision"
-
   smoke_test_docker_image_build:
     machine:
       image: ubuntu-2004:202104-01
@@ -672,145 +432,6 @@ jobs:
             docker tag ${image_name}:${CIRCLE_WORKFLOW_ID} ${image_name}:latest
             docker push ${image_name}:${CIRCLE_WORKFLOW_ID}
             docker push ${image_name}:latest
-
-  smoke_test_win_conda:
-    <<: *binary_common
-    executor:
-      name: windows-cpu
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - designate_upload_channel
-      - run:
-          name: install binaries
-          command: |
-            set -x
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda env remove -n python${PYTHON_VERSION} || true
-            conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
-            conda activate python${PYTHON_VERSION}
-            conda install -v -y -c pytorch-nightly pytorch
-            conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
-      - run:
-          name: smoke test
-          command: |
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda activate python${PYTHON_VERSION}
-            python -c "import torchvision"
-
-  smoke_test_win_pip:
-    <<: *binary_common
-    executor:
-      name: windows-cpu
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - designate_upload_channel
-      - run:
-          name: install binaries
-          command: |
-            set -x
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
-            conda activate python${PYTHON_VERSION}
-      - pip_install:
-          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
-      - run:
-          name: smoke test
-          command: |
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda activate python${PYTHON_VERSION}
-            python -c "import torchvision"
-
-  unittest_linux_cpu:
-    <<: *binary_common
-    docker:
-      - image: "pytorch/manylinux-cpu"
-    resource_class: 2xlarge+
-    steps:
-      - checkout
-      - designate_upload_channel
-      - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-      - run:
-          name: Setup
-          command: .circleci/unittest/linux/scripts/setup_env.sh
-      - save_cache:
-          {% raw %}
-          key: env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-          paths:
-            - conda
-            - env
-      - run:
-          name: Install torchvision
-          command: .circleci/unittest/linux/scripts/install.sh
-      - run:
-          name: Run tests
-          command: .circleci/unittest/linux/scripts/run_test.sh
-      - run:
-          name: Post process
-          command: .circleci/unittest/linux/scripts/post_process.sh
-      - store_test_results:
-          path: test-results
-
-  unittest_linux_gpu:
-    <<: *binary_common
-    machine:
-      image: ubuntu-2004-cuda-11.4:202110-01
-    resource_class: gpu.nvidia.medium
-    environment:
-      image_name: "pytorch/manylinux-cuda116"
-      CU_VERSION: << parameters.cu_version >>
-      PYTHON_VERSION: << parameters.python_version >>
-    steps:
-      - checkout
-      - designate_upload_channel
-      - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - env-v3-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-      - run:
-          name: Setup
-          command: docker run -e PYTHON_VERSION -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
-      - save_cache:
-          {% raw %}
-          key: env-v3-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-          paths:
-            - conda
-            - env
-      - run:
-          # Here we create an envlist file that contains some env variables that we want the docker container to be aware of.
-          # Normally, the CIRCLECI variable is set and available on all CI workflows: https://circleci.com/docs/2.0/env-vars/#built-in-environment-variables.
-          # They're avaiable in all the other workflows (OSX and Windows).
-          # But here, we're running the unittest_linux_gpu workflows in a docker container, where those variables aren't accessible.
-          # So instead we dump the variables we need in env.list and we pass that file when invoking "docker run".
-          name: export CIRCLECI env var
-          command: echo "CIRCLECI=true" >> ./env.list
-      - run:
-          name: Install torchvision
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
-      - run:
-          name: Run tests
-          command: docker run --env-file ./env.list -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
-      - run:
-          name: Post Process
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/post_process.sh
-      - store_test_results:
-          path: test-results
 
   unittest_windows_cpu:
     <<: *binary_common
@@ -897,49 +518,6 @@ jobs:
       - store_test_results:
           path: test-results
 
-  unittest_macos_cpu:
-    <<: *binary_common
-    macos:
-      xcode: "14.0"
-    resource_class: large
-    steps:
-      - checkout
-      - designate_upload_channel
-      - run:
-          name: Install wget
-          command: HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
-          # Disable brew auto update which is very slow
-      - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - env-v3-macos-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-      - run:
-          name: Setup
-          command: .circleci/unittest/linux/scripts/setup_env.sh
-      - save_cache:
-          {% raw %}
-          key: env-v3-macos-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-          paths:
-            - conda
-            - env
-      - run:
-          name: Install torchvision
-          command: .circleci/unittest/linux/scripts/install.sh
-      - run:
-          name: Run tests
-          command: .circleci/unittest/linux/scripts/run_test.sh
-      - run:
-          name: Post process
-          command: .circleci/unittest/linux/scripts/post_process.sh
-      - store_test_results:
-          path: test-results
-
   cmake_linux_cpu:
     <<: *binary_common
     docker:
@@ -995,6 +573,10 @@ jobs:
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            conda create -yn python39 python=3.9
+            conda activate python39
             packaging/build_cmake.sh
 
   cmake_windows_gpu:
@@ -1012,83 +594,18 @@ jobs:
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
             packaging/windows/internal/cuda_install.bat
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate
+            conda update -y conda
+            conda create -yn python39 python=3.9
+            conda activate python39
             packaging/build_cmake.sh
-
-  build_docs:
-    <<: *binary_common
-    docker:
-      - image: cimg/python:3.8
-    resource_class: 2xlarge+
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - checkout
-      - download_model_weights
-      - run:
-          name: Setup
-          command: .circleci/unittest/linux/scripts/setup_env.sh
-      - designate_upload_channel
-      - run:
-          name: Install torchvision
-          command: .circleci/unittest/linux/scripts/install.sh
-      - run:
-          name: Build docs
-          command: |
-            set -ex
-            # turn v1.12.0rc3 into 1.12.0
-            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9.]*\).*/\1/')
-            VERSION=${tag:-main}
-            eval "$(./conda/bin/conda shell.bash hook)"
-            conda activate ./env
-            pushd docs
-            pip install --progress-bar=off -r requirements.txt
-            make html
-            popd
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - "*"
-      - store_artifacts:
-          path: ./docs/build/html
-          destination: docs
-
-  upload_docs:
-    <<: *binary_common
-    docker:
-      - image: "pytorch/manylinux-cuda100"
-    resource_class: 2xlarge+
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - run:
-          name: Generate netrc
-          command: |
-            # set credentials for https pushing
-            # requires the org-member context
-            cat > ~/.netrc \<<DONE
-              machine github.com
-              login pytorchbot
-              password ${GITHUB_PYTORCHBOT_TOKEN}
-            DONE
-      - run:
-          name: Upload docs
-          command: |
-            # Don't use "checkout" step since it uses ssh, which cannot git push
-            # https://circleci.com/docs/2.0/configuration-reference/#checkout
-            set -ex
-            # Change v1.12.1rc1 into 1.12 (only major.minor)
-            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9]*\.[0-9]*\).*/\1/')
-            target=${tag:-main}
-            ~/workspace/.circleci/build_docs/commit_docs.sh ~/workspace $target
 
 
 workflows:
   lint:
     jobs:
       - circleci_consistency
-      - lint_python_and_config
-      - lint_c
-      - type_check_python
 
   build:
     jobs:
@@ -1098,9 +615,6 @@ workflows:
 
   unittest:
     jobs:
-      - unittest_torchhub
-      - unittest_onnx
-      - unittest_extended
       {{ unittest_workflows() }}
 
   cmake:

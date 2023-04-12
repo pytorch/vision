@@ -1875,7 +1875,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     elif data_augmentation == "ssd":
         t = [
             transforms.RandomPhotometricDistort(p=1),
-            transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})),
+            transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0}), p=1),
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(p=1),
             to_tensor,
@@ -1934,7 +1934,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
         # param is True.
         # Note that the values below are probably specific to the random seed
         # set above (which is fine).
-        (True, "ssd"): 4,
+        (True, "ssd"): 5,
         (True, "ssdlite"): 4,
     }.get((sanitize, data_augmentation), num_boxes)
 
@@ -2019,6 +2019,9 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
 
     assert out_image is input_img
     assert out_whatever is whatever
+
+    assert isinstance(out_boxes, datapoints.BoundingBox)
+    assert isinstance(out_masks, datapoints.Mask)
 
     if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
         assert out_labels is labels

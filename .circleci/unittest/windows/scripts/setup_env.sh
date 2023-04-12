@@ -5,7 +5,7 @@
 #
 # Do not install PyTorch and torchvision here, otherwise they also get cached.
 
-set -e
+set -ex
 
 this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 root_dir="$(git rev-parse --show-toplevel)"

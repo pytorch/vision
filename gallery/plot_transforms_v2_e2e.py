@@ -75,7 +75,8 @@ print(type(target), type(target[0]), list(target[0].keys()))
 # :func:`~torchvision.datasets.wrap_dataset_for_transforms_v2` function. For
 # :class:`~torchvision.datasets.CocoDetection`, this changes the target structure to a single dictionary of lists. It
 # also adds the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` wrapped in the corresponding
-# ``torchvision.datapoints``.
+# ``torchvision.datapoints``. By default, it only returns ``"boxes"`` and ``"labels"`` to avoid transforming unnecessary
+# items down the line, but you can pass the ``target_type`` parameter for fine-grained control.
 
 dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
 
@@ -83,7 +84,7 @@ sample = dataset[0]
 image, target = sample
 print(type(image))
 print(type(target), list(target.keys()))
-print(type(target["boxes"]), type(target["masks"]), type(target["labels"]))
+print(type(target["boxes"]), type(target["labels"]))
 
 ########################################################################################################################
 # As baseline, let's have a look at a sample without transformations:
