@@ -462,15 +462,14 @@ def test_resize_size_equals_small_edge_size(height, width):
     result = t(img)
     assert max(result.size) == max_size
 
-@pytest.mark.parametrize("height, width", [(28, 28)])
 def test_resize_equal_input_output_sizes(height, width):
     # Regression test for https://github.com/pytorch/vision/issues/7518
+    height, width = 28, 27
     img = Image.new("RGB", size=(width, height))
 
     t = transforms.Resize(((height, width)), antialias=True)
     result = t(img)
-    print(id(result),id(img))
-    assert id(result) == id(img)
+    assert result is img
 
 
 class TestPad:
