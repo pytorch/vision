@@ -217,15 +217,7 @@ def draw_bounding_boxes(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
-    if colors is None:
-        colors = _generate_color_palette(num_boxes)
-    elif isinstance(colors, list):
-        if len(colors) < num_boxes:
-            raise ValueError(f"Number of colors ({len(colors)}) is less than number of boxes ({num_boxes}). ")
-    else:  # colors specifies a single color for all boxes
-        colors = [colors] * num_boxes
-
-    colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
+    colors = _parse_colors(colors=colors, num_objects=num_boxes, output_format="tuple")
 
     if font is None:
         if font_size is not None:
@@ -312,27 +304,11 @@ def draw_segmentation_masks(
         warnings.warn("masks doesn't contain any mask. No mask was drawn")
         return image
 
-    if colors is None:
-        colors = _generate_color_palette(num_masks)
-    elif isinstance(colors, list):
-        if len(colors) < num_masks:
-            raise ValueError(f"Number of colors ({len(colors)}) is less than the number of masks ({num_masks}). ")
-    elif not isinstance(colors, (tuple, str)):
-        raise ValueError("colors must be a tuple or a string, or a list thereof")
-    elif isinstance(colors, tuple) and len(colors) != 3:
-        raise ValueError("It seems that you passed a tuple of colors instead of a list of colors")
-    else:  # colors specifies a single color for all masks
-        colors = [colors] * num_masks
-
-    colors_ = []
-    for color in colors:
-        if isinstance(color, str):
-            color = ImageColor.getrgb(color)
-        colors_.append(torch.tensor(color, dtype=torch.uint8))
+    colors = _parse_colors(colors=colors, num_objects=num_masks)
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
-    for mask, color in zip(masks, colors_):
+    for mask, color in zip(masks, colors):
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
@@ -573,3 +549,63 @@ def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
     if isinstance(x, collections.abc.Iterable):
         return tuple(x)
     return tuple(repeat(x, n))
+
+
+def _parse_colors(
+    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int], None]],
+    num_objects: int,
+    output_format: Optional[str] = "tensor",
+) -> List[Union[torch.Tensor, Tuple[int, int, int]]]:
+    """
+    Parses a specification of colors for a set of objects.
+
+    Args:
+        colors: A specification of colors for the objects. This can be one of the following:
+            - None: to generate a color palette automatically.
+            - A list of colors: where each color is either a string (specifying a named color) or an RGB tuple.
+            - A string or an RGB tuple: to use the same color for all objects.
+
+            If `colors` is a tuple, it should be a 3-tuple specifying the RGB values of the color.
+            If `colors` is a list, it should have at least as many elements as the number of objects to color.
+            If `colors` is None, a color palette will be generated automatically to have a distinct color for each object.
+
+        num_objects (int): The number of objects to color.
+
+        output_format (str, optional): Specifies the output format of the colors. Default: "tensor".
+            If "tensor", returns a list of `torch.tensor`.
+            If "tuple", returns a list of `tuple`.
+
+    Returns:
+        A list of colors. If output_format is "tensor", the list contains torch.Tensors. If output_format is "tuple",
+        the list contains tuples.
+
+    Raises:
+        ValueError: If the number of colors in the list is less than the number of objects to color.
+                    If `colors` is not one of the above types.
+    """
+    if colors is None:
+        colors = _generate_color_palette(num_objects)
+    elif isinstance(colors, list):
+        if len(colors) < num_objects:
+            raise ValueError(f"Number of colors ({len(colors)}) is less than the number of objects ({num_objects}). ")
+    elif not isinstance(colors, (tuple, str)):
+        raise ValueError("colors must be a tuple or a string, or a list thereof")
+    elif isinstance(colors, tuple) and len(colors) != 3:
+        raise ValueError("It seems that you passed a tuple of colors instead of a list of colors")
+    else:  # colors specifies a single color for all objects
+        colors = [colors] * num_objects
+
+    out_dtype = torch.uint8
+    if output_format == "tensor":
+        colors_ = [
+            torch.tensor(ImageColor.getrgb(color), dtype=out_dtype)
+            if isinstance(color, str)
+            else torch.tensor(color, dtype=out_dtype)
+            for color in colors
+        ]
+    elif output_format == "tuple":
+        colors_ = [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
+    else:
+        raise ValueError(f"Invalid output_format: {output_format}. Must be 'tensor' or 'tuple'.")
+
+    return colors_

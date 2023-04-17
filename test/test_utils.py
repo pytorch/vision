@@ -120,6 +120,9 @@ def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
 
+    with pytest.raises(ValueError, match=".*is less than the number of objects.*"):
+        utils.draw_bounding_boxes(image=img, boxes=boxes, colors=[])
+
 
 def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
@@ -268,6 +271,8 @@ def test_draw_segmentation_masks_errors():
     with pytest.raises(ValueError, match="must have the same height and width"):
         masks_bad_shape = torch.randint(0, 2, size=(h + 4, w), dtype=torch.bool)
         utils.draw_segmentation_masks(image=img, masks=masks_bad_shape)
+    with pytest.raises(ValueError, match=".*is less than the number of objects.*"):
+        utils.draw_segmentation_masks(image=img, masks=masks, colors=[])
     with pytest.raises(ValueError, match="colors must be a tuple or a string, or a list thereof"):
         bad_colors = np.array(["red", "blue"])  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
