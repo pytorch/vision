@@ -307,8 +307,6 @@ def draw_segmentation_masks(
         raise ValueError("The image and the masks must have the same height and width")
 
     num_masks = masks.size()[0]
-    if colors is not None and num_masks > len(colors):
-        raise ValueError(f"There are more masks ({num_masks}) than colors ({len(colors)})")
 
     if num_masks == 0:
         warnings.warn("masks doesn't contain any mask. No mask was drawn")
@@ -316,21 +314,21 @@ def draw_segmentation_masks(
 
     if colors is None:
         colors = _generate_color_palette(num_masks)
-
-    if not isinstance(colors, list):
-        colors = [colors]
-    if not isinstance(colors[0], (tuple, str)):
+    elif isinstance(colors, list):
+        if len(colors) < num_masks:
+            raise ValueError(f"Number of colors ({len(colors)}) is less than the number of masks ({num_masks}). ")
+    elif not isinstance(colors, (tuple, str)):
         raise ValueError("colors must be a tuple or a string, or a list thereof")
-    if isinstance(colors[0], tuple) and len(colors[0]) != 3:
+    elif isinstance(colors, tuple) and len(colors) != 3:
         raise ValueError("It seems that you passed a tuple of colors instead of a list of colors")
-
-    out_dtype = torch.uint8
+    else:  # colors specifies a single color for all masks
+        colors = [colors] * num_masks
 
     colors_ = []
     for color in colors:
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
-        colors_.append(torch.tensor(color, dtype=out_dtype))
+        colors_.append(torch.tensor(color, dtype=torch.uint8))
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
@@ -338,7 +336,7 @@ def draw_segmentation_masks(
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
-    return out.to(out_dtype)
+    return out.to(dtype=torch.uint8)
 
 
 @torch.no_grad()
