@@ -15,8 +15,9 @@ import torch
 import torchvision.transforms.v2 as v2_transforms
 from common_utils import (
     ArgsKwargs,
-    assert_close,
+    assert_close_with_image_support,
     assert_equal,
+    assert_equal_with_image_support,
     make_bounding_box,
     make_detection_mask,
     make_image,
@@ -580,7 +581,7 @@ def check_call_consistency(
                 f"`is_simple_tensor` path in `_transform`."
             ) from exc
 
-        assert_close(
+        assert_close_with_image_support(
             output_prototype_tensor,
             output_legacy_tensor,
             msg=lambda msg: f"Tensor image consistency check failed with: \n\n{msg}",
@@ -597,7 +598,7 @@ def check_call_consistency(
                 f"`datapoints.Image` path in `_transform`."
             ) from exc
 
-        assert_close(
+        assert_close_with_image_support(
             output_prototype_image,
             output_prototype_tensor,
             msg=lambda msg: f"Output for datapoint and tensor images is not equal: \n\n{msg}",
@@ -627,7 +628,7 @@ def check_call_consistency(
                     f"`PIL.Image.Image` path in `_transform`."
                 ) from exc
 
-            assert_close(
+            assert_close_with_image_support(
                 output_prototype_pil,
                 output_legacy_pil,
                 msg=lambda msg: f"PIL image consistency check failed with: \n\n{msg}",
@@ -757,7 +758,7 @@ def test_jit_consistency(config, args_kwargs):
         torch.manual_seed(0)
         output_prototype_scripted = prototype_transform_scripted(image)
 
-        assert_close(output_prototype_scripted, output_legacy_scripted, **config.closeness_kwargs)
+        torch.testing.assert_close(output_prototype_scripted, output_legacy_scripted, **config.closeness_kwargs)
 
 
 class TestContainerTransforms:
@@ -899,7 +900,7 @@ class TestAATransforms:
             expected_output = t_ref(inpt)
             output = t(inpt)
 
-            assert_close(expected_output, output, atol=1, rtol=0.1)
+        assert_close_with_image_support(expected_output, output, atol=1, rtol=0.1)
 
     @pytest.mark.parametrize(
         "inpt",
@@ -951,7 +952,7 @@ class TestAATransforms:
             expected_output = t_ref(inpt)
             output = t(inpt)
 
-            assert_close(expected_output, output, atol=1, rtol=0.1)
+        assert_close_with_image_support(expected_output, output, atol=1, rtol=0.1)
 
     @pytest.mark.parametrize(
         "inpt",
@@ -1004,7 +1005,7 @@ class TestAATransforms:
         expected_output = t_ref(inpt)
         output = t(inpt)
 
-        assert_equal(expected_output, output)
+        assert_equal_with_image_support(expected_output, output)
 
     @pytest.mark.parametrize(
         "inpt",
@@ -1033,7 +1034,7 @@ class TestAATransforms:
         torch.manual_seed(12)
         output = t(inpt)
 
-        assert_equal(expected_output, output)
+        assert_equal_with_image_support(expected_output, output)
 
 
 def import_transforms_from_references(reference):
@@ -1127,7 +1128,7 @@ class TestRefDetTransforms:
             torch.manual_seed(12)
             expected_output = t_ref(*dp)
 
-            assert_equal(expected_output, output)
+            assert_equal_with_image_support(expected_output, output)
 
 
 seg_transforms = import_transforms_from_references("segmentation")
@@ -1196,7 +1197,7 @@ class TestRefSegTransforms:
             expected_mask = legacy_F.pil_to_tensor(expected_mask).squeeze(0)
             expected = (expected_image, expected_mask)
 
-            assert_equal(actual, expected)
+            assert_equal_with_image_support(actual, expected)
 
     @pytest.mark.parametrize(
         ("t_ref", "t", "data_kwargs"),

@@ -21,8 +21,8 @@ import pytest
 import torch
 import torch.testing
 from PIL import Image
+from torch.utils._pytree import tree_flatten
 
-from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import datapoints, io
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import convert_dtype_image_tensor, to_image_tensor
@@ -270,84 +270,57 @@ def combinations_grid(**kwargs):
     return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
 
 
-class ImagePair(TensorLikePair):
-    def __init__(
-        self,
-        actual,
-        expected,
-        *,
-        mae=False,
-        **other_parameters,
-    ):
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+
+
+def assert_close_with_image_support(actual, expected, *, mae=False, atol=None, msg=None, **kwargs):
+    def compare(actual, expected):
         if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
             actual, expected = [to_image_tensor(input) for input in [actual, expected]]
 
-        super().__init__(actual, expected, **other_parameters)
-        self.mae = mae
+        enable_mae_comparison = all(isinstance(input, torch.Tensor) for input in [actual, expected])
 
-    def compare(self) -> None:
-        actual, expected = self.actual, self.expected
+        value_comparison_failure = False
 
-        self._compare_attributes(actual, expected)
-        actual, expected = self._equalize_attributes(actual, expected)
+        def msg_callback(default_msg):
+            # This is a dirty hack that let's us "hook" into the comparison logic of `torch.testing.assert_close`. It
+            # will only be triggered in case of failed value comparison. This let's us reuse all of the attribute
+            # checking that `torch.testing.assert_close` does while giving us the ability to ignore the regular value
+            # comparison.
+            nonlocal value_comparison_failure
+            value_comparison_failure = True
+            if msg is None:
+                return default_msg
+            elif isinstance(msg, str):
+                return msg
+            elif callable(msg):
+                return msg(default_msg)
+            else:
+                raise pytest.UsageError(f"`msg` can be either be `None`, a `str` or a callable, but got {msg}.")
 
-        if self.mae:
-            if actual.dtype is torch.uint8:
-                actual, expected = actual.to(torch.int), expected.to(torch.int)
-            mae = float(torch.abs(actual - expected).float().mean())
-            if mae > self.atol:
-                self._fail(
-                    AssertionError,
-                    f"The MAE of the images is {mae}, but only {self.atol} is allowed.",
-                )
-        else:
-            super()._compare_values(actual, expected)
+        try:
+            return torch.testing.assert_close(
+                actual, expected, atol=atol, msg=msg_callback if enable_mae_comparison else msg, **kwargs
+            )
+        except AssertionError:
+            if not (value_comparison_failure and mae):
+                raise
 
+        if actual.dtype is torch.uint8:
+            actual, expected = actual.to(torch.int), expected.to(torch.int)
+        mae_value = float(torch.abs(actual - expected).float().mean())
+        if mae_value > atol:
+            raise AssertionError(f"The MAE of the images is {mae_value}, but only {atol} is allowed.")
 
-def assert_close(
-    actual,
-    expected,
-    *,
-    allow_subclasses=True,
-    rtol=None,
-    atol=None,
-    equal_nan=False,
-    check_device=True,
-    check_dtype=True,
-    check_layout=True,
-    check_stride=False,
-    msg=None,
-    **kwargs,
-):
-    """Superset of :func:`torch.testing.assert_close` with support for PIL vs. tensor image comparison"""
-    __tracebackhide__ = True
+    actual_flat, actual_spec = tree_flatten(actual)
+    expected_flat, expected_spec = tree_flatten(expected)
+    assert actual_spec, expected_spec
 
-    error_metas = not_close_error_metas(
-        actual,
-        expected,
-        pair_types=(
-            NonePair,
-            BooleanPair,
-            NumberPair,
-            ImagePair,
-            TensorLikePair,
-        ),
-        allow_subclasses=allow_subclasses,
-        rtol=rtol,
-        atol=atol,
-        equal_nan=equal_nan,
-        check_device=check_device,
-        check_dtype=check_dtype,
-        check_layout=check_layout,
-        check_stride=check_stride,
-        **kwargs,
-    )
-
-    if error_metas:
-        raise error_metas[0].to_error(msg)
+    for actual_item, expected_item in zip(actual_flat, expected_flat):
+        compare(actual_item, expected_item)
 
 
-assert_equal = functools.partial(assert_close, rtol=0, atol=0)
+assert_equal_with_image_support = functools.partial(assert_close_with_image_support, rtol=0, atol=0)
 
 
 def parametrized_error_message(*args, **kwargs):

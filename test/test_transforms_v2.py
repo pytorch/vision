@@ -15,6 +15,7 @@ import torchvision.transforms.v2 as transforms
 
 from common_utils import (
     assert_equal,
+    assert_equal_with_image_support,
     assert_run_python_script,
     cpu_and_gpu,
     make_bounding_box,
@@ -383,7 +384,7 @@ def test_simple_tensor_heuristic(flat_inputs):
                 return False
 
             # Make sure nothing fishy is going on
-            assert_equal(output, inpt)
+            assert_equal_with_image_support(output, inpt)
             return True
 
     first_simple_tensor_input, other_simple_tensor_inputs, other_inputs = split_on_simple_tensor(flat_inputs)
