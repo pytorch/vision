@@ -36,8 +36,7 @@ possible, but we should make sure that the tutorials are still running properly,
 and that their intended narrative is preserved (by e.g. checking outputs,
 etc.).
 
-The rest of the folders (build, android, ios, etc.) are private and have no BC
-guarantees.
+The rest of the folders are private and have no BC guarantees.
 
 ### Deprecation policy.
 
