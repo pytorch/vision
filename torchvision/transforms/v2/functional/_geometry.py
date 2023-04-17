@@ -215,8 +215,8 @@ def resize_image_pil(
     old_height, old_width = image.height, image.width
     new_height, new_width = _compute_resized_output_size(
         (old_height, old_width),
-        size=size,
-        max_size=max_size,  # type: ignore[arg-type]
+        size=size,  # type: ignore[arg-type]
+        max_size=max_size,
     )
 
     interpolation = _check_interpolation(interpolation)
