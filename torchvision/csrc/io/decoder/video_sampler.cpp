@@ -181,6 +181,24 @@ bool VideoSampler::init(const SamplerParameters& params) {
   // set output format
   params_ = params;
 
+  if (params.in.video.format == AV_PIX_FMT_YUV420P) {
+      /* When the video width and height are not multiples of 8,
+       * and there is no size change in the conversion,
+       * a blurry screen will appear on the right side
+       * This problem was discovered in 2012 and
+       * continues to exist in version 4.1.3 in 2019
+       * This problem can be avoided by increasing SWS_ACCURATE_RND
+       * details https://trac.ffmpeg.org/ticket/1582
+       */
+      if ((params.in.video.width & 0x7) || (params.in.video.height & 0x7)) {
+          VLOG(1) << "The width " << params.in.video.width
+                  << " and height " << params.in.video.height
+                  << " the image is not a multiple of 8, "
+                  << "the decoding speed may be reduced";
+          swsFlags_ |= SWS_ACCURATE_RND;
+      }
+  }
+
   scaleContext_ = sws_getContext(
       params.in.video.width,
       params.in.video.height,
