@@ -179,7 +179,9 @@ def resize_image_tensor(
     num_channels, old_height, old_width = shape[-3:]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
 
-    if image.numel() > 0:
+    if (new_height, new_width) == (old_height, old_width):
+        return image
+    elif image.numel() > 0:
         image = image.reshape(-1, num_channels, old_height, old_width)
 
         dtype = image.dtype
@@ -210,9 +212,19 @@ def resize_image_pil(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
+    old_height, old_width = image.height, image.width
+    new_height, new_width = _compute_resized_output_size(
+        (old_height, old_width),
+        size=size,
+        max_size=max_size,  # type: ignore[arg-type]
+    )
+
     interpolation = _check_interpolation(interpolation)
-    size = _compute_resized_output_size(image.size[::-1], size=size, max_size=max_size)  # type: ignore[arg-type]
-    return _FP.resize(image, size, interpolation=pil_modes_mapping[interpolation])
+
+    if (new_height, new_width) == (old_height, old_width):
+        return image
+
+    return image.resize((new_width, new_height), resample=pil_modes_mapping[interpolation])
 
 
 def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
@@ -235,6 +247,10 @@ def resize_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = spatial_size
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
+
+    if (new_height, new_width) == (old_height, old_width):
+        return bounding_box, spatial_size
+
     w_ratio = new_width / old_width
     h_ratio = new_height / old_height
     ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
