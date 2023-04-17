@@ -262,61 +262,6 @@ def cmake_workflows(indentation=6):
     return indent(indentation, jobs)
 
 
-def ios_workflows(indentation=6, nightly=False):
-    jobs = []
-    build_job_names = []
-    name_prefix = "nightly_" if nightly else ""
-    env_prefix = "nightly-" if nightly else ""
-    for arch, platform in [("x86_64", "SIMULATOR"), ("arm64", "OS")]:
-        name = f"{name_prefix}binary_libtorchvision_ops_ios_12.0.0_{arch}"
-        build_job_names.append(name)
-        build_job = {
-            "build_environment": f"{env_prefix}binary-libtorchvision_ops-ios-12.0.0-{arch}",
-            "ios_arch": arch,
-            "ios_platform": platform,
-            "name": name,
-        }
-        if nightly:
-            build_job["filters"] = gen_filter_branch_tree("nightly")
-        jobs.append({"binary_ios_build": build_job})
-
-    if nightly:
-        upload_job = {
-            "build_environment": f"{env_prefix}binary-libtorchvision_ops-ios-12.0.0-upload",
-            "context": "org-member",
-            "filters": gen_filter_branch_tree("nightly"),
-            "requires": build_job_names,
-        }
-        jobs.append({"binary_ios_upload": upload_job})
-    return indent(indentation, jobs)
-
-
-def android_workflows(indentation=6, nightly=False):
-    jobs = []
-    build_job_names = []
-    name_prefix = "nightly_" if nightly else ""
-    env_prefix = "nightly-" if nightly else ""
-
-    name = f"{name_prefix}binary_libtorchvision_ops_android"
-    build_job_names.append(name)
-    build_job = {
-        "build_environment": f"{env_prefix}binary-libtorchvision_ops-android",
-        "name": name,
-    }
-
-    if nightly:
-        upload_job = {
-            "build_environment": f"{env_prefix}binary-libtorchvision_ops-android-upload",
-            "context": "org-member",
-            "filters": gen_filter_branch_tree("nightly"),
-            "name": f"{name_prefix}binary_libtorchvision_ops_android_upload",
-        }
-        jobs.append({"binary_android_upload": upload_job})
-    else:
-        jobs.append({"binary_android_build": build_job})
-    return indent(indentation, jobs)
-
-
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
@@ -332,7 +277,5 @@ if __name__ == "__main__":
                 build_workflows=build_workflows,
                 unittest_workflows=unittest_workflows,
                 cmake_workflows=cmake_workflows,
-                ios_workflows=ios_workflows,
-                android_workflows=android_workflows,
             )
         )

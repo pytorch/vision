@@ -46,59 +46,6 @@ commands:
             fi
             echo "export UPLOAD_CHANNEL=${our_upload_channel}" >> ${BASH_ENV}
 
-  brew_update:
-    description: "Update Homebrew and install base formulae"
-    steps:
-      - run:
-          name: Update Homebrew
-          no_output_timeout: "10m"
-          command: |
-            set -ex
-
-            # Update repositories manually.
-            # Running `brew update` produces a comparison between the
-            # current checkout and the updated checkout, which takes a
-            # very long time because the existing checkout is 2y old.
-            for path in $(find /usr/local/Homebrew -type d -name .git)
-            do
-            cd $path/..
-            git fetch --depth=1 origin
-            git reset --hard origin/master
-            done
-
-            export HOMEBREW_NO_AUTO_UPDATE=1
-
-            # Install expect and moreutils so that we can call `unbuffer` and `ts`.
-            # moreutils installs a `parallel` executable by default, which conflicts
-            # with the executable from the GNU `parallel`, so we must unlink GNU
-            # `parallel` first, and relink it afterwards.
-            brew install coreutils
-            brew unlink parallel
-            brew install moreutils
-            brew link parallel --overwrite
-            brew install expect
-
-  brew_install:
-    description: "Install Homebrew formulae"
-    parameters:
-      formulae:
-        type: string
-        default: ""
-    steps:
-      - run:
-          name: Install << parameters.formulae >>
-          no_output_timeout: "10m"
-          command: |
-            set -ex
-            export HOMEBREW_NO_AUTO_UPDATE=1
-            brew install << parameters.formulae >>
-
-  run_brew_for_ios_build:
-    steps:
-      - brew_update
-      - brew_install:
-          formulae: libtool
-
   pip_install:
     parameters:
       args:
@@ -157,30 +104,6 @@ binary_common: &binary_common
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
     MACOSX_DEPLOYMENT_TARGET: 10.9
-
-torchvision_ios_params: &torchvision_ios_params
-  parameters:
-    build_environment:
-      type: string
-      default: ""
-    ios_arch:
-      type: string
-      default: ""
-    ios_platform:
-      type: string
-      default: ""
-  environment:
-    BUILD_ENVIRONMENT: << parameters.build_environment >>
-    IOS_ARCH: << parameters.ios_arch >>
-    IOS_PLATFORM: << parameters.ios_platform >>
-
-torchvision_android_params: &torchvision_android_params
-  parameters:
-    build_environment:
-      type: string
-      default: ""
-  environment:
-    BUILD_ENVIRONMENT: << parameters.build_environment >>
 
 smoke_test_common: &smoke_test_common
   <<: *binary_common
@@ -273,79 +196,6 @@ jobs:
           root: dist
           paths:
             - "*"
-
-  binary_ios_build:
-    <<: *torchvision_ios_params
-    macos:
-      xcode: "14.0"
-    steps:
-    - attach_workspace:
-        at: ~/workspace
-    - checkout
-    - run_brew_for_ios_build
-    - run:
-        name: Build
-        no_output_timeout: "1h"
-        command: |
-          script="/Users/distiller/project/.circleci/unittest/ios/scripts/binary_ios_build.sh"
-          cat "$script"
-          source "$script"
-    - persist_to_workspace:
-        root: /Users/distiller/workspace/
-        paths: ios
-
-  binary_ios_upload:
-    <<: *torchvision_ios_params
-    macos:
-      xcode: "14.0"
-    steps:
-    - attach_workspace:
-        at: ~/workspace
-    - checkout
-    - run_brew_for_ios_build
-    - run:
-        name: Upload
-        no_output_timeout: "1h"
-        command: |
-          script="/Users/distiller/project/.circleci/unittest/ios/scripts/binary_ios_upload.sh"
-          cat "$script"
-          source "$script"
-
-  binary_android_build:
-    <<: *torchvision_android_params
-    docker:
-      - image: cimg/android:2021.08-ndk
-    resource_class: xlarge
-    steps:
-    - attach_workspace:
-        at: ~/workspace
-    - checkout
-    - run:
-        name: Build
-        no_output_timeout: "1h"
-        command: |
-          script="/home/circleci/project/.circleci/unittest/android/scripts/binary_android_build.sh"
-          cat "$script"
-          source "$script"
-    - store_artifacts:
-        path: ~/workspace/artifacts
-
-  binary_android_upload:
-    <<: *torchvision_android_params
-    docker:
-      - image: cimg/android:2021.08-ndk
-    resource_class: xlarge
-    steps:
-    - attach_workspace:
-        at: ~/workspace
-    - checkout
-    - run:
-        name: Upload
-        no_output_timeout: "1h"
-        command: |
-          script="/home/circleci/project/.circleci/unittest/android/scripts/binary_android_upload.sh"
-          cat "$script"
-          source "$script"
 
   binary_macos_conda:
     <<: *binary_common
@@ -805,19 +655,6 @@ workflows:
           cu_version: cu118
           name: binary_win_conda_py3.11_cu118
           python_version: '3.11'
-      - binary_ios_build:
-          build_environment: binary-libtorchvision_ops-ios-12.0.0-x86_64
-          ios_arch: x86_64
-          ios_platform: SIMULATOR
-          name: binary_libtorchvision_ops_ios_12.0.0_x86_64
-      - binary_ios_build:
-          build_environment: binary-libtorchvision_ops-ios-12.0.0-arm64
-          ios_arch: arm64
-          ios_platform: OS
-          name: binary_libtorchvision_ops_ios_12.0.0_arm64
-      - binary_android_build:
-          build_environment: binary-libtorchvision_ops-android
-          name: binary_libtorchvision_ops_android
 
   unittest:
     jobs:
@@ -882,42 +719,6 @@ workflows:
 
   nightly:
     jobs:
-      - binary_ios_build:
-          build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-x86_64
-          filters:
-            branches:
-              only:
-              - nightly
-          ios_arch: x86_64
-          ios_platform: SIMULATOR
-          name: nightly_binary_libtorchvision_ops_ios_12.0.0_x86_64
-      - binary_ios_build:
-          build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-arm64
-          filters:
-            branches:
-              only:
-              - nightly
-          ios_arch: arm64
-          ios_platform: OS
-          name: nightly_binary_libtorchvision_ops_ios_12.0.0_arm64
-      - binary_ios_upload:
-          build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-upload
-          context: org-member
-          filters:
-            branches:
-              only:
-              - nightly
-          requires:
-          - nightly_binary_libtorchvision_ops_ios_12.0.0_x86_64
-          - nightly_binary_libtorchvision_ops_ios_12.0.0_arm64
-      - binary_android_upload:
-          build_environment: nightly-binary-libtorchvision_ops-android-upload
-          context: org-member
-          filters:
-            branches:
-              only:
-              - nightly
-          name: nightly_binary_libtorchvision_ops_android_upload
       - binary_win_wheel:
           cu_version: cpu
           filters:
