@@ -120,7 +120,7 @@ def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
 
-    with pytest.raises(ValueError, match="is less than the number of objects"):
+    with pytest.raises(ValueError, match="Number of colors must be equal or larger than the number of objects"):
         utils.draw_bounding_boxes(image=img, boxes=boxes, colors=[])
 
 
@@ -198,8 +198,8 @@ def test_draw_no_boxes():
         "blue",
         "#FF00FF",
         (1, 34, 122),
-        ["red", "#FF00FF"],
-        ["blue", (1, 34, 122)],
+        ["red", "blue"],
+        ["#FF00FF", (1, 34, 122)],
     ],
 )
 @pytest.mark.parametrize("alpha", (0, 0.5, 0.7, 1))
@@ -226,7 +226,8 @@ def test_draw_segmentation_masks(colors, alpha):
     assert_equal(img[:, ~masked_pixels], out[:, ~masked_pixels])
 
     if colors is None:
-        colors = utils._generate_color_palette(num_masks)
+        palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
+        colors = [tuple((i * palette) % 255) for i in range(num_masks)]
     elif isinstance(colors, str) or isinstance(colors, tuple):
         colors = [colors]
 
@@ -271,12 +272,12 @@ def test_draw_segmentation_masks_errors():
     with pytest.raises(ValueError, match="must have the same height and width"):
         masks_bad_shape = torch.randint(0, 2, size=(h + 4, w), dtype=torch.bool)
         utils.draw_segmentation_masks(image=img, masks=masks_bad_shape)
-    with pytest.raises(ValueError, match=".*is less than the number of objects.*"):
+    with pytest.raises(ValueError, match="Number of colors must be equal or larger than the number of objects"):
         utils.draw_segmentation_masks(image=img, masks=masks, colors=[])
-    with pytest.raises(ValueError, match="colors must be a tuple or a string, or a list thereof"):
+    with pytest.raises(ValueError, match="`colors` must be a tuple or a string, or a list thereof"):
         bad_colors = np.array(["red", "blue"])  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
-    with pytest.raises(ValueError, match="It seems that you passed a tuple of colors instead of"):
+    with pytest.raises(ValueError, match="If passed as tuple, colors should be an RGB triplet"):
         bad_colors = ("red", "blue")  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
 

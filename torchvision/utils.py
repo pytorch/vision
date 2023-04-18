@@ -217,7 +217,7 @@ def draw_bounding_boxes(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
-    colors = _parse_colors(colors=colors, num_objects=num_boxes, output_format="tuple")
+    colors = _parse_colors(colors, num_objects=num_boxes)
 
     if font is None:
         if font_size is not None:
@@ -304,7 +304,8 @@ def draw_segmentation_masks(
         warnings.warn("masks doesn't contain any mask. No mask was drawn")
         return image
 
-    colors = _parse_colors(colors, num_objects=num_masks)
+    out_dtype = torch.uint8
+    colors = [torch.tensor(color, dtype=out_dtype) for color in _parse_colors(colors, num_objects=num_masks)]
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
@@ -312,7 +313,7 @@ def draw_segmentation_masks(
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
-    return out.to(dtype=torch.uint8)
+    return out.to(dtype=out_dtype)
 
 
 @torch.no_grad()
@@ -504,11 +505,6 @@ def _make_colorwheel() -> torch.Tensor:
     return colorwheel
 
 
-def _generate_color_palette(num_objects: int):
-    palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
-    return [tuple((i * palette) % 255) for i in range(num_objects)]
-
-
 def _log_api_usage_once(obj: Any) -> None:
 
     """
@@ -555,8 +551,7 @@ def _parse_colors(
     colors: Union[None, str, Tuple[int, int, int], List[Union[str, Tuple[int, int, int]]]],
     *,
     num_objects: int,
-    output_format: Optional[str] = "tensor",
-) -> List[Union[torch.Tensor, Tuple[int, int, int]]]:
+) -> List[Tuple[int, int, int]]:
     """
     Parses a specification of colors for a set of objects.
 
@@ -572,23 +567,21 @@ def _parse_colors(
 
         num_objects (int): The number of objects to color.
 
-        output_format (str, optional): Specifies the output format of the colors. Default: "tensor".
-            If "tensor", returns a list of `torch.tensor`.
-            If "tuple", returns a list of `tuple`.
-
     Returns:
-        A list of colors. If output_format is "tensor", the list contains torch.Tensors. If output_format is "tuple",
-        the list contains tuples.
+        A list of 3-tuples, specifying the RGB values of the colors.
 
     Raises:
         ValueError: If the number of colors in the list is less than the number of objects to color.
-                    If `colors` is not one of the above types.
+                    If `colors` is not a list, tuple, string or None.
     """
     if colors is None:
-        colors = _generate_color_palette(num_objects)
+        palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
+        colors = [tuple((i * palette) % 255) for i in range(num_objects)]
     elif isinstance(colors, list):
         if len(colors) < num_objects:
-            raise ValueError(f"Number of colors must be equal or larger than the number of objects, but got {len(colors)} < {num_objects}.")
+            raise ValueError(
+                f"Number of colors must be equal or larger than the number of objects, but got {len(colors)} < {num_objects}."
+            )
     elif not isinstance(colors, (tuple, str)):
         raise ValueError("`colors` must be a tuple or a string, or a list thereof, but got {colors}.")
     elif isinstance(colors, tuple) and len(colors) != 3:
@@ -596,17 +589,6 @@ def _parse_colors(
     else:  # colors specifies a single color for all objects
         colors = [colors] * num_objects
 
-    out_dtype = torch.uint8
-    if output_format == "tensor":
-        colors_ = [
-            torch.tensor(ImageColor.getrgb(color), dtype=out_dtype)
-            if isinstance(color, str)
-            else torch.tensor(color, dtype=out_dtype)
-            for color in colors
-        ]
-    elif output_format == "tuple":
-        colors_ = [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
-    else:
-        raise ValueError(f"Invalid output_format: {output_format}. Must be 'tensor' or 'tuple'.")
+    colors_ = [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
 
     return colors_
