@@ -552,7 +552,7 @@ def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
 
 
 def _parse_colors(
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int], None]],
+    colors: Union[None, str, Tuple[int, int, int], List[Union[str, Tuple[int, int, int]]]],
     num_objects: int,
     output_format: Optional[str] = "tensor",
 ) -> List[Union[torch.Tensor, Tuple[int, int, int]]]:
