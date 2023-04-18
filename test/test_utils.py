@@ -120,7 +120,7 @@ def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
 
-    with pytest.raises(ValueError, match=".*is less than the number of objects.*"):
+    with pytest.raises(ValueError, match="is less than the number of objects"):
         utils.draw_bounding_boxes(image=img, boxes=boxes, colors=[])
 
 
