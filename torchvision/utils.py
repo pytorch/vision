@@ -547,6 +547,11 @@ def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
     return tuple(repeat(x, n))
 
 
+def _generate_color_palette(num_objects: int):
+    palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
+    return [tuple((i * palette) % 255) for i in range(num_objects)]
+
+
 def _parse_colors(
     colors: Union[None, str, Tuple[int, int, int], List[Union[str, Tuple[int, int, int]]]],
     *,
@@ -575,8 +580,7 @@ def _parse_colors(
                     If `colors` is not a list, tuple, string or None.
     """
     if colors is None:
-        palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
-        colors = [tuple((i * palette) % 255) for i in range(num_objects)]
+        colors = _generate_color_palette(num_objects)
     elif isinstance(colors, list):
         if len(colors) < num_objects:
             raise ValueError(

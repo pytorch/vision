@@ -226,8 +226,7 @@ def test_draw_segmentation_masks(colors, alpha):
     assert_equal(img[:, ~masked_pixels], out[:, ~masked_pixels])
 
     if colors is None:
-        palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
-        colors = [tuple((i * palette) % 255) for i in range(num_masks)]
+        colors = utils._generate_color_palette(num_masks)
     elif isinstance(colors, str) or isinstance(colors, tuple):
         colors = [colors]
 
