@@ -73,7 +73,7 @@ jobs:
         echo '::endgroup::'
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@39a3e10e12c1c57db3bca15ee51f8b082265b0e1
     with:
       repository: pytorch/vision
       script: |
