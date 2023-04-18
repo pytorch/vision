@@ -4,7 +4,8 @@ from collections import namedtuple
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datapoints import Image, Label
+from torchvision.datapoints import Image
+from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 

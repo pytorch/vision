@@ -1,10 +1,11 @@
 import os
 import sys
+import warnings
 
 import numpy as np
+import PIL.Image
 import pytest
 import torch
-import torchvision.transforms._pil_constants as _pil_constants
 from common_utils import (
     _assert_approx_equal_tensor_to_pil,
     _assert_equal_tensor_to_pil,
@@ -371,7 +372,7 @@ class TestResize:
     def test_resize_int(self, size):
         # TODO: Minimal check for bug-fix, improve this later
         x = torch.rand(3, 32, 46)
-        t = T.Resize(size=size)
+        t = T.Resize(size=size, antialias=True)
         y = t(x)
         # If size is an int, smaller edge of the image will be matched to this number.
         # i.e, if height > width, then image will be rescaled to (size * height / width, size).
@@ -394,13 +395,13 @@ class TestResize:
         if max_size is not None and len(size) != 1:
             pytest.skip("Size should be an int or a sequence of length 1 if max_size is specified")
 
-        transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size)
+        transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size, antialias=True)
         s_transform = torch.jit.script(transform)
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_resize_save_load(self, tmpdir):
-        fn = T.Resize(size=[32])
+        fn = T.Resize(size=[32], antialias=True)
         _test_fn_save_load(fn, tmpdir)
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -424,8 +425,24 @@ class TestResize:
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_resized_crop_save_load(self, tmpdir):
-        fn = T.RandomResizedCrop(size=[32])
+        fn = T.RandomResizedCrop(size=[32], antialias=True)
         _test_fn_save_load(fn, tmpdir)
+
+    def test_antialias_default_warning(self):
+
+        img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
+
+        match = "The default value of the antialias"
+        with pytest.warns(UserWarning, match=match):
+            T.Resize((20, 20))(img)
+        with pytest.warns(UserWarning, match=match):
+            T.RandomResizedCrop((20, 20))(img)
+
+        # For modes that aren't bicubic or bilinear, don't throw a warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            T.Resize((20, 20), interpolation=NEAREST)(img)
+            T.RandomResizedCrop((20, 20), interpolation=NEAREST)(img)
 
 
 def _test_random_affine_helper(device, **kwargs):
@@ -640,13 +657,13 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
             matrix = (1, level, 0, 0, 1, 0)
         elif mode == "Y":
             matrix = (1, 0, 0, level, 1, 0)
-        return pil_img.transform((image_size, image_size), _pil_constants.AFFINE, matrix, resample=resample)
+        return pil_img.transform((image_size, image_size), PIL.Image.AFFINE, matrix, resample=resample)
 
     t_img, pil_img = _create_data(image_size, image_size)
 
     resample_pil = {
-        F.InterpolationMode.NEAREST: _pil_constants.NEAREST,
-        F.InterpolationMode.BILINEAR: _pil_constants.BILINEAR,
+        F.InterpolationMode.NEAREST: PIL.Image.NEAREST,
+        F.InterpolationMode.BILINEAR: PIL.Image.BILINEAR,
     }[interpolation]
 
     level = 0.3

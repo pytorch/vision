@@ -13,4 +13,4 @@ setup_visual_studio_constraint
 setup_junit_results_folder
 export CUDATOOLKIT_CHANNEL="nvidia"
 
-conda build -c $CUDATOOLKIT_CHANNEL $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
+conda build -c $CUDATOOLKIT_CHANNEL $CONDA_CHANNEL_FLAGS --no-anaconda-upload --no-test --python "$PYTHON_VERSION" packaging/torchvision

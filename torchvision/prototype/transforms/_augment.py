@@ -1,111 +1,17 @@
 import math
-import numbers
-import warnings
 from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import transforms as _transforms
+from torchvision import datapoints
 from torchvision.ops import masks_to_boxes
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
+from torchvision.prototype import datapoints as proto_datapoints
+from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
 
-from ._transform import _RandomApplyTransform
-from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
-
-
-class RandomErasing(_RandomApplyTransform):
-    _v1_transform_cls = _transforms.RandomErasing
-
-    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
-        return dict(
-            super()._extract_params_for_v1_transform(),
-            value="random" if self.value is None else self.value,
-        )
-
-    _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
-
-    def __init__(
-        self,
-        p: float = 0.5,
-        scale: Tuple[float, float] = (0.02, 0.33),
-        ratio: Tuple[float, float] = (0.3, 3.3),
-        value: float = 0.0,
-        inplace: bool = False,
-    ):
-        super().__init__(p=p)
-        if not isinstance(value, (numbers.Number, str, tuple, list)):
-            raise TypeError("Argument value should be either a number or str or a sequence")
-        if isinstance(value, str) and value != "random":
-            raise ValueError("If value is str, it should be 'random'")
-        if not isinstance(scale, (tuple, list)):
-            raise TypeError("Scale should be a sequence")
-        if not isinstance(ratio, (tuple, list)):
-            raise TypeError("Ratio should be a sequence")
-        if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
-            warnings.warn("Scale and ratio should be of kind (min, max)")
-        if scale[0] < 0 or scale[1] > 1:
-            raise ValueError("Scale should be between 0 and 1")
-        self.scale = scale
-        self.ratio = ratio
-        if isinstance(value, (int, float)):
-            self.value = [float(value)]
-        elif isinstance(value, str):
-            self.value = None
-        elif isinstance(value, (list, tuple)):
-            self.value = [float(v) for v in value]
-        else:
-            self.value = value
-        self.inplace = inplace
-
-        self._log_ratio = torch.log(torch.tensor(self.ratio))
-
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        img_c, img_h, img_w = query_chw(flat_inputs)
-
-        if self.value is not None and not (len(self.value) in (1, img_c)):
-            raise ValueError(
-                f"If value is a sequence, it should have either a single value or {img_c} (number of inpt channels)"
-            )
-
-        area = img_h * img_w
-
-        log_ratio = self._log_ratio
-        for _ in range(10):
-            erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
-            aspect_ratio = torch.exp(
-                torch.empty(1).uniform_(
-                    log_ratio[0],  # type: ignore[arg-type]
-                    log_ratio[1],  # type: ignore[arg-type]
-                )
-            ).item()
-
-            h = int(round(math.sqrt(erase_area * aspect_ratio)))
-            w = int(round(math.sqrt(erase_area / aspect_ratio)))
-            if not (h < img_h and w < img_w):
-                continue
-
-            if self.value is None:
-                v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
-            else:
-                v = torch.tensor(self.value)[:, None, None]
-
-            i = torch.randint(0, img_h - h + 1, size=(1,)).item()
-            j = torch.randint(0, img_w - w + 1, size=(1,)).item()
-            break
-        else:
-            i, j, h, w, v = 0, 0, img_h, img_w, None
-
-        return dict(i=i, j=j, h=h, w=w, v=v)
-
-    def _transform(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
-        if params["v"] is not None:
-            inpt = F.erase(inpt, **params, inplace=self.inplace)
-
-        return inpt
+from torchvision.transforms.v2._transform import _RandomApplyTransform
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_spatial_size
 
 
 class _BaseMixupCutmix(_RandomApplyTransform):
@@ -117,19 +23,19 @@ class _BaseMixupCutmix(_RandomApplyTransform):
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
             has_any(flat_inputs, datapoints.Image, datapoints.Video, is_simple_tensor)
-            and has_any(flat_inputs, datapoints.OneHotLabel)
+            and has_any(flat_inputs, proto_datapoints.OneHotLabel)
         ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
-        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Label):
+        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask, proto_datapoints.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
             )
 
-    def _mixup_onehotlabel(self, inpt: datapoints.OneHotLabel, lam: float) -> datapoints.OneHotLabel:
+    def _mixup_onehotlabel(self, inpt: proto_datapoints.OneHotLabel, lam: float) -> proto_datapoints.OneHotLabel:
         if inpt.ndim < 2:
             raise ValueError("Need a batch of one hot labels")
         output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
-        return datapoints.OneHotLabel.wrap_like(inpt, output)
+        return proto_datapoints.OneHotLabel.wrap_like(inpt, output)
 
 
 class RandomMixup(_BaseMixupCutmix):
@@ -148,7 +54,7 @@ class RandomMixup(_BaseMixupCutmix):
                 output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
-        elif isinstance(inpt, datapoints.OneHotLabel):
+        elif isinstance(inpt, proto_datapoints.OneHotLabel):
             return self._mixup_onehotlabel(inpt, lam)
         else:
             return inpt
@@ -192,7 +98,7 @@ class RandomCutmix(_BaseMixupCutmix):
                 output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
-        elif isinstance(inpt, datapoints.OneHotLabel):
+        elif isinstance(inpt, proto_datapoints.OneHotLabel):
             lam_adjusted = params["lam_adjusted"]
             return self._mixup_onehotlabel(inpt, lam_adjusted)
         else:
@@ -203,25 +109,25 @@ class SimpleCopyPaste(Transform):
     def __init__(
         self,
         blending: bool = True,
-        resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR,
+        resize_interpolation: Union[int, InterpolationMode] = F.InterpolationMode.BILINEAR,
         antialias: Optional[bool] = None,
     ) -> None:
         super().__init__()
-        self.resize_interpolation = resize_interpolation
+        self.resize_interpolation = _check_interpolation(resize_interpolation)
         self.blending = blending
         self.antialias = antialias
 
     def _copy_paste(
         self,
-        image: datapoints.TensorImageType,
+        image: datapoints._TensorImageType,
         target: Dict[str, Any],
-        paste_image: datapoints.TensorImageType,
+        paste_image: datapoints._TensorImageType,
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
         blending: bool,
         resize_interpolation: F.InterpolationMode,
         antialias: Optional[bool],
-    ) -> Tuple[datapoints.TensorImageType, Dict[str, Any]]:
+    ) -> Tuple[datapoints._TensorImageType, Dict[str, Any]]:
 
         paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
         paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
@@ -293,7 +199,7 @@ class SimpleCopyPaste(Transform):
 
     def _extract_image_targets(
         self, flat_sample: List[Any]
-    ) -> Tuple[List[datapoints.TensorImageType], List[Dict[str, Any]]]:
+    ) -> Tuple[List[datapoints._TensorImageType], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
         # with List[image], List[BoundingBox], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
@@ -306,7 +212,7 @@ class SimpleCopyPaste(Transform):
                 bboxes.append(obj)
             elif isinstance(obj, datapoints.Mask):
                 masks.append(obj)
-            elif isinstance(obj, (datapoints.Label, datapoints.OneHotLabel)):
+            elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
                 labels.append(obj)
 
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
@@ -324,7 +230,7 @@ class SimpleCopyPaste(Transform):
     def _insert_outputs(
         self,
         flat_sample: List[Any],
-        output_images: List[datapoints.TensorImageType],
+        output_images: List[datapoints._TensorImageType],
         output_targets: List[Dict[str, Any]],
     ) -> None:
         c0, c1, c2, c3 = 0, 0, 0, 0
@@ -344,7 +250,7 @@ class SimpleCopyPaste(Transform):
             elif isinstance(obj, datapoints.Mask):
                 flat_sample[i] = datapoints.Mask.wrap_like(obj, output_targets[c2]["masks"])
                 c2 += 1
-            elif isinstance(obj, (datapoints.Label, datapoints.OneHotLabel)):
+            elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
                 flat_sample[i] = obj.wrap_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
                 c3 += 1
 

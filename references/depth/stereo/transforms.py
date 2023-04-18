@@ -455,7 +455,11 @@ class Resize(torch.nn.Module):
         INTERP_MODE = self._interpolation_mode_strategy()
 
         for img in images:
-            resized_images += (F.resize(img, self.resize_size, interpolation=INTERP_MODE),)
+            # We hard-code antialias=False to preserve results after we changed
+            # its default from None to True (see
+            # https://github.com/pytorch/vision/pull/7160)
+            # TODO: we could re-train the stereo models with antialias=True?
+            resized_images += (F.resize(img, self.resize_size, interpolation=INTERP_MODE, antialias=False),)
 
         for dsp in disparities:
             if dsp is not None:

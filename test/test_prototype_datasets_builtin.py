@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 import torch
+import torchvision.transforms.v2 as transforms
 
-import torchvision.prototype.transforms.utils
 from builtin_dataset_mocks import DATASET_MOCKS, parametrize_dataset_mocks
 from torch.testing._comparison import not_close_error_metas, ObjectPair, TensorLikePair
 
@@ -19,10 +19,13 @@ from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.dataloader2.graph.utils import traverse_dps
 from torchdata.datapipes.iter import ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
+from torchvision import datapoints
 from torchvision._utils import sequence_to_str
-from torchvision.prototype import datapoints, datasets, transforms
+from torchvision.prototype import datasets
+from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import EncodedImage
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
+from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 def assert_samples_equal(*args, msg=None, **kwargs):
@@ -120,7 +123,7 @@ class TestCommon:
     def test_stream_closing(self, log_session_streams, dataset_mock, config):
         def make_msg_and_close(head):
             unclosed_streams = []
-            for stream in StreamWrapper.session_streams.keys():
+            for stream in list(StreamWrapper.session_streams.keys()):
                 unclosed_streams.append(repr(stream.file_obj))
                 stream.close()
             unclosed_streams = "\n".join(unclosed_streams)
@@ -141,9 +144,7 @@ class TestCommon:
         dataset, _ = dataset_mock.load(config)
         sample = next_consume(iter(dataset))
 
-        simple_tensors = {
-            key for key, value in sample.items() if torchvision.prototype.transforms.utils.is_simple_tensor(value)
-        }
+        simple_tensors = {key for key, value in sample.items() if is_simple_tensor(value)}
 
         if simple_tensors and not any(
             isinstance(item, (datapoints.Image, datapoints.Video, EncodedImage)) for item in sample.values()
@@ -276,6 +277,6 @@ class TestUSPS:
             assert "label" in sample
 
             assert isinstance(sample["image"], datapoints.Image)
-            assert isinstance(sample["label"], datapoints.Label)
+            assert isinstance(sample["label"], Label)
 
             assert sample["image"].shape == (1, 16, 16)
