@@ -313,7 +313,7 @@ def draw_segmentation_masks(
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
-    return out.to(dtype=out_dtype)
+    return out.to(out_dtype)
 
 
 @torch.no_grad()
@@ -589,6 +589,4 @@ def _parse_colors(
     else:  # colors specifies a single color for all objects
         colors = [colors] * num_objects
 
-    colors_ = [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
-
-    return colors_
+    return [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
