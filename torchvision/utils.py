@@ -304,7 +304,7 @@ def draw_segmentation_masks(
         warnings.warn("masks doesn't contain any mask. No mask was drawn")
         return image
 
-    colors = _parse_colors(colors=colors, num_objects=num_masks)
+    colors = _parse_colors(colors, num_objects=num_masks)
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
