@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 import torch
 from torch import Tensor
@@ -16,38 +16,35 @@ from torchvision.ops import (
 )
 
 
+def _binary_cross_entropy(
+    inputs: Tensor,
+    targets: Tensor,
+    reduction: str = "mean",
+    input_is_normalized: bool = True):
+    """Returns the binary cross entropy from either normalized inputs or logits.
+
+    It would be more convenient to pass the correct cross entropy function to every function that uses it, but
+    TorchScript doesn't allow passing functions.
+
+    Args:
+        inputs: Probabilities in a tensor of an arbitrary shape.
+        targets: Targets in a tensor of the same shape as ``input``.
+        reduction: Specifies the reduction to apply to the output. ``'none'``: no reduction will be applied, ``'mean'``:
+            the sum of the output will be divided by the number of elements in the output, ``'sum'``: the output will be
+            summed.
+        input_is_normalized: If ``False``, input is logits, if ``True``, input is normalized to `0..1`.
+    """
+    if input_is_normalized:
+        return binary_cross_entropy(inputs, targets, reduction=reduction)
+    else:
+        return binary_cross_entropy_with_logits(inputs, targets, reduction=reduction)
+
+
 def box_iou_loss(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     return 1.0 - box_iou(boxes1, boxes2).diagonal()
 
 
-_iou_and_loss_functions = {
-    "iou": (box_iou, box_iou_loss),
-    "giou": (generalized_box_iou, generalized_box_iou_loss),
-    "diou": (distance_box_iou, distance_box_iou_loss),
-    "ciou": (complete_box_iou, complete_box_iou_loss),
-}
-
-
-def _get_iou_and_loss_functions(name: str) -> Tuple[Callable, Callable]:
-    """Returns functions for calculating the IoU and the IoU loss, given the IoU variant name.
-
-    Args:
-        name: Name of the IoU variant. Either "iou", "giou", "diou", or "ciou".
-
-    Returns:
-        A tuple of two functions. The first function calculates the pairwise IoU and the second function calculates the
-        elementwise loss.
-    """
-    if name not in _iou_and_loss_functions:
-        raise ValueError(f"Unknown IoU function '{name}'.")
-    iou_func, loss_func = _iou_and_loss_functions[name]
-    if not callable(iou_func):
-        raise ValueError(f"The IoU function '{name}' is not supported by the installed version of Torchvision.")
-    assert callable(loss_func)
-    return iou_func, loss_func
-
-
-def _size_compensation(targets: Tensor, image_size: Tensor) -> Tuple[Tensor, Tensor]:
+def _size_compensation(targets: Tensor, image_size: Tensor) -> Tensor:
     """Calcuates the size compensation factor for the overlap loss.
 
     The overlap losses for each target should be multiplied by the returned weight. The returned value is
@@ -66,7 +63,7 @@ def _size_compensation(targets: Tensor, image_size: Tensor) -> Tuple[Tensor, Ten
 
 
 def _pairwise_confidence_loss(
-    preds: Tensor, overlap: Tensor, bce_func: Callable, predict_overlap: Optional[float]
+    preds: Tensor, overlap: Tensor, input_is_normalized: bool, predict_overlap: Optional[float]
 ) -> Tensor:
     """Calculates the confidence loss for every pair of a foreground anchor and a target.
 
@@ -77,7 +74,7 @@ def _pairwise_confidence_loss(
     Args:
         preds: An ``[N]`` vector of predicted confidences.
         overlap: An ``[N, M]`` matrix of overlaps between all predicted and target bounding boxes.
-        bce_func: A function for calculating binary cross entropy.
+        input_is_normalized: If ``False``, input is logits, if ``True``, input is normalized to `0..1`.
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the overlap.
 
@@ -91,16 +88,17 @@ def _pairwise_confidence_loss(
         targets = torch.ones_like(preds) - predict_overlap
         # Distance-IoU may return negative "overlaps", so we have to make sure that the targets are not negative.
         targets += predict_overlap * overlap.detach().clamp(min=0)
-        return bce_func(preds, targets, reduction="none")
+        return _binary_cross_entropy(preds, targets, reduction="none", input_is_normalized=input_is_normalized)
     else:
         # When not predicting overlap, target confidence is the same for every prediction, but we should still return a
         # matrix.
         targets = torch.ones_like(preds)
-        return bce_func(preds, targets, reduction="none").unsqueeze(1).expand(overlap.shape)
+        result = _binary_cross_entropy(preds, targets, reduction="none", input_is_normalized=input_is_normalized)
+        return result.unsqueeze(1).expand(overlap.shape)
 
 
 def _foreground_confidence_loss(
-    preds: Tensor, overlap: Tensor, bce_func: Callable, predict_overlap: Optional[float]
+    preds: Tensor, overlap: Tensor, input_is_normalized: bool, predict_overlap: Optional[float]
 ) -> Tensor:
     """Calculates the sum of the confidence losses for foreground anchors and their matched targets.
 
@@ -111,7 +109,7 @@ def _foreground_confidence_loss(
     Args:
         preds: A vector of predicted confidences.
         overlap: A vector of overlaps between matched target and predicted bounding boxes.
-        bce_func: A function for calculating binary cross entropy.
+        input_is_normalized: If ``False``, input is logits, if ``True``, input is normalized to `0..1`.
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1, and 1.0 means that the target confidence is the overlap.
 
@@ -123,21 +121,21 @@ def _foreground_confidence_loss(
         targets -= predict_overlap
         # Distance-IoU may return negative "overlaps", so we have to make sure that the targets are not negative.
         targets += predict_overlap * overlap.detach().clamp(min=0)
-    return bce_func(preds, targets, reduction="sum")
+    return _binary_cross_entropy(preds, targets, reduction="sum", input_is_normalized=input_is_normalized)
 
 
-def _background_confidence_loss(preds: Tensor, bce_func: Callable) -> Tensor:
+def _background_confidence_loss(preds: Tensor, input_is_normalized: bool) -> Tensor:
     """Calculates the sum of the confidence losses for background anchors.
 
     Args:
         preds: A vector of predicted confidences for background anchors.
-        bce_func: A function for calculating binary cross entropy.
+        input_is_normalized: If ``False``, input is logits, if ``True``, input is normalized to `0..1`.
 
     Returns:
         The sum of the background confidence losses.
     """
     targets = torch.zeros_like(preds)
-    return bce_func(preds, targets, reduction="sum")
+    return _binary_cross_entropy(preds, targets, reduction="sum", input_is_normalized=input_is_normalized)
 
 
 def _target_labels_to_probs(
@@ -177,6 +175,7 @@ def _target_labels_to_probs(
     return targets
 
 
+@torch.jit.script
 @dataclass
 class Losses:
     overlap: Tensor
@@ -192,9 +191,8 @@ class YOLOLoss:
     categories, since the YOLO model does multi-label classification.
 
     Args:
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou" (default).
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -207,19 +205,14 @@ class YOLOLoss:
 
     def __init__(
         self,
-        overlap_func: Union[str, Callable] = "ciou",
+        overlap_func: str = "ciou",
         predict_overlap: Optional[float] = None,
         label_smoothing: Optional[float] = None,
         overlap_multiplier: float = 5.0,
         confidence_multiplier: float = 1.0,
         class_multiplier: float = 1.0,
     ):
-        if callable(overlap_func):
-            self._pairwise_overlap = overlap_func
-            self._elementwise_overlap_loss = lambda boxes1, boxes2: 1.0 - overlap_func(boxes1, boxes2).diagonal()
-        else:
-            self._pairwise_overlap, self._elementwise_overlap_loss = _get_iou_and_loss_functions(overlap_func)
-
+        self.overlap_func = overlap_func
         self.predict_overlap = predict_overlap
         self.label_smoothing = label_smoothing
         self.overlap_multiplier = overlap_multiplier
@@ -247,18 +240,13 @@ class YOLOLoss:
         """
         loss_shape = torch.Size([len(preds["boxes"]), len(targets["boxes"])])
 
-        if input_is_normalized:
-            bce_func = binary_cross_entropy
-        else:
-            bce_func = binary_cross_entropy_with_logits
-
         overlap = self._pairwise_overlap(preds["boxes"], targets["boxes"])
         assert overlap.shape == loss_shape
 
         overlap_loss = 1.0 - overlap
         assert overlap_loss.shape == loss_shape
 
-        confidence_loss = _pairwise_confidence_loss(preds["confidences"], overlap, bce_func, self.predict_overlap)
+        confidence_loss = _pairwise_confidence_loss(preds["confidences"], overlap, input_is_normalized, self.predict_overlap)
         assert confidence_loss.shape == loss_shape
 
         pred_probs = preds["classprobs"].unsqueeze(1)  # [N, 1, classes]
@@ -267,7 +255,10 @@ class YOLOLoss:
         )
         target_probs = target_probs.unsqueeze(0)  # [1, M, classes]
         pred_probs, target_probs = torch.broadcast_tensors(pred_probs, target_probs)
-        class_loss = bce_func(pred_probs, target_probs, reduction="none").sum(-1)
+        class_loss = _binary_cross_entropy(
+            pred_probs, target_probs, reduction="none", input_is_normalized=input_is_normalized
+        )
+        class_loss = class_loss.sum(-1)
         assert class_loss.shape == loss_shape
 
         losses = Losses(
@@ -297,23 +288,20 @@ class YOLOLoss:
         Returns:
             The final losses.
         """
-        if input_is_normalized:
-            bce_func = binary_cross_entropy
-        else:
-            bce_func = binary_cross_entropy_with_logits
-
         overlap_loss = self._elementwise_overlap_loss(targets["boxes"], preds["boxes"])
         overlap = 1.0 - overlap_loss
         overlap_loss = (overlap_loss * _size_compensation(targets["boxes"], image_size)).sum()
 
-        confidence_loss = _foreground_confidence_loss(preds["confidences"], overlap, bce_func, self.predict_overlap)
-        confidence_loss += _background_confidence_loss(preds["bg_confidences"], bce_func)
+        confidence_loss = _foreground_confidence_loss(preds["confidences"], overlap, input_is_normalized, self.predict_overlap)
+        confidence_loss += _background_confidence_loss(preds["bg_confidences"], input_is_normalized)
 
         pred_probs = preds["classprobs"]
         target_probs = _target_labels_to_probs(
             targets["labels"], pred_probs.shape[-1], pred_probs.dtype, self.label_smoothing
         )
-        class_loss = bce_func(pred_probs, target_probs, reduction="sum")
+        class_loss = _binary_cross_entropy(
+            pred_probs, target_probs, reduction="sum", input_is_normalized=input_is_normalized
+        )
 
         losses = Losses(
             overlap_loss * self.overlap_multiplier,
@@ -322,3 +310,51 @@ class YOLOLoss:
         )
 
         return losses
+
+    def _pairwise_overlap(self, boxes1: Tensor, boxes2: Tensor) -> Tensor:
+        """Returns the pairwise intersection-over-union values between two sets of boxes.
+
+        Uses the IoU function specified in ``self.overlap_func``. It would be better to save the function in a variable,
+        but TorchScript doesn't allow this.
+
+        Args:
+            boxes1: first set of boxes
+            boxes2: second set of boxes
+
+        Returns:
+            A matrix containing the pairwise IoU values for every element in ``boxes1`` and ``boxes2``.
+        """
+        if self.overlap_func == "iou":
+            return box_iou(boxes1, boxes2)
+        elif self.overlap_func == "giou":
+            return generalized_box_iou(boxes1, boxes2)
+        elif self.overlap_func == "diou":
+            return distance_box_iou(boxes1, boxes2)
+        elif self.overlap_func == "ciou":
+            return complete_box_iou(boxes1, boxes2)
+        else:
+            raise ValueError(f"Unknown IoU function '{self.overlap_func}'.")
+
+    def _elementwise_overlap_loss(self, boxes1: Tensor, boxes2: Tensor) -> Tensor:
+        """Returns the elementwise intersection-over-union losses between two sets of boxes.
+
+        Uses the IoU loss function specified in ``self.overlap_func``. It would be better to save the function in a
+        variable, but TorchScript doesn't allow this.
+
+        Args:
+            boxes1: first set of boxes
+            boxes2: second set of boxes
+
+        Returns:
+            A vector containing the IoU losses between corresponding elements in ``boxes1`` and ``boxes2``.
+        """
+        if self.overlap_func == "iou":
+            return box_iou_loss(boxes1, boxes2)
+        elif self.overlap_func == "giou":
+            return generalized_box_iou_loss(boxes1, boxes2)
+        elif self.overlap_func == "diou":
+            return distance_box_iou_loss(boxes1, boxes2)
+        elif self.overlap_func == "ciou":
+            return complete_box_iou_loss(boxes1, boxes2)
+        else:
+            raise ValueError(f"Unknown IoU function '{self.overlap_func}'.")

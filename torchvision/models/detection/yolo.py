@@ -11,13 +11,9 @@ from .._api import register_model, Weights, WeightsEnum
 from .._utils import _ovewrite_value_param
 from ..yolo import YOLOV4Backbone
 from .backbone_utils import _validate_trainable_layers
-from .yolo_networks import DarknetNetwork, YOLOV4Network
+from .yolo_networks import DarknetNetwork, YOLOV4Network, PRED, TARGET, TARGETS
 
-IMAGES = Union[Tuple[Tensor, ...], List[Tensor]]
-PRED = Dict[str, Any]
-PREDS = Union[Tuple[PRED, ...], List[PRED]]
-TARGET = Dict[str, Any]
-TARGETS = Union[Tuple[TARGET, ...], List[TARGET]]
+IMAGES = List[Tensor]  # TorchScript doesn't allow a tuple.
 
 
 class YOLO(nn.Module):

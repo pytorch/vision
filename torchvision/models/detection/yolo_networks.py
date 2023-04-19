@@ -25,15 +25,15 @@ from ..yolo import (
     YOLOV7Backbone,
 )
 from .anchor_utils import global_xy
-from .target_matching import HighestIoUMatching, IoUThresholdMatching, ShapeMatching, SimOTAMatching, SizeRatioMatching
+from .target_matching import HighestIoUMatching, IoUThresholdMatching, PRIOR_SHAPES, SimOTAMatching, SizeRatioMatching
 from .yolo_loss import YOLOLoss
 
-CONFIG = Dict[str, Any]
+DARKNET_CONFIG = Dict[str, Any]
 CREATE_LAYER_OUTPUT = Tuple[nn.Module, int]  # layer, num_outputs
-PRED = Dict[str, Any]
-PREDS = Union[Tuple[PRED, ...], List[PRED]]
-TARGET = Dict[str, Any]
-TARGETS = Union[Tuple[TARGET, ...], List[TARGET]]
+PRED = Dict[str, Tensor]
+PREDS = List[PRED]  # TorchScript doesn't allow a tuple
+TARGET = Dict[str, Tensor]
+TARGETS = List[TARGET]  # TorchScript doesn't allow a tuple
 NETWORK_OUTPUT = Tuple[List[Tensor], List[Tensor], List[int]]  # detections, losses, hits
 
 
@@ -45,7 +45,7 @@ class DetectionLayer(nn.Module):
     Args:
         num_classes: Number of different classes that this layer predicts.
         prior_shapes: A list of prior box dimensions for this layer, used for scaling the predicted dimensions. The list
-            should contain (width, height) tuples in the network input resolution.
+            should contain [width, height] pairs in the network input resolution.
         matching_func: The matching algorithm to be used for assigning targets to anchors.
         loss_func: ``YOLOLoss`` object for calculating the losses.
         xy_scale: Eliminate "grid sensitivity" by scaling the box coordinates by this factor. Using a value > 1.0 helps
@@ -59,7 +59,7 @@ class DetectionLayer(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        prior_shapes: List[Tuple[int, int]],
+        prior_shapes: PRIOR_SHAPES,
         matching_func: Callable,
         loss_func: YOLOLoss,
         xy_scale: float = 1.0,
@@ -98,7 +98,7 @@ class DetectionLayer(nn.Module):
         """
         batch_size, num_features, height, width = x.shape
         num_attrs = self.num_classes + 5
-        anchors_per_cell = int(torch.div(num_features, num_attrs, rounding_mode="floor"))
+        anchors_per_cell = num_features // num_attrs
         if anchors_per_cell != len(self.prior_shapes):
             raise ValueError(
                 "The model predicts {} bounding boxes per spatial location, but {} prior box dimensions are defined "
@@ -166,44 +166,40 @@ class DetectionLayer(nn.Module):
         if (len(targets) != batch_size) or (len(return_preds) != batch_size):
             raise ValueError("Different batch size for predictions and targets.")
 
-        matches = []
+        # Creating lists that are concatenated in the end will confuse TorchScript compilation. Instead, we'll create
+        # tensors and concatenate new matches immediately.
+        pred_boxes = torch.empty((0, 4), device=return_preds[0]["boxes"].device)
+        pred_confidences = torch.empty(0, device=return_preds[0]["confidences"].device)
+        pred_bg_confidences = torch.empty(0, device=return_preds[0]["confidences"].device)
+        pred_classprobs = torch.empty((0, self.num_classes), device=return_preds[0]["classprobs"].device)
+        target_boxes = torch.empty((0, 4), device=targets[0]["boxes"].device)
+        target_labels = torch.empty(0, dtype=torch.int64, device=targets[0]["labels"].device)
+
         for image_preds, image_return_preds, image_targets in zip(preds, return_preds, targets):
             if image_targets["boxes"].shape[0] > 0:
                 pred_selector, background_selector, target_selector = self.matching_func(
                     image_preds, image_targets, image_size
                 )
-                matched_preds = {
-                    "boxes": image_return_preds["boxes"][pred_selector],
-                    "confidences": image_return_preds["confidences"][pred_selector],
-                    "bg_confidences": image_return_preds["confidences"][background_selector],
-                    "classprobs": image_return_preds["classprobs"][pred_selector],
-                }
-                matched_targets = {
-                    "boxes": image_targets["boxes"][target_selector],
-                    "labels": image_targets["labels"][target_selector],
-                }
+                pred_boxes = torch.cat((pred_boxes, image_return_preds["boxes"][pred_selector]))
+                pred_confidences = torch.cat((pred_confidences, image_return_preds["confidences"][pred_selector]))
+                pred_bg_confidences = torch.cat(
+                    (pred_bg_confidences, image_return_preds["confidences"][background_selector])
+                )
+                pred_classprobs = torch.cat((pred_classprobs, image_return_preds["classprobs"][pred_selector]))
+                target_boxes = torch.cat((target_boxes, image_targets["boxes"][target_selector]))
+                target_labels = torch.cat((target_labels, image_targets["labels"][target_selector]))
             else:
-                matched_preds = {
-                    "boxes": torch.empty((0, 4), device=image_return_preds["boxes"].device),
-                    "confidences": torch.empty(0, device=image_return_preds["confidences"].device),
-                    "bg_confidences": image_return_preds["confidences"].flatten(),
-                    "classprobs": torch.empty((0, self.num_classes), device=image_return_preds["classprobs"].device),
-                }
-                matched_targets = {
-                    "boxes": torch.empty((0, 4), device=image_targets["boxes"].device),
-                    "labels": torch.empty(0, dtype=torch.int64, device=image_targets["labels"].device),
-                }
-            matches.append((matched_preds, matched_targets))
+                pred_bg_confidences = torch.cat((pred_bg_confidences, image_return_preds["confidences"].flatten()))
 
         matched_preds = {
-            "boxes": torch.cat(tuple(m[0]["boxes"] for m in matches)),
-            "confidences": torch.cat(tuple(m[0]["confidences"] for m in matches)),
-            "bg_confidences": torch.cat(tuple(m[0]["bg_confidences"] for m in matches)),
-            "classprobs": torch.cat(tuple(m[0]["classprobs"] for m in matches)),
+            "boxes": pred_boxes,
+            "confidences": pred_confidences,
+            "bg_confidences": pred_bg_confidences,
+            "classprobs": pred_classprobs,
         }
         matched_targets = {
-            "boxes": torch.cat(tuple(m[1]["boxes"] for m in matches)),
-            "labels": torch.cat(tuple(m[1]["labels"] for m in matches)),
+            "boxes": target_boxes,
+            "labels": target_labels,
         }
         return matched_preds, matched_targets
 
@@ -243,14 +239,14 @@ class DetectionLayer(nn.Module):
 
 
 def create_detection_layer(
-    prior_shapes: Sequence[Tuple[int, int]],
-    prior_shape_idxs: Sequence[int],
+    prior_shapes: PRIOR_SHAPES,
+    prior_shape_idxs: List[int],
     matching_algorithm: Optional[str] = None,
     matching_threshold: Optional[float] = None,
     spatial_range: float = 5.0,
     size_range: float = 4.0,
     ignore_bg_threshold: float = 0.7,
-    overlap_func: Union[str, Callable] = "ciou",
+    overlap_func: str = "ciou",
     predict_overlap: Optional[float] = None,
     label_smoothing: Optional[float] = None,
     overlap_loss_multiplier: float = 5.0,
@@ -262,7 +258,7 @@ def create_detection_layer(
 
     Args:
         prior_shapes: A list of all the prior box dimensions, used for scaling the predicted dimensions and possibly for
-            matching the targets to the anchors. The list should contain (width, height) tuples in the network input
+            matching the targets to the anchors. The list should contain [width, height] pairs in the network input
             resolution.
         prior_shape_idxs: List of indices to ``prior_shapes`` that is used to select the (usually 3) prior shapes that
             this layer uses.
@@ -278,9 +274,8 @@ def create_detection_layer(
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the corresponding anchor
             has IoU with some target greater than this threshold, the predictor will not be taken into account when
             calculating the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou" (default).
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -297,7 +292,7 @@ def create_detection_layer(
             height are scaled up so that the maximum value is four times the anchor dimension. This is used by the
             Darknet configurations of Scaled-YOLOv4.
     """
-    matching_func: Union[ShapeMatching, SimOTAMatching]
+    matching_func: Callable
     if matching_algorithm == "simota":
         loss_func = YOLOLoss(
             overlap_func, None, None, overlap_loss_multiplier, confidence_loss_multiplier, class_loss_multiplier
@@ -328,82 +323,101 @@ def create_detection_layer(
     return DetectionLayer(prior_shapes=layer_shapes, matching_func=matching_func, loss_func=loss_func, **kwargs)
 
 
-def run_detection(
-    detection_layer: DetectionLayer,
-    layer_input: Tensor,
-    targets: Optional[TARGETS],
-    image_size: Tensor,
-    detections: List[Tensor],
-    losses: List[Tensor],
-    hits: List[int],
-) -> None:
-    """Runs the detection layer on the inputs and appends the output to the ``detections`` list.
+class DetectionStage(nn.Module):
+    """This is a convenience class for running a detection layer.
 
-    If ``targets`` is given, also calculates the losses and appends to the ``losses`` list.
+    It might be cleaner to implement this as a function, but TorchScript allows only specific types in function
+    arguments, not modules.
+    """
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__()
+        self.detection_layer = create_detection_layer(**kwargs)
+
+    def forward(
+        self,
+        layer_input: Tensor,
+        targets: Optional[TARGETS],
+        image_size: Tensor,
+        detections: List[Tensor],
+        losses: List[Tensor],
+        hits: List[int],
+    ) -> None:
+        """Runs the detection layer on the inputs and appends the output to the ``detections`` list.
+
+        If ``targets`` is given, also calculates the losses and appends to the ``losses`` list.
+
+        Args:
+            layer_input: Input to the detection layer.
+            targets: List of training targets for each image.
+            image_size: Width and height in a vector that defines the scale of the target coordinates.
+            detections: A list where a tensor containing the detections will be appended to.
+            losses: A list where a tensor containing the losses will be appended to, if ``targets`` is given.
+            hits: A list where the number of targets that matched this layer will be appended to, if ``targets`` is given.
+        """
+        output, preds = self.detection_layer(layer_input, image_size)
+        detections.append(output)
+
+        if targets is not None:
+            layer_losses, layer_hits = self.detection_layer.calculate_losses(preds, targets, image_size)
+            losses.append(layer_losses)
+            hits.append(layer_hits)
+
+
+class DetectionStageWithAux(nn.Module):
+    """This class represents a combination of a lead and an auxiliary detection layer.
 
     Args:
-        detection_layer: The detection layer.
-        layer_input: Input to the detection layer.
-        targets: List of training targets for each image.
-        image_size: Width and height in a vector that defines the scale of the target coordinates.
-        detections: A list where a tensor containing the detections will be appended to.
-        losses: A list where a tensor containing the losses will be appended to, if ``targets`` is given.
-        hits: A list where the number of targets that matched this layer will be appended to, if ``targets`` is given.
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+            area centered at the target. This parameter specifies `N` for the lead head.
+        aux_spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+            area centered at the target. This parameter specifies `N` for the auxiliary head.
+        aux_weight: Weight for the loss from the auxiliary head.
     """
-    output, preds = detection_layer(layer_input, image_size)
-    detections.append(output)
+    def __init__(self, spatial_range: float = 5.0, aux_spatial_range: float = 3.0, aux_weight: float = 0.25, **kwargs: Any) -> None:
+        self.detection_layer = create_detection_layer(spatial_range=spatial_range, **kwargs)
+        self.aux_detection_layer = create_detection_layer(spatial_range=aux_spatial_range, **kwargs)
+        self.aux_weight = aux_weight
 
-    if targets is not None:
-        layer_losses, layer_hits = detection_layer.calculate_losses(preds, targets, image_size)
-        losses.append(layer_losses)
-        hits.append(layer_hits)
+    def forward(
+        self,
+        layer_input: Tensor,
+        aux_input: Tensor,
+        targets: Optional[TARGETS],
+        image_size: Tensor,
+        detections: List[Tensor],
+        losses: List[Tensor],
+        hits: List[int],
+    ) -> None:
+        """Runs the detection layer and the auxiliary detection layer on their respective inputs and appends the outputs
+        to the ``detections`` list.
 
+        If ``targets`` is given, also calculates the losses and appends to the ``losses`` list.
 
-def run_detection_with_aux_head(
-    detection_layer: DetectionLayer,
-    aux_detection_layer: DetectionLayer,
-    layer_input: Tensor,
-    aux_input: Tensor,
-    targets: Optional[TARGETS],
-    image_size: Tensor,
-    aux_weight: float,
-    detections: List[Tensor],
-    losses: List[Tensor],
-    hits: List[int],
-) -> None:
-    """Runs the detection layer on the inputs and appends the output to the ``detections`` list.
+        Args:
+            layer_input: Input to the lead detection layer.
+            aux_input: Input to the auxiliary detection layer.
+            targets: List of training targets for each image.
+            image_size: Width and height in a vector that defines the scale of the target coordinates.
+            detections: A list where a tensor containing the detections will be appended to.
+            losses: A list where a tensor containing the losses will be appended to, if ``targets`` is given.
+            hits: A list where the number of targets that matched this layer will be appended to, if ``targets`` is given.
+        """
+        output, preds = self.detection_layer(layer_input, image_size)
+        detections.append(output)
 
-    If ``targets`` is given, also runs the auxiliary detection layer on the auxiliary inputs, calculates the losses, and
-    appends the losses to the ``losses`` list.
+        if targets is not None:
+            # Match lead head predictions to targets and calculate losses from lead head outputs.
+            layer_losses, layer_hits = self.detection_layer.calculate_losses(preds, targets, image_size)
+            losses.append(layer_losses)
+            hits.append(layer_hits)
 
-    Args:
-        detection_layer: The lead detection layer.
-        aux_detection_layer: The auxiliary detection layer.
-        layer_input: Input to the lead detection layer.
-        aux_input: Input to the auxiliary detection layer.
-        targets: List of training targets for each image.
-        image_size: Width and height in a vector that defines the scale of the target coordinates.
-        aux_weight: Weight of the auxiliary loss.
-        detections: A list where a tensor containing the detections will be appended to.
-        losses: A list where a tensor containing the losses will be appended to, if ``targets`` is given.
-        hits: A list where the number of targets that matched this layer will be appended to, if ``targets`` is given.
-    """
-    output, preds = detection_layer(layer_input, image_size)
-    detections.append(output)
-
-    if targets is not None:
-        # Match lead head predictions to targets and calculate losses from lead head outputs.
-        layer_losses, layer_hits = detection_layer.calculate_losses(preds, targets, image_size)
-        losses.append(layer_losses)
-        hits.append(layer_hits)
-
-        # Match lead head predictions to targets and calculate losses from auxiliary head outputs.
-        _, aux_preds = aux_detection_layer(aux_input, image_size)
-        layer_losses, layer_hits = aux_detection_layer.calculate_losses(
-            preds, targets, image_size, loss_preds=aux_preds
-        )
-        losses.append(layer_losses * aux_weight)
-        hits.append(layer_hits)
+            # Match lead head predictions to targets and calculate losses from auxiliary head outputs.
+            _, aux_preds = self.aux_detection_layer(aux_input, image_size)
+            layer_losses, layer_hits = self.aux_detection_layer.calculate_losses(
+                preds, targets, image_size, loss_preds=aux_preds
+            )
+            losses.append(layer_losses * self.aux_weight)
+            hits.append(layer_hits)
 
 
 @torch.jit.script
@@ -437,10 +451,10 @@ class YOLOV4TinyNetwork(nn.Module):
             "linear", or "none".
         normalization: Which layer normalization to use. Can be "batchnorm", "groupnorm", or "none".
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
-            matching the targets to the anchors. The list should contain (width, height) tuples in the network input
-            resolution. There should be `3N` tuples, where `N` defines the number of anchors per spatial location. They
-            are assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning
-            that you typically want to sort the shapes from the smallest to the largest.
+            matching the targets to the anchors. The list should contain [width, height] pairs in the network input
+            resolution. There should be `3N` pairs, where `N` is the number of anchors per spatial location. They are
+            assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning that
+            you typically want to sort the shapes from the smallest to the largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
@@ -453,9 +467,8 @@ class YOLOV4TinyNetwork(nn.Module):
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the prior shape has IoU
             with some target greater than this threshold, the predictor will not be taken into account when calculating
             the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou" (default).
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -475,7 +488,7 @@ class YOLOV4TinyNetwork(nn.Module):
         width: int = 32,
         activation: Optional[str] = "leaky",
         normalization: Optional[str] = "batchnorm",
-        prior_shapes: Optional[List[Tuple[int, int]]] = None,
+        prior_shapes: Optional[PRIOR_SHAPES] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
@@ -483,15 +496,15 @@ class YOLOV4TinyNetwork(nn.Module):
         # By default use the prior shapes that have been learned from the COCO data.
         if prior_shapes is None:
             prior_shapes = [
-                (12, 16),
-                (19, 36),
-                (40, 28),
-                (36, 75),
-                (76, 55),
-                (72, 146),
-                (142, 110),
-                (192, 243),
-                (459, 401),
+                [12, 16],
+                [19, 36],
+                [40, 28],
+                [36, 75],
+                [76, 55],
+                [72, 146],
+                [142, 110],
+                [192, 243],
+                [459, 401],
             ]
             anchors_per_cell = 3
         else:
@@ -511,10 +524,14 @@ class YOLOV4TinyNetwork(nn.Module):
         def outputs(in_channels: int) -> nn.Module:
             return nn.Conv2d(in_channels, num_outputs, kernel_size=1, stride=1, bias=True)
 
-        def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
+        def detect(prior_shape_idxs: Sequence[int]) -> DetectionStage:
             assert prior_shapes is not None
-            return create_detection_layer(
-                prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
+            return DetectionStage(
+                prior_shapes=prior_shapes,
+                prior_shape_idxs=list(prior_shape_idxs),
+                num_classes=num_classes,
+                input_is_normalized=False,
+                **kwargs,
             )
 
         self.backbone = backbone or YOLOV4TinyBackbone(width=width, activation=activation, normalization=normalization)
@@ -556,9 +573,9 @@ class YOLOV4TinyNetwork(nn.Module):
         x = torch.cat((self.upsample4(p4), c3), dim=1)
         p3 = self.fpn3(x)
 
-        run_detection(self.detect5, self.out5(p5), targets, image_size, detections, losses, hits)
-        run_detection(self.detect4, self.out4(p4), targets, image_size, detections, losses, hits)
-        run_detection(self.detect3, self.out3(p3), targets, image_size, detections, losses, hits)
+        self.detect5(self.out5(p5), targets, image_size, detections, losses, hits)
+        self.detect4(self.out4(p4), targets, image_size, detections, losses, hits)
+        self.detect3(self.out3(p3), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -573,10 +590,10 @@ class YOLOV4Network(nn.Module):
             "linear", or "none".
         normalization: Which layer normalization to use. Can be "batchnorm", "groupnorm", or "none".
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
-            matching the targets to the anchors. The list should contain (width, height) tuples in the network input
-            resolution. There should be `3N` tuples, where `N` defines the number of anchors per spatial location. They
-            are assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning
-            that you typically want to sort the shapes from the smallest to the largest.
+            matching the targets to the anchors. The list should contain [width, height] pairs in the network input
+            resolution. There should be `3N` pairs, where `N` is the number of anchors per spatial location. They are
+            assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning that
+            you typically want to sort the shapes from the smallest to the largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
@@ -589,9 +606,8 @@ class YOLOV4Network(nn.Module):
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the prior shape has IoU
             with some target greater than this threshold, the predictor will not be taken into account when calculating
             the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou" (default).
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -611,7 +627,7 @@ class YOLOV4Network(nn.Module):
         widths: Sequence[int] = (32, 64, 128, 256, 512, 1024),
         activation: Optional[str] = "silu",
         normalization: Optional[str] = "batchnorm",
-        prior_shapes: Optional[List[Tuple[int, int]]] = None,
+        prior_shapes: Optional[PRIOR_SHAPES] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
@@ -619,15 +635,15 @@ class YOLOV4Network(nn.Module):
         # By default use the prior shapes that have been learned from the COCO data.
         if prior_shapes is None:
             prior_shapes = [
-                (12, 16),
-                (19, 36),
-                (40, 28),
-                (36, 75),
-                (76, 55),
-                (72, 146),
-                (142, 110),
-                (192, 243),
-                (459, 401),
+                [12, 16],
+                [19, 36],
+                [40, 28],
+                [36, 75],
+                [76, 55],
+                [72, 146],
+                [142, 110],
+                [192, 243],
+                [459, 401],
             ]
             anchors_per_cell = 3
         else:
@@ -665,10 +681,14 @@ class YOLOV4Network(nn.Module):
         def downsample(in_channels: int, out_channels: int) -> nn.Module:
             return Conv(in_channels, out_channels, kernel_size=3, stride=2, activation=activation, norm=normalization)
 
-        def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
+        def detect(prior_shape_idxs: Sequence[int]) -> DetectionStage:
             assert prior_shapes is not None
-            return create_detection_layer(
-                prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
+            return DetectionStage(
+                prior_shapes=prior_shapes,
+                prior_shape_idxs=list(prior_shape_idxs),
+                num_classes=num_classes,
+                input_is_normalized=False,
+                **kwargs,
             )
 
         if backbone is not None:
@@ -723,9 +743,9 @@ class YOLOV4Network(nn.Module):
         x = torch.cat((self.downsample4(n4), c5), dim=1)
         n5 = self.pan5(x)
 
-        run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
-        run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
-        run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
+        self.detect3(self.out3(n3), targets, image_size, detections, losses, hits)
+        self.detect4(self.out4(n4), targets, image_size, detections, losses, hits)
+        self.detect5(self.out5(n5), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -740,10 +760,10 @@ class YOLOV4P6Network(nn.Module):
             "linear", or "none".
         normalization: Which layer normalization to use. Can be "batchnorm", "groupnorm", or "none".
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
-            matching the targets to the anchors. The list should contain (width, height) tuples in the network input
-            resolution. There should be `3N` tuples, where `N` defines the number of anchors per spatial location. They
-            are assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning
-            that you typically want to sort the shapes from the smallest to the largest.
+            matching the targets to the anchors. The list should contain [width, height] pairs in the network input
+            resolution. There should be `4N` pairs, where `N` is the number of anchors per spatial location. They are
+            assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning that
+            you typically want to sort the shapes from the smallest to the largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
@@ -756,9 +776,8 @@ class YOLOV4P6Network(nn.Module):
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the prior shape has IoU
             with some target greater than this threshold, the predictor will not be taken into account when calculating
             the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou" (default).
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -778,7 +797,7 @@ class YOLOV4P6Network(nn.Module):
         widths: Sequence[int] = (32, 64, 128, 256, 512, 1024, 1024),
         activation: Optional[str] = "silu",
         normalization: Optional[str] = "batchnorm",
-        prior_shapes: Optional[List[Tuple[int, int]]] = None,
+        prior_shapes: Optional[PRIOR_SHAPES] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
@@ -786,22 +805,22 @@ class YOLOV4P6Network(nn.Module):
         # By default use the prior shapes that have been learned from the COCO data.
         if prior_shapes is None:
             prior_shapes = [
-                (13, 17),
-                (31, 25),
-                (24, 51),
-                (61, 45),
-                (61, 45),
-                (48, 102),
-                (119, 96),
-                (97, 189),
-                (97, 189),
-                (217, 184),
-                (171, 384),
-                (324, 451),
-                (324, 451),
-                (545, 357),
-                (616, 618),
-                (1024, 1024),
+                [13, 17],
+                [31, 25],
+                [24, 51],
+                [61, 45],
+                [61, 45],
+                [48, 102],
+                [119, 96],
+                [97, 189],
+                [97, 189],
+                [217, 184],
+                [171, 384],
+                [324, 451],
+                [324, 451],
+                [545, 357],
+                [616, 618],
+                [1024, 1024],
             ]
             anchors_per_cell = 4
         else:
@@ -839,10 +858,14 @@ class YOLOV4P6Network(nn.Module):
         def downsample(in_channels: int, out_channels: int) -> nn.Module:
             return Conv(in_channels, out_channels, kernel_size=3, stride=2, activation=activation, norm=normalization)
 
-        def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
+        def detect(prior_shape_idxs: Sequence[int]) -> DetectionStage:
             assert prior_shapes is not None
-            return create_detection_layer(
-                prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
+            return DetectionStage(
+                prior_shapes=prior_shapes,
+                prior_shape_idxs=list(prior_shape_idxs),
+                num_classes=num_classes,
+                input_is_normalized=False,
+                **kwargs,
             )
 
         if backbone is not None:
@@ -913,10 +936,10 @@ class YOLOV4P6Network(nn.Module):
         x = torch.cat((self.downsample5(n5), c6), dim=1)
         n6 = self.pan6(x)
 
-        run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
-        run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
-        run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
-        run_detection(self.detect6, self.out6(n6), targets, image_size, detections, losses, hits)
+        self.detect3(self.out3(n3), targets, image_size, detections, losses, hits)
+        self.detect4(self.out4(n4), targets, image_size, detections, losses, hits)
+        self.detect5(self.out5(n5), targets, image_size, detections, losses, hits)
+        self.detect6(self.out6(n6), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -936,10 +959,10 @@ class YOLOV5Network(nn.Module):
             "linear", or "none".
         normalization: Which layer normalization to use. Can be "batchnorm", "groupnorm", or "none".
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
-            matching the targets to the anchors. The list should contain (width, height) tuples in the network input
-            resolution. There should be `3N` tuples, where `N` defines the number of anchors per spatial location. They
-            are assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning
-            that you typically want to sort the shapes from the smallest to the largest.
+            matching the targets to the anchors. The list should contain [width, height] pairs in the network input
+            resolution. There should be `3N` pairs, where `N` is the number of anchors per spatial location. They are
+            assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning that
+            you typically want to sort the shapes from the smallest to the largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
@@ -952,9 +975,8 @@ class YOLOV5Network(nn.Module):
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the prior shape has IoU
             with some target greater than this threshold, the predictor will not be taken into account when calculating
             the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou" (default).
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -975,7 +997,7 @@ class YOLOV5Network(nn.Module):
         depth: int = 3,
         activation: Optional[str] = "silu",
         normalization: Optional[str] = "batchnorm",
-        prior_shapes: Optional[List[Tuple[int, int]]] = None,
+        prior_shapes: Optional[PRIOR_SHAPES] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
@@ -983,15 +1005,15 @@ class YOLOV5Network(nn.Module):
         # By default use the prior shapes that have been learned from the COCO data.
         if prior_shapes is None:
             prior_shapes = [
-                (12, 16),
-                (19, 36),
-                (40, 28),
-                (36, 75),
-                (76, 55),
-                (72, 146),
-                (142, 110),
-                (192, 243),
-                (459, 401),
+                [12, 16],
+                [19, 36],
+                [40, 28],
+                [36, 75],
+                [76, 55],
+                [72, 146],
+                [142, 110],
+                [192, 243],
+                [459, 401],
             ]
             anchors_per_cell = 3
         else:
@@ -1023,10 +1045,14 @@ class YOLOV5Network(nn.Module):
                 activation=activation,
             )
 
-        def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
+        def detect(prior_shape_idxs: Sequence[int]) -> DetectionStage:
             assert prior_shapes is not None
-            return create_detection_layer(
-                prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
+            return DetectionStage(
+                prior_shapes=prior_shapes,
+                prior_shape_idxs=list(prior_shape_idxs),
+                num_classes=num_classes,
+                input_is_normalized=False,
+                **kwargs,
             )
 
         self.backbone = backbone or YOLOV5Backbone(
@@ -1083,9 +1109,9 @@ class YOLOV5Network(nn.Module):
         x = torch.cat((self.downsample4(n4), p5), dim=1)
         n5 = self.pan5(x)
 
-        run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
-        run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
-        run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
+        self.detect3(self.out3(n3), targets, image_size, detections, losses, hits)
+        self.detect4(self.out4(n4), targets, image_size, detections, losses, hits)
+        self.detect5(self.out5(n5), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -1100,24 +1126,26 @@ class YOLOV7Network(nn.Module):
             "linear", or "none".
         normalization: Which layer normalization to use. Can be "batchnorm", "groupnorm", or "none".
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
-            matching the targets to the anchors. The list should contain (width, height) tuples in the network input
-            resolution. There should be `3N` tuples, where `N` defines the number of anchors per spatial location. They
-            are assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning
-            that you typically want to sort the shapes from the smallest to the largest.
-        aux_weight: Weight for the loss from the auxiliary heads.
+            matching the targets to the anchors. The list should contain [width, height] pairs in the network input
+            resolution. There should be `4N` pairs, where `N` is the number of anchors per spatial location. They are
+            assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning that
+            you typically want to sort the shapes from the smallest to the largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+            area centered at the target. This parameter specifies `N` for the lead head.
+        aux_spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+            area centered at the target. This parameter specifies `N` for the auxiliary head.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the prior shape has IoU
             with some target greater than this threshold, the predictor will not be taken into account when calculating
             the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou" (default).
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -1128,6 +1156,7 @@ class YOLOV7Network(nn.Module):
         class_loss_multiplier: Classification loss will be scaled by this value.
         xy_scale: Eliminate "grid sensitivity" by scaling the box coordinates by this factor. Using a value > 1.0 helps
             to produce coordinate values close to one.
+        aux_weight: Weight for the loss from the auxiliary heads.
     """
 
     def __init__(
@@ -1137,33 +1166,30 @@ class YOLOV7Network(nn.Module):
         widths: Sequence[int] = (64, 128, 256, 512, 768, 1024),
         activation: Optional[str] = "silu",
         normalization: Optional[str] = "batchnorm",
-        prior_shapes: Optional[List[Tuple[int, int]]] = None,
-        aux_weight: float = 0.25,
+        prior_shapes: Optional[PRIOR_SHAPES] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
 
-        self.aux_weight = aux_weight
-
         # By default use the prior shapes that have been learned from the COCO data.
         if prior_shapes is None:
             prior_shapes = [
-                (13, 17),
-                (31, 25),
-                (24, 51),
-                (61, 45),
-                (61, 45),
-                (48, 102),
-                (119, 96),
-                (97, 189),
-                (97, 189),
-                (217, 184),
-                (171, 384),
-                (324, 451),
-                (324, 451),
-                (545, 357),
-                (616, 618),
-                (1024, 1024),
+                [13, 17],
+                [31, 25],
+                [24, 51],
+                [61, 45],
+                [61, 45],
+                [48, 102],
+                [119, 96],
+                [97, 189],
+                [97, 189],
+                [217, 184],
+                [171, 384],
+                [324, 451],
+                [324, 451],
+                [545, 357],
+                [616, 618],
+                [1024, 1024],
             ]
             anchors_per_cell = 4
         else:
@@ -1204,12 +1230,11 @@ class YOLOV7Network(nn.Module):
         def downsample(in_channels: int, out_channels: int) -> nn.Module:
             return Conv(in_channels, out_channels, kernel_size=3, stride=2, activation=activation, norm=normalization)
 
-        def detect(prior_shape_idxs: Sequence[int], range: float) -> DetectionLayer:
+        def detect(prior_shape_idxs: Sequence[int]) -> DetectionStageWithAux:
             assert prior_shapes is not None
-            return create_detection_layer(
-                prior_shapes,
-                prior_shape_idxs,
-                spatial_range=range,
+            return DetectionStageWithAux(
+                prior_shapes=prior_shapes,
+                prior_shape_idxs=list(prior_shape_idxs),
                 num_classes=num_classes,
                 input_is_normalized=False,
                 **kwargs,
@@ -1259,14 +1284,10 @@ class YOLOV7Network(nn.Module):
         self.out6 = out(w6 // 2, w6)
         self.aux_out6 = out(w6 // 2, w6 + (w6 // 4))
 
-        self.detect3 = detect(range(0, anchors_per_cell), 5.0)
-        self.aux_detect3 = detect(range(0, anchors_per_cell), 3.0)
-        self.detect4 = detect(range(anchors_per_cell, anchors_per_cell * 2), 5.0)
-        self.aux_detect4 = detect(range(anchors_per_cell, anchors_per_cell * 2), 3.0)
-        self.detect5 = detect(range(anchors_per_cell * 2, anchors_per_cell * 3), 5.0)
-        self.aux_detect5 = detect(range(anchors_per_cell * 2, anchors_per_cell * 3), 3.0)
-        self.detect6 = detect(range(anchors_per_cell * 3, anchors_per_cell * 4), 5.0)
-        self.aux_detect6 = detect(range(anchors_per_cell * 3, anchors_per_cell * 4), 3.0)
+        self.detect3 = detect(range(0, anchors_per_cell))
+        self.detect4 = detect(range(anchors_per_cell, anchors_per_cell * 2))
+        self.detect5 = detect(range(anchors_per_cell * 2, anchors_per_cell * 3))
+        self.detect6 = detect(range(anchors_per_cell * 3, anchors_per_cell * 4))
 
     def forward(self, x: Tensor, targets: Optional[TARGETS] = None) -> NETWORK_OUTPUT:
         detections: List[Tensor] = []  # Outputs from detection layers
@@ -1291,54 +1312,10 @@ class YOLOV7Network(nn.Module):
         x = torch.cat((self.downsample5(n5), c6), dim=1)
         n6 = self.pan6(x)
 
-        run_detection_with_aux_head(
-            self.detect3,
-            self.aux_detect3,
-            self.out3(n3),
-            self.aux_out3(n3),
-            targets,
-            image_size,
-            self.aux_weight,
-            detections,
-            losses,
-            hits,
-        )
-        run_detection_with_aux_head(
-            self.detect4,
-            self.aux_detect4,
-            self.out4(n4),
-            self.aux_out4(p4),
-            targets,
-            image_size,
-            self.aux_weight,
-            detections,
-            losses,
-            hits,
-        )
-        run_detection_with_aux_head(
-            self.detect5,
-            self.aux_detect5,
-            self.out5(n5),
-            self.aux_out5(p5),
-            targets,
-            image_size,
-            self.aux_weight,
-            detections,
-            losses,
-            hits,
-        )
-        run_detection_with_aux_head(
-            self.detect6,
-            self.aux_detect6,
-            self.out6(n6),
-            self.aux_out6(c6),
-            targets,
-            image_size,
-            self.aux_weight,
-            detections,
-            losses,
-            hits,
-        )
+        self.detect3(self.out3(n3), self.aux_out3(n3), targets, image_size, detections, losses, hits)
+        self.detect4(self.out4(n4), self.aux_out4(p4), targets, image_size, detections, losses, hits)
+        self.detect5(self.out5(n5), self.aux_out5(p5), targets, image_size, detections, losses, hits)
+        self.detect6(self.out6(n6), self.aux_out6(c6), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -1415,10 +1392,10 @@ class YOLOXNetwork(nn.Module):
             "linear", or "none".
         normalization: Which layer normalization to use. Can be "batchnorm", "groupnorm", or "none".
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
-            matching the targets to the anchors. The list should contain (width, height) tuples in the network input
-            resolution. There should be `3N` tuples, where `N` defines the number of anchors per spatial location. They
-            are assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning
-            that you typically want to sort the shapes from the smallest to the largest.
+            matching the targets to the anchors. The list should contain [width, height] pairs in the network input
+            resolution. There should be `3N` pairs, where `N` is the number of anchors per spatial location. They are
+            assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning that
+            you typically want to sort the shapes from the smallest to the largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
@@ -1431,9 +1408,8 @@ class YOLOXNetwork(nn.Module):
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the prior shape has IoU
             with some target greater than this threshold, the predictor will not be taken into account when calculating
             the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou" (default).
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -1454,14 +1430,14 @@ class YOLOXNetwork(nn.Module):
         depth: int = 3,
         activation: Optional[str] = "silu",
         normalization: Optional[str] = "batchnorm",
-        prior_shapes: Optional[List[Tuple[int, int]]] = None,
+        prior_shapes: Optional[PRIOR_SHAPES] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
 
         # By default use one anchor per cell and the stride as the prior size.
         if prior_shapes is None:
-            prior_shapes = [(8, 8), (16, 16), (32, 32)]
+            prior_shapes = [[8, 8], [16, 16], [32, 32]]
             anchors_per_cell = 1
         else:
             anchors_per_cell, modulo = divmod(len(prior_shapes), 3)
@@ -1497,10 +1473,14 @@ class YOLOXNetwork(nn.Module):
                 norm=normalization,
             )
 
-        def detect(prior_shape_idxs: Sequence[int]) -> DetectionLayer:
+        def detect(prior_shape_idxs: Sequence[int]) -> DetectionStage:
             assert prior_shapes is not None
-            return create_detection_layer(
-                prior_shapes, prior_shape_idxs, num_classes=num_classes, input_is_normalized=False, **kwargs
+            return DetectionStage(
+                prior_shapes=prior_shapes,
+                prior_shape_idxs=list(prior_shape_idxs),
+                num_classes=num_classes,
+                input_is_normalized=False,
+                **kwargs,
             )
 
         self.backbone = backbone or YOLOV5Backbone(
@@ -1557,9 +1537,9 @@ class YOLOXNetwork(nn.Module):
         x = torch.cat((self.downsample4(n4), p5), dim=1)
         n5 = self.pan5(x)
 
-        run_detection(self.detect3, self.out3(n3), targets, image_size, detections, losses, hits)
-        run_detection(self.detect4, self.out4(n4), targets, image_size, detections, losses, hits)
-        run_detection(self.detect5, self.out5(n5), targets, image_size, detections, losses, hits)
+        self.detect3(self.out3(n3), targets, image_size, detections, losses, hits)
+        self.detect4(self.out4(n4), targets, image_size, detections, losses, hits)
+        self.detect5(self.out5(n5), targets, image_size, detections, losses, hits)
         return detections, losses, hits
 
 
@@ -1585,9 +1565,8 @@ class DarknetNetwork(nn.Module):
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the corresponding anchor
             has IoU with some target greater than this threshold, the predictor will not be taken into account when
             calculating the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou".
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -1811,7 +1790,7 @@ class DarknetNetwork(nn.Module):
         return sections
 
 
-def _create_layer(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
+def _create_layer(config: DARKNET_CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
     """Calls one of the ``_create_<layertype>(config, num_inputs)`` functions to create a PyTorch module from the
     layer config.
 
@@ -1834,7 +1813,7 @@ def _create_layer(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CREAT
     return create_func[config["type"]](config, num_inputs, **kwargs)
 
 
-def _create_convolutional(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
+def _create_convolutional(config: DARKNET_CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
     """Creates a convolutional layer.
 
     Args:
@@ -1861,7 +1840,7 @@ def _create_convolutional(config: CONFIG, num_inputs: List[int], **kwargs: Any) 
     return layer, config["filters"]
 
 
-def _create_maxpool(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
+def _create_maxpool(config: DARKNET_CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
     """Creates a max pooling layer.
 
     Padding is added so that the output resolution will be the input resolution divided by stride, rounded upwards.
@@ -1878,7 +1857,7 @@ def _create_maxpool(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CRE
     return layer, num_inputs[-1]
 
 
-def _create_route(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
+def _create_route(config: DARKNET_CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
     """Creates a routing layer.
 
     A routing layer concatenates the output (or part of it) from the layers specified by the "layers" configuration
@@ -1907,7 +1886,7 @@ def _create_route(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CREAT
     return layer, num_outputs
 
 
-def _create_shortcut(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
+def _create_shortcut(config: DARKNET_CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
     """Creates a shortcut layer.
 
     A shortcut layer adds a residual connection from the layer specified by the "from" configuration option.
@@ -1924,7 +1903,7 @@ def _create_shortcut(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CR
     return layer, num_inputs[-1]
 
 
-def _create_upsample(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
+def _create_upsample(config: DARKNET_CONFIG, num_inputs: List[int], **kwargs: Any) -> CREATE_LAYER_OUTPUT:
     """Creates a layer that upsamples the data.
 
     Args:
@@ -1940,15 +1919,15 @@ def _create_upsample(config: CONFIG, num_inputs: List[int], **kwargs: Any) -> CR
 
 
 def _create_yolo(
-    config: CONFIG,
+    config: DARKNET_CONFIG,
     num_inputs: List[int],
-    prior_shapes: Optional[List[Tuple[int, int]]] = None,
+    prior_shapes: Optional[PRIOR_SHAPES] = None,
     matching_algorithm: Optional[str] = None,
     matching_threshold: Optional[float] = None,
     spatial_range: float = 5.0,
     size_range: float = 4.0,
     ignore_bg_threshold: Optional[float] = None,
-    overlap_func: Optional[Union[str, Callable]] = None,
+    overlap_func: Optional[str] = None,
     predict_overlap: Optional[float] = None,
     label_smoothing: Optional[float] = None,
     overlap_loss_multiplier: Optional[float] = None,
@@ -1962,10 +1941,11 @@ def _create_yolo(
         config: Dictionary of configuration options for this layer.
         num_inputs: Number of channels in the input of every layer up to this layer. Not used by the detection layer.
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
-            matching the targets to the anchors. The list should contain (width, height) tuples in the network input
-            resolution. There should be `3N` tuples, where `N` defines the number of anchors per spatial location. They
-            are assigned to the layers from the lowest (high-resolution) to the highest (low-resolution) layer, meaning
-            that you typically want to sort the shapes from the smallest to the largest.
+            matching the targets to the anchors. The list should contain [width, height] pairs in the network input
+            resolution. There should be `M × N` pairs, where `M` is the number of detection layers and `N` is the number
+			of anchors per spatial location. They are assigned to the layers from the lowest (high-resolution) to the
+			highest (low-resolution) layer, meaning that you typically want to sort the shapes from the smallest to the
+			largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
@@ -1978,9 +1958,8 @@ def _create_yolo(
         ignore_bg_threshold: If a predictor is not responsible for predicting any target, but the corresponding anchor
             has IoU with some target greater than this threshold, the predictor will not be taken into account when
             calculating the confidence loss.
-        overlap_func: A function for calculating the pairwise overlaps between two sets of boxes. Either a string or a
-            function that returns a matrix of pairwise overlaps. Valid string values are "iou", "giou", "diou", and
-            "ciou".
+        overlap_func: Which function to use for calculating the IoU between two sets of boxes. Valid values are "iou",
+            "giou", "diou", and "ciou".
         predict_overlap: Balance between binary confidence targets and predicting the overlap. 0.0 means that the target
             confidence is 1 if there's an object, and 1.0 means that the target confidence is the output of
             ``overlap_func``.
@@ -1997,7 +1976,7 @@ def _create_yolo(
     if prior_shapes is None:
         # The "anchors" list alternates width and height.
         dims = config["anchors"]
-        prior_shapes = [(dims[i], dims[i + 1]) for i in range(0, len(dims), 2)]
+        prior_shapes = [[dims[i], dims[i + 1]] for i in range(0, len(dims), 2)]
     if ignore_bg_threshold is None:
         ignore_bg_threshold = config.get("ignore_thresh", 1.0)
         assert isinstance(ignore_bg_threshold, float)
