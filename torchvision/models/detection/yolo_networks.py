@@ -267,7 +267,7 @@ def create_detection_layer(
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target, where `N` is the value of this parameter.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
@@ -329,6 +329,7 @@ class DetectionStage(nn.Module):
     It might be cleaner to implement this as a function, but TorchScript allows only specific types in function
     arguments, not modules.
     """
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__()
         self.detection_layer = create_detection_layer(**kwargs)
@@ -352,7 +353,8 @@ class DetectionStage(nn.Module):
             image_size: Width and height in a vector that defines the scale of the target coordinates.
             detections: A list where a tensor containing the detections will be appended to.
             losses: A list where a tensor containing the losses will be appended to, if ``targets`` is given.
-            hits: A list where the number of targets that matched this layer will be appended to, if ``targets`` is given.
+            hits: A list where the number of targets that matched this layer will be appended to, if ``targets`` is
+                given.
         """
         output, preds = self.detection_layer(layer_input, image_size)
         detections.append(output)
@@ -367,13 +369,16 @@ class DetectionStageWithAux(nn.Module):
     """This class represents a combination of a lead and an auxiliary detection layer.
 
     Args:
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target. This parameter specifies `N` for the lead head.
-        aux_spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        aux_spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target. This parameter specifies `N` for the auxiliary head.
         aux_weight: Weight for the loss from the auxiliary head.
     """
-    def __init__(self, spatial_range: float = 5.0, aux_spatial_range: float = 3.0, aux_weight: float = 0.25, **kwargs: Any) -> None:
+
+    def __init__(
+        self, spatial_range: float = 5.0, aux_spatial_range: float = 3.0, aux_weight: float = 0.25, **kwargs: Any
+    ) -> None:
         self.detection_layer = create_detection_layer(spatial_range=spatial_range, **kwargs)
         self.aux_detection_layer = create_detection_layer(spatial_range=aux_spatial_range, **kwargs)
         self.aux_weight = aux_weight
@@ -400,7 +405,8 @@ class DetectionStageWithAux(nn.Module):
             image_size: Width and height in a vector that defines the scale of the target coordinates.
             detections: A list where a tensor containing the detections will be appended to.
             losses: A list where a tensor containing the losses will be appended to, if ``targets`` is given.
-            hits: A list where the number of targets that matched this layer will be appended to, if ``targets`` is given.
+            hits: A list where the number of targets that matched this layer will be appended to, if ``targets`` is
+                given.
         """
         output, preds = self.detection_layer(layer_input, image_size)
         detections.append(output)
@@ -460,7 +466,7 @@ class YOLOV4TinyNetwork(nn.Module):
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target, where `N` is the value of this parameter.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
@@ -599,7 +605,7 @@ class YOLOV4Network(nn.Module):
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target, where `N` is the value of this parameter.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
@@ -769,7 +775,7 @@ class YOLOV4P6Network(nn.Module):
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target, where `N` is the value of this parameter.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
@@ -968,7 +974,7 @@ class YOLOV5Network(nn.Module):
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target, where `N` is the value of this parameter.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
@@ -1135,9 +1141,9 @@ class YOLOV7Network(nn.Module):
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target. This parameter specifies `N` for the lead head.
-        aux_spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        aux_spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target. This parameter specifies `N` for the auxiliary head.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
@@ -1401,7 +1407,7 @@ class YOLOXNetwork(nn.Module):
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target, where `N` is the value of this parameter.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
@@ -1558,7 +1564,7 @@ class DarknetNetwork(nn.Module):
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target, where `N` is the value of this parameter.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.
@@ -1942,16 +1948,16 @@ def _create_yolo(
         num_inputs: Number of channels in the input of every layer up to this layer. Not used by the detection layer.
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
             matching the targets to the anchors. The list should contain [width, height] pairs in the network input
-            resolution. There should be `M × N` pairs, where `M` is the number of detection layers and `N` is the number
-			of anchors per spatial location. They are assigned to the layers from the lowest (high-resolution) to the
-			highest (low-resolution) layer, meaning that you typically want to sort the shapes from the smallest to the
-			largest.
+            resolution. There should be `M x N` pairs, where `M` is the number of detection layers and `N` is the number
+                        of anchors per spatial location. They are assigned to the layers from the lowest (high-resolution) to the
+                        highest (low-resolution) layer, meaning that you typically want to sort the shapes from the smallest to the
+                        largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that
             gives the highest IoU, default).
         matching_threshold: Threshold for "size" and "iou" matching algorithms.
-        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N × N` grid cell
+        spatial_range: The "simota" matching algorithm will restrict to anchors that are within an `N x N` grid cell
             area centered at the target, where `N` is the value of this parameter.
         size_range: The "simota" matching algorithm will restrict to anchors whose dimensions are no more than `N` and
             no less than `1/N` times the target dimensions, where `N` is the value of this parameter.

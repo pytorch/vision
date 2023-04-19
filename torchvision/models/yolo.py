@@ -2,7 +2,7 @@ from collections import OrderedDict
 from typing import List, Optional, Sequence, Tuple
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 
 
 def _get_padding(kernel_size: int, stride: int) -> Tuple[int, nn.Module]:

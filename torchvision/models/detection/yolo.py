@@ -1,8 +1,8 @@
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-import warnings
 from torch import Tensor
 
 from ...ops import batched_nms
@@ -11,7 +11,7 @@ from .._api import register_model, Weights, WeightsEnum
 from .._utils import _ovewrite_value_param
 from ..yolo import YOLOV4Backbone
 from .backbone_utils import _validate_trainable_layers
-from .yolo_networks import DarknetNetwork, YOLOV4Network, PRED, TARGET, TARGETS
+from .yolo_networks import DarknetNetwork, PRED, TARGET, TARGETS, YOLOV4Network
 
 IMAGES = List[Tensor]  # TorchScript doesn't allow a tuple.
 

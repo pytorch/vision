@@ -17,10 +17,8 @@ from torchvision.ops import (
 
 
 def _binary_cross_entropy(
-    inputs: Tensor,
-    targets: Tensor,
-    reduction: str = "mean",
-    input_is_normalized: bool = True):
+    inputs: Tensor, targets: Tensor, reduction: str = "mean", input_is_normalized: bool = True
+) -> Tensor:
     """Returns the binary cross entropy from either normalized inputs or logits.
 
     It would be more convenient to pass the correct cross entropy function to every function that uses it, but
@@ -246,7 +244,9 @@ class YOLOLoss:
         overlap_loss = 1.0 - overlap
         assert overlap_loss.shape == loss_shape
 
-        confidence_loss = _pairwise_confidence_loss(preds["confidences"], overlap, input_is_normalized, self.predict_overlap)
+        confidence_loss = _pairwise_confidence_loss(
+            preds["confidences"], overlap, input_is_normalized, self.predict_overlap
+        )
         assert confidence_loss.shape == loss_shape
 
         pred_probs = preds["classprobs"].unsqueeze(1)  # [N, 1, classes]
@@ -292,7 +292,9 @@ class YOLOLoss:
         overlap = 1.0 - overlap_loss
         overlap_loss = (overlap_loss * _size_compensation(targets["boxes"], image_size)).sum()
 
-        confidence_loss = _foreground_confidence_loss(preds["confidences"], overlap, input_is_normalized, self.predict_overlap)
+        confidence_loss = _foreground_confidence_loss(
+            preds["confidences"], overlap, input_is_normalized, self.predict_overlap
+        )
         confidence_loss += _background_confidence_loss(preds["bg_confidences"], input_is_normalized)
 
         pred_probs = preds["classprobs"]

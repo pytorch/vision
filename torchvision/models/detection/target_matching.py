@@ -334,7 +334,7 @@ class SimOTAMatching:
         prior_shape_idxs: List of indices to ``prior_shapes`` that is used to select the (usually 3) prior shapes that
             this layer uses.
         loss_func: A ``YOLOLoss`` object that can be used to calculate the pairwise costs.
-        spatial_range: For each target, restrict to the anchors that are within an `N × N` grid cell are centered at the
+        spatial_range: For each target, restrict to the anchors that are within an `N x N` grid cell are centered at the
             target, where `N` is the value of this parameter.
         size_range: For each target, restrict to the anchors whose prior dimensions are not larger than the target
             dimensions multiplied by this value and not smaller than the target dimensions divided by this value.

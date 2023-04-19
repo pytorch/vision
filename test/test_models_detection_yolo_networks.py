@@ -42,8 +42,8 @@ def test_create_convolutional(config):
 @pytest.mark.parametrize(
     "config",
     [
-        ({ "size": 2, "stride": 2 }),
-        ({ "size": 6, "stride": 3 }),
+        ({"size": 2, "stride": 2}),
+        ({"size": 6, "stride": 3}),
     ],
 )
 def test_create_maxpool(config):
