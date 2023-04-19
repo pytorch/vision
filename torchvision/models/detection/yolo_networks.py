@@ -393,8 +393,8 @@ class DetectionStageWithAux(nn.Module):
         losses: List[Tensor],
         hits: List[int],
     ) -> None:
-        """Runs the detection layer and the auxiliary detection layer on their respective inputs and appends the outputs
-        to the ``detections`` list.
+        """Runs the detection layer and the auxiliary detection layer on their respective inputs and appends the
+        outputs to the ``detections`` list.
 
         If ``targets`` is given, also calculates the losses and appends to the ``losses`` list.
 
@@ -1949,9 +1949,9 @@ def _create_yolo(
         prior_shapes: A list of prior box dimensions, used for scaling the predicted dimensions and possibly for
             matching the targets to the anchors. The list should contain [width, height] pairs in the network input
             resolution. There should be `M x N` pairs, where `M` is the number of detection layers and `N` is the number
-                        of anchors per spatial location. They are assigned to the layers from the lowest (high-resolution) to the
-                        highest (low-resolution) layer, meaning that you typically want to sort the shapes from the smallest to the
-                        largest.
+            of anchors per spatial location. They are assigned to the layers from the lowest (high-resolution) to the
+            highest (low-resolution) layer, meaning that you typically want to sort the shapes from the smallest to the
+            largest.
         matching_algorithm: Which algorithm to use for matching targets to anchors. "simota" (the SimOTA matching rule
             from YOLOX), "size" (match those prior shapes, whose width and height relative to the target is below given
             ratio), "iou" (match all prior shapes that give a high enough IoU), or "maxiou" (match the prior shape that

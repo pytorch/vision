@@ -17,8 +17,8 @@ IMAGES = List[Tensor]  # TorchScript doesn't allow a tuple.
 
 
 class YOLO(nn.Module):
-    """YOLO implementation that supports the most important features of YOLOv3, YOLOv4, YOLOv5, YOLOv7, Scaled-YOLOv4,
-    and YOLOX.
+    """YOLO implementation that supports the most important features of YOLOv3, YOLOv4, YOLOv5, YOLOv7, Scaled-
+    YOLOv4, and YOLOX.
 
     *YOLOv3 paper*: `Joseph Redmon and Ali Farhadi <https://arxiv.org/abs/1804.02767>`__
 
