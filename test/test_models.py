@@ -922,7 +922,7 @@ def test_yolo_darknet(dev):
 
     if not full_validation:
         msg = (
-            f"The output of yolo_darknet could only be partially validated. "
+            "The output of yolo_darknet could only be partially validated. "
             "This is likely due to unit-test flakiness, but you may "
             "want to do additional manual checks if you made "
             "significant changes to the codebase."
