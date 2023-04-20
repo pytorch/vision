@@ -11,7 +11,7 @@ from .yolo_loss import YOLOLoss
 PRIOR_SHAPES = List[List[int]]  # TorchScript doesn't allow a list of tuples.
 
 
-def target_boxes_to_grid(preds: Tensor, targets: Tensor, image_size: Tensor) -> Tensor:
+def target_boxes_to_grid(preds: Tensor, targets: Tensor, image_size: Tensor) -> Tuple[Tensor, Tensor]:
     """Scales target bounding boxes to feature map coordinates.
 
     It would be better to implement this in a super class, but TorchScript doesn't allow class inheritance.
@@ -22,7 +22,9 @@ def target_boxes_to_grid(preds: Tensor, targets: Tensor, image_size: Tensor) -> 
         image_size: Input image width and height.
 
     Returns:
-        A tensor containing target x, y, width, and height in the feature map coordinates.
+        Two tensors with as many rows as there are targets. An integer tensor containing x/y coordinates to the feature
+        map that correspond to the target position, and a floating point tensor containing the target width and height
+        scaled to the feature map size.
     """
     height, width = preds.shape[:2]
 
@@ -33,11 +35,11 @@ def target_boxes_to_grid(preds: Tensor, targets: Tensor, image_size: Tensor) -> 
     # Bounding box center coordinates are converted to the feature map dimensions so that the whole number tells the
     # cell index and the fractional part tells the location inside the cell.
     xywh = box_convert(targets, in_fmt="xyxy", out_fmt="cxcywh")
-    grid_xy = xywh[:, :2] * image_to_grid
-    cell_i = grid_xy[:, 0].to(torch.int64).clamp(0, width - 1)
-    cell_j = grid_xy[:, 1].to(torch.int64).clamp(0, height - 1)
-
-    return torch.cat((cell_i.unsqueeze(1), cell_j.unsqueeze(1), xywh[:, 2:]), 1)
+    xy = (xywh[:, :2] * image_to_grid).to(torch.int64)
+    x = xy[:, 0].clamp(0, width - 1)
+    y = xy[:, 1].clamp(0, height - 1)
+    xy = torch.stack((x, y), 1)
+    return xy, xywh[:, 2:]
 
 
 class HighestIoUMatching:
@@ -105,21 +107,18 @@ class HighestIoUMatching:
         Returns:
             The indices of the matched predictions, background mask, and a mask for selecting the matched targets.
         """
-        scaled_targets = target_boxes_to_grid(preds["boxes"], targets["boxes"], image_size)
-        target_selector, anchor_selector = self.match(scaled_targets[:, 2:])
-
-        scaled_targets = scaled_targets[target_selector]
-        cell_i = scaled_targets[:, 0]
-        cell_j = scaled_targets[:, 1]
+        anchor_xy, target_wh = target_boxes_to_grid(preds["boxes"], targets["boxes"], image_size)
+        target_selector, anchor_idx = self.match(target_wh)
+        anchor_x = anchor_xy[target_selector, 0]
+        anchor_y = anchor_xy[target_selector, 1]
 
         # Background mask is used to select anchors that are not responsible for predicting any object, for
         # calculating the part of the confidence loss with zero as the target confidence. It is set to False, if a
         # predicted box overlaps any target significantly, or if a prediction is matched to a target.
         background_mask = iou_below(preds["boxes"], targets["boxes"], self.ignore_bg_threshold)
-        background_mask[cell_j, cell_i, anchor_selector] = False
+        background_mask[anchor_y, anchor_x, anchor_idx] = False
 
-        pred_selector = [cell_j, cell_i, anchor_selector]
-
+        pred_selector = [anchor_y, anchor_x, anchor_idx]
         return pred_selector, background_mask, target_selector
 
 
@@ -183,21 +182,18 @@ class IoUThresholdMatching:
         Returns:
             The indices of the matched predictions, background mask, and a mask for selecting the matched targets.
         """
-        scaled_targets = target_boxes_to_grid(preds["boxes"], targets["boxes"], image_size)
-        target_selector, anchor_selector = self.match(scaled_targets[:, 2:])
-
-        scaled_targets = scaled_targets[target_selector]
-        cell_i = scaled_targets[:, 0]
-        cell_j = scaled_targets[:, 1]
+        anchor_xy, target_wh = target_boxes_to_grid(preds["boxes"], targets["boxes"], image_size)
+        target_selector, anchor_idx = self.match(target_wh)
+        anchor_x = anchor_xy[target_selector, 0]
+        anchor_y = anchor_xy[target_selector, 1]
 
         # Background mask is used to select anchors that are not responsible for predicting any object, for
         # calculating the part of the confidence loss with zero as the target confidence. It is set to False, if a
         # predicted box overlaps any target significantly, or if a prediction is matched to a target.
         background_mask = iou_below(preds["boxes"], targets["boxes"], self.ignore_bg_threshold)
-        background_mask[cell_j, cell_i, anchor_selector] = False
+        background_mask[anchor_y, anchor_x, anchor_idx] = False
 
-        pred_selector = [cell_j, cell_i, anchor_selector]
-
+        pred_selector = [anchor_y, anchor_x, anchor_idx]
         return pred_selector, background_mask, target_selector
 
 
@@ -262,21 +258,18 @@ class SizeRatioMatching:
         Returns:
             The indices of the matched predictions, background mask, and a mask for selecting the matched targets.
         """
-        scaled_targets = target_boxes_to_grid(preds["boxes"], targets["boxes"], image_size)
-        target_selector, anchor_selector = self.match(scaled_targets[:, 2:])
-
-        scaled_targets = scaled_targets[target_selector]
-        cell_i = scaled_targets[:, 0]
-        cell_j = scaled_targets[:, 1]
+        anchor_xy, target_wh = target_boxes_to_grid(preds["boxes"], targets["boxes"], image_size)
+        target_selector, anchor_idx = self.match(target_wh)
+        anchor_x = anchor_xy[target_selector, 0]
+        anchor_y = anchor_xy[target_selector, 1]
 
         # Background mask is used to select anchors that are not responsible for predicting any object, for
         # calculating the part of the confidence loss with zero as the target confidence. It is set to False, if a
         # predicted box overlaps any target significantly, or if a prediction is matched to a target.
         background_mask = iou_below(preds["boxes"], targets["boxes"], self.ignore_bg_threshold)
-        background_mask[cell_j, cell_i, anchor_selector] = False
+        background_mask[anchor_y, anchor_x, anchor_idx] = False
 
-        pred_selector = [cell_j, cell_i, anchor_selector]
-
+        pred_selector = [anchor_y, anchor_x, anchor_idx]
         return pred_selector, background_mask, target_selector
 
 

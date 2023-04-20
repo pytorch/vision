@@ -379,6 +379,7 @@ class DetectionStageWithAux(nn.Module):
     def __init__(
         self, spatial_range: float = 5.0, aux_spatial_range: float = 3.0, aux_weight: float = 0.25, **kwargs: Any
     ) -> None:
+        super().__init__()
         self.detection_layer = create_detection_layer(spatial_range=spatial_range, **kwargs)
         self.aux_detection_layer = create_detection_layer(spatial_range=aux_spatial_range, **kwargs)
         self.aux_weight = aux_weight
