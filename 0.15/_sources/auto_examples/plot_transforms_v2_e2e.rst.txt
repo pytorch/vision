@@ -296,7 +296,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
  .. code-block:: none
 
-    {'bbox_regression': tensor(2.4982, grad_fn=<DivBackward0>), 'classification': tensor(57.6569, grad_fn=<DivBackward0>)}
+    {'bbox_regression': tensor(4.0019, grad_fn=<DivBackward0>), 'classification': tensor(42.4939, grad_fn=<DivBackward0>)}
 
 
 
@@ -304,7 +304,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.743 seconds)
+   **Total running time of the script:** ( 0 minutes  2.824 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms_v2_e2e.py:

@@ -10,7 +10,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Transforms v2: End-to-end object detection example &mdash; Torchvision 0.15 documentation</title>
+  <title>Transforms v2: End-to-end object detection example &mdash; Torchvision main documentation</title>
   
 
   
@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>0.15 &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.2a0+fa99a53 ) &#x25BC</a>
     </div>
     
 
@@ -423,7 +423,7 @@ index created!
 &lt;class &#39;list&#39;&gt; &lt;class &#39;dict&#39;&gt; [&#39;segmentation&#39;, &#39;iscrowd&#39;, &#39;image_id&#39;, &#39;bbox&#39;, &#39;category_id&#39;, &#39;id&#39;]
 </pre></div>
 </div>
-<p>The dataset returns a two-tuple with the first item being a <a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v9.4.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> and second one a list of
+<p>The dataset returns a two-tuple with the first item being a <a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v9.5.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> and second one a list of
 dictionaries, which each containing the annotations for a single object instance. As is, this format is not compatible
 with the <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code>, nor with the models. To overcome that, we provide the
 <a class="reference internal" href="../generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2" title="torchvision.datasets.wrap_dataset_for_transforms_v2"><code class="xref py py-func docutils literal notranslate"><span class="pre">wrap_dataset_for_transforms_v2()</span></code></a> function. For
@@ -510,10 +510,10 @@ In all of this, the bounding box was transformed accordingly. And without any fu
     <span class="k">break</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;bbox_regression&#39;: tensor(2.4982, grad_fn=&lt;DivBackward0&gt;), &#39;classification&#39;: tensor(57.6569, grad_fn=&lt;DivBackward0&gt;)}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;bbox_regression&#39;: tensor(4.0019, grad_fn=&lt;DivBackward0&gt;), &#39;classification&#39;: tensor(42.4939, grad_fn=&lt;DivBackward0&gt;)}
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.743 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.824 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-transforms-v2-e2e-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/88714c15e2eebafbfaedf6914b5cb4e2/plot_transforms_v2_e2e.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_transforms_v2_e2e.py</span></code></a></p>
