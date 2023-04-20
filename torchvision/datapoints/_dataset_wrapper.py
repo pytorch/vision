@@ -38,8 +38,8 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
         * :class:`~torchvision.datasets.CocoDetection`: Instead of returning the target as list of dicts, the wrapper
           returns a dict of lists. In addition, the key-value-pairs ``"boxes"`` (in ``XYXY`` coordinate format),
           ``"masks"`` and ``"labels"`` are added and wrap the data in the corresponding ``torchvision.datapoints``.
-          The original keys are preserved. If ``target_keys`` is ommitted, returns only the values for the ``"boxes"``
-          and ``"labels"``.
+          The original keys are preserved. If ``target_keys`` is ommitted, returns only the values for the
+          ``"image_id"``, ``"boxes"``, and ``"labels"``.
         * :class:`~torchvision.datasets.VOCDetection`: The key-value-pairs ``"boxes"`` and ``"labels"`` are added to
           the target and wrap the data in the corresponding ``torchvision.datapoints``. The original keys are
           preserved. If ``target_keys`` is ommitted, returns only the values for the ``"boxes"`` and ``"labels"``.
@@ -124,7 +124,9 @@ class VisionDatasetDatapointWrapper(Dataset):
         if not isinstance(dataset, datasets.VisionDataset):
             raise TypeError(
                 f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
-                f"but got a '{dataset_cls.__name__}' instead."
+                f"but got a '{dataset_cls.__name__}' instead.\n"
+                f"For an example of how to perform the wrapping for custom datasets, see\n\n"
+                "https://pytorch.org/vision/main/auto_examples/plot_datapoints.html#do-i-have-to-wrap-the-output-of-the-datasets-myself"
             )
 
         for cls in dataset_cls.mro():
@@ -328,7 +330,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             "masks",
             "labels",
         },
-        default={"boxes", "labels"},
+        default={"image_id", "boxes", "labels"},
     )
 
     def segmentation_to_mask(segmentation, *, spatial_size):
