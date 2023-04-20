@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - python-version: "3.8"
-            runner: windows.8xlarge.nvidia.gpu
+            runner: windows.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.7"
       fail-fast: false
