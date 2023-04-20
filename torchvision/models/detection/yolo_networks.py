@@ -1617,6 +1617,10 @@ class DarknetNetwork(nn.Module):
             with open(weights_path) as weight_file:
                 self.load_weights(weight_file)
 
+        # A workaround for TorchScript compilation. For some reason, the compilation will crash with "Unknown type name
+        # 'ShortcutLayer'" without this.
+        self._ = ShortcutLayer(0)
+
     def forward(self, x: Tensor, targets: Optional[TARGETS] = None) -> NETWORK_OUTPUT:
         outputs: List[Tensor] = []  # Outputs from all layers
         detections: List[Tensor] = []  # Outputs from detection layers
