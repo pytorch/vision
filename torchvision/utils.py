@@ -568,7 +568,6 @@ def _parse_colors(
 
             If `colors` is a tuple, it should be a 3-tuple specifying the RGB values of the color.
             If `colors` is a list, it should have at least as many elements as the number of objects to color.
-            If `colors` is None, a color palette will be generated automatically to have a distinct color for each object.
 
         num_objects (int): The number of objects to color.
 
