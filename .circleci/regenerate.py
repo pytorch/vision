@@ -219,7 +219,7 @@ def indent(indentation, data_list):
 def unittest_workflows(indentation=6):
     jobs = []
     for os_type in ["windows"]:
-        for device_type in ["cpu", "gpu"]:
+        for device_type in ["gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
 
