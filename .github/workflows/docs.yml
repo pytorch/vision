@@ -66,3 +66,16 @@ jobs:
           if-no-files-found: error
           path: html
           s3-prefix: pytorch/vision/${{ github.event.pull_request.number }}
+
+      # The upload below duplicates the upload from above, but to a different path. This is needed since we are in the
+      # process of changing the path, but want to keep the disruption to a minimum.
+      # See https://github.com/pytorch/test-infra/issues/3894
+      # After a grace period, we can delete this again
+      - name: Upload docs preview
+        uses: seemethere/upload-artifact-s3@v5
+        with:
+          retention-days: 14
+          s3-bucket: doc-previews
+          if-no-files-found: error
+          path: html
+          s3-prefix: pytorch/pytorch/vision/${{ github.event.pull_request.number }}
