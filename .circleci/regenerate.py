@@ -32,8 +32,8 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu117", "cu118", "rocm5.2", "rocm5.3"],
-                "win": ["cpu", "cu117", "cu118"],
+                "linux": ["cpu", "cu117", "cu118", "cu121", "rocm5.2", "rocm5.3"],
+                "win": ["cpu", "cu117", "cu118", "cu121"],
                 "macos": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
@@ -109,6 +109,7 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=""
 manylinux_images = {
     "cu117": "pytorch/manylinux-cuda117",
     "cu118": "pytorch/manylinux-cuda118",
+    "cu121": "pytorch/manylinux-cuda121",
 }
 
 
