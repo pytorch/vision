@@ -96,8 +96,14 @@ def normalize(clip, mean, std, inplace=False):
         raise ValueError("clip should be a 4D torch.tensor")
     if not inplace:
         clip = clip.clone()
-    mean = torch.as_tensor(mean, dtype=clip.dtype, device=clip.device)
-    std = torch.as_tensor(std, dtype=clip.dtype, device=clip.device)
+    mean = torch.as_tensor(mean, dtype=clip.dtype)
+    if mean.device.type == "cpu" and clip.device.type == "cuda":
+        mean.pin_memory()
+    mean = mean.to(device=clip.device, non_blocking=True)
+    std = torch.as_tensor(std, dtype=clip.dtype)
+    if std.device.type == "cpu" and clip.device.type == "cuda":
+        std.pin_memory()
+    std = std.to(device=clip.device, non_blocking=True)
     clip.sub_(mean[:, None, None, None]).div_(std[:, None, None, None])
     return clip
 

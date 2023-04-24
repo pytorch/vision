@@ -334,12 +334,18 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     _x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
     left_indices = [i for i in range(padding[0] - 1, -1, -1)]  # e.g. [3, 2, 1, 0]
     right_indices = [-(i + 1) for i in range(padding[1])]  # e.g. [-1, -2, -3]
-    x_indices = torch.tensor(left_indices + _x_indices + right_indices, device=img.device)
+    x_indices = torch.tensor(left_indices + _x_indices + right_indices)
+    if img.device.type == "cuda":
+        x_indices.pin_memory()
+    x_indices = x_indices.to(device=img.device, non_blocking=True)
 
     _y_indices = [i for i in range(in_sizes[-2])]
     top_indices = [i for i in range(padding[2] - 1, -1, -1)]
     bottom_indices = [-(i + 1) for i in range(padding[3])]
-    y_indices = torch.tensor(top_indices + _y_indices + bottom_indices, device=img.device)
+    y_indices = torch.tensor(top_indices + _y_indices + bottom_indices)
+    if img.device.type == "cuda":
+        y_indices.pin_memory()
+    y_indices = y_indices.to(device=img.device, non_blocking=True)
 
     ndim = img.ndim
     if ndim == 3:
@@ -565,7 +571,10 @@ def _apply_grid_transform(
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
         fill_list, len_fill = (fill, len(fill)) if isinstance(fill, (tuple, list)) else ([float(fill)], 1)
-        fill_img = torch.tensor(fill_list, dtype=img.dtype, device=img.device).view(1, len_fill, 1, 1).expand_as(img)
+        fill_img = torch.tensor(fill_list, dtype=img.dtype).view(1, len_fill, 1, 1).expand_as(img)
+        if img.device.type == "cuda":
+            fill_img = fill_img.contiguous().pin_memory()
+        fill_img = fill_img.to(device=img.device, non_blocking=True)
         if mode == "nearest":
             mask = mask < 0.5
             img[mask] = fill_img[mask]
@@ -597,7 +606,9 @@ def _gen_affine_grid(
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta = theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h], dtype=theta.dtype, device=theta.device)
+    rescaled_theta = theta.transpose(1, 2)
+    rescaled_theta[..., 0] /= 0.5 * w
+    rescaled_theta[..., 1] /= 0.5 * h
     output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
     return output_grid.view(1, oh, ow, 2)
 
@@ -611,7 +622,10 @@ def affine(
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
+    theta = torch.tensor(matrix, dtype=dtype).reshape(1, 2, 3)
+    if img.device.type == "cuda":
+        theta.pin_memory()
+    theta = theta.to(img.device, non_blocking=True)
     shape = img.shape
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
@@ -677,10 +691,13 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
     # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #
-    theta1 = torch.tensor(
-        [[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype, device=device
-    )
-    theta2 = torch.tensor([[[coeffs[6], coeffs[7], 1.0], [coeffs[6], coeffs[7], 1.0]]], dtype=dtype, device=device)
+    theta1 = torch.tensor([[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype)
+    theta2 = torch.tensor([[[coeffs[6], coeffs[7], 1.0], [coeffs[6], coeffs[7], 1.0]]], dtype=dtype)
+    if device.type == "cuda":
+        theta1.pin_memory()
+        theta2.pin_memory()
+    theta1 = theta1.to(device=device, non_blocking=True)
+    theta2 = theta2.to(device=device, non_blocking=True)
 
     d = 0.5
     base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
@@ -690,7 +707,9 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta1 = theta1.transpose(1, 2) / torch.tensor([0.5 * ow, 0.5 * oh], dtype=dtype, device=device)
+    rescaled_theta1 = theta1.transpose(1, 2)
+    rescaled_theta1[..., 0] /= 0.5 * ow
+    rescaled_theta1[..., 1] /= 0.5 * oh
     output_grid1 = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta1)
     output_grid2 = base_grid.view(1, oh * ow, 3).bmm(theta2.transpose(1, 2))
 
@@ -917,8 +936,15 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
         tensor = tensor.clone()
 
     dtype = tensor.dtype
-    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
-    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
+    mean = torch.as_tensor(mean, dtype=dtype)
+    if mean.device.type == "cpu" and tensor.device.type == "cuda":
+        mean = mean.pin_memory()
+    mean = mean.to(tensor.device, non_blocking=True)
+    std = torch.as_tensor(std, dtype=dtype)
+    if std.device.type == "cpu" and tensor.device.type == "cuda":
+        std = std.pin_memory()
+    std = std.to(tensor.device, non_blocking=True)
+
     if (std == 0).any():
         raise ValueError(f"std evaluated to zero after conversion to {dtype}, leading to division by zero.")
     if mean.ndim == 1:

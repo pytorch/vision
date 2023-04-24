@@ -33,8 +33,14 @@ def normalize_image_tensor(
 
     dtype = image.dtype
     device = image.device
-    mean = torch.as_tensor(mean, dtype=dtype, device=device)
-    std = torch.as_tensor(std, dtype=dtype, device=device)
+    mean = torch.as_tensor(mean, dtype=dtype)
+    if mean.device.type == "cpu" and device.type == "cuda":
+        mean.pin_memory()
+    mean = mean.to(device=device, non_blocking=True)
+    std = torch.as_tensor(std, dtype=dtype)
+    if std.device.type == "cpu" and device.type == "cuda":
+        std.pin_memory()
+    std = std.to(device=device, non_blocking=True)
     if mean.ndim == 1:
         mean = mean.view(-1, 1, 1)
     if std.ndim == 1:
