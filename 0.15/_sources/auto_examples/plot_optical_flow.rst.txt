@@ -266,7 +266,7 @@ w.r.t. the dimensions of the images.
 
     dtype = torch.float32
     shape = torch.Size([2, 2, 520, 960]) = (N, 2, H, W)
-    min = -3.8997113704681396, max = 6.40040922164917
+    min = -3.8997180461883545, max = 6.400400161743164
 
 
 
@@ -355,7 +355,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  7.254 seconds)
+   **Total running time of the script:** ( 0 minutes  8.200 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:
