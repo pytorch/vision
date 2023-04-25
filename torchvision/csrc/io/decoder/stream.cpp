@@ -65,7 +65,7 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
     // otherwise set sensible defaults
     // with the special case for the different MPEG4 codecs
     // that don't have threading context functions
-    if (codecCtx_->codec->capabilities & AV_CODEC_CAP_INTRA_ONLY) {
+    if (codecCtx_->codec_descriptor->props & AV_CODEC_PROP_INTRA_ONLY) {
       codecCtx_->thread_type = FF_THREAD_FRAME;
       codecCtx_->thread_count = 2;
     } else {
