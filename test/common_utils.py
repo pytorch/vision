@@ -292,7 +292,8 @@ class ImagePair(TensorLikePair):
         actual, expected = self._equalize_attributes(actual, expected)
 
         if self.mae:
-            actual, expected = self._promote_for_comparison(actual, expected)
+            if actual.dtype is torch.uint8:
+                actual, expected = actual.to(torch.int), expected.to(torch.int)
             mae = float(torch.abs(actual - expected).float().mean())
             if mae > self.atol:
                 self._fail(
@@ -351,7 +352,7 @@ assert_equal = functools.partial(assert_close, rtol=0, atol=0)
 
 def parametrized_error_message(*args, **kwargs):
     def to_str(obj):
-        if isinstance(obj, torch.Tensor) and obj.numel() > 10:
+        if isinstance(obj, torch.Tensor) and obj.numel() > 30:
             return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
         elif isinstance(obj, enum.Enum):
             return f"{type(obj).__name__}.{obj.name}"

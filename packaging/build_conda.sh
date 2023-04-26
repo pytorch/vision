@@ -13,8 +13,4 @@ setup_visual_studio_constraint
 setup_junit_results_folder
 export CUDATOOLKIT_CHANNEL="nvidia"
 
-if [[ "$PYTHON_VERSION" == "3.11" ]]; then
-  export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c malfet"
-fi
-
 conda build -c $CUDATOOLKIT_CHANNEL $CONDA_CHANNEL_FLAGS --no-anaconda-upload --no-test --python "$PYTHON_VERSION" packaging/torchvision
