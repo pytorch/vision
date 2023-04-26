@@ -14,6 +14,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  generate-matrix:
+    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
+    with:
+      package-type: wheel
+      os: windows
+      test-infra-repository: pytorch/test-infra
+      test-infra-ref: main
   build:
     needs: generate-matrix
     strategy:
