@@ -1765,5 +1765,10 @@ class TestDropBlock:
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
+def test__has_x86_avx2():
+    result = torch.ops.torchvision._has_x86_avx2()
+    assert isinstance(result, bool)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

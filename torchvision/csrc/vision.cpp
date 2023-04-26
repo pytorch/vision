@@ -6,6 +6,7 @@
 #endif
 #endif
 #include <torch/library.h>
+#include <cpuinfo.h>
 
 #ifdef WITH_CUDA
 #include <cuda.h>
@@ -35,7 +36,15 @@ int64_t cuda_version() {
 #endif
 }
 
+bool _has_x86_avx2() {
+  return cpuinfo_initialize() && cpuinfo_has_x86_avx2();
+}
+
 TORCH_LIBRARY_FRAGMENT(torchvision, m) {
   m.def("_cuda_version", &cuda_version);
+}
+
+TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def("_has_x86_avx2", &_has_x86_avx2);
 }
 } // namespace vision
