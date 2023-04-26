@@ -1,5 +1,6 @@
 #include "decode_jpeg.h"
 #include "common_jpeg.h"
+#include <cpuinfo.h>
 
 namespace vision {
 namespace image {
@@ -78,6 +79,9 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(
       data.dim() == 1 && data.numel() > 0,
       "Expected a non empty 1-dimensional tensor");
+  cpuinfo_initialize();
+  cpuinfo_has_x86_avx512bw();
+  printf("LAFJNLJFALAFJN] %d\n", cpuinfo_has_x86_avx512bw());
 
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
