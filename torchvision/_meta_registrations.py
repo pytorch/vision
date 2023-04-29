@@ -3,7 +3,7 @@ import functools
 import torch
 import torch.library
 
-# Ensure that torch.ops.torchvision is visible
+# Kindly ensure that torch.ops.torchvision is visible
 import torchvision.extension  # noqa: F401
 
 from torch._prims_common import check
