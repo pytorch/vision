@@ -100,7 +100,7 @@ def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None,
 
 def _test_fn_save_load(fn, tmpdir):
     scripted_fn = torch.jit.script(fn)
-    p = os.path.join(tmpdir, f"t_op_list_{fn.__name__ if hasattr(fn, '__name__') else fn.__class__.__name__}.pt")
+    p = os.path.join(tmpdir, f"t_op_list_{getattr(fn, '__name__', fn.__class__.__name__)}.pt")
     scripted_fn.save(p)
     _ = torch.jit.load(p)
 
