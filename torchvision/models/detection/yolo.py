@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -111,7 +111,7 @@ class YOLO(nn.Module):
 
     def forward(
         self, images: Union[Tensor, IMAGES], targets: Optional[TARGETS] = None
-    ) -> Union[Tensor, Tuple[Tensor, Tensor, List[int]]]:
+    ) -> Union[Tensor, Dict[str, Tensor]]:
         """Runs a forward pass through the network (all layers listed in ``self.network``), and if training targets
         are provided, computes the losses from the detection layers.
 
@@ -121,25 +121,26 @@ class YOLO(nn.Module):
         Args:
             images: A tensor of size ``[batch_size, channels, height, width]`` containing a batch of images or a list of
                 image tensors.
-            targets: If given, computes losses from detection layers against these targets. A list of target
-                dictionaries, one for each image.
+            targets: Compute losses against these targets. A list of dictionaries, one for each image. Must be given in
+                training mode.
 
         Returns:
-            detections (:class:`~torch.Tensor`), losses (:class:`~torch.Tensor`), hits (List[int]): Detections, and if
-            targets were provided, a dictionary of losses. Detections are shaped ``[batch_size, anchors, classes + 5]``,
-            where ``anchors`` is the feature map size (width * height) times the number of anchors per cell. The
-            predicted box coordinates are in `(x1, y1, x2, y2)` format and scaled to the input image size.
+            If targets are given, returns a dictionary containing the three losses (overlap, confidence, and
+            classification). Otherwise returns detections in a tensor shaped ``[batch_size, anchors, classes + 5]``,
+            where ``anchors`` is the total number of anchors in all detection layers. The number of anchors in a
+            detection layer is the feature map size (width * height) times the number of anchors per cell (usually 3 or
+            4). The predicted box coordinates are in `(x1, y1, x2, y2)` format and scaled to the input image size.
         """
         self.validate_batch(images, targets)
         images_tensor = images if isinstance(images, Tensor) else torch.stack(images)
         detections, losses, hits = self.network(images_tensor, targets)
 
-        detections = torch.cat(detections, 1)
         if targets is None:
+            detections = torch.cat(detections, 1)
             return detections
 
         losses = torch.stack(losses).sum(0)
-        return detections, losses, hits
+        return {"overlap": losses[0], "confidence": losses[1], "classification": losses[2]}
 
     def infer(self, image: Tensor) -> PRED:
         """Feeds an image to the network and returns the detected bounding boxes, confidence scores, and class
