@@ -11,9 +11,5 @@ echo '::group::Install testing utilities'
 pip install --progress-bar=off pytest pytest-mock pytest-cov
 echo '::endgroup::'
 
-if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
-  sleep 3600
-fi
-
 python test/smoke_test.py
 #pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25
