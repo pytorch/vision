@@ -433,53 +433,6 @@ jobs:
             docker push ${image_name}:${CIRCLE_WORKFLOW_ID}
             docker push ${image_name}:latest
 
-  unittest_windows_gpu:
-    <<: *binary_common
-    executor:
-      name: windows-gpu
-    environment:
-      CUDA_VERSION: "11.7"
-      PYTHON_VERSION: << parameters.python_version >>
-    steps:
-      - checkout
-      - designate_upload_channel
-      - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-
-          keys:
-            - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-
-      - run:
-          name: Setup
-          command: .circleci/unittest/windows/scripts/setup_env.sh
-      - save_cache:
-
-          key: env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-
-          paths:
-            - conda
-            - env
-      - run:
-          name: Install CUDA
-          command: packaging/windows/internal/cuda_install.bat
-      - run:
-          name: Update CUDA driver
-          command: packaging/windows/internal/driver_update.bat
-      - run:
-          name: Install torchvision
-          command: .circleci/unittest/windows/scripts/install.sh
-      - run:
-          name: Run tests
-          command: .circleci/unittest/windows/scripts/run_test.sh
-      - run:
-          name: Post process
-          command: .circleci/unittest/windows/scripts/post_process.sh
-      - store_test_results:
-          path: test-results
-
   cmake_linux_cpu:
     <<: *binary_common
     docker:
@@ -852,31 +805,6 @@ workflows:
       - binary_android_build:
           build_environment: binary-libtorchvision_ops-android
           name: binary_libtorchvision_ops_android
-
-  unittest:
-    jobs:
-      - unittest_windows_gpu:
-          cu_version: cu117
-          name: unittest_windows_gpu_py3.8
-          python_version: '3.8'
-      - unittest_windows_gpu:
-          cu_version: cu117
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_windows_gpu_py3.9
-          python_version: '3.9'
-      - unittest_windows_gpu:
-          cu_version: cu117
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_windows_gpu_py3.10
-          python_version: '3.10'
 
   cmake:
     jobs:
