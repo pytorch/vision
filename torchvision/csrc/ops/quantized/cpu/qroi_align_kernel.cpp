@@ -8,9 +8,6 @@ namespace ops {
 
 namespace {
 
-// FIXME: android is no longer supported and thus the comments below can be
-// acted on
-
 // BEGIN copy-pasted code from pytorch core
 // https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/quantized/affine_quantizer_base.cpp
 // We're vendoring the quantize_val() and dequantize_val() functions here. The

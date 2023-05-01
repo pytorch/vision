@@ -1,0 +1,135 @@
+apply plugin: 'com.android.application'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+    flatDir {
+        dirs 'aars'
+    }
+}
+
+android {
+    configurations {
+        extractForNativeBuild
+    }
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+    compileSdkVersion rootProject.compileSdkVersion
+    buildToolsVersion rootProject.buildToolsVersion
+    defaultConfig {
+        applicationId "org.pytorch.testapp"
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        ndk {
+            abiFilters ABI_FILTERS.split(",")
+        }
+        externalNativeBuild {
+            cmake {
+                abiFilters ABI_FILTERS.split(",")
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+        buildConfigField("String", "MODULE_ASSET_NAME", "\"frcnn_mnetv3.pt\"")
+        buildConfigField("String", "LOGCAT_TAG", "@string/app_name")
+        buildConfigField("long[]", "INPUT_TENSOR_SHAPE", "new long[]{3, 96, 96}")
+        addManifestPlaceholders([APP_NAME: "@string/app_name", MAIN_ACTIVITY: "org.pytorch.testapp.MainActivity"])
+    }
+    buildTypes {
+        debug {
+            minifyEnabled false
+            debuggable true
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+    flavorDimensions "model", "activity", "build"
+    productFlavors {
+        frcnnMnetv3 {
+            dimension "model"
+            applicationIdSuffix ".frcnnMnetv3"
+            buildConfigField("String", "MODULE_ASSET_NAME", "\"frcnn_mnetv3.pt\"")
+            addManifestPlaceholders([APP_NAME: "TV_FRCNN_MNETV3"])
+            buildConfigField("String", "LOGCAT_TAG", "\"pytorch-frcnn-mnetv3\"")
+        }
+        camera {
+            dimension "activity"
+            addManifestPlaceholders([APP_NAME: "TV_CAMERA_FRCNN"])
+            addManifestPlaceholders([MAIN_ACTIVITY: "org.pytorch.testapp.CameraActivity"])
+        }
+        base {
+            dimension "activity"
+        }
+        aar {
+            dimension "build"
+        }
+        local {
+            dimension "build"
+        }
+    }
+    packagingOptions {
+        doNotStrip '**.so'
+        pickFirst '**.so'
+    }
+
+    // Filtering for CI
+    if (!testAppAllVariantsEnabled.toBoolean()) {
+        variantFilter { variant ->
+            def names = variant.flavors*.name
+            if (names.contains("aar")) {
+                setIgnore(true)
+            }
+        }
+    }
+}
+
+tasks.all { task ->
+    // Disable externalNativeBuild for all but nativeBuild variant
+    if (task.name.startsWith('externalNativeBuild')
+          && !task.name.contains('NativeBuild')) {
+        task.enabled = false
+    }
+}
+
+dependencies {
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.facebook.soloader:nativeloader:0.8.0'
+    localImplementation project(':ops')
+
+    implementation "org.pytorch:pytorch_android:$pytorchAndroidVersion"
+    implementation "org.pytorch:pytorch_android_torchvision:$pytorchAndroidVersion"
+
+    aarImplementation(name: 'pytorch_android-release', ext: 'aar')
+    aarImplementation(name: 'pytorch_android_torchvision-release', ext: 'aar')
+
+    def camerax_version = "1.0.0-alpha05"
+    implementation "androidx.camera:camera-core:$camerax_version"
+    implementation "androidx.camera:camera-camera2:$camerax_version"
+    implementation 'com.google.android.material:material:1.0.0-beta01'
+}
+
+task extractAARForNativeBuild {
+    doLast {
+        configurations.extractForNativeBuild.files.each {
+            def file = it.absoluteFile
+            copy {
+                from zipTree(file)
+                into "$buildDir/$file.name"
+                include "headers/**"
+                include "jni/**"
+            }
+        }
+    }
+}
+
+tasks.whenTaskAdded { task ->
+  if (task.name.contains('externalNativeBuild')) {
+    task.dependsOn(extractAARForNativeBuild)
+  }
+}
