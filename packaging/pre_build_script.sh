@@ -1,6 +1,6 @@
 #!/bin/bash
 if [[ "$(uname)" == Darwin ]]; then
-   # Uninstall Conflicting jpeg brew formulae
+  # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)
   echo "Existing Jpeg-related Brew libraries"
   echo $jpeg_packages
