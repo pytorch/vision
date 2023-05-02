@@ -34,8 +34,9 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_conda_windows.yml@main
     with:
+      conda-package-directory: ${{ matrix.conda-package-directory }}
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: pytorch/test-infra
