@@ -45,6 +45,7 @@ jobs:
       pre-script: ${{ matrix.pre-script }}
       post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
+      smoke-test-script: ${{ matrix.smoke-test-script }}
       # Using "development" as trigger event so these binaries are not uploaded
       # to official channels yet
       trigger-event: development
