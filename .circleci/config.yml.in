@@ -283,53 +283,6 @@ jobs:
             docker push ${image_name}:${CIRCLE_WORKFLOW_ID}
             docker push ${image_name}:latest
 
-  unittest_windows_gpu:
-    <<: *binary_common
-    executor:
-      name: windows-gpu
-    environment:
-      CUDA_VERSION: "11.7"
-      PYTHON_VERSION: << parameters.python_version >>
-    steps:
-      - checkout
-      - designate_upload_channel
-      - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-      - run:
-          name: Setup
-          command: .circleci/unittest/windows/scripts/setup_env.sh
-      - save_cache:
-          {% raw %}
-          key: env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-          paths:
-            - conda
-            - env
-      - run:
-          name: Install CUDA
-          command: packaging/windows/internal/cuda_install.bat
-      - run:
-          name: Update CUDA driver
-          command: packaging/windows/internal/driver_update.bat
-      - run:
-          name: Install torchvision
-          command: .circleci/unittest/windows/scripts/install.sh
-      - run:
-          name: Run tests
-          command: .circleci/unittest/windows/scripts/run_test.sh
-      - run:
-          name: Post process
-          command: .circleci/unittest/windows/scripts/post_process.sh
-      - store_test_results:
-          path: test-results
-
   cmake_linux_cpu:
     <<: *binary_common
     docker:
@@ -422,10 +375,6 @@ workflows:
   build:
     jobs:
       {{ build_workflows(windows_latest_only=True) }}
-
-  unittest:
-    jobs:
-      {{ unittest_workflows() }}
 
   cmake:
     jobs:

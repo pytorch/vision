@@ -217,36 +217,6 @@ def indent(indentation, data_list):
     return ("\n" + " " * indentation).join(yaml.dump(data_list, default_flow_style=False).splitlines())
 
 
-def unittest_workflows(indentation=6):
-    jobs = []
-    for os_type in ["windows"]:
-        for device_type in ["gpu"]:
-            if os_type == "macos" and device_type == "gpu":
-                continue
-
-            for i, python_version in enumerate(PYTHON_VERSIONS):
-
-                # Turn off unit tests for 3.11, unit test are not setup properly
-                if python_version == "3.11":
-                    continue
-
-                job = {
-                    "name": f"unittest_{os_type}_{device_type}_py{python_version}",
-                    "python_version": python_version,
-                }
-
-                if device_type == "gpu":
-                    if python_version != "3.8":
-                        job["filters"] = gen_filter_branch_tree("main", "nightly")
-                    job["cu_version"] = "cu117"
-                else:
-                    job["cu_version"] = "cpu"
-
-                jobs.append({f"unittest_{os_type}_{device_type}": job})
-
-    return indent(indentation, jobs)
-
-
 def cmake_workflows(indentation=6):
     jobs = []
     python_version = "3.8"
@@ -276,7 +246,6 @@ if __name__ == "__main__":
         f.write(
             env.get_template("config.yml.in").render(
                 build_workflows=build_workflows,
-                unittest_workflows=unittest_workflows,
                 cmake_workflows=cmake_workflows,
             )
         )
