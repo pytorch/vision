@@ -124,7 +124,9 @@ class VisionDatasetDatapointWrapper(Dataset):
         if not isinstance(dataset, datasets.VisionDataset):
             raise TypeError(
                 f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
-                f"but got a '{dataset_cls.__name__}' instead."
+                f"but got a '{dataset_cls.__name__}' instead.\n"
+                f"For an example of how to perform the wrapping for custom datasets, see\n\n"
+                "https://pytorch.org/vision/main/auto_examples/plot_datapoints.html#do-i-have-to-wrap-the-output-of-the-datasets-myself"
             )
 
         for cls in dataset_cls.mro():
