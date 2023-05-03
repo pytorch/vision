@@ -815,7 +815,7 @@ def retinanet_resnet50_fpn(
     model = RetinaNet(backbone, num_classes, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
         if weights == RetinaNet_ResNet50_FPN_Weights.COCO_V1:
             overwrite_eps(model, 0.0)
 
@@ -894,6 +894,6 @@ def retinanet_resnet50_fpn_v2(
     model = RetinaNet(backbone, num_classes, anchor_generator=anchor_generator, head=head, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
     return model

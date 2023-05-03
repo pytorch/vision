@@ -1,5 +1,5 @@
 #!/bin/bash
-if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
+if [[ "$(uname)" == Darwin ]]; then
   # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)
   echo "Existing Jpeg-related Brew libraries"
@@ -8,10 +8,13 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     brew uninstall --ignore-dependencies --force $pkg || true
   done
 
+  conda install -yq wget
+fi
+
+if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   # Install libpng from Anaconda (defaults)
   conda install ${CONDA_CHANNEL_FLAGS} libpng "jpeg<=9b" -y
   conda install -yq ffmpeg=4.2 -c pytorch
-  conda install -yq wget
 else
   # Install native CentOS libJPEG, freetype and GnuTLS
   yum install -y libjpeg-turbo-devel freetype gnutls
