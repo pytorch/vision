@@ -98,10 +98,10 @@ class Resize(Transform):
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image. If the longer edge of the image is greater
-            than ``max_size`` after being resized according to ``size``, 
+            than ``max_size`` after being resized according to ``size``,
             ``size`` will be overruled so that the longer edge is equal to
             ``max_size``.
-            As a result, the smaller edge may be shorter than ``size``. This 
+            As a result, the smaller edge may be shorter than ``size``. This
             is only supported if ``size`` is an int (or a sequence of length
             1 in torchscript mode).
         antialias (bool, optional): Whether to apply antialiasing.
