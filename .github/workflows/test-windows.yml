@@ -28,8 +28,11 @@ jobs:
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@win-gpu
     with:
+      test-infra-ref: win-gpu
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
       script: |
         set -euxo pipefail
