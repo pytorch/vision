@@ -2,7 +2,6 @@ import math
 import os
 import random
 import re
-import sys
 import textwrap
 import warnings
 from functools import partial
@@ -1446,7 +1445,7 @@ def test_random_order():
         if out == resize_crop_out:
             num_normal_order += 1
 
-    p_value = stats.binom_test(num_normal_order, num_samples, p=0.5)
+    p_value = stats.binomtest(num_normal_order, num_samples, p=0.5).pvalue
     random.setstate(random_state)
     assert p_value > 0.0001
 
@@ -1852,7 +1851,7 @@ def test_random_erasing(seed):
         aspect_ratios.append(h / w)
 
     count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
-    p_value = stats.binom_test(count_bigger_then_ones, trial, p=0.5)
+    p_value = stats.binomtest(count_bigger_then_ones, trial, p=0.5).pvalue
     assert p_value > 0.0001
 
     # Checking if RandomErasing can be printed as string
@@ -2279,10 +2278,6 @@ def test_random_grayscale_with_grayscale_input():
     ),
 )
 @pytest.mark.parametrize("from_private", (True, False))
-@pytest.mark.skipif(
-    sys.platform in ("win32", "cygwin"),
-    reason="assert_run_python_script is broken on Windows. Possible fix in https://github.com/pytorch/vision/pull/7346",
-)
 def test_functional_deprecation_warning(import_statement, from_private):
     if from_private:
         import_statement = import_statement.replace("functional", "_functional")

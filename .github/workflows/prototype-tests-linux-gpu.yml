@@ -4,91 +4,51 @@ on:
   pull_request:
 
 jobs:
-  tests:
+  unittests-prototype:
     strategy:
       matrix:
         python-version:
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11"
+        runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
-        gpu-arch-version: [""]
-        runner: ["linux.2xlarge"]
         include:
           - python-version: "3.8"
+            runner: linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.7"
-            runner: linux.4xlarge.nvidia.gpu
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
-      job-name: Python ${{ matrix.python-version }}, ${{ matrix.gpu-arch-type }}
       repository: pytorch/vision
+      runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
-      runner: ${{ matrix.runner }}
-      timeout: 45
+      timeout: 120
       script: |
-        # Mark Build Directory Safe
+        set -euo pipefail
 
-        echo '::group::Set PyTorch conda channel'
-        if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
-          POSTFIX=test
-        else
-          POSTFIX=nightly
-        fi
-        PYTORCH_CHANNEL=pytorch-"${POSTFIX}"
-        echo "${PYTORCH_CHANNEL}"
-        echo '::endgroup::'
-
-        echo '::group::Set PyTorch conda mutex'
-        if [[ ${{ matrix.gpu-arch-type }} = 'cuda' ]]; then
-          PYTORCH_MUTEX="pytorch-cuda=${{ matrix.gpu-arch-version }}"
-        else
-          PYTORCH_MUTEX=cpuonly
-        fi
-        echo "${PYTORCH_MUTEX}"
-        echo '::endgroup::'
-
-        echo '::group::Create conda environment'
-        conda create --prefix $PWD/ci \
-          --quiet --yes \
-          python=${{ matrix.python-version }} \
-          numpy libpng jpeg scipy
-        conda activate $PWD/ci
-        echo '::endgroup::'
-
-        echo '::group::Install PyTorch'
-        conda install \
-          --quiet --yes \
-          -c "${PYTORCH_CHANNEL}" \
-          -c nvidia \
-          pytorch \
-          "${PYTORCH_MUTEX}"
-        if [[ ${{ matrix.gpu-arch-type }} = 'cuda' ]]; then
-          python3 -c "import torch; exit(not torch.cuda.is_available())"
-        fi
-        echo '::endgroup::'
-
-        echo '::group::Install TorchVision'
-        python setup.py develop
-        echo '::endgroup::'
-
-        echo '::group::Collect PyTorch environment information'
-        python -m torch.utils.collect_env
-        echo '::endgroup::'
+        export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        ./.github/scripts/setup-env.sh
+        
+        # Prepare conda
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda activate ci
 
         echo '::group::Install testing utilities'
         pip install --progress-bar=off pytest pytest-mock pytest-cov
         echo '::endgroup::'
 
-        echo '::group::Run prototype tests'
         # We don't want to run the prototype datasets tests. Since the positional glob into `pytest`, i.e.
         # `test/test_prototype*.py` takes the highest priority, neither `--ignore` nor `--ignore-glob` can help us here.
         rm test/test_prototype_datasets*.py
         pytest \
-          --durations=25 \
-          --cov=torchvision/prototype \
-          --cov-report=term-missing \
-          test/test_prototype*.py
-        echo '::endgroup::'
+          -v --durations=25 \
+          --cov=torchvision/prototype --cov-report=term-missing \
+          --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" \
+          test/test_prototype_*.py

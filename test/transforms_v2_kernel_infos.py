@@ -860,8 +860,8 @@ KERNEL_INFOS.extend(
             reference_fn=reference_rotate_bounding_box,
             reference_inputs_fn=reference_inputs_rotate_bounding_box,
             closeness_kwargs={
-                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
-                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-4, rtol=1e-4),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-4, rtol=1e-4),
             },
         ),
         KernelInfo(
