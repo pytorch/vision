@@ -26,7 +26,7 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.7"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@win-gpu
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -37,15 +37,5 @@ jobs:
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-        
-        # TODO: Port this to pytorch/test-infra/.github/workflows/windows_job.yml
-        export PATH="/c/Jenkins/Miniconda3/Scripts:${PATH}"
-        
-        if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
-          # TODO: This should be handled by the generic Windows job the same as its done by the generic Linux job
-          export CUDA_HOME="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-version }}"
-          export CUDA_PATH="${CUDA_HOME}"
-          export PATH="${CUDA_PATH}/bin:${PATH}"
-        fi
         
         ./.github/scripts/unittest.sh
