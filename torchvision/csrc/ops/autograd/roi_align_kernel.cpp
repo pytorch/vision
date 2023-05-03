@@ -15,8 +15,8 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
       const torch::autograd::Variable& input,
       const torch::autograd::Variable& rois,
       double spatial_scale,
-      int64_t pooled_height,
-      int64_t pooled_width,
+      c10::SymInt pooled_height,
+      c10::SymInt pooled_width,
       int64_t sampling_ratio,
       bool aligned) {
     ctx->saved_data["spatial_scale"] = spatial_scale;
@@ -24,10 +24,10 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["sampling_ratio"] = sampling_ratio;
     ctx->saved_data["aligned"] = aligned;
-    ctx->saved_data["input_shape"] = input.sizes();
+    ctx->saved_data["input_shape"] = input.sym_sizes();
     ctx->save_for_backward({rois});
     at::AutoDispatchBelowADInplaceOrView g;
-    auto result = roi_align(
+    auto result = roi_align_symint(
         input,
         rois,
         spatial_scale,
@@ -44,17 +44,17 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     // Use data saved in forward
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
-    auto input_shape = ctx->saved_data["input_shape"].toIntList();
-    auto grad_in = detail::_roi_align_backward(
+    auto input_shape = ctx->saved_data["input_shape"].toList();
+    auto grad_in = detail::_roi_align_backward_symint(
         grad_output[0],
         rois,
         ctx->saved_data["spatial_scale"].toDouble(),
-        ctx->saved_data["pooled_height"].toInt(),
-        ctx->saved_data["pooled_width"].toInt(),
-        input_shape[0],
-        input_shape[1],
-        input_shape[2],
-        input_shape[3],
+        ctx->saved_data["pooled_height"].toSymInt(),
+        ctx->saved_data["pooled_width"].toSymInt(),
+        input_shape[0].get().toSymInt(),
+        input_shape[1].get().toSymInt(),
+        input_shape[2].get().toSymInt(),
+        input_shape[3].get().toSymInt(),
         ctx->saved_data["sampling_ratio"].toInt(),
         ctx->saved_data["aligned"].toBool());
     return {
@@ -77,16 +77,16 @@ class ROIAlignBackwardFunction
       const torch::autograd::Variable& grad,
       const torch::autograd::Variable& rois,
       double spatial_scale,
-      int64_t pooled_height,
-      int64_t pooled_width,
-      int64_t batch_size,
-      int64_t channels,
-      int64_t height,
-      int64_t width,
+      c10::SymInt pooled_height,
+      c10::SymInt pooled_width,
+      c10::SymInt batch_size,
+      c10::SymInt channels,
+      c10::SymInt height,
+      c10::SymInt width,
       int64_t sampling_ratio,
       bool aligned) {
     at::AutoDispatchBelowADInplaceOrView g;
-    auto result = detail::_roi_align_backward(
+    auto result = detail::_roi_align_backward_symint(
         grad,
         rois,
         spatial_scale,
@@ -112,8 +112,8 @@ at::Tensor roi_align_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
-    int64_t pooled_height,
-    int64_t pooled_width,
+    c10::SymInt pooled_height,
+    c10::SymInt pooled_width,
     int64_t sampling_ratio,
     bool aligned) {
   return ROIAlignFunction::apply(
@@ -130,12 +130,12 @@ at::Tensor roi_align_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& rois,
     double spatial_scale,
-    int64_t pooled_height,
-    int64_t pooled_width,
-    int64_t batch_size,
-    int64_t channels,
-    int64_t height,
-    int64_t width,
+    c10::SymInt pooled_height,
+    c10::SymInt pooled_width,
+    c10::SymInt batch_size,
+    c10::SymInt channels,
+    c10::SymInt height,
+    c10::SymInt width,
     int64_t sampling_ratio,
     bool aligned) {
   return ROIAlignBackwardFunction::apply(

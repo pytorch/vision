@@ -298,6 +298,8 @@ def get_extensions():
     use_jpeg = use_jpeg and jpeg_found
     if use_jpeg:
         print("Building torchvision with JPEG image support")
+        print(f"  libpng include path: {jpeg_include}")
+        print(f"  libpng lib path: {jpeg_lib}")
         image_link_flags.append("jpeg")
         if jpeg_conda:
             image_library += [jpeg_lib]
@@ -435,8 +437,8 @@ def get_extensions():
                     "swresample",
                     "swscale",
                 ],
-                extra_compile_args=["-std=c++14"] if os.name != "nt" else ["/std:c++14", "/MP"],
-                extra_link_args=["-std=c++14" if os.name != "nt" else "/std:c++14"],
+                extra_compile_args=["-std=c++17"] if os.name != "nt" else ["/std:c++17", "/MP"],
+                extra_link_args=["-std=c++17" if os.name != "nt" else "/std:c++17"],
             )
         )
 

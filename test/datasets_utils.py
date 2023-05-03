@@ -572,9 +572,21 @@ class DatasetTestCase(unittest.TestCase):
 
         try:
             with self.create_dataset(config) as (dataset, _):
-                wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
-                wrapped_sample = wrapped_dataset[0]
-                assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
+                for target_keys in [None, "all"]:
+                    if target_keys is not None and self.DATASET_CLASS not in {
+                        torchvision.datasets.CocoDetection,
+                        torchvision.datasets.VOCDetection,
+                        torchvision.datasets.Kitti,
+                        torchvision.datasets.WIDERFace,
+                    }:
+                        with self.assertRaisesRegex(ValueError, "`target_keys` is currently only supported for"):
+                            wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                        continue
+
+                    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                    wrapped_sample = wrapped_dataset[0]
+
+                    assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
         except TypeError as error:
             msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
             if str(error).startswith(msg):

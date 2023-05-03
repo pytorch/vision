@@ -1445,7 +1445,7 @@ def test_random_order():
         if out == resize_crop_out:
             num_normal_order += 1
 
-    p_value = stats.binom_test(num_normal_order, num_samples, p=0.5)
+    p_value = stats.binomtest(num_normal_order, num_samples, p=0.5).pvalue
     random.setstate(random_state)
     assert p_value > 0.0001
 
@@ -1851,7 +1851,7 @@ def test_random_erasing(seed):
         aspect_ratios.append(h / w)
 
     count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
-    p_value = stats.binom_test(count_bigger_then_ones, trial, p=0.5)
+    p_value = stats.binomtest(count_bigger_then_ones, trial, p=0.5).pvalue
     assert p_value > 0.0001
 
     # Checking if RandomErasing can be printed as string
