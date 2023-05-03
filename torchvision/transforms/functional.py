@@ -478,7 +478,7 @@ def resize(
         size = [size]
     output_size = _compute_resized_output_size((image_height, image_width), size, max_size)
 
-    if (image_height, image_width) == output_size:
+    if [image_height, image_width] == output_size:
         return img
 
     antialias = _check_antialias(img, antialias, interpolation)
