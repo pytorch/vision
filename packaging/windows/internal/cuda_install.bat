@@ -23,7 +23,6 @@ set CUDA_VERSION_STR=%CUDA_VER_MAJOR%.%CUDA_VER_MINOR%
 set CUDNN_FOLDER="cuda"
 set CUDNN_LIB_FOLDER="lib\x64"
 
-if %CUDA_VER% EQU 116 goto cuda116
 if %CUDA_VER% EQU 117 goto cuda117
 if %CUDA_VER% EQU 118 goto cuda118
 if %CUDA_VER% EQU 121 goto cuda121
