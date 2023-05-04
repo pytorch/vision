@@ -13,13 +13,13 @@ jobs:
   unittests:
     strategy:
       matrix:
-#        python-version:
-#          - "3.8"
-#          - "3.9"
-#          - "3.10"
-#          - "3.11"
-#        runner: ["windows.4xlarge"]
-#        gpu-arch-type: ["cpu"]
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+        runner: ["windows.4xlarge"]
+        gpu-arch-type: ["cpu"]
         include:
           - python-version: "3.8"
             runner: windows.g5.4xlarge.nvidia.gpu
