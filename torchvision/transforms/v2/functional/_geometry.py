@@ -185,7 +185,17 @@ def resize_image_tensor(
         image = image.reshape(-1, num_channels, old_height, old_width)
 
         dtype = image.dtype
-        need_cast = dtype not in (torch.float32, torch.float64)
+        acceptable_dtypes = [torch.float32, torch.float64]
+        if interpolation in [InterpolationMode.NEAREST, InterpolationMode.NEAREST_EXACT]:
+            # uint8 dtype can be included for cpu and cuda input if nearest mode
+            acceptable_dtypes.append(torch.uint8)
+        elif interpolation == InterpolationMode.BILINEAR and image.device.type == "cpu":
+            # uint8 dtype support for bilinear mode is limited to cpu and
+            # according to our benchmarks non-AVX CPUs should prefer u8->f32->interpolate->u8 path
+            if "AVX2" in torch.backends.cpu.get_cpu_capability():
+                acceptable_dtypes.append(torch.uint8)
+
+        need_cast = dtype not in acceptable_dtypes
         if need_cast:
             image = image.to(dtype=torch.float32)
 
