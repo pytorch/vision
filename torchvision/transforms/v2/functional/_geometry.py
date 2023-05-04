@@ -192,8 +192,10 @@ def resize_image_tensor(
         elif interpolation == InterpolationMode.BILINEAR and image.device.type == "cpu":
             # uint8 dtype support for bilinear mode is limited to cpu and
             # according to our benchmarks non-AVX CPUs should prefer u8->f32->interpolate->u8 path
-            if "AVX2" in torch.backends.cpu.get_cpu_capability():
-                acceptable_dtypes.append(torch.uint8)
+            # TODO: enable torchscript and torch.backends.cpu.get_cpu_capability
+            if not torch.jit.is_scripting():
+                if "AVX2" in torch.backends.cpu.get_cpu_capability():
+                    acceptable_dtypes.append(torch.uint8)
 
         need_cast = dtype not in acceptable_dtypes
         if need_cast:
