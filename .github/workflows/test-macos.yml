@@ -18,7 +18,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-        runner: ["macos-12"]
+        runner: ["macos-12-xl"]
         include:
           - python-version: "3.8"
             runner: macos-m1-12
@@ -26,9 +26,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
-      # We need an increased timeout here, since the macos-12 runner is the free one from GH
-      # and needs roughly 2 hours to just run the test suite
-      timeout: 240
+      timeout: 120
       runner: ${{ matrix.runner }}
       script: |
         set -euo pipefail
