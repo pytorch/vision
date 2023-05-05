@@ -327,6 +327,10 @@ setup_junit_results_folder() {
 }
 
 
+remove_ffmpeg() {
+  conda uninstall -yq ffmpeg
+}
+
 download_copy_ffmpeg() {
   if [[ "$OSTYPE" == "msys" ]]; then
     # conda install -yq ffmpeg=4.2 -c pytorch
@@ -335,18 +339,7 @@ download_copy_ffmpeg() {
     # cp Library/bin/*.dll ../torchvision
     echo "FFmpeg is disabled currently on Windows"
   else
-    if [[ "$(uname)" == Darwin ]]; then
-      conda install -yq ffmpeg=4.2 -c pytorch
-      conda install -yq wget
-    else
-      # pushd ext_libraries
-      # wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
-      # tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
-      # rm -rf ffmpeg-4.2-hf484d3e_0.tar.bz2
-      # ldconfig
-      # which ffmpeg
-      # popd
-      echo "FFmpeg is disabled currently on Linux"
-    fi
+    conda install -yq ffmpeg=4.2 -c pytorch
+    conda install -yq wget
   fi
 }

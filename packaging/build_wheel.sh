@@ -42,6 +42,7 @@ else
     IS_WHEEL=1 python setup.py bdist_wheel
 fi
 
+remove_ffmpeg
 
 if [[ "$(uname)" == Darwin ]]; then
     pushd dist/
