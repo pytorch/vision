@@ -26,9 +26,8 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.7"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/windows_job.yml@win-gpu
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
-      test-infra-ref: win-gpu
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
