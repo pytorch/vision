@@ -771,6 +771,8 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
                     bbox=torch.rand(4).tolist(),
                     segmentation=[torch.rand(8).tolist()],
                     category_id=int(torch.randint(91, ())),
+                    area=float(torch.rand(1)),
+                    iscrowd=int(torch.randint(2, size=(1,))),
                 )
             )
             annotion_id += 1
@@ -3336,7 +3338,7 @@ class TestDatasetWrapper:
         mocker.patch.dict(
             datapoints._dataset_wrapper.WRAPPER_FACTORIES,
             clear=False,
-            values={datasets.FakeData: lambda dataset: lambda idx, sample: sentinel},
+            values={datasets.FakeData: lambda dataset, target_keys: lambda idx, sample: sentinel},
         )
 
         class MyFakeData(datasets.FakeData):
