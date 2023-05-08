@@ -39,7 +39,7 @@ jobs:
         pip install --progress-bar=off -r requirements.txt
         echo '::endgroup::'
         
-        # The runner does not have sufficient memory to run with as many processes as their are
+        # The runner does not have sufficient memory to run with as many processes as there are
         # cores (`-j auto`). Thus, we limit to a single process (`-j 1`) here.
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
