@@ -639,7 +639,7 @@ def _swin_transformer(
     )
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
     return model
 
