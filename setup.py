@@ -525,7 +525,7 @@ if __name__ == "__main__":
 
     write_version_file()
 
-    with open("README.rst") as f:
+    with open("README.md") as f:
         readme = f.read()
 
     setup(
