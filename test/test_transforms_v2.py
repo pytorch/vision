@@ -91,13 +91,11 @@ def auto_augment_detection_adapter(transform, input, device):
             # AA detection transforms don't support masks
             continue
         elif isinstance(value, datapoints.BoundingBox):
-            # TODO: this will only test the first bbox
             if bounding_box_found:
                 # AA detection transforms only support a single bounding box tensor
                 continue
             bounding_box_found = True
         elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor, PIL.Image.Image)):
-            # TODO: this will only test the first image_or_video
             if image_or_video_found:
                 # AA transforms only support a single image or video
                 continue
