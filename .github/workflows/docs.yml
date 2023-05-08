@@ -44,4 +44,4 @@ jobs:
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
         
-        mv build/html "${RUNNER_DOCS_DIR}"
+        mv build/html/* "${RUNNER_DOCS_DIR}"
