@@ -3,7 +3,7 @@ FCOS
 
 .. currentmodule:: torchvision.models.detection
 
-The RetinaNet model is based on the `FCOS: Fully Convolutional One-Stage Object Detection
+The FCOS model is based on the `FCOS: Fully Convolutional One-Stage Object Detection
 <https://arxiv.org/abs/1904.01355>`__ paper.
 
 .. betastatus:: detection module

@@ -593,7 +593,7 @@ def _mvit(
     )
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
     return model
 
@@ -765,9 +765,10 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
 @register_model()
 @handle_legacy_interface(weights=("pretrained", MViT_V2_S_Weights.KINETICS400_V1))
 def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
-    """
-    Constructs a small MViTV2 architecture from
-    `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__.
+    """Constructs a small MViTV2 architecture from
+    `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__ and
+    `MViTv2: Improved Multiscale Vision Transformers for Classification
+    and Detection <https://arxiv.org/abs/2112.01526>`__.
 
     .. betastatus:: video module
 
@@ -785,7 +786,7 @@ def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = T
             for more details about this class.
 
     .. autoclass:: torchvision.models.video.MViT_V2_S_Weights
-        :members:
+            :members:
     """
     weights = MViT_V2_S_Weights.verify(weights)
 

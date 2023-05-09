@@ -14,23 +14,26 @@ case $(uname) in
   Darwin)
     OS_TYPE=macos
     ;;
+  MSYS*)
+    OS_TYPE=windows
+    ;;
   *)
     echo "Unknown OS type:" $(uname)
     exit 1
     ;;
 esac
 
-echo '::group::Uninstall system JPEG libraries on macOS'
-# The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG libraries installed by default
-# that interfere with our build. We uninstall them here and use the one from conda below.
 if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
+  echo '::group::Uninstall system JPEG libraries on macOS'
+  # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG libraries installed by
+  # default that interfere with our build. We uninstall them here and use the one from conda below.
   JPEG_LIBS=$(brew list | grep jpeg)
   echo $JPEG_LIBS
   for lib in $JPEG_LIBS; do
     brew uninstall --ignore-dependencies --force $lib || true
   done
+  echo '::endgroup::'
 fi
-echo '::endgroup::'
 
 echo '::group::Create build environment'
 # See https://github.com/pytorch/vision/issues/7296 for ffmpeg
@@ -66,9 +69,23 @@ ltt install --progress-bar=off \
   torch
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
-  python3 -c "import torch; exit(not torch.cuda.is_available())"
+  python -c "import torch; exit(not torch.cuda.is_available())"
 fi
 echo '::endgroup::'
+
+if [[ "${OS_TYPE}" == "windows" ]]; then
+  echo '::group::Install third party dependencies prior to TorchVision install on Windows'
+  # `easy_install`, i.e. `python setup.py` has problems downloading the dependencies due to SSL.
+  # Thus, we install them upfront with `pip` to avoid that.
+  # Instead of fixing the SSL error, we can probably maintain this special case until we switch away from the deprecated
+  # `easy_install` anyway.
+  python setup.py egg_info
+  # The requires.txt cannot be used with `pip install -r` directly. The requirements are listed at the top and the
+  # optional dependencies come in non-standard syntax after a blank line. Thus, we just extract the header.
+  sed -e '/^$/,$d' *.egg-info/requires.txt > requirements.txt
+  pip install --progress-bar=off -r requirements.txt
+  echo '::endgroup::'
+fi
 
 echo '::group::Install TorchVision'
 python setup.py develop
