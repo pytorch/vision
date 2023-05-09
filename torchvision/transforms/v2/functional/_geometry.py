@@ -192,9 +192,20 @@ def resize_image_tensor(
         elif interpolation == InterpolationMode.BILINEAR and image.device.type == "cpu":
             # uint8 dtype support for bilinear mode is limited to cpu and
             # according to our benchmarks non-AVX CPUs should prefer u8->f32->interpolate->u8 path
-            # TODO: enable torchscript and torch.backends.cpu.get_cpu_capability
             if "AVX2" in torch.backends.cpu.get_cpu_capability():
                 acceptable_dtypes.append(torch.uint8)
+
+        if image.is_contiguous(memory_format=torch.channels_last):
+            strides = image.stride()
+            numel = image.numel()
+            if image.shape[0] == 1 and numel != strides[0]:
+                # This is the case when channels last tensor was squeezed and unsqueezed such that
+                # stride[0] set as image.shape[1] * image.stride()[1] instead of being image.numel()
+                # Let's restride image such that it will be correctly treated as channels last.
+                # Related pytorch issue: https://github.com/pytorch/pytorch/issues/68430
+                new_strides = list(strides)
+                new_strides[0] = numel
+                image = image.as_strided((1, num_channels, old_height, old_width), new_strides)
 
         need_cast = dtype not in acceptable_dtypes
         if need_cast:
