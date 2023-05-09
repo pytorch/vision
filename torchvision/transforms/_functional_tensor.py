@@ -459,19 +459,7 @@ def resize(
         # now we don't as True is the default.
         antialias = False
 
-    acceptable_dtypes = [torch.float32, torch.float64]
-    if interpolation in ["nearest", "nearest-exact"]:
-        # uint8 dtype can be included for cpu and cuda input if nearest mode
-        acceptable_dtypes.append(torch.uint8)
-    elif interpolation == "bilinear" and img.device.type == "cpu":
-        # uint8 dtype support for bilinear mode is limited to cpu and
-        # according to our benchmarks non-AVX CPUs should prefer u8->f32->interpolate->u8 path
-        # TODO: enable torchscript and torch.backends.cpu.get_cpu_capability
-        if not torch.jit.is_scripting():
-            if "AVX2" in torch.backends.cpu.get_cpu_capability():
-                acceptable_dtypes.append(torch.uint8)
-
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, acceptable_dtypes)
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
