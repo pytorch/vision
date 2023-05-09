@@ -321,6 +321,9 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
+    if (old_height, old_width) == (new_height, new_width):
+        return bounding_box, (old_height, old_width)
+
     affine_matrix = np.array(
         [
             [new_width / old_width, 0, 0],
