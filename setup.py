@@ -537,6 +537,7 @@ if __name__ == "__main__":
         url="https://github.com/pytorch/vision",
         description="image and video datasets and models for torch deep learning",
         long_description=readme,
+        long_description_content_type="text/markdown",
         license="BSD",
         # Package info
         packages=find_packages(exclude=("test",)),
