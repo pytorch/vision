@@ -3,8 +3,7 @@
 set -euo pipefail
 
 # Prepare conda
-CONDA_PATH=$(which conda)
-eval "$(${CONDA_PATH} shell.bash hook)"
+eval "$($(which conda) shell.bash hook)"
 
 # Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in
@@ -88,6 +87,7 @@ if [[ "${OS_TYPE}" == "windows" ]]; then
 fi
 
 echo '::group::Install TorchVision'
+# FIXME: can we run this upfront or does this needs to happen after the cmake build?
 python setup.py develop
 echo '::endgroup::'
 
