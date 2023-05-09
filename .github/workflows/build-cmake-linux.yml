@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  unittests:
+  cmake:
     strategy:
       matrix:
         include:
