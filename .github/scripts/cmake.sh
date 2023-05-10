@@ -20,9 +20,11 @@ cd cpp_build
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}"
 
 PARALLELISM=8
+set +u
 if [ -n "$MAX_JOBS" ]; then
     PARALLELISM=$MAX_JOBS
 fi
+set -u
 
 make -j$PARALLELISM
 make install
