@@ -334,7 +334,7 @@ class Resize(torch.nn.Module):
             v0.17** for the PIL and Tensor backends to be consistent.
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=321, antialias="warn"):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias="warn"):
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(size, (int, Sequence)):
@@ -364,6 +364,36 @@ class Resize(torch.nn.Module):
         detail = f"(size={self.size}, interpolation={self.interpolation.value}, max_size={self.max_size}, antialias={self.antialias})"
         return f"{self.__class__.__name__}{detail}"
 
+
+class CenterCrop(torch.nn.Module):
+    """Crops the given image at the center.
+    If the image is torch Tensor, it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.
+
+    Args:
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
+    """
+
+    def __init__(self, size):
+        super().__init__()
+        _log_api_usage_once(self)
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be cropped.
+
+        Returns:
+            PIL Image or Tensor: Cropped image.
+        """
+        return F.center_crop(img, self.size)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(size={self.size})"
 
 
 class Pad(torch.nn.Module):
@@ -404,7 +434,7 @@ class Pad(torch.nn.Module):
               will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    def __init__(self, padding, fill, padding_mode="constant"):
+    def __init__(self, padding, fill=0, padding_mode="constant"):
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(padding, (numbers.Number, tuple, list)):
