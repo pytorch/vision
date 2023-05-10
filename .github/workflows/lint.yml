@@ -98,7 +98,7 @@ jobs:
         echo '::endgroup::'
 
   bc:
-    if: github.event.issue.pull_request
+    if: github.event.pull_request
     runs-on: ubuntu-latest
     steps:
       - name: Run BC Lint Action
