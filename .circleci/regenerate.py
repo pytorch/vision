@@ -28,6 +28,10 @@ RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
 def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
+
+    # Don't generate anything for build workflow
+    return indent(indentation, w)
+
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
