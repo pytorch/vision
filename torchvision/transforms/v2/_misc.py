@@ -32,10 +32,12 @@ class Lambda(Transform):
         lambd (function): Lambda/function to be used for transform.
     """
 
+    _transformed_types = (object,)
+
     def __init__(self, lambd: Callable[[Any], Any], *types: Type):
         super().__init__()
         self.lambd = lambd
-        self.types = types or (object,)
+        self.types = types or self._transformed_types
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, self.types):
