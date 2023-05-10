@@ -292,7 +292,8 @@ class ImagePair(TensorLikePair):
         actual, expected = self._equalize_attributes(actual, expected)
 
         if self.mae:
-            actual, expected = self._promote_for_comparison(actual, expected)
+            if actual.dtype is torch.uint8:
+                actual, expected = actual.to(torch.int), expected.to(torch.int)
             mae = float(torch.abs(actual - expected).float().mean())
             if mae > self.atol:
                 self._fail(
@@ -351,7 +352,7 @@ assert_equal = functools.partial(assert_close, rtol=0, atol=0)
 
 def parametrized_error_message(*args, **kwargs):
     def to_str(obj):
-        if isinstance(obj, torch.Tensor) and obj.numel() > 10:
+        if isinstance(obj, torch.Tensor) and obj.numel() > 30:
             return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
         elif isinstance(obj, enum.Enum):
             return f"{type(obj).__name__}.{obj.name}"
@@ -844,17 +845,20 @@ class InfoBase:
 
 def assert_run_python_script(source_code):
     """Utility to check assertions in an independent Python subprocess.
-    The script provided in the source code should return 0 and not print
-    anything on stderr or stdout. Taken from scikit-learn test utils.
-    source_code (str): The Python source code to execute.
-    """
-    with tempfile.NamedTemporaryFile(mode="wb") as f:
-        f.write(source_code.encode())
-        f.flush()
 
-        cmd = [sys.executable, f.name]
+    The script provided in the source code should return 0 and not print
+    anything on stderr or stdout. Modified from scikit-learn test utils.
+
+    Args:
+        source_code (str): The Python source code to execute.
+    """
+    with get_tmp_dir() as root:
+        path = pathlib.Path(root) / "main.py"
+        with open(path, "w") as file:
+            file.write(source_code)
+
         try:
-            out = check_output(cmd, stderr=STDOUT)
+            out = check_output([sys.executable, str(path)], stderr=STDOUT)
         except CalledProcessError as e:
             raise RuntimeError(f"script errored with output:\n{e.output.decode()}")
         if out != b"":

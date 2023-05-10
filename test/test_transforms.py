@@ -463,6 +463,16 @@ def test_resize_size_equals_small_edge_size(height, width):
     assert max(result.size) == max_size
 
 
+def test_resize_equal_input_output_sizes():
+    # Regression test for https://github.com/pytorch/vision/issues/7518
+    height, width = 28, 27
+    img = Image.new("RGB", size=(width, height))
+
+    t = transforms.Resize((height, width), antialias=True)
+    result = t(img)
+    assert result is img
+
+
 class TestPad:
     @pytest.mark.parametrize("fill", [85, 85.0])
     def test_pad(self, fill):
@@ -1445,7 +1455,7 @@ def test_random_order():
         if out == resize_crop_out:
             num_normal_order += 1
 
-    p_value = stats.binom_test(num_normal_order, num_samples, p=0.5)
+    p_value = stats.binomtest(num_normal_order, num_samples, p=0.5).pvalue
     random.setstate(random_state)
     assert p_value > 0.0001
 
@@ -1851,7 +1861,7 @@ def test_random_erasing(seed):
         aspect_ratios.append(h / w)
 
     count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
-    p_value = stats.binom_test(count_bigger_then_ones, trial, p=0.5)
+    p_value = stats.binomtest(count_bigger_then_ones, trial, p=0.5).pvalue
     assert p_value > 0.0001
 
     # Checking if RandomErasing can be printed as string

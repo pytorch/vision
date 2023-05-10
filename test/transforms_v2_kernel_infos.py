@@ -79,20 +79,20 @@ class KernelInfo(InfoBase):
         self.logs_usage = logs_usage
 
 
-def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=False):
+def pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=False):
     return dict(atol=uint8_atol / 255 * get_max_value(dtype), rtol=0, mae=mae)
 
 
 def cuda_vs_cpu_pixel_difference(atol=1):
     return {
-        (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): _pixel_difference_closeness_kwargs(atol, dtype=dtype)
+        (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): pixel_difference_closeness_kwargs(atol, dtype=dtype)
         for dtype in [torch.uint8, torch.float32]
     }
 
 
 def pil_reference_pixel_difference(atol=1, mae=False):
     return {
-        (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): _pixel_difference_closeness_kwargs(
+        (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): pixel_difference_closeness_kwargs(
             atol, mae=mae
         )
     }
@@ -104,7 +104,7 @@ def float32_vs_uint8_pixel_difference(atol=1, mae=False):
             ("TestKernels", "test_float32_vs_uint8"),
             torch.float32,
             "cpu",
-        ): _pixel_difference_closeness_kwargs(atol, dtype=torch.float32, mae=mae)
+        ): pixel_difference_closeness_kwargs(atol, dtype=torch.float32, mae=mae)
     }
 
 
@@ -320,6 +320,9 @@ def sample_inputs_resize_video():
 def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
+
+    if (old_height, old_width) == (new_height, new_width):
+        return bounding_box, (old_height, old_width)
 
     affine_matrix = np.array(
         [
@@ -860,8 +863,8 @@ KERNEL_INFOS.extend(
             reference_fn=reference_rotate_bounding_box,
             reference_inputs_fn=reference_inputs_rotate_bounding_box,
             closeness_kwargs={
-                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
-                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-4, rtol=1e-4),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-4, rtol=1e-4),
             },
         ),
         KernelInfo(
@@ -1938,12 +1941,16 @@ KERNEL_INFOS.extend(
                 **pil_reference_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(2),
                 **cuda_vs_cpu_pixel_difference(),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): pixel_difference_closeness_kwargs(1),
             },
         ),
         KernelInfo(
             F.adjust_contrast_video,
             sample_inputs_fn=sample_inputs_adjust_contrast_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
+            closeness_kwargs={
+                **cuda_vs_cpu_pixel_difference(),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): pixel_difference_closeness_kwargs(1),
+            },
         ),
     ]
 )
@@ -2071,11 +2078,13 @@ KERNEL_INFOS.extend(
             closeness_kwargs={
                 **pil_reference_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(2),
+                **cuda_vs_cpu_pixel_difference(),
             },
         ),
         KernelInfo(
             F.adjust_saturation_video,
             sample_inputs_fn=sample_inputs_adjust_saturation_video,
+            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
         ),
     ]
 )

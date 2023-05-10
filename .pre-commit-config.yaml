@@ -11,7 +11,7 @@ repos:
       - id: end-of-file-fixer
 
   - repo: https://github.com/omnilib/ufmt
-    rev: v1.3.2
+    rev: v1.3.3
     hooks:
       - id: ufmt
         additional_dependencies:

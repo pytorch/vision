@@ -298,6 +298,8 @@ def get_extensions():
     use_jpeg = use_jpeg and jpeg_found
     if use_jpeg:
         print("Building torchvision with JPEG image support")
+        print(f"  libpng include path: {jpeg_include}")
+        print(f"  libpng lib path: {jpeg_lib}")
         image_link_flags.append("jpeg")
         if jpeg_conda:
             image_library += [jpeg_lib]
@@ -435,8 +437,8 @@ def get_extensions():
                     "swresample",
                     "swscale",
                 ],
-                extra_compile_args=["-std=c++14"] if os.name != "nt" else ["/std:c++14", "/MP"],
-                extra_link_args=["-std=c++14" if os.name != "nt" else "/std:c++14"],
+                extra_compile_args=["-std=c++17"] if os.name != "nt" else ["/std:c++17", "/MP"],
+                extra_link_args=["-std=c++17" if os.name != "nt" else "/std:c++17"],
             )
         )
 
@@ -523,7 +525,7 @@ if __name__ == "__main__":
 
     write_version_file()
 
-    with open("README.rst") as f:
+    with open("README.md") as f:
         readme = f.read()
 
     setup(
@@ -535,6 +537,7 @@ if __name__ == "__main__":
         url="https://github.com/pytorch/vision",
         description="image and video datasets and models for torch deep learning",
         long_description=readme,
+        long_description_content_type="text/markdown",
         license="BSD",
         # Package info
         packages=find_packages(exclude=("test",)),
