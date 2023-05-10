@@ -369,6 +369,14 @@ class CorrBlock(nn.Module):
             raise ValueError(
                 f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)"
             )
+
+        _, _, h_fmap, w_fmap = fmap1.shape
+        min_res = 2 * 2 ** (self.num_levels - 1) * 8
+        if (min_res // 8, min_res // 8) <= (h_fmap, w_fmap):
+            raise ValueError(
+                f"Input image resolution is too small, resolution should be at least {min_res} (h) and {min_res} (w)"
+            )
+
         corr_volume = self._compute_corr_volume(fmap1, fmap2)
 
         batch_size, h, w, num_channels, _, _ = corr_volume.shape  # _, _ = h, w
@@ -480,15 +488,6 @@ class RAFT(nn.Module):
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
         if fmap1.shape[-2:] != (h // 8, w // 8):
             raise ValueError("The feature encoder should downsample H and W by 8")
-        
-        _, _, h_fmap, w_fmap = fmap1.shape
-        if not (((h_fmap // 2**(self.corr_block.num_levels - 1))) < 2) and (
-                ((w_fmap // 2**(self.corr_block.num_levels - 1))) < 2
-        ):
-            min_res = 2 * 2**(self.corr_block.num_levels - 1) * 8
-            raise ValueError(
-                f"input image resolution is too small image resolution should be at least {min_res} (h) and {min_res} (w), got {h} (h) and {w} (w)"
-            )
         
         self.corr_block.build_pyramid(fmap1, fmap2)
 
