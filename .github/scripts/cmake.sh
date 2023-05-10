@@ -14,13 +14,6 @@ else
   WITH_CUDA=0
 fi
 
-PARALLELISM=8
-set +u
-if [ -n "$MAX_JOBS" ]; then
-    PARALLELISM=$MAX_JOBS
-fi
-set -u
-
 echo '::group::Prepare CMake builds'
 mkdir -p cpp_build
 
@@ -44,7 +37,7 @@ echo '::group::Build and install libtorchvision'
 pushd cpp_build
 
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}"
-make -j$PARALLELISM
+make
 make install
 
 popd
@@ -54,7 +47,7 @@ echo '::group::Build and run project that uses Faster-RCNN'
 pushd test/tracing/frcnn/build
 
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}"
-make -j$PARALLELISM
+make
 
 ./test_frcnn_tracing
 
@@ -65,7 +58,7 @@ echo '::group::Build and run C++ example'
 pushd examples/cpp/hello_world/build
 
 cmake .. -DTorch_DIR="${Torch_DIR}"
-make -j$PARALLELISM
+make
 
 ./hello-world
 
