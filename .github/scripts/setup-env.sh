@@ -87,8 +87,7 @@ if [[ "${OS_TYPE}" == "windows" ]]; then
 fi
 
 echo '::group::Install TorchVision'
-# FIXME: can we run this upfront or does this needs to happen after the cmake build?
-# python setup.py develop
+python setup.py develop
 echo '::endgroup::'
 
 echo '::group::Collect PyTorch environment information'
