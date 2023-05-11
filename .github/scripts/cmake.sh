@@ -7,7 +7,7 @@ set -euxo pipefail
 # Activate conda environment
 eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
 
-Torch_DIR=$(python -c "import torch; print(torch.__path__[0])")/share/cmake/Torch
+Torch_DIR=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]).joinpath('share/cmake/Torch'))")
 if [[ "${GPU_ARCH_TYPE}" == "cuda" ]]; then
   WITH_CUDA=1
 else
