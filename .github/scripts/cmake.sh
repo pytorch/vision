@@ -24,8 +24,14 @@ case $(uname) in
     ;;
 esac
 
-JOBS=$(nproc)
 PACKAGING_DIR="${PWD}/packaging"
+
+if [[ $OS_TYPE == macos ]]; then
+  JOBS=$(sysctl -n hw.logicalcpu)
+else
+  JOBS=$(nproc)
+fi
+
 
 Torch_DIR=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]).joinpath('share/cmake/Torch'))")
 if [[ "${GPU_ARCH_TYPE}" == "cuda" ]]; then
