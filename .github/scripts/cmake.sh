@@ -32,12 +32,11 @@ else
   JOBS=$(nproc)
 fi
 
-if [[ $OS_TYPE == windows ]]; then
+if [[ $OS_TYPE == windows && $GPU_ARCH_TYPE == cuda ]]; then
   echo $CUDA_PATH
   echo $CUDA_HOME
   echo $PATH
   export PATH="${CUDA_PATH}/libnvvp:${PATH}"
-  JOBS=$(sysctl -n hw.logicalcpu)
 fi
 
 
