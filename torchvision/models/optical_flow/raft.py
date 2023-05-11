@@ -371,12 +371,12 @@ class CorrBlock(nn.Module):
             )
 
         # Explaining min_fmap_size below: the fmaps are down-sampled (num_levels - 1) times by a factor of 2.
-        # The resulting corr_volum most have at least 2 values (hence the 2* factor), otherwise grid_sample() would
+        # The last corr_volume most have at least 2 values (hence the 2* factor), otherwise grid_sample() would
         # produce nans in its output.
         min_fmap_size = 2 * (2 ** (self.num_levels - 1))
         if any(fmap_size < min_fmap_size for fmap_size in fmap1.shape[-2:]):
             raise ValueError(
-                f"Feature maps are too small to be down-sampled by the correlation pyramid. "
+                "Feature maps are too small to be down-sampled by the correlation pyramid. "
                 f"H and W of feature maps should be at least {min_fmap_size}; got: {fmap1.shape[-2:]}. "
                 "Remember that input images to the model are downsampled by 8, so that means their "
                 f"dimensions should be at least 8 * {min_fmap_size} = {8 * min_fmap_size}."
