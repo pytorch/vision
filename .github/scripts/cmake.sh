@@ -86,7 +86,7 @@ echo '::group::Build and run project that uses Faster-RCNN'
 pushd test/tracing/frcnn/build
 
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}"
-make -jJOBS
+make -j$JOBS
 
 ./test_frcnn_tracing
 
@@ -97,7 +97,7 @@ echo '::group::Build and run C++ example'
 pushd examples/cpp/hello_world/build
 
 cmake .. -DTorch_DIR="${Torch_DIR}"
-make -jJOBS
+make -j$JOBS
 
 ./hello-world
 
