@@ -36,7 +36,7 @@ echo '::endgroup::'
 echo '::group::Build and install libtorchvision'
 pushd cpp_build
 
-cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}"
+cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
 make
 make install
 
