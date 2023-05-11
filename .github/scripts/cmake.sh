@@ -69,6 +69,7 @@ echo '::endgroup::'
 echo '::group::Build and install libtorchvision'
 pushd cpp_build
 
+ls "${CONDA_PREFIX}/lib" | grep -E "jpeg|png"
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cmake.bat" $JOBS
