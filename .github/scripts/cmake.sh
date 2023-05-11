@@ -71,7 +71,6 @@ echo '::group::Build and install libtorchvision'
 pushd cpp_build
 
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
-
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cmake.bat" $JOBS
 else
@@ -86,7 +85,11 @@ echo '::group::Build and run project that uses Faster-RCNN'
 pushd test/tracing/frcnn/build
 
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}"
-make -j$JOBS
+if [[ $OS_TYPE == windows ]]; then
+  "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_frcnn.bat" $JOBS
+else
+  make -j$JOBS
+fi
 
 ./test_frcnn_tracing
 
@@ -97,7 +100,11 @@ echo '::group::Build and run C++ example'
 pushd examples/cpp/hello_world/build
 
 cmake .. -DTorch_DIR="${Torch_DIR}"
-make -j$JOBS
+if [[ $OS_TYPE == windows ]]; then
+  "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cpp_example.bat" $JOBS
+else
+  make -j$JOBS
+fi
 
 ./hello-world
 
