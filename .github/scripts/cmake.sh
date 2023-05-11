@@ -5,7 +5,7 @@ set -euxo pipefail
 ./.github/scripts/setup-env.sh
 
 # Activate conda environment
-eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
+set +x && eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci && set -x
 
 # Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in

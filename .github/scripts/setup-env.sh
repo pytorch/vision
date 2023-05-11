@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euxo pipefail
 
 # Prepare conda
-eval "$($(which conda) shell.bash hook)"
+set +x && eval "$($(which conda) shell.bash hook)" && set -x
 
 # Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in
