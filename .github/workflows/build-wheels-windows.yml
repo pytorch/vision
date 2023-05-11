@@ -46,9 +46,7 @@ jobs:
       post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
-      # Using "development" as trigger event so these binaries are not uploaded
-      # to official channels yet
-      trigger-event: development
+      trigger-event: ${{ github.event_name }}
     secrets:
       AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
       AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY: ${{ secrets.AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY }}
