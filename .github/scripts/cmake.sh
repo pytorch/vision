@@ -5,7 +5,7 @@ set -euxo pipefail
 ./.github/scripts/setup-env.sh
 
 # Activate conda environment
-set +x && eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci && set -x
+set +x && eval "$($(which conda) shell.bash hook)" && set -x && conda deactivate && conda activate ci
 
 # Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in
@@ -33,12 +33,8 @@ else
 fi
 
 if [[ $OS_TYPE == windows && $GPU_ARCH_TYPE == cuda ]]; then
-  echo $CUDA_PATH
-  echo $CUDA_HOME
-  echo $PATH
   export PATH="${CUDA_PATH}/libnvvp:${PATH}"
 fi
-
 
 Torch_DIR=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]).joinpath('share/cmake/Torch'))")
 if [[ "${GPU_ARCH_TYPE}" == "cuda" ]]; then
@@ -69,7 +65,10 @@ echo '::endgroup::'
 echo '::group::Build and install libtorchvision'
 pushd cpp_build
 
-ls "${CONDA_PREFIX}/lib" | grep -E "jpeg|png"
+if [[ $OS_TYPE == macos ]]; then
+  # DEBUG
+  ls "${CONDA_PREFIX}/lib" | grep -E "jpeg|png"
+fi
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cmake.bat" $JOBS
