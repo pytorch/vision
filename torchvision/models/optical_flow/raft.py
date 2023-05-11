@@ -370,11 +370,16 @@ class CorrBlock(nn.Module):
                 f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)"
             )
 
-        _, _, h_fmap, w_fmap = fmap1.shape
-        min_res = 2 * 2 ** (self.num_levels - 1) * 8
-        if (min_res // 8, min_res // 8) <= (h_fmap, w_fmap):
+        # Explaining min_fmap_size below: the fmaps are down-sampled (num_levels - 1) times by a factor of 2.
+        # The resulting corr_volum most have at least 2 values (hence the 2* factor), otherwise grid_sample() would
+        # produce nans in its output.
+        min_fmap_size = 2 * (2 ** (self.num_levels - 1))
+        if any(fmap_size < min_fmap_size for fmap_size in fmap1.shape[-2:]):
             raise ValueError(
-                f"Input image resolution is too small, resolution should be at least {min_res} (h) and {min_res} (w)"
+                f"Feature maps are too small to be down-sampled by the correlation pyramid. "
+                f"H and W of feature maps should be at least {min_fmap_size}; got: {fmap1.shape[-2:]}. "
+                "Remember that input images to the model are downsampled by 8, so that means their "
+                f"dimensions should be at least 8 * {min_fmap_size} = {8 * min_fmap_size}."
             )
 
         corr_volume = self._compute_corr_volume(fmap1, fmap2)
@@ -488,7 +493,7 @@ class RAFT(nn.Module):
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
         if fmap1.shape[-2:] != (h // 8, w // 8):
             raise ValueError("The feature encoder should downsample H and W by 8")
-        
+
         self.corr_block.build_pyramid(fmap1, fmap2)
 
         context_out = self.context_encoder(image1)
