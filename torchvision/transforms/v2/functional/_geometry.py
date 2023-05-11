@@ -195,6 +195,12 @@ def resize_image_tensor(
             if "AVX2" in torch.backends.cpu.get_cpu_capability():
                 acceptable_dtypes.append(torch.uint8)
 
+                # TODO: Remove when https://github.com/pytorch/pytorch/pull/101136 is landed
+                if dtype == torch.uint8 and not (
+                    image.is_contiguous() or image.is_contiguous(memory_format=torch.channels_last)
+                ):
+                    image = image.contiguous(memory_format=torch.channels_last)
+
         if image.is_contiguous(memory_format=torch.channels_last):
             strides = image.stride()
             numel = image.numel()

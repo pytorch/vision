@@ -497,18 +497,21 @@ def make_image_loader(
     extra_dims=(),
     dtype=torch.float32,
     constant_alpha=True,
+    memory_format=torch.contiguous_format,
 ):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
-    def fn(shape, dtype, device):
+    def fn(shape, dtype, device, memory_format):
         max_value = get_max_value(dtype)
-        data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
+        data = torch.testing.make_tensor(
+            shape, low=0, high=max_value, dtype=dtype, device=device, memory_format=memory_format
+        )
         if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
             data[..., -1, :, :] = max_value
         return datapoints.Image(data)
 
-    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype)
+    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, memory_format=memory_format)
 
 
 make_image = from_loader(make_image_loader)
@@ -757,8 +760,10 @@ def make_video_loader(
     size = _parse_spatial_size(size)
     num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
-    def fn(shape, dtype, device):
-        video = make_image(size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device)
+    def fn(shape, dtype, device, memory_format):
+        video = make_image(
+            size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device, memory_format=memory_format
+        )
         return datapoints.Video(video)
 
     return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
