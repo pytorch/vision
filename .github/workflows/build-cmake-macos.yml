@@ -1,4 +1,4 @@
-name: Tests on macOS
+name: CMake on macOS
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  unittests:
+  cmake:
     strategy:
       matrix:
         include:

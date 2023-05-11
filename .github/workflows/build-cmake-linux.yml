@@ -1,4 +1,4 @@
-name: Cmake on Linux
+name: CMake on Linux
 
 on:
   pull_request:
