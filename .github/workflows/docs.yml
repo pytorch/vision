@@ -45,13 +45,11 @@ jobs:
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
         
-        # On PRs we want to upload the docs into our S3 bucket for preview. For all other 
-        # events, we upload them as artifact in order to download them manually or from other 
-        # CI jobs.
+        cp build/html "${RUNNER_ARTIFACT_DIR}"
+        
+        # On PRs we also want to upload the docs into our S3 bucket for preview.
         if [[ ${{ github.event_name == 'pull_request' }} ]]; then
-          mv build/html/* "${RUNNER_DOCS_DIR}"
-        else
-          mv build/html "${RUNNER_ARTIFACT_DIR}"
+          cp -r build/html/* "${RUNNER_DOCS_DIR}"
         fi
 
   upload:
