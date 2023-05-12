@@ -565,7 +565,6 @@ def make_image_loader_for_interpolation(
         else:
             image_tensor = image_tensor.to(device=device)
         image_tensor = convert_dtype_image_tensor(image_tensor, dtype=dtype)
-        assert image_tensor[None].is_contiguous(memory_format=memory_format)
 
         return datapoints.Image(image_tensor)
 

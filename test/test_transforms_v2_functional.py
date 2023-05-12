@@ -1382,6 +1382,11 @@ def test_memory_format_consistency_resize_image_tensor(test_id, info, args_kwarg
     assert input.ndim == 3, error_msg_fn
     input_stride = input.stride()
     output_stride = output.stride()
+    # Here we check output memory format according to the input:
+    # if input_stride is (..., 1) then input is most likely channels first and thus
+    #   output strides should match channels first strides (H * W, H, 1)
+    # if input_stride is (1, ...) then input is most likely channels last and thus
+    #   output strides should match channels last strides (1, W * C, C)
     if input_stride[-1] == 1:
         expected_stride = (output.shape[-2] * output.shape[-1], output.shape[-1], 1)
         assert expected_stride == output_stride, error_msg_fn("")

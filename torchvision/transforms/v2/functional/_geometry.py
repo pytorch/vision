@@ -176,12 +176,13 @@ def resize_image_tensor(
         antialias = False
 
     shape = image.shape
+    numel = image.numel()
     num_channels, old_height, old_width = shape[-3:]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
 
     if (new_height, new_width) == (old_height, old_width):
         return image
-    elif image.numel() > 0:
+    elif numel > 0:
         image = image.reshape(-1, num_channels, old_height, old_width)
 
         dtype = image.dtype
@@ -201,17 +202,19 @@ def resize_image_tensor(
                 ):
                     image = image.contiguous(memory_format=torch.channels_last)
 
-        if image.is_contiguous(memory_format=torch.channels_last):
-            strides = image.stride()
-            numel = image.numel()
-            if image.shape[0] == 1 and numel != strides[0]:
-                # This is the case when channels last tensor was squeezed and unsqueezed such that
-                # stride[0] set as image.shape[1] * image.stride()[1] instead of being image.numel()
-                # Let's restride image such that it will be correctly treated as channels last.
-                # Related pytorch issue: https://github.com/pytorch/pytorch/issues/68430
-                new_strides = list(strides)
-                new_strides[0] = numel
-                image = image.as_strided((1, num_channels, old_height, old_width), new_strides)
+        strides = image.stride()
+        if image.is_contiguous(memory_format=torch.channels_last) and image.shape[0] == 1 and numel != strides[0]:
+            # There is a weird behaviour in torch core where the output tensor of `interpolate()` can be allocated as
+            # contiguous even though the input is un-ambiguously channels_last (https://github.com/pytorch/pytorch/issues/68430).
+            # In particular this happens for the typical torchvision use-case of single CHW images where we fake the batch dim
+            # to become 1CHW. Below, we restride those tensors to trick torch core into properly allocating the output as
+            # channels_last, thus preserving the memory format of the input. This is not just for format consistency:
+            # for uint8 bilinear images, this also avoids an extra copy (re-packing) of the output and saves time.
+            # TODO: when https://github.com/pytorch/pytorch/issues/68430 is fixed (possibly by https://github.com/pytorch/pytorch/pull/100373),
+            # we should be able to remove this hack.
+            new_strides = list(strides)
+            new_strides[0] = numel
+            image = image.as_strided((1, num_channels, old_height, old_width), new_strides)
 
         need_cast = dtype not in acceptable_dtypes
         if need_cast:

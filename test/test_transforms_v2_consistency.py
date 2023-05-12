@@ -98,7 +98,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for biliear and nearest modes
+        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         closeness_kwargs=dict(rtol=1, atol=1),
     ),
     ConsistencyConfig(
@@ -315,7 +315,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for biliear and nearest modes
+        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         closeness_kwargs=dict(rtol=1, atol=1),
     ),
     ConsistencyConfig(
@@ -787,7 +787,7 @@ class TestContainerTransforms:
             ]
         )
 
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for biliear and nearest modes
+        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=1, atol=1))
 
     @pytest.mark.parametrize("p", [0, 0.1, 0.5, 0.9, 1])
@@ -812,7 +812,7 @@ class TestContainerTransforms:
             p=p,
         )
 
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for biliear and nearest modes
+        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=1, atol=1))
 
         if sequence_type is nn.ModuleList:
@@ -838,7 +838,7 @@ class TestContainerTransforms:
             p=probabilities,
         )
 
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for biliear and nearest modes
+        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=1, atol=1))
 
 
