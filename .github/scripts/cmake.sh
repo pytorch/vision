@@ -32,10 +32,6 @@ else
   JOBS=$(nproc)
 fi
 
-if [[ $OS_TYPE == windows && $GPU_ARCH_TYPE == cuda ]]; then
-  export PATH="${CUDA_PATH}/libnvvp:${PATH}"
-fi
-
 Torch_DIR=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]).joinpath('share/cmake/Torch'))")
 if [[ "${GPU_ARCH_TYPE}" == "cuda" ]]; then
   WITH_CUDA=1
