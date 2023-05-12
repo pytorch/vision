@@ -24,15 +24,19 @@ case $(uname) in
     ;;
 esac
 
-PACKAGING_DIR="${PWD}/packaging"
-
 if [[ $OS_TYPE == macos ]]; then
   JOBS=$(sysctl -n hw.logicalcpu)
 else
   JOBS=$(nproc)
 fi
 
-Torch_DIR=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]).joinpath('share/cmake/Torch'))")
+TORCH_PATH=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0])).as_posix()")
+if [[ $OS_TYPE == windows ]]; then
+  PACKAGING_DIR="${PWD}/packaging"
+  export PATH="${TORCH_PATH}/lib:${PATH}"
+fi
+
+Torch_DIR="${TORCH_PATH}/share/cmake/Torch"
 if [[ "${GPU_ARCH_TYPE}" == "cuda" ]]; then
   WITH_CUDA=1
 else
@@ -89,6 +93,8 @@ cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" \
   -DCMAKE_FIND_FRAMEWORK=NEVER
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_frcnn.bat" $JOBS
+  cd Release
+  cp ../fasterrcnn_resnet50_fpn.pt .
 else
   make -j$JOBS
 fi
@@ -106,6 +112,8 @@ cmake .. -DTorch_DIR="${Torch_DIR}" \
   -DCMAKE_FIND_FRAMEWORK=NEVER
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cpp_example.bat" $JOBS
+  cd Release
+  cp ../resnet18.pt .
 else
   make -j$JOBS
 fi
