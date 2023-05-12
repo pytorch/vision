@@ -30,7 +30,7 @@ else
   JOBS=$(nproc)
 fi
 
-TORCH_PATH=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0])).as_posix()")
+TORCH_PATH=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]).as_posix())")
 if [[ $OS_TYPE == windows ]]; then
   PACKAGING_DIR="${PWD}/packaging"
   export PATH="${TORCH_PATH}/lib:${PATH}"
