@@ -77,7 +77,7 @@ jobs:
         if [[ "${TARGET}" == main ]]; then
           mkdir -p _static
           rm -rf _static/*
-          cp "${TARGET}"/_static/* _static
+          cp -r "${TARGET}"/_static/* _static
           git add _static
         fi
         
