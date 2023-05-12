@@ -68,6 +68,8 @@ pushd cpp_build
 if [[ $OS_TYPE == macos ]]; then
   # DEBUG
   ls "${CONDA_PREFIX}/lib" | grep -E "jpeg|png"
+  cat "${CONDA_PREFIX}/include/jpeglib.h" | grep VERSION
+  cat "${CONDA_PREFIX}/include/png.h" | grep VERSION_STRING
 fi
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
 if [[ $OS_TYPE == windows ]]; then
