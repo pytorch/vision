@@ -65,15 +65,14 @@ echo '::endgroup::'
 echo '::group::Build and install libtorchvision'
 pushd cpp_build
 
-if [[ $OS_TYPE == macos ]]; then
-  # DEBUG
-  IMAGE_LIBS=$(ls "${CONDA_PREFIX}/lib" | grep -E "(jpeg|png).*?\.dylib$")
-  echo $IMAGE_LIBS
-  cat "${CONDA_PREFIX}/include/jpeglib.h" | grep VERSION
-  cat "${CONDA_PREFIX}/include/png.h" | grep VERSION_STRING
-fi
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
+  # On macOS, CMake is looking for the library (*.dylib) and the header (*.h) separately. By default, it prefers to load
+  # the header from other packages that install the library. This easily leads to a mismatch if the library installed
+  # from conda doesn't have the exact same version. Thus, we need to explicitly tell it to load anything from other
+  # installed frameworks. Resources:
+  # https://stackoverflow.com/questions/36523911/osx-homebrew-cmake-libpng-version-mismatch-issue
+  # https://cmake.org/cmake/help/latest/variable/CMAKE_FIND_FRAMEWORK.html
   -DCMAKE_FIND_FRAMEWORK=NEVER \
   -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
 if [[ $OS_TYPE == windows ]]; then
@@ -89,7 +88,10 @@ echo '::endgroup::'
 echo '::group::Build and run project that uses Faster-RCNN'
 pushd test/tracing/frcnn/build
 
-cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}"
+cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" \
+  -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
+  # See above for details
+  -DCMAKE_FIND_FRAMEWORK=NEVER \
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_frcnn.bat" $JOBS
 else
@@ -104,7 +106,10 @@ echo '::endgroup::'
 echo '::group::Build and run C++ example'
 pushd examples/cpp/hello_world/build
 
-cmake .. -DTorch_DIR="${Torch_DIR}"
+cmake .. -DTorch_DIR="${Torch_DIR}" \
+  -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
+  # See above for details
+  -DCMAKE_FIND_FRAMEWORK=NEVER \
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cpp_example.bat" $JOBS
 else
