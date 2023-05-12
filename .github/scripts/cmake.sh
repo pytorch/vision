@@ -5,7 +5,7 @@ set -euxo pipefail
 ./.github/scripts/setup-env.sh
 
 # Activate conda environment
-set +x && eval "$($(which conda) shell.bash hook)" && set -x && conda deactivate && conda activate ci
+set +x && eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci && set -x
 
 # Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in
@@ -30,7 +30,7 @@ else
   JOBS=$(nproc)
 fi
 
-TORCH_PATH=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]).as_posix())")
+TORCH_PATH=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]))")
 if [[ $OS_TYPE == windows ]]; then
   PACKAGING_DIR="${PWD}/packaging"
   export PATH="${TORCH_PATH}/lib:${PATH}"
