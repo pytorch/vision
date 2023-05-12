@@ -8,8 +8,6 @@ option(WITH_PNG "Enable features requiring LibPNG." ON)
 option(WITH_JPEG "Enable features requiring LibJPEG." ON)
 option(USE_PYTHON "Link to Python when building" OFF)
 
-set(CMAKE_FIND_DEBUG_MODE TRUE)
-
 if(WITH_CUDA)
   enable_language(CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
@@ -33,8 +31,6 @@ if (USE_PYTHON)
   add_definitions(-DUSE_PYTHON)
   find_package(Python3 REQUIRED COMPONENTS Development)
 endif()
-
-set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
     get_property(old_flags TARGET ${EXISTING_TARGET} PROPERTY INTERFACE_COMPILE_OPTIONS)
