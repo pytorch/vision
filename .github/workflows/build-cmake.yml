@@ -61,9 +61,9 @@ jobs:
         include:
           - runner: windows.4xlarge
             gpu-arch-type: cpu
-#          - runner: windows.g5.4xlarge.nvidia.gpu
-#            gpu-arch-type: cuda
-#            gpu-arch-version: "11.7"
+          - runner: windows.g5.4xlarge.nvidia.gpu
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.7"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
