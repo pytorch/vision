@@ -85,5 +85,11 @@ jobs:
 #        git config user.email "soumith+bot@pytorch.org"
 #        git config user.name "pytorchbot"
 #        git commit -m "auto-generating sphinx docs" || true
+#
+#        {
+#          machine github.com
+#          login pytorchbot
+#          password ${GITHUB_PYTORCHBOT_TOKEN}
+#        } > ~/.netrc
 #        git remote add origin https://github.com/pytorch/vision.git
 #        git push -u origin gh-pages
