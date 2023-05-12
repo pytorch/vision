@@ -67,7 +67,10 @@ pushd cpp_build
 
 if [[ $OS_TYPE == macos ]]; then
   # DEBUG
-  ls "${CONDA_PREFIX}/lib" | grep -E "jpeg|png"
+  IMAGE_LIBS=$(ls "${CONDA_PREFIX}/lib" | grep -E "(jpeg|png).*?\.dylib$")
+  for lib in "${IMAGE_LIBS}"; do
+    otool -L "${lib}"
+  done
   cat "${CONDA_PREFIX}/include/jpeglib.h" | grep VERSION
   cat "${CONDA_PREFIX}/include/png.h" | grep VERSION_STRING
 fi
