@@ -71,7 +71,7 @@ jobs:
         TARGET="main"
         mkdir -p "${TARGET}"
         rm -rf "${TARGET}"/*
-        mv "${RUNNER_ARTIFACT_DIR}"/docs/html/* "${TARGET}"
+        mv "${RUNNER_ARTIFACT_DIR}"/html/* "${TARGET}"
         git add "${TARGET}" || true
         
         if [[ "${TARGET}" == main ]]; then
@@ -80,6 +80,8 @@ jobs:
           cp "${TARGET}"/_static/* _static
           git add _static
         fi
+        
+        git status
         
         # FIXME
 #        git config user.email "soumith+bot@pytorch.org"
