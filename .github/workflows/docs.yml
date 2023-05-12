@@ -45,7 +45,7 @@ jobs:
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
         
-        cp build/html "${RUNNER_ARTIFACT_DIR}"
+        cp -r build/html "${RUNNER_ARTIFACT_DIR}"
         
         # On PRs we also want to upload the docs into our S3 bucket for preview.
         if [[ ${{ github.event_name == 'pull_request' }} ]]; then
