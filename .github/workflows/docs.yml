@@ -14,6 +14,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
+      upload-artifact: docs
       script: |
         set -euo pipefail
 
@@ -44,4 +45,47 @@ jobs:
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
         
-        mv build/html/* "${RUNNER_DOCS_DIR}"
+        # On PRs we want to upload the docs into our S3 bucket for preview. For all other 
+        # events, we upload them as artifact in order to download them manually or from other 
+        # CI jobs.
+        if [[ ${{ github.event_name == 'pull_request' }} ]]; then
+          mv build/html/* "${RUNNER_DOCS_DIR}"
+        else
+          mv build/html "${RUNNER_ARTIFACT_DIR}"
+        fi
+
+  upload:
+    # FIXME
+#    if: github.event_name == 'push'
+    needs: build
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      download-artifact: docs
+      ref: gh-pages
+      script: |
+        set -euo pipefail
+        
+        # FIXME
+        # check if branch name is main
+        # otherwise exit 1 here for now
+        
+        TARGET="main"
+        mkdir -p "${TARGET}"
+        rm -rf "${TARGET}"/*
+        mv "${RUNNER_ARTIFACT_DIR}"/docs/html/* "${TARGET}"
+        git add "${TARGET}" || true
+        
+        if [[ "${TARGET}" == main ]]; then
+          mkdir -p _static
+          rm -rf _static/*
+          cp "${TARGET}"/_static/* _static
+          git add _static
+        fi
+        
+        # FIXME
+#        git config user.email "soumith+bot@pytorch.org"
+#        git config user.name "pytorchbot"
+#        git commit -m "auto-generating sphinx docs" || true
+#        git remote add origin https://github.com/pytorch/vision.git
+#        git push -u origin gh-pages
