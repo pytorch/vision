@@ -412,6 +412,8 @@ at::Tensor ps_roi_align_backward_kernel(
 
   int channels_out = channels / (pooled_height * pooled_width);
 
+  at::globalContext().alertNotDeterministic("ps_roi_align_backward_kernel");
+
   auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "ps_roi_align_backward_kernel", [&] {

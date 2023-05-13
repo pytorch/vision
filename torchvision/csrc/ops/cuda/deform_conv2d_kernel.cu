@@ -426,6 +426,8 @@ void compute_grad_input(
   // Checks if num_kernels or columns numel larger than 2 ** 31
   use_64bits_indexing |= num_kernels > (1 << 31);
 
+  at::globalContext().alertNotDeterministic("compute_grad_input");
+
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_input", ([&] {
