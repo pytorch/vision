@@ -1,3 +1,4 @@
+import random
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import torch
@@ -125,15 +126,23 @@ class RandomChoice(Transform):
         p (list of floats or None, optional): probability of each transform being picked.
             If ``p`` doesn't sum to 1, it is automatically normalized. If ``None``
             (default), all transforms have the same probability.
+        max_transforms(int, optional): The maximum number of transforms that can be applied.
+            If specified, ``p`` is ignored and a random number of transforms sampled from
+            [1, ``max_transforms``] is applied.
     """
 
     def __init__(
         self,
         transforms: Sequence[Callable],
         p: Optional[List[float]] = None,
+        max_transforms: Optional[int] = None,
     ) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
+
+        # p and max_transforms are mutually exclusive
+        if p is not None and max_transforms is not None:
+            raise ValueError("Only one of `p` and `max_transforms` should be specified.")
 
         if p is None:
             p = [1] * len(transforms)
@@ -145,11 +154,19 @@ class RandomChoice(Transform):
         self.transforms = transforms
         total = sum(p)
         self.p = [prob / total for prob in p]
+        self.max_transforms = max_transforms
 
     def forward(self, *inputs: Any) -> Any:
         idx = int(torch.multinomial(torch.tensor(self.p), 1))
         transform = self.transforms[idx]
-        return transform(*inputs)
+
+        if self.p:
+            return transform(*inputs)
+
+        else:
+            selected_transforms = random.sample(self.transforms, k=random.randint(1, self.max_transforms))
+            random.shuffle(selected_transforms)
+            return Compose(selected_transforms)(*inputs)
 
 
 class RandomOrder(Transform):
