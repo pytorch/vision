@@ -11,13 +11,32 @@ import torch
 import torch.fx
 import torch.nn.functional as F
 from common_utils import assert_equal, cpu_and_gpu, needs_cuda
-from torch.testing._internal.common_utils import DeterministicGuard
 from PIL import Image
 from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
 from torchvision.models.feature_extraction import get_graph_node_names
+
+
+# Context manager for setting deterministic flag and automatically
+# resetting it to its original value
+class DeterministicGuard:
+    def __init__(self, deterministic, *, warn_only=False):
+        self.deterministic = deterministic
+        self.warn_only = warn_only
+
+    def __enter__(self):
+        self.deterministic_restore = torch.are_deterministic_algorithms_enabled()
+        self.warn_only_restore = torch.is_deterministic_algorithms_warn_only_enabled()
+        torch.use_deterministic_algorithms(
+            self.deterministic,
+            warn_only=self.warn_only)
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        torch.use_deterministic_algorithms(
+            self.deterministic_restore,
+            warn_only=self.warn_only_restore)
 
 
 class RoIOpTesterModuleWrapper(nn.Module):
