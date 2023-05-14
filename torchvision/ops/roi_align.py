@@ -14,8 +14,6 @@ from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 # NB: all tensor inputs
 def _bilinear_interpolate(input, roi_batch_ind, c, height, width, y, x, ymask, xmask):
-    from functorch.dim import dims
-
     # deal with inverse element out of feature map boundary
     y = y.clamp(min=0)
     x = x.clamp(min=0)
