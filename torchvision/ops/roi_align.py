@@ -29,8 +29,8 @@ def _bilinear_interpolate(input, roi_batch_ind, c, height, width, y, x, ymask, x
 
     ly = y - y_low
     lx = x - x_low
-    hy = 1. - ly
-    hx = 1. - lx
+    hy = 1.0 - ly
+    hx = 1.0 - lx
 
     # do bilinear interpolation, but respect the masking!
     # TODO: It's possible the masking here is unnecessary if y and
@@ -49,10 +49,11 @@ def _bilinear_interpolate(input, roi_batch_ind, c, height, width, y, x, ymask, x
     w1 = hy * hx
     w2 = hy * lx
     w3 = ly * hx
-    w4 = ly * lx;
+    w4 = ly * lx
 
     val = w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4
     return val
+
 
 # TODO: this doesn't actually cache
 # TODO: main library should make this easier to do
@@ -61,6 +62,7 @@ def maybe_cast(tensor):
         return tensor.float()
     else:
         return tensor
+
 
 # This is a slow but pure Python and differentiable implementation of
 # roi_align.  It potentially is a good basis for Inductor compilation
@@ -192,9 +194,7 @@ def roi_align(
         rois = convert_boxes_to_roi_format(rois)
     if not torch.jit.is_scripting():
         if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and input.is_cuda):
-            return _roi_align(
-                input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned
-            )
+            return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
     return torch.ops.torchvision.roi_align(
         input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned
     )

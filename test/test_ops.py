@@ -29,14 +29,10 @@ class DeterministicGuard:
     def __enter__(self):
         self.deterministic_restore = torch.are_deterministic_algorithms_enabled()
         self.warn_only_restore = torch.is_deterministic_algorithms_warn_only_enabled()
-        torch.use_deterministic_algorithms(
-            self.deterministic,
-            warn_only=self.warn_only)
+        torch.use_deterministic_algorithms(self.deterministic, warn_only=self.warn_only)
 
     def __exit__(self, exception_type, exception_value, traceback):
-        torch.use_deterministic_algorithms(
-            self.deterministic_restore,
-            warn_only=self.warn_only_restore)
+        torch.use_deterministic_algorithms(self.deterministic_restore, warn_only=self.warn_only_restore)
 
 
 class RoIOpTesterModuleWrapper(nn.Module):
@@ -408,7 +404,6 @@ class TestRoIAlign(RoIOpTester):
                     grid_w = sampling_ratio if sampling_ratio > 0 else int(np.ceil(bin_w))
 
                     for channel in range(0, n_channels):
-
                         val = 0
                         for iy in range(0, grid_h):
                             y = start_h + (iy + 0.5) * bin_h / grid_h
@@ -431,7 +426,12 @@ class TestRoIAlign(RoIOpTester):
         if deterministic and device == "cpu":
             pytest.skip("cpu is always deterministic, don't retest")
         super().test_forward(
-            device=device, contiguous=contiguous, deterministic=deterministic, x_dtype=x_dtype, rois_dtype=rois_dtype, aligned=aligned
+            device=device,
+            contiguous=contiguous,
+            deterministic=deterministic,
+            x_dtype=x_dtype,
+            rois_dtype=rois_dtype,
+            aligned=aligned,
         )
 
     @needs_cuda
@@ -442,7 +442,12 @@ class TestRoIAlign(RoIOpTester):
     def test_autocast(self, aligned, deterministic, x_dtype, rois_dtype):
         with torch.cuda.amp.autocast():
             self.test_forward(
-                torch.device("cuda"), contiguous=False, deterministic=deterministic, aligned=aligned, x_dtype=x_dtype, rois_dtype=rois_dtype
+                torch.device("cuda"),
+                contiguous=False,
+                deterministic=deterministic,
+                aligned=aligned,
+                x_dtype=x_dtype,
+                rois_dtype=rois_dtype,
             )
 
     @pytest.mark.parametrize("seed", range(10))
@@ -1013,7 +1018,6 @@ class TestDeformConv:
             weight = init_weight
 
         for d in ["cpu", "cuda"]:
-
             out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1, mask=mask.to(d))
             out.mean().backward()
             if true_cpu_grads is None:
@@ -1409,7 +1413,6 @@ class TestGeneralizedBoxIouLoss:
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_giou_loss(self, dtype, device):
-
         box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
 
         # Identical boxes should have loss of 0
