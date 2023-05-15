@@ -13,7 +13,16 @@ from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
 # NB: all inputs are tensors
-def _bilinear_interpolate(input, roi_batch_ind, c, height, width, y, x, ymask, xmask):
+def _bilinear_interpolate(
+    input,  # [N, C, H, W]
+    roi_batch_ind,  # [K]
+    y,  # [K, PH, IY]
+    x,  # [K, PW, IX]
+    ymask,  # [IY]
+    xmask,  # [IX]
+):
+    _, channels, height, width = input.size()
+
     # deal with inverse element out of feature map boundary
     y = y.clamp(min=0)
     x = x.clamp(min=0)
@@ -35,21 +44,35 @@ def _bilinear_interpolate(input, roi_batch_ind, c, height, width, y, x, ymask, x
     # do bilinear interpolation, but respect the masking!
     # TODO: It's possible the masking here is unnecessary if y and
     # x were clamped appropriately; hard to tell
-    def masked_index(y, x):
+    def masked_index(
+        y,  # [K, PH, IY]
+        x,  # [K, PW, IX]
+    ):
         if ymask is not None:
             assert xmask is not None
-            y = torch.where(ymask, y, 0)
-            x = torch.where(xmask, x, 0)
-        return input[roi_batch_ind, c, y, x]
+            y = torch.where(ymask[None, None, :], y, 0)
+            x = torch.where(xmask[None, None, :], x, 0)
+        return input[
+            roi_batch_ind[:, None, None, None, None, None],
+            torch.arange(channels, device=input.device)[None, :, None, None, None, None],
+            y[:, None, :, None, :, None],  # prev [K, PH, IY]
+            x[:, None, None, :, None, :],  # prev [K, PW, IX]
+        ]  # [K, C, PH, PW, IY, IX]
 
     v1 = masked_index(y_low, x_low)
     v2 = masked_index(y_low, x_high)
     v3 = masked_index(y_high, x_low)
     v4 = masked_index(y_high, x_high)
-    w1 = hy * hx
-    w2 = hy * lx
-    w3 = ly * hx
-    w4 = ly * lx
+    # all ws preemptively [K, C, PH, PW, IY, IX]
+    def outer_prod(y, x):
+        return (
+            y[:, None, :, None, :, None] *
+            x[:, None, None, :, None, :]
+        )
+    w1 = outer_prod(hy, hx)
+    w2 = outer_prod(hy, lx)
+    w3 = outer_prod(ly, hx)
+    w4 = outer_prod(ly, lx)
 
     val = w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4
     return val
@@ -74,8 +97,6 @@ def maybe_cast(tensor):
 # https://dev-discuss.pytorch.org/t/a-pure-python-implementation-of-roi-align-that-looks-just-like-its-cuda-kernel/1266
 @torch._dynamo.allow_in_graph
 def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned):
-    from functorch.dim import dims
-
     orig_dtype = input.dtype
 
     input = maybe_cast(input)
@@ -83,37 +104,41 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
 
     _, _, height, width = input.size()
 
-    n, c, ph, pw = dims(4)
-    ph.size = pooled_height
-    pw.size = pooled_width
-    offset_rois = rois[n]
-    roi_batch_ind = offset_rois[0].int()
+    ph = torch.arange(pooled_height, device=input.device)  # [PH]
+    pw = torch.arange(pooled_width, device=input.device)  # [PW]
+
+    # input: [N, C, H, W]
+    # rois: [K, 5]
+
+    roi_batch_ind = rois[:, 0].int()  # [K]
     offset = 0.5 if aligned else 0.0
-    roi_start_w = offset_rois[1] * spatial_scale - offset
-    roi_start_h = offset_rois[2] * spatial_scale - offset
-    roi_end_w = offset_rois[3] * spatial_scale - offset
-    roi_end_h = offset_rois[4] * spatial_scale - offset
+    roi_start_w = rois[:, 1] * spatial_scale - offset  # [K]
+    roi_start_h = rois[:, 2] * spatial_scale - offset  # [K]
+    roi_end_w = rois[:, 3] * spatial_scale - offset  # [K]
+    roi_end_h = rois[:, 4] * spatial_scale - offset  # [K]
 
-    roi_width = roi_end_w - roi_start_w
-    roi_height = roi_end_h - roi_start_h
+    roi_width = roi_end_w - roi_start_w  # [K]
+    roi_height = roi_end_h - roi_start_h  # [K]
     if not aligned:
-        roi_width = torch.clamp(roi_width, min=1.0)
-        roi_height = torch.clamp(roi_height, min=1.0)
+        roi_width = torch.clamp(roi_width, min=1.0)  # [K]
+        roi_height = torch.clamp(roi_height, min=1.0)  # [K]
 
-    bin_size_h = roi_height / pooled_height
-    bin_size_w = roi_width / pooled_width
+    bin_size_h = roi_height / pooled_height  # [K]
+    bin_size_w = roi_width / pooled_width  # [K]
 
     exact_sampling = sampling_ratio > 0
 
-    roi_bin_grid_h = sampling_ratio if exact_sampling else torch.ceil(roi_height / pooled_height)
-    roi_bin_grid_w = sampling_ratio if exact_sampling else torch.ceil(roi_width / pooled_width)
+    roi_bin_grid_h = sampling_ratio if exact_sampling else torch.ceil(roi_height / pooled_height)  # scalar or [K]
+    roi_bin_grid_w = sampling_ratio if exact_sampling else torch.ceil(roi_width / pooled_width)  # scalar or [K]
 
+    """
     iy, ix = dims(2)
+    """
 
     if exact_sampling:
         count = max(roi_bin_grid_h * roi_bin_grid_w, 1)
-        iy.size = roi_bin_grid_h
-        ix.size = roi_bin_grid_w
+        iy = torch.arange(roi_bin_grid_h, device=input.device)  # [IY]
+        ix = torch.arange(roi_bin_grid_w, device=input.device)  # [IX]
         ymask = None
         xmask = None
     else:
@@ -123,26 +148,37 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
         # awkward because first-class dims can't actually handle this.
         # So instead, we inefficiently suppose that we needed to sample ALL
         # the points and mask out things that turned out to be unnecessary
-        iy.size = height
-        ix.size = width
-        ymask = iy < roi_bin_grid_h
-        xmask = ix < roi_bin_grid_w
+        iy = torch.arange(height, device=input.device)  # [IY]
+        ix = torch.arange(width, device=input.device)  # [IX]
+        ymask = iy < roi_bin_grid_h  # [IY]
+        xmask = ix < roi_bin_grid_w  # [IX]
 
-    y = roi_start_h + ph * bin_size_h + (iy + 0.5) * bin_size_h / roi_bin_grid_h
-    x = roi_start_w + pw * bin_size_w + (ix + 0.5) * bin_size_w / roi_bin_grid_w
-    val = _bilinear_interpolate(input, roi_batch_ind, c, height, width, y, x, ymask, xmask)
+    def from_K(t):
+        return t[:, None, None]
+
+    y = (
+        from_K(roi_start_h) +
+        ph[None, :, None] * from_K(bin_size_h) +
+        (iy[None, None, :] + 0.5) * from_K(bin_size_h / roi_bin_grid_h)
+    ) # [K, PH, IY]
+    x = (
+        from_K(roi_start_w) +
+        pw[None, :, None] * from_K(bin_size_w) +
+        (ix[None, None, :] + 0.5) * from_K(bin_size_w / roi_bin_grid_w)
+    ) # [K, PW, IX]
+    val = _bilinear_interpolate(input, roi_batch_ind, y, x, ymask, xmask)  # [K, C, PH, PW, IY, IX]
 
     # Mask out samples that weren't actually adaptively needed
     if not exact_sampling:
-        val = torch.where(ymask, val, 0)
-        val = torch.where(xmask, val, 0)
+        val = torch.where(ymask[None, None, None, None, :, None], val, 0)
+        val = torch.where(xmask[None, None, None, None, None, :], val, 0)
 
-    output = val.sum((iy, ix))
+    output = val.sum((-1, -2))  # remove IY, IX ~> [K, C, PH, PW]
     output /= count
 
     output = output.to(orig_dtype)
 
-    return output.order(n, c, ph, pw)
+    return output
 
 
 @torch.fx.wrap
