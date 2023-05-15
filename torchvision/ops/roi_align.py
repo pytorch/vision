@@ -196,7 +196,7 @@ def roi_align(
     if not torch.jit.is_scripting():
         if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and input.is_cuda):
             return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
-    assert _assert_has_ops()
+    _assert_has_ops()
     return torch.ops.torchvision.roi_align(
         input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned
     )
