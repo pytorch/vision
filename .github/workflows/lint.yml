@@ -28,7 +28,6 @@ jobs:
         pip install --progress-bar=off pre-commit
         echo '::endgroup::'
         
-        echo '::group::Lint Python source and configs'
         set +e
         pre-commit run --all-files
         
@@ -36,7 +35,6 @@ jobs:
           git --no-pager diff
           exit 1
         fi
-        echo '::endgroup::'
 
   c-source:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
