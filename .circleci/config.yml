@@ -124,55 +124,7 @@ jobs:
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
-  binary_win_conda:
-    <<: *binary_common
-    executor: windows-cpu
-    steps:
-      - checkout_merge
-      - designate_upload_channel
-      - run:
-          name: Build conda packages
-          no_output_timeout: 30m
-          command: |
-            set -ex
-            source packaging/windows/internal/vc_install_helper.sh
-            packaging/windows/internal/cuda_install.bat
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda activate base
-            conda install -yq conda-build "conda-package-handling!=1.5.0"
-            packaging/build_conda.sh
-            rm /C/tools/miniconda3/conda-bld/win-64/vs${VC_YEAR}*.tar.bz2
-      - store_artifacts:
-          path: C:/tools/miniconda3/conda-bld/win-64
-      - persist_to_workspace:
-          root: C:/tools/miniconda3/conda-bld/win-64
-          paths:
-            - "*"
-      - store_test_results:
-          path: build_results/
 
-  binary_win_wheel:
-    <<: *binary_common
-    executor: windows-cpu
-    steps:
-      - checkout_merge
-      - designate_upload_channel
-      - run:
-          name: Build wheel packages
-          no_output_timeout: 30m
-          command: |
-            set -ex
-            source packaging/windows/internal/vc_install_helper.sh
-            packaging/windows/internal/cuda_install.bat
-            packaging/build_wheel.sh
-      - store_artifacts:
-          path: dist
-      - persist_to_workspace:
-          root: dist
-          paths:
-            - "*"
-      - store_test_results:
-          path: build_results/
 
   binary_macos_wheel:
     <<: *binary_common
@@ -372,10 +324,6 @@ workflows:
     jobs:
       - circleci_consistency
 
-  build:
-    jobs:
-      []
-
   cmake:
     jobs:
       - cmake_linux_cpu:
@@ -400,9 +348,6 @@ workflows:
           name: cmake_macos_cpu
           python_version: '3.8'
 
-  nightly:
-    jobs:
-      []
   docker_build:
     triggers:
       - schedule:
