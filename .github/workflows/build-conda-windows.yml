@@ -34,15 +34,15 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_conda_windows.yml@main
     with:
+      conda-package-directory: ${{ matrix.conda-package-directory }}
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
-      env-script: ${{ matrix.env-script }}
       post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
@@ -50,5 +50,4 @@ jobs:
       # to official channels yet
       trigger-event: development
     secrets:
-      AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
-      AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY: ${{ secrets.AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY }}
+      CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
