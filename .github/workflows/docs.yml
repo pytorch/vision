@@ -80,18 +80,21 @@ jobs:
           cp -r "${TARGET}"/_static/* _static
           git add _static
         fi
-        
+
+        # DEBUG
         git status
         
-        # FIXME
-#        git config user.email "soumith+bot@pytorch.org"
-#        git config user.name "pytorchbot"
-#        git commit -m "auto-generating sphinx docs" || true
-#
-#        {
-#          machine github.com
-#          login pytorchbot
-#          password ${GITHUB_PYTORCHBOT_TOKEN}
-#        } > ~/.netrc
-#        git remote add origin https://github.com/pytorch/vision.git
+        git config user.email "soumith+bot@pytorch.org"
+        git config user.name "pytorchbot"
+        git commit -m "auto-generating sphinx docs" || true
+
+        {
+          echo "machine github.com"
+          echo "login pytorchbot"
+          echo "password ${{ secrets.GITHUB_PYTORCHBOT_TOKEN }}"
+        } > ~/.netrc
+        # DEBUG
+        cat ~/.netrc
+        git remote add origin https://github.com/pytorch/vision.git
+#        FIXME
 #        git push -u origin gh-pages
