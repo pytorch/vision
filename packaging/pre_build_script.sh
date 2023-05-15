@@ -23,6 +23,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
       cp "$bin_path/Library/bin/libjpeg.dll" torchvision
   fi
 
+else
   # Install native CentOS libJPEG, freetype and GnuTLS
   yum install -y libjpeg-turbo-devel freetype gnutls
 
