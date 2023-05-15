@@ -91,7 +91,7 @@ jobs:
         {
           echo "machine github.com"
           echo "login pytorchbot"
-          echo "password ${{ secrets.GITHUB_PYTORCHBOT_TOKEN }}"
+          echo "password ${GITHUB_PYTORCHBOT_TOKEN}"
         } > ~/.netrc
         # DEBUG
         cat ~/.netrc
