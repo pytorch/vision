@@ -18,8 +18,8 @@ def _bilinear_interpolate(
     roi_batch_ind,  # [K]
     y,  # [K, PH, IY]
     x,  # [K, PW, IX]
-    ymask,  # [IY]
-    xmask,  # [IX]
+    ymask,  # [K, IY]
+    xmask,  # [K, IX]
 ):
     _, channels, height, width = input.size()
 
@@ -50,8 +50,8 @@ def _bilinear_interpolate(
     ):
         if ymask is not None:
             assert xmask is not None
-            y = torch.where(ymask[None, None, :], y, 0)
-            x = torch.where(xmask[None, None, :], x, 0)
+            y = torch.where(ymask[:, None, :], y, 0)
+            x = torch.where(xmask[:, None, :], x, 0)
         return input[
             roi_batch_ind[:, None, None, None, None, None],
             torch.arange(channels, device=input.device)[None, :, None, None, None, None],
@@ -63,12 +63,11 @@ def _bilinear_interpolate(
     v2 = masked_index(y_low, x_high)
     v3 = masked_index(y_high, x_low)
     v4 = masked_index(y_high, x_high)
+
     # all ws preemptively [K, C, PH, PW, IY, IX]
     def outer_prod(y, x):
-        return (
-            y[:, None, :, None, :, None] *
-            x[:, None, None, :, None, :]
-        )
+        return y[:, None, :, None, :, None] * x[:, None, None, :, None, :]
+
     w1 = outer_prod(hy, hx)
     w2 = outer_prod(hy, lx)
     w3 = outer_prod(ly, hx)
@@ -136,13 +135,13 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
     """
 
     if exact_sampling:
-        count = max(roi_bin_grid_h * roi_bin_grid_w, 1)
+        count = max(roi_bin_grid_h * roi_bin_grid_w, 1)  # scalar
         iy = torch.arange(roi_bin_grid_h, device=input.device)  # [IY]
         ix = torch.arange(roi_bin_grid_w, device=input.device)  # [IX]
         ymask = None
         xmask = None
     else:
-        count = torch.clamp(roi_bin_grid_h * roi_bin_grid_w, min=1)
+        count = torch.clamp(roi_bin_grid_h * roi_bin_grid_w, min=1)  # [K]
         # When doing adaptive sampling, the number of samples we need to do
         # is data-dependent based on how big the ROIs are.  This is a bit
         # awkward because first-class dims can't actually handle this.
@@ -150,31 +149,31 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
         # the points and mask out things that turned out to be unnecessary
         iy = torch.arange(height, device=input.device)  # [IY]
         ix = torch.arange(width, device=input.device)  # [IX]
-        ymask = iy < roi_bin_grid_h  # [IY]
-        xmask = ix < roi_bin_grid_w  # [IX]
+        ymask = iy[None, :] < roi_bin_grid_h[:, None]  # [K, IY]
+        xmask = ix[None, :] < roi_bin_grid_w[:, None]  # [K, IX]
 
     def from_K(t):
         return t[:, None, None]
 
     y = (
-        from_K(roi_start_h) +
-        ph[None, :, None] * from_K(bin_size_h) +
-        (iy[None, None, :] + 0.5) * from_K(bin_size_h / roi_bin_grid_h)
-    ) # [K, PH, IY]
+        from_K(roi_start_h)
+        + ph[None, :, None] * from_K(bin_size_h)
+        + (iy[None, None, :] + 0.5) * from_K(bin_size_h / roi_bin_grid_h)
+    )  # [K, PH, IY]
     x = (
-        from_K(roi_start_w) +
-        pw[None, :, None] * from_K(bin_size_w) +
-        (ix[None, None, :] + 0.5) * from_K(bin_size_w / roi_bin_grid_w)
-    ) # [K, PW, IX]
+        from_K(roi_start_w)
+        + pw[None, :, None] * from_K(bin_size_w)
+        + (ix[None, None, :] + 0.5) * from_K(bin_size_w / roi_bin_grid_w)
+    )  # [K, PW, IX]
     val = _bilinear_interpolate(input, roi_batch_ind, y, x, ymask, xmask)  # [K, C, PH, PW, IY, IX]
 
     # Mask out samples that weren't actually adaptively needed
     if not exact_sampling:
-        val = torch.where(ymask[None, None, None, None, :, None], val, 0)
-        val = torch.where(xmask[None, None, None, None, None, :], val, 0)
+        val = torch.where(ymask[:, None, None, None, :, None], val, 0)
+        val = torch.where(xmask[:, None, None, None, None, :], val, 0)
 
     output = val.sum((-1, -2))  # remove IY, IX ~> [K, C, PH, PW]
-    output /= count
+    output /= count[:, None, None, None]
 
     output = output.to(orig_dtype)
 

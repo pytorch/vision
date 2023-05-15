@@ -439,8 +439,6 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
     @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
     def test_autocast(self, aligned, deterministic, x_dtype, rois_dtype):
-        if deterministic and device == "cpu":
-            pytest.skip("cpu is always deterministic, don't retest")
         with torch.cuda.amp.autocast():
             self.test_forward(
                 torch.device("cuda"),
