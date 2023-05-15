@@ -232,6 +232,8 @@ at::Tensor roi_pool_backward_kernel(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
+  at::globalContext().alertNotDeterministic("roi_pool_backward_kernel");
+
   auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "roi_pool_backward_kernel", [&] {
