@@ -21,7 +21,6 @@ import yaml
 from jinja2 import select_autoescape
 
 
-
 def indent(indentation, data_list):
     return ("\n" + " " * indentation).join(yaml.dump(data_list, default_flow_style=False).splitlines())
 
