@@ -157,8 +157,7 @@ class RoIOpTester(ABC):
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
-    @pytest.mark.parametrize("deterministic", (False,))
-    def test_backward(self, seed, device, contiguous, deterministic):
+    def test_backward(self, seed, device, contiguous, deterministic=False):
         torch.random.manual_seed(seed)
         pool_size = 2
         x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
@@ -440,6 +439,8 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
     @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
     def test_autocast(self, aligned, deterministic, x_dtype, rois_dtype):
+        if deterministic and device == "cpu":
+            pytest.skip("cpu is always deterministic, don't retest")
         with torch.cuda.amp.autocast():
             self.test_forward(
                 torch.device("cuda"),
@@ -455,6 +456,8 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
     def test_backward(self, seed, device, contiguous, deterministic):
+        if deterministic and device == "cpu":
+            pytest.skip("cpu is always deterministic, don't retest")
         super().test_backward(seed, device, contiguous, deterministic)
 
     def _make_rois(self, img_size, num_imgs, dtype, num_rois=1000):

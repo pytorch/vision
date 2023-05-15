@@ -12,7 +12,7 @@ from ..utils import _log_api_usage_once
 from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
-# NB: all tensor inputs
+# NB: all inputs are tensors
 def _bilinear_interpolate(input, roi_batch_ind, c, height, width, y, x, ymask, xmask):
     # deal with inverse element out of feature map boundary
     y = y.clamp(min=0)
@@ -67,7 +67,8 @@ def maybe_cast(tensor):
 # This is a slow but pure Python and differentiable implementation of
 # roi_align.  It potentially is a good basis for Inductor compilation
 # (but I have not benchmarked it) but today it is solely used for the
-# fact that its backwards can be implemented deterministically.
+# fact that its backwards can be implemented deterministically,
+# which is needed for the PT2 benchmark suite.
 #
 # It is transcribed directly off of the roi_align CUDA kernel, see
 # https://dev-discuss.pytorch.org/t/a-pure-python-implementation-of-roi-align-that-looks-just-like-its-cuda-kernel/1266
@@ -195,6 +196,7 @@ def roi_align(
     if not torch.jit.is_scripting():
         if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and input.is_cuda):
             return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
+    assert _assert_has_ops()
     return torch.ops.torchvision.roi_align(
         input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned
     )
