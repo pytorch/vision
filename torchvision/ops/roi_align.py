@@ -173,7 +173,10 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
         val = torch.where(xmask[:, None, None, None, None, :], val, 0)
 
     output = val.sum((-1, -2))  # remove IY, IX ~> [K, C, PH, PW]
-    output /= count[:, None, None, None]
+    if isinstance(count, torch.Tensor):
+        output /= count[:, None, None, None]
+    else:
+        output /= count
 
     output = output.to(orig_dtype)
 
