@@ -20,9 +20,8 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   if [[ "$OSTYPE" == "msys" ]]; then
       python_exec="$(which python)"
       bin_path=$(dirname $python_exec)
-      cp "$bin_path/Library/bin/libpng16.dll" torchvision
       cp "$bin_path/Library/bin/libjpeg.dll" torchvision
-  else
+  fi
 
   # Install native CentOS libJPEG, freetype and GnuTLS
   yum install -y libjpeg-turbo-devel freetype gnutls
