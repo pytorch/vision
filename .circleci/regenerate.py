@@ -15,6 +15,7 @@ https://github.com/pytorch/vision/pull/1321#issuecomment-531033978
 """
 
 import os.path
+
 import jinja2
 import yaml
 from jinja2 import select_autoescape
