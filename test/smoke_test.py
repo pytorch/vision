@@ -26,6 +26,7 @@ def smoke_test_torchvision_read_decode() -> None:
     if img_png.shape != (4, 471, 354):
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
 
+
 def smoke_test_torchvision_decode_jpeg(device: str = "cpu"):
     img_jpg_data = read_file(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
     img_jpg = decode_jpeg(img_jpg_data, device=device)
