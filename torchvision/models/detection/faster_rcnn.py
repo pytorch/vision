@@ -166,10 +166,7 @@ class FasterRCNN(GeneralizedRCNN):
         backbone,
         num_classes=None,
         # transform parameters
-        min_size=800,
-        max_size=1333,
-        image_mean=None,
-        image_std=None,
+        min_size=800, max_size=1333, image_mean=None, image_std=None,
         # RPN parameters
         rpn_anchor_generator=None,
         rpn_head=None,
