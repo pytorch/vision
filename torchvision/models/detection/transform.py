@@ -71,6 +71,47 @@ def _resize_image_and_masks(
     return image, target
 
 
+def _resize_image_and_masks_simple(
+    image: Tensor,
+    self_min_size: int,
+    self_max_size: int,
+    target: Optional[Dict[str, Tensor]] = None,
+    fixed_size: Optional[Tuple[int, int]] = None,
+) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    im_shape = image.shape[-2:]
+
+    size: Optional[List[int]] = None
+    scale_factor: Optional[float] = None
+    recompute_scale_factor: Optional[bool] = None
+    if fixed_size is not None:
+        size = [fixed_size[1], fixed_size[0]]
+    else:
+        min_size = min(im_shape)
+        max_size = max(im_shape)
+        scale_factor = min(self_min_size / min_size, self_max_size / max_size)
+        recompute_scale_factor = True
+
+    image = torch.nn.functional.interpolate(
+        image[None],
+        size=size,
+        scale_factor=scale_factor,
+        mode="bilinear",
+        recompute_scale_factor=recompute_scale_factor,
+        align_corners=False,
+    )[0]
+
+    if target is None:
+        return image, target
+
+    if "masks" in target:
+        mask = target["masks"]
+        mask = torch.nn.functional.interpolate(
+            mask[:, None].float(), size=size, scale_factor=scale_factor, recompute_scale_factor=recompute_scale_factor
+        )[:, 0].byte()
+        target["masks"] = mask
+    return image, target
+
+
 class GeneralizedRCNNTransform(nn.Module):
     """
     Performs input / target transformation before feeding the data to a GeneralizedRCNN
@@ -171,14 +212,23 @@ class GeneralizedRCNNTransform(nn.Module):
         target: Optional[Dict[str, Tensor]] = None,
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         h, w = image.shape[-2:]
-        if self.training:
-            if self._skip_resize:
-                return image, target
-            size = float(self.torch_choice(self.min_size))
+        if not torch.jit.is_scripting():
+            if self.training:
+                if self._skip_resize:
+                    return image, target
+                size = random.choice(self.min_size)
+            else:
+                size = self.min_size[-1]
+            image, target = _resize_image_and_masks_simple(image, size, self.max_size, target, self.fixed_size)
         else:
-            # FIXME assume for now that testing uses the largest scale
-            size = float(self.min_size[-1])
-        image, target = _resize_image_and_masks(image, size, float(self.max_size), target, self.fixed_size)
+            if self.training:
+                if self._skip_resize:
+                    return image, target
+                size = float(self.torch_choice(self.min_size))
+            else:
+                # FIXME assume for now that testing uses the largest scale
+                size = float(self.min_size[-1])
+            image, target = _resize_image_and_masks(image, size, float(self.max_size), target, self.fixed_size)
 
         if target is None:
             return image, target
