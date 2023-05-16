@@ -74,6 +74,14 @@ jobs:
       script: |
         set -euo pipefail
 
+        source packaging/windows/internal/vc_install_helper.sh
+
+        if [[ ${{ matrix.gpu-arch-type }} == cuda ]]; then
+          export CU_VERSION=cu$(echo ${{ matrix.gpu-arch-version }} | sed 's/\.//')
+          echo CU_VERSION="${CU_VERSION}"
+          packaging/windows/internal/cuda_install.bat
+        fi
+
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
