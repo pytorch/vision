@@ -98,8 +98,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        closeness_kwargs=dict(rtol=1, atol=1),
+        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
+        closeness_kwargs=dict(rtol=0, atol=1),
     ),
     ConsistencyConfig(
         v2_transforms.CenterCrop,
@@ -315,8 +315,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        closeness_kwargs=dict(rtol=1, atol=1),
+        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
+        closeness_kwargs=dict(rtol=0, atol=1),
     ),
     ConsistencyConfig(
         v2_transforms.RandomErasing,
@@ -787,8 +787,8 @@ class TestContainerTransforms:
             ]
         )
 
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=1, atol=1))
+        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
+        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=0, atol=1))
 
     @pytest.mark.parametrize("p", [0, 0.1, 0.5, 0.9, 1])
     @pytest.mark.parametrize("sequence_type", [list, nn.ModuleList])
@@ -812,8 +812,8 @@ class TestContainerTransforms:
             p=p,
         )
 
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=1, atol=1))
+        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
+        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=0, atol=1))
 
         if sequence_type is nn.ModuleList:
             # quick and dirty test that it is jit-scriptable
@@ -838,8 +838,8 @@ class TestContainerTransforms:
             p=probabilities,
         )
 
-        # rtol=atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=1, atol=1))
+        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
+        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=0, atol=1))
 
 
 class TestToTensorTransforms:
