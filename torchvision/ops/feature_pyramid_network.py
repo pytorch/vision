@@ -216,7 +216,7 @@ class LastLevelMaxPool(ExtraFPNBlock):
         names: List[str],
     ) -> Tuple[List[Tensor], List[str]]:
         names.append("pool")
-        x.append(F.max_pool2d(x[-1], 1, 2, 0))
+        x.append(F.max_pool2d(x[-1], kernel_size=2, stride=2, padding=0))
         return x, names
 
 
