@@ -1,5 +1,5 @@
 import math
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -15,7 +15,7 @@ from ._utils import _setup_fill_arg
 from .utils import check_type, is_simple_tensor
 
 
-def solarize_add(
+def _solarize_add(
     image: Union[datapoints._ImageType, datapoints._VideoType], addition: float = 0.0, threshold: float = 128 / 255
 ) -> Union[datapoints._ImageType, datapoints._VideoType]:
     if check_type(image, (datapoints.Image, is_simple_tensor, datapoints.Video)):
@@ -40,7 +40,7 @@ def solarize_add(
     return result
 
 
-def cutout(
+def _cutout(
     image: Union[datapoints._ImageType, datapoints._VideoType],
     pad_size: Union[int, Tuple[int, int], None] = None,
     pad_fraction: float = 0.0,
@@ -64,8 +64,7 @@ def cutout(
     right_pad = max(0, img_w - cutout_center_width - pad_size[1])
 
     cutout_shape = [img_h - (lower_pad + upper_pad), img_w - (left_pad + right_pad)]
-    v = torch.tensor(replace)[:, None, None]
-    return F.erase(image, lower_pad, left_pad, cutout_shape[0], cutout_shape[1], v)
+    return F.erase(image, lower_pad, left_pad, cutout_shape[0], cutout_shape[1], torch.tensor(replace))
 
 
 class _AutoAugmentBase(Transform):
@@ -126,18 +125,6 @@ class _AutoAugmentBase(Transform):
         flat_inputs, spec, idx = flat_inputs_with_spec
         flat_inputs[idx] = image_or_video
         return tree_unflatten(flat_inputs, spec)
-
-    def _apply_image_or_video_transform(
-        self,
-        image: Union[datapoints._ImageType, datapoints._VideoType],
-        transform_id: str,
-        magnitude: float,
-        interpolation: Union[InterpolationMode, int],
-        fill: Dict[Type, datapoints._FillTypeJIT],
-    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-        return self._apply_transform(
-            image, transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill
-        )
 
     def _apply_transform(
         self,
@@ -227,14 +214,6 @@ class _AutoAugmentBase(Transform):
             return F.invert(inpt)
         elif transform_id == "Flip":
             return F.horizontal_flip(inpt)
-        elif isinstance(inpt, datapoints.BoundingBox):
-            return inpt
-        elif transform_id == "SolarizeAdd":
-            return solarize_add(inpt, magnitude)
-        elif transform_id == "Cutout":
-            return cutout(inpt, pad_size=int(magnitude))
-        elif transform_id == "BBox_Cutout":
-            return cutout(inpt, pad_fraction=magnitude)
         else:
             raise ValueError(f"No transform available for {transform_id}")
 
@@ -408,7 +387,7 @@ class AutoAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            image_or_video = self._apply_image_or_video_transform(
+            image_or_video = self._apply_transform(
                 image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
@@ -492,7 +471,7 @@ class RandAugment(_AutoAugmentBase):
                     magnitude *= -1
             else:
                 magnitude = 0.0
-            image_or_video = self._apply_image_or_video_transform(
+            image_or_video = self._apply_transform(
                 image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
@@ -564,7 +543,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         else:
             magnitude = 0.0
 
-        image_or_video = self._apply_image_or_video_transform(
+        image_or_video = self._apply_transform(
             image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
         )
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
@@ -687,7 +666,7 @@ class AugMix(_AutoAugmentBase):
                 else:
                     magnitude = 0.0
 
-                aug = self._apply_image_or_video_transform(
+                aug = self._apply_transform(
                     aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
                 )
             mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
@@ -702,6 +681,25 @@ class AugMix(_AutoAugmentBase):
 
 
 class _AutoAugmentDetectionBase(_AutoAugmentBase):
+    def _apply_transform(
+        self,
+        inpt: datapoints._InputType,
+        transform_id: str,
+        magnitude: float,
+        interpolation: Union[InterpolationMode, int],
+        fill: Dict[Type, datapoints._FillTypeJIT],
+    ) -> Union[datapoints._ImageType, datapoints._VideoType, datapoints.BoundingBox]:
+        if transform_id in ["SolarizeAdd", "Cutout", "BBox_Cutout"]:
+            if isinstance(inpt, datapoints.BoundingBox):
+                return inpt
+            elif transform_id == "SolarizeAdd":
+                return _solarize_add(inpt, magnitude)
+            elif transform_id == "Cutout":
+                return _cutout(inpt, pad_size=int(magnitude))
+            elif transform_id == "BBox_Cutout":
+                return _cutout(inpt, pad_fraction=magnitude)
+        return super()._apply_transform(inpt, transform_id, magnitude, interpolation, fill)
+
     def _flatten_and_extract_image_or_video_and_bboxes(
         self,
         inputs: Any,
@@ -767,7 +765,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     ) -> torch.Tensor:
         new_img = image.clone()
         xyxy_bboxes = F.convert_format_bounding_box(bboxes, new_format=datapoints.BoundingBoxFormat.XYXY)
-        for bbox in xyxy_bboxes:
+        for bbox in xyxy_bboxes.to(torch.long):
             bbox_img = new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]]
             out_bbox_img = fn(bbox_img, **fn_kwrgs)
             new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]] = out_bbox_img
@@ -786,20 +784,16 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
             random_index = int(torch.randint(len(bboxes), ()))
             chosen_bbox = bboxes.wrap_like(bboxes, bboxes[random_index].unsqueeze(0))
             fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
-            image = self._transform_image_or_video_in_bboxes(
-                self._apply_image_or_video_transform, fn_kwargs, image, chosen_bbox
-            )
+            image = self._transform_image_or_video_in_bboxes(self._apply_transform, fn_kwargs, image, chosen_bbox)
         elif transform_id.endswith("_Only_BBoxes"):
             transform_id = transform_id.replace("_Only_BBoxes", "")
             fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
-            image = self._transform_image_or_video_in_bboxes(
-                self._apply_image_or_video_transform, fn_kwargs, image, bboxes
-            )
+            image = self._transform_image_or_video_in_bboxes(self._apply_transform, fn_kwargs, image, bboxes)
         else:
             image = self._apply_transform(image, transform_id, magnitude, interpolation, fill)
-            result = self._apply_transform(bboxes, transform_id, magnitude, interpolation, fill)
-            assert isinstance(result, datapoints.BoundingBox)
-            bboxes = result
+            bboxes = cast(
+                datapoints.BoundingBox, self._apply_transform(bboxes, transform_id, magnitude, interpolation, fill)
+            )
 
         return image, bboxes
 
