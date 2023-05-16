@@ -2163,3 +2163,38 @@ def test_no_warnings_v1_namespace():
         from torchvision.datasets import ImageNet
     """
     assert_run_python_script(textwrap.dedent(source))
+
+
+class TestLambda:
+    inputs = pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
+
+    @inputs
+    def test_default(self, input):
+        was_applied = False
+
+        def was_applied_fn(input):
+            nonlocal was_applied
+            was_applied = True
+            return input
+
+        transform = transforms.Lambda(was_applied_fn)
+
+        transform(input)
+
+        assert was_applied
+
+    @inputs
+    def test_with_types(self, input):
+        was_applied = False
+
+        def was_applied_fn(input):
+            nonlocal was_applied
+            was_applied = True
+            return input
+
+        types = (torch.Tensor, np.ndarray)
+        transform = transforms.Lambda(was_applied_fn, *types)
+
+        transform(input)
+
+        assert was_applied is isinstance(input, types)

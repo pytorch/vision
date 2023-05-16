@@ -321,6 +321,9 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
+    if (old_height, old_width) == (new_height, new_width):
+        return bounding_box, (old_height, old_width)
+
     affine_matrix = np.array(
         [
             [new_width / old_width, 0, 0],
@@ -1566,7 +1569,7 @@ def reference_inputs_equalize_image_tensor():
     # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
     # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
     # the information gain is low if we already provide something really close to the expected value.
-    def make_uniform_band_image(shape, dtype, device, *, low_factor, high_factor):
+    def make_uniform_band_image(shape, dtype, device, *, low_factor, high_factor, memory_format):
         if dtype.is_floating_point:
             low = low_factor
             high = high_factor
@@ -1574,23 +1577,27 @@ def reference_inputs_equalize_image_tensor():
             max_value = torch.iinfo(dtype).max
             low = int(low_factor * max_value)
             high = int(high_factor * max_value)
-        return torch.testing.make_tensor(shape, dtype=dtype, device=device, low=low, high=high)
+        return torch.testing.make_tensor(shape, dtype=dtype, device=device, low=low, high=high).to(
+            memory_format=memory_format, copy=True
+        )
 
-    def make_beta_distributed_image(shape, dtype, device, *, alpha, beta):
+    def make_beta_distributed_image(shape, dtype, device, *, alpha, beta, memory_format):
         image = torch.distributions.Beta(alpha, beta).sample(shape)
         if not dtype.is_floating_point:
             image.mul_(torch.iinfo(dtype).max).round_()
-        return image.to(dtype=dtype, device=device)
+        return image.to(dtype=dtype, device=device, memory_format=memory_format, copy=True)
 
     spatial_size = (256, 256)
     for dtype, color_space, fn in itertools.product(
         [torch.uint8],
         ["GRAY", "RGB"],
         [
-            lambda shape, dtype, device: torch.zeros(shape, dtype=dtype, device=device),
-            lambda shape, dtype, device: torch.full(
-                shape, 1.0 if dtype.is_floating_point else torch.iinfo(dtype).max, dtype=dtype, device=device
+            lambda shape, dtype, device, memory_format: torch.zeros(shape, dtype=dtype, device=device).to(
+                memory_format=memory_format, copy=True
             ),
+            lambda shape, dtype, device, memory_format: torch.full(
+                shape, 1.0 if dtype.is_floating_point else torch.iinfo(dtype).max, dtype=dtype, device=device
+            ).to(memory_format=memory_format, copy=True),
             *[
                 functools.partial(make_uniform_band_image, low_factor=low_factor, high_factor=high_factor)
                 for low_factor, high_factor in [

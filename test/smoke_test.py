@@ -27,9 +27,9 @@ def smoke_test_torchvision_read_decode() -> None:
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
 
 
-def smoke_test_torchvision_decode_jpeg_cuda():
+def smoke_test_torchvision_decode_jpeg(device: str = "cpu"):
     img_jpg_data = read_file(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
-    img_jpg = decode_jpeg(img_jpg_data, device="cuda")
+    img_jpg = decode_jpeg(img_jpg_data, device=device)
     if img_jpg.shape != (3, 606, 517):
         raise RuntimeError(f"Unexpected shape of img_jpg: {img_jpg.shape}")
 
@@ -81,8 +81,9 @@ def main() -> None:
     smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()
+    smoke_test_torchvision_decode_jpeg()
     if torch.cuda.is_available():
-        smoke_test_torchvision_decode_jpeg_cuda()
+        smoke_test_torchvision_decode_jpeg("cuda")
         smoke_test_torchvision_resnet50_classify("cuda")
         smoke_test_compile()
 
