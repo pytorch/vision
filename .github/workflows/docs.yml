@@ -53,8 +53,9 @@ jobs:
         fi
 
   upload:
-    # FIXME
-#    if: github.event_name == 'push'
+    # FIXME: this also needs to happen on created releases
+#    # FIXME: enable this before the PR is merged
+#    if: github.event_name == 'push' && github.event.push.base_ref == 'main'
     needs: build
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
@@ -64,11 +65,8 @@ jobs:
       script: |
         set -euo pipefail
         
-        # FIXME
-        # check if branch name is main
-        # otherwise exit 1 here for now
-        
         TARGET="main"
+
         mkdir -p "${TARGET}"
         rm -rf "${TARGET}"/*
         mv "${RUNNER_ARTIFACT_DIR}"/html/* "${TARGET}"
@@ -78,23 +76,27 @@ jobs:
           mkdir -p _static
           rm -rf _static/*
           cp -r "${TARGET}"/_static/* _static
-          git add _static
+          git add _static || true
         fi
-
-        # DEBUG
-        git status
         
         git config user.email "soumith+bot@pytorch.org"
         git config user.name "pytorchbot"
         git commit -m "auto-generating sphinx docs" || true
 
+        # FIXME: this needs to come from ${{ secrets }}
+        export GITHUB_PYTORCHBOT_TOKEN=FOO
         {
           echo "machine github.com"
           echo "login pytorchbot"
           echo "password ${GITHUB_PYTORCHBOT_TOKEN}"
         } > ~/.netrc
-        # DEBUG
+
+        # FIXME: remove this before the PR is merged. GHA automatically redacts secrets in the
+        #  logs, so we are not leaking anything here. This just makes sure this workflow is
+        # able to push correctly after we merge the PR.
+        git status
         cat ~/.netrc
+
         git remote add origin https://github.com/pytorch/vision.git
-#        FIXME
+#        FIXME: enable this before the PR is merged
 #        git push -u origin gh-pages
