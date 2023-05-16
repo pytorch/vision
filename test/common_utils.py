@@ -465,10 +465,14 @@ class TensorLoader:
 class ImageLoader(TensorLoader):
     spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
+    memory_format: torch.memory_format = torch.contiguous_format
 
     def __post_init__(self):
         self.spatial_size = self.shape[-2:]
         self.num_channels = self.shape[-3]
+
+    def load(self, device):
+        return self.fn(self.shape, self.dtype, device, memory_format=self.memory_format)
 
 
 NUM_CHANNELS_MAP = {
@@ -493,18 +497,21 @@ def make_image_loader(
     extra_dims=(),
     dtype=torch.float32,
     constant_alpha=True,
+    memory_format=torch.contiguous_format,
 ):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
-    def fn(shape, dtype, device):
+    def fn(shape, dtype, device, memory_format):
         max_value = get_max_value(dtype)
-        data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
+        data = torch.testing.make_tensor(
+            shape, low=0, high=max_value, dtype=dtype, device=device, memory_format=memory_format
+        )
         if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
             data[..., -1, :, :] = max_value
         return datapoints.Image(data)
 
-    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype)
+    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, memory_format=memory_format)
 
 
 make_image = from_loader(make_image_loader)
@@ -530,11 +537,13 @@ def make_image_loaders(
 make_images = from_loaders(make_image_loaders)
 
 
-def make_image_loader_for_interpolation(size="random", *, color_space="RGB", dtype=torch.uint8):
+def make_image_loader_for_interpolation(
+    size="random", *, color_space="RGB", dtype=torch.uint8, memory_format=torch.contiguous_format
+):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
-    def fn(shape, dtype, device):
+    def fn(shape, dtype, device, memory_format):
         height, width = shape[-2:]
 
         image_pil = (
@@ -550,19 +559,25 @@ def make_image_loader_for_interpolation(size="random", *, color_space="RGB", dty
             )
         )
 
-        image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
+        image_tensor = to_image_tensor(image_pil)
+        if memory_format == torch.contiguous_format:
+            image_tensor = image_tensor.to(device=device, memory_format=memory_format, copy=True)
+        else:
+            image_tensor = image_tensor.to(device=device)
+        image_tensor = convert_dtype_image_tensor(image_tensor, dtype=dtype)
 
         return datapoints.Image(image_tensor)
 
-    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype)
+    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, memory_format=memory_format)
 
 
 def make_image_loaders_for_interpolation(
     sizes=((233, 147),),
     color_spaces=("RGB",),
     dtypes=(torch.uint8,),
+    memory_formats=(torch.contiguous_format, torch.channels_last),
 ):
-    for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
+    for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes, memory_format=memory_formats):
         yield make_image_loader_for_interpolation(**params)
 
 
@@ -744,8 +759,10 @@ def make_video_loader(
     size = _parse_spatial_size(size)
     num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
-    def fn(shape, dtype, device):
-        video = make_image(size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device)
+    def fn(shape, dtype, device, memory_format):
+        video = make_image(
+            size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device, memory_format=memory_format
+        )
         return datapoints.Video(video)
 
     return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
