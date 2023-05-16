@@ -1504,9 +1504,9 @@ class TestLastLevelMaxPool2d:
 
         # skip what FPN really dit, simply copy results from feature maps here.
         results = feature_maps
-
-        results, names = extra_blocks(results, feature_maps, names)
+        
         expected_pooled_featuremap = F.max_pool2d(feature_maps[-1], 2, 2, 0)
+        results, names = extra_blocks(results, feature_maps, names)
 
         tol = 1e-3 if feature_maps[-1].dtype is torch.half else 1e-5
         torch.testing.assert_close(expected_pooled_featuremap, results[-1], atol=tol, rtol=tol)
