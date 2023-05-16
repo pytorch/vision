@@ -1488,12 +1488,15 @@ class TestDistanceBoxIouLoss:
     def test_empty_distance_iou_inputs(self, dtype, device):
         assert_empty_loss(ops.distance_box_iou_loss, dtype, device)
 
+        
 class TestLastLevelMaxPool2d:
     def _generate_fpn_feature_maps(self, **kwargs) -> Tuple[List[Tensor], List[str]]:
-        feature_maps = [torch.rand(16, 3, 240, 320),
-                        torch.rand(16, 3, 120, 160),
-                        torch.rand(16, 3, 60, 80),
-                        torch.rand(16, 3, 30, 40)]
+        feature_maps = [
+            torch.rand(16, 3, 240, 320),
+            torch.rand(16, 3, 120, 160),
+            torch.rand(16, 3, 60, 80),
+            torch.rand(16, 3, 30, 40)
+        ]
         names = ['0', '1', '2', '3']
         
         return feature_maps, names
@@ -1511,6 +1514,7 @@ class TestLastLevelMaxPool2d:
         tol = 1e-3 if feature_maps[-1].dtype is torch.half else 1e-5
         torch.testing.assert_close(expected_pooled_featuremap, results[-1], atol=tol, rtol=tol)
 
+        
 class TestFocalLoss:
     def _generate_diverse_input_target_pair(self, shape=(5, 2), **kwargs):
         def logit(p):
