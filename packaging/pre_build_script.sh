@@ -15,6 +15,14 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   # Install libpng from Anaconda (defaults)
   conda install ${CONDA_CHANNEL_FLAGS} libpng "jpeg<=9b" -y
   conda install -yq ffmpeg=4.2 -c pytorch
+
+  # Copy binaries to be included in the wheel distribution
+  if [[ "$OSTYPE" == "msys" ]]; then
+      python_exec="$(which python)"
+      bin_path=$(dirname $python_exec)
+      cp "$bin_path/Library/bin/libjpeg.dll" torchvision
+  fi
+
 else
   # Install native CentOS libJPEG, freetype and GnuTLS
   yum install -y libjpeg-turbo-devel freetype gnutls
