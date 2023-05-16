@@ -24,8 +24,8 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   fi
 
 else
-  # Install native CentOS libJPEG, freetype and GnuTLS
-  yum install -y libjpeg-turbo-devel freetype gnutls
+  # Install native CentOS libPNG, libJPEG, freetype and GnuTLS
+  yum install -y libpng-devel libjpeg-turbo-devel freetype gnutls
 
   # Download all the dependencies required to compile image and video_reader
   # extensions
