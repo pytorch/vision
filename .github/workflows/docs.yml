@@ -54,9 +54,10 @@ jobs:
 
   upload:
     # FIXME: this also needs to happen on created releases
-#    # FIXME: enable this before the PR is merged
-#    if: github.event_name == 'push' && github.event.push.base_ref == 'main'
     needs: build
+    if: github.event_name == 'push' && github.event.push.base_ref == 'main'
+    permissions:
+      contents: write
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
@@ -82,21 +83,5 @@ jobs:
         git config user.email "soumith+bot@pytorch.org"
         git config user.name "pytorchbot"
         git commit -m "auto-generating sphinx docs" || true
-
-        # FIXME: this needs to come from ${{ secrets }}
-        export GITHUB_PYTORCHBOT_TOKEN=FOO
-        {
-          echo "machine github.com"
-          echo "login pytorchbot"
-          echo "password ${GITHUB_PYTORCHBOT_TOKEN}"
-        } > ~/.netrc
-
-        # FIXME: remove this before the PR is merged. GHA automatically redacts secrets in the
-        #  logs, so we are not leaking anything here. This just makes sure this workflow is
-        # able to push correctly after we merge the PR.
-        git status
-        cat ~/.netrc
-
         git remote add origin https://github.com/pytorch/vision.git
-#        FIXME: enable this before the PR is merged
-#        git push -u origin gh-pages
+        git push -u origin gh-pages
