@@ -19,6 +19,22 @@ from torchvision import models, ops
 from torchvision.models.feature_extraction import get_graph_node_names
 
 
+# Context manager for setting deterministic flag and automatically
+# resetting it to its original value
+class DeterministicGuard:
+    def __init__(self, deterministic, *, warn_only=False):
+        self.deterministic = deterministic
+        self.warn_only = warn_only
+
+    def __enter__(self):
+        self.deterministic_restore = torch.are_deterministic_algorithms_enabled()
+        self.warn_only_restore = torch.is_deterministic_algorithms_warn_only_enabled()
+        torch.use_deterministic_algorithms(self.deterministic, warn_only=self.warn_only)
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        torch.use_deterministic_algorithms(self.deterministic_restore, warn_only=self.warn_only_restore)
+
+
 class RoIOpTesterModuleWrapper(nn.Module):
     def __init__(self, obj):
         super().__init__()
@@ -84,7 +100,7 @@ class RoIOpTester(ABC):
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
-    def test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, **kwargs):
+    def test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, deterministic=False, **kwargs):
         x_dtype = self.dtype if x_dtype is None else x_dtype
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
@@ -100,7 +116,8 @@ class RoIOpTester(ABC):
         )
 
         pool_h, pool_w = pool_size, pool_size
-        y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs)
+        with DeterministicGuard(deterministic):
+            y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs)
         # the following should be true whether we're running an autocast test or not.
         assert y.dtype == x.dtype
         gt_y = self.expected_fn(
@@ -141,7 +158,7 @@ class RoIOpTester(ABC):
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
-    def test_backward(self, seed, device, contiguous):
+    def test_backward(self, seed, device, contiguous, deterministic=False):
         torch.random.manual_seed(seed)
         pool_size = 2
         x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
@@ -156,7 +173,9 @@ class RoIOpTester(ABC):
 
         script_func = self.get_script_fn(rois, pool_size)
 
-        gradcheck(func, (x,))
+        with DeterministicGuard(deterministic):
+            gradcheck(func, (x,))
+
         gradcheck(script_func, (x,))
 
     @needs_cuda
@@ -385,7 +404,6 @@ class TestRoIAlign(RoIOpTester):
                     grid_w = sampling_ratio if sampling_ratio > 0 else int(np.ceil(bin_w))
 
                     for channel in range(0, n_channels):
-
                         val = 0
                         for iy in range(0, grid_h):
                             y = start_h + (iy + 0.5) * bin_h / grid_h
@@ -403,20 +421,43 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
-    def test_forward(self, device, contiguous, aligned, x_dtype=None, rois_dtype=None):
+    @pytest.mark.parametrize("deterministic", (True, False))
+    def test_forward(self, device, contiguous, deterministic, aligned, x_dtype=None, rois_dtype=None):
+        if deterministic and device == "cpu":
+            pytest.skip("cpu is always deterministic, don't retest")
         super().test_forward(
-            device=device, contiguous=contiguous, x_dtype=x_dtype, rois_dtype=rois_dtype, aligned=aligned
+            device=device,
+            contiguous=contiguous,
+            deterministic=deterministic,
+            x_dtype=x_dtype,
+            rois_dtype=rois_dtype,
+            aligned=aligned,
         )
 
     @needs_cuda
     @pytest.mark.parametrize("aligned", (True, False))
+    @pytest.mark.parametrize("deterministic", (True, False))
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
     @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
-    def test_autocast(self, aligned, x_dtype, rois_dtype):
+    def test_autocast(self, aligned, deterministic, x_dtype, rois_dtype):
         with torch.cuda.amp.autocast():
             self.test_forward(
-                torch.device("cuda"), contiguous=False, aligned=aligned, x_dtype=x_dtype, rois_dtype=rois_dtype
+                torch.device("cuda"),
+                contiguous=False,
+                deterministic=deterministic,
+                aligned=aligned,
+                x_dtype=x_dtype,
+                rois_dtype=rois_dtype,
             )
+
+    @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("contiguous", (True, False))
+    @pytest.mark.parametrize("deterministic", (True, False))
+    def test_backward(self, seed, device, contiguous, deterministic):
+        if deterministic and device == "cpu":
+            pytest.skip("cpu is always deterministic, don't retest")
+        super().test_backward(seed, device, contiguous, deterministic)
 
     def _make_rois(self, img_size, num_imgs, dtype, num_rois=1000):
         rois = torch.randint(0, img_size // 2, size=(num_rois, 5)).to(dtype)
@@ -979,7 +1020,6 @@ class TestDeformConv:
             weight = init_weight
 
         for d in ["cpu", "cuda"]:
-
             out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1, mask=mask.to(d))
             out.mean().backward()
             if true_cpu_grads is None:
@@ -1375,7 +1415,6 @@ class TestGeneralizedBoxIouLoss:
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_giou_loss(self, dtype, device):
-
         box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
 
         # Identical boxes should have loss of 0
