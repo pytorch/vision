@@ -140,11 +140,8 @@ setup_macos() {
 # Usage: setup_env 0.2.0
 setup_env() {
   setup_cuda
-  if [[ -z "$1" ]]; then
-      setup_base_build_version
-  else
-    setup_build_version "$1"
-  fi
+  setup_base_build_version
+  # setup_build_version "$1"
   setup_macos
 }
 
