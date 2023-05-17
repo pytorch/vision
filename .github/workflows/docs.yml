@@ -84,6 +84,7 @@ jobs:
               TARGET=$(echo "${TARGET}" | sed 's/v\([0-9]\+\)\.\([0-9]\+\)\.[0-9]\+/\1.\2/')
               echo "Target Folder: ${TARGET}"
               ;;
+          esac
         fi
 
         mkdir -p "${TARGET}"
