@@ -442,7 +442,7 @@ class RaftStereo(nn.Module):
         hidden_dims = self.update_block.hidden_dims
         context_out_channels = [context_outs[i].shape[1] - hidden_dims[i] for i in range(len(context_outs))]
         hidden_states: List[Tensor] = []
-        contexts: List[List[Tensor]] = []
+        contexts: List[Tuple[Tensor, ...]] = []
         for i, context_conv in enumerate(self.context_convs):
             # As in the original paper, the actual output of the context encoder is split in 2 parts:
             # - one part is used to initialize the hidden state of the recurent units of the update block
