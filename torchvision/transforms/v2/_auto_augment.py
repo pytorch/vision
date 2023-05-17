@@ -220,7 +220,7 @@ class _AutoAugmentBase(Transform):
 
 class AutoAugment(_AutoAugmentBase):
     r"""[BETA] AutoAugment data augmentation method based on
-    `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
+    `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/abs/1805.09501>`_.
 
     .. v2betastatus:: AutoAugment transform
 
@@ -798,7 +798,33 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         return image, bboxes
 
 
-class AutoAugmentDetection(_AutoAugmentDetectionBase):
+class _AutoAugmentDetection(_AutoAugmentDetectionBase):
+    r"""[BETA] AutoAugment data augmentation method for object detection task based on
+    `"Learning Data Augmentation Strategies for Object Detection" <https://arxiv.org/abs/1906.11172>`_.
+
+    .. v2betastatus:: AutoAugment transform
+
+    This transformation works on images, videos and bounding boxes only.
+
+    If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+    Args:
+        policy (str, optional): The name of the AutoAugment policy to use. The available
+            options are `v0`, `v1`, `v2`, `v3` and `test`. `v0` is the policy used for
+            all of the results in the paper and was found to achieve the best results
+            on the COCO dataset. `v1`, `v2` and `v3` are additional good policies
+            found on the COCO dataset that have slight variation in what operations
+            were used during the search procedure along with how many operations are
+            applied in parallel to a single image (2 vs 3).
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
+    """
+
     _AUGMENTATION_SPACE = {
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
@@ -821,11 +847,11 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "Cutout": (lambda num_bins, height, width: torch.linspace(0, 100, num_bins + 1).round().int(), False),
         "BBox_Cutout": (lambda num_bins, height, width: torch.linspace(0.0, 0.75, num_bins + 1), False),
         "TranslateX": (
-            lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins + 1),
+            lambda num_bins, height, width: torch.linspace(0.0, 250.0 / 331.0 * width, num_bins + 1),
             True,
         ),
         "TranslateY": (
-            lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins + 1),
+            lambda num_bins, height, width: torch.linspace(0.0, 250.0 / 331.0 * height, num_bins + 1),
             True,
         ),
         "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
@@ -835,11 +861,11 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "ShearX_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
         "ShearY_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins + 1), True),
         "TranslateX_Only_BBoxes": (
-            lambda num_bins, height, width: torch.linspace(0.0, 120.0, num_bins + 1),
+            lambda num_bins, height, width: torch.linspace(0.0, 120.0 / 331.0 * width, num_bins + 1),
             True,
         ),
         "TranslateY_Only_BBoxes": (
-            lambda num_bins, height, width: torch.linspace(0.0, 120.0, num_bins + 1),
+            lambda num_bins, height, width: torch.linspace(0.0, 120.0 / 331.0 * height, num_bins + 1),
             True,
         ),
         "Flip_Only_BBoxes": (lambda num_bins, height, width: None, False),

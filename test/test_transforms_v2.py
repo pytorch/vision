@@ -141,10 +141,10 @@ class TestSmoke:
             (transforms.AutoAugment(), auto_augment_adapter),
             (transforms.RandAugment(), auto_augment_adapter),
             (transforms.TrivialAugmentWide(), auto_augment_adapter),
-            (transforms.AutoAugmentDetection("v0"), auto_augment_detection_adapter),
-            (transforms.AutoAugmentDetection("v1"), auto_augment_detection_adapter),
-            (transforms.AutoAugmentDetection("v2"), auto_augment_detection_adapter),
-            (transforms.AutoAugmentDetection("v3"), auto_augment_detection_adapter),
+            (transforms._AutoAugmentDetection("v0"), auto_augment_detection_adapter),
+            (transforms._AutoAugmentDetection("v1"), auto_augment_detection_adapter),
+            (transforms._AutoAugmentDetection("v2"), auto_augment_detection_adapter),
+            (transforms._AutoAugmentDetection("v3"), auto_augment_detection_adapter),
             (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
             (transforms.Grayscale(), None),
             (transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1.0), None),
@@ -334,6 +334,37 @@ class TestSmoke:
         ]
     )
     def test_auto_augment(self, transform, input):
+        transform(input)
+
+    @pytest.mark.parametrize(
+        "transform",
+        [
+            transforms._AutoAugmentDetection("v0"),
+            transforms._AutoAugmentDetection("v1"),
+            transforms._AutoAugmentDetection("v2"),
+            transforms._AutoAugmentDetection("v3"),
+        ],
+    )
+    @pytest.mark.parametrize("seed", range(10))
+    def test_auto_augment_detection(self, transform, seed):
+        torch.manual_seed(seed)
+        image = datapoints.Image(torch.randint(0, 256, size=(3, 480, 640), dtype=torch.uint8))
+        boxes = torch.tensor(
+            [
+                [388.3100, 38.8300, 638.5600, 480.0000],
+                [82.6800, 314.7300, 195.4400, 445.7400],
+                [199.1000, 214.1700, 316.4100, 399.2800],
+                [159.8400, 183.6800, 216.8700, 273.1200],
+                [15.8000, 265.4600, 93.2900, 395.1800],
+                [88.2300, 266.0800, 222.9800, 371.2500],
+                [176.9000, 283.8600, 208.4300, 292.3000],
+                [537.6300, 230.8300, 580.7100, 291.3300],
+                [421.1200, 230.4700, 580.6700, 350.9500],
+                [427.4200, 185.4300, 494.0200, 266.3500],
+            ]
+        )
+        bboxes = datapoints.BoundingBox(boxes, format="XYXY", spatial_size=image.shape[-2:])
+        input = (image, bboxes)
         transform(input)
 
     @parametrize(
