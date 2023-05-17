@@ -27,7 +27,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       script: |
-        set -eux
+        set -ex
         source /c/Jenkins/Miniconda3/etc/profile.d/conda.sh
         source packaging/windows/internal/vc_install_helper.sh
 

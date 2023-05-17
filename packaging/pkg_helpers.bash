@@ -1,6 +1,6 @@
 # A set of useful bash functions for common functionality we need to do in
 # many build scripts
-set -eux
+set -ex
 
 # Setup CUDA environment variables, based on CU_VERSION
 #
