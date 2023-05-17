@@ -7,6 +7,9 @@ on:
       - nightly
       - main
       - release/*
+  tags:
+    - v[0-9]+.[0-9]+.[0-9]
+    - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 
 jobs:
@@ -53,9 +56,9 @@ jobs:
         fi
 
   upload:
-    # FIXME: this also needs to happen on created releases
     needs: build
-    if: github.event_name == 'push' && github.event.push.base_ref == 'main'
+    if: github.repository == 'pytorch/audio' && github.event_name == 'push' && 
+        ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
     permissions:
       contents: write
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
@@ -63,10 +66,25 @@ jobs:
       repository: pytorch/vision
       download-artifact: docs
       ref: gh-pages
+      env:
+        TARGET: github.ref_name
       script: |
         set -euo pipefail
         
-        TARGET="main"
+        if [[ ${{ github.ref_type }} == 'tag' ]]; then
+          case "${TARGET}" in
+            *-rc*)
+              echo "Aborting upload since this is an RC tag: ${TARGET}"
+              exit 0
+              ;;
+            *)
+              echo "Tag: ${TARGET}"
+              # Strip the leading "v" as well as the trailing patch version. For example:
+              # 'v0.15.2' -> '0.15'
+              TARGET=$(echo "${TARGET}" | sed 's/v\([0-9]\+\)\.\([0-9]\+\)\.[0-9]\+/\1.\2/')
+              echo "Target Folder: ${TARGET}"
+              ;;
+        fi
 
         mkdir -p "${TARGET}"
         rm -rf "${TARGET}"/*
@@ -80,8 +98,8 @@ jobs:
           git add _static || true
         fi
         
-        git config user.email "soumith+bot@pytorch.org"
-        git config user.name "pytorchbot"
+        git config user.email 'soumith+bot@pytorch.org'
+        git config user.name 'pytorchbot'
         git commit -m "auto-generating sphinx docs" || true
         git remote add origin https://github.com/pytorch/vision.git
         git push -u origin gh-pages
