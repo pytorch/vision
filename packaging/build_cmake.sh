@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -eux
 
 PARALLELISM=8
 #if [ -n "$MAX_JOBS" ]; then
