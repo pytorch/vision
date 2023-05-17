@@ -57,7 +57,7 @@ jobs:
 
   upload:
     needs: build
-    if: github.repository == 'pytorch/audio' && github.event_name == 'push' && 
+    if: github.repository == 'pytorch/vision' && github.event_name == 'push' && 
         ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
     permissions:
       contents: write
