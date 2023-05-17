@@ -36,11 +36,12 @@ jobs:
           echo CU_VERSION="${CU_VERSION}"
           export CUDA_VERSION=${{ matrix.gpu-arch-version }}
 
+          source packaging/windows/internal/cuda_install.bat
+
           export CUDA_HOME="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-version }}"
           export CUDA_PATH="${CUDA_HOME}"
           export PATH="${CUDA_PATH}/bin:${PATH}"
-
-          packaging/windows/internal/cuda_install.bat
+          export NVTOOLSEXT_PATH="/c/Program Files/NVIDIA Corporation/NvToolsExt/bin/x64"
         fi
 
         export PYTHON_VERSION=3.9
