@@ -2,9 +2,9 @@
 set -ex
 
 PARALLELISM=8
-if [ -n "$MAX_JOBS" ]; then
-    PARALLELISM=$MAX_JOBS
-fi
+#if [ -n "$MAX_JOBS" ]; then
+#    PARALLELISM=$MAX_JOBS
+#fi
 
 if [[ "$(uname)" != Darwin && "$OSTYPE" != "msys" ]]; then
     eval "$(./conda/bin/conda shell.bash hook)"
