@@ -34,6 +34,7 @@ jobs:
         if [[ ${{ matrix.gpu-arch-type }} == cuda ]]; then
           export CU_VERSION=cu$(echo ${{ matrix.gpu-arch-version }} | sed 's/\.//')
           echo CU_VERSION="${CU_VERSION}"
+          export CUDA_VERSION=${{ matrix.gpu-arch-version }}
           packaging/windows/internal/cuda_install.bat
         fi
 
@@ -44,6 +45,7 @@ jobs:
         export PYTORCH_VERSION_SUFFIX=""
         export CONDA_CHANNEL_FLAGS=""
         export UPLOAD_CHANNEL="nightly"
+
 
         conda activate
         conda update -y conda
