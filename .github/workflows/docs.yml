@@ -101,7 +101,7 @@ jobs:
           git add _static || true
         fi
         
-        git config user.email 'soumith+bot@pytorch.org'
         git config user.name 'pytorchbot'
+        git config user.email 'soumith+bot@pytorch.org'
         git commit -m "auto-generating sphinx docs" || true
-        git push -u origin gh-pages
+        git push
