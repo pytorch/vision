@@ -66,12 +66,13 @@ jobs:
       repository: pytorch/vision
       download-artifact: docs
       ref: gh-pages
-      env:
-        TARGET: github.ref_name
       script: |
         set -euo pipefail
         
-        if [[ ${{ github.ref_type }} == 'tag' ]]; then
+        TARGET=${{ github.ref_name }}
+        if [[ ${{ github.ref_type }} == 'branch' ]]; then
+          echo "Branch: ${TARGET}"
+        else
           case "${TARGET}" in
             *-rc*)
               echo "Aborting upload since this is an RC tag: ${TARGET}"
