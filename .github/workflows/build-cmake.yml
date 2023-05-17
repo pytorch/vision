@@ -28,7 +28,7 @@ jobs:
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       script: |
         set -euo pipefail
-
+        source /c/Jenkins/Miniconda3/etc/profile.d/conda.sh
         source packaging/windows/internal/vc_install_helper.sh
 
         if [[ ${{ matrix.gpu-arch-type }} == cuda ]]; then
@@ -37,8 +37,14 @@ jobs:
           packaging/windows/internal/cuda_install.bat
         fi
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
-        ./.github/scripts/cmake.sh
+        conda activate
+        conda update -y conda
+        conda create -yn python39 python=3.9
+        conda activate python39
+        source ./packaging/build_cmake.sh
+
+        # ./.github/scripts/cmake.sh
