@@ -69,8 +69,8 @@ jobs:
       script: |
         set -euo pipefail
         
-        REF_TYPE=tag
-        REF_NAME=v1.2.3
+        REF_TYPE=branch
+        REF_NAME=main
 
         if [[ "${REF_TYPE}" == branch ]]; then
           TARGET_FOLDER="${REF_NAME}"
