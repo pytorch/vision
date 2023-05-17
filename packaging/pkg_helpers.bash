@@ -1,6 +1,6 @@
 # A set of useful bash functions for common functionality we need to do in
 # many build scripts
-
+set -eux
 
 # Setup CUDA environment variables, based on CU_VERSION
 #
@@ -140,8 +140,7 @@ setup_macos() {
 # Usage: setup_env 0.2.0
 setup_env() {
   setup_cuda
-  setup_base_build_version
-  # setup_build_version "$1"
+  setup_build_version "$1"
   setup_macos
 }
 
