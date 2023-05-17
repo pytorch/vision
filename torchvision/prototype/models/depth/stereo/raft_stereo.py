@@ -450,7 +450,9 @@ class RaftStereo(nn.Module):
             hidden_state, context = torch.split(context_outs[i], [hidden_dims[i], context_out_channels[i]], dim=1)
             hidden_states.append(torch.tanh(hidden_state))
             contexts.append(
-                torch.split(context_conv(F.relu(context)), [hidden_dims[i], hidden_dims[i], hidden_dims[i]], dim=1)
+                list(
+                    torch.split(context_conv(F.relu(context)), [hidden_dims[i], hidden_dims[i], hidden_dims[i]], dim=1)
+                )
             )
 
         _, Cf, Hf, Wf = fmap1.shape
