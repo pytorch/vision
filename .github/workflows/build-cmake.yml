@@ -35,6 +35,11 @@ jobs:
           export CU_VERSION=cu$(echo ${{ matrix.gpu-arch-version }} | sed 's/\.//')
           echo CU_VERSION="${CU_VERSION}"
           export CUDA_VERSION=${{ matrix.gpu-arch-version }}
+
+          export CUDA_HOME="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-version }}"
+          export CUDA_PATH="${CUDA_HOME}"
+          export PATH="${CUDA_PATH}/bin:${PATH}"
+
           packaging/windows/internal/cuda_install.bat
         fi
 
