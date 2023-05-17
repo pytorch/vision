@@ -43,6 +43,7 @@ jobs:
         export PYTORCH_VERSION=2.1.0.dev20230517
         export PYTORCH_VERSION_SUFFIX=""
         export CONDA_CHANNEL_FLAGS=""
+        export UPLOAD_CHANNEL="nightly"
 
         conda activate
         conda update -y conda
