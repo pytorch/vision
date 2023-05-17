@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+282001f ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+19b2d3c ) &#x25BC</a>
     </div>
     
 
@@ -354,6 +354,13 @@
 <dt class="sig sig-object py" id="torchvision.datasets.ImageNet">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.datasets.</span></span><span class="sig-name descname"><span class="pre">ImageNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'train'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.11)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/datasets/imagenet.html#ImageNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.ImageNet" title="Permalink to this definition">¶</a></dt>
 <dd><p><a class="reference external" href="http://image-net.org/">ImageNet</a> 2012 Classification Dataset.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Before using this class, it is required to download ImageNet 2012 dataset from
+<a class="reference external" href="https://image-net.org/challenges/LSVRC/2012/2012-downloads.php">here</a> and
+place the files <code class="docutils literal notranslate"><span class="pre">ILSVRC2012_devkit_t12.tar.gz</span></code> and <code class="docutils literal notranslate"><span class="pre">ILSVRC2012_img_train.tar</span></code>
+or <code class="docutils literal notranslate"><span class="pre">ILSVRC2012_img_val.tar</span></code> based on <code class="docutils literal notranslate"><span class="pre">split</span></code> in the root directory.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

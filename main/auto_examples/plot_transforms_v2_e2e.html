@@ -39,7 +39,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Optical Flow: Predicting movement with the RAFT model" href="plot_optical_flow.html" />
-    <link rel="prev" title="Getting started with transforms v2" href="plot_transforms_v2.html" />
+    <link rel="prev" title="Datapoints FAQ" href="plot_datapoints.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+282001f ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+19b2d3c ) &#x25BC</a>
     </div>
     
 
@@ -423,25 +423,26 @@ index created!
 &lt;class &#39;list&#39;&gt; &lt;class &#39;dict&#39;&gt; [&#39;segmentation&#39;, &#39;iscrowd&#39;, &#39;image_id&#39;, &#39;bbox&#39;, &#39;category_id&#39;, &#39;id&#39;]
 </pre></div>
 </div>
-<p>The dataset returns a two-tuple with the first item being a <a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v9.4.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> and second one a list of
+<p>The dataset returns a two-tuple with the first item being a <a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v9.5.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> and second one a list of
 dictionaries, which each containing the annotations for a single object instance. As is, this format is not compatible
 with the <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code>, nor with the models. To overcome that, we provide the
 <a class="reference internal" href="../generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2" title="torchvision.datasets.wrap_dataset_for_transforms_v2"><code class="xref py py-func docutils literal notranslate"><span class="pre">wrap_dataset_for_transforms_v2()</span></code></a> function. For
 <a class="reference internal" href="../generated/torchvision.datasets.CocoDetection.html#torchvision.datasets.CocoDetection" title="torchvision.datasets.CocoDetection"><code class="xref py py-class docutils literal notranslate"><span class="pre">CocoDetection</span></code></a>, this changes the target structure to a single dictionary of lists. It
 also adds the key-value-pairs <code class="docutils literal notranslate"><span class="pre">&quot;boxes&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;masks&quot;</span></code>, and <code class="docutils literal notranslate"><span class="pre">&quot;labels&quot;</span></code> wrapped in the corresponding
-<code class="docutils literal notranslate"><span class="pre">torchvision.datapoints</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">torchvision.datapoints</span></code>. By default, it only returns <code class="docutils literal notranslate"><span class="pre">&quot;boxes&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;labels&quot;</span></code> to avoid transforming unnecessary
+items down the line, but you can pass the <code class="docutils literal notranslate"><span class="pre">target_type</span></code> parameter for fine-grained control.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">wrap_dataset_for_transforms_v2</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
 
 <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sample</span></a> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="PIL.Image.Image" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">image</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sample</span></a>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="PIL.Image.Image" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">image</span></a><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]),</span> <span class="nb">type</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a><span class="p">[</span><span class="s2">&quot;masks&quot;</span><span class="p">]),</span> <span class="nb">type</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]),</span> <span class="nb">type</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]))</span>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;class &#39;PIL.Image.Image&#39;&gt;
-&lt;class &#39;dict&#39;&gt; [&#39;segmentation&#39;, &#39;iscrowd&#39;, &#39;image_id&#39;, &#39;bbox&#39;, &#39;category_id&#39;, &#39;id&#39;, &#39;boxes&#39;, &#39;masks&#39;, &#39;labels&#39;]
-&lt;class &#39;torchvision.datapoints._bounding_box.BoundingBox&#39;&gt; &lt;class &#39;torchvision.datapoints._mask.Mask&#39;&gt; &lt;class &#39;torch.Tensor&#39;&gt;
+&lt;class &#39;dict&#39;&gt; [&#39;image_id&#39;, &#39;boxes&#39;, &#39;labels&#39;]
+&lt;class &#39;torchvision.datapoints._bounding_box.BoundingBox&#39;&gt; &lt;class &#39;torch.Tensor&#39;&gt;
 </pre></div>
 </div>
 <p>As baseline, let’s have a look at a sample without transformations:</p>
@@ -510,10 +511,10 @@ In all of this, the bounding box was transformed accordingly. And without any fu
     <span class="k">break</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;bbox_regression&#39;: tensor(2.4982, grad_fn=&lt;DivBackward0&gt;), &#39;classification&#39;: tensor(57.6569, grad_fn=&lt;DivBackward0&gt;)}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;bbox_regression&#39;: tensor(4.0019, grad_fn=&lt;DivBackward0&gt;), &#39;classification&#39;: tensor(42.4939, grad_fn=&lt;DivBackward0&gt;)}
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.715 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.881 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-transforms-v2-e2e-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/88714c15e2eebafbfaedf6914b5cb4e2/plot_transforms_v2_e2e.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_transforms_v2_e2e.py</span></code></a></p>
@@ -536,7 +537,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
         <a href="plot_optical_flow.html" class="btn btn-neutral float-right" title="Optical Flow: Predicting movement with the RAFT model" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="plot_transforms_v2.html" class="btn btn-neutral" title="Getting started with transforms v2" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="plot_datapoints.html" class="btn btn-neutral" title="Datapoints FAQ" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   

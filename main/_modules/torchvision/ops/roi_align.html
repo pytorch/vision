@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+282001f ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+19b2d3c ) &#x25BC</a>
     </div>
     
 
@@ -347,14 +347,186 @@
 <span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch._dynamo</span>
 <span class="kn">import</span> <span class="nn">torch.fx</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">torch.jit.annotations</span> <span class="kn">import</span> <span class="n">BroadcastingList2</span>
 <span class="kn">from</span> <span class="nn">torch.nn.modules.utils</span> <span class="kn">import</span> <span class="n">_pair</span>
-<span class="kn">from</span> <span class="nn">torchvision.extension</span> <span class="kn">import</span> <span class="n">_assert_has_ops</span>
+<span class="kn">from</span> <span class="nn">torchvision.extension</span> <span class="kn">import</span> <span class="n">_assert_has_ops</span><span class="p">,</span> <span class="n">_has_ops</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">check_roi_boxes_shape</span><span class="p">,</span> <span class="n">convert_boxes_to_roi_format</span>
+
+
+<span class="c1"># NB: all inputs are tensors</span>
+<span class="k">def</span> <span class="nf">_bilinear_interpolate</span><span class="p">(</span>
+    <span class="nb">input</span><span class="p">,</span>  <span class="c1"># [N, C, H, W]</span>
+    <span class="n">roi_batch_ind</span><span class="p">,</span>  <span class="c1"># [K]</span>
+    <span class="n">y</span><span class="p">,</span>  <span class="c1"># [K, PH, IY]</span>
+    <span class="n">x</span><span class="p">,</span>  <span class="c1"># [K, PW, IX]</span>
+    <span class="n">ymask</span><span class="p">,</span>  <span class="c1"># [K, IY]</span>
+    <span class="n">xmask</span><span class="p">,</span>  <span class="c1"># [K, IX]</span>
+<span class="p">):</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+
+    <span class="c1"># deal with inverse element out of feature map boundary</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">y_low</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+    <span class="n">x_low</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+    <span class="n">y_high</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y_low</span> <span class="o">&gt;=</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y_low</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">y_low</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y_low</span> <span class="o">&gt;=</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y_low</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y_low</span> <span class="o">&gt;=</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">y</span><span class="p">)</span>
+
+    <span class="n">x_high</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">x_low</span> <span class="o">&gt;=</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x_low</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">x_low</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">x_low</span> <span class="o">&gt;=</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x_low</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">x_low</span> <span class="o">&gt;=</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span>
+
+    <span class="n">ly</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">y_low</span>
+    <span class="n">lx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">x_low</span>
+    <span class="n">hy</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">ly</span>
+    <span class="n">hx</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">lx</span>
+
+    <span class="c1"># do bilinear interpolation, but respect the masking!</span>
+    <span class="c1"># TODO: It&#39;s possible the masking here is unnecessary if y and</span>
+    <span class="c1"># x were clamped appropriately; hard to tell</span>
+    <span class="k">def</span> <span class="nf">masked_index</span><span class="p">(</span>
+        <span class="n">y</span><span class="p">,</span>  <span class="c1"># [K, PH, IY]</span>
+        <span class="n">x</span><span class="p">,</span>  <span class="c1"># [K, PW, IX]</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">ymask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">xmask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ymask</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">xmask</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">input</span><span class="p">[</span>
+            <span class="n">roi_batch_ind</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+            <span class="n">y</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span>  <span class="c1"># prev [K, PH, IY]</span>
+            <span class="n">x</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span>  <span class="c1"># prev [K, PW, IX]</span>
+        <span class="p">]</span>  <span class="c1"># [K, C, PH, PW, IY, IX]</span>
+
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">masked_index</span><span class="p">(</span><span class="n">y_low</span><span class="p">,</span> <span class="n">x_low</span><span class="p">)</span>
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">masked_index</span><span class="p">(</span><span class="n">y_low</span><span class="p">,</span> <span class="n">x_high</span><span class="p">)</span>
+    <span class="n">v3</span> <span class="o">=</span> <span class="n">masked_index</span><span class="p">(</span><span class="n">y_high</span><span class="p">,</span> <span class="n">x_low</span><span class="p">)</span>
+    <span class="n">v4</span> <span class="o">=</span> <span class="n">masked_index</span><span class="p">(</span><span class="n">y_high</span><span class="p">,</span> <span class="n">x_high</span><span class="p">)</span>
+
+    <span class="c1"># all ws preemptively [K, C, PH, PW, IY, IX]</span>
+    <span class="k">def</span> <span class="nf">outer_prod</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">w1</span> <span class="o">=</span> <span class="n">outer_prod</span><span class="p">(</span><span class="n">hy</span><span class="p">,</span> <span class="n">hx</span><span class="p">)</span>
+    <span class="n">w2</span> <span class="o">=</span> <span class="n">outer_prod</span><span class="p">(</span><span class="n">hy</span><span class="p">,</span> <span class="n">lx</span><span class="p">)</span>
+    <span class="n">w3</span> <span class="o">=</span> <span class="n">outer_prod</span><span class="p">(</span><span class="n">ly</span><span class="p">,</span> <span class="n">hx</span><span class="p">)</span>
+    <span class="n">w4</span> <span class="o">=</span> <span class="n">outer_prod</span><span class="p">(</span><span class="n">ly</span><span class="p">,</span> <span class="n">lx</span><span class="p">)</span>
+
+    <span class="n">val</span> <span class="o">=</span> <span class="n">w1</span> <span class="o">*</span> <span class="n">v1</span> <span class="o">+</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">v2</span> <span class="o">+</span> <span class="n">w3</span> <span class="o">*</span> <span class="n">v3</span> <span class="o">+</span> <span class="n">w4</span> <span class="o">*</span> <span class="n">v4</span>
+    <span class="k">return</span> <span class="n">val</span>
+
+
+<span class="c1"># TODO: this doesn&#39;t actually cache</span>
+<span class="c1"># TODO: main library should make this easier to do</span>
+<span class="k">def</span> <span class="nf">maybe_cast</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_autocast_enabled</span><span class="p">()</span> <span class="ow">and</span> <span class="n">tensor</span><span class="o">.</span><span class="n">is_cuda</span> <span class="ow">and</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">double</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor</span>
+
+
+<span class="c1"># This is a slow but pure Python and differentiable implementation of</span>
+<span class="c1"># roi_align.  It potentially is a good basis for Inductor compilation</span>
+<span class="c1"># (but I have not benchmarked it) but today it is solely used for the</span>
+<span class="c1"># fact that its backwards can be implemented deterministically,</span>
+<span class="c1"># which is needed for the PT2 benchmark suite.</span>
+<span class="c1">#</span>
+<span class="c1"># It is transcribed directly off of the roi_align CUDA kernel, see</span>
+<span class="c1"># https://dev-discuss.pytorch.org/t/a-pure-python-implementation-of-roi-align-that-looks-just-like-its-cuda-kernel/1266</span>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">_dynamo</span><span class="o">.</span><span class="n">allow_in_graph</span>
+<span class="k">def</span> <span class="nf">_roi_align</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">rois</span><span class="p">,</span> <span class="n">spatial_scale</span><span class="p">,</span> <span class="n">pooled_height</span><span class="p">,</span> <span class="n">pooled_width</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="p">,</span> <span class="n">aligned</span><span class="p">):</span>
+    <span class="n">orig_dtype</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="nb">input</span> <span class="o">=</span> <span class="n">maybe_cast</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="n">rois</span> <span class="o">=</span> <span class="n">maybe_cast</span><span class="p">(</span><span class="n">rois</span><span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+
+    <span class="n">ph</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">pooled_height</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># [PH]</span>
+    <span class="n">pw</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">pooled_width</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># [PW]</span>
+
+    <span class="c1"># input: [N, C, H, W]</span>
+    <span class="c1"># rois: [K, 5]</span>
+
+    <span class="n">roi_batch_ind</span> <span class="o">=</span> <span class="n">rois</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>  <span class="c1"># [K]</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="k">if</span> <span class="n">aligned</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">roi_start_w</span> <span class="o">=</span> <span class="n">rois</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">spatial_scale</span> <span class="o">-</span> <span class="n">offset</span>  <span class="c1"># [K]</span>
+    <span class="n">roi_start_h</span> <span class="o">=</span> <span class="n">rois</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">spatial_scale</span> <span class="o">-</span> <span class="n">offset</span>  <span class="c1"># [K]</span>
+    <span class="n">roi_end_w</span> <span class="o">=</span> <span class="n">rois</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">spatial_scale</span> <span class="o">-</span> <span class="n">offset</span>  <span class="c1"># [K]</span>
+    <span class="n">roi_end_h</span> <span class="o">=</span> <span class="n">rois</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">spatial_scale</span> <span class="o">-</span> <span class="n">offset</span>  <span class="c1"># [K]</span>
+
+    <span class="n">roi_width</span> <span class="o">=</span> <span class="n">roi_end_w</span> <span class="o">-</span> <span class="n">roi_start_w</span>  <span class="c1"># [K]</span>
+    <span class="n">roi_height</span> <span class="o">=</span> <span class="n">roi_end_h</span> <span class="o">-</span> <span class="n">roi_start_h</span>  <span class="c1"># [K]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">aligned</span><span class="p">:</span>
+        <span class="n">roi_width</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">roi_width</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># [K]</span>
+        <span class="n">roi_height</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">roi_height</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># [K]</span>
+
+    <span class="n">bin_size_h</span> <span class="o">=</span> <span class="n">roi_height</span> <span class="o">/</span> <span class="n">pooled_height</span>  <span class="c1"># [K]</span>
+    <span class="n">bin_size_w</span> <span class="o">=</span> <span class="n">roi_width</span> <span class="o">/</span> <span class="n">pooled_width</span>  <span class="c1"># [K]</span>
+
+    <span class="n">exact_sampling</span> <span class="o">=</span> <span class="n">sampling_ratio</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="n">roi_bin_grid_h</span> <span class="o">=</span> <span class="n">sampling_ratio</span> <span class="k">if</span> <span class="n">exact_sampling</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">roi_height</span> <span class="o">/</span> <span class="n">pooled_height</span><span class="p">)</span>  <span class="c1"># scalar or [K]</span>
+    <span class="n">roi_bin_grid_w</span> <span class="o">=</span> <span class="n">sampling_ratio</span> <span class="k">if</span> <span class="n">exact_sampling</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">roi_width</span> <span class="o">/</span> <span class="n">pooled_width</span><span class="p">)</span>  <span class="c1"># scalar or [K]</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    iy, ix = dims(2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">exact_sampling</span><span class="p">:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">roi_bin_grid_h</span> <span class="o">*</span> <span class="n">roi_bin_grid_w</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># scalar</span>
+        <span class="n">iy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">roi_bin_grid_h</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># [IY]</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">roi_bin_grid_w</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># [IX]</span>
+        <span class="n">ymask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">xmask</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">roi_bin_grid_h</span> <span class="o">*</span> <span class="n">roi_bin_grid_w</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [K]</span>
+        <span class="c1"># When doing adaptive sampling, the number of samples we need to do</span>
+        <span class="c1"># is data-dependent based on how big the ROIs are.  This is a bit</span>
+        <span class="c1"># awkward because first-class dims can&#39;t actually handle this.</span>
+        <span class="c1"># So instead, we inefficiently suppose that we needed to sample ALL</span>
+        <span class="c1"># the points and mask out things that turned out to be unnecessary</span>
+        <span class="n">iy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># [IY]</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># [IX]</span>
+        <span class="n">ymask</span> <span class="o">=</span> <span class="n">iy</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;</span> <span class="n">roi_bin_grid_h</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># [K, IY]</span>
+        <span class="n">xmask</span> <span class="o">=</span> <span class="n">ix</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;</span> <span class="n">roi_bin_grid_w</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># [K, IX]</span>
+
+    <span class="k">def</span> <span class="nf">from_K</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">t</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="n">y</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">from_K</span><span class="p">(</span><span class="n">roi_start_h</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">ph</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">from_K</span><span class="p">(</span><span class="n">bin_size_h</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">iy</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">from_K</span><span class="p">(</span><span class="n">bin_size_h</span> <span class="o">/</span> <span class="n">roi_bin_grid_h</span><span class="p">)</span>
+    <span class="p">)</span>  <span class="c1"># [K, PH, IY]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">from_K</span><span class="p">(</span><span class="n">roi_start_w</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">pw</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">from_K</span><span class="p">(</span><span class="n">bin_size_w</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">ix</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">from_K</span><span class="p">(</span><span class="n">bin_size_w</span> <span class="o">/</span> <span class="n">roi_bin_grid_w</span><span class="p">)</span>
+    <span class="p">)</span>  <span class="c1"># [K, PW, IX]</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">_bilinear_interpolate</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">roi_batch_ind</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ymask</span><span class="p">,</span> <span class="n">xmask</span><span class="p">)</span>  <span class="c1"># [K, C, PH, PW, IY, IX]</span>
+
+    <span class="c1"># Mask out samples that weren&#39;t actually adaptively needed</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">exact_sampling</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ymask</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">val</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">xmask</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">val</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>  <span class="c1"># remove IY, IX ~&gt; [K, C, PH, PW]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">output</span> <span class="o">/=</span> <span class="n">count</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">/=</span> <span class="n">count</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">orig_dtype</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span>
 
 
 <div class="viewcode-block" id="roi_align"><a class="viewcode-back" href="../../../generated/torchvision.ops.roi_align.html#torchvision.ops.roi_align">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span>
@@ -400,12 +572,15 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">roi_align</span><span class="p">)</span>
-    <span class="n">_assert_has_ops</span><span class="p">()</span>
     <span class="n">check_roi_boxes_shape</span><span class="p">(</span><span class="n">boxes</span><span class="p">)</span>
     <span class="n">rois</span> <span class="o">=</span> <span class="n">boxes</span>
     <span class="n">output_size</span> <span class="o">=</span> <span class="n">_pair</span><span class="p">(</span><span class="n">output_size</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rois</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">rois</span> <span class="o">=</span> <span class="n">convert_boxes_to_roi_format</span><span class="p">(</span><span class="n">rois</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_has_ops</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">are_deterministic_algorithms_enabled</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">input</span><span class="o">.</span><span class="n">is_cuda</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">_roi_align</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">rois</span><span class="p">,</span> <span class="n">spatial_scale</span><span class="p">,</span> <span class="n">output_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">output_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sampling_ratio</span><span class="p">,</span> <span class="n">aligned</span><span class="p">)</span>
+    <span class="n">_assert_has_ops</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">roi_align</span><span class="p">(</span>
         <span class="nb">input</span><span class="p">,</span> <span class="n">rois</span><span class="p">,</span> <span class="n">spatial_scale</span><span class="p">,</span> <span class="n">output_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">output_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sampling_ratio</span><span class="p">,</span> <span class="n">aligned</span>
     <span class="p">)</span></div>

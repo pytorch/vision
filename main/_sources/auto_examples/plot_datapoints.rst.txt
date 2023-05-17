@@ -28,7 +28,7 @@ to worry about: you do not need to understand the internals of datapoints to eff
 ``torchvision.transforms.v2``. It may however be useful for advanced users trying to implement their own datasets,
 transforms, or work directly with the datapoints.
 
-.. GENERATED FROM PYTHON SOURCE LINES 12-25
+.. GENERATED FROM PYTHON SOURCE LINES 12-26
 
 .. code-block:: default
 
@@ -43,6 +43,7 @@ transforms, or work directly with the datapoints.
     torchvision.disable_beta_transforms_warning()
 
     from torchvision import datapoints
+    from torchvision.transforms.v2 import functional as F
 
 
 
@@ -52,14 +53,14 @@ transforms, or work directly with the datapoints.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 26-30
+.. GENERATED FROM PYTHON SOURCE LINES 27-31
 
 What are datapoints?
 --------------------
 
 Datapoints are zero-copy tensor subclasses:
 
-.. GENERATED FROM PYTHON SOURCE LINES 30-38
+.. GENERATED FROM PYTHON SOURCE LINES 31-39
 
 .. code-block:: default
 
@@ -78,7 +79,7 @@ Datapoints are zero-copy tensor subclasses:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 39-56
+.. GENERATED FROM PYTHON SOURCE LINES 40-57
 
 Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate function
 for the input data.
@@ -98,7 +99,7 @@ How do I construct a datapoint?
 
 Each datapoint class takes any tensor-like data that can be turned into a :class:`~torch.Tensor`
 
-.. GENERATED FROM PYTHON SOURCE LINES 56-61
+.. GENERATED FROM PYTHON SOURCE LINES 57-62
 
 .. code-block:: default
 
@@ -121,12 +122,12 @@ Each datapoint class takes any tensor-like data that can be turned into a :class
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 62-64
+.. GENERATED FROM PYTHON SOURCE LINES 63-65
 
 Similar to other PyTorch creations ops, the constructor also takes the ``dtype``, ``device``, and ``requires_grad``
 parameters.
 
-.. GENERATED FROM PYTHON SOURCE LINES 64-69
+.. GENERATED FROM PYTHON SOURCE LINES 65-70
 
 .. code-block:: default
 
@@ -149,12 +150,12 @@ parameters.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 70-72
+.. GENERATED FROM PYTHON SOURCE LINES 71-73
 
 In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` also take a
 :class:`PIL.Image.Image` directly:
 
-.. GENERATED FROM PYTHON SOURCE LINES 72-76
+.. GENERATED FROM PYTHON SOURCE LINES 73-77
 
 .. code-block:: default
 
@@ -175,13 +176,13 @@ In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.dat
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 77-80
+.. GENERATED FROM PYTHON SOURCE LINES 78-81
 
 In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
 :class:`~torchvision.datapoints.BoundingBox` stores the coordinate format as well as the spatial size of the
 corresponding image alongside the actual values:
 
-.. GENERATED FROM PYTHON SOURCE LINES 80-87
+.. GENERATED FROM PYTHON SOURCE LINES 81-88
 
 .. code-block:: default
 
@@ -205,7 +206,7 @@ corresponding image alongside the actual values:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 88-103
+.. GENERATED FROM PYTHON SOURCE LINES 89-101
 
 Do I have to wrap the output of the datasets myself?
 ----------------------------------------------------
@@ -215,6 +216,94 @@ Only if you are using custom datasets. For the built-in ones, you can use
 built-in datasets. Meaning, if your custom dataset subclasses from a built-in one and the output type is the same, you
 also don't have to wrap manually.
 
+If you have a custom dataset, for example the ``PennFudanDataset`` from
+`this tutorial <https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html>`_, you have two options:
+
+1. Perform the wrapping inside ``__getitem__``:
+
+.. GENERATED FROM PYTHON SOURCE LINES 101-123
+
+.. code-block:: default
+
+
+    class PennFudanDataset(torch.utils.data.Dataset):
+        ...
+
+        def __getitem__(self, item):
+            ...
+
+            target["boxes"] = datapoints.BoundingBox(
+                boxes,
+                format=datapoints.BoundingBoxFormat.XYXY,
+                spatial_size=F.get_spatial_size(img),
+            )
+            target["labels"] = labels
+            target["masks"] = datapoints.Mask(masks)
+
+            ...
+
+            if self.transforms is not None:
+                img, target = self.transforms(img, target)
+
+            ...
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 124-125
+
+2. Perform the wrapping inside a custom transformation at the beginning of your pipeline:
+
+.. GENERATED FROM PYTHON SOURCE LINES 125-147
+
+.. code-block:: default
+
+
+
+    class WrapPennFudanDataset:
+        def __call__(self, img, target):
+            target["boxes"] = datapoints.BoundingBox(
+                target["boxes"],
+                format=datapoints.BoundingBoxFormat.XYXY,
+                spatial_size=F.get_spatial_size(img),
+            )
+            target["masks"] = datapoints.Mask(target["masks"])
+            return img, target
+
+
+    ...
+
+
+    def get_transform(train):
+        transforms = []
+        transforms.append(WrapPennFudanDataset())
+        transforms.append(T.PILToTensor())
+        ...
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 148-166
+
+.. note::
+
+   If both :class:`~torchvision.datapoints.BoundingBox`'es and :class:`~torchvision.datapoints.Mask`'s are included in
+   the sample, ``torchvision.transforms.v2`` will transform them both. Meaning, if you don't need both, dropping or
+   at least not wrapping the obsolete parts, can lead to a significant performance boost.
+
+   For example, if you are using the ``PennFudanDataset`` for object detection, not wrapping the masks avoids
+   transforming them over and over again in the pipeline just to ultimately ignoring them. In general, it would be
+   even better to not load the masks at all, but this is not possible in this example, since the bounding boxes are
+   generated from the masks.
+
 How do the datapoints behave inside a computation?
 --------------------------------------------------
 
@@ -223,9 +312,10 @@ also works on datapoints.
 Since for most operations involving datapoints, it cannot be safely inferred whether the result should retain the
 datapoint type, we choose to return a plain tensor instead of a datapoint (this might change, see note below):
 
-.. GENERATED FROM PYTHON SOURCE LINES 103-110
+.. GENERATED FROM PYTHON SOURCE LINES 166-174
 
 .. code-block:: default
+
 
 
     assert isinstance(image, datapoints.Image)
@@ -241,7 +331,7 @@ datapoint type, we choose to return a plain tensor instead of a datapoint (this 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-123
+.. GENERATED FROM PYTHON SOURCE LINES 175-187
 
 .. note::
 
@@ -256,7 +346,7 @@ There are two exceptions to this rule:
 2. Inplace operations on datapoints cannot change the type of the datapoint they are called on. However, if you use
    the flow style, the returned value will be unwrapped:
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-133
+.. GENERATED FROM PYTHON SOURCE LINES 187-197
 
 .. code-block:: default
 
@@ -287,7 +377,7 @@ There are two exceptions to this rule:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.066 seconds)
+   **Total running time of the script:** ( 0 minutes  0.008 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_datapoints.py:

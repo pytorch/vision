@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+282001f ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+19b2d3c ) &#x25BC</a>
     </div>
     
 
@@ -629,7 +629,7 @@
 <div class="viewcode-block" id="Resize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Resize.html#torchvision.transforms.Resize">[docs]</a><span class="k">class</span> <span class="nc">Resize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Resize the input image to the given size.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
-<span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions</span>
+<span class="sd">    to have [..., H, W] shape, where ... means a maximum of two leading dimensions</span>
 
 <span class="sd">    .. warning::</span>
 <span class="sd">        The output image might be different depending on its type: when downsampling, the interpolation of PIL images</span>
@@ -653,13 +653,13 @@
 <span class="sd">            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.</span>
 <span class="sd">            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.</span>
 <span class="sd">        max_size (int, optional): The maximum allowed for the longer edge of</span>
-<span class="sd">            the resized image: if the longer edge of the image is greater</span>
-<span class="sd">            than ``max_size`` after being resized according to ``size``, then</span>
-<span class="sd">            the image is resized again so that the longer edge is equal to</span>
-<span class="sd">            ``max_size``. As a result, ``size`` might be overruled, i.e. the</span>
-<span class="sd">            smaller edge may be shorter than ``size``. This is only supported</span>
-<span class="sd">            if ``size`` is an int (or a sequence of length 1 in torchscript</span>
-<span class="sd">            mode).</span>
+<span class="sd">            the resized image. If the longer edge of the image is greater</span>
+<span class="sd">            than ``max_size`` after being resized according to ``size``,</span>
+<span class="sd">            ``size`` will be overruled so that the longer edge is equal to</span>
+<span class="sd">            ``max_size``.</span>
+<span class="sd">            As a result, the smaller edge may be shorter than ``size``. This</span>
+<span class="sd">            is only supported if ``size`` is an int (or a sequence of length</span>
+<span class="sd">            1 in torchscript mode).</span>
 <span class="sd">        antialias (bool, optional): Whether to apply antialiasing.</span>
 <span class="sd">            It only affects **tensors** with bilinear or bicubic modes and it is</span>
 <span class="sd">            ignored otherwise: on PIL images, antialiasing is always applied on</span>
@@ -824,7 +824,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lambd</span><span class="p">):</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">lambd</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">lambd</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Argument lambd should be callable, got </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">lambd</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lambd</span> <span class="o">=</span> <span class="n">lambd</span>
 
@@ -975,7 +975,7 @@
 <span class="sd">              will result in [2, 1, 1, 2, 3, 4, 4, 3]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="RandomCrop.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomCrop.html#torchvision.transforms.RandomCrop.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="RandomCrop.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.RandomCrop.html#torchvision.transforms.RandomCrop.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get parameters for ``crop`` for a random crop.</span>
 
@@ -1158,7 +1158,7 @@
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">perspective</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">startpoints</span><span class="p">,</span> <span class="n">endpoints</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">img</span></div>
 
-<div class="viewcode-block" id="RandomPerspective.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomPerspective.html#torchvision.transforms.RandomPerspective.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="RandomPerspective.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.RandomPerspective.html#torchvision.transforms.RandomPerspective.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">distortion_scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get parameters for ``perspective`` for a random perspective transform.</span>
 
@@ -1270,7 +1270,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span> <span class="o">=</span> <span class="n">ratio</span>
 
-<div class="viewcode-block" id="RandomResizedCrop.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomResizedCrop.html#torchvision.transforms.RandomResizedCrop.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="RandomResizedCrop.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.RandomResizedCrop.html#torchvision.transforms.RandomResizedCrop.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">ratio</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get parameters for ``crop`` for a random sized crop.</span>
 
@@ -1578,7 +1578,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
-<div class="viewcode-block" id="ColorJitter.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="ColorJitter.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.ColorJitter.html#torchvision.transforms.ColorJitter.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span>
         <span class="n">brightness</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
         <span class="n">contrast</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
@@ -1695,7 +1695,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
-<div class="viewcode-block" id="RandomRotation.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="RandomRotation.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.RandomRotation.html#torchvision.transforms.RandomRotation.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">degrees</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get parameters for ``rotate`` for a random rotation.</span>
 
@@ -1822,7 +1822,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">center</span>
 
-<div class="viewcode-block" id="RandomAffine.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomAffine.html#torchvision.transforms.RandomAffine.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="RandomAffine.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.RandomAffine.html#torchvision.transforms.RandomAffine.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span>
         <span class="n">degrees</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
         <span class="n">translate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
@@ -2019,7 +2019,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inplace</span> <span class="o">=</span> <span class="n">inplace</span>
 
-<div class="viewcode-block" id="RandomErasing.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomErasing.html#torchvision.transforms.RandomErasing.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="RandomErasing.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.RandomErasing.html#torchvision.transforms.RandomErasing.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span>
         <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">ratio</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
@@ -2140,7 +2140,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
 
-<div class="viewcode-block" id="GaussianBlur.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.GaussianBlur.html#torchvision.transforms.GaussianBlur.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="GaussianBlur.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.GaussianBlur.html#torchvision.transforms.GaussianBlur.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">sigma_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Choose sigma for random gaussian blurring.</span>
 

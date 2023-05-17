@@ -122,7 +122,7 @@ returns, and we'll see how to convert it to a format that is compatible with our
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 72-79
+.. GENERATED FROM PYTHON SOURCE LINES 72-80
 
 The dataset returns a two-tuple with the first item being a :class:`PIL.Image.Image` and second one a list of
 dictionaries, which each containing the annotations for a single object instance. As is, this format is not compatible
@@ -130,9 +130,10 @@ with the ``torchvision.transforms.v2``, nor with the models. To overcome that, w
 :func:`~torchvision.datasets.wrap_dataset_for_transforms_v2` function. For
 :class:`~torchvision.datasets.CocoDetection`, this changes the target structure to a single dictionary of lists. It
 also adds the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` wrapped in the corresponding
-``torchvision.datapoints``.
+``torchvision.datapoints``. By default, it only returns ``"boxes"`` and ``"labels"`` to avoid transforming unnecessary
+items down the line, but you can pass the ``target_type`` parameter for fine-grained control.
 
-.. GENERATED FROM PYTHON SOURCE LINES 79-88
+.. GENERATED FROM PYTHON SOURCE LINES 80-89
 
 .. code-block:: default
 
@@ -143,7 +144,7 @@ also adds the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` wrapped
     image, target = sample
     print(type(image))
     print(type(target), list(target.keys()))
-    print(type(target["boxes"]), type(target["masks"]), type(target["labels"]))
+    print(type(target["boxes"]), type(target["labels"]))
 
 
 
@@ -154,17 +155,17 @@ also adds the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` wrapped
  .. code-block:: none
 
     <class 'PIL.Image.Image'>
-    <class 'dict'> ['segmentation', 'iscrowd', 'image_id', 'bbox', 'category_id', 'id', 'boxes', 'masks', 'labels']
-    <class 'torchvision.datapoints._bounding_box.BoundingBox'> <class 'torchvision.datapoints._mask.Mask'> <class 'torch.Tensor'>
+    <class 'dict'> ['image_id', 'boxes', 'labels']
+    <class 'torchvision.datapoints._bounding_box.BoundingBox'> <class 'torch.Tensor'>
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 89-90
+.. GENERATED FROM PYTHON SOURCE LINES 90-91
 
 As baseline, let's have a look at a sample without transformations:
 
-.. GENERATED FROM PYTHON SOURCE LINES 90-94
+.. GENERATED FROM PYTHON SOURCE LINES 91-95
 
 .. code-block:: default
 
@@ -184,12 +185,12 @@ As baseline, let's have a look at a sample without transformations:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-97
+.. GENERATED FROM PYTHON SOURCE LINES 96-98
 
 With the dataset properly set up, we can now define the augmentation pipeline. This is done the same way it is done in
 ``torchvision.transforms`` v1, but now handles bounding boxes and masks without any extra configuration.
 
-.. GENERATED FROM PYTHON SOURCE LINES 97-112
+.. GENERATED FROM PYTHON SOURCE LINES 98-113
 
 .. code-block:: default
 
@@ -215,7 +216,7 @@ With the dataset properly set up, we can now define the augmentation pipeline. T
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 113-120
+.. GENERATED FROM PYTHON SOURCE LINES 114-121
 
 .. note::
    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBox` transform is a no-op in this example, but it
@@ -225,7 +226,7 @@ With the dataset properly set up, we can now define the augmentation pipeline. T
 
 Let's look how the sample looks like with our augmentation pipeline in place:
 
-.. GENERATED FROM PYTHON SOURCE LINES 120-130
+.. GENERATED FROM PYTHON SOURCE LINES 121-131
 
 .. code-block:: default
 
@@ -260,12 +261,12 @@ Let's look how the sample looks like with our augmentation pipeline in place:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 132-134
+.. GENERATED FROM PYTHON SOURCE LINES 133-135
 
 We can see that the color of the image was distorted, we zoomed out on it (off center) and flipped it horizontally.
 In all of this, the bounding box was transformed accordingly. And without any further ado, we can start training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 134-153
+.. GENERATED FROM PYTHON SOURCE LINES 135-154
 
 .. code-block:: default
 
@@ -296,7 +297,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
  .. code-block:: none
 
-    {'bbox_regression': tensor(2.4982, grad_fn=<DivBackward0>), 'classification': tensor(57.6569, grad_fn=<DivBackward0>)}
+    {'bbox_regression': tensor(4.0019, grad_fn=<DivBackward0>), 'classification': tensor(42.4939, grad_fn=<DivBackward0>)}
 
 
 
@@ -304,7 +305,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.715 seconds)
+   **Total running time of the script:** ( 0 minutes  2.881 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms_v2_e2e.py:

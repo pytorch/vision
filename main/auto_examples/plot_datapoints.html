@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Tensor transforms and JIT" href="plot_scripted_tensor_transforms.html" />
-    <link rel="prev" title="Example gallery" href="index.html" />
+    <link rel="next" title="Transforms v2: End-to-end object detection example" href="plot_transforms_v2_e2e.html" />
+    <link rel="prev" title="Getting started with transforms v2" href="plot_transforms_v2.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+282001f ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+19b2d3c ) &#x25BC</a>
     </div>
     
 
@@ -370,6 +370,7 @@ transforms, or work directly with the datapoints.</p>
 <span class="n">torchvision</span><span class="o">.</span><span class="n">disable_beta_transforms_warning</span><span class="p">()</span>
 
 <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span>
+<span class="kn">from</span> <span class="nn">torchvision.transforms.v2</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
 </pre></div>
 </div>
 <section id="what-are-datapoints">
@@ -397,7 +398,7 @@ for the input data.</p>
 </section>
 <section id="how-do-i-construct-a-datapoint">
 <h2>How do I construct a datapoint?<a class="headerlink" href="#how-do-i-construct-a-datapoint" title="Permalink to this heading">¶</a></h2>
-<p>Each datapoint class takes any tensor-like data that can be turned into a <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></p>
+<p>Each datapoint class takes any tensor-like data that can be turned into a <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">image</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span></a><span class="p">([[[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]]])</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 </pre></div>
@@ -417,7 +418,7 @@ parameters.</p>
 </pre></div>
 </div>
 <p>In addition, <a class="reference internal" href="../generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image" title="torchvision.datapoints.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> and <a class="reference internal" href="../generated/torchvision.datapoints.Mask.html#torchvision.datapoints.Mask" title="torchvision.datapoints.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a> also take a
-<a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v9.4.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> directly:</p>
+<a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v9.5.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> directly:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">image</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span></a><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.open" title="PIL.Image.open" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-function"><span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span></a><span class="p">(</span><span class="s2">&quot;assets/astronaut.jpg&quot;</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 </pre></div>
@@ -444,10 +445,71 @@ corresponding image alongside the actual values:</p>
 <a class="reference internal" href="../generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2" title="torchvision.datasets.wrap_dataset_for_transforms_v2"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchvision.datasets.wrap_dataset_for_transforms_v2()</span></code></a>. Note that the function also supports subclasses of the
 built-in datasets. Meaning, if your custom dataset subclasses from a built-in one and the output type is the same, you
 also don’t have to wrap manually.</p>
+<p>If you have a custom dataset, for example the <code class="docutils literal notranslate"><span class="pre">PennFudanDataset</span></code> from
+<a class="reference external" href="https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html">this tutorial</a>, you have two options:</p>
+<ol class="arabic simple">
+<li><p>Perform the wrapping inside <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code>:</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PennFudanDataset</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset" title="torch.utils.data.Dataset" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span></a><span class="p">):</span>
+    <span class="o">...</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="o">...</span>
+
+        <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span></a><span class="p">(</span>
+            <span class="n">boxes</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
+            <span class="n">spatial_size</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">get_spatial_size</span><span class="p">(</span><span class="n">img</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">target</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span>
+        <span class="n">target</span><span class="p">[</span><span class="s2">&quot;masks&quot;</span><span class="p">]</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span></a><span class="p">(</span><span class="n">masks</span><span class="p">)</span>
+
+        <span class="o">...</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">img</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+        <span class="o">...</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Perform the wrapping inside a custom transformation at the beginning of your pipeline:</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">WrapPennFudanDataset</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span></a><span class="p">(</span>
+            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">],</span>
+            <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
+            <span class="n">spatial_size</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">get_spatial_size</span><span class="p">(</span><span class="n">img</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">target</span><span class="p">[</span><span class="s2">&quot;masks&quot;</span><span class="p">]</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span></a><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="s2">&quot;masks&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">target</span>
+
+
+<span class="o">...</span>
+
+
+<span class="k">def</span> <span class="nf">get_transform</span><span class="p">(</span><span class="n">train</span><span class="p">):</span>
+    <span class="n">transforms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">WrapPennFudanDataset</span><span class="p">())</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">PILToTensor</span><span class="p">())</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If both <a class="reference internal" href="../generated/torchvision.datapoints.BoundingBox.html#torchvision.datapoints.BoundingBox" title="torchvision.datapoints.BoundingBox"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBox</span></code></a>’es and <a class="reference internal" href="../generated/torchvision.datapoints.Mask.html#torchvision.datapoints.Mask" title="torchvision.datapoints.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a>’s are included in
+the sample, <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> will transform them both. Meaning, if you don’t need both, dropping or
+at least not wrapping the obsolete parts, can lead to a significant performance boost.</p>
+<p>For example, if you are using the <code class="docutils literal notranslate"><span class="pre">PennFudanDataset</span></code> for object detection, not wrapping the masks avoids
+transforming them over and over again in the pipeline just to ultimately ignoring them. In general, it would be
+even better to not load the masks at all, but this is not possible in this example, since the bounding boxes are
+generated from the masks.</p>
+</div>
 </section>
 <section id="how-do-the-datapoints-behave-inside-a-computation">
 <h2>How do the datapoints behave inside a computation?<a class="headerlink" href="#how-do-the-datapoints-behave-inside-a-computation" title="Permalink to this heading">¶</a></h2>
-<p>Datapoints look and feel just like regular tensors. Everything that is supported on a plain <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>
+<p>Datapoints look and feel just like regular tensors. Everything that is supported on a plain <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>
 also works on datapoints.
 Since for most operations involving datapoints, it cannot be safely inferred whether the result should retain the
 datapoint type, we choose to return a plain tensor instead of a datapoint (this might change, see note below):</p>
@@ -466,7 +528,7 @@ have any suggestions on how to better support your use-cases, please reach out t
 </div>
 <p>There are two exceptions to this rule:</p>
 <ol class="arabic simple">
-<li><p>The operations <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.clone.html#torch.Tensor.clone" title="(in PyTorch v1.13)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">clone()</span></code></a>, <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.to.html#torch.Tensor.to" title="(in PyTorch v1.13)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code></a>, and <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.requires_grad_.html#torch.Tensor.requires_grad_" title="(in PyTorch v1.13)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requires_grad_()</span></code></a>
+<li><p>The operations <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.clone.html#torch.Tensor.clone" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">clone()</span></code></a>, <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.to.html#torch.Tensor.to" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code></a>, and <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.requires_grad_.html#torch.Tensor.requires_grad_" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requires_grad_()</span></code></a>
 retain the datapoint type.</p></li>
 <li><p>Inplace operations on datapoints cannot change the type of the datapoint they are called on. However, if you use
 the flow style, the returned value will be unwrapped:</p></li>
@@ -486,7 +548,7 @@ the flow style, the returned value will be unwrapped:</p></li>
         [4, 2]]], )
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.066 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.008 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-datapoints-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/6a84432ae501676eae9710a4770e1887/plot_datapoints.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_datapoints.py</span></code></a></p>
@@ -507,10 +569,10 @@ the flow style, the returned value will be unwrapped:</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="plot_scripted_tensor_transforms.html" class="btn btn-neutral float-right" title="Tensor transforms and JIT" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="plot_transforms_v2_e2e.html" class="btn btn-neutral float-right" title="Transforms v2: End-to-end object detection example" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="index.html" class="btn btn-neutral" title="Example gallery" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="plot_transforms_v2.html" class="btn btn-neutral" title="Getting started with transforms v2" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   

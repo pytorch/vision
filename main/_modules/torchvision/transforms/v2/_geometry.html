@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+282001f ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+19b2d3c ) &#x25BC</a>
     </div>
     
 
@@ -443,13 +443,13 @@
 <span class="sd">            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.</span>
 <span class="sd">            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.</span>
 <span class="sd">        max_size (int, optional): The maximum allowed for the longer edge of</span>
-<span class="sd">            the resized image: if the longer edge of the image is greater</span>
-<span class="sd">            than ``max_size`` after being resized according to ``size``, then</span>
-<span class="sd">            the image is resized again so that the longer edge is equal to</span>
-<span class="sd">            ``max_size``. As a result, ``size`` might be overruled, i.e. the</span>
-<span class="sd">            smaller edge may be shorter than ``size``. This is only supported</span>
-<span class="sd">            if ``size`` is an int (or a sequence of length 1 in torchscript</span>
-<span class="sd">            mode).</span>
+<span class="sd">            the resized image. If the longer edge of the image is greater</span>
+<span class="sd">            than ``max_size`` after being resized according to ``size``,</span>
+<span class="sd">            ``size`` will be overruled so that the longer edge is equal to</span>
+<span class="sd">            ``max_size``.</span>
+<span class="sd">            As a result, the smaller edge may be shorter than ``size``. This</span>
+<span class="sd">            is only supported if ``size`` is an int (or a sequence of length</span>
+<span class="sd">            1 in torchscript mode).</span>
 <span class="sd">        antialias (bool, optional): Whether to apply antialiasing.</span>
 <span class="sd">            It only affects **tensors** with bilinear or bicubic modes and it is</span>
 <span class="sd">            ignored otherwise: on PIL images, antialiasing is always applied on</span>

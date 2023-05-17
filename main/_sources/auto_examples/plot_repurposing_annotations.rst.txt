@@ -347,6 +347,7 @@ Here is demo with a Faster R-CNN model loaded from
 
  .. code-block:: none
 
+    Downloading: "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth" to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
     torch.Size([3, 498, 533])
 
 
@@ -420,7 +421,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.449 seconds)
+   **Total running time of the script:** ( 0 minutes  2.470 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_repurposing_annotations.py:

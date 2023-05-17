@@ -140,7 +140,7 @@ single model input.
 
  .. code-block:: none
 
-    /home/circleci/project/torchvision/io/video.py:161: UserWarning: The pts_unit 'pts' gives wrong results. Please use pts_unit 'sec'.
+    /work/torchvision/io/video.py:161: UserWarning: The pts_unit 'pts' gives wrong results. Please use pts_unit 'sec'.
       warnings.warn("The pts_unit 'pts' gives wrong results. Please use pts_unit 'sec'.")
 
 
@@ -225,6 +225,7 @@ builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
  .. code-block:: none
 
+    Downloading: "https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth" to /root/.cache/torch/hub/checkpoints/raft_large_C_T_SKHT_V2-ff5fadd5.pth
     type = <class 'list'>
     length = 12 = number of iterations of the model
 
@@ -266,7 +267,7 @@ w.r.t. the dimensions of the images.
 
     dtype = torch.float32
     shape = torch.Size([2, 2, 520, 960]) = (N, 2, H, W)
-    min = -3.8997113704681396, max = 6.40040922164917
+    min = -3.8997180461883545, max = 6.400400161743164
 
 
 
@@ -355,7 +356,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  6.486 seconds)
+   **Total running time of the script:** ( 0 minutes  9.585 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:
