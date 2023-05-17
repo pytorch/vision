@@ -40,6 +40,9 @@ jobs:
         export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        export PYTORCH_VERSION=2.1.0.dev20230517
+        export PYTORCH_VERSION_SUFFIX=""
+        export CONDA_CHANNEL_FLAGS=""
 
         conda activate
         conda update -y conda
