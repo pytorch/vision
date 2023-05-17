@@ -57,10 +57,10 @@ jobs:
 
   upload:
     needs: build
-    if: github.repository == 'pytorch/vision' && github.event_name == 'push' && 
-        ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
-    permissions:
-      contents: write
+#    if: github.repository == 'pytorch/vision' && github.event_name == 'push' &&
+#        ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
+#    permissions:
+#      contents: write
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
@@ -69,8 +69,8 @@ jobs:
       script: |
         set -euo pipefail
         
-        REF_TYPE=${{ github.ref_type }}
-        REF_NAME=${{ github.ref_name }}
+        REF_TYPE=branch
+        REF_NAME=main
 
         if [[ "${REF_TYPE}" == branch ]]; then
           TARGET_FOLDER="${REF_NAME}"
@@ -104,4 +104,5 @@ jobs:
         git config user.email 'soumith+bot@pytorch.org'
         git config user.name 'pytorchbot'
         git commit -m "auto-generating sphinx docs" || true
-        git push -u origin gh-pages
+        # git push -u origin gh-pages
+        git status
