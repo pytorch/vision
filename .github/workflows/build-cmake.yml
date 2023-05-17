@@ -1,0 +1,44 @@
+name: CMake
+
+on:
+  pull_request:
+  push:
+    branches:
+      - nightly
+      - main
+      - release/*
+  workflow_dispatch:
+
+jobs:
+  windows:
+    strategy:
+      matrix:
+        include:
+          - runner: windows.4xlarge
+            gpu-arch-type: cpu
+          - runner: windows.g5.4xlarge.nvidia.gpu
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.7"
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    with:
+      repository: pytorch/vision
+      runner: ${{ matrix.runner }}
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      script: |
+        set -euo pipefail
+
+        source packaging/windows/internal/vc_install_helper.sh
+
+        if [[ ${{ matrix.gpu-arch-type }} == cuda ]]; then
+          export CU_VERSION=cu$(echo ${{ matrix.gpu-arch-version }} | sed 's/\.//')
+          echo CU_VERSION="${CU_VERSION}"
+          packaging/windows/internal/cuda_install.bat
+        fi
+
+        export PYTHON_VERSION=3.8
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+
+        ./.github/scripts/cmake.sh
