@@ -421,6 +421,8 @@ at::Tensor roi_align_backward_kernel(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
+  at::globalContext().alertNotDeterministic("roi_align_backward_kernel");
+
   auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "roi_align_backward_kernel", [&] {

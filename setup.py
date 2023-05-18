@@ -325,11 +325,14 @@ def get_extensions():
     image_macros += [("NVJPEG_FOUND", str(int(use_nvjpeg)))]
 
     image_path = os.path.join(extensions_dir, "io", "image")
-    image_src = (
-        glob.glob(os.path.join(image_path, "*.cpp"))
-        + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
-        + glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
-    )
+    image_src = glob.glob(os.path.join(image_path, "*.cpp")) + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
+
+    if is_rocm_pytorch:
+        image_src += glob.glob(os.path.join(image_path, "hip", "*.cpp"))
+        # we need to exclude this in favor of the hipified source
+        image_src.remove(os.path.join(image_path, "image.cpp"))
+    else:
+        image_src += glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
 
     if use_png or use_jpeg:
         ext_modules.append(
