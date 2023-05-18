@@ -77,7 +77,7 @@ class ConvNormActivation(torch.nn.Sequential):
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         dilation: Union[int, Tuple[int, ...]] = 1,
-        inplace: Optional[bool] = True,
+        inplace: Optional[bool] = None,
         bias: Optional[bool] = None,
         conv_layer: Callable[..., torch.nn.Module] = torch.nn.Conv2d,
     ) -> None:
@@ -136,7 +136,7 @@ class Conv2dNormActivation(ConvNormActivation):
         norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer won't be used. Default: ``torch.nn.BatchNorm2d``
         activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer won't be used. Default: ``torch.nn.ReLU``
         dilation (int): Spacing between kernel elements. Default: 1
-        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``
+        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default is ``None``, which uses the default value of the ``activation_layer``.
         bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.
 
     """
@@ -152,7 +152,7 @@ class Conv2dNormActivation(ConvNormActivation):
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         dilation: Union[int, Tuple[int, int]] = 1,
-        inplace: Optional[bool] = True,
+        inplace: Optional[bool] = None,
         bias: Optional[bool] = None,
     ) -> None:
 
@@ -186,7 +186,7 @@ class Conv3dNormActivation(ConvNormActivation):
         norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer won't be used. Default: ``torch.nn.BatchNorm3d``
         activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer won't be used. Default: ``torch.nn.ReLU``
         dilation (int): Spacing between kernel elements. Default: 1
-        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``
+        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default is ``None``, which uses the default value of the ``activation_layer``.
         bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.
     """
 
@@ -201,7 +201,7 @@ class Conv3dNormActivation(ConvNormActivation):
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm3d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         dilation: Union[int, Tuple[int, int, int]] = 1,
-        inplace: Optional[bool] = True,
+        inplace: Optional[bool] = None,
         bias: Optional[bool] = None,
     ) -> None:
 
