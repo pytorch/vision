@@ -20,7 +20,7 @@ fi
 # Unless there's an error, Don't exit.
 if [[ "$version" != "cpu" ]]; then
     # set cuda envs
-    export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
+    export PATH="C\:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v${version}\\bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
     export CUDA_PATH_V${version/./_}="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
     export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
 
