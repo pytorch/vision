@@ -206,7 +206,7 @@ class FeaturePyramidNetwork(nn.Module):
 
 class LastLevelMaxPool(ExtraFPNBlock):
     """
-    Applies a max_pool2d (not actual max_pool2d) on top of the last feature map
+    Applies a max_pool2d (not actual max_pool2d, we just subsample) on top of the last feature map
     """
 
     def forward(
