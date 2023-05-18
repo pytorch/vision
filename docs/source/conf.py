@@ -94,8 +94,7 @@ author = "Torch Contributors"
 # built documents.
 # version: The short X.Y version.
 # release: The full version, including alpha/beta/rc tags.
-VERSION = os.environ.get("VERSION", None)
-if VERSION:
+if os.environ.get("TORCHVISION_SANITIZE_VERSION_STR_IN_DOCS", None):
     # Turn 1.11.0aHASH into 1.11 (major.minor only)
     version = release = ".".join(torchvision.__version__.split(".")[:2])
     html_title = " ".join((project, version, "documentation"))

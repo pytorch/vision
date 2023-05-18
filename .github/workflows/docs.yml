@@ -44,10 +44,10 @@ jobs:
         echo '::endgroup::'
         
         if [[ ${{ github.ref_type }} == tag || (${{ github.ref_type }} == branch && ${{ github.ref_name }} == release/*) ]]; then
-          echo '::group::Enable version wrangling'
+          echo '::group::Enable version string sanitization'
           # This environment variable just has to exist and must not be empty. The actual value is arbitrary.
           # See docs/source/conf.py for details
-          export VERSION=1
+          export TORCHVISION_SANITIZE_VERSION_STR_IN_DOCS=1
           echo '::endgroup::'
         fi
 
