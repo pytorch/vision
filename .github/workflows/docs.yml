@@ -43,7 +43,7 @@ jobs:
         pip install --progress-bar=off -r requirements.txt
         echo '::endgroup::'
         
-        if [[ ${{ github.ref_type }} == tag || (${{ github.ref_type }} == branch && ${{ github.ref_name }} == release/*) ]]; then
+        if [[ ${{ github.event_name }} == push && (${{ github.ref_type }} == tag || (${{ github.ref_type }} == branch && ${{ github.ref_name }} == release/*)) ]]; then
           echo '::group::Enable version string sanitization'
           # This environment variable just has to exist and must not be empty. The actual value is arbitrary.
           # See docs/source/conf.py for details
