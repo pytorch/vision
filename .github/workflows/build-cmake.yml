@@ -40,7 +40,7 @@ jobs:
 
           export CUDA_HOME="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${{ matrix.gpu-arch-version }}"
           export CUDA_PATH="${CUDA_HOME}"
-          export PATH="${CUDA_PATH}/bin:${PATH}"
+          export PATH="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.7\\bin:${PATH}"
           export NVTOOLSEXT_PATH="/c/Program Files/NVIDIA Corporation/NvToolsExt/bin/x64"
         fi
 
