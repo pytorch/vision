@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 import torch
 
@@ -10,7 +12,26 @@ from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import is_simple_tensor
 
 
-def _check_cuda_vs_cpu(kernel, input_cuda, *other_args, **kwargs):
+def _check_kernel_smoke(kernel, input, *args, **kwargs):
+    initial_input_version = input._version
+
+    output = kernel(input.as_subclass(torch.Tensor), *args, **kwargs)
+
+    # check that no inplace operation happened
+    assert input._version == initial_input_version
+
+    assert output.dtype == input.dtype
+    assert output.device == input.device
+
+
+def _check_logging(fn, *args, **kwargs):
+    with mock.patch("torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once) as spy:
+        fn(*args, **kwargs)
+
+        spy.assert_any_call(f"{fn.__module__}.{fn.__name__}")
+
+
+def _check_kernel_cuda_vs_cpu(kernel, input_cuda, *other_args, **kwargs):
     input_cuda = input_cuda.as_subclass(torch.Tensor)
     input_cpu = input_cuda.to("cpu")
 
@@ -28,7 +49,7 @@ def _script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
-def _check_scripted_vs_eager(kernel_eager, input, *other_args, **kwargs):
+def _check_kernel_scripted_vs_eager(kernel_eager, input, *other_args, **kwargs):
     kernel_scripted = _script(kernel_eager)
 
     input = input.as_subclass(torch.Tensor)
@@ -56,7 +77,7 @@ def _unbatch(batch, *, data_dims):
     ]
 
 
-def _check_batched_vs_single(kernel, batched_input, *other_args, **kwargs):
+def _check_kernel_batched_vs_single(kernel, batched_input, *other_args, **kwargs):
     input_type = datapoints.Image if is_simple_tensor(batched_input) else type(batched_input)
     # This dictionary contains the number of rightmost dimensions that contain the actual data.
     # Everything to the left is considered a batch dimension.
@@ -92,32 +113,32 @@ def check_kernel(
     kernel,
     input,
     *other_kernel_args,
+    # Most kernels don't log because that is done through the dispatcher. Meaning if we set the default to True,
+    # we'll have to set it to False in almost any test. That would be more explicit though
+    check_logging=False,
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
     check_batched_vs_single=True,
     **kernel_kwargs,
     # TODO: tolerances!
 ):
-    initial_input_version = input._version
-    output = kernel(input.as_subclass(torch.Tensor), *other_kernel_args, **kernel_kwargs)
+    # TODO: we can improve performance here by not computing the regular output of the kernel over and over
 
-    # check that no inplace operation happened
-    assert input._version == initial_input_version
+    _check_kernel_smoke(kernel, input, *other_kernel_args, **kernel_kwargs)
 
-    assert output.dtype == input.dtype
-    assert output.device == input.device
-
-    # TODO: we can do better here, by passing the regular output of the kernel instead of multiple times in
-    #  each auxiliary helper
+    if check_logging:
+        # We need to unwrap the input here manually, because `_check_logging` is not only used for kernels and thus
+        # cannot do this internally
+        _check_logging(kernel, input.as_subclass(torch.Tensor), *other_kernel_args, **kernel_kwargs)
 
     if check_cuda_vs_cpu and input.device.type == "cuda":
-        _check_cuda_vs_cpu(kernel, input, *other_kernel_args, **kernel_kwargs)
+        _check_kernel_cuda_vs_cpu(kernel, input, *other_kernel_args, **kernel_kwargs)
 
     if check_scripted_vs_eager:
-        _check_scripted_vs_eager(kernel, input, *other_kernel_args, **kernel_kwargs)
+        _check_kernel_scripted_vs_eager(kernel, input, *other_kernel_args, **kernel_kwargs)
 
     if check_batched_vs_single:
-        _check_batched_vs_single(kernel, input, *other_kernel_args, **kernel_kwargs)
+        _check_kernel_batched_vs_single(kernel, input, *other_kernel_args, **kernel_kwargs)
 
 
 def check_dispatcher():
