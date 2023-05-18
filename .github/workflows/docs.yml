@@ -43,6 +43,14 @@ jobs:
         pip install --progress-bar=off -r requirements.txt
         echo '::endgroup::'
         
+        if [[ ${{ github.ref_type }} == tag || (${{ github.ref_type }} == branch && ${{ github.ref_name }} == release/*) ]]; then
+          echo '::group::Enable version wrangling'
+          # This environment variable just has to exist and must not be empty. The actual value is arbitrary.
+          # See docs/source/conf.py for details
+          export VERSION=1
+          echo '::endgroup::'
+        fi
+
         # The runner does not have sufficient memory to run with as many processes as there are
         # cores (`-j auto`). Thus, we limit to a single process (`-j 1`) here.
         sed -i -e 's/-j auto/-j 1/' Makefile
