@@ -31,12 +31,15 @@ def _check_logging(fn, *args, **kwargs):
         spy.assert_any_call(f"{fn.__module__}.{fn.__name__}")
 
 
-def _check_kernel_cuda_vs_cpu(kernel, input_cuda, *other_args, **kwargs):
-    input_cuda = input_cuda.as_subclass(torch.Tensor)
+def _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs):
+    if input.device.type != "cuda":
+        return
+
+    input_cuda = input.as_subclass(torch.Tensor)
     input_cpu = input_cuda.to("cpu")
 
-    actual = kernel(input_cuda, *other_args, **kwargs)
-    expected = kernel(input_cpu, *other_args, **kwargs)
+    actual = kernel(input_cuda, *args, **kwargs)
+    expected = kernel(input_cpu, *args, **kwargs)
 
     assert_close(actual, expected)
 
@@ -49,12 +52,12 @@ def _script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
-def _check_kernel_scripted_vs_eager(kernel_eager, input, *other_args, **kwargs):
+def _check_kernel_scripted_vs_eager(kernel_eager, input, *args, **kwargs):
     kernel_scripted = _script(kernel_eager)
 
     input = input.as_subclass(torch.Tensor)
-    actual = kernel_scripted(input, *other_args, **kwargs)
-    expected = kernel_eager(input, *other_args, **kwargs)
+    actual = kernel_scripted(input, *args, **kwargs)
+    expected = kernel_eager(input, *args, **kwargs)
 
     assert_close(actual, expected)
 
@@ -77,8 +80,8 @@ def _unbatch(batch, *, data_dims):
     ]
 
 
-def _check_kernel_batched_vs_single(kernel, batched_input, *other_args, **kwargs):
-    input_type = datapoints.Image if is_simple_tensor(batched_input) else type(batched_input)
+def _check_kernel_batched_vs_single(kernel, input, *args, **kwargs):
+    input_type = datapoints.Image if is_simple_tensor(input) else type(input)
     # This dictionary contains the number of rightmost dimensions that contain the actual data.
     # Everything to the left is considered a batch dimension.
     data_dims = {
@@ -95,16 +98,16 @@ def _check_kernel_batched_vs_single(kernel, batched_input, *other_args, **kwargs
         raise pytest.UsageError(
             f"The number of data dimensions cannot be determined for input of type {input_type.__name__}."
         ) from None
-    elif batched_input.ndim <= data_dims or not all(batched_input.shape[:-data_dims]):
+    elif input.ndim <= data_dims or not all(input.shape[:-data_dims]):
         # input is not batched or has a degenerate batch shape
         return
 
-    batched_input = batched_input.as_subclass(torch.Tensor)
-    batched_output = kernel(batched_input, *other_args, **kwargs)
+    batched_input = input.as_subclass(torch.Tensor)
+    batched_output = kernel(batched_input, *args, **kwargs)
     actual = _unbatch(batched_output, data_dims=data_dims)
 
     single_inputs = _unbatch(batched_input, data_dims=data_dims)
-    expected = tree_map(lambda single_input: kernel(single_input, *other_args, **kwargs), single_inputs)
+    expected = tree_map(lambda single_input: kernel(single_input, *args, **kwargs), single_inputs)
 
     assert_close(actual, expected)
 
@@ -112,33 +115,33 @@ def _check_kernel_batched_vs_single(kernel, batched_input, *other_args, **kwargs
 def check_kernel(
     kernel,
     input,
-    *other_kernel_args,
+    *args,
     # Most kernels don't log because that is done through the dispatcher. Meaning if we set the default to True,
     # we'll have to set it to False in almost any test. That would be more explicit though
     check_logging=False,
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
     check_batched_vs_single=True,
-    **kernel_kwargs,
+    **kwargs,
     # TODO: tolerances!
 ):
     # TODO: we can improve performance here by not computing the regular output of the kernel over and over
 
-    _check_kernel_smoke(kernel, input, *other_kernel_args, **kernel_kwargs)
+    _check_kernel_smoke(kernel, input, *args, **kwargs)
 
     if check_logging:
         # We need to unwrap the input here manually, because `_check_logging` is not only used for kernels and thus
         # cannot do this internally
-        _check_logging(kernel, input.as_subclass(torch.Tensor), *other_kernel_args, **kernel_kwargs)
+        _check_logging(kernel, input.as_subclass(torch.Tensor), *args, **kwargs)
 
-    if check_cuda_vs_cpu and input.device.type == "cuda":
-        _check_kernel_cuda_vs_cpu(kernel, input, *other_kernel_args, **kernel_kwargs)
+    if check_cuda_vs_cpu:
+        _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs)
 
     if check_scripted_vs_eager:
-        _check_kernel_scripted_vs_eager(kernel, input, *other_kernel_args, **kernel_kwargs)
+        _check_kernel_scripted_vs_eager(kernel, input, *args, **kwargs)
 
     if check_batched_vs_single:
-        _check_kernel_batched_vs_single(kernel, input, *other_kernel_args, **kernel_kwargs)
+        _check_kernel_batched_vs_single(kernel, input, *args, **kwargs)
 
 
 def check_dispatcher():
@@ -153,15 +156,15 @@ class TestResize:
     @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
     @pytest.mark.parametrize("antialias", [True, False])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_resize_image_tensor(self, size, antialias, device):
+    def test_kernel_image_tensor(self, size, antialias, device):
         image = torch.rand((3, 14, 16), dtype=torch.float32, device=device)
         check_kernel(F.resize_image_tensor, image, size=size, antialias=antialias)
 
-    def test_resize_bounding_box(self):
+    def test_kernel_bounding_box(self):
         pass
 
-    def test_resize(self):
+    def test_dispatcher(self):
         pass
 
-    def test_Resize(self):
+    def test_transform(self):
         pass
