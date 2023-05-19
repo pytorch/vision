@@ -3,13 +3,29 @@ from unittest import mock
 import pytest
 import torch
 
-from common_utils import cache, cpu_and_gpu
+from common_utils import cache, cpu_and_gpu, make_image
 from torch.testing import assert_close
 from torch.utils._pytree import tree_map
 from torchvision import datapoints
 
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import is_simple_tensor
+
+
+def _to_tolerances(maybe_tolerance_dict):
+    default_tolerances = dict(rtol=None, atol=None)
+    if not isinstance(maybe_tolerance_dict, dict):
+        return default_tolerances
+
+    missing = default_tolerances.keys() - maybe_tolerance_dict.keys()
+    if missing:
+        raise pytest.UsageError("ADDME")
+
+    extra = maybe_tolerance_dict.keys() - default_tolerances.keys()
+    if extra:
+        raise pytest.UsageError("ADDME")
+
+    return maybe_tolerance_dict
 
 
 def _check_kernel_smoke(kernel, input, *args, **kwargs):
@@ -31,7 +47,7 @@ def _check_logging(fn, *args, **kwargs):
         spy.assert_any_call(f"{fn.__module__}.{fn.__name__}")
 
 
-def _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs):
+def _check_kernel_cuda_vs_cpu(kernel, tolerances, input, *args, **kwargs):
     if input.device.type != "cuda":
         return
 
@@ -41,7 +57,7 @@ def _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs):
     actual = kernel(input_cuda, *args, **kwargs)
     expected = kernel(input_cpu, *args, **kwargs)
 
-    assert_close(actual, expected)
+    assert_close(actual, expected, **tolerances)
 
 
 @cache
@@ -52,14 +68,14 @@ def _script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
-def _check_kernel_scripted_vs_eager(kernel_eager, input, *args, **kwargs):
-    kernel_scripted = _script(kernel_eager)
+def _check_kernel_scripted_vs_eager(kernel, tolerances, input, *args, **kwargs):
+    kernel_scripted = _script(kernel)
 
     input = input.as_subclass(torch.Tensor)
     actual = kernel_scripted(input, *args, **kwargs)
-    expected = kernel_eager(input, *args, **kwargs)
+    expected = kernel(input, *args, **kwargs)
 
-    assert_close(actual, expected)
+    assert_close(actual, expected, **tolerances)
 
 
 def _unbatch(batch, *, data_dims):
@@ -80,7 +96,7 @@ def _unbatch(batch, *, data_dims):
     ]
 
 
-def _check_kernel_batched_vs_single(kernel, input, *args, **kwargs):
+def _check_kernel_batched_vs_single(kernel, tolerances, input, *args, **kwargs):
     input_type = datapoints.Image if is_simple_tensor(input) else type(input)
     # This dictionary contains the number of rightmost dimensions that contain the actual data.
     # Everything to the left is considered a batch dimension.
@@ -109,7 +125,7 @@ def _check_kernel_batched_vs_single(kernel, input, *args, **kwargs):
     single_inputs = _unbatch(batched_input, data_dims=data_dims)
     expected = tree_map(lambda single_input: kernel(single_input, *args, **kwargs), single_inputs)
 
-    assert_close(actual, expected)
+    assert_close(actual, expected, **tolerances)
 
 
 def check_kernel(
@@ -135,13 +151,13 @@ def check_kernel(
         _check_logging(kernel, input.as_subclass(torch.Tensor), *args, **kwargs)
 
     if check_cuda_vs_cpu:
-        _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs)
+        _check_kernel_cuda_vs_cpu(kernel, _to_tolerances(check_cuda_vs_cpu), input, *args, **kwargs)
 
     if check_scripted_vs_eager:
-        _check_kernel_scripted_vs_eager(kernel, input, *args, **kwargs)
+        _check_kernel_scripted_vs_eager(kernel, _to_tolerances(check_scripted_vs_eager), input, *args, **kwargs)
 
     if check_batched_vs_single:
-        _check_kernel_batched_vs_single(kernel, input, *args, **kwargs)
+        _check_kernel_batched_vs_single(kernel, _to_tolerances(check_batched_vs_single), input, *args, **kwargs)
 
 
 def check_dispatcher():
@@ -157,7 +173,7 @@ class TestResize:
     @pytest.mark.parametrize("antialias", [True, False])
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_kernel_image_tensor(self, size, antialias, device):
-        image = torch.rand((3, 14, 16), dtype=torch.float32, device=device)
+        image = make_image(size=(14, 16), dtype=torch.float32, device=device)
         check_kernel(F.resize_image_tensor, image, size=size, antialias=antialias)
 
     def test_kernel_bounding_box(self):
