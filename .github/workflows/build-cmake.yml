@@ -76,6 +76,8 @@ jobs:
 
         source packaging/windows/internal/vc_install_helper.sh
 
+        # FIXME: Basically, we are reinstalling CUDA here. We only need this, because we need to copy some files that
+        #  can be extracted from the CUDA installer, but are not available on our Windows AMI.
         if [[ ${{ matrix.gpu-arch-type }} == cuda ]]; then
           export CU_VERSION=cu$(echo ${{ matrix.gpu-arch-version }} | sed 's/\.//')
           echo CU_VERSION="${CU_VERSION}"
