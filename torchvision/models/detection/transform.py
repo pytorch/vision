@@ -40,7 +40,7 @@ def _resize_image_and_masks(
     if fixed_size is not None:
         size = [fixed_size[1], fixed_size[0]]
     else:
-        if torch.jit.is_scripting():
+        if torch.jit.is_scripting() or torchvision._is_tracing():
             min_size = torch.min(im_shape).to(dtype=torch.float32)
             max_size = torch.max(im_shape).to(dtype=torch.float32)
             self_min_size_f = float(self_min_size)
