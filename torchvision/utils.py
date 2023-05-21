@@ -29,7 +29,6 @@ def make_grid(
     value_range: Optional[Tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: float = 0.0,
-    **kwargs,
 ) -> torch.Tensor:
     """
     Make a grid of images.
