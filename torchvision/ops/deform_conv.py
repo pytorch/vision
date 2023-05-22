@@ -82,12 +82,11 @@ def deform_conv2d(
     n_offset_grps = offset.shape[1] // (2 * weights_h * weights_w)
     n_weight_grps = n_in_channels // weight.shape[1]
 
-    if n_offset_grps == 0:
-        raise RuntimeError(
+    torch._assert(offset.shape[1] // (2 * weights_h * weights_w) != 0,
             "the shape of the offset tensor at dimension 1 is not valid. It should "
             "be a multiple of 2 * weight.size[2] * weight.size[3].\n"
             f"Got offset.shape[1]={offset.shape[1]}, while 2 * weight.size[2] * weight.size[3]={2 * weights_h * weights_w}"
-        )
+    )
 
     return torch.ops.torchvision.deform_conv2d(
         input,
