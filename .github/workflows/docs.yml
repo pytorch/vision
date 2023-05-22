@@ -7,6 +7,9 @@ on:
       - nightly
       - main
       - release/*
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]
+      - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 
 jobs:
@@ -14,6 +17,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
+      upload-artifact: docs
       script: |
         set -euo pipefail
 
@@ -39,9 +43,73 @@ jobs:
         pip install --progress-bar=off -r requirements.txt
         echo '::endgroup::'
         
+        if [[ ${{ github.event_name }} == push && (${{ github.ref_type }} == tag || (${{ github.ref_type }} == branch && ${{ github.ref_name }} == release/*)) ]]; then
+          echo '::group::Enable version string sanitization'
+          # This environment variable just has to exist and must not be empty. The actual value is arbitrary.
+          # See docs/source/conf.py for details
+          export TORCHVISION_SANITIZE_VERSION_STR_IN_DOCS=1
+          echo '::endgroup::'
+        fi
+
         # The runner does not have sufficient memory to run with as many processes as there are
         # cores (`-j auto`). Thus, we limit to a single process (`-j 1`) here.
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
         
-        mv build/html/* "${RUNNER_DOCS_DIR}"
+        cp -r build/html "${RUNNER_ARTIFACT_DIR}"
+        
+        # On PRs we also want to upload the docs into our S3 bucket for preview.
+        if [[ ${{ github.event_name == 'pull_request' }} ]]; then
+          cp -r build/html/* "${RUNNER_DOCS_DIR}"
+        fi
+
+  upload:
+    needs: build
+    if: github.repository == 'pytorch/vision' && github.event_name == 'push' && 
+        ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
+    permissions:
+      contents: write
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      download-artifact: docs
+      ref: gh-pages
+      script: |
+        set -euo pipefail
+        
+        REF_TYPE=${{ github.ref_type }}
+        REF_NAME=${{ github.ref_name }}
+
+        if [[ "${REF_TYPE}" == branch ]]; then
+          TARGET_FOLDER="${REF_NAME}"
+        elif [[ "${REF_TYPE}" == tag ]]; then
+          case "${REF_NAME}" in
+            *-rc*)
+              echo "Aborting upload since this is an RC tag: ${REF_NAME}"
+              exit 0
+              ;;
+            *)
+              # Strip the leading "v" as well as the trailing patch version. For example:
+              # 'v0.15.2' -> '0.15'
+              TARGET_FOLDER=$(echo "${REF_NAME}" | sed 's/v\([0-9]\+\)\.\([0-9]\+\)\.[0-9]\+/\1.\2/')
+              ;;
+          esac
+        fi
+        echo "Target Folder: ${TARGET_FOLDER}"
+
+        mkdir -p "${TARGET_FOLDER}"
+        rm -rf "${TARGET_FOLDER}"/*
+        mv "${RUNNER_ARTIFACT_DIR}"/html/* "${TARGET_FOLDER}"
+        git add "${TARGET_FOLDER}" || true
+        
+        if [[ "${TARGET_FOLDER}" == main ]]; then
+          mkdir -p _static
+          rm -rf _static/*
+          cp -r "${TARGET_FOLDER}"/_static/* _static
+          git add _static || true
+        fi
+        
+        git config user.name 'pytorchbot'
+        git config user.email 'soumith+bot@pytorch.org'
+        git commit -m "auto-generating sphinx docs" || true
+        git push

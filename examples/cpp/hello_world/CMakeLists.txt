@@ -17,4 +17,4 @@ add_executable(hello-world main.cpp)
 # which also adds all the necessary torch dependencies.
 target_compile_features(hello-world PUBLIC cxx_range_for)
 target_link_libraries(hello-world TorchVision::TorchVision)
-set_property(TARGET hello-world PROPERTY CXX_STANDARD 14)
+set_property(TARGET hello-world PROPERTY CXX_STANDARD 17)
