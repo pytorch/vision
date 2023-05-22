@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 set(TARGET torchvision_ops)
 project(${TARGET} CXX)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(LIBTORCH_HEADER_ROOT ${LIBTORCH_HEADER_ROOT})
 set(LIBRARY_OUTPUT_PATH ../lib)
 
