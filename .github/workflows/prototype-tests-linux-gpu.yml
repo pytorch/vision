@@ -18,7 +18,7 @@ jobs:
           - python-version: "3.8"
             runner: linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
-            gpu-arch-version: "11.7"
+            gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
@@ -34,7 +34,7 @@ jobs:
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"

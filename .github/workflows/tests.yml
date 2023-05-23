@@ -24,7 +24,7 @@ jobs:
           - python-version: 3.8
             runner: linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
-            gpu-arch-version: "11.7"
+            gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
@@ -41,7 +41,7 @@ jobs:
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
         ./.github/scripts/unittest.sh
-        
+
   unittests-macos:
     strategy:
       matrix:
@@ -100,7 +100,7 @@ jobs:
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-        
+
         ./.github/scripts/unittest.sh
 
   onnx:
@@ -115,20 +115,20 @@ jobs:
         export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
-        
+
         echo '::group::Install ONNX'
         pip install --progress-bar=off onnx onnxruntime
         echo '::endgroup::'
-        
+
         echo '::group::Install testing utilities'
         pip install --progress-bar=off pytest
         echo '::endgroup::'
-        
+
         echo '::group::Run ONNX tests'
         pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_onnx.py
         echo '::endgroup::'
@@ -145,21 +145,21 @@ jobs:
         export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
-        
+
         echo '::group::Pre-download model weights'
         pip install --progress-bar=off aiohttp aiofiles tqdm
         python scripts/download_model_urls.py
         echo '::endgroup::'
-        
+
         echo '::group::Install testing utilities'
         pip install --progress-bar=off pytest
         echo '::endgroup::'
-        
+
         echo '::group::Run extended unittests'
         export PYTORCH_TEST_WITH_EXTENDED=1
         pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_extended_*.py
