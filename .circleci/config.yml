@@ -241,16 +241,16 @@ workflows:
           name: cmake_linux_cpu
           python_version: '3.8'
       - cmake_linux_gpu:
-          cu_version: cu118
+          cu_version: cu117
           name: cmake_linux_gpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda118
+          wheel_docker_image: pytorch/manylinux-cuda117
       - cmake_windows_cpu:
           cu_version: cpu
           name: cmake_windows_cpu
           python_version: '3.8'
       - cmake_windows_gpu:
-          cu_version: cu118
+          cu_version: cu117
           name: cmake_windows_gpu
           python_version: '3.8'
       - cmake_macos_cpu:
