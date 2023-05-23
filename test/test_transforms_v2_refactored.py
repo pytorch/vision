@@ -41,7 +41,7 @@ def _check_kernel_cuda_vs_cpu(kernel, tolerances, input, *args, **kwargs):
     actual = kernel(input_cuda, *args, **kwargs)
     expected = kernel(input_cpu, *args, **kwargs)
 
-    assert_close(actual, expected, **tolerances)
+    assert_close(actual, expected, **tolerances, check_device=False)
 
 
 @cache
