@@ -97,7 +97,7 @@ def _check_kernel_batched_vs_single(kernel, tolerances, input, *args, **kwargs):
     if data_dims is None:
         raise pytest.UsageError(
             f"The number of data dimensions cannot be determined for input of type {input_type.__name__}."
-        ) from None
+        )
     elif input.ndim <= data_dims or not all(input.shape[:-data_dims]):
         # input is not batched or has a degenerate batch shape
         return
@@ -143,11 +143,6 @@ def check_kernel(
 
     if check_batched_vs_single:
         _check_kernel_batched_vs_single(kernel, _to_tolerances(check_batched_vs_single), input, *args, **kwargs)
-
-
-def _check_kernel_scripted_smoke(dispatcher, input, *args, **kwargs):
-    dispatcher_scripted = _script(dispatcher)
-    dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
 
 def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs):
@@ -213,6 +208,9 @@ def check_dispatcher(
     unknown_input = object()
     with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
         dispatcher(unknown_input, *args, **kwargs)
+
+    dispatcher_scripted = _script(dispatcher)
+    dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
     if check_dispatch_simple_tensor:
         _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs)
