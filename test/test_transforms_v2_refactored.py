@@ -16,22 +16,12 @@ from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 def _to_tolerances(maybe_tolerance_dict):
-    default_tolerances = dict(rtol=None, atol=None)
     if not isinstance(maybe_tolerance_dict, dict):
-        return default_tolerances
-
-    missing = default_tolerances.keys() - maybe_tolerance_dict.keys()
-    if missing:
-        raise pytest.UsageError("ADDME")
-
-    extra = maybe_tolerance_dict.keys() - default_tolerances.keys()
-    if extra:
-        raise pytest.UsageError("ADDME")
-
-    return maybe_tolerance_dict
+        return dict(rtol=None, atol=None)
+    return dict(rtol=0, atol=0, **maybe_tolerance_dict)
 
 
-def _check_kernel_cuda_vs_cpu(kernel, tolerances, input, *args, **kwargs):
+def _check_kernel_cuda_vs_cpu(kernel, input, *args, rtol, atol, **kwargs):
     if input.device.type != "cuda":
         return
 
@@ -41,7 +31,7 @@ def _check_kernel_cuda_vs_cpu(kernel, tolerances, input, *args, **kwargs):
     actual = kernel(input_cuda, *args, **kwargs)
     expected = kernel(input_cpu, *args, **kwargs)
 
-    assert_close(actual, expected, **tolerances, check_device=False)
+    assert_close(actual, expected, check_device=False, rtol=rtol, atol=atol)
 
 
 @cache
@@ -52,14 +42,14 @@ def _script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
-def _check_kernel_scripted_vs_eager(kernel, tolerances, input, *args, **kwargs):
+def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     kernel_scripted = _script(kernel)
 
     input = input.as_subclass(torch.Tensor)
     actual = kernel_scripted(input, *args, **kwargs)
     expected = kernel(input, *args, **kwargs)
 
-    assert_close(actual, expected, **tolerances)
+    assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
 def _unbatch(batch, *, data_dims):
@@ -80,7 +70,7 @@ def _unbatch(batch, *, data_dims):
     ]
 
 
-def _check_kernel_batched_vs_single(kernel, tolerances, input, *args, **kwargs):
+def _check_kernel_batched_vs_single(kernel, input, *args, rtol, atol, **kwargs):
     input_type = datapoints.Image if is_simple_tensor(input) else type(input)
     # This dictionary contains the number of rightmost dimensions that contain the actual data.
     # Everything to the left is considered a batch dimension.
@@ -109,7 +99,7 @@ def _check_kernel_batched_vs_single(kernel, tolerances, input, *args, **kwargs):
     single_inputs = _unbatch(batched_input, data_dims=data_dims)
     expected = tree_map(lambda single_input: kernel(single_input, *args, **kwargs), single_inputs)
 
-    assert_close(actual, expected, **tolerances)
+    assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
 def check_kernel(
@@ -136,13 +126,13 @@ def check_kernel(
 
     # TODO: we can improve performance here by not computing the regular output of the kernel over and over
     if check_cuda_vs_cpu:
-        _check_kernel_cuda_vs_cpu(kernel, _to_tolerances(check_cuda_vs_cpu), input, *args, **kwargs)
+        _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs, **_to_tolerances(check_cuda_vs_cpu))
 
     if check_scripted_vs_eager:
-        _check_kernel_scripted_vs_eager(kernel, _to_tolerances(check_scripted_vs_eager), input, *args, **kwargs)
+        _check_kernel_scripted_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_scripted_vs_eager))
 
     if check_batched_vs_single:
-        _check_kernel_batched_vs_single(kernel, _to_tolerances(check_batched_vs_single), input, *args, **kwargs)
+        _check_kernel_batched_vs_single(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_single))
 
 
 def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs):
@@ -209,8 +199,9 @@ def check_dispatcher(
     with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
         dispatcher(unknown_input, *args, **kwargs)
 
-    dispatcher_scripted = _script(dispatcher)
-    dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
+    if isinstance(input, datapoints.Image):
+        dispatcher_scripted = _script(dispatcher)
+        dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
     if check_dispatch_simple_tensor:
         _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs)
