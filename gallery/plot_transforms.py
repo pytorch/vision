@@ -101,7 +101,6 @@ perspective_transformer = T.RandomPerspective(distortion_scale=0.6, p=1.0)
 perspective_imgs = [perspective_transformer(orig_img) for _ in range(4)]
 plot(perspective_imgs)
 
-
 ####################################
 # RandomRotation
 # ~~~~~~~~~~~~~~
