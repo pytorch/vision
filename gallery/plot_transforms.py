@@ -162,7 +162,7 @@ plot(resized_crops)
 # while preserving its geometric structure.
 #
 # Except :class:`~torchvision.transforms.Grayscale`, the following transforms are random,
-# which means that the same transformer
+# which means that the same transform
 # instance will produce different result each time it transforms a given image.
 #
 # Grayscale
@@ -306,7 +306,7 @@ plot(imgs)
 #
 # The following transforms are randomly-applied given a probability ``p``.  That is, given ``p = 0.5``,
 # there is a 50% chance to return the original image, and a 50% chance to return the transformed image,
-# even when called with the same transformer instance!
+# even when called with the same transform instance!
 #
 # RandomHorizontalFlip
 # ~~~~~~~~~~~~~~~~~~~~
