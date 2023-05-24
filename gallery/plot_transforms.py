@@ -154,8 +154,8 @@ resized_crops = [resize_cropper(orig_img) for _ in range(4)]
 plot(resized_crops)
 
 ####################################
-# Photometric Transform
-# ---------------------
+# Photometric Transforms
+# ----------------------
 # Photometric image transformation refers to the process of modifying the photometric properties of an image,
 # such as its brightness, contrast, color, or tone.
 # These transformations are applied to change the visual appearance of an image
@@ -255,8 +255,8 @@ equalized_imgs = [equalizer(orig_img) for _ in range(4)]
 plot(equalized_imgs)
 
 ####################################
-# Combined Transform
-# ------------------
+# Augmentation Transforms
+# -----------------------
 # The following transforms are combinations of multiple transforms,
 # either geometric or photometric, or both.
 #
@@ -301,7 +301,7 @@ imgs = [augmenter(orig_img) for _ in range(4)]
 plot(imgs)
 
 ####################################
-# Randomly-applied transforms
+# Randomly-applied Transforms
 # ---------------------------
 #
 # The following transforms are randomly-applied given a probability ``p``.  That is, given ``p = 0.5``,
