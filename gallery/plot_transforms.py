@@ -49,6 +49,7 @@ def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
 
     plt.tight_layout()
 
+
 ####################################
 # Geometric Transforms
 # --------------------
