@@ -14,6 +14,10 @@ from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import is_simple_tensor
 
+VALID_BATCH_DIMS = [(), (4,), (2, 3)]
+DEGENERATE_BATCH_DIMS = [(0,), (5, 0), (0, 5)]
+DEFAULT_BATCH_DIMS = [*VALID_BATCH_DIMS, *DEGENERATE_BATCH_DIMS]
+
 
 def _to_tolerances(maybe_tolerance_dict):
     if not isinstance(maybe_tolerance_dict, dict):
@@ -270,19 +274,23 @@ def check_transform():
 class TestResize:
     @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
     @pytest.mark.parametrize("antialias", [True, False])
+    @pytest.mark.parametrize("batch_dims", DEFAULT_BATCH_DIMS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_kernel_image_tensor(self, size, antialias, dtype, device):
-        image = make_image(size=(14, 16), dtype=dtype, device=device)
+    def test_kernel_image_tensor(self, size, antialias, batch_dims, dtype, device):
+        image = make_image(size=(14, 16), extra_dims=batch_dims, dtype=dtype, device=device)
         check_kernel(F.resize_image_tensor, image, size=size, antialias=antialias)
 
     @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("batch_dims", DEFAULT_BATCH_DIMS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_kernel_bounding_box(self, size, format, dtype, device):
+    def test_kernel_bounding_box(self, size, format, batch_dims, dtype, device):
         spatial_size = (14, 16)
-        bounding_box = make_bounding_box(format=format, spatial_size=spatial_size, dtype=dtype, device=device)
+        bounding_box = make_bounding_box(
+            format=format, spatial_size=spatial_size, extra_dims=batch_dims, dtype=dtype, device=device
+        )
         check_kernel(F.resize_bounding_box, bounding_box, spatial_size=spatial_size, size=size)
 
     @pytest.mark.parametrize("kernel", [F.resize_image_tensor, F.resize_bounding_box])
