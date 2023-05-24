@@ -49,19 +49,24 @@ def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
 
     plt.tight_layout()
 
-
 ####################################
+# Geometric Transforms
+# --------------------
+# Geometric image transformation refers to the process of altering the geometric properties of an image,
+# such as its shape, size, orientation, or position.
+# It involves applying mathematical operations to the image pixels or coordinates to achieve the desired transformation.
+#
 # Pad
-# ---
+# ~~~
 # The :class:`~torchvision.transforms.Pad` transform
 # (see also :func:`~torchvision.transforms.functional.pad`)
-# fills image borders with some pixel values.
+# pads all image borders with some pixel values.
 padded_imgs = [T.Pad(padding=padding)(orig_img) for padding in (3, 10, 30, 50)]
 plot(padded_imgs)
 
 ####################################
 # Resize
-# ------
+# ~~~~~~
 # The :class:`~torchvision.transforms.Resize` transform
 # (see also :func:`~torchvision.transforms.functional.resize`)
 # resizes an image.
@@ -70,7 +75,7 @@ plot(resized_imgs)
 
 ####################################
 # CenterCrop
-# ----------
+# ~~~~~~~~~~
 # The :class:`~torchvision.transforms.CenterCrop` transform
 # (see also :func:`~torchvision.transforms.functional.center_crop`)
 # crops the given image at the center.
@@ -79,45 +84,12 @@ plot(center_crops)
 
 ####################################
 # FiveCrop
-# --------
+# ~~~~~~~~
 # The :class:`~torchvision.transforms.FiveCrop` transform
 # (see also :func:`~torchvision.transforms.functional.five_crop`)
 # crops the given image into four corners and the central crop.
 (top_left, top_right, bottom_left, bottom_right, center) = T.FiveCrop(size=(100, 100))(orig_img)
 plot([top_left, top_right, bottom_left, bottom_right, center])
-
-####################################
-# Grayscale
-# ---------
-# The :class:`~torchvision.transforms.Grayscale` transform
-# (see also :func:`~torchvision.transforms.functional.to_grayscale`)
-# converts an image to grayscale
-gray_img = T.Grayscale()(orig_img)
-plot([gray_img], cmap='gray')
-
-####################################
-# Random transforms
-# -----------------
-# The following transforms are random, which means that the same transfomer
-# instance will produce different result each time it transforms a given image.
-#
-# ColorJitter
-# ~~~~~~~~~~~
-# The :class:`~torchvision.transforms.ColorJitter` transform
-# randomly changes the brightness, saturation, and other properties of an image.
-jitter = T.ColorJitter(brightness=.5, hue=.3)
-jitted_imgs = [jitter(orig_img) for _ in range(4)]
-plot(jitted_imgs)
-
-####################################
-# GaussianBlur
-# ~~~~~~~~~~~~
-# The :class:`~torchvision.transforms.GaussianBlur` transform
-# (see also :func:`~torchvision.transforms.functional.gaussian_blur`)
-# performs gaussian blur transform on an image.
-blurrer = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5))
-blurred_imgs = [blurrer(orig_img) for _ in range(4)]
-plot(blurred_imgs)
 
 ####################################
 # RandomPerspective
@@ -128,6 +100,7 @@ plot(blurred_imgs)
 perspective_transformer = T.RandomPerspective(distortion_scale=0.6, p=1.0)
 perspective_imgs = [perspective_transformer(orig_img) for _ in range(4)]
 plot(perspective_imgs)
+
 
 ####################################
 # RandomRotation
@@ -180,6 +153,45 @@ plot(crops)
 resize_cropper = T.RandomResizedCrop(size=(32, 32))
 resized_crops = [resize_cropper(orig_img) for _ in range(4)]
 plot(resized_crops)
+
+####################################
+# Photometric Transform
+# ---------------------
+# Photometric image transformation refers to the process of modifying the photometric properties of an image,
+# such as its brightness, contrast, color, or tone.
+# These transformations are applied to change the visual appearance of an image
+# while preserving its geometric structure.
+#
+# Except :class:`~torchvision.transforms.Grayscale`, the following transforms are random,
+# which means that the same transformer
+# instance will produce different result each time it transforms a given image.
+#
+# Grayscale
+# ~~~~~~~~~
+# The :class:`~torchvision.transforms.Grayscale` transform
+# (see also :func:`~torchvision.transforms.functional.to_grayscale`)
+# converts an image to grayscale
+gray_img = T.Grayscale()(orig_img)
+plot([gray_img], cmap='gray')
+
+####################################
+# ColorJitter
+# ~~~~~~~~~~~
+# The :class:`~torchvision.transforms.ColorJitter` transform
+# randomly changes the brightness, contrast, saturation, hue, and other properties of an image.
+jitter = T.ColorJitter(brightness=.5, hue=.3)
+jitted_imgs = [jitter(orig_img) for _ in range(4)]
+plot(jitted_imgs)
+
+####################################
+# GaussianBlur
+# ~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.GaussianBlur` transform
+# (see also :func:`~torchvision.transforms.functional.gaussian_blur`)
+# performs gaussian blur transform on an image.
+blurrer = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5))
+blurred_imgs = [blurrer(orig_img) for _ in range(4)]
+plot(blurred_imgs)
 
 ####################################
 # RandomInvert
@@ -244,6 +256,11 @@ equalized_imgs = [equalizer(orig_img) for _ in range(4)]
 plot(equalized_imgs)
 
 ####################################
+# Combined Transform
+# ------------------
+# The following transforms are combinations of multiple transforms,
+# either geometric or photometric, or both.
+#
 # AutoAugment
 # ~~~~~~~~~~~
 # The :class:`~torchvision.transforms.AutoAugment` transform
@@ -261,7 +278,7 @@ plot(imgs, row_title=row_title)
 ####################################
 # RandAugment
 # ~~~~~~~~~~~
-# The :class:`~torchvision.transforms.RandAugment` transform automatically augments the data.
+# The :class:`~torchvision.transforms.RandAugment` is an alternate version of AutoAugment.
 augmenter = T.RandAugment()
 imgs = [augmenter(orig_img) for _ in range(4)]
 plot(imgs)
@@ -269,7 +286,9 @@ plot(imgs)
 ####################################
 # TrivialAugmentWide
 # ~~~~~~~~~~~~~~~~~~
-# The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically augments the data.
+# The :class:`~torchvision.transforms.TrivialAugmentWide` is an alternate implementation of AutoAugment.
+# However, instead of transforming an image multiple times, it transforms an image only once
+# using a random transform from a given list with a random strength number.
 augmenter = T.TrivialAugmentWide()
 imgs = [augmenter(orig_img) for _ in range(4)]
 plot(imgs)
@@ -277,7 +296,7 @@ plot(imgs)
 ####################################
 # AugMix
 # ~~~~~~
-# The :class:`~torchvision.transforms.AugMix` transform automatically augments the data.
+# The :class:`~torchvision.transforms.AugMix` transform interpolates between augmented versions of an image.
 augmenter = T.AugMix()
 imgs = [augmenter(orig_img) for _ in range(4)]
 plot(imgs)
@@ -286,9 +305,9 @@ plot(imgs)
 # Randomly-applied transforms
 # ---------------------------
 #
-# Some transforms are randomly-applied given a probability ``p``.  That is, the
-# transformed image may actually be the same as the original one, even when
-# called with the same transformer instance!
+# The following transforms are randomly-applied given a probability ``p``.  That is, given ``p = 0.5``,
+# there is a 50% chance to return the original image, and a 50% chance to return the transformed image,
+# even when called with the same transformer instance!
 #
 # RandomHorizontalFlip
 # ~~~~~~~~~~~~~~~~~~~~
