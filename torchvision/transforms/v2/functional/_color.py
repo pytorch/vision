@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 
 import PIL.Image
 import torch
@@ -10,6 +10,7 @@ from torchvision.transforms._functional_tensor import _max_value
 from torchvision.utils import _log_api_usage_once
 
 from ._meta import _num_value_bits, convert_dtype_image_tensor
+from ._type_conversion import pil_to_tensor, to_image_pil
 from ._utils import is_simple_tensor
 
 
@@ -665,6 +666,48 @@ def invert(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
         return inpt.invert()
     elif isinstance(inpt, PIL.Image.Image):
         return invert_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
+
+
+def permute_channels_image_tensor(image: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+    shape = image.shape
+    num_channels, height, width = shape[-3:]
+
+    if len(permutation) != num_channels:
+        raise ValueError(
+            f"Length of permutation does not match number of channels: " f"{len(permutation)} != {num_channels}"
+        )
+
+    if image.numel() == 0:
+        return image
+
+    image = image.reshape(-1, num_channels, height, width)
+    image = image[:, permutation, :, :]
+    return image.reshape(shape)
+
+
+def permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image:
+    return to_image_pil(permute_channels_image_tensor(pil_to_tensor(image), permutation=permutation))
+
+
+def permute_channels_video(video: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+    return permute_channels_image_tensor(video, permutation=permutation)
+
+
+def permute_channels(inpt: datapoints._InputTypeJIT, permutation: List[int]) -> datapoints._InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(permute_channels)
+
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return permute_channels_image_tensor(inpt, permutation=permutation)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        return inpt.permute_channels(permutation=permutation)
+    elif isinstance(inpt, PIL.Image.Image):
+        return permute_channels_image_pil(inpt, permutation=permutation)
     else:
         raise TypeError(
             f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "

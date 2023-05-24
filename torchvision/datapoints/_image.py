@@ -253,6 +253,10 @@ class Image(Datapoint):
         output = self._F.normalize_image_tensor(self.as_subclass(torch.Tensor), mean=mean, std=std, inplace=inplace)
         return Image.wrap_like(self, output)
 
+    def permute_channels(self, permutation: List[int]) -> Image:
+        output = self._F.permute_channels_image_tensor(self.as_subclass(torch.Tensor), permutation=permutation)
+        return Image.wrap_like(self, output)
+
 
 _ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
 _ImageTypeJIT = torch.Tensor

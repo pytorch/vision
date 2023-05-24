@@ -254,6 +254,9 @@ class Datapoint(torch.Tensor):
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Datapoint:
         return self
 
+    def permute_channels(self, permutation: List[int]) -> Datapoint:
+        return self
+
 
 _InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
 _InputTypeJIT = torch.Tensor

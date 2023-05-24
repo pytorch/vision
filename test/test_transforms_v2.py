@@ -126,6 +126,7 @@ class TestSmoke:
             (transforms.RandomEqualize(p=1.0), None),
             (transforms.RandomGrayscale(p=1.0), None),
             (transforms.RandomInvert(p=1.0), None),
+            (transforms.PermuteChannels(), None),
             (transforms.RandomPhotometricDistort(p=1.0), None),
             (transforms.RandomPosterize(bits=4, p=1.0), None),
             (transforms.RandomSolarize(threshold=0.5, p=1.0), None),

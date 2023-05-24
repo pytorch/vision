@@ -243,6 +243,10 @@ class Video(Datapoint):
         output = self._F.normalize_video(self.as_subclass(torch.Tensor), mean=mean, std=std, inplace=inplace)
         return Video.wrap_like(self, output)
 
+    def permute_channels(self, permutation: List[int]) -> Video:
+        output = self._F.permute_channels_image_tensor(self.as_subclass(torch.Tensor), permutation=permutation)
+        return Video.wrap_like(self, output)
+
 
 _VideoType = Union[torch.Tensor, Video]
 _VideoTypeJIT = torch.Tensor
