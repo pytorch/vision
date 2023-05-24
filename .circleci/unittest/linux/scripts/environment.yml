@@ -1,0 +1,16 @@
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - pytest
+  - pytest-cov
+  - pytest-mock
+  - pip
+  - libpng
+  - jpeg
+  - ca-certificates
+  - h5py
+  - pip:
+    - future
+    - scipy
+    - av < 10
