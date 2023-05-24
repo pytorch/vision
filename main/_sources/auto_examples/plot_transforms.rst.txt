@@ -25,7 +25,7 @@ Illustration of transforms
 This example illustrates the various transforms available in :ref:`the
 torchvision.transforms module <transforms>`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 9-52
+.. GENERATED FROM PYTHON SOURCE LINES 9-51
 
 .. code-block:: default
 
@@ -78,16 +78,21 @@ torchvision.transforms module <transforms>`.
 
 
 
+.. GENERATED FROM PYTHON SOURCE LINES 53-64
 
-.. GENERATED FROM PYTHON SOURCE LINES 54-59
+Geometric Transforms
+--------------------
+Geometric image transformation refers to the process of altering the geometric properties of an image,
+such as its shape, size, orientation, or position.
+It involves applying mathematical operations to the image pixels or coordinates to achieve the desired transformation.
 
 Pad
----
+~~~
 The :class:`~torchvision.transforms.Pad` transform
 (see also :func:`~torchvision.transforms.functional.pad`)
-fills image borders with some pixel values.
+pads all image borders with some pixel values.
 
-.. GENERATED FROM PYTHON SOURCE LINES 59-62
+.. GENERATED FROM PYTHON SOURCE LINES 64-67
 
 .. code-block:: default
 
@@ -106,15 +111,15 @@ fills image borders with some pixel values.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-68
+.. GENERATED FROM PYTHON SOURCE LINES 68-73
 
 Resize
-------
+~~~~~~
 The :class:`~torchvision.transforms.Resize` transform
 (see also :func:`~torchvision.transforms.functional.resize`)
 resizes an image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 68-71
+.. GENERATED FROM PYTHON SOURCE LINES 73-76
 
 .. code-block:: default
 
@@ -133,15 +138,15 @@ resizes an image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 72-77
+.. GENERATED FROM PYTHON SOURCE LINES 77-82
 
 CenterCrop
-----------
+~~~~~~~~~~
 The :class:`~torchvision.transforms.CenterCrop` transform
 (see also :func:`~torchvision.transforms.functional.center_crop`)
 crops the given image at the center.
 
-.. GENERATED FROM PYTHON SOURCE LINES 77-80
+.. GENERATED FROM PYTHON SOURCE LINES 82-85
 
 .. code-block:: default
 
@@ -160,15 +165,15 @@ crops the given image at the center.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 81-86
+.. GENERATED FROM PYTHON SOURCE LINES 86-91
 
 FiveCrop
---------
+~~~~~~~~
 The :class:`~torchvision.transforms.FiveCrop` transform
 (see also :func:`~torchvision.transforms.functional.five_crop`)
 crops the given image into four corners and the central crop.
 
-.. GENERATED FROM PYTHON SOURCE LINES 86-89
+.. GENERATED FROM PYTHON SOURCE LINES 91-94
 
 .. code-block:: default
 
@@ -187,20 +192,21 @@ crops the given image into four corners and the central crop.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 90-95
+.. GENERATED FROM PYTHON SOURCE LINES 95-100
 
-Grayscale
----------
-The :class:`~torchvision.transforms.Grayscale` transform
-(see also :func:`~torchvision.transforms.functional.to_grayscale`)
-converts an image to grayscale
+RandomPerspective
+~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomPerspective` transform
+(see also :func:`~torchvision.transforms.functional.perspective`)
+performs random perspective transform on an image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-98
+.. GENERATED FROM PYTHON SOURCE LINES 100-104
 
 .. code-block:: default
 
-    gray_img = T.Grayscale()(orig_img)
-    plot([gray_img], cmap='gray')
+    perspective_transformer = T.RandomPerspective(distortion_scale=0.6, p=1.0)
+    perspective_imgs = [perspective_transformer(orig_img) for _ in range(4)]
+    plot(perspective_imgs)
 
 
 
@@ -214,25 +220,21 @@ converts an image to grayscale
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 99-108
+.. GENERATED FROM PYTHON SOURCE LINES 105-110
 
-Random transforms
------------------
-The following transforms are random, which means that the same transfomer
-instance will produce different result each time it transforms a given image.
+RandomRotation
+~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomRotation` transform
+(see also :func:`~torchvision.transforms.functional.rotate`)
+rotates an image with random angle.
 
-ColorJitter
-~~~~~~~~~~~
-The :class:`~torchvision.transforms.ColorJitter` transform
-randomly changes the brightness, saturation, and other properties of an image.
-
-.. GENERATED FROM PYTHON SOURCE LINES 108-112
+.. GENERATED FROM PYTHON SOURCE LINES 110-114
 
 .. code-block:: default
 
-    jitter = T.ColorJitter(brightness=.5, hue=.3)
-    jitted_imgs = [jitter(orig_img) for _ in range(4)]
-    plot(jitted_imgs)
+    rotater = T.RandomRotation(degrees=(0, 180))
+    rotated_imgs = [rotater(orig_img) for _ in range(4)]
+    plot(rotated_imgs)
 
 
 
@@ -246,21 +248,21 @@ randomly changes the brightness, saturation, and other properties of an image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 113-118
+.. GENERATED FROM PYTHON SOURCE LINES 115-120
 
-GaussianBlur
+RandomAffine
 ~~~~~~~~~~~~
-The :class:`~torchvision.transforms.GaussianBlur` transform
-(see also :func:`~torchvision.transforms.functional.gaussian_blur`)
-performs gaussian blur transform on an image.
+The :class:`~torchvision.transforms.RandomAffine` transform
+(see also :func:`~torchvision.transforms.functional.affine`)
+performs random affine transform on an image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 118-122
+.. GENERATED FROM PYTHON SOURCE LINES 120-124
 
 .. code-block:: default
 
-    blurrer = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5))
-    blurred_imgs = [blurrer(orig_img) for _ in range(4)]
-    plot(blurred_imgs)
+    affine_transfomer = T.RandomAffine(degrees=(30, 70), translate=(0.1, 0.3), scale=(0.5, 0.75))
+    affine_imgs = [affine_transfomer(orig_img) for _ in range(4)]
+    plot(affine_imgs)
 
 
 
@@ -274,21 +276,22 @@ performs gaussian blur transform on an image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-128
+.. GENERATED FROM PYTHON SOURCE LINES 125-131
 
-RandomPerspective
-~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomPerspective` transform
-(see also :func:`~torchvision.transforms.functional.perspective`)
-performs random perspective transform on an image.
+ElasticTransform
+~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.ElasticTransform` transform
+(see also :func:`~torchvision.transforms.functional.elastic_transform`)
+Randomly transforms the morphology of objects in images and produces a
+see-through-water-like effect.
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-132
+.. GENERATED FROM PYTHON SOURCE LINES 131-135
 
 .. code-block:: default
 
-    perspective_transformer = T.RandomPerspective(distortion_scale=0.6, p=1.0)
-    perspective_imgs = [perspective_transformer(orig_img) for _ in range(4)]
-    plot(perspective_imgs)
+    elastic_transformer = T.ElasticTransform(alpha=250.0)
+    transformed_imgs = [elastic_transformer(orig_img) for _ in range(2)]
+    plot(transformed_imgs)
 
 
 
@@ -302,21 +305,21 @@ performs random perspective transform on an image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 133-138
+.. GENERATED FROM PYTHON SOURCE LINES 136-141
 
-RandomRotation
-~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomRotation` transform
-(see also :func:`~torchvision.transforms.functional.rotate`)
-rotates an image with random angle.
+RandomCrop
+~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomCrop` transform
+(see also :func:`~torchvision.transforms.functional.crop`)
+crops an image at a random location.
 
-.. GENERATED FROM PYTHON SOURCE LINES 138-142
+.. GENERATED FROM PYTHON SOURCE LINES 141-145
 
 .. code-block:: default
 
-    rotater = T.RandomRotation(degrees=(0, 180))
-    rotated_imgs = [rotater(orig_img) for _ in range(4)]
-    plot(rotated_imgs)
+    cropper = T.RandomCrop(size=(128, 128))
+    crops = [cropper(orig_img) for _ in range(4)]
+    plot(crops)
 
 
 
@@ -330,21 +333,22 @@ rotates an image with random angle.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 143-148
+.. GENERATED FROM PYTHON SOURCE LINES 146-152
 
-RandomAffine
-~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomAffine` transform
-(see also :func:`~torchvision.transforms.functional.affine`)
-performs random affine transform on an image.
+RandomResizedCrop
+~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomResizedCrop` transform
+(see also :func:`~torchvision.transforms.functional.resized_crop`)
+crops an image at a random location, and then resizes the crop to a given
+size.
 
-.. GENERATED FROM PYTHON SOURCE LINES 148-152
+.. GENERATED FROM PYTHON SOURCE LINES 152-156
 
 .. code-block:: default
 
-    affine_transfomer = T.RandomAffine(degrees=(30, 70), translate=(0.1, 0.3), scale=(0.5, 0.75))
-    affine_imgs = [affine_transfomer(orig_img) for _ in range(4)]
-    plot(affine_imgs)
+    resize_cropper = T.RandomResizedCrop(size=(32, 32))
+    resized_crops = [resize_cropper(orig_img) for _ in range(4)]
+    plot(resized_crops)
 
 
 
@@ -358,22 +362,31 @@ performs random affine transform on an image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 153-159
+.. GENERATED FROM PYTHON SOURCE LINES 157-173
 
-ElasticTransform
-~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.ElasticTransform` transform
-(see also :func:`~torchvision.transforms.functional.elastic_transform`)
-Randomly transforms the morphology of objects in images and produces a
-see-through-water-like effect.
+Photometric Transforms
+----------------------
+Photometric image transformation refers to the process of modifying the photometric properties of an image,
+such as its brightness, contrast, color, or tone.
+These transformations are applied to change the visual appearance of an image
+while preserving its geometric structure.
 
-.. GENERATED FROM PYTHON SOURCE LINES 159-163
+Except :class:`~torchvision.transforms.Grayscale`, the following transforms are random,
+which means that the same transform
+instance will produce different result each time it transforms a given image.
+
+Grayscale
+~~~~~~~~~
+The :class:`~torchvision.transforms.Grayscale` transform
+(see also :func:`~torchvision.transforms.functional.to_grayscale`)
+converts an image to grayscale
+
+.. GENERATED FROM PYTHON SOURCE LINES 173-176
 
 .. code-block:: default
 
-    elastic_transformer = T.ElasticTransform(alpha=250.0)
-    transformed_imgs = [elastic_transformer(orig_img) for _ in range(2)]
-    plot(transformed_imgs)
+    gray_img = T.Grayscale()(orig_img)
+    plot([gray_img], cmap='gray')
 
 
 
@@ -387,21 +400,20 @@ see-through-water-like effect.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 164-169
+.. GENERATED FROM PYTHON SOURCE LINES 177-181
 
-RandomCrop
-~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomCrop` transform
-(see also :func:`~torchvision.transforms.functional.crop`)
-crops an image at a random location.
+ColorJitter
+~~~~~~~~~~~
+The :class:`~torchvision.transforms.ColorJitter` transform
+randomly changes the brightness, contrast, saturation, hue, and other properties of an image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 169-173
+.. GENERATED FROM PYTHON SOURCE LINES 181-185
 
 .. code-block:: default
 
-    cropper = T.RandomCrop(size=(128, 128))
-    crops = [cropper(orig_img) for _ in range(4)]
-    plot(crops)
+    jitter = T.ColorJitter(brightness=.5, hue=.3)
+    jitted_imgs = [jitter(orig_img) for _ in range(4)]
+    plot(jitted_imgs)
 
 
 
@@ -415,22 +427,21 @@ crops an image at a random location.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 174-180
+.. GENERATED FROM PYTHON SOURCE LINES 186-191
 
-RandomResizedCrop
-~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomResizedCrop` transform
-(see also :func:`~torchvision.transforms.functional.resized_crop`)
-crops an image at a random location, and then resizes the crop to a given
-size.
+GaussianBlur
+~~~~~~~~~~~~
+The :class:`~torchvision.transforms.GaussianBlur` transform
+(see also :func:`~torchvision.transforms.functional.gaussian_blur`)
+performs gaussian blur transform on an image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 180-184
+.. GENERATED FROM PYTHON SOURCE LINES 191-195
 
 .. code-block:: default
 
-    resize_cropper = T.RandomResizedCrop(size=(32, 32))
-    resized_crops = [resize_cropper(orig_img) for _ in range(4)]
-    plot(resized_crops)
+    blurrer = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5))
+    blurred_imgs = [blurrer(orig_img) for _ in range(4)]
+    plot(blurred_imgs)
 
 
 
@@ -444,7 +455,7 @@ size.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 185-190
+.. GENERATED FROM PYTHON SOURCE LINES 196-201
 
 RandomInvert
 ~~~~~~~~~~~~
@@ -452,7 +463,7 @@ The :class:`~torchvision.transforms.RandomInvert` transform
 (see also :func:`~torchvision.transforms.functional.invert`)
 randomly inverts the colors of the given image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 190-194
+.. GENERATED FROM PYTHON SOURCE LINES 201-205
 
 .. code-block:: default
 
@@ -472,7 +483,7 @@ randomly inverts the colors of the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 195-201
+.. GENERATED FROM PYTHON SOURCE LINES 206-212
 
 RandomPosterize
 ~~~~~~~~~~~~~~~
@@ -481,7 +492,7 @@ The :class:`~torchvision.transforms.RandomPosterize` transform
 randomly posterizes the image by reducing the number of bits
 of each color channel.
 
-.. GENERATED FROM PYTHON SOURCE LINES 201-205
+.. GENERATED FROM PYTHON SOURCE LINES 212-216
 
 .. code-block:: default
 
@@ -501,7 +512,7 @@ of each color channel.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 206-212
+.. GENERATED FROM PYTHON SOURCE LINES 217-223
 
 RandomSolarize
 ~~~~~~~~~~~~~~
@@ -510,7 +521,7 @@ The :class:`~torchvision.transforms.RandomSolarize` transform
 randomly solarizes the image by inverting all pixel values above
 the threshold.
 
-.. GENERATED FROM PYTHON SOURCE LINES 212-216
+.. GENERATED FROM PYTHON SOURCE LINES 223-227
 
 .. code-block:: default
 
@@ -530,7 +541,7 @@ the threshold.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 217-222
+.. GENERATED FROM PYTHON SOURCE LINES 228-233
 
 RandomAdjustSharpness
 ~~~~~~~~~~~~~~~~~~~~~
@@ -538,7 +549,7 @@ The :class:`~torchvision.transforms.RandomAdjustSharpness` transform
 (see also :func:`~torchvision.transforms.functional.adjust_sharpness`)
 randomly adjusts the sharpness of the given image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 222-226
+.. GENERATED FROM PYTHON SOURCE LINES 233-237
 
 .. code-block:: default
 
@@ -558,7 +569,7 @@ randomly adjusts the sharpness of the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 227-232
+.. GENERATED FROM PYTHON SOURCE LINES 238-243
 
 RandomAutocontrast
 ~~~~~~~~~~~~~~~~~~
@@ -566,7 +577,7 @@ The :class:`~torchvision.transforms.RandomAutocontrast` transform
 (see also :func:`~torchvision.transforms.functional.autocontrast`)
 randomly applies autocontrast to the given image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 232-236
+.. GENERATED FROM PYTHON SOURCE LINES 243-247
 
 .. code-block:: default
 
@@ -586,7 +597,7 @@ randomly applies autocontrast to the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 237-242
+.. GENERATED FROM PYTHON SOURCE LINES 248-253
 
 RandomEqualize
 ~~~~~~~~~~~~~~
@@ -594,7 +605,7 @@ The :class:`~torchvision.transforms.RandomEqualize` transform
 (see also :func:`~torchvision.transforms.functional.equalize`)
 randomly equalizes the histogram of the given image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 242-246
+.. GENERATED FROM PYTHON SOURCE LINES 253-257
 
 .. code-block:: default
 
@@ -614,7 +625,12 @@ randomly equalizes the histogram of the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 247-252
+.. GENERATED FROM PYTHON SOURCE LINES 258-268
+
+Augmentation Transforms
+-----------------------
+The following transforms are combinations of multiple transforms,
+either geometric or photometric, or both.
 
 AutoAugment
 ~~~~~~~~~~~
@@ -622,7 +638,7 @@ The :class:`~torchvision.transforms.AutoAugment` transform
 automatically augments data based on a given auto-augmentation policy.
 See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policies.
 
-.. GENERATED FROM PYTHON SOURCE LINES 252-261
+.. GENERATED FROM PYTHON SOURCE LINES 268-277
 
 .. code-block:: default
 
@@ -647,13 +663,13 @@ See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policie
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 262-265
+.. GENERATED FROM PYTHON SOURCE LINES 278-281
 
 RandAugment
 ~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandAugment` transform automatically augments the data.
+The :class:`~torchvision.transforms.RandAugment` is an alternate version of AutoAugment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 265-269
+.. GENERATED FROM PYTHON SOURCE LINES 281-285
 
 .. code-block:: default
 
@@ -673,13 +689,15 @@ The :class:`~torchvision.transforms.RandAugment` transform automatically augment
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 270-273
+.. GENERATED FROM PYTHON SOURCE LINES 286-291
 
 TrivialAugmentWide
 ~~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically augments the data.
+The :class:`~torchvision.transforms.TrivialAugmentWide` is an alternate implementation of AutoAugment.
+However, instead of transforming an image multiple times, it transforms an image only once
+using a random transform from a given list with a random strength number.
 
-.. GENERATED FROM PYTHON SOURCE LINES 273-277
+.. GENERATED FROM PYTHON SOURCE LINES 291-295
 
 .. code-block:: default
 
@@ -699,13 +717,13 @@ The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 278-281
+.. GENERATED FROM PYTHON SOURCE LINES 296-299
 
 AugMix
 ~~~~~~
-The :class:`~torchvision.transforms.AugMix` transform automatically augments the data.
+The :class:`~torchvision.transforms.AugMix` transform interpolates between augmented versions of an image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 281-285
+.. GENERATED FROM PYTHON SOURCE LINES 299-303
 
 .. code-block:: default
 
@@ -725,14 +743,14 @@ The :class:`~torchvision.transforms.AugMix` transform automatically augments the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 286-298
+.. GENERATED FROM PYTHON SOURCE LINES 304-316
 
-Randomly-applied transforms
+Randomly-applied Transforms
 ---------------------------
 
-Some transforms are randomly-applied given a probability ``p``.  That is, the
-transformed image may actually be the same as the original one, even when
-called with the same transformer instance!
+The following transforms are randomly-applied given a probability ``p``.  That is, given ``p = 0.5``,
+there is a 50% chance to return the original image, and a 50% chance to return the transformed image,
+even when called with the same transform instance!
 
 RandomHorizontalFlip
 ~~~~~~~~~~~~~~~~~~~~
@@ -740,7 +758,7 @@ The :class:`~torchvision.transforms.RandomHorizontalFlip` transform
 (see also :func:`~torchvision.transforms.functional.hflip`)
 performs horizontal flip of an image, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 298-302
+.. GENERATED FROM PYTHON SOURCE LINES 316-320
 
 .. code-block:: default
 
@@ -760,7 +778,7 @@ performs horizontal flip of an image, with a given probability.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 303-308
+.. GENERATED FROM PYTHON SOURCE LINES 321-326
 
 RandomVerticalFlip
 ~~~~~~~~~~~~~~~~~~
@@ -768,7 +786,7 @@ The :class:`~torchvision.transforms.RandomVerticalFlip` transform
 (see also :func:`~torchvision.transforms.functional.vflip`)
 performs vertical flip of an image, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 308-312
+.. GENERATED FROM PYTHON SOURCE LINES 326-330
 
 .. code-block:: default
 
@@ -788,14 +806,14 @@ performs vertical flip of an image, with a given probability.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 313-317
+.. GENERATED FROM PYTHON SOURCE LINES 331-335
 
 RandomApply
 ~~~~~~~~~~~
 The :class:`~torchvision.transforms.RandomApply` transform
 randomly applies a list of transforms, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 317-320
+.. GENERATED FROM PYTHON SOURCE LINES 335-338
 
 .. code-block:: default
 
@@ -817,7 +835,7 @@ randomly applies a list of transforms, with a given probability.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.779 seconds)
+   **Total running time of the script:** ( 0 minutes  8.786 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms.py:

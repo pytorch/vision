@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+300a909) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+e1ad6ad) &#x25BC</a>
     </div>
     
 
@@ -398,18 +398,23 @@ torchvision.transforms module</span></a>.</p>
     <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.tight_layout.html#matplotlib.pyplot.tight_layout" title="matplotlib.pyplot.tight_layout" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
+<section id="geometric-transforms">
+<h2>Geometric Transforms<a class="headerlink" href="#geometric-transforms" title="Permalink to this heading">¶</a></h2>
+<p>Geometric image transformation refers to the process of altering the geometric properties of an image,
+such as its shape, size, orientation, or position.
+It involves applying mathematical operations to the image pixels or coordinates to achieve the desired transformation.</p>
 <section id="pad">
-<h2>Pad<a class="headerlink" href="#pad" title="Permalink to this heading">¶</a></h2>
+<h3>Pad<a class="headerlink" href="#pad" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.Pad.html#torchvision.transforms.Pad" title="torchvision.transforms.Pad"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pad</span></code></a> transform
 (see also <a class="reference internal" href="../generated/torchvision.transforms.functional.pad.html#torchvision.transforms.functional.pad" title="torchvision.transforms.functional.pad"><code class="xref py py-func docutils literal notranslate"><span class="pre">pad()</span></code></a>)
-fills image borders with some pixel values.</p>
+pads all image borders with some pixel values.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">padded_imgs</span></a> <span class="o">=</span> <span class="p">[</span><a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">Pad</span></a><span class="p">(</span><span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">)(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">padding</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">50</span><span class="p">)]</span>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">padded_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_transforms_001.png" srcset="../_images/sphx_glr_plot_transforms_001.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="resize">
-<h2>Resize<a class="headerlink" href="#resize" title="Permalink to this heading">¶</a></h2>
+<h3>Resize<a class="headerlink" href="#resize" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.Resize.html#torchvision.transforms.Resize" title="torchvision.transforms.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a> transform
 (see also <a class="reference internal" href="../generated/torchvision.transforms.functional.resize.html#torchvision.transforms.functional.resize" title="torchvision.transforms.functional.resize"><code class="xref py py-func docutils literal notranslate"><span class="pre">resize()</span></code></a>)
 resizes an image.</p>
@@ -419,7 +424,7 @@ resizes an image.</p>
 </div>
 <img src="../_images/sphx_glr_plot_transforms_002.png" srcset="../_images/sphx_glr_plot_transforms_002.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="centercrop">
-<h2>CenterCrop<a class="headerlink" href="#centercrop" title="Permalink to this heading">¶</a></h2>
+<h3>CenterCrop<a class="headerlink" href="#centercrop" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.CenterCrop.html#torchvision.transforms.CenterCrop" title="torchvision.transforms.CenterCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">CenterCrop</span></code></a> transform
 (see also <a class="reference internal" href="../generated/torchvision.transforms.functional.center_crop.html#torchvision.transforms.functional.center_crop" title="torchvision.transforms.functional.center_crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">center_crop()</span></code></a>)
 crops the given image at the center.</p>
@@ -429,7 +434,7 @@ crops the given image at the center.</p>
 </div>
 <img src="../_images/sphx_glr_plot_transforms_003.png" srcset="../_images/sphx_glr_plot_transforms_003.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="fivecrop">
-<h2>FiveCrop<a class="headerlink" href="#fivecrop" title="Permalink to this heading">¶</a></h2>
+<h3>FiveCrop<a class="headerlink" href="#fivecrop" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.FiveCrop.html#torchvision.transforms.FiveCrop" title="torchvision.transforms.FiveCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">FiveCrop</span></code></a> transform
 (see also <a class="reference internal" href="../generated/torchvision.transforms.functional.five_crop.html#torchvision.transforms.functional.five_crop" title="torchvision.transforms.functional.five_crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">five_crop()</span></code></a>)
 crops the given image into four corners and the central crop.</p>
@@ -438,41 +443,6 @@ crops the given image into four corners and the central crop.</p>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_transforms_004.png" srcset="../_images/sphx_glr_plot_transforms_004.png" alt="Original image" class = "sphx-glr-single-img"/></section>
-<section id="grayscale">
-<h2>Grayscale<a class="headerlink" href="#grayscale" title="Permalink to this heading">¶</a></h2>
-<p>The <a class="reference internal" href="../generated/torchvision.transforms.Grayscale.html#torchvision.transforms.Grayscale" title="torchvision.transforms.Grayscale"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grayscale</span></code></a> transform
-(see also <a class="reference internal" href="../generated/torchvision.transforms.functional.to_grayscale.html#torchvision.transforms.functional.to_grayscale" title="torchvision.transforms.functional.to_grayscale"><code class="xref py py-func docutils literal notranslate"><span class="pre">to_grayscale()</span></code></a>)
-converts an image to grayscale</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="PIL.Image.Image" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">gray_img</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">Grayscale</span></a><span class="p">()(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span>
-<span class="n">plot</span><span class="p">([</span><a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="PIL.Image.Image" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">gray_img</span></a><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<img src="../_images/sphx_glr_plot_transforms_005.png" srcset="../_images/sphx_glr_plot_transforms_005.png" alt="Original image" class = "sphx-glr-single-img"/></section>
-<section id="random-transforms">
-<h2>Random transforms<a class="headerlink" href="#random-transforms" title="Permalink to this heading">¶</a></h2>
-<p>The following transforms are random, which means that the same transfomer
-instance will produce different result each time it transforms a given image.</p>
-<section id="colorjitter">
-<h3>ColorJitter<a class="headerlink" href="#colorjitter" title="Permalink to this heading">¶</a></h3>
-<p>The <a class="reference internal" href="../generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter" title="torchvision.transforms.ColorJitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ColorJitter</span></code></a> transform
-randomly changes the brightness, saturation, and other properties of an image.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">jitter</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">ColorJitter</span></a><span class="p">(</span><span class="n">brightness</span><span class="o">=</span><span class="mf">.5</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="mf">.3</span><span class="p">)</span>
-<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">jitted_imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">jitter</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
-<span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">jitted_imgs</span></a><span class="p">)</span>
-</pre></div>
-</div>
-<img src="../_images/sphx_glr_plot_transforms_006.png" srcset="../_images/sphx_glr_plot_transforms_006.png" alt="Original image" class = "sphx-glr-single-img"/></section>
-<section id="gaussianblur">
-<h3>GaussianBlur<a class="headerlink" href="#gaussianblur" title="Permalink to this heading">¶</a></h3>
-<p>The <a class="reference internal" href="../generated/torchvision.transforms.GaussianBlur.html#torchvision.transforms.GaussianBlur" title="torchvision.transforms.GaussianBlur"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianBlur</span></code></a> transform
-(see also <a class="reference internal" href="../generated/torchvision.transforms.functional.gaussian_blur.html#torchvision.transforms.functional.gaussian_blur" title="torchvision.transforms.functional.gaussian_blur"><code class="xref py py-func docutils literal notranslate"><span class="pre">gaussian_blur()</span></code></a>)
-performs gaussian blur transform on an image.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">blurrer</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">GaussianBlur</span></a><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
-<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">blurred_imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">blurrer</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
-<span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">blurred_imgs</span></a><span class="p">)</span>
-</pre></div>
-</div>
-<img src="../_images/sphx_glr_plot_transforms_007.png" srcset="../_images/sphx_glr_plot_transforms_007.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="randomperspective">
 <h3>RandomPerspective<a class="headerlink" href="#randomperspective" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.RandomPerspective.html#torchvision.transforms.RandomPerspective" title="torchvision.transforms.RandomPerspective"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomPerspective</span></code></a> transform
@@ -483,7 +453,7 @@ performs random perspective transform on an image.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">perspective_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_transforms_008.png" srcset="../_images/sphx_glr_plot_transforms_008.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_transforms_005.png" srcset="../_images/sphx_glr_plot_transforms_005.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="randomrotation">
 <h3>RandomRotation<a class="headerlink" href="#randomrotation" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation" title="torchvision.transforms.RandomRotation"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomRotation</span></code></a> transform
@@ -494,7 +464,7 @@ rotates an image with random angle.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rotated_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_transforms_009.png" srcset="../_images/sphx_glr_plot_transforms_009.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_transforms_006.png" srcset="../_images/sphx_glr_plot_transforms_006.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="randomaffine">
 <h3>RandomAffine<a class="headerlink" href="#randomaffine" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.RandomAffine.html#torchvision.transforms.RandomAffine" title="torchvision.transforms.RandomAffine"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAffine</span></code></a> transform
@@ -505,7 +475,7 @@ performs random affine transform on an image.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">affine_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_transforms_010.png" srcset="../_images/sphx_glr_plot_transforms_010.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_transforms_007.png" srcset="../_images/sphx_glr_plot_transforms_007.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="elastictransform">
 <h3>ElasticTransform<a class="headerlink" href="#elastictransform" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.ElasticTransform.html#torchvision.transforms.ElasticTransform" title="torchvision.transforms.ElasticTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElasticTransform</span></code></a> transform
@@ -517,7 +487,7 @@ see-through-water-like effect.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">transformed_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_transforms_011.png" srcset="../_images/sphx_glr_plot_transforms_011.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_transforms_008.png" srcset="../_images/sphx_glr_plot_transforms_008.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="randomcrop">
 <h3>RandomCrop<a class="headerlink" href="#randomcrop" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.RandomCrop.html#torchvision.transforms.RandomCrop" title="torchvision.transforms.RandomCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomCrop</span></code></a> transform
@@ -528,7 +498,7 @@ crops an image at a random location.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">crops</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_transforms_012.png" srcset="../_images/sphx_glr_plot_transforms_012.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_transforms_009.png" srcset="../_images/sphx_glr_plot_transforms_009.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="randomresizedcrop">
 <h3>RandomResizedCrop<a class="headerlink" href="#randomresizedcrop" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.RandomResizedCrop.html#torchvision.transforms.RandomResizedCrop" title="torchvision.transforms.RandomResizedCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a> transform
@@ -538,6 +508,47 @@ size.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">resize_cropper</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">RandomResizedCrop</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">resized_crops</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">resize_cropper</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">resized_crops</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_transforms_010.png" srcset="../_images/sphx_glr_plot_transforms_010.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+</section>
+<section id="photometric-transforms">
+<h2>Photometric Transforms<a class="headerlink" href="#photometric-transforms" title="Permalink to this heading">¶</a></h2>
+<p>Photometric image transformation refers to the process of modifying the photometric properties of an image,
+such as its brightness, contrast, color, or tone.
+These transformations are applied to change the visual appearance of an image
+while preserving its geometric structure.</p>
+<p>Except <a class="reference internal" href="../generated/torchvision.transforms.Grayscale.html#torchvision.transforms.Grayscale" title="torchvision.transforms.Grayscale"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grayscale</span></code></a>, the following transforms are random,
+which means that the same transform
+instance will produce different result each time it transforms a given image.</p>
+<section id="grayscale">
+<h3>Grayscale<a class="headerlink" href="#grayscale" title="Permalink to this heading">¶</a></h3>
+<p>The <a class="reference internal" href="../generated/torchvision.transforms.Grayscale.html#torchvision.transforms.Grayscale" title="torchvision.transforms.Grayscale"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grayscale</span></code></a> transform
+(see also <a class="reference internal" href="../generated/torchvision.transforms.functional.to_grayscale.html#torchvision.transforms.functional.to_grayscale" title="torchvision.transforms.functional.to_grayscale"><code class="xref py py-func docutils literal notranslate"><span class="pre">to_grayscale()</span></code></a>)
+converts an image to grayscale</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="PIL.Image.Image" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">gray_img</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">Grayscale</span></a><span class="p">()(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span>
+<span class="n">plot</span><span class="p">([</span><a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="PIL.Image.Image" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">gray_img</span></a><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_transforms_011.png" srcset="../_images/sphx_glr_plot_transforms_011.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+<section id="colorjitter">
+<h3>ColorJitter<a class="headerlink" href="#colorjitter" title="Permalink to this heading">¶</a></h3>
+<p>The <a class="reference internal" href="../generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter" title="torchvision.transforms.ColorJitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ColorJitter</span></code></a> transform
+randomly changes the brightness, contrast, saturation, hue, and other properties of an image.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">jitter</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">ColorJitter</span></a><span class="p">(</span><span class="n">brightness</span><span class="o">=</span><span class="mf">.5</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="mf">.3</span><span class="p">)</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">jitted_imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">jitter</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+<span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">jitted_imgs</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_transforms_012.png" srcset="../_images/sphx_glr_plot_transforms_012.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+<section id="gaussianblur">
+<h3>GaussianBlur<a class="headerlink" href="#gaussianblur" title="Permalink to this heading">¶</a></h3>
+<p>The <a class="reference internal" href="../generated/torchvision.transforms.GaussianBlur.html#torchvision.transforms.GaussianBlur" title="torchvision.transforms.GaussianBlur"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianBlur</span></code></a> transform
+(see also <a class="reference internal" href="../generated/torchvision.transforms.functional.gaussian_blur.html#torchvision.transforms.functional.gaussian_blur" title="torchvision.transforms.functional.gaussian_blur"><code class="xref py py-func docutils literal notranslate"><span class="pre">gaussian_blur()</span></code></a>)
+performs gaussian blur transform on an image.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">blurrer</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">GaussianBlur</span></a><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">blurred_imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">blurrer</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+<span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">blurred_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_transforms_013.png" srcset="../_images/sphx_glr_plot_transforms_013.png" alt="Original image" class = "sphx-glr-single-img"/></section>
@@ -609,6 +620,11 @@ randomly equalizes the histogram of the given image.</p>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_transforms_019.png" srcset="../_images/sphx_glr_plot_transforms_019.png" alt="Original image" class = "sphx-glr-single-img"/></section>
+</section>
+<section id="augmentation-transforms">
+<h2>Augmentation Transforms<a class="headerlink" href="#augmentation-transforms" title="Permalink to this heading">¶</a></h2>
+<p>The following transforms are combinations of multiple transforms,
+either geometric or photometric, or both.</p>
 <section id="autoaugment">
 <h3>AutoAugment<a class="headerlink" href="#autoaugment" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.AutoAugment.html#torchvision.transforms.AutoAugment" title="torchvision.transforms.AutoAugment"><code class="xref py py-class docutils literal notranslate"><span class="pre">AutoAugment</span></code></a> transform
@@ -627,7 +643,7 @@ See <a class="reference internal" href="../generated/torchvision.transforms.Auto
 <img src="../_images/sphx_glr_plot_transforms_020.png" srcset="../_images/sphx_glr_plot_transforms_020.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="randaugment">
 <h3>RandAugment<a class="headerlink" href="#randaugment" title="Permalink to this heading">¶</a></h3>
-<p>The <a class="reference internal" href="../generated/torchvision.transforms.RandAugment.html#torchvision.transforms.RandAugment" title="torchvision.transforms.RandAugment"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandAugment</span></code></a> transform automatically augments the data.</p>
+<p>The <a class="reference internal" href="../generated/torchvision.transforms.RandAugment.html#torchvision.transforms.RandAugment" title="torchvision.transforms.RandAugment"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandAugment</span></code></a> is an alternate version of AutoAugment.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">augmenter</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">RandAugment</span></a><span class="p">()</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">augmenter</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">imgs</span></a><span class="p">)</span>
@@ -636,7 +652,9 @@ See <a class="reference internal" href="../generated/torchvision.transforms.Auto
 <img src="../_images/sphx_glr_plot_transforms_021.png" srcset="../_images/sphx_glr_plot_transforms_021.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="trivialaugmentwide">
 <h3>TrivialAugmentWide<a class="headerlink" href="#trivialaugmentwide" title="Permalink to this heading">¶</a></h3>
-<p>The <a class="reference internal" href="../generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide" title="torchvision.transforms.TrivialAugmentWide"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrivialAugmentWide</span></code></a> transform automatically augments the data.</p>
+<p>The <a class="reference internal" href="../generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide" title="torchvision.transforms.TrivialAugmentWide"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrivialAugmentWide</span></code></a> is an alternate implementation of AutoAugment.
+However, instead of transforming an image multiple times, it transforms an image only once
+using a random transform from a given list with a random strength number.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">augmenter</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">TrivialAugmentWide</span></a><span class="p">()</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">augmenter</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">imgs</span></a><span class="p">)</span>
@@ -645,7 +663,7 @@ See <a class="reference internal" href="../generated/torchvision.transforms.Auto
 <img src="../_images/sphx_glr_plot_transforms_022.png" srcset="../_images/sphx_glr_plot_transforms_022.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 <section id="augmix">
 <h3>AugMix<a class="headerlink" href="#augmix" title="Permalink to this heading">¶</a></h3>
-<p>The <a class="reference internal" href="../generated/torchvision.transforms.AugMix.html#torchvision.transforms.AugMix" title="torchvision.transforms.AugMix"><code class="xref py py-class docutils literal notranslate"><span class="pre">AugMix</span></code></a> transform automatically augments the data.</p>
+<p>The <a class="reference internal" href="../generated/torchvision.transforms.AugMix.html#torchvision.transforms.AugMix" title="torchvision.transforms.AugMix"><code class="xref py py-class docutils literal notranslate"><span class="pre">AugMix</span></code></a> transform interpolates between augmented versions of an image.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">augmenter</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">AugMix</span></a><span class="p">()</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">augmenter</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">imgs</span></a><span class="p">)</span>
@@ -654,10 +672,10 @@ See <a class="reference internal" href="../generated/torchvision.transforms.Auto
 <img src="../_images/sphx_glr_plot_transforms_023.png" srcset="../_images/sphx_glr_plot_transforms_023.png" alt="Original image" class = "sphx-glr-single-img"/></section>
 </section>
 <section id="randomly-applied-transforms">
-<h2>Randomly-applied transforms<a class="headerlink" href="#randomly-applied-transforms" title="Permalink to this heading">¶</a></h2>
-<p>Some transforms are randomly-applied given a probability <code class="docutils literal notranslate"><span class="pre">p</span></code>.  That is, the
-transformed image may actually be the same as the original one, even when
-called with the same transformer instance!</p>
+<h2>Randomly-applied Transforms<a class="headerlink" href="#randomly-applied-transforms" title="Permalink to this heading">¶</a></h2>
+<p>The following transforms are randomly-applied given a probability <code class="docutils literal notranslate"><span class="pre">p</span></code>.  That is, given <code class="docutils literal notranslate"><span class="pre">p</span> <span class="pre">=</span> <span class="pre">0.5</span></code>,
+there is a 50% chance to return the original image, and a 50% chance to return the transformed image,
+even when called with the same transform instance!</p>
 <section id="randomhorizontalflip">
 <h3>RandomHorizontalFlip<a class="headerlink" href="#randomhorizontalflip" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="../generated/torchvision.transforms.RandomHorizontalFlip.html#torchvision.transforms.RandomHorizontalFlip" title="torchvision.transforms.RandomHorizontalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomHorizontalFlip</span></code></a> transform
@@ -689,7 +707,7 @@ randomly applies a list of transforms, with a given probability.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">transformed_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_transforms_026.png" srcset="../_images/sphx_glr_plot_transforms_026.png" alt="Original image" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.779 seconds)</p>
+<img src="../_images/sphx_glr_plot_transforms_026.png" srcset="../_images/sphx_glr_plot_transforms_026.png" alt="Original image" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.786 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-transforms-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/2fc879ef12ea97750926a04c0a48c66b/plot_transforms.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_transforms.py</span></code></a></p>
@@ -747,33 +765,39 @@ randomly applies a list of transforms, with a given probability.</p>
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">Illustration of transforms</a><ul>
+<li><a class="reference internal" href="#geometric-transforms">Geometric Transforms</a><ul>
 <li><a class="reference internal" href="#pad">Pad</a></li>
 <li><a class="reference internal" href="#resize">Resize</a></li>
 <li><a class="reference internal" href="#centercrop">CenterCrop</a></li>
 <li><a class="reference internal" href="#fivecrop">FiveCrop</a></li>
-<li><a class="reference internal" href="#grayscale">Grayscale</a></li>
-<li><a class="reference internal" href="#random-transforms">Random transforms</a><ul>
-<li><a class="reference internal" href="#colorjitter">ColorJitter</a></li>
-<li><a class="reference internal" href="#gaussianblur">GaussianBlur</a></li>
 <li><a class="reference internal" href="#randomperspective">RandomPerspective</a></li>
 <li><a class="reference internal" href="#randomrotation">RandomRotation</a></li>
 <li><a class="reference internal" href="#randomaffine">RandomAffine</a></li>
 <li><a class="reference internal" href="#elastictransform">ElasticTransform</a></li>
 <li><a class="reference internal" href="#randomcrop">RandomCrop</a></li>
 <li><a class="reference internal" href="#randomresizedcrop">RandomResizedCrop</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#photometric-transforms">Photometric Transforms</a><ul>
+<li><a class="reference internal" href="#grayscale">Grayscale</a></li>
+<li><a class="reference internal" href="#colorjitter">ColorJitter</a></li>
+<li><a class="reference internal" href="#gaussianblur">GaussianBlur</a></li>
 <li><a class="reference internal" href="#randominvert">RandomInvert</a></li>
 <li><a class="reference internal" href="#randomposterize">RandomPosterize</a></li>
 <li><a class="reference internal" href="#randomsolarize">RandomSolarize</a></li>
 <li><a class="reference internal" href="#randomadjustsharpness">RandomAdjustSharpness</a></li>
 <li><a class="reference internal" href="#randomautocontrast">RandomAutocontrast</a></li>
 <li><a class="reference internal" href="#randomequalize">RandomEqualize</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#augmentation-transforms">Augmentation Transforms</a><ul>
 <li><a class="reference internal" href="#autoaugment">AutoAugment</a></li>
 <li><a class="reference internal" href="#randaugment">RandAugment</a></li>
 <li><a class="reference internal" href="#trivialaugmentwide">TrivialAugmentWide</a></li>
 <li><a class="reference internal" href="#augmix">AugMix</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#randomly-applied-transforms">Randomly-applied transforms</a><ul>
+<li><a class="reference internal" href="#randomly-applied-transforms">Randomly-applied Transforms</a><ul>
 <li><a class="reference internal" href="#randomhorizontalflip">RandomHorizontalFlip</a></li>
 <li><a class="reference internal" href="#randomverticalflip">RandomVerticalFlip</a></li>
 <li><a class="reference internal" href="#randomapply">RandomApply</a></li>
