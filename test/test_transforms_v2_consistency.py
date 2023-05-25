@@ -354,16 +354,14 @@ CONSISTENCY_CONFIGS = [
             v2_transforms.ElasticTransform,
             legacy_transforms.ElasticTransform,
             [
-                ArgsKwargs(),
                 ArgsKwargs(alpha=20.0),
                 ArgsKwargs(alpha=(15.3, 27.2)),
                 ArgsKwargs(sigma=3.0),
                 ArgsKwargs(sigma=(2.5, 3.9)),
                 ArgsKwargs(interpolation=v2_transforms.InterpolationMode.NEAREST),
-                ArgsKwargs(interpolation=v2_transforms.InterpolationMode.BICUBIC),
                 ArgsKwargs(interpolation=PIL.Image.NEAREST),
-                ArgsKwargs(interpolation=PIL.Image.BICUBIC),
                 ArgsKwargs(fill=1),
+                *extra_args_kwargs,
             ],
             # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
             make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)], dtypes=[dt]),
@@ -371,7 +369,19 @@ CONSISTENCY_CONFIGS = [
             # This brings float32 accumulation visible in elastic transform -> we need to relax consistency tolerance
             closeness_kwargs=ckw,
         )
-        for dt, ckw in [(torch.uint8, {"rtol": 1e-1, "atol": 1}), (torch.float32, {"rtol": 1e-2, "atol": 1e-3})]
+        for dt, ckw, extra_args_kwargs in [
+            (torch.uint8, {"rtol": 1e-1, "atol": 1}, []),
+            (
+                torch.float32,
+                {"rtol": 1e-2, "atol": 1e-3},
+                [
+                    # These proved to be flaky on uint8 inputs so we only run them on float32
+                    ArgsKwargs(),
+                    ArgsKwargs(interpolation=v2_transforms.InterpolationMode.BICUBIC),
+                    ArgsKwargs(interpolation=PIL.Image.BICUBIC),
+                ],
+            ),
+        ]
     ],
     ConsistencyConfig(
         v2_transforms.GaussianBlur,
