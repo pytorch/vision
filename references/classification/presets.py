@@ -40,7 +40,6 @@ class ClassificationPresetTrain:
                 trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
 
         if backend == "pil":
-            # Note: we could also just use pure tensors?
             trans.append(transforms.PILToTensor())
 
         trans.extend(
