@@ -17,7 +17,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/update-viablestrict.yml@main
     with:
       repository: pytorch/vision
-      required_checks: "Build Linux,Build M1,Build Macos,Tests on Linux,Tests on macOS,Docs,Lint"
+      required_checks: "Build Linux,Build M1,Build Macos,Build Windows,Tests,CMake"
     secrets:
       ROCKSET_API_KEY: ${{ secrets.ROCKSET_API_KEY }}
       GITHUB_DEPLOY_KEY : ${{ secrets.VISION_GITHUB_DEPLOY_KEY }}
