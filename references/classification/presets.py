@@ -22,8 +22,8 @@ class ClassificationPresetTrain:
         backend = backend.lower()
         if backend == "tensor":
             trans.append(transforms.PILToTensor())
-        else:
-            assert backend == "pil"
+        elif backend != "pil":
+            raise ValueError("backend can be 'tensor' or 'pil', but got {backend}")
 
         trans.append(transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True))
         if hflip_prob > 0:
