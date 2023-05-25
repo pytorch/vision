@@ -7,6 +7,7 @@ import presets
 import torch
 import torch.utils.data
 import torchvision
+import torchvision.transforms
 import transforms
 import utils
 from sampler import RASampler
@@ -161,7 +162,10 @@ def load_data(traindir, valdir, args):
     else:
         if args.weights and args.test_only:
             weights = torchvision.models.get_weight(args.weights)
-            preprocessing = weights.transforms(antialias=True, backend=args.backend)
+            preprocessing = weights.transforms(antialias=True)
+            if args.backend.lower() == "tensor":
+                preprocessing = torchvision.transforms.Compose([torchvision.transforms.PILToTensor(), preprocessing])
+
         else:
             preprocessing = presets.ClassificationPresetEval(
                 crop_size=val_crop_size,
