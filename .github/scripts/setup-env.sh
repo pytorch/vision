@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euxo pipefail
 
 # Prepare conda
-CONDA_PATH=$(which conda)
-eval "$(${CONDA_PATH} shell.bash hook)"
+set +x && eval "$($(which conda) shell.bash hook)" && set -x
 
 # Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in
@@ -25,12 +24,11 @@ esac
 
 if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
   echo '::group::Uninstall system JPEG libraries on macOS'
-  # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG libraries installed by
-  # default that interfere with our build. We uninstall them here and use the one from conda below.
-  JPEG_LIBS=$(brew list | grep jpeg)
-  echo $JPEG_LIBS
-  for lib in $JPEG_LIBS; do
-    brew uninstall --ignore-dependencies --force $lib || true
+  # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG and PNG libraries
+  # installed by default that interfere with our build. We uninstall them here and use the one from conda below.
+  IMAGE_LIBS=$(brew list | grep -E "jpeg|png")
+  for lib in $IMAGE_LIBS; do
+    brew uninstall --ignore-dependencies --force "${lib}"
   done
   echo '::endgroup::'
 fi
@@ -41,7 +39,7 @@ conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
-  ninja \
+  ninja cmake \
   libpng jpeg \
   'ffmpeg<4.3'
 conda activate ci
