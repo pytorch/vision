@@ -45,6 +45,7 @@ class ImageClassification(nn.Module):
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
+        backend="pil",
     ) -> None:
         super().__init__()
         self.crop_size = [crop_size]
@@ -53,11 +54,16 @@ class ImageClassification(nn.Module):
         self.std = list(std)
         self.interpolation = interpolation
         self.antialias = antialias
+        self.backend = backend.lower()
+        if self.backend not in ("pil", "tensor"):
+            raise ValueError(f"backend parameter must be pil or tensor, got {backend}")
 
     def forward(self, img: Tensor) -> Tensor:
+        if self.backend == "tensor":
+            img = F.pil_to_tensor(img)
         img = F.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
         img = F.center_crop(img, self.crop_size)
-        if not isinstance(img, Tensor):
+        if self.backend == "pil":
             img = F.pil_to_tensor(img)
         img = F.convert_image_dtype(img, torch.float)
         img = F.normalize(img, mean=self.mean, std=self.std)
