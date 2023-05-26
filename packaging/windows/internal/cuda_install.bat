@@ -41,8 +41,8 @@ if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
 )
 
 set CUDNN_FOLDER=cudnn-windows-x86_64-8.5.0.96_cuda11-archive
+set "CUDNN_INSTALL_ZIP=%CUDNN_FOLDER%.zip"
 set CUDNN_LIB_FOLDER="lib"
-set CUDNN_INSTALL_ZIP="%CUDNN_FOLDER%.zip"
 if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
     curl -k -L "http://s3.amazonaws.com/ossci-windows/%CUDNN_INSTALL_ZIP%" --output "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
     if errorlevel 1 exit /b 1
@@ -67,8 +67,8 @@ if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
 )
 
 set CUDNN_FOLDER=cudnn-windows-x86_64-8.7.0.84_cuda11-archive
+set "CUDNN_INSTALL_ZIP=%CUDNN_FOLDER%.zip"
 set CUDNN_LIB_FOLDER="lib"
-set CUDNN_INSTALL_ZIP="%CUDNN_FOLDER%.zip"
 if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
     curl -k -L "http://s3.amazonaws.com/ossci-windows/%CUDNN_INSTALL_ZIP%" --output "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
     if errorlevel 1 exit /b 1
@@ -93,8 +93,8 @@ if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
 )
 
 set CUDNN_FOLDER=cudnn-windows-x86_64-8.8.1.3_cuda12-archive
+set "CUDNN_INSTALL_ZIP=%CUDNN_FOLDER%.zip"
 set CUDNN_LIB_FOLDER="lib"
-set CUDNN_INSTALL_ZIP="%CUDNN_FOLDER%.zip"
 if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
     curl -k -L "http://s3.amazonaws.com/ossci-windows/%CUDNN_INSTALL_ZIP%" --output "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
     if errorlevel 1 exit /b 1
