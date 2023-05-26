@@ -163,7 +163,7 @@ def load_data(traindir, valdir, args):
         if args.weights and args.test_only:
             weights = torchvision.models.get_weight(args.weights)
             preprocessing = weights.transforms(antialias=True)
-            if args.backend.lower() == "tensor":
+            if args.backend == "tensor":
                 preprocessing = torchvision.transforms.Compose([torchvision.transforms.PILToTensor(), preprocessing])
 
         else:
@@ -515,7 +515,7 @@ def get_args_parser(add_help=True):
         "--ra-reps", default=3, type=int, help="number of repetitions for Repeated Augmentation (default: 3)"
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
-    parser.add_argument("--backend", default="PIL", type=str, help="PIL or tensor - case insensitive")
+    parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
     return parser
 
 

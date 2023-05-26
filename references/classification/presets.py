@@ -23,7 +23,7 @@ class ClassificationPresetTrain:
         if backend == "tensor":
             trans.append(transforms.PILToTensor())
         elif backend != "pil":
-            raise ValueError("backend can be 'tensor' or 'pil', but got {backend}")
+            raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
 
         trans.append(transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True))
         if hflip_prob > 0:
@@ -74,7 +74,7 @@ class ClassificationPresetEval:
         if backend == "tensor":
             trans.append(transforms.PILToTensor())
         else:
-            assert backend == "pil"
+            raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
 
         trans += [
             transforms.Resize(resize_size, interpolation=interpolation, antialias=True),
