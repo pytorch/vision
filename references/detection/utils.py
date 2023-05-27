@@ -98,7 +98,10 @@ def reduce_dict(input_dict, average=True):
     # nothing to sync, but we still convert to tensor for consistency with the distributed case.
     for k in sorted(input_dict.keys()):
         names.append(k)
-        values.append(torch.tensor(input_dict[k], device="cuda"))
+        if isinstance(input_dict[k], torch.Tensor):
+            values.append(input_dict[k])
+        else:
+            values.append(torch.tensor(input_dict[k], device="cuda"))
     world_size = get_world_size()
     if world_size >= 2:
         with torch.no_grad():
