@@ -89,6 +89,7 @@ echo '::group::Install TorchVision'
 python setup.py develop
 echo '::endgroup::'
 
-echo '::group::Collect PyTorch environment information'
+echo '::group::Collect environment information'
+conda list
 python -m torch.utils.collect_env
 echo '::endgroup::'
