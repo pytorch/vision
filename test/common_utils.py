@@ -133,6 +133,11 @@ def needs_cuda(test_func):
 
     return pytest.mark.needs_cuda(test_func)
 
+def needs_mps(test_func):
+    import pytest
+
+    return pytest.mark.needs_mps(test_func)
+
 
 def _create_data(height=3, width=3, channels=3, device="cpu"):
     # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture

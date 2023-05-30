@@ -137,10 +137,13 @@ def get_extensions():
         + glob.glob(os.path.join(extensions_dir, "ops", "cpu", "*.cpp"))
         + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
     )
+    source_mps = glob.glob(os.path.join(extensions_dir, "ops", "mps", "*.mm"))
 
     print("Compiling extensions with following flags:")
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
     print(f"  FORCE_CUDA: {force_cuda}")
+    force_mps = os.getenv("FORCE_MPS", "0") == "1"
+    print(f"  FORCE_MPS: {force_mps}")
     debug_mode = os.getenv("DEBUG", "0") == "1"
     print(f"  DEBUG: {debug_mode}")
     use_png = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
@@ -202,6 +205,9 @@ def get_extensions():
             define_macros += [("WITH_HIP", None)]
             nvcc_flags = []
         extra_compile_args["nvcc"] = nvcc_flags
+    elif torch.backends.mps.is_available() or force_mps:
+        sources += source_mps
+        define_macros += [("WITH_MPS", None)]
 
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
