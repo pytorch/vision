@@ -57,8 +57,10 @@ pytorch_dep = "torch"
 if os.getenv("PYTORCH_VERSION"):
     pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
+numpy_dep = "numpy" if sys.version_info[:2] >= (3, 9) else "numpy < 1.25"
+
 requirements = [
-    "numpy",
+    numpy_dep,
     "requests",
     pytorch_dep,
 ]
