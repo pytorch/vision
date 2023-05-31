@@ -94,9 +94,7 @@ conda list
 python -m torch.utils.collect_env
 echo '::endgroup::'
 
-if [[ ! $(python -c 'import torchvision; print(int(torchvision.io._HAS_VIDEO_OPT))') ]]; then
-  if [[ "${OS_TYPE}" == linux ]]; then
-    ldd torchvision/video_reader.so
-  fi
+if [[ $(python -c 'import torchvision; print(torchvision.io._HAS_VIDEO_OPT)') == False ]]; then
+  ldd torchvision/video_reader.so
   python -c 'from torchvision.extension import _load_library; _load_library("video_reader")'
 fi
