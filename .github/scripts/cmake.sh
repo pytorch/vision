@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-./.github/scripts/setup-env.sh
+source .github/scripts/setup-env.sh
 
 # Activate conda environment
 set +x && eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci && set -x

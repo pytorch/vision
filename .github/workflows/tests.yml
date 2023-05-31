@@ -114,7 +114,7 @@ jobs:
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
-        ./.github/scripts/setup-env.sh
+        source .github/scripts/setup-env.sh
         
         # Prepare conda
         CONDA_PATH=$(which conda)
@@ -144,7 +144,7 @@ jobs:
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
-        ./.github/scripts/setup-env.sh
+        source .github/scripts/setup-env.sh
         
         # Prepare conda
         CONDA_PATH=$(which conda)

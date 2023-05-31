@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
-./.github/scripts/setup-env.sh
-
-# Activate conda environment
-eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
+source .github/scripts/setup-env.sh
 
 echo '::group::Install testing utilities'
 pip install --progress-bar=off pytest pytest-mock pytest-cov

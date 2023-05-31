@@ -24,19 +24,11 @@ jobs:
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
-        ./.github/scripts/setup-env.sh
+        source .github/scripts/setup-env.sh
         
-        # Prepare conda
-        CONDA_PATH=$(which conda)
-        eval "$(${CONDA_PATH} shell.bash hook)"
-        conda activate ci
-        # FIXME: not sure why we need this. `ldd torchvision/video_reader.so` shows that it
-        #  already links against the one pulled from conda. However, at runtime it pulls from
-        #  /lib64
-        # Should we maybe always do this in `./.github/scripts/setup-env.sh` so that we don't
-        # have to pay attention in all other workflows?
-        export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
-        
+        # Activate conda environment
+        eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
+
         cd docs
         
         echo '::group::Install doc requirements'

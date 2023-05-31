@@ -81,7 +81,7 @@ jobs:
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
-        ./.github/scripts/setup-env.sh
+        source .github/scripts/setup-env.sh
         
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
