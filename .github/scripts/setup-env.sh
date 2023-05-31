@@ -33,11 +33,6 @@ if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
   echo '::endgroup::'
 fi
 
-# FIXME: not sure why we need this. `ldd torchvision/video_reader.so` shows that it
-#  already links against the one pulled from conda.
-#  However, at runtime it pulls from /lib64
-export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
-
 echo '::group::Create build environment'
 # See https://github.com/pytorch/vision/issues/7296 for ffmpeg
 conda create \
@@ -49,6 +44,10 @@ conda create \
   'ffmpeg<4.3'
 conda activate ci
 pip install --progress-bar=off --upgrade setuptools
+
+# FIXME: not sure why we need this. `ldd torchvision/video_reader.so` shows that it already links against the one
+#  pulled from conda. However, at runtime it pulls from /lib64
+export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
 
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
