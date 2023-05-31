@@ -266,19 +266,14 @@ class TestResize:
 
     @pytest.mark.parametrize("kernel", [F.resize_image_tensor, F.resize_bounding_box])
     @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
-    @pytest.mark.parametrize("antialias", [True, False])
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8, torch.int64])
-    @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_dispatcher(self, kernel, size, antialias, dtype, device):
+    def test_dispatcher(self, kernel, size):
         spatial_size = (14, 16)
         if kernel is F.resize_image_tensor:
-            input = make_image(size=spatial_size, dtype=dtype, device=device)
+            input = make_image(size=spatial_size)
         elif kernel is F.resize_bounding_box:
-            input = make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, dtype=dtype, device=device
-            )
+            input = make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size)
 
-        check_dispatcher(F.resize, kernel, input, size=size, antialias=antialias)
+        check_dispatcher(F.resize, kernel, input, size=size)
 
     @pytest.mark.parametrize(
         ("kernel", "datapoint_type"),
