@@ -54,9 +54,6 @@ echo '::endgroup::'
 
 if [[ "${OS_TYPE}" == windows && "${GPU_ARCH_TYPE}" == cuda ]]; then
   echo '::group::Install VisualStudio CUDA extensions on Windows'
-  echo "${CUDA_HOME}"
-  ls "${CUDA_HOME}"
-  ls "${CUDA_HOME}/MSBuildExtensions"
   TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Microsoft/VC/v160/BuildCustomizations"
   mkdir -p "${TARGET_DIR}"
   cp -r "${CUDA_HOME}/MSBuildExtensions/"* "${TARGET_DIR}"
