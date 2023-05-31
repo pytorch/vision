@@ -6,5 +6,5 @@ retryable_workflows:
 - Build Linux
 - Build Macos
 - Build M1
-- Tests on Linux
-- Tests on macOS
+- Build Windows
+- Tests

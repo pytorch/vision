@@ -6,8 +6,6 @@ import torch.library
 # Ensure that torch.ops.torchvision is visible
 import torchvision.extension  # noqa: F401
 
-from torch._prims_common import check
-
 
 @functools.lru_cache(None)
 def get_meta_lib():
@@ -25,8 +23,8 @@ def register_meta(op_name, overload_name="default"):
 
 @register_meta("roi_align")
 def meta_roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned):
-    check(rois.size(1) == 5, lambda: "rois must have shape as Tensor[K, 5]")
-    check(
+    torch._check(rois.size(1) == 5, lambda: "rois must have shape as Tensor[K, 5]")
+    torch._check(
         input.dtype == rois.dtype,
         lambda: (
             "Expected tensor for input to have the same type as tensor for rois; "
@@ -42,7 +40,7 @@ def meta_roi_align(input, rois, spatial_scale, pooled_height, pooled_width, samp
 def meta_roi_align_backward(
     grad, rois, spatial_scale, pooled_height, pooled_width, batch_size, channels, height, width, sampling_ratio, aligned
 ):
-    check(
+    torch._check(
         grad.dtype == rois.dtype,
         lambda: (
             "Expected tensor for grad to have the same type as tensor for rois; "

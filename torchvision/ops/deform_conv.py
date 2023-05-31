@@ -68,7 +68,7 @@ def deform_conv2d(
     use_mask = mask is not None
 
     if mask is None:
-        mask = torch.zeros((input.shape[0], 0), device=input.device, dtype=input.dtype)
+        mask = torch.zeros((input.shape[0], 1), device=input.device, dtype=input.dtype)
 
     if bias is None:
         bias = torch.zeros(out_channels, device=input.device, dtype=input.dtype)
