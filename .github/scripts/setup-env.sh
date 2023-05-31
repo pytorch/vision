@@ -72,15 +72,16 @@ fi
 echo '::endgroup::'
 
 echo '::group::Install third party dependencies prior to TorchVision install'
-# `easy_install`, i.e. `python setup.py`, has some quirks when installing third-party dependencies. For example:
+# Installing with `easy_install`, e.g. `python setup.py install` or `python setup.py develop`, has some quirks when
+# when pulling in third-party dependencies. For example:
 # - On Windows, we often hit an SSL error although `pip` can install just fine.
-# - `easy_install` happily pulls in pre-releases, which can lead to more problems down the line. `pip` does not unless
-#   explicitly told to do so.
+# - It happily pulls in pre-releases, which can lead to more problems down the line.
+#   `pip` does not unless explicitly told to do so.
 # Thus, we use `easy_install` to extract the third-party dependencies here and install them upfront with `pip`.
 python setup.py egg_info
 # The requires.txt cannot be used with `pip install -r` directly. The requirements are listed at the top and the
 # optional dependencies come in non-standard syntax after a blank line. Thus, we just extract the header.
-sed -e '/^$/,$d' *.egg-info/requires.txt > requirements.txt
+sed -e '/^$/,$d' *.egg-info/requires.txt | tee requirements.txt
 pip install --progress-bar=off -r requirements.txt
 echo '::endgroup::'
 
