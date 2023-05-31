@@ -52,6 +52,14 @@ fi
 
 echo '::endgroup::'
 
+if [[ "${OS_TYPE}" == windows && "${GPU_ARCH_TYPE}" == cuda ]]; then
+  echo '::group::Install VisualStudio CUDA extensions on Windows'
+  TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Microsoft/VC/v160/BuildCustomizations"
+  mkdir -p "${TARGET_DIR}"
+  cp -r "${CUDA_HOME}/MSBuildExtensions/*" "${TARGET_DIR}"
+  echo '::endgroup::'
+fi
+
 echo '::group::Install PyTorch'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
 if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
