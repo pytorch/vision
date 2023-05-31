@@ -9,14 +9,8 @@ import pytest
 import torch
 from common_utils import cache, cpu_and_gpu, make_bounding_box, make_image
 from torch.testing import assert_close
-from torch.utils._pytree import tree_map
 from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.utils import is_simple_tensor
-
-VALID_BATCH_DIMS = [(), (4,), (2, 3)]
-DEGENERATE_BATCH_DIMS = [(0,), (5, 0), (0, 5)]
-DEFAULT_BATCH_DIMS = [*VALID_BATCH_DIMS, *DEGENERATE_BATCH_DIMS]
 
 
 def _to_tolerances(maybe_tolerance_dict):
@@ -56,54 +50,35 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
-def _unbatch(batch, *, data_dims):
-    if isinstance(batch, torch.Tensor):
-        batched_tensor = batch
-        metadata = ()
-    else:
-        batched_tensor, *metadata = batch
-
-    if batched_tensor.ndim == data_dims:
-        return batch
-
-    return [
-        _unbatch(unbatched, data_dims=data_dims)
-        for unbatched in (
-            batched_tensor.unbind(0) if not metadata else [(t, *metadata) for t in batched_tensor.unbind(0)]
-        )
-    ]
-
-
 def _check_kernel_batched_vs_single(kernel, input, *args, rtol, atol, **kwargs):
-    input_type = datapoints.Image if is_simple_tensor(input) else type(input)
-    # This dictionary contains the number of rightmost dimensions that contain the actual data.
-    # Everything to the left is considered a batch dimension.
-    data_dims = {
-        datapoints.Image: 3,
-        datapoints.BoundingBox: 1,
-        # `Mask`'s are special in the sense that the data dimensions depend on the type of mask. For detection masks
-        # it is 3 `(*, N, H, W)`, but for segmentation masks it is 2 `(*, H, W)`. Since both a grouped under one
-        # type all kernels should also work without differentiating between the two. Thus, we go with 2 here as
-        # common ground.
-        datapoints.Mask: 2,
-        datapoints.Video: 4,
-    }.get(input_type)
-    if data_dims is None:
-        raise pytest.UsageError(
-            f"The number of data dimensions cannot be determined for input of type {input_type.__name__}."
+    single_input = input.as_subclass(torch.Tensor)
+
+    for batch_dims in [(4,), (2, 3)]:
+        repeats = [*batch_dims, *[1] * input.ndim]
+
+        actual = kernel(single_input.repeat(repeats), *args, **kwargs)
+
+        expected = kernel(single_input, *args, **kwargs)
+        # We can't directly call `.repeat()` on the output, since some kernel also return some additional metadata
+        if isinstance(expected, torch.Tensor):
+            expected = expected.repeat(repeats)
+        else:
+            tensor, *metadata = expected
+            expected = (tensor.repeat(repeats), *metadata)
+
+        assert_close(actual, expected, rtol=rtol, atol=atol)
+
+    for degenerate_batch_dims in [(0,), (5, 0), (0, 5)]:
+        degenerate_batched_input = torch.empty(
+            degenerate_batch_dims + input.shape, dtype=input.dtype, device=input.device
         )
-    elif input.ndim <= data_dims or not all(input.shape[:-data_dims]):
-        # input is not batched or has a degenerate batch shape
-        return
 
-    batched_input = input.as_subclass(torch.Tensor)
-    batched_output = kernel(batched_input, *args, **kwargs)
-    actual = _unbatch(batched_output, data_dims=data_dims)
+        output = kernel(degenerate_batched_input, *args, **kwargs)
+        # Most kernels just return a tensor, but some also return some additional metadata
+        if not isinstance(output, torch.Tensor):
+            output, *_ = output
 
-    single_inputs = _unbatch(batched_input, data_dims=data_dims)
-    expected = tree_map(lambda single_input: kernel(single_input, *args, **kwargs), single_inputs)
-
-    assert_close(actual, expected, rtol=rtol, atol=atol)
+        assert output.shape[: -input.ndim] == degenerate_batch_dims
 
 
 def check_kernel(
@@ -274,23 +249,19 @@ def check_transform():
 class TestResize:
     @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
     @pytest.mark.parametrize("antialias", [True, False])
-    @pytest.mark.parametrize("batch_dims", DEFAULT_BATCH_DIMS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_kernel_image_tensor(self, size, antialias, batch_dims, dtype, device):
-        image = make_image(size=(14, 16), extra_dims=batch_dims, dtype=dtype, device=device)
+    def test_kernel_image_tensor(self, size, antialias, dtype, device):
+        image = make_image(size=(14, 16), dtype=dtype, device=device)
         check_kernel(F.resize_image_tensor, image, size=size, antialias=antialias)
 
     @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    @pytest.mark.parametrize("batch_dims", DEFAULT_BATCH_DIMS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_kernel_bounding_box(self, size, format, batch_dims, dtype, device):
+    def test_kernel_bounding_box(self, size, format, dtype, device):
         spatial_size = (14, 16)
-        bounding_box = make_bounding_box(
-            format=format, spatial_size=spatial_size, extra_dims=batch_dims, dtype=dtype, device=device
-        )
+        bounding_box = make_bounding_box(format=format, spatial_size=spatial_size, dtype=dtype, device=device)
         check_kernel(F.resize_bounding_box, bounding_box, spatial_size=spatial_size, size=size)
 
     @pytest.mark.parametrize("kernel", [F.resize_image_tensor, F.resize_bounding_box])
