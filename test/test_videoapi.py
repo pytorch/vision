@@ -25,6 +25,13 @@ CheckerConfig = ["duration", "video_fps", "audio_sample_rate"]
 GroundTruth = collections.namedtuple("GroundTruth", " ".join(CheckerConfig))
 
 
+def backends():
+    backends_ = ["video_reader"]
+    if av is not None:
+        backends_.append("pyav")
+    return backends_
+
+
 def fate(name, path="."):
     """Download and return a path to a sample from the FFmpeg test suite.
     See the `FFmpeg Automated Test Environment <https://www.ffmpeg.org/fate.html>`_
@@ -53,7 +60,7 @@ test_videos = {
 class TestVideoApi:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
+    @pytest.mark.parametrize("backend", backends())
     def test_frame_reading(self, test_video, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -119,7 +126,7 @@ class TestVideoApi:
 
     @pytest.mark.parametrize("stream", ["video", "audio"])
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
+    @pytest.mark.parametrize("backend", backends())
     def test_frame_reading_mem_vs_file(self, test_video, stream, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -166,7 +173,7 @@ class TestVideoApi:
             del reader, reader_md
 
     @pytest.mark.parametrize("test_video,config", test_videos.items())
-    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
+    @pytest.mark.parametrize("backend", backends())
     def test_metadata(self, test_video, config, backend):
         """
         Test that the metadata returned via pyav corresponds to the one returned
@@ -180,7 +187,7 @@ class TestVideoApi:
         assert config.duration == approx(reader_md["video"]["duration"][0], abs=0.5)
 
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
+    @pytest.mark.parametrize("backend", backends())
     def test_seek_start(self, test_video, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -249,7 +256,7 @@ class TestVideoApi:
 
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video,config", test_videos.items())
-    @pytest.mark.parametrize("backend", ["pyav", "video_reader"])
+    @pytest.mark.parametrize("backend", backends())
     def test_keyframe_reading(self, test_video, config, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
