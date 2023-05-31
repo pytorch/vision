@@ -10,6 +10,12 @@ from torchvision.datasets.utils import download_url
 from torchvision.io import _HAS_VIDEO_OPT, VideoReader
 
 
+# WARNING: these tests have been skipped forever on the CI because the video ops
+# are never properly available. This is bad, but things have been in a terrible
+# state for a long time already as we write this comment, and we'll hopefully be
+# able to get rid of this all soon.
+
+
 try:
     import av
 
