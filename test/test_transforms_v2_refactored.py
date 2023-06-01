@@ -7,7 +7,16 @@ import PIL.Image
 import pytest
 
 import torch
-from common_utils import cache, cpu_and_gpu, make_bounding_box, make_image
+import torchvision.transforms.v2 as transforms
+from common_utils import (
+    cache,
+    cpu_and_gpu,
+    make_bounding_box,
+    make_detection_mask,
+    make_image,
+    make_segmentation_mask,
+    make_video,
+)
 from torch.testing import assert_close
 from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F
@@ -41,6 +50,9 @@ def _script(fn):
 
 
 def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
+    if input.device.type != "cpu":
+        return
+
     kernel_scripted = _script(kernel)
 
     input = input.as_subclass(torch.Tensor)
@@ -103,7 +115,6 @@ def check_kernel(
     assert output.dtype == input.dtype
     assert output.device == input.device
 
-    # TODO: we can improve performance here by not computing the regular output of the kernel over and over
     if check_cuda_vs_cpu:
         _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs, **_to_tolerances(check_cuda_vs_cpu))
 
@@ -112,6 +123,14 @@ def check_kernel(
 
     if check_batched_vs_single:
         _check_kernel_batched_vs_single(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_single))
+
+
+def _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs):
+    if not isinstance(input, datapoints.Image):
+        return
+
+    dispatcher_scripted = _script(dispatcher)
+    dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
 
 def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs):
@@ -164,6 +183,7 @@ def check_dispatcher(
     kernel,
     input,
     *args,
+    check_scripted_smoke=True,
     check_dispatch_simple_tensor=True,
     check_dispatch_datapoint=True,
     check_dispatch_pil=True,
@@ -178,9 +198,8 @@ def check_dispatcher(
     with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
         dispatcher(unknown_input, *args, **kwargs)
 
-    if isinstance(input, datapoints.Image):
-        dispatcher_scripted = _script(dispatcher)
-        dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
+    if check_scripted_smoke:
+        _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs)
 
     if check_dispatch_simple_tensor:
         _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs)
@@ -246,40 +265,113 @@ def check_transform():
     pass
 
 
+# We cannot use `list(transforms.InterpolationMode)` here, since it includes some PIL-only ones as well
+INTERPOLATION_MODES = [
+    transforms.InterpolationMode.NEAREST,
+    transforms.InterpolationMode.NEAREST_EXACT,
+    transforms.InterpolationMode.BILINEAR,
+    transforms.InterpolationMode.BICUBIC,
+]
+
+
 class TestResize:
-    @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
+    SPATIAL_SIZE = (17, 11)
+    SIZES = [17, [17], (17,), [12, 13], (12, 13)]
+
+    def _make_max_size_kwarg(self, *, use_max_size, size):
+        if use_max_size:
+            if not (isinstance(size, int) or len(size) == 1):
+                # This would result in an `ValueError`
+                return None
+
+            max_size = (size if isinstance(size, int) else size[0]) + 1
+        else:
+            max_size = None
+
+        return dict(max_size=max_size)
+
+    @pytest.mark.parametrize("size", SIZES)
+    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
+    @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("antialias", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_kernel_image_tensor(self, size, antialias, dtype, device):
-        image = make_image(size=(14, 16), dtype=dtype, device=device)
-        check_kernel(F.resize_image_tensor, image, size=size, antialias=antialias)
+    def test_kernel_image_tensor(self, size, interpolation, use_max_size, antialias, dtype, device):
+        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
+            return
 
-    @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
+        image = make_image(size=self.SPATIAL_SIZE, dtype=dtype, device=device)
+        check_kernel(
+            F.resize_image_tensor,
+            image,
+            size=size,
+            interpolation=interpolation,
+            **max_size_kwarg,
+            antialias=antialias,
+            check_scripted_vs_eager=not isinstance(size, int),
+        )
+
+    @pytest.mark.parametrize("size", SIZES)
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_kernel_bounding_box(self, size, format, dtype, device):
-        spatial_size = (14, 16)
-        bounding_box = make_bounding_box(format=format, spatial_size=spatial_size, dtype=dtype, device=device)
-        check_kernel(F.resize_bounding_box, bounding_box, spatial_size=spatial_size, size=size)
+    def test_kernel_bounding_box(self, size, format, use_max_size, dtype, device):
+        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
+            return
 
-    @pytest.mark.parametrize("kernel", [F.resize_image_tensor, F.resize_bounding_box])
-    @pytest.mark.parametrize("size", [(11, 17), (15, 13)])
-    def test_dispatcher(self, kernel, size):
-        spatial_size = (14, 16)
-        if kernel is F.resize_image_tensor:
-            input = make_image(size=spatial_size)
-        elif kernel is F.resize_bounding_box:
-            input = make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size)
-
-        check_dispatcher(F.resize, kernel, input, size=size)
+        bounding_box = make_bounding_box(format=format, spatial_size=self.SPATIAL_SIZE, dtype=dtype, device=device)
+        check_kernel(
+            F.resize_bounding_box,
+            bounding_box,
+            spatial_size=bounding_box.spatial_size,
+            size=size,
+            **max_size_kwarg,
+            check_scripted_vs_eager=not isinstance(size, int),
+        )
 
     @pytest.mark.parametrize(
-        ("kernel", "datapoint_type"),
+        "dtype_and_make_mask", [(torch.uint8, make_segmentation_mask), (torch.bool, make_detection_mask)]
+    )
+    def test_kernel_mask(self, dtype_and_make_mask):
+        dtype, make_mask = dtype_and_make_mask
+        mask = make_mask(size=self.SPATIAL_SIZE, dtype=dtype)
+        check_kernel(F.resize_mask, mask, size=self.SIZES[-1])
+
+    def test_kernel_video(self):
+        video = make_video(size=self.SPATIAL_SIZE)
+        check_kernel(F.resize_video, video, size=self.SIZES[-1])
+
+    def _make_dispatcher_input(self, kernel):
+        if kernel is F.resize_image_tensor:
+            input = make_image(size=self.SPATIAL_SIZE)
+        elif kernel is F.resize_bounding_box:
+            input = make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=self.SPATIAL_SIZE)
+        elif kernel is F.resize_mask:
+            input = make_segmentation_mask(size=self.SPATIAL_SIZE)
+        elif kernel is F.resize_video:
+            input = make_video(size=self.SPATIAL_SIZE)
+
+        return input
+
+    @pytest.mark.parametrize("kernel", [F.resize_image_tensor, F.resize_bounding_box, F.resize_mask, F.resize_video])
+    @pytest.mark.parametrize("size", SIZES)
+    def test_dispatcher(self, kernel, size):
+        check_dispatcher(
+            F.resize,
+            kernel,
+            self._make_dispatcher_input(kernel),
+            size=size,
+            check_scripted_smoke=not isinstance(size, int),
+        )
+
+    @pytest.mark.parametrize(
+        ("datapoint_type", "kernel"),
         [
-            (F.resize_image_tensor, datapoints.Image),
-            (F.resize_bounding_box, datapoints.BoundingBox),
+            (datapoints.Image, F.resize_image_tensor),
+            (datapoints.BoundingBox, F.resize_bounding_box),
+            (datapoints.Mask, F.resize_mask),
+            (datapoints.Video, F.resize_video),
         ],
     )
     def test_dispatcher_signature(self, kernel, datapoint_type):
