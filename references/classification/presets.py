@@ -16,8 +16,16 @@ class ClassificationPresetTrain:
         ra_magnitude=9,
         augmix_severity=3,
         random_erase_prob=0.0,
+        backend="pil",
     ):
-        trans = [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+        trans = []
+        backend = backend.lower()
+        if backend == "tensor":
+            trans.append(transforms.PILToTensor())
+        elif backend != "pil":
+            raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
+
+        trans.append(transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True))
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(hflip_prob))
         if auto_augment_policy is not None:
@@ -30,9 +38,12 @@ class ClassificationPresetTrain:
             else:
                 aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
                 trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
+
+        if backend == "pil":
+            trans.append(transforms.PILToTensor())
+
         trans.extend(
             [
-                transforms.PILToTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize(mean=mean, std=std),
             ]
@@ -55,17 +66,30 @@ class ClassificationPresetEval:
         mean=(0.485, 0.456, 0.406),
         std=(0.229, 0.224, 0.225),
         interpolation=InterpolationMode.BILINEAR,
+        backend="pil",
     ):
+        trans = []
 
-        self.transforms = transforms.Compose(
-            [
-                transforms.Resize(resize_size, interpolation=interpolation),
-                transforms.CenterCrop(crop_size),
-                transforms.PILToTensor(),
-                transforms.ConvertImageDtype(torch.float),
-                transforms.Normalize(mean=mean, std=std),
-            ]
-        )
+        backend = backend.lower()
+        if backend == "tensor":
+            trans.append(transforms.PILToTensor())
+        else:
+            raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
+
+        trans += [
+            transforms.Resize(resize_size, interpolation=interpolation, antialias=True),
+            transforms.CenterCrop(crop_size),
+        ]
+
+        if backend == "pil":
+            trans.append(transforms.PILToTensor())
+
+        trans += [
+            transforms.ConvertImageDtype(torch.float),
+            transforms.Normalize(mean=mean, std=std),
+        ]
+
+        self.transforms = transforms.Compose(trans)
 
     def __call__(self, img):
         return self.transforms(img)
