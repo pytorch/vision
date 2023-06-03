@@ -29,8 +29,10 @@ SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 def disable_tf32():
     previous = torch.backends.cudnn.allow_tf32
     torch.backends.cudnn.allow_tf32 = False
-    yield
-    torch.backends.cudnn.allow_tf32 = previous
+    try:
+        yield
+    finally:
+        torch.backends.cudnn.allow_tf32 = previous
 
 
 def list_model_fns(module):
