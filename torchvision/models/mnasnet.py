@@ -95,7 +95,7 @@ def _get_depths(alpha: float) -> List[int]:
 
 
 class MNASNet(torch.nn.Module):
-    """MNASNet, as described in https://arxiv.org/pdf/1807.11626.pdf. This
+    """MNASNet, as described in https://arxiv.org/abs/1807.11626. This
     implements the B1 variant of the model.
     >>> model = MNASNet(1.0, num_classes=1000)
     >>> x = torch.rand(1, 3, 224, 224)
@@ -327,7 +327,7 @@ def _mnasnet(alpha: float, weights: Optional[WeightsEnum], progress: bool, **kwa
 def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     """MNASNet with depth multiplier of 0.5 from
     `MnasNet: Platform-Aware Neural Architecture Search for Mobile
-    <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
+    <https://arxiv.org/abs/1807.11626>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.MNASNet0_5_Weights`, optional): The
@@ -355,7 +355,7 @@ def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool =
 def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     """MNASNet with depth multiplier of 0.75 from
     `MnasNet: Platform-Aware Neural Architecture Search for Mobile
-    <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
+    <https://arxiv.org/abs/1807.11626>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.MNASNet0_75_Weights`, optional): The
@@ -383,7 +383,7 @@ def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool
 def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     """MNASNet with depth multiplier of 1.0 from
     `MnasNet: Platform-Aware Neural Architecture Search for Mobile
-    <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
+    <https://arxiv.org/abs/1807.11626>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.MNASNet1_0_Weights`, optional): The
@@ -411,7 +411,7 @@ def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool =
 def mnasnet1_3(*, weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     """MNASNet with depth multiplier of 1.3 from
     `MnasNet: Platform-Aware Neural Architecture Search for Mobile
-    <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
+    <https://arxiv.org/abs/1807.11626>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.MNASNet1_3_Weights`, optional): The
