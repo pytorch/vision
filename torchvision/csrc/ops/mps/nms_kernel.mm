@@ -1,11 +1,17 @@
-//#include <ATen/mps/MPSProfiler.h>
+#include <ATen/mps/MPSProfiler.h>
 #include <ATen/native/mps/OperationUtils.h>
 #include "vision_kernels.h"
+
+#include <iostream>
+#include <cmath>
 
 namespace vision {
 namespace ops {
 
 namespace {
+
+// This should be in sync with the one in metal kernel.
+int const threadsPerBlock = sizeof(uint64_t) * 8;
 
 at::Tensor nms_kernel(
     const at::Tensor& dets,
@@ -49,12 +55,9 @@ at::Tensor nms_kernel(
   int dets_num = dets.size(0);
   float iou_threshold_f = static_cast<float>(iou_threshold);
 
-  //TODO: ceil_div
-  //const int col_blocks = ceil_div(dets_num, threadsPerBlock);
-  //at::Tensor mask =
-  //  at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
+  const int col_blocks = (dets_num + threadsPerBlock - 1) / threadsPerBlock;
   at::Tensor mask =
-    at::empty({dets_num}, dets.options().dtype(at::kLong));
+    at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
 
   id<MTLBuffer> inputBuffer = getMTLBufferStorage(dets_sorted);
   id<MTLBuffer> outputBuffer = getMTLBufferStorage(mask);
@@ -65,16 +68,14 @@ at::Tensor nms_kernel(
   const uint32_t numThreads = dets_num;
   dispatch_sync(mpsStream->queue(), ^() {
     @autoreleasepool {
-      NSError* error = nil;
       id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
-      MTLSize gridSize = MTLSizeMake(numThreads, 1, 1);
-
+      MTLSize threadgroupsPerGrid = MTLSizeMake(col_blocks, col_blocks, 1);
 
       const std::string kernel = "nms_" + scalarToMetalTypeString(dets_sorted.scalar_type());
       id<MTLComputePipelineState> binaryPSO = mps::binaryPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      //getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {input, other});
+      getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {dets, scores});
 
       [computeEncoder setComputePipelineState:binaryPSO];
       [computeEncoder setBuffer:inputBuffer offset:dets_sorted.storage_offset() * dets_sorted.element_size() atIndex:0];
@@ -82,18 +83,53 @@ at::Tensor nms_kernel(
       [computeEncoder setBytes:&dets_num length:sizeof(int) atIndex:2];
       [computeEncoder setBytes:&iou_threshold_f length:sizeof(float) atIndex:3];
 
+      // A threadGroup is equivalent to a cuda's block.
       NSUInteger tgSize = binaryPSO.maxTotalThreadsPerThreadgroup;
-      if (tgSize > numThreads) {
-        tgSize = numThreads;
+      if (tgSize > threadsPerBlock) {
+        tgSize = threadsPerBlock;
       }
 
       MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
-      [computeEncoder dispatchThreads:gridSize threadsPerThreadgroup:threadGroupSize];
+      [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
 
-      //getMPSProfiler().endProfileKernel(binaryPSO);
+      getMPSProfiler().endProfileKernel(binaryPSO);
     }
   });
-  return mask;
+
+  // out[det] = 
+  int64_t num_to_keep = 0;
+
+  at::Tensor mask_cpu = mask.to(at::kCPU); // tid or 
+  unsigned long long* mask_host =
+      (unsigned long long*)mask_cpu.data_ptr<int64_t>();
+
+  std::vector<unsigned long long> remv(col_blocks);
+  memset(&remv[0], 0, sizeof(unsigned long long) * col_blocks);
+  
+  at::Tensor keep =
+      at::empty({dets_num}, dets.options().dtype(at::kLong).device(at::kCPU));
+  int64_t* keep_out = keep.data_ptr<int64_t>();  
+
+  for (int i = 0; i < dets_num; i++) {
+    int nblock = i / threadsPerBlock;
+    int inblock = i % threadsPerBlock;
+
+    //std::cout << "remv:" << remv[nblock] << "cur:" << (1ULL << i) << std::endl;
+    if (!(remv[nblock] & (1ULL << inblock))) {
+      keep_out[num_to_keep++] = i;
+      unsigned long long* p = mask_host + i * col_blocks;
+      for (int j = nblock; j < col_blocks; j++) {
+        remv[j] |= p[j];
+      }
+    } else {
+      //std::cout << "SKIP at:" << i << std::endl;
+    }
+  }
+  //std::cout << "NTK: " << num_to_keep << std::endl;
+  //std::cout << "SUM mask: " << mask_cpu.sum() << std::endl;
+  return order_t.index(
+      {keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)
+           .to(order_t.device(), keep.scalar_type())});
 
 }
 

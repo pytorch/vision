@@ -10,11 +10,18 @@ static const char* METAL_VISION = R"VISION_METAL(
 #include <metal_stdlib>
 using namespace metal;
 
+constant uint threadsPerBlock = sizeof(uint64_t) * 8;
+
+template <typename T>
+inline T ceil_div(T n, T m) {
+  return (n + m - 1) / m;
+}
+
 template <typename T, typename scalar_t>
-bool IoU(
+bool inline IoU(
   constant T & a,
-  constant T & b,
-  scalar_t threshold) {
+  threadgroup T & b,
+  const float threshold) {
   auto xx1 = max(a.x, b.x);
   auto yy1 = max(a.y, b.y);
   auto xx2 = min(a.z, b.z);
@@ -28,29 +35,54 @@ bool IoU(
 }
 
 template<typename T, typename scalar_t>
-kernel void nms(constant  T       * input         [[buffer(0)]],
-                device    int64_t * out           [[buffer(1)]],
-                constant  int     & dets_num      [[buffer(2)]],
+kernel void nms(constant  T       * dev_boxes         [[buffer(0)]],
+                device    uint64_t * mask           [[buffer(1)]],
+                constant  int     & n_boxes      [[buffer(2)]],
                 constant  float   & iou_threshold [[buffer(3)]],
-                uint      tid  [[thread_position_in_grid]]) {
-  int t = 0;
-  for (int i = tid + 1; i < dets_num; i++){
-    if (IoU<T, scalar_t>(input[tid], input[i], iou_threshold)){
-      t |= static_cast<int>(1) << i;
+                uint2     tgid   [[threadgroup_position_in_grid]],
+                uint2     tid2   [[thread_position_in_threadgroup]]) {
+  
+  const uint row_start = tgid.y;
+  const uint col_start = tgid.x;
+  const uint tid = tid2.x;
+  const uint row_size =
+      min(n_boxes - row_start * threadsPerBlock, threadsPerBlock);
+  const uint col_size =
+      min(n_boxes - col_start * threadsPerBlock, threadsPerBlock);
+
+  threadgroup T block_boxes[threadsPerBlock];
+  block_boxes[tid] = dev_boxes[threadsPerBlock * col_start + tid];
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+
+  if (tid < row_size) {
+    const uint cur_box_idx = threadsPerBlock * row_start + tid;
+    uint64_t t = 0;
+    uint start = 0;
+    
+    if (row_start == col_start) {
+      start = tid + 1;
     }
+
+    for (uint i = start; i < col_size; i++){
+      if (IoU<T, scalar_t>(dev_boxes[cur_box_idx], block_boxes[i], iou_threshold)){
+        t |= static_cast<uint64_t>(1) << i;  // discard 1 keep 0
+      }
+    }
+    const uint col_blocks = ceil_div(static_cast<uint>(n_boxes), threadsPerBlock);
+    mask[cur_box_idx * col_blocks + col_start] = t;
   }
-  out[tid] = static_cast<int64_t>(t);
 }
 
 #define REGISTER_NMS_OP(DTYPE)                        \
-template                                               \
+template                                              \
 [[host_name("nms_" #DTYPE)]]                          \
-kernel void nms<DTYPE ## 4, DTYPE>(                               \
-  constant DTYPE ## 4   * input         [[buffer(0)]],   \
-  device   int64_t  * out           [[buffer(1)]],   \
-  constant int      & dets_num      [[buffer(2)]],   \
-  constant float    & iou_threshold [[buffer(3)]],   \
-  uint tid [[thread_position_in_grid]]);
+kernel void nms<DTYPE ## 4, DTYPE>(                   \
+  constant DTYPE ## 4 * dev_boxes        [[buffer(0)]],   \
+  device   uint64_t  * mask           [[buffer(1)]],   \
+  constant int      & n_boxes        [[buffer(2)]],   \
+  constant float    & iou_threshold  [[buffer(3)]],   \
+  uint2     tgid   [[threadgroup_position_in_grid]],  \
+  uint2     tid2   [[thread_position_in_threadgroup]]);
 
 REGISTER_NMS_OP(float);
 REGISTER_NMS_OP(half);

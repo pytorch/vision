@@ -10,7 +10,7 @@ import pytest
 import torch
 import torch.fx
 import torch.nn.functional as F
-from common_utils import assert_equal, cpu_and_gpu, needs_cuda
+from common_utils import assert_equal, cpu_and_gpu, needs_cuda, needs_mps
 from PIL import Image
 from torch import nn, Tensor
 from torch.autograd import gradcheck
@@ -722,6 +722,24 @@ class TestNMS:
             is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()], rtol=tol, atol=tol)
         assert is_eq, err_msg.format(iou)
 
+    @needs_mps
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    def test_nms_mps(self, iou, dtype=torch.float32):
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        err_msg = "NMS incompatible between CPU and MPS for IoU={}"
+
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        r_cpu = ops.nms(boxes, scores, iou)
+        r_mps = ops.nms(boxes.to("mps"), scores.to("mps"), iou)
+
+        print(r_cpu.size(), r_mps.size())
+        is_eq = torch.allclose(r_cpu, r_mps.cpu())
+        if not is_eq:
+            # if the indices are not the same, ensure that it's because the scores
+            # are duplicate
+            is_eq = torch.allclose(scores[r_cpu], scores[r_mps.cpu()], rtol=tol, atol=tol)
+        assert is_eq, err_msg.format(iou)
+
     @needs_cuda
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("dtype", (torch.float, torch.half))
@@ -739,6 +757,23 @@ class TestNMS:
             ]
         ).cuda()
         scores = torch.tensor([0.6370, 0.7569, 0.3966]).cuda()
+
+        iou_thres = 0.2
+        keep32 = ops.nms(boxes, scores, iou_thres)
+        keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
+        assert_equal(keep32, keep16)
+
+    @needs_mps
+    @pytest.mark.xfail
+    def test_nms_mps_float16(self):
+        boxes = torch.tensor(
+            [
+                [285.3538, 185.5758, 1193.5110, 851.4551],
+                [285.1472, 188.7374, 1192.4984, 851.0669],
+                [279.2440, 197.9812, 1189.4746, 849.2019],
+            ]
+        ).to("mps")
+        scores = torch.tensor([0.6370, 0.7569, 0.3966]).to("mps")
 
         iou_thres = 0.2
         keep32 = ops.nms(boxes, scores, iou_thres)
