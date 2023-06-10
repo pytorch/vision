@@ -10,7 +10,7 @@ import pytest
 import torch
 import torch.fx
 import torch.nn.functional as F
-from common_utils import assert_equal, cpu_and_gpu, needs_cuda, needs_mps
+from common_utils import assert_equal, cpu_and_gpu, cpu_and_gpu_and_mps, needs_cuda, needs_mps
 from PIL import Image
 from torch import nn, Tensor
 from torch.autograd import gradcheck
@@ -96,12 +96,14 @@ class PoolWrapper(nn.Module):
 
 class RoIOpTester(ABC):
     dtype = torch.float64
+    mps_dtype = torch.float32
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     def test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, deterministic=False, **kwargs):
-        x_dtype = self.dtype if x_dtype is None else x_dtype
-        rois_dtype = self.dtype if rois_dtype is None else rois_dtype
+        dtype = self.mps_dtype if device == "mps" else self.dtype
+        x_dtype = dtype if x_dtype is None else x_dtype
+        rois_dtype = dtype if rois_dtype is None else rois_dtype
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS operations.
         n_channels = 2 * (pool_size**2)
@@ -120,7 +122,7 @@ class RoIOpTester(ABC):
         # the following should be true whether we're running an autocast test or not.
         assert y.dtype == x.dtype
         gt_y = self.expected_fn(
-            x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, device=device, dtype=self.dtype, **kwargs
+            x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, device=device, dtype=dtype, **kwargs
         )
 
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
@@ -418,7 +420,7 @@ class TestRoIAlign(RoIOpTester):
         self._helper_boxes_shape(ops.roi_align)
 
     @pytest.mark.parametrize("aligned", (True, False))
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
     def test_forward(self, device, contiguous, deterministic, aligned, x_dtype=None, rois_dtype=None):
@@ -450,7 +452,7 @@ class TestRoIAlign(RoIOpTester):
             )
 
     @pytest.mark.parametrize("seed", range(10))
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
     def test_backward(self, seed, device, contiguous, deterministic):

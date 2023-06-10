@@ -127,6 +127,8 @@ def cpu_and_gpu():
 
     return ("cpu", pytest.param("cuda", marks=pytest.mark.needs_cuda))
 
+def cpu_and_gpu_and_mps():
+    return cpu_and_gpu() + (pytest.param("mps", marks=pytest.mark.needs_mps),)
 
 def needs_cuda(test_func):
     import pytest  # noqa
