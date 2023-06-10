@@ -69,11 +69,10 @@ class ClassificationPresetEval:
         backend="pil",
     ):
         trans = []
-
         backend = backend.lower()
         if backend == "tensor":
             trans.append(transforms.PILToTensor())
-        else:
+        elif backend != "pil":
             raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
 
         trans += [
