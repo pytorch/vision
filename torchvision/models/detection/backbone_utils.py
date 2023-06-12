@@ -158,7 +158,7 @@ def _validate_trainable_layers(
     if not is_trained:
         if trainable_backbone_layers is not None:
             warnings.warn(
-                "Changing trainable_backbone_layers has not effect if "
+                "Changing trainable_backbone_layers has no effect if "
                 "neither pretrained nor pretrained_backbone have been set to True, "
                 f"falling back to trainable_backbone_layers={max_value} so that all layers are trainable"
             )
