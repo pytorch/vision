@@ -79,20 +79,20 @@ class KernelInfo(InfoBase):
         self.logs_usage = logs_usage
 
 
-def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=False):
+def pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=False):
     return dict(atol=uint8_atol / 255 * get_max_value(dtype), rtol=0, mae=mae)
 
 
 def cuda_vs_cpu_pixel_difference(atol=1):
     return {
-        (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): _pixel_difference_closeness_kwargs(atol, dtype=dtype)
+        (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): pixel_difference_closeness_kwargs(atol, dtype=dtype)
         for dtype in [torch.uint8, torch.float32]
     }
 
 
 def pil_reference_pixel_difference(atol=1, mae=False):
     return {
-        (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): _pixel_difference_closeness_kwargs(
+        (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): pixel_difference_closeness_kwargs(
             atol, mae=mae
         )
     }
@@ -104,7 +104,7 @@ def float32_vs_uint8_pixel_difference(atol=1, mae=False):
             ("TestKernels", "test_float32_vs_uint8"),
             torch.float32,
             "cpu",
-        ): _pixel_difference_closeness_kwargs(atol, dtype=torch.float32, mae=mae)
+        ): pixel_difference_closeness_kwargs(atol, dtype=torch.float32, mae=mae)
     }
 
 
@@ -320,6 +320,9 @@ def sample_inputs_resize_video():
 def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
+
+    if (old_height, old_width) == (new_height, new_width):
+        return bounding_box, (old_height, old_width)
 
     affine_matrix = np.array(
         [
@@ -1566,7 +1569,7 @@ def reference_inputs_equalize_image_tensor():
     # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
     # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
     # the information gain is low if we already provide something really close to the expected value.
-    def make_uniform_band_image(shape, dtype, device, *, low_factor, high_factor):
+    def make_uniform_band_image(shape, dtype, device, *, low_factor, high_factor, memory_format):
         if dtype.is_floating_point:
             low = low_factor
             high = high_factor
@@ -1574,23 +1577,27 @@ def reference_inputs_equalize_image_tensor():
             max_value = torch.iinfo(dtype).max
             low = int(low_factor * max_value)
             high = int(high_factor * max_value)
-        return torch.testing.make_tensor(shape, dtype=dtype, device=device, low=low, high=high)
+        return torch.testing.make_tensor(shape, dtype=dtype, device=device, low=low, high=high).to(
+            memory_format=memory_format, copy=True
+        )
 
-    def make_beta_distributed_image(shape, dtype, device, *, alpha, beta):
+    def make_beta_distributed_image(shape, dtype, device, *, alpha, beta, memory_format):
         image = torch.distributions.Beta(alpha, beta).sample(shape)
         if not dtype.is_floating_point:
             image.mul_(torch.iinfo(dtype).max).round_()
-        return image.to(dtype=dtype, device=device)
+        return image.to(dtype=dtype, device=device, memory_format=memory_format, copy=True)
 
     spatial_size = (256, 256)
     for dtype, color_space, fn in itertools.product(
         [torch.uint8],
         ["GRAY", "RGB"],
         [
-            lambda shape, dtype, device: torch.zeros(shape, dtype=dtype, device=device),
-            lambda shape, dtype, device: torch.full(
-                shape, 1.0 if dtype.is_floating_point else torch.iinfo(dtype).max, dtype=dtype, device=device
+            lambda shape, dtype, device, memory_format: torch.zeros(shape, dtype=dtype, device=device).to(
+                memory_format=memory_format, copy=True
             ),
+            lambda shape, dtype, device, memory_format: torch.full(
+                shape, 1.0 if dtype.is_floating_point else torch.iinfo(dtype).max, dtype=dtype, device=device
+            ).to(memory_format=memory_format, copy=True),
             *[
                 functools.partial(make_uniform_band_image, low_factor=low_factor, high_factor=high_factor)
                 for low_factor, high_factor in [
@@ -1925,9 +1932,6 @@ def sample_inputs_adjust_contrast_video():
         yield ArgsKwargs(video_loader, contrast_factor=_ADJUST_CONTRAST_FACTORS[0])
 
 
-# TODO: this is just temporary to make CI green for release. We should add proper tolerances after
-skip_adjust_contrast_jit = TestMark(("TestKernels", "test_scripted_vs_eager"), pytest.mark.skip(reason="Test is flaky"))
-
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -1941,14 +1945,16 @@ KERNEL_INFOS.extend(
                 **pil_reference_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(2),
                 **cuda_vs_cpu_pixel_difference(),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): pixel_difference_closeness_kwargs(1),
             },
-            test_marks=[skip_adjust_contrast_jit],
         ),
         KernelInfo(
             F.adjust_contrast_video,
             sample_inputs_fn=sample_inputs_adjust_contrast_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
-            test_marks=[skip_adjust_contrast_jit],
+            closeness_kwargs={
+                **cuda_vs_cpu_pixel_difference(),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): pixel_difference_closeness_kwargs(1),
+            },
         ),
     ]
 )
@@ -2064,9 +2070,6 @@ def sample_inputs_adjust_saturation_video():
         yield ArgsKwargs(video_loader, saturation_factor=_ADJUST_SATURATION_FACTORS[0])
 
 
-# TODO: this is just temporary to make CI green for release. We should add proper tolerances after
-skip_adjust_saturation_cuda = TestMark(("TestKernels", "test_cuda_vs_cpu"), pytest.mark.skip(reason="Test is flaky"))
-
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -2079,13 +2082,13 @@ KERNEL_INFOS.extend(
             closeness_kwargs={
                 **pil_reference_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(2),
+                **cuda_vs_cpu_pixel_difference(),
             },
-            test_marks=[skip_adjust_saturation_cuda],
         ),
         KernelInfo(
             F.adjust_saturation_video,
             sample_inputs_fn=sample_inputs_adjust_saturation_video,
-            test_marks=[skip_adjust_saturation_cuda],
+            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
         ),
     ]
 )

@@ -1,4 +1,4 @@
-name: Tests on Linux
+name: Tests
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  unittests:
+  unittests-linux:
     strategy:
       matrix:
         python-version:
@@ -24,7 +24,7 @@ jobs:
           - python-version: 3.8
             runner: linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
-            gpu-arch-version: "11.7"
+            gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
@@ -40,6 +40,67 @@ jobs:
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
+        ./.github/scripts/unittest.sh
+        
+  unittests-macos:
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+        runner: ["macos-12"]
+        include:
+          - python-version: "3.8"
+            runner: macos-m1-12
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    with:
+      repository: pytorch/vision
+      # We need an increased timeout here, since the macos-12 runner is the free one from GH
+      # and needs roughly 2 hours to just run the test suite
+      timeout: 240
+      runner: ${{ matrix.runner }}
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=cpu
+        export GPU_ARCH_VERSION=''
+
+        ./.github/scripts/unittest.sh
+
+  unittests-windows:
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+        runner: ["windows.4xlarge"]
+        gpu-arch-type: ["cpu"]
+        include:
+          - python-version: "3.8"
+            runner: windows.g5.4xlarge.nvidia.gpu
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.8"
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    with:
+      repository: pytorch/vision
+      runner: ${{ matrix.runner }}
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      timeout: 120
+      script: |
+        set -euxo pipefail
+
+        export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        
         ./.github/scripts/unittest.sh
 
   onnx:

@@ -508,7 +508,7 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
 class SwinTransformer(nn.Module):
     """
     Implements Swin Transformer from the `"Swin Transformer: Hierarchical Vision Transformer using
-    Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_ paper.
+    Shifted Windows" <https://arxiv.org/abs/2103.14030>`_ paper.
     Args:
         patch_size (List[int]): Patch size.
         embed_dim (int): Patch embedding dimension.
@@ -639,7 +639,7 @@ def _swin_transformer(
     )
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
     return model
 
@@ -804,7 +804,7 @@ class Swin_V2_B_Weights(WeightsEnum):
 def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
-    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
+    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/abs/2103.14030>`_.
 
     Args:
         weights (:class:`~torchvision.models.Swin_T_Weights`, optional): The
@@ -842,7 +842,7 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, *
 def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_small architecture from
-    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
+    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/abs/2103.14030>`_.
 
     Args:
         weights (:class:`~torchvision.models.Swin_S_Weights`, optional): The
@@ -880,7 +880,7 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, *
 def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_base architecture from
-    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
+    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/abs/2103.14030>`_.
 
     Args:
         weights (:class:`~torchvision.models.Swin_B_Weights`, optional): The
@@ -918,7 +918,7 @@ def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, *
 def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_v2_tiny architecture from
-    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
+    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/abs/2111.09883>`_.
 
     Args:
         weights (:class:`~torchvision.models.Swin_V2_T_Weights`, optional): The
@@ -958,7 +958,7 @@ def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = T
 def swin_v2_s(*, weights: Optional[Swin_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_v2_small architecture from
-    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
+    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/abs/2111.09883>`_.
 
     Args:
         weights (:class:`~torchvision.models.Swin_V2_S_Weights`, optional): The
@@ -998,7 +998,7 @@ def swin_v2_s(*, weights: Optional[Swin_V2_S_Weights] = None, progress: bool = T
 def swin_v2_b(*, weights: Optional[Swin_V2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_v2_base architecture from
-    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
+    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/abs/2111.09883>`_.
 
     Args:
         weights (:class:`~torchvision.models.Swin_V2_B_Weights`, optional): The

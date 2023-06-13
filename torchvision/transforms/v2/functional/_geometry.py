@@ -176,14 +176,44 @@ def resize_image_tensor(
         antialias = False
 
     shape = image.shape
+    numel = image.numel()
     num_channels, old_height, old_width = shape[-3:]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
 
-    if image.numel() > 0:
+    if (new_height, new_width) == (old_height, old_width):
+        return image
+    elif numel > 0:
         image = image.reshape(-1, num_channels, old_height, old_width)
 
         dtype = image.dtype
-        need_cast = dtype not in (torch.float32, torch.float64)
+        acceptable_dtypes = [torch.float32, torch.float64]
+        if interpolation == InterpolationMode.NEAREST or interpolation == InterpolationMode.NEAREST_EXACT:
+            # uint8 dtype can be included for cpu and cuda input if nearest mode
+            acceptable_dtypes.append(torch.uint8)
+        elif (
+            interpolation == InterpolationMode.BILINEAR
+            and image.device.type == "cpu"
+            and "AVX2" in torch.backends.cpu.get_cpu_capability()
+        ):
+            # uint8 dtype support for bilinear mode is limited to cpu and
+            # according to our benchmarks non-AVX CPUs should prefer u8->f32->interpolate->u8 path
+            acceptable_dtypes.append(torch.uint8)
+
+        strides = image.stride()
+        if image.is_contiguous(memory_format=torch.channels_last) and image.shape[0] == 1 and numel != strides[0]:
+            # There is a weird behaviour in torch core where the output tensor of `interpolate()` can be allocated as
+            # contiguous even though the input is un-ambiguously channels_last (https://github.com/pytorch/pytorch/issues/68430).
+            # In particular this happens for the typical torchvision use-case of single CHW images where we fake the batch dim
+            # to become 1CHW. Below, we restride those tensors to trick torch core into properly allocating the output as
+            # channels_last, thus preserving the memory format of the input. This is not just for format consistency:
+            # for uint8 bilinear images, this also avoids an extra copy (re-packing) of the output and saves time.
+            # TODO: when https://github.com/pytorch/pytorch/issues/68430 is fixed (possibly by https://github.com/pytorch/pytorch/pull/100373),
+            # we should be able to remove this hack.
+            new_strides = list(strides)
+            new_strides[0] = numel
+            image = image.as_strided((1, num_channels, old_height, old_width), new_strides)
+
+        need_cast = dtype not in acceptable_dtypes
         if need_cast:
             image = image.to(dtype=torch.float32)
 
@@ -210,9 +240,19 @@ def resize_image_pil(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
+    old_height, old_width = image.height, image.width
+    new_height, new_width = _compute_resized_output_size(
+        (old_height, old_width),
+        size=size,  # type: ignore[arg-type]
+        max_size=max_size,
+    )
+
     interpolation = _check_interpolation(interpolation)
-    size = _compute_resized_output_size(image.size[::-1], size=size, max_size=max_size)  # type: ignore[arg-type]
-    return _FP.resize(image, size, interpolation=pil_modes_mapping[interpolation])
+
+    if (new_height, new_width) == (old_height, old_width):
+        return image
+
+    return image.resize((new_width, new_height), resample=pil_modes_mapping[interpolation])
 
 
 def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
@@ -235,6 +275,10 @@ def resize_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = spatial_size
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
+
+    if (new_height, new_width) == (old_height, old_width):
+        return bounding_box, spatial_size
+
     w_ratio = new_width / old_width
     h_ratio = new_height / old_height
     ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)

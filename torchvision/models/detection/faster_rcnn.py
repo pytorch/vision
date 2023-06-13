@@ -571,7 +571,7 @@ def fasterrcnn_resnet50_fpn(
     model = FasterRCNN(backbone, num_classes=num_classes, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
         if weights == FasterRCNN_ResNet50_FPN_Weights.COCO_V1:
             overwrite_eps(model, 0.0)
 
@@ -653,7 +653,7 @@ def fasterrcnn_resnet50_fpn_v2(
     )
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
     return model
 
@@ -694,7 +694,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
     )
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
     return model
 

@@ -2,7 +2,7 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <torch/library.h>
-#include <ATen/cuda/Atomic.cuh>
+#include <ATen/native/cuda/KernelUtils.cuh>
 
 #include "cuda_helpers.h"
 
@@ -218,7 +218,8 @@ __global__ void roi_align_backward_kernel_impl(
     int n_stride,
     int c_stride,
     int h_stride,
-    int w_stride) {
+    int w_stride,
+    const int memory_span) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -247,12 +248,9 @@ __global__ void roi_align_backward_kernel_impl(
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    T* offset_grad_input =
-        grad_input + ((roi_batch_ind * channels + c) * height * width);
-
     // We need to index the gradient using the tensor strides to access the
     // correct values.
-    int output_offset = n * n_stride + c * c_stride;
+    const int output_offset = n * n_stride + c * c_stride;
     const T* offset_grad_output = grad_output + output_offset;
     const T grad_output_this_bin =
         offset_grad_output[ph * h_stride + pw * w_stride];
@@ -266,6 +264,8 @@ __global__ void roi_align_backward_kernel_impl(
 
     // We do average (integral) pooling inside a bin
     const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
+
+    const int input_offset = (roi_batch_ind * channels + c) * height * width;
 
     for (int iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
     {
@@ -301,14 +301,30 @@ __global__ void roi_align_backward_kernel_impl(
         T g4 = grad_output_this_bin * w4 / count;
 
         if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
-          gpuAtomicAdd(
-              offset_grad_input + y_low * width + x_low, static_cast<T>(g1));
-          gpuAtomicAdd(
-              offset_grad_input + y_low * width + x_high, static_cast<T>(g2));
-          gpuAtomicAdd(
-              offset_grad_input + y_high * width + x_low, static_cast<T>(g3));
-          gpuAtomicAdd(
-              offset_grad_input + y_high * width + x_high, static_cast<T>(g4));
+          at::native::fastAtomicAdd(
+              grad_input,
+              input_offset + y_low * width + x_low,
+              memory_span,
+              static_cast<T>(g1),
+              true);
+          at::native::fastAtomicAdd(
+              grad_input,
+              input_offset + y_low * width + x_high,
+              memory_span,
+              static_cast<T>(g2),
+              true);
+          at::native::fastAtomicAdd(
+              grad_input,
+              input_offset + y_high * width + x_low,
+              memory_span,
+              static_cast<T>(g3),
+              true);
+          at::native::fastAtomicAdd(
+              grad_input,
+              input_offset + y_high * width + x_high,
+              memory_span,
+              static_cast<T>(g4),
+              true);
         } // if
       } // ix
     } // iy
@@ -421,6 +437,8 @@ at::Tensor roi_align_backward_kernel(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
+  at::globalContext().alertNotDeterministic("roi_align_backward_kernel");
+
   auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "roi_align_backward_kernel", [&] {
@@ -440,7 +458,8 @@ at::Tensor roi_align_backward_kernel(
             n_stride,
             c_stride,
             h_stride,
-            w_stride);
+            w_stride,
+            grad_input.numel());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
