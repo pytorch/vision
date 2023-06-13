@@ -98,8 +98,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        closeness_kwargs=dict(rtol=0, atol=1),
+        # Such a high atol is needed for bicubic mode
+        closeness_kwargs=dict(rtol=0, atol=32),
     ),
     ConsistencyConfig(
         v2_transforms.CenterCrop,
@@ -315,8 +315,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        closeness_kwargs=dict(rtol=0, atol=1),
+        # Such a high atol is needed for bicubic mode
+        closeness_kwargs=dict(rtol=0, atol=30),
     ),
     ConsistencyConfig(
         v2_transforms.RandomErasing,

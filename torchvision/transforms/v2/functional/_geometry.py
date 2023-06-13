@@ -190,14 +190,13 @@ def resize_image_tensor(
         if interpolation == InterpolationMode.NEAREST or interpolation == InterpolationMode.NEAREST_EXACT:
             # uint8 dtype can be included for cpu and cuda input if nearest mode
             acceptable_dtypes.append(torch.uint8)
-        elif (
-            interpolation == InterpolationMode.BILINEAR
-            and image.device.type == "cpu"
-            and "AVX2" in torch.backends.cpu.get_cpu_capability()
-        ):
-            # uint8 dtype support for bilinear mode is limited to cpu and
-            # according to our benchmarks non-AVX CPUs should prefer u8->f32->interpolate->u8 path
-            acceptable_dtypes.append(torch.uint8)
+        elif image.device.type == "cpu":
+            # uint8 dtype support for bilinear and bicubic is limited to cpu and
+            # according to our benchmarks, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
+            if (interpolation == InterpolationMode.BILINEAR and "AVX2" in torch.backends.cpu.get_cpu_capability()) or (
+                interpolation == InterpolationMode.BICUBIC
+            ):
+                acceptable_dtypes.append(torch.uint8)
 
         strides = image.stride()
         if image.is_contiguous(memory_format=torch.channels_last) and image.shape[0] == 1 and numel != strides[0]:
@@ -227,6 +226,7 @@ def resize_image_tensor(
 
         if need_cast:
             if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+                # This path is hit on non-AVX archs, or on GPU.
                 image = image.clamp_(min=0, max=255)
             image = image.round_().to(dtype=dtype)
 
