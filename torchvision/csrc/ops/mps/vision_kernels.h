@@ -491,6 +491,96 @@ kernel void roi_align_backward<DTYPE>(                   \
 REGISTER_ROI_ALIGN_BACKWARD_OP(float);
 REGISTER_ROI_ALIGN_BACKWARD_OP(half);
 
+template<typename T>
+kernel void roi_pool(
+    constant T       * input         [[buffer(0)]],
+    constant T       * rois         [[buffer(1)]],
+    device   T       * output        [[buffer(2)]],
+    device   int64_t * argmax        [[buffer(3)]],
+    constant int64_t & output_size  [[buffer(4)]],
+    constant int64_t & channels  [[buffer(5)]],
+    constant int64_t & height  [[buffer(6)]],
+    constant int64_t & width  [[buffer(7)]],
+    constant int64_t & pooled_height  [[buffer(8)]],
+    constant int64_t & pooled_width  [[buffer(9)]],
+    constant float   & spatial_scale  [[buffer(10)]],
+    uint2     tgid   [[threadgroup_position_in_grid]],
+    uint2     tptg   [[threads_per_threadgroup]],
+    uint2     tid2   [[thread_position_in_threadgroup]]){
+  MPS_1D_KERNEL_LOOP(index, output_size, 1) {
+    // (n, c, ph, pw) is an element in the pooled output
+    int pw = index % pooled_width;
+    int ph = (index / pooled_width) % pooled_height;
+    int c = (index / pooled_width / pooled_height) % channels;
+    int n = index / pooled_width / pooled_height / channels;
+
+    constant T* offset_rois = rois + n * 5;
+    int roi_batch_ind = offset_rois[0];
+    int roi_start_w = round(offset_rois[1] * spatial_scale);
+    int roi_start_h = round(offset_rois[2] * spatial_scale);
+    int roi_end_w = round(offset_rois[3] * spatial_scale);
+    int roi_end_h = round(offset_rois[4] * spatial_scale);
+
+    // Force malformed ROIs to be 1x1
+    int roi_width = max(roi_end_w - roi_start_w + 1, 1);
+    int roi_height = max(roi_end_h - roi_start_h + 1, 1);
+    T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
+    T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
+
+    int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
+    int wstart = static_cast<int>(floor(static_cast<T>(pw) * bin_size_w));
+    int hend = static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
+    int wend = static_cast<int>(ceil(static_cast<T>(pw + 1) * bin_size_w));
+
+    // Add roi offsets and clip to input boundaries
+    hstart = min(max(hstart + roi_start_h, 0), static_cast<int>(height));
+    hend = min(max(hend + roi_start_h, 0), static_cast<int>(height));
+    wstart = min(max(wstart + roi_start_w, 0), static_cast<int>(width));
+    wend = min(max(wend + roi_start_w, 0), static_cast<int>(width));
+    bool is_empty = (hend <= hstart) || (wend <= wstart);
+
+    // Define an empty pooling region to be zero
+    T maxval = is_empty ? 0 : -FLT_MAX;
+    // If nothing is pooled, argmax = -1 causes nothing to be backprop'd
+    int maxidx = -1;
+    constant T* offset_input =
+        input + (roi_batch_ind * channels + c) * height * width;
+    for (int h = hstart; h < hend; ++h) {
+      for (int w = wstart; w < wend; ++w) {
+        int input_index = h * width + w;
+        if (offset_input[input_index] > maxval) {
+          maxval = offset_input[input_index];
+          maxidx = input_index;
+        }
+      }
+    }
+    output[index] = maxval;
+    argmax[index] = maxidx;
+  }
+}
+
+#define REGISTER_ROI_POOL_OP(DTYPE)                        \
+template                                              \
+[[host_name("roi_pool_" #DTYPE)]]                          \
+kernel void roi_pool<DTYPE>(                   \
+  constant DTYPE * input        [[buffer(0)]],   \
+  constant DTYPE * rois         [[buffer(1)]],   \
+  device   DTYPE * output        [[buffer(2)]],   \
+  device   int64_t * argmax        [[buffer(3)]],   \
+  constant int64_t & output_size  [[buffer(4)]],   \
+  constant int64_t & channels  [[buffer(5)]],   \
+  constant int64_t & height  [[buffer(6)]],   \
+  constant int64_t & width  [[buffer(7)]],           \
+  constant int64_t & pooled_height  [[buffer(8)]],   \
+  constant int64_t & pooled_width  [[buffer(9)]],    \
+  constant float   & spatial_scale  [[buffer(10)]],   \
+  uint2     tgid   [[threadgroup_position_in_grid]],  \
+  uint2     tptg   [[threads_per_threadgroup]],  \
+  uint2     tid2   [[thread_position_in_threadgroup]]);
+
+REGISTER_ROI_POOL_OP(float);
+REGISTER_ROI_POOL_OP(half);
+
 )VISION_METAL";
 
 static id<MTLLibrary> compileBinaryOpsLibrary(id<MTLDevice> device) {
