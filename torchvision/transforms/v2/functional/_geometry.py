@@ -228,7 +228,9 @@ def resize_image_tensor(
             if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
                 # This path is hit on non-AVX archs, or on GPU.
                 image = image.clamp_(min=0, max=255)
-            image = image.round_().to(dtype=dtype)
+            if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+                image = image.round_()
+            image = image.to(dtype=dtype)
 
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
