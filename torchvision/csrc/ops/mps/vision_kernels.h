@@ -748,6 +748,138 @@ kernel void ps_roi_align<DTYPE>(                   \
 REGISTER_PS_ROI_ALIGN_OP(float);
 REGISTER_PS_ROI_ALIGN_OP(half);
 
+template<typename T>
+kernel void ps_roi_align_backward(
+    constant T       * grad_output         [[buffer(0)]],
+    constant T       * rois         [[buffer(1)]],
+    constant int64_t * channel_mapping         [[buffer(2)]],
+    device   T       * grad_input        [[buffer(3)]],
+    constant int64_t & output_size  [[buffer(4)]],
+    constant int64_t & channels  [[buffer(5)]],
+    constant int64_t & height  [[buffer(6)]],
+    constant int64_t & width  [[buffer(7)]],
+    constant int64_t & pooled_height  [[buffer(8)]],
+    constant int64_t & pooled_width  [[buffer(9)]],
+    constant int64_t & sampling_ratio  [[buffer(10)]],
+    constant int64_t & channels_out [[buffer(11)]],
+    constant float   & spatial_scale  [[buffer(12)]],
+    uint2     tgid   [[threadgroup_position_in_grid]],
+    uint2     tptg   [[threads_per_threadgroup]],
+    uint2     tid2   [[thread_position_in_threadgroup]]){
+
+  MPS_1D_KERNEL_LOOP(index, output_size, 1) {
+    // (n, *, ph, pw) is an element in the pooled output
+    int pw = index % pooled_width;
+    int ph = (index / pooled_width) % pooled_height;
+    int n = index / pooled_width / pooled_height / channels_out;
+
+    constant T* offset_rois = rois + n * 5;
+    int roi_batch_ind = offset_rois[0];
+
+    // Do not using rounding; this implementation detail is critical
+    T roi_start_w = offset_rois[1] * spatial_scale - static_cast<T>(0.5);
+    T roi_start_h = offset_rois[2] * spatial_scale - static_cast<T>(0.5);
+    T roi_end_w = offset_rois[3] * spatial_scale - static_cast<T>(0.5);
+    T roi_end_h = offset_rois[4] * spatial_scale - static_cast<T>(0.5);
+
+    // Force too small ROIs to be 1x1
+    T roi_width = roi_end_w - roi_start_w;
+    T roi_height = roi_end_h - roi_start_h;
+    T bin_size_h = roi_height / static_cast<T>(pooled_height);
+    T bin_size_w = roi_width / static_cast<T>(pooled_width);
+
+    int c_in = channel_mapping[index];
+
+    // Do not using floor/ceil; this implementation detail is critical
+    T hstart = static_cast<T>(ph) * bin_size_h + roi_start_h;
+    T wstart = static_cast<T>(pw) * bin_size_w + roi_start_w;
+
+    const T grad_output_this_bin = grad_output[index];
+
+    // We use roi_bin_grid to sample the grid and mimic integral
+    int roi_bin_grid_h = (sampling_ratio > 0)
+        ? sampling_ratio
+        : ceil(roi_height / pooled_height); // e.g., = 2
+    int roi_bin_grid_w =
+        (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
+    const T count = roi_bin_grid_h * roi_bin_grid_w;
+
+    const int offset = (roi_batch_ind * channels + c_in) * height * width;
+
+    for (int iy = 0; iy < roi_bin_grid_h; iy++) {
+      const T y = hstart +
+          static_cast<T>(iy + .5f) * bin_size_h /
+              static_cast<T>(roi_bin_grid_h);
+      for (int ix = 0; ix < roi_bin_grid_w; ix++) {
+        const T x = wstart +
+            static_cast<T>(ix + .5f) * bin_size_w /
+                static_cast<T>(roi_bin_grid_w);
+
+        T w1, w2, w3, w4;
+        int x_low, x_high, y_low, y_high;
+
+        bilinear_interpolate_gradient(
+            height,
+            width,
+            y,
+            x,
+            w1,
+            w2,
+            w3,
+            w4,
+            x_low,
+            x_high,
+            y_low,
+            y_high,
+            index);
+
+        T g1 = grad_output_this_bin * w1 / count;
+        T g2 = grad_output_this_bin * w2 / count;
+        T g3 = grad_output_this_bin * w3 / count;
+        T g4 = grad_output_this_bin * w4 / count;
+
+        if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
+          device atomic_uint* xAtomic = (device atomic_uint*)(grad_input + offset + y_low * width + x_low);
+          device atomic_uint* yAtomic = (device atomic_uint*)(grad_input + offset + y_low * width + x_high);
+          device atomic_uint* zAtomic = (device atomic_uint*)(grad_input + offset + y_high * width + x_low);
+          device atomic_uint* wAtomic = (device atomic_uint*)(grad_input + offset + y_high * width + x_high);
+  
+          // atomic_float data type is supported on Metal 3 onward.
+          // TODO: Use native atomic_fetch_add_explicit for Metal 3.
+          atomic_add_float(xAtomic, static_cast<T>(g1));
+          atomic_add_float(yAtomic, static_cast<T>(g2));
+          atomic_add_float(zAtomic, static_cast<T>(g3));
+          atomic_add_float(wAtomic, static_cast<T>(g4));
+        } // if
+      } // ix
+    } // iy
+  }
+}
+
+#define REGISTER_PS_ROI_ALIGN_BACKWARD_OP(DTYPE) \
+template                                        \
+[[host_name("ps_roi_align_backward_" #DTYPE)]]    \
+kernel void ps_roi_align_backward<DTYPE>(                   \
+    constant DTYPE       * grad_output       [[buffer(0)]], \
+    constant DTYPE       * rois              [[buffer(1)]], \
+    constant int64_t     * channel_mapping   [[buffer(2)]], \
+    device   DTYPE       * grad_input        [[buffer(3)]], \
+    constant int64_t & output_size           [[buffer(4)]], \
+    constant int64_t & channels              [[buffer(5)]], \
+    constant int64_t & height                [[buffer(6)]], \
+    constant int64_t & width                 [[buffer(7)]], \
+    constant int64_t & pooled_height  [[buffer(8)]], \
+    constant int64_t & pooled_width  [[buffer(9)]], \
+    constant int64_t & sampling_ratio  [[buffer(10)]], \
+    constant int64_t & channels_out  [[buffer(11)]], \
+    constant float   & spatial_scale  [[buffer(12)]],  \
+    uint2     tgid   [[threadgroup_position_in_grid]], \
+    uint2     tptg   [[threads_per_threadgroup]], \
+    uint2     tid2   [[thread_position_in_threadgroup]]);
+
+REGISTER_PS_ROI_ALIGN_BACKWARD_OP(float);
+REGISTER_PS_ROI_ALIGN_BACKWARD_OP(half);
+
 )VISION_METAL";
 
 static id<MTLLibrary> compileBinaryOpsLibrary(id<MTLDevice> device) {

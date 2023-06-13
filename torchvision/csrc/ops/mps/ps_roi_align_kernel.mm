@@ -111,29 +111,30 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_kernel(
 at::Tensor ps_roi_align_backward_kernel(
     const at::Tensor& grad,
     const at::Tensor& rois,
+    const at::Tensor& channel_mapping,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width,
+    int64_t sampling_ratio,
     int64_t batch_size,
     int64_t channels,
     int64_t height,
-    int64_t width,
-    int64_t sampling_ratio,
-    bool aligned) {
+    int64_t width) {
 
   using namespace at::native::mps;
   TORCH_CHECK(grad.is_mps(), "grad must be a MPS tensor");
   TORCH_CHECK(rois.is_mps(), "rois must be a MPS tensor");
+  TORCH_CHECK(channel_mapping.is_mps(), "channel_mapping must be a MPS tensor");
 
-  at::TensorArg grad_t{grad, "input", 1}, rois_t{rois, "rois", 2};
+  at::TensorArg grad_t{grad, "input", 1}, rois_t{rois, "rois", 2}, channel_mapping_t{channel_mapping, "channel_mapping", 3};
 
   at::CheckedFrom c = "ps_roi_align_backward_kernel";
-  at::checkAllSameGPU(c, {grad_t, rois_t});
+  at::checkAllSameGPU(c, {grad_t, rois_t, channel_mapping_t});
   at::checkAllSameType(c, {grad_t, rois_t});
   
   float spatial_scale_f = static_cast<float>(spatial_scale);
 
-  at::Tensor grad_input = at::zeros(
+  auto grad_input = at::zeros(
       {batch_size, channels, height, width}, grad.options());
 
   if (grad.numel() == 0) {
@@ -146,11 +147,14 @@ at::Tensor ps_roi_align_backward_kernel(
   int64_t w_stride = grad.stride(3);
   int64_t output_size = grad.numel();
 
-  at::globalContext().alertNotDeterministic("ps_roi_align_backward_kernel");
-  auto rois_ = rois.contiguous();
+  int64_t channels_out = channels / (pooled_height * pooled_width);
 
-  id<MTLBuffer> inputBuffer = getMTLBufferStorage(grad);
+  at::globalContext().alertNotDeterministic("ps_roi_align_backward_kernel");
+  auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
+
+  id<MTLBuffer> inputBuffer = getMTLBufferStorage(grad_);
   id<MTLBuffer> roisBuffer = getMTLBufferStorage(rois_);
+  id<MTLBuffer> channelMappingBuffer = getMTLBufferStorage(channel_mapping);
   id<MTLBuffer> outputBuffer = getMTLBufferStorage(grad_input);
   id<MTLDevice> device = MPSDevice::getInstance()->device();
   MPSStream* mpsStream = getCurrentMPSStream();
@@ -167,23 +171,20 @@ at::Tensor ps_roi_align_backward_kernel(
 
       [computeEncoder setComputePipelineState:binaryPSO];
       // [N, C, H, W]
-      [computeEncoder setBuffer:inputBuffer offset:grad.storage_offset() * grad.element_size() atIndex:0];
+      [computeEncoder setBuffer:inputBuffer offset:grad_.storage_offset() * grad_.element_size() atIndex:0];
       [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
-      [computeEncoder setBuffer:outputBuffer offset:grad_input.storage_offset() * grad_input.element_size() atIndex:2];
+      [computeEncoder setBuffer:channelMappingBuffer offset:channel_mapping.storage_offset() * channel_mapping.element_size() atIndex:2];
+      [computeEncoder setBuffer:outputBuffer offset:grad_input.storage_offset() * grad_input.element_size() atIndex:3];
       
-      [computeEncoder setBytes:&output_size length:sizeof(int64_t) atIndex:3];
-      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:4];
-      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:5];
-      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:6];
-      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:7];
-      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:8];
-      [computeEncoder setBytes:&sampling_ratio length:sizeof(int64_t) atIndex:9];
-      [computeEncoder setBytes:&aligned length:sizeof(bool) atIndex:10];
-      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:11];
-      [computeEncoder setBytes:&n_stride length:sizeof(int64_t) atIndex:12];
-      [computeEncoder setBytes:&c_stride length:sizeof(int64_t) atIndex:13];
-      [computeEncoder setBytes:&h_stride length:sizeof(int64_t) atIndex:14];
-      [computeEncoder setBytes:&w_stride length:sizeof(int64_t) atIndex:15];
+      [computeEncoder setBytes:&output_size length:sizeof(int64_t) atIndex:4];
+      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:5];
+      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:6];
+      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:7];
+      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:8];
+      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:9];
+      [computeEncoder setBytes:&sampling_ratio length:sizeof(int64_t) atIndex:10];
+      [computeEncoder setBytes:&channels_out length:sizeof(int64_t) atIndex:11];
+      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:12];
 
       // A threadGroup is equivalent to a cuda's block.
       NSUInteger tgSize = binaryPSO.maxTotalThreadsPerThreadgroup;
@@ -206,9 +207,9 @@ TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::ps_roi_align"),
       TORCH_FN(ps_roi_align_forward_kernel));
-  //m.impl(
-  //    TORCH_SELECTIVE_NAME("torchvision::_ps_roi_align_backward"),
-  //    TORCH_FN(ps_roi_align_backward_kernel));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_ps_roi_align_backward"),
+      TORCH_FN(ps_roi_align_backward_kernel));
 }
 
 } // namespace ops
