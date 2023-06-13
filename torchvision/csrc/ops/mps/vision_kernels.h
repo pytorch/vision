@@ -566,7 +566,7 @@ kernel void roi_pool<DTYPE>(                   \
   constant DTYPE * input        [[buffer(0)]],   \
   constant DTYPE * rois         [[buffer(1)]],   \
   device   DTYPE * output        [[buffer(2)]],   \
-  device   int64_t * argmax        [[buffer(3)]],   \
+  device   int64_t * argmax_data        [[buffer(3)]],   \
   constant int64_t & output_size  [[buffer(4)]],   \
   constant int64_t & channels  [[buffer(5)]],   \
   constant int64_t & height  [[buffer(6)]],   \
@@ -580,6 +580,79 @@ kernel void roi_pool<DTYPE>(                   \
 
 REGISTER_ROI_POOL_OP(float);
 REGISTER_ROI_POOL_OP(half);
+
+template<typename T>
+kernel void roi_pool_backward(
+    constant T       * grad_output         [[buffer(0)]],
+    constant T       * rois         [[buffer(1)]],
+    constant int64_t * argmax_data         [[buffer(2)]],
+    device   T       * grad_input        [[buffer(3)]],
+    constant int64_t & output_size  [[buffer(4)]],
+    constant int64_t & channels  [[buffer(5)]],
+    constant int64_t & height  [[buffer(6)]],
+    constant int64_t & width  [[buffer(7)]],
+    constant int64_t & pooled_height  [[buffer(8)]],
+    constant int64_t & pooled_width  [[buffer(9)]],
+    constant float   & spatial_scale  [[buffer(10)]],
+    constant int64_t & n_stride  [[buffer(11)]],
+    constant int64_t & c_stride  [[buffer(12)]],
+    constant int64_t & h_stride  [[buffer(13)]],
+    constant int64_t & w_stride  [[buffer(14)]],
+    uint2     tgid   [[threadgroup_position_in_grid]],
+    uint2     tptg   [[threads_per_threadgroup]],
+    uint2     tid2   [[thread_position_in_threadgroup]]){
+
+  MPS_1D_KERNEL_LOOP(index, output_size, 1) {
+    // (n, c, ph, pw) is an element in the pooled output
+    int pw = index % pooled_width;
+    int ph = (index / pooled_width) % pooled_height;
+    int c = (index / pooled_width / pooled_height) % channels;
+    int n = index / pooled_width / pooled_height / channels;
+
+    constant T* offset_rois = rois + n * 5;
+    int roi_batch_ind = offset_rois[0];
+
+    const int output_offset = n * n_stride + c * c_stride;
+    constant int64_t * argmax_data_offset =
+        argmax_data + (n * channels + c) * pooled_height * pooled_width;
+    const int argmax = argmax_data_offset[ph * pooled_width + pw];
+    const int offset = (roi_batch_ind * channels + c) * height * width;
+
+    if (argmax != -1) {
+      device atomic_uint* xAtomic = (device atomic_uint*)(grad_input + offset + argmax);
+      // atomic_float data type is supported on Metal 3 onward.
+      // TODO: Use native atomic_fetch_add_explicit for Metal 3.
+      atomic_add_float(xAtomic, static_cast<T>(grad_output[output_offset + ph * h_stride + pw * w_stride]));
+    }
+    
+  } // MPS_1D_KERNEL_LOOP
+}
+
+#define REGISTER_ROI_POOL_BACKWARD_OP(DTYPE) \
+template                                        \
+[[host_name("roi_pool_backward_" #DTYPE)]]    \
+kernel void roi_pool_backward<DTYPE>(                   \
+    constant DTYPE       * grad_output         [[buffer(0)]], \
+    constant DTYPE       * rois         [[buffer(1)]], \
+    constant int64_t * argmax_data         [[buffer(2)]], \
+    device   DTYPE       * grad_input        [[buffer(3)]], \
+    constant int64_t & output_size  [[buffer(4)]], \
+    constant int64_t & channels  [[buffer(5)]], \
+    constant int64_t & height  [[buffer(6)]], \
+    constant int64_t & width  [[buffer(7)]], \
+    constant int64_t & pooled_height  [[buffer(8)]], \
+    constant int64_t & pooled_width  [[buffer(9)]], \
+    constant float   & spatial_scale  [[buffer(10)]],  \
+    constant int64_t & n_stride  [[buffer(11)]], \
+    constant int64_t & c_stride  [[buffer(12)]], \
+    constant int64_t & h_stride  [[buffer(13)]], \
+    constant int64_t & w_stride  [[buffer(14)]], \
+    uint2     tgid   [[threadgroup_position_in_grid]], \
+    uint2     tptg   [[threads_per_threadgroup]], \
+    uint2     tid2   [[thread_position_in_threadgroup]]);
+
+REGISTER_ROI_POOL_BACKWARD_OP(float);
+REGISTER_ROI_POOL_BACKWARD_OP(half);
 
 )VISION_METAL";
 

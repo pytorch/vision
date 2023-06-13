@@ -103,27 +103,28 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
 at::Tensor roi_pool_backward_kernel(
     const at::Tensor& grad,
     const at::Tensor& rois,
+    const at::Tensor& argmax,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width,
     int64_t batch_size,
     int64_t channels,
     int64_t height,
-    int64_t width,
-    int64_t sampling_ratio,
-    bool aligned) {
+    int64_t width) {
 
   using namespace at::native::mps;
   TORCH_CHECK(grad.is_mps(), "grad must be a MPS tensor");
   TORCH_CHECK(rois.is_mps(), "rois must be a MPS tensor");
+  TORCH_CHECK(argmax.is_mps(), "argmax must be a MPS tensor");
 
-  at::TensorArg grad_t{grad, "input", 1}, rois_t{rois, "rois", 2};
+  at::TensorArg grad_t{grad, "input", 1}, rois_t{rois, "rois", 2}, argmax_t{argmax, "argmax", 3};
 
   at::CheckedFrom c = "roi_pool_backward_kernel";
-  at::checkAllSameGPU(c, {grad_t, rois_t});
+  at::checkAllSameGPU(c, {grad_t, rois_t, argmax_t});
   at::checkAllSameType(c, {grad_t, rois_t});
   
   float spatial_scale_f = static_cast<float>(spatial_scale);
+  auto num_rois = rois.size(0);
 
   at::Tensor grad_input = at::zeros(
       {batch_size, channels, height, width}, grad.options());
@@ -139,10 +140,11 @@ at::Tensor roi_pool_backward_kernel(
   int64_t output_size = grad.numel();
 
   at::globalContext().alertNotDeterministic("roi_pool_backward_kernel");
-  auto rois_ = rois.contiguous();
+  auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
 
   id<MTLBuffer> inputBuffer = getMTLBufferStorage(grad);
   id<MTLBuffer> roisBuffer = getMTLBufferStorage(rois_);
+  id<MTLBuffer> argmaxBuffer = getMTLBufferStorage(argmax_);
   id<MTLBuffer> outputBuffer = getMTLBufferStorage(grad_input);
   id<MTLDevice> device = MPSDevice::getInstance()->device();
   MPSStream* mpsStream = getCurrentMPSStream();
@@ -155,27 +157,26 @@ at::Tensor roi_pool_backward_kernel(
       id<MTLComputePipelineState> binaryPSO = mps::binaryPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {grad, rois_});
+      getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {grad, rois_, argmax_});
 
       [computeEncoder setComputePipelineState:binaryPSO];
       // [N, C, H, W]
       [computeEncoder setBuffer:inputBuffer offset:grad.storage_offset() * grad.element_size() atIndex:0];
       [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
-      [computeEncoder setBuffer:outputBuffer offset:grad_input.storage_offset() * grad_input.element_size() atIndex:2];
+      [computeEncoder setBuffer:argmaxBuffer offset:argmax_.storage_offset() * argmax_.element_size() atIndex:2];
+      [computeEncoder setBuffer:outputBuffer offset:grad_input.storage_offset() * grad_input.element_size() atIndex:3];
       
-      [computeEncoder setBytes:&output_size length:sizeof(int64_t) atIndex:3];
-      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:4];
-      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:5];
-      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:6];
-      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:7];
-      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:8];
-      [computeEncoder setBytes:&sampling_ratio length:sizeof(int64_t) atIndex:9];
-      [computeEncoder setBytes:&aligned length:sizeof(bool) atIndex:10];
-      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:11];
-      [computeEncoder setBytes:&n_stride length:sizeof(int64_t) atIndex:12];
-      [computeEncoder setBytes:&c_stride length:sizeof(int64_t) atIndex:13];
-      [computeEncoder setBytes:&h_stride length:sizeof(int64_t) atIndex:14];
-      [computeEncoder setBytes:&w_stride length:sizeof(int64_t) atIndex:15];
+      [computeEncoder setBytes:&output_size length:sizeof(int64_t) atIndex:4];
+      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:5];
+      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:6];
+      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:7];
+      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:8];
+      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:9];
+      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:10];
+      [computeEncoder setBytes:&n_stride length:sizeof(int64_t) atIndex:11];
+      [computeEncoder setBytes:&c_stride length:sizeof(int64_t) atIndex:12];
+      [computeEncoder setBytes:&h_stride length:sizeof(int64_t) atIndex:13];
+      [computeEncoder setBytes:&w_stride length:sizeof(int64_t) atIndex:14];
 
       // A threadGroup is equivalent to a cuda's block.
       NSUInteger tgSize = binaryPSO.maxTotalThreadsPerThreadgroup;
@@ -198,9 +199,9 @@ TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::roi_pool"),
       TORCH_FN(roi_pool_forward_kernel));
-  //m.impl(
-  //    TORCH_SELECTIVE_NAME("torchvision::_roi_pool_backward"),
-  //    TORCH_FN(roi_pool_backward_kernel));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_roi_pool_backward"),
+      TORCH_FN(roi_pool_backward_kernel));
 }
 
 } // namespace ops
