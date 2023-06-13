@@ -8,6 +8,7 @@ namespace mps {
 static const char* METAL_VISION = R"VISION_METAL(
 
 #include <metal_stdlib>
+#include <metal_atomic>
 using namespace metal;
 
 #define MPS_1D_KERNEL_LOOP_T(i, n, n_grids, index_t)                         \
@@ -21,9 +22,39 @@ using namespace metal;
 // we need to make it static instead of deriving it from [[threads_per_threadgroup]].
 constant uint threadsPerBlock = sizeof(uint64_t) * 8;
 
+// Utility functions
+
 template <typename T>
 inline T ceil_div(T n, T m) {
   return (n + m - 1) / m;
+}
+
+// https://github.com/ShoYamanishi/AppleNumericalComputing/blob/053f06c1f5a831095c4bcc29aaf11366fce5231e/03_dot/metal/dot.metal#L447-L472
+void atomic_add_float( device atomic_uint* atom_var, const float val )
+{
+    uint  fetched_uint,  assigning_uint;
+    float fetched_float, assigning_float;
+
+    fetched_uint = atomic_exchange_explicit( atom_var, 0, memory_order_relaxed );
+
+    fetched_float = *( (thread float*) &fetched_uint );
+
+    assigning_float = fetched_float + val;
+
+    assigning_uint =  *( (thread uint*) &assigning_float );
+
+    while ( (fetched_uint = atomic_exchange_explicit( atom_var, assigning_uint, memory_order_relaxed ) ) != 0 )  {
+
+        uint fetched_uint_again = atomic_exchange_explicit( atom_var, 0, memory_order_relaxed );
+
+        float fetched_float_again = *( (thread float*) &fetched_uint_again );
+
+        fetched_float = *( (thread float*) &(fetched_uint) );
+
+        assigning_float = fetched_float_again + fetched_float;
+
+        assigning_uint =  *( (thread uint*) &assigning_float );
+    }
 }
 
 template <typename T>
@@ -78,6 +109,65 @@ inline T bilinear_interpolate(
   T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
 
   return val;
+}
+
+template <typename T>
+void bilinear_interpolate_gradient(
+    int height,
+    int width,
+    T y,
+    T x,
+    thread T& w1,
+    thread T& w2,
+    thread T& w3,
+    thread T& w4,
+    thread int& x_low,
+    thread int& x_high,
+    thread int& y_low,
+    thread int& y_high,
+    uint index /* index for debug only*/) {
+  // deal with cases that inverse elements are out of feature map boundary
+  if (y < -1.0 || y > height || x < -1.0 || x > width) {
+    // empty
+    w1 = w2 = w3 = w4 = 0.;
+    x_low = x_high = y_low = y_high = -1;
+    return;
+  }
+
+  if (y <= 0)
+    y = 0;
+  if (x <= 0)
+    x = 0;
+
+  y_low = (int)y;
+  x_low = (int)x;
+
+  if (y_low >= height - 1) {
+    y_high = y_low = height - 1;
+    y = (T)y_low;
+  } else {
+    y_high = y_low + 1;
+  }
+
+  if (x_low >= width - 1) {
+    x_high = x_low = width - 1;
+    x = (T)x_low;
+  } else {
+    x_high = x_low + 1;
+  }
+
+  T ly = y - y_low;
+  T lx = x - x_low;
+  T hy = 1. - ly, hx = 1. - lx;
+
+  // reference in forward
+  // T v1 = input[y_low * width + x_low];
+  // T v2 = input[y_low * width + x_high];
+  // T v3 = input[y_high * width + x_low];
+  // T v4 = input[y_high * width + x_high];
+  // T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
+
+  w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
 }
 
 template <typename T, typename scalar_t>
@@ -266,16 +356,112 @@ kernel void roi_align_backward(
     constant int64_t & pooled_width  [[buffer(8)]],
     constant int64_t & sampling_ratio  [[buffer(9)]],
     constant bool    & aligned  [[buffer(10)]],
-    constant int64_t & n_stride  [[buffer(11)]],
-    constant int64_t & c_stride  [[buffer(12)]],
-    constant int64_t & h_stride  [[buffer(13)]],
-    constant int64_t & w_stride  [[buffer(14)]],
+    constant float   & spatial_scale  [[buffer(11)]],
+    constant int64_t & n_stride  [[buffer(12)]],
+    constant int64_t & c_stride  [[buffer(13)]],
+    constant int64_t & h_stride  [[buffer(14)]],
+    constant int64_t & w_stride  [[buffer(15)]],
     uint2     tgid   [[threadgroup_position_in_grid]],
     uint2     tptg   [[threads_per_threadgroup]],
     uint2     tid2   [[thread_position_in_threadgroup]]){
+
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
-    
-  }
+    // (n, c, ph, pw) is an element in the pooled output
+    int pw = index % pooled_width;
+    int ph = (index / pooled_width) % pooled_height;
+    int c = (index / pooled_width / pooled_height) % channels;
+    int n = index / pooled_width / pooled_height / channels;
+
+    constant T* offset_rois = rois + n * 5;
+    int roi_batch_ind = offset_rois[0];
+
+    // Do not using rounding; this implementation detail is critical
+    T offset = aligned ? (T)0.5 : (T)0.0;
+    T roi_start_w = offset_rois[1] * spatial_scale - offset;
+    T roi_start_h = offset_rois[2] * spatial_scale - offset;
+    T roi_end_w = offset_rois[3] * spatial_scale - offset;
+    T roi_end_h = offset_rois[4] * spatial_scale - offset;
+
+    T roi_width = roi_end_w - roi_start_w;
+    T roi_height = roi_end_h - roi_start_h;
+    if (!aligned) {
+      // Force malformed ROIs to be 1x1
+      roi_width = max(roi_width, (T)1.);
+      roi_height = max(roi_height, (T)1.);
+    }
+
+    T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
+    T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
+
+    // We need to index the gradient using the tensor strides to access the
+    // correct values.
+    const int output_offset = n * n_stride + c * c_stride;
+    constant T* offset_grad_output = grad_output + output_offset;
+    const T grad_output_this_bin =
+        offset_grad_output[ph * h_stride + pw * w_stride];
+
+    // We use roi_bin_grid to sample the grid and mimic integral
+    int roi_bin_grid_h = (sampling_ratio > 0)
+        ? sampling_ratio
+        : ceil(roi_height / pooled_height); // e.g., = 2
+    int roi_bin_grid_w =
+        (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
+
+    // We do average (integral) pooling inside a bin
+    const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
+
+    const int input_offset = (roi_batch_ind * channels + c) * height * width;
+
+    for (int iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
+    {
+      const T y = roi_start_h + ph * bin_size_h +
+          static_cast<T>(iy + .5f) * bin_size_h /
+              static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
+      for (int ix = 0; ix < roi_bin_grid_w; ix++) {
+        const T x = roi_start_w + pw * bin_size_w +
+            static_cast<T>(ix + .5f) * bin_size_w /
+                static_cast<T>(roi_bin_grid_w);
+
+        T w1, w2, w3, w4;
+        int x_low, x_high, y_low, y_high;
+
+        bilinear_interpolate_gradient(
+            height,
+            width,
+            y,
+            x,
+            w1,
+            w2,
+            w3,
+            w4,
+            x_low,
+            x_high,
+            y_low,
+            y_high,
+            index);
+
+        T g1 = grad_output_this_bin * w1 / count;
+        T g2 = grad_output_this_bin * w2 / count;
+        T g3 = grad_output_this_bin * w3 / count;
+        T g4 = grad_output_this_bin * w4 / count;
+
+        if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
+          device atomic_uint* xAtomic = (device atomic_uint*)(grad_input + input_offset + y_low * width + x_low);
+          device atomic_uint* yAtomic = (device atomic_uint*)(grad_input + input_offset + y_low * width + x_high);
+          device atomic_uint* zAtomic = (device atomic_uint*)(grad_input + input_offset + y_high * width + x_low);
+          device atomic_uint* wAtomic = (device atomic_uint*)(grad_input + input_offset + y_high * width + x_high);
+  
+          // atomic_float data type is supported on Metal 3 onward.
+          // TODO: Use native atomic_fetch_add_explicit for Metal 3.
+          atomic_add_float(xAtomic, static_cast<T>(g1));
+          atomic_add_float(yAtomic, static_cast<T>(g2));
+          atomic_add_float(zAtomic, static_cast<T>(g3));
+          atomic_add_float(wAtomic, static_cast<T>(g4));
+          
+        } // if
+      } // ix
+    } // iy
+  } // MPS_1D_KERNEL_LOOP
 }
 
 #define REGISTER_ROI_ALIGN_BACKWARD_OP(DTYPE) \
@@ -293,10 +479,11 @@ kernel void roi_align_backward<DTYPE>(                   \
     constant int64_t & pooled_width  [[buffer(8)]], \
     constant int64_t & sampling_ratio  [[buffer(9)]], \
     constant bool    & aligned  [[buffer(10)]], \
-    constant int64_t & n_stride  [[buffer(11)]], \
-    constant int64_t & c_stride  [[buffer(12)]], \
-    constant int64_t & h_stride  [[buffer(13)]], \
-    constant int64_t & w_stride  [[buffer(14)]], \
+    constant float   & spatial_scale  [[buffer(11)]],  \
+    constant int64_t & n_stride  [[buffer(12)]], \
+    constant int64_t & c_stride  [[buffer(13)]], \
+    constant int64_t & h_stride  [[buffer(14)]], \
+    constant int64_t & w_stride  [[buffer(15)]], \
     uint2     tgid   [[threadgroup_position_in_grid]], \
     uint2     tptg   [[threads_per_threadgroup]], \
     uint2     tid2   [[thread_position_in_threadgroup]]);

@@ -157,16 +157,18 @@ class RoIOpTester(ABC):
         torch.testing.assert_close(output_gt, output_fx, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize("seed", range(10))
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     def test_backward(self, seed, device, contiguous, deterministic=False):
+        dtype = self.mps_dtype if device == "mps" else self.dtype
+
         torch.random.manual_seed(seed)
         pool_size = 2
-        x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
+        x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=dtype, device=device, requires_grad=True)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor(
-            [[0, 0, 0, 4, 4], [0, 0, 2, 3, 4], [0, 2, 2, 4, 4]], dtype=self.dtype, device=device  # format is (xyxy)
+            [[0, 0, 0, 4, 4], [0, 0, 2, 3, 4], [0, 2, 2, 4, 4]], dtype=dtype, device=device  # format is (xyxy)
         )
 
         def func(z):
