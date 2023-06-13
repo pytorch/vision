@@ -1395,3 +1395,13 @@ def test_memory_format_consistency_resize_image_tensor(test_id, info, args_kwarg
         assert expected_stride == output_stride, error_msg_fn("")
     else:
         assert False, error_msg_fn("")
+
+
+def test_resize_float16_no_rounding():
+    # Make sure Resize() doesn't round float16 images
+    # Non-regression test for https://github.com/pytorch/vision/issues/7667
+
+    img = torch.randint(0, 256, size=(1, 3, 100, 100), dtype=torch.float16)
+    out = F.resize(img, size=(10, 10))
+    assert out.dtype == torch.float16
+    assert (out.round() - out).sum() > 0
