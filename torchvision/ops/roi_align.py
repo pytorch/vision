@@ -232,7 +232,7 @@ def roi_align(
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
     if not torch.jit.is_scripting():
-        if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and input.is_cuda):
+        if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and (input.is_cuda or input.is_mps)):
             return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
     _assert_has_ops()
     return torch.ops.torchvision.roi_align(

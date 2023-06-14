@@ -11,9 +11,6 @@ namespace ops {
 
 namespace {
 
-// This should be in sync with the one in metal kernel.
-int const threadsPerBlock = 512;
-
 std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -124,7 +121,6 @@ at::Tensor roi_pool_backward_kernel(
   at::checkAllSameType(c, {grad_t, rois_t});
   
   float spatial_scale_f = static_cast<float>(spatial_scale);
-  auto num_rois = rois.size(0);
 
   at::Tensor grad_input = at::zeros(
       {batch_size, channels, height, width}, grad.options());

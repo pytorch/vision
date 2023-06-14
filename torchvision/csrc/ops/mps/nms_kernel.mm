@@ -10,8 +10,8 @@ namespace ops {
 
 namespace {
 
-// This should be in sync with the one in metal kernel.
-int const threadsPerBlock = sizeof(uint64_t) * 8;
+// This should be in sync with `nmsThreadsPerBlock` in the metal kernel.
+constexpr int nmsThreadsPerBlock = sizeof(uint64_t) * 8;
 
 at::Tensor nms_kernel(
     const at::Tensor& dets,
@@ -41,10 +41,6 @@ at::Tensor nms_kernel(
       " and ",
       scores.size(0))
   
-  //at::Tensor input = at::arange({10}, at::kFloat, c10::nullopt, at::kMPS, c10::nullopt);
-  //at::Tensor other = at::arange({10}, at::kFloat, c10::nullopt, at::kMPS, c10::nullopt);
-  //at::Tensor out = at::zeros({10}, at::kFloat, c10::nullopt, at::kMPS, c10::nullopt);
-  
   if (dets.numel() == 0) {
     return at::empty({0}, dets.options().dtype(at::kLong));
   }
@@ -55,7 +51,7 @@ at::Tensor nms_kernel(
   int dets_num = dets.size(0);
   float iou_threshold_f = static_cast<float>(iou_threshold);
 
-  const int col_blocks = (dets_num + threadsPerBlock - 1) / threadsPerBlock;
+  const int col_blocks = (dets_num + nmsThreadsPerBlock - 1) / nmsThreadsPerBlock;
   at::Tensor mask =
     at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
 
@@ -63,9 +59,6 @@ at::Tensor nms_kernel(
   id<MTLBuffer> outputBuffer = getMTLBufferStorage(mask);
   id<MTLDevice> device = MPSDevice::getInstance()->device();
   MPSStream* mpsStream = getCurrentMPSStream();
-  //const uint32_t nDim = iter.ndim();
-  //constexpr uint32_t nOffsets = 3;
-  const uint32_t numThreads = dets_num;
   dispatch_sync(mpsStream->queue(), ^() {
     @autoreleasepool {
       id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
@@ -85,8 +78,8 @@ at::Tensor nms_kernel(
 
       // A threadGroup is equivalent to a cuda's block.
       NSUInteger tgSize = binaryPSO.maxTotalThreadsPerThreadgroup;
-      if (tgSize > threadsPerBlock) {
-        tgSize = threadsPerBlock;
+      if (tgSize > nmsThreadsPerBlock) {
+        tgSize = nmsThreadsPerBlock;
       }
 
       MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
@@ -96,10 +89,9 @@ at::Tensor nms_kernel(
     }
   });
 
-  // out[det] = 
   int64_t num_to_keep = 0;
 
-  at::Tensor mask_cpu = mask.to(at::kCPU); // tid or 
+  at::Tensor mask_cpu = mask.to(at::kCPU);
   unsigned long long* mask_host =
       (unsigned long long*)mask_cpu.data_ptr<int64_t>();
 
@@ -111,26 +103,21 @@ at::Tensor nms_kernel(
   int64_t* keep_out = keep.data_ptr<int64_t>();  
 
   for (int i = 0; i < dets_num; i++) {
-    int nblock = i / threadsPerBlock;
-    int inblock = i % threadsPerBlock;
+    int nblock = i / nmsThreadsPerBlock;
+    int inblock = i % nmsThreadsPerBlock;
 
-    //std::cout << "remv:" << remv[nblock] << "cur:" << (1ULL << i) << std::endl;
     if (!(remv[nblock] & (1ULL << inblock))) {
       keep_out[num_to_keep++] = i;
       unsigned long long* p = mask_host + i * col_blocks;
       for (int j = nblock; j < col_blocks; j++) {
         remv[j] |= p[j];
       }
-    } else {
-      //std::cout << "SKIP at:" << i << std::endl;
     }
   }
-  //std::cout << "NTK: " << num_to_keep << std::endl;
-  //std::cout << "SUM mask: " << mask_cpu.sum() << std::endl;
+
   return order_t.index(
       {keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)
            .to(order_t.device(), keep.scalar_type())});
-
 }
 
 } // namespace

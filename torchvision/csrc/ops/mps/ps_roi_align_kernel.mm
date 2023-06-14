@@ -11,9 +11,6 @@ namespace ops {
 
 namespace {
 
-// This should be in sync with the one in metal kernel.
-int const threadsPerBlock = 512;
-
 std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_kernel(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -141,12 +138,7 @@ at::Tensor ps_roi_align_backward_kernel(
     return grad_input;
   }
 
-  int64_t n_stride = grad.stride(0);
-  int64_t c_stride = grad.stride(1);
-  int64_t h_stride = grad.stride(2);
-  int64_t w_stride = grad.stride(3);
   int64_t output_size = grad.numel();
-
   int64_t channels_out = channels / (pooled_height * pooled_width);
 
   at::globalContext().alertNotDeterministic("ps_roi_align_backward_kernel");

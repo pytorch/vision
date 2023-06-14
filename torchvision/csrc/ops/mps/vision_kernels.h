@@ -11,43 +11,46 @@ static const char* METAL_VISION = R"VISION_METAL(
 #include <metal_atomic>
 using namespace metal;
 
+/*----------Macros----------*/
+
 #define MPS_1D_KERNEL_LOOP_T(i, n, n_grids, index_t)                         \
   for (index_t i = (tgid.x * tptg.x) + tid2.x; i < (n); \
        i += (tptg.x * n_grids))
 
 #define MPS_1D_KERNEL_LOOP(i, n, n_grids) MPS_1D_KERNEL_LOOP_T(i, n, n_grids, int)
 
-// This should be in sync with the one in nms_kernel.mm.
-// Since metal does not support dynamic array,
-// we need to make it static instead of deriving it from [[threads_per_threadgroup]].
-constant uint threadsPerBlock = sizeof(uint64_t) * 8;
-
-// Utility functions
+/*----------Utils----------*/
 
 template <typename T>
 inline T ceil_div(T n, T m) {
   return (n + m - 1) / m;
 }
 
-// https://github.com/ShoYamanishi/AppleNumericalComputing/blob/053f06c1f5a831095c4bcc29aaf11366fce5231e/03_dot/metal/dot.metal#L447-L472
-void atomic_add_float( device atomic_uint* atom_var, const float val )
+template <typename T>
+void atomic_add_float( device T* data_ptr, const float val)
 {
-    uint  fetched_uint,  assigning_uint;
-    float fetched_float, assigning_float;
+#if __METAL_VERSION__ >= 300
+  device atomic_fetch_add_explicit((device atomic_float*) data_ptr, val, memory_order_relaxed);
+#else
+  // https://github.com/ShoYamanishi/AppleNumericalComputing/blob/053f06c1f5a831095c4bcc29aaf11366fce5231e/03_dot/metal/dot.metal#L447-L472
+  device atomic_uint* atom_var = (device atomic_uint*)data_ptr;
+  uint  fetched_uint,  assigning_uint;
+  float fetched_float, assigning_float;
 
-    fetched_uint = atomic_exchange_explicit( atom_var, 0, memory_order_relaxed );
-    fetched_float = *( (thread float*) &fetched_uint );
+  fetched_uint = atomic_exchange_explicit( atom_var, 0, memory_order_relaxed );
+  fetched_float = *( (thread float*) &fetched_uint );
 
-    assigning_float = fetched_float + val;
+  assigning_float = fetched_float + val;
+  assigning_uint =  *( (thread uint*) &assigning_float );
+
+  while ((fetched_uint = atomic_exchange_explicit( atom_var, assigning_uint, memory_order_relaxed)) != 0)  {
+    uint fetched_uint_again = atomic_exchange_explicit( atom_var, 0, memory_order_relaxed);
+    float fetched_float_again = *( (thread float*) &fetched_uint_again );
+    fetched_float = *( (thread float*) &(fetched_uint) );
+    assigning_float = fetched_float_again + fetched_float;
     assigning_uint =  *( (thread uint*) &assigning_float );
-
-    while ( (fetched_uint = atomic_exchange_explicit( atom_var, assigning_uint, memory_order_relaxed ) ) != 0 )  {
-      uint fetched_uint_again = atomic_exchange_explicit( atom_var, 0, memory_order_relaxed );
-      float fetched_float_again = *( (thread float*) &fetched_uint_again );
-      fetched_float = *( (thread float*) &(fetched_uint) );
-      assigning_float = fetched_float_again + fetched_float;
-      assigning_uint =  *( (thread uint*) &assigning_float );
-    }
+  }
+#endif
 }
 
 template <typename T>
@@ -180,6 +183,13 @@ bool inline IoU(
   return (inter / (area_a + area_b - inter)) > threshold;
 }
 
+/*----------Kernels----------*/
+
+// This should be in sync with the one in nms_kernel.mm.
+// Since metal does not support dynamic array,
+// we need to make it static instead of deriving it from [[threads_per_threadgroup]].
+constant uint nmsThreadsPerBlock = sizeof(uint64_t) * 8;
+
 template<typename T, typename scalar_t>
 kernel void nms(constant  T       * dev_boxes         [[buffer(0)]],
                 device    uint64_t * mask           [[buffer(1)]],
@@ -192,16 +202,16 @@ kernel void nms(constant  T       * dev_boxes         [[buffer(0)]],
   const uint col_start = tgid.x;
   const uint tid = tid2.x;
   const uint row_size =
-      min(n_boxes - row_start * threadsPerBlock, threadsPerBlock);
+      min(n_boxes - row_start * nmsThreadsPerBlock, nmsThreadsPerBlock);
   const uint col_size =
-      min(n_boxes - col_start * threadsPerBlock, threadsPerBlock);
+      min(n_boxes - col_start * nmsThreadsPerBlock, nmsThreadsPerBlock);
 
-  threadgroup T block_boxes[threadsPerBlock];
-  block_boxes[tid] = dev_boxes[threadsPerBlock * col_start + tid];
+  threadgroup T block_boxes[nmsThreadsPerBlock];
+  block_boxes[tid] = dev_boxes[nmsThreadsPerBlock * col_start + tid];
   threadgroup_barrier(mem_flags::mem_threadgroup);
 
   if (tid < row_size) {
-    const uint cur_box_idx = threadsPerBlock * row_start + tid;
+    const uint cur_box_idx = nmsThreadsPerBlock * row_start + tid;
     uint64_t t = 0;
     uint start = 0;
     
@@ -214,7 +224,7 @@ kernel void nms(constant  T       * dev_boxes         [[buffer(0)]],
         t |= static_cast<uint64_t>(1) << i;  // discard 1 keep 0
       }
     }
-    const uint col_blocks = ceil_div(static_cast<uint>(n_boxes), threadsPerBlock);
+    const uint col_blocks = ceil_div(static_cast<uint>(n_boxes), nmsThreadsPerBlock);
     mask[cur_box_idx * col_blocks + col_start] = t;
   }
 }
@@ -229,9 +239,6 @@ kernel void nms<DTYPE ## 4, DTYPE>(                   \
   constant float    & iou_threshold  [[buffer(3)]],   \
   uint2     tgid   [[threadgroup_position_in_grid]],  \
   uint2     tid2   [[thread_position_in_threadgroup]]);
-
-REGISTER_NMS_OP(float);
-REGISTER_NMS_OP(half);
 
 template<typename T>
 kernel void roi_align(
@@ -332,9 +339,6 @@ kernel void roi_align<DTYPE>(                   \
   uint2     tgid   [[threadgroup_position_in_grid]],  \
   uint2     tptg   [[threads_per_threadgroup]],  \
   uint2     tid2   [[thread_position_in_threadgroup]]);
-
-REGISTER_ROI_ALIGN_OP(float);
-REGISTER_ROI_ALIGN_OP(half);
 
 template<typename T>
 kernel void roi_align_backward(
@@ -439,17 +443,10 @@ kernel void roi_align_backward(
         T g4 = grad_output_this_bin * w4 / count;
 
         if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
-          device atomic_uint* xAtomic = (device atomic_uint*)(grad_input + input_offset + y_low * width + x_low);
-          device atomic_uint* yAtomic = (device atomic_uint*)(grad_input + input_offset + y_low * width + x_high);
-          device atomic_uint* zAtomic = (device atomic_uint*)(grad_input + input_offset + y_high * width + x_low);
-          device atomic_uint* wAtomic = (device atomic_uint*)(grad_input + input_offset + y_high * width + x_high);
-  
-          // atomic_float data type is supported on Metal 3 onward.
-          // TODO: Use native atomic_fetch_add_explicit for Metal 3.
-          atomic_add_float(xAtomic, static_cast<T>(g1));
-          atomic_add_float(yAtomic, static_cast<T>(g2));
-          atomic_add_float(zAtomic, static_cast<T>(g3));
-          atomic_add_float(wAtomic, static_cast<T>(g4));
+          atomic_add_float(grad_input + input_offset + y_low * width + x_low, static_cast<T>(g1));
+          atomic_add_float(grad_input + input_offset + y_low * width + x_high, static_cast<T>(g2));
+          atomic_add_float(grad_input + input_offset + y_high * width + x_low, static_cast<T>(g3));
+          atomic_add_float(grad_input + input_offset + y_high * width + x_high, static_cast<T>(g4));
           
         } // if
       } // ix
@@ -480,9 +477,6 @@ kernel void roi_align_backward<DTYPE>(                   \
     uint2     tgid   [[threadgroup_position_in_grid]], \
     uint2     tptg   [[threads_per_threadgroup]], \
     uint2     tid2   [[thread_position_in_threadgroup]]);
-
-REGISTER_ROI_ALIGN_BACKWARD_OP(float);
-REGISTER_ROI_ALIGN_BACKWARD_OP(half);
 
 template<typename T>
 kernel void roi_pool(
@@ -571,9 +565,6 @@ kernel void roi_pool<DTYPE>(                   \
   uint2     tptg   [[threads_per_threadgroup]],  \
   uint2     tid2   [[thread_position_in_threadgroup]]);
 
-REGISTER_ROI_POOL_OP(float);
-REGISTER_ROI_POOL_OP(half);
-
 template<typename T>
 kernel void roi_pool_backward(
     constant T       * grad_output         [[buffer(0)]],
@@ -612,10 +603,7 @@ kernel void roi_pool_backward(
     const int offset = (roi_batch_ind * channels + c) * height * width;
 
     if (argmax != -1) {
-      device atomic_uint* xAtomic = (device atomic_uint*)(grad_input + offset + argmax);
-      // atomic_float data type is supported on Metal 3 onward.
-      // TODO: Use native atomic_fetch_add_explicit for Metal 3.
-      atomic_add_float(xAtomic, static_cast<T>(grad_output[output_offset + ph * h_stride + pw * w_stride]));
+      atomic_add_float(grad_input + offset + argmax, static_cast<T>(grad_output[output_offset + ph * h_stride + pw * w_stride]));
     }
     
   } // MPS_1D_KERNEL_LOOP
@@ -643,9 +631,6 @@ kernel void roi_pool_backward<DTYPE>(                   \
     uint2     tgid   [[threadgroup_position_in_grid]], \
     uint2     tptg   [[threads_per_threadgroup]], \
     uint2     tid2   [[thread_position_in_threadgroup]]);
-
-REGISTER_ROI_POOL_BACKWARD_OP(float);
-REGISTER_ROI_POOL_BACKWARD_OP(half);
 
 template<typename T>
 kernel void ps_roi_align(
@@ -745,9 +730,6 @@ kernel void ps_roi_align<DTYPE>(                   \
   uint2     tptg   [[threads_per_threadgroup]],  \
   uint2     tid2   [[thread_position_in_threadgroup]]);
 
-REGISTER_PS_ROI_ALIGN_OP(float);
-REGISTER_PS_ROI_ALIGN_OP(half);
-
 template<typename T>
 kernel void ps_roi_align_backward(
     constant T       * grad_output         [[buffer(0)]],
@@ -839,17 +821,10 @@ kernel void ps_roi_align_backward(
         T g4 = grad_output_this_bin * w4 / count;
 
         if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
-          device atomic_uint* xAtomic = (device atomic_uint*)(grad_input + offset + y_low * width + x_low);
-          device atomic_uint* yAtomic = (device atomic_uint*)(grad_input + offset + y_low * width + x_high);
-          device atomic_uint* zAtomic = (device atomic_uint*)(grad_input + offset + y_high * width + x_low);
-          device atomic_uint* wAtomic = (device atomic_uint*)(grad_input + offset + y_high * width + x_high);
-  
-          // atomic_float data type is supported on Metal 3 onward.
-          // TODO: Use native atomic_fetch_add_explicit for Metal 3.
-          atomic_add_float(xAtomic, static_cast<T>(g1));
-          atomic_add_float(yAtomic, static_cast<T>(g2));
-          atomic_add_float(zAtomic, static_cast<T>(g3));
-          atomic_add_float(wAtomic, static_cast<T>(g4));
+          atomic_add_float(grad_input + offset + y_low * width + x_low, static_cast<T>(g1));
+          atomic_add_float(grad_input + offset + y_low * width + x_high, static_cast<T>(g2));
+          atomic_add_float(grad_input + offset + y_high * width + x_low, static_cast<T>(g3));
+          atomic_add_float(grad_input + offset + y_high * width + x_high, static_cast<T>(g4));
         } // if
       } // ix
     } // iy
@@ -877,6 +852,18 @@ kernel void ps_roi_align_backward<DTYPE>(                   \
     uint2     tptg   [[threads_per_threadgroup]], \
     uint2     tid2   [[thread_position_in_threadgroup]]);
 
+REGISTER_NMS_OP(float);
+REGISTER_NMS_OP(half);
+REGISTER_ROI_ALIGN_OP(float);
+REGISTER_ROI_ALIGN_OP(half);
+REGISTER_ROI_ALIGN_BACKWARD_OP(float);
+REGISTER_ROI_ALIGN_BACKWARD_OP(half);
+REGISTER_ROI_POOL_OP(float);
+REGISTER_ROI_POOL_OP(half);
+REGISTER_ROI_POOL_BACKWARD_OP(float);
+REGISTER_ROI_POOL_BACKWARD_OP(half);
+REGISTER_PS_ROI_ALIGN_OP(float);
+REGISTER_PS_ROI_ALIGN_OP(half);
 REGISTER_PS_ROI_ALIGN_BACKWARD_OP(float);
 REGISTER_PS_ROI_ALIGN_BACKWARD_OP(half);
 

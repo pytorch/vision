@@ -11,9 +11,6 @@ namespace ops {
 
 namespace {
 
-// This should be in sync with the one in metal kernel.
-int const threadsPerBlock = 512;
-
 at::Tensor roi_align_forward_kernel(
     const at::Tensor& input,
     const at::Tensor& rois,
