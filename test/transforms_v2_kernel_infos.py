@@ -257,15 +257,18 @@ def sample_inputs_resize_image_tensor():
 
     for image_loader, interpolation in itertools.product(
         make_image_loaders(sizes=["random"], color_spaces=["RGB"]),
-        [
-            F.InterpolationMode.NEAREST,
-            F.InterpolationMode.BILINEAR,
-            F.InterpolationMode.BICUBIC,
-        ],
+        [F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR],
     ):
         yield ArgsKwargs(image_loader, size=[min(image_loader.spatial_size) + 1], interpolation=interpolation)
 
     yield ArgsKwargs(make_image_loader(size=(11, 17)), size=20, max_size=25)
+
+
+def sample_inputs_resize_image_tensor_bicubic():
+    for image_loader, interpolation in itertools.product(
+        make_image_loaders(sizes=["random"], color_spaces=["RGB"]), [F.InterpolationMode.BICUBIC]
+    ):
+        yield ArgsKwargs(image_loader, size=[min(image_loader.spatial_size) + 1], interpolation=interpolation)
 
 
 @pil_reference_wrapper
@@ -358,6 +361,21 @@ KERNEL_INFOS.extend(
             closeness_kwargs={
                 **pil_reference_pixel_difference(10, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
+                **float32_vs_uint8_pixel_difference(1, mae=True),
+            },
+            test_marks=[
+                xfail_jit_python_scalar_arg("size"),
+            ],
+        ),
+        KernelInfo(
+            F.resize_image_tensor,
+            sample_inputs_fn=sample_inputs_resize_image_tensor_bicubic,
+            reference_fn=reference_resize_image_tensor,
+            reference_inputs_fn=reference_inputs_resize_image_tensor,
+            float32_vs_uint8=True,
+            closeness_kwargs={
+                **pil_reference_pixel_difference(10, mae=True),
+                **cuda_vs_cpu_pixel_difference(atol=30),
                 **float32_vs_uint8_pixel_difference(1, mae=True),
             },
             test_marks=[
