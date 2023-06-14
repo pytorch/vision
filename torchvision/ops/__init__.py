@@ -16,7 +16,7 @@ from .ciou_loss import complete_box_iou_loss
 from .deform_conv import deform_conv2d, DeformConv2d
 from .diou_loss import distance_box_iou_loss
 from .drop_block import drop_block2d, drop_block3d, DropBlock2d, DropBlock3d
-from .feature_pyramid_network import FeaturePyramidNetwork
+from .feature_pyramid_network import FeaturePyramidNetwork, SimpleFeaturePyramidNetwork
 from .focal_loss import sigmoid_focal_loss
 from .giou_loss import generalized_box_iou_loss
 from .misc import Conv2dNormActivation, Conv3dNormActivation, FrozenBatchNorm2d, MLP, Permute, SqueezeExcitation
@@ -54,6 +54,7 @@ __all__ = [
     "PSRoIPool",
     "MultiScaleRoIAlign",
     "FeaturePyramidNetwork",
+    "SimpleFeaturePyramidNetwork",
     "sigmoid_focal_loss",
     "stochastic_depth",
     "StochasticDepth",

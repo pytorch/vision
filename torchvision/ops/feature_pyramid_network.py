@@ -204,6 +204,152 @@ class FeaturePyramidNetwork(nn.Module):
         return out
 
 
+class SimpleFeaturePyramidNetwork(nn.Module):
+    """
+    Module that adds a Simple FPN from on top of a set of feature maps. This is based on
+    `"Exploring Plain Vision Transformer Backbones for Object Detection" <https://arxiv.org/abs/2203.16527>`_.
+
+    Unlike regular FPN, Simple FPN expects a single feature map,
+    on which the Simple FPN will be added.
+
+    Args:
+        in_channels (int): number of channels for the input feature map that
+            is passed to the module
+        out_channels (int): number of channels of the Simple FPN representation
+        extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
+            be performed. It is expected to take the fpn features, the original
+            features and the names of the original features as input, and returns
+            a new list of feature maps and their corresponding names
+        norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
+
+    Examples::
+
+        >>> m = torchvision.ops.SimpleFeaturePyramidNetwork(10, 5)
+        >>> # get some dummy data
+        >>> x = torch.rand(1, 10, 64, 64)
+        >>> # compute the Simple FPN on top of x
+        >>> output = m(x)
+        >>> print([(k, v.shape) for k, v in output.items()])
+        >>> # returns
+        >>>   [('feat0', torch.Size([1, 5, 64, 64])),
+        >>>    ('feat2', torch.Size([1, 5, 16, 16])),
+        >>>    ('feat3', torch.Size([1, 5, 8, 8]))]
+
+    """
+
+    _version = 2
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        extra_blocks: Optional[ExtraFPNBlock] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+    ):
+        super().__init__()
+        _log_api_usage_once(self)
+        self.blocks = nn.ModuleList()
+        if in_channels <= 0:
+            raise ValueError("in_channels<=0 is currently not supported")
+
+        for block_index in range(4):
+            layers = []
+
+            current_in_channels = in_channels
+            if block_index == 0:
+                # This class and its uses is required because of:
+                #    https://github.com/pytorch/pytorch/issues/71465
+                class Permute(nn.Module):
+                    def __init__(self, *dims):
+                        super().__init__()
+                        self.dims = dims
+
+                    def forward(self, x: Tensor) -> Tensor:
+                        return x.permute(self.dims)
+
+                layers.extend([
+                    nn.ConvTranspose2d(
+                        in_channels,
+                        in_channels // 2,
+                        kernel_size=2,
+                        stride=2,
+                    ),
+                    Permute(0, 2, 3, 1),
+                    nn.LayerNorm(in_channels // 2),
+                    Permute(0, 3, 1, 2),
+                    nn.GELU(),
+                    nn.ConvTranspose2d(
+                        in_channels // 2,
+                        in_channels // 4,
+                        kernel_size=2,
+                        stride=2,
+                    ),
+                ])
+                current_in_channels = in_channels // 4
+            elif block_index == 1:
+                layers.append(
+                    nn.ConvTranspose2d(
+                        in_channels,
+                        in_channels // 2,
+                        kernel_size=2,
+                        stride=2,
+                    ),
+                )
+                current_in_channels = in_channels // 2
+            elif block_index == 2:
+                # nothing to do for this scale
+                pass
+            elif block_index == 3:
+                layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
+
+            layers.extend([
+                Conv2dNormActivation(
+                    current_in_channels,
+                    out_channels,
+                    kernel_size=1,
+                    padding=0,
+                    norm_layer=norm_layer,
+                    activation_layer=None
+                ),
+                Conv2dNormActivation(
+                    out_channels,
+                    out_channels,
+                    kernel_size=3,
+                    norm_layer=norm_layer,
+                    activation_layer=None
+                )
+            ])
+
+            self.blocks.append(nn.Sequential(*layers))
+
+        if extra_blocks is not None:
+            if not isinstance(extra_blocks, ExtraFPNBlock):
+                raise TypeError(f"extra_blocks should be of type ExtraFPNBlock not {type(extra_blocks)}")
+        self.extra_blocks = extra_blocks
+
+    def forward(self, x: Tensor) -> OrderedDict[str, Tensor]:
+        """
+        Computes the Simple FPN for a feature map.
+
+        Args:
+            x (Tensor): input feature map.
+
+        Returns:
+            results (list[Tensor]): feature maps after FPN layers.
+                They are ordered from highest resolution first.
+        """
+        results = [block(x) for block in self.blocks]
+        names = [f"{i}" for i in range(len(self.blocks))]
+
+        if self.extra_blocks is not None:
+            results, names = self.extra_blocks(results, [x], names)
+
+        # make it back an OrderedDict
+        out = OrderedDict([(k, v) for k, v in zip(names, results)])
+
+        return out
+
+
 class LastLevelMaxPool(ExtraFPNBlock):
     """
     Applies a max_pool2d (not actual max_pool2d, we just subsample) on top of the last feature map
