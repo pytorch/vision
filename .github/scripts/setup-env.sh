@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euxo pipefail
 
 # Prepare conda
-CONDA_PATH=$(which conda)
-eval "$(${CONDA_PATH} shell.bash hook)"
+set +x && eval "$($(which conda) shell.bash hook)" && set -x
 
 # Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in
@@ -25,12 +24,11 @@ esac
 
 if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
   echo '::group::Uninstall system JPEG libraries on macOS'
-  # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG libraries installed by
-  # default that interfere with our build. We uninstall them here and use the one from conda below.
-  JPEG_LIBS=$(brew list | grep jpeg)
-  echo $JPEG_LIBS
-  for lib in $JPEG_LIBS; do
-    brew uninstall --ignore-dependencies --force $lib || true
+  # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG and PNG libraries
+  # installed by default that interfere with our build. We uninstall them here and use the one from conda below.
+  IMAGE_LIBS=$(brew list | grep -E "jpeg|png")
+  for lib in $IMAGE_LIBS; do
+    brew uninstall --ignore-dependencies --force "${lib}"
   done
   echo '::endgroup::'
 fi
@@ -41,7 +39,7 @@ conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
-  ninja \
+  ninja cmake \
   libpng jpeg \
   'ffmpeg<4.3'
 conda activate ci
@@ -53,6 +51,14 @@ if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
 fi
 
 echo '::endgroup::'
+
+if [[ "${OS_TYPE}" == windows && "${GPU_ARCH_TYPE}" == cuda ]]; then
+  echo '::group::Install VisualStudio CUDA extensions on Windows'
+  TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Microsoft/VC/v160/BuildCustomizations"
+  mkdir -p "${TARGET_DIR}"
+  cp -r "${CUDA_HOME}/MSBuildExtensions/"* "${TARGET_DIR}"
+  echo '::endgroup::'
+fi
 
 echo '::group::Install PyTorch'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
@@ -73,24 +79,25 @@ if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
 fi
 echo '::endgroup::'
 
-if [[ "${OS_TYPE}" == "windows" ]]; then
-  echo '::group::Install third party dependencies prior to TorchVision install on Windows'
-  # `easy_install`, i.e. `python setup.py` has problems downloading the dependencies due to SSL.
-  # Thus, we install them upfront with `pip` to avoid that.
-  # Instead of fixing the SSL error, we can probably maintain this special case until we switch away from the deprecated
-  # `easy_install` anyway.
-  python setup.py egg_info
-  # The requires.txt cannot be used with `pip install -r` directly. The requirements are listed at the top and the
-  # optional dependencies come in non-standard syntax after a blank line. Thus, we just extract the header.
-  sed -e '/^$/,$d' *.egg-info/requires.txt > requirements.txt
-  pip install --progress-bar=off -r requirements.txt
-  echo '::endgroup::'
-fi
+echo '::group::Install third party dependencies prior to TorchVision install'
+# Installing with `easy_install`, e.g. `python setup.py install` or `python setup.py develop`, has some quirks when
+# when pulling in third-party dependencies. For example:
+# - On Windows, we often hit an SSL error although `pip` can install just fine.
+# - It happily pulls in pre-releases, which can lead to more problems down the line.
+#   `pip` does not unless explicitly told to do so.
+# Thus, we use `easy_install` to extract the third-party dependencies here and install them upfront with `pip`.
+python setup.py egg_info
+# The requires.txt cannot be used with `pip install -r` directly. The requirements are listed at the top and the
+# optional dependencies come in non-standard syntax after a blank line. Thus, we just extract the header.
+sed -e '/^$/,$d' *.egg-info/requires.txt | tee requirements.txt
+pip install --progress-bar=off -r requirements.txt
+echo '::endgroup::'
 
 echo '::group::Install TorchVision'
 python setup.py develop
 echo '::endgroup::'
 
-echo '::group::Collect PyTorch environment information'
+echo '::group::Collect environment information'
+conda list
 python -m torch.utils.collect_env
 echo '::endgroup::'

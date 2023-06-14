@@ -25,6 +25,16 @@ ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 
+@contextlib.contextmanager
+def disable_tf32():
+    previous = torch.backends.cudnn.allow_tf32
+    torch.backends.cudnn.allow_tf32 = False
+    try:
+        yield
+    finally:
+        torch.backends.cudnn.allow_tf32 = previous
+
+
 def list_model_fns(module):
     return [get_model_builder(name) for name in list_models(module)]
 
@@ -671,6 +681,7 @@ def test_vitc_models(model_fn, dev):
     test_classification_model(model_fn, dev)
 
 
+@disable_tf32()  # see: https://github.com/pytorch/vision/issues/7618
 @pytest.mark.parametrize("model_fn", list_model_fns(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_classification_model(model_fn, dev):
@@ -682,10 +693,6 @@ def test_classification_model(model_fn, dev):
     model_name = model_fn.__name__
     if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
-    if model_name == "vit_h_14" and dev == "cuda":
-        # TODO: investigate why this fail on CI. It doesn't fail on AWS cluster with CUDA 11.6
-        # (can't test with later versions ATM)
-        pytest.xfail("https://github.com/pytorch/vision/issues/7143")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
