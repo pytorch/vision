@@ -79,7 +79,7 @@ def rehash(path, blocksize=1 << 20):
     h = hashlib.sha256()
     length = 0
     with open(path, "rb") as f:
-        for block in read_chunks(f, size=blocksize):
+        while block := f.read(blocksize):
             length += len(block)
             h.update(block)
     digest = "sha256=" + urlsafe_b64encode(h.digest()).decode("latin1").rstrip("=")
