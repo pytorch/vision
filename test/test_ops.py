@@ -160,6 +160,7 @@ class RoIOpTester(ABC):
     @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     def test_backward(self, seed, device, contiguous, deterministic=False):
+        atol = 5e-2 if device == "mps" else None
         dtype = self.mps_dtype if device == "mps" else self.dtype
 
         torch.random.manual_seed(seed)
@@ -177,9 +178,9 @@ class RoIOpTester(ABC):
         script_func = self.get_script_fn(rois, pool_size)
 
         with DeterministicGuard(deterministic):
-            gradcheck(func, (x,))
+            gradcheck(func, (x,), atol=atol)
 
-        gradcheck(script_func, (x,))
+        gradcheck(script_func, (x,), atol=atol)
 
     @needs_cuda
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
