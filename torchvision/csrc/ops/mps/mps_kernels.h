@@ -1047,23 +1047,23 @@ REGISTER_PS_ROI_POOL_BACKWARD_OP(half);
 
 )VISION_METAL";
 
-static id<MTLLibrary> compileBinaryOpsLibrary(id<MTLDevice> device) {
-  static id<MTLLibrary> binaryLibrary = nil;
-  if (binaryLibrary) {
-    return binaryLibrary;
+static id<MTLLibrary> compileVisionOpsLibrary(id<MTLDevice> device) {
+  static id<MTLLibrary> visionLibrary = nil;
+  if (visionLibrary) {
+    return visionLibrary;
   }
 
   NSError* error = nil;
   MTLCompileOptions* options = [[MTLCompileOptions new] autorelease];
   [options setLanguageVersion:MTLLanguageVersion2_3];
-  binaryLibrary = [device newLibraryWithSource:[NSString stringWithCString:METAL_VISION encoding:NSASCIIStringEncoding]
+  visionLibrary = [device newLibraryWithSource:[NSString stringWithCString:METAL_VISION encoding:NSASCIIStringEncoding]
                                        options:options
                                          error:&error];
-  TORCH_CHECK(binaryLibrary, "Failed to create metal binary library, error: ", [[error description] UTF8String]);
-  return binaryLibrary;
+  TORCH_CHECK(visionLibrary, "Failed to create metal vision library, error: ", [[error description] UTF8String]);
+  return visionLibrary;
 }
 
-static id<MTLComputePipelineState> binaryPipelineState(id<MTLDevice> device, const std::string& kernel) {
+static id<MTLComputePipelineState> visionPipelineState(id<MTLDevice> device, const std::string& kernel) {
   static std::unordered_map<std::string, id<MTLComputePipelineState>> psoCache;
   id<MTLComputePipelineState> pso = psoCache[kernel];
   if (pso) {
@@ -1071,10 +1071,10 @@ static id<MTLComputePipelineState> binaryPipelineState(id<MTLDevice> device, con
   }
 
   NSError* error = nil;
-  id<MTLLibrary> binaryLib = compileBinaryOpsLibrary(device);
-  id<MTLFunction> binaryFunc = [binaryLib newFunctionWithName:[NSString stringWithUTF8String:kernel.c_str()]];
-  TORCH_CHECK(binaryFunc, "Failed to create function state object for: ", kernel);
-  pso = [device newComputePipelineStateWithFunction:binaryFunc error:&error];
+  id<MTLLibrary> visionLib = compileVisionOpsLibrary(device);
+  id<MTLFunction> visionFunc = [visionLib newFunctionWithName:[NSString stringWithUTF8String:kernel.c_str()]];
+  TORCH_CHECK(visionFunc, "Failed to create function state object for: ", kernel);
+  pso = [device newComputePipelineStateWithFunction:visionFunc error:&error];
   TORCH_CHECK(pso, "Failed to created pipeline state object, error: ", [[error description] UTF8String]);
 
   psoCache[kernel] = pso;

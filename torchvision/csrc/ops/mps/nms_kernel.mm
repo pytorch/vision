@@ -1,6 +1,6 @@
 #include <ATen/mps/MPSProfiler.h>
 #include <ATen/native/mps/OperationUtils.h>
-#include "vision_kernels.h"
+#include "mps_kernels.h"
 
 #include <iostream>
 #include <cmath>
@@ -65,7 +65,7 @@ at::Tensor nms_kernel(
       MTLSize threadgroupsPerGrid = MTLSizeMake(col_blocks, col_blocks, 1);
 
       const std::string kernel = "nms_" + scalarToMetalTypeString(dets_sorted.scalar_type());
-      id<MTLComputePipelineState> binaryPSO = mps::binaryPipelineState(device, kernel);
+      id<MTLComputePipelineState> binaryPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
       getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {dets, scores});

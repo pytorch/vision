@@ -1,6 +1,6 @@
 #include <ATen/mps/MPSProfiler.h>
 #include <ATen/native/mps/OperationUtils.h>
-#include "vision_kernels.h"
+#include "mps_kernels.h"
 #include "mps_helpers.h"
 
 #include <iostream>
@@ -62,7 +62,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
       MTLSize threadgroupsPerGrid = MTLSizeMake(std::min(ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)), static_cast<int64_t>(4096)), 1, 1);
 
       const std::string kernel = "roi_pool_" + scalarToMetalTypeString(input.scalar_type());
-      id<MTLComputePipelineState> binaryPSO = mps::binaryPipelineState(device, kernel);
+      id<MTLComputePipelineState> binaryPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
       getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {input_, rois_});
@@ -150,7 +150,7 @@ at::Tensor roi_pool_backward_kernel(
       MTLSize threadgroupsPerGrid = MTLSizeMake(std::min(ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)), static_cast<int64_t>(4096)), 1, 1);
 
       const std::string kernel = "roi_pool_backward_" + scalarToMetalTypeString(grad.scalar_type());
-      id<MTLComputePipelineState> binaryPSO = mps::binaryPipelineState(device, kernel);
+      id<MTLComputePipelineState> binaryPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
       getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {grad, rois_, argmax_});
