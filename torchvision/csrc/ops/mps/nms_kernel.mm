@@ -65,19 +65,19 @@ at::Tensor nms_kernel(
       MTLSize threadgroupsPerGrid = MTLSizeMake(col_blocks, col_blocks, 1);
 
       const std::string kernel = "nms_" + scalarToMetalTypeString(dets_sorted.scalar_type());
-      id<MTLComputePipelineState> binaryPSO = mps::visionPipelineState(device, kernel);
+      id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {dets, scores});
+      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {dets, scores});
 
-      [computeEncoder setComputePipelineState:binaryPSO];
+      [computeEncoder setComputePipelineState:visionPSO];
       [computeEncoder setBuffer:inputBuffer offset:dets_sorted.storage_offset() * dets_sorted.element_size() atIndex:0];
       [computeEncoder setBuffer:outputBuffer offset:mask.storage_offset() * mask.element_size() atIndex:1];
       [computeEncoder setBytes:&dets_num length:sizeof(int) atIndex:2];
       [computeEncoder setBytes:&iou_threshold_f length:sizeof(float) atIndex:3];
 
       // A threadGroup is equivalent to a cuda's block.
-      NSUInteger tgSize = binaryPSO.maxTotalThreadsPerThreadgroup;
+      NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
       if (tgSize > nmsThreadsPerBlock) {
         tgSize = nmsThreadsPerBlock;
       }
@@ -85,7 +85,7 @@ at::Tensor nms_kernel(
       MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
       [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
 
-      getMPSProfiler().endProfileKernel(binaryPSO);
+      getMPSProfiler().endProfileKernel(visionPSO);
     }
   });
 

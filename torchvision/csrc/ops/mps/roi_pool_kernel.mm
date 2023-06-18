@@ -62,12 +62,12 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
       MTLSize threadgroupsPerGrid = MTLSizeMake(std::min(ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)), static_cast<int64_t>(4096)), 1, 1);
 
       const std::string kernel = "roi_pool_" + scalarToMetalTypeString(input.scalar_type());
-      id<MTLComputePipelineState> binaryPSO = mps::visionPipelineState(device, kernel);
+      id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {input_, rois_});
+      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_, rois_});
 
-      [computeEncoder setComputePipelineState:binaryPSO];
+      [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
       [computeEncoder setBuffer:inputBuffer offset:input_.storage_offset() * input_.element_size() atIndex:0];
       [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
@@ -83,7 +83,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
       [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:10];
 
       // A threadGroup is equivalent to a cuda's block.
-      NSUInteger tgSize = binaryPSO.maxTotalThreadsPerThreadgroup;
+      NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
       if (tgSize > threadsPerBlock) {
         tgSize = threadsPerBlock;
       }
@@ -91,7 +91,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
       MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
       [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
 
-      getMPSProfiler().endProfileKernel(binaryPSO);
+      getMPSProfiler().endProfileKernel(visionPSO);
     }
   });
   return std::make_tuple(output, argmax);
@@ -150,12 +150,12 @@ at::Tensor roi_pool_backward_kernel(
       MTLSize threadgroupsPerGrid = MTLSizeMake(std::min(ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)), static_cast<int64_t>(4096)), 1, 1);
 
       const std::string kernel = "roi_pool_backward_" + scalarToMetalTypeString(grad.scalar_type());
-      id<MTLComputePipelineState> binaryPSO = mps::visionPipelineState(device, kernel);
+      id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(binaryPSO, kernel, {grad, rois_, argmax_});
+      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {grad, rois_, argmax_});
 
-      [computeEncoder setComputePipelineState:binaryPSO];
+      [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
       [computeEncoder setBuffer:inputBuffer offset:grad.storage_offset() * grad.element_size() atIndex:0];
       [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
@@ -175,7 +175,7 @@ at::Tensor roi_pool_backward_kernel(
       [computeEncoder setBytes:&w_stride length:sizeof(int64_t) atIndex:14];
 
       // A threadGroup is equivalent to a cuda's block.
-      NSUInteger tgSize = binaryPSO.maxTotalThreadsPerThreadgroup;
+      NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
       if (tgSize > threadsPerBlock) {
         tgSize = threadsPerBlock;
       }
@@ -183,7 +183,7 @@ at::Tensor roi_pool_backward_kernel(
       MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
       [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
 
-      getMPSProfiler().endProfileKernel(binaryPSO);
+      getMPSProfiler().endProfileKernel(visionPSO);
     }
   });
   return grad_input;
