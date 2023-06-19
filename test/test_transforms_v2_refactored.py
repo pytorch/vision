@@ -11,6 +11,7 @@ import torch
 import torchvision.transforms.v2 as transforms
 from common_utils import (
     assert_equal,
+    assert_no_warnings,
     cache,
     cpu_and_gpu,
     make_bounding_box,
@@ -495,6 +496,7 @@ class TestResize:
         with pytest.raises(ValueError, match=match):
             F.resize(self._make_input(input_type), size=size, max_size=max_size, antialias=True)
 
+    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
         "input_type_and_kernel",
         [
@@ -502,11 +504,15 @@ class TestResize:
             (datapoints.Video, F.resize_video),
         ],
     )
-    def test_antialias_warning(self, input_type_and_kernel):
+    def test_antialias_warning(self, interpolation, input_type_and_kernel):
         input_type, kernel = input_type_and_kernel
 
-        with assert_warns_antialias_default_value():
-            F.resize(self._make_input(input_type), size=self.SIZES[0])
+        with (
+            assert_warns_antialias_default_value()
+            if interpolation in {transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC}
+            else assert_no_warnings()
+        ):
+            F.resize(self._make_input(input_type), size=self.SIZES[0], interpolation=interpolation)
 
     # `InterpolationMode.NEAREST_EXACT` has no proper corresponding integer equivalent. Internally, we map it to `0` to
     # be the same as `InterpolationMode.NEAREST` for PIL. However, for the tensor backend there is a difference and thus

@@ -10,6 +10,7 @@ import random
 import shutil
 import sys
 import tempfile
+import warnings
 from collections import defaultdict
 from subprocess import CalledProcessError, check_output, STDOUT
 from typing import Callable, Sequence, Tuple, Union
@@ -880,3 +881,12 @@ def assert_run_python_script(source_code):
             raise RuntimeError(f"script errored with output:\n{e.output.decode()}")
         if out != b"":
             raise AssertionError(out.decode())
+
+
+@contextlib.contextmanager
+def assert_no_warnings():
+    # The name `catch_warnings` is a misnomer as the context manager does **not** catch any warnings, but rather scopes
+    # the warning filters. All changes that are made to the filters while in this context, will be reset upon exit.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        yield
