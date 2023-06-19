@@ -347,6 +347,35 @@ class TestResize:
 
         return input
 
+    def _check_size(self, input, output, *, size, max_size):
+        if isinstance(size, int) or len(size) == 1:
+            if not isinstance(size, int):
+                size = size[0]
+
+            old_height, old_width = F.get_spatial_size(input)
+            ratio = old_width / old_height
+            if ratio > 1:
+                new_height = size
+                new_width = int(ratio * new_height)
+            else:
+                new_width = size
+                new_height = int(new_width / ratio)
+
+            if max_size is not None and max(new_height, new_width) > max_size:
+                # Need to recompute the aspect ratio, since it might have changed due to rounding
+                ratio = new_width / new_height
+                if ratio > 1:
+                    new_width = max_size
+                    new_height = int(new_width / ratio)
+                else:
+                    new_height = max_size
+                    new_width = int(new_height * ratio)
+
+        else:
+            new_height, new_width = size
+
+        assert F.get_spatial_size(output) == [new_height, new_width]
+
     @pytest.mark.parametrize("size", SIZES)
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize("use_max_size", [True, False])
@@ -394,6 +423,8 @@ class TestResize:
                 **max_size_kwarg,
             )
         )
+
+        self._check_size(image, actual, size=size, **max_size_kwarg)
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1
@@ -594,6 +625,8 @@ class TestResize:
         expected = F.to_image_tensor(
             F.resize_image_pil(F.to_image_pil(image), size=size, interpolation=interpolation, **max_size_kwarg)
         )
+
+        self._check_size(image, actual, size=size, **max_size_kwarg)
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1
