@@ -34,17 +34,16 @@ if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
 fi
 
 echo '::group::Create build environment'
-# 1. `libjpeg-turbo` is only available for macOS and Windows on the `defaults` conda channel. Thus, we need to pull it
-#    in from the `pytorch-nightly` channel on Linux
-# 2. See https://github.com/pytorch/vision/issues/7296 for ffmpeg
+# See https://github.com/pytorch/vision/issues/7296 for ffmpeg
 conda create \
   --name ci \
   --quiet --yes \
-  --channel=defaults --channel=pytorch-nightly
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
-  libpng libjpeg-turbo \
+  libpng \
   'ffmpeg<4.3'
+conda activate ci
+conda install libjpeg-turbo -c pytorch -y
 pip install --progress-bar=off --upgrade setuptools
 
 # See https://github.com/pytorch/vision/issues/6790
