@@ -147,11 +147,11 @@ def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, *
     """Checks if the dispatcher correctly dispatches simple tensors to the ``*_image_tensor`` kernel and the input type
     is preserved in doing so.
     """
-    if not isinstance(input, datapoints.Image):
+    if type(input) is not torch.Tensor:
         return
 
     with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
-        output = dispatcher(input.as_subclass(torch.Tensor), *args, **kwargs)
+        output = dispatcher(input, *args, **kwargs)
 
         spy.assert_called_once()
 
@@ -159,10 +159,28 @@ def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, *
     assert type(output) is torch.Tensor
 
 
+def _check_dispatcher_dispatch_pil(dispatcher, kernel, input, *args, **kwargs):
+    """Checks if the dispatcher correctly dispatches PIL images to the ``*_image_pil`` kernel  and the input type
+    is preserved in doing so.
+    """
+    if not isinstance(input, PIL.Image.Image):
+        return
+
+    with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
+        output = dispatcher(input, *args, **kwargs)
+
+        spy.assert_called_once()
+
+    assert isinstance(output, PIL.Image.Image)
+
+
 def _check_dispatcher_dispatch_datapoint(dispatcher, kernel, input, *args, **kwargs):
     """Checks if the dispatcher ultimately correctly dispatches datapoints to corresponding kernel and the input type
     is preserved in doing so. For bounding boxes also checks that the format is preserved.
     """
+    if not isinstance(input, datapoints._datapoint.Datapoint):
+        return
+
     # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
     # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
     spy = mock.MagicMock(wraps=kernel)
@@ -180,23 +198,6 @@ def _check_dispatcher_dispatch_datapoint(dispatcher, kernel, input, *args, **kwa
         assert output.format == input.format
 
 
-def _check_dispatcher_dispatch_pil(dispatcher, input, *args, **kwargs):
-    """Checks if the dispatcher correctly dispatches PIL images to the ``*_image_pil`` kernel  and the input type
-    is preserved in doing so.
-    """
-    if not (isinstance(input, datapoints.Image) and input.dtype is torch.uint8):
-        return
-
-    kernel = getattr(F, f"{dispatcher.__name__}_image_pil")
-
-    with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
-        output = dispatcher(F.to_image_pil(input), *args, **kwargs)
-
-        spy.assert_called_once()
-
-    assert isinstance(output, PIL.Image.Image)
-
-
 def check_dispatcher(
     dispatcher,
     kernel,
@@ -204,8 +205,8 @@ def check_dispatcher(
     *args,
     check_scripted_smoke=True,
     check_dispatch_simple_tensor=True,
-    check_dispatch_datapoint=True,
     check_dispatch_pil=True,
+    check_dispatch_datapoint=True,
     **kwargs,
 ):
     with mock.patch("torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once) as spy:
@@ -223,11 +224,11 @@ def check_dispatcher(
     if check_dispatch_simple_tensor:
         _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs)
 
+    if check_dispatch_pil:
+        _check_dispatcher_dispatch_pil(dispatcher, kernel, input, *args, **kwargs)
+
     if check_dispatch_datapoint:
         _check_dispatcher_dispatch_datapoint(dispatcher, kernel, input, *args, **kwargs)
-
-    if check_dispatch_pil:
-        _check_dispatcher_dispatch_pil(dispatcher, input, *args, **kwargs)
 
 
 def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
@@ -238,9 +239,10 @@ def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
     kernel_signature = inspect.signature(kernel)
     kernel_params = list(kernel_signature.parameters.values())[1:]
 
-    # We filter out metadata that is implicitly passed to the dispatcher through the input datapoint, but has to be
-    # explicit passed to the kernel.
-    kernel_params = [param for param in kernel_params if param.name not in input_type.__annotations__.keys()]
+    if issubclass(input_type, datapoints._datapoint.Datapoint):
+        # We filter out metadata that is implicitly passed to the dispatcher through the input datapoint, but has to be
+        # explicitly passed to the kernel.
+        kernel_params = [param for param in kernel_params if param.name not in input_type.__annotations__.keys()]
 
     dispatcher_params = iter(dispatcher_params)
     for dispatcher_param, kernel_param in zip(dispatcher_params, kernel_params):
@@ -254,6 +256,11 @@ def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
                 f"Parameter `{kernel_param.name}` of kernel `{kernel.__name__}` "
                 f"has no corresponding parameter on the dispatcher `{dispatcher.__name__}`."
             ) from None
+
+        if issubclass(input_type, PIL.Image.Image):
+            # PIL kernels often have more correct annotations, since they are not limited by JIT. Thus, we don't check
+            # them in the first place.
+            dispatcher_param._annotation = kernel_param._annotation = inspect.Parameter.empty
 
         assert dispatcher_param == kernel_param
 
@@ -488,6 +495,8 @@ class TestResize:
     @pytest.mark.parametrize(
         "input_type_and_kernel",
         [
+            (torch.Tensor, F.resize_image_tensor),
+            (PIL.Image.Image, F.resize_image_pil),
             (datapoints.Image, F.resize_image_tensor),
             (datapoints.BoundingBox, F.resize_bounding_box),
             (datapoints.Mask, F.resize_mask),
@@ -508,6 +517,8 @@ class TestResize:
     @pytest.mark.parametrize(
         ("input_type", "kernel"),
         [
+            (torch.Tensor, F.resize_image_tensor),
+            (PIL.Image.Image, F.resize_image_pil),
             (datapoints.Image, F.resize_image_tensor),
             (datapoints.BoundingBox, F.resize_bounding_box),
             (datapoints.Mask, F.resize_mask),
@@ -523,17 +534,10 @@ class TestResize:
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
-        "input_type_and_kernel",
-        [
-            (datapoints.Image, F.resize_image_tensor),
-            (datapoints.BoundingBox, F.resize_bounding_box),
-            (datapoints.Mask, F.resize_mask),
-            (datapoints.Video, F.resize_video),
-        ],
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
     )
-    def test_max_size_error(self, size, input_type_and_kernel):
-        input_type, kernel = input_type_and_kernel
-
+    def test_max_size_error(self, size, input_type):
         if isinstance(size, int) or len(size) == 1:
             max_size = (size if isinstance(size, int) else size[0]) - 1
             match = "must be strictly greater than the requested size"
@@ -547,15 +551,10 @@ class TestResize:
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
-        "input_type_and_kernel",
-        [
-            (datapoints.Image, F.resize_image_tensor),
-            (datapoints.Video, F.resize_video),
-        ],
+        "input_type",
+        [torch.Tensor, datapoints.Image, datapoints.Video],
     )
-    def test_antialias_warning(self, interpolation, input_type_and_kernel):
-        input_type, kernel = input_type_and_kernel
-
+    def test_antialias_warning(self, interpolation, input_type):
         with (
             assert_warns_antialias_default_value()
             if interpolation in {transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC}
@@ -568,14 +567,10 @@ class TestResize:
     # we don't test it here.
     @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST_EXACT})
     @pytest.mark.parametrize(
-        "input_type_and_kernel",
-        [
-            (datapoints.Image, F.resize_image_tensor),
-            (datapoints.Video, F.resize_video),
-        ],
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video],
     )
-    def test_interpolation_int(self, interpolation, input_type_and_kernel):
-        input_type, kernel = input_type_and_kernel
+    def test_interpolation_int(self, interpolation, input_type):
         input = self._make_input(input_type)
 
         expected = F.resize(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation)
@@ -595,14 +590,7 @@ class TestResize:
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize(
         "input_type",
-        [
-            torch.Tensor,
-            PIL.Image.Image,
-            datapoints.Image,
-            datapoints.BoundingBox,
-            datapoints.Mask,
-            datapoints.Video,
-        ],
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
     )
     def test_transform(self, size, device, input_type):
         input = self._make_input(input_type, device=device)
