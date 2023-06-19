@@ -65,15 +65,6 @@ PLATFORM_ARCH = platform.machine()
 PYTHON_VERSION = sys.version_info
 
 
-def read_chunks(file, size=io.DEFAULT_BUFFER_SIZE):
-    """Yield pieces of data from a file-like object until EOF."""
-    while True:
-        chunk = file.read(size)
-        if not chunk:
-            break
-        yield chunk
-
-
 def rehash(path, blocksize=1 << 20):
     """Return (hash, length) for path using hashlib.sha256()"""
     h = hashlib.sha256()
