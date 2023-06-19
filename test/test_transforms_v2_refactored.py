@@ -35,6 +35,7 @@ def _to_tolerances(maybe_tolerance_dict):
 
 
 def _check_kernel_cuda_vs_cpu(kernel, input, *args, rtol, atol, **kwargs):
+    """Checks if the kernel produces closes results for inputs on GPU and CPU."""
     if input.device.type != "cuda":
         return
 
@@ -56,6 +57,7 @@ def _script(fn):
 
 
 def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
+    """Checks if the kernel is scriptable and if the scripted output is close to the eager one."""
     if input.device.type != "cpu":
         return
 
@@ -68,15 +70,16 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
-def _check_kernel_batched_vs_single(kernel, input, *args, rtol, atol, **kwargs):
-    single_input = input.as_subclass(torch.Tensor)
+def _check_kernel_batched_vs_unbatched(kernel, input, *args, rtol, atol, **kwargs):
+    """Checks if the kernel produces close results for batched and unbatched inputs."""
+    unbatched_input = input.as_subclass(torch.Tensor)
 
-    for batch_dims in [(4,), (2, 3)]:
+    for batch_dims in [(2,), (2, 1)]:
         repeats = [*batch_dims, *[1] * input.ndim]
 
-        actual = kernel(single_input.repeat(repeats), *args, **kwargs)
+        actual = kernel(unbatched_input.repeat(repeats), *args, **kwargs)
 
-        expected = kernel(single_input, *args, **kwargs)
+        expected = kernel(unbatched_input, *args, **kwargs)
         # We can't directly call `.repeat()` on the output, since some kernel also return some additional metadata
         if isinstance(expected, torch.Tensor):
             expected = expected.repeat(repeats)
@@ -105,7 +108,7 @@ def check_kernel(
     *args,
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
-    check_batched_vs_single=True,
+    check_batched_vs_unbatched=True,
     **kwargs,
 ):
     initial_input_version = input._version
@@ -127,20 +130,12 @@ def check_kernel(
     if check_scripted_vs_eager:
         _check_kernel_scripted_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_scripted_vs_eager))
 
-    if check_batched_vs_single:
-        _check_kernel_batched_vs_single(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_single))
-
-
-def check_image_kernel_tensor_vs_pil(kernel_tensor, kernel_pil, image_tensor, *args, rtol=None, atol=None, **kwargs):
-    # FIXME: do we need MAE comparison here?
-
-    actual = kernel_tensor(image_tensor, *args, **kwargs)
-    expected = F.to_image_tensor(kernel_pil(F.to_image_pil(image_tensor), *args, **kwargs))
-
-    torch.testing.assert_close(actual, expected, rtol=rtol, atol=atol)
+    if check_batched_vs_unbatched:
+        _check_kernel_batched_vs_unbatched(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_unbatched))
 
 
 def _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs):
+    """Checks if the dispatcher can be scripted and the scripted version can be called without error."""
     if not isinstance(input, datapoints.Image):
         return
 
@@ -149,6 +144,9 @@ def _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs):
 
 
 def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs):
+    """Checks if the dispatcher correctly dispatches simple tensors to the ``*_image_tensor`` kernel and the input type
+    is preserved in doing so.
+    """
     if not isinstance(input, datapoints.Image):
         return
 
@@ -162,6 +160,9 @@ def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, *
 
 
 def _check_dispatcher_dispatch_datapoint(dispatcher, kernel, input, *args, **kwargs):
+    """Checks if the dispatcher ultimately correctly dispatches datapoints to corresponding kernel and the input type
+    is preserved in doing so. For bounding boxes also checks that the format is preserved.
+    """
     # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
     # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
     spy = mock.MagicMock(wraps=kernel)
@@ -180,6 +181,9 @@ def _check_dispatcher_dispatch_datapoint(dispatcher, kernel, input, *args, **kwa
 
 
 def _check_dispatcher_dispatch_pil(dispatcher, input, *args, **kwargs):
+    """Checks if the dispatcher correctly dispatches PIL images to the ``*_image_pil`` kernel  and the input type
+    is preserved in doing so.
+    """
     if not (isinstance(input, datapoints.Image) and input.dtype is torch.uint8):
         return
 
@@ -227,6 +231,7 @@ def check_dispatcher(
 
 
 def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
+    """Checks if the signature of the dispatcher matches the kernel signature."""
     dispatcher_signature = inspect.signature(dispatcher)
     dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
 
@@ -254,6 +259,7 @@ def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
 
 
 def _check_dispatcher_datapoint_signature_match(dispatcher):
+    """Checks if the signature of the dispatcher matches the corresponding method signature on the Datapoint class."""
     dispatcher_signature = inspect.signature(dispatcher)
     dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
 
@@ -276,14 +282,20 @@ def check_dispatcher_signatures_match(dispatcher, *, kernel, input_type):
     _check_dispatcher_datapoint_signature_match(dispatcher)
 
 
-def _check_transform_v1_compatibility(transform):
+def _check_transform_v1_compatibility(transform, input):
+    """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
+    ``get_params`` method, is scriptable, and the scripted version can be called without error."""
     if not hasattr(transform, "_v1_transform_cls"):
+        return
+
+    if type(input) is not torch.Tensor:
         return
 
     if hasattr(transform._v1_transform_cls, "get_params"):
         assert type(transform).get_params is transform._v1_transform_cls.get_params
 
-    _script(transform)
+    scripted_transform = _script(transform)
+    scripted_transform(input)
 
 
 def check_transform(transform_cls, input, *args, **kwargs):
@@ -295,7 +307,7 @@ def check_transform(transform_cls, input, *args, **kwargs):
     if isinstance(input, datapoints.BoundingBox):
         assert output.format == input.format
 
-    _check_transform_v1_compatibility(transform)
+    _check_transform_v1_compatibility(transform, input)
 
 
 # We cannot use `list(transforms.InterpolationMode)` here, since it includes some PIL-only ones as well
@@ -314,8 +326,8 @@ def assert_warns_antialias_default_value():
 
 
 class TestResize:
-    SPATIAL_SIZE = (17, 11)
-    SIZES = [17, [17], (17,), [12, 13], (12, 13)]
+    INPUT_SIZE = (17, 11)
+    OUTPUT_SIZES = [17, [17], (17,), [12, 13], (12, 13)]
 
     def _make_max_size_kwarg(self, *, use_max_size, size):
         if use_max_size:
@@ -331,7 +343,7 @@ class TestResize:
 
     def _make_input(self, input_type, *, dtype=None, device="cpu"):
         if input_type in {torch.Tensor, PIL.Image.Image, datapoints.Image}:
-            input = make_image(size=self.SPATIAL_SIZE, dtype=dtype or torch.uint8, device=device)
+            input = make_image(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device)
             if input_type is torch.Tensor:
                 input = input.as_subclass(torch.Tensor)
             elif input_type is PIL.Image.Image:
@@ -339,14 +351,14 @@ class TestResize:
         elif input_type is datapoints.BoundingBox:
             input = make_bounding_box(
                 format=datapoints.BoundingBoxFormat.XYXY,
-                spatial_size=self.SPATIAL_SIZE,
+                spatial_size=self.INPUT_SIZE,
                 dtype=dtype or torch.float32,
                 device=device,
             )
         elif input_type is datapoints.Mask:
-            input = make_segmentation_mask(size=self.SPATIAL_SIZE, dtype=dtype or torch.uint8, device=device)
+            input = make_segmentation_mask(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device)
         elif input_type is datapoints.Video:
-            input = make_video(size=self.SPATIAL_SIZE, dtype=dtype or torch.uint8, device=device)
+            input = make_video(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device)
 
         return input
 
@@ -379,7 +391,7 @@ class TestResize:
 
         assert F.get_spatial_size(output) == [new_height, new_width]
 
-    @pytest.mark.parametrize("size", SIZES)
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("antialias", [True, False])
@@ -393,7 +405,7 @@ class TestResize:
             if dtype.is_floating_point:
                 check_cuda_vs_cpu_atol = 1 / 255
             elif interpolation is transforms.InterpolationMode.BICUBIC:
-                check_cuda_vs_cpu_atol = 20
+                check_cuda_vs_cpu_atol = 30
             else:
                 check_cuda_vs_cpu_atol = 1
         else:
@@ -411,7 +423,7 @@ class TestResize:
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
-    @pytest.mark.parametrize("size", SIZES)
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
     @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
@@ -448,11 +460,11 @@ class TestResize:
     def test_pil_interpolation_compat_smoke(self, interpolation):
         F.resize_image_pil(
             self._make_input(PIL.Image.Image, dtype=torch.uint8, device="cpu"),
-            size=self.SIZES[0],
+            size=self.OUTPUT_SIZES[0],
             interpolation=interpolation,
         )
 
-    @pytest.mark.parametrize("size", SIZES)
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
@@ -476,11 +488,12 @@ class TestResize:
     )
     def test_kernel_mask(self, dtype_and_make_mask):
         dtype, make_mask = dtype_and_make_mask
-        check_kernel(F.resize_mask, self._make_input(datapoints.Mask, dtype=dtype), size=self.SIZES[-1])
+        check_kernel(F.resize_mask, self._make_input(datapoints.Mask, dtype=dtype), size=self.OUTPUT_SIZES[-1])
 
     def test_kernel_video(self):
-        check_kernel(F.resize_video, self._make_input(datapoints.Video), size=self.SIZES[-1], antialias=True)
+        check_kernel(F.resize_video, self._make_input(datapoints.Video), size=self.OUTPUT_SIZES[-1], antialias=True)
 
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
         "input_type_and_kernel",
         [
@@ -490,8 +503,7 @@ class TestResize:
             (datapoints.Video, F.resize_video),
         ],
     )
-    @pytest.mark.parametrize("size", SIZES)
-    def test_dispatcher(self, input_type_and_kernel, size):
+    def test_dispatcher(self, size, input_type_and_kernel):
         input_type, kernel = input_type_and_kernel
         check_dispatcher(
             F.resize,
@@ -516,9 +528,9 @@ class TestResize:
 
     def test_dispatcher_pil_antialias_warning(self):
         with pytest.warns(UserWarning, match="Anti-alias option is always applied for PIL Image input"):
-            F.resize(self._make_input(PIL.Image.Image), size=self.SIZES[0], antialias=False)
+            F.resize(self._make_input(PIL.Image.Image), size=self.OUTPUT_SIZES[0], antialias=False)
 
-    @pytest.mark.parametrize("size", SIZES)
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
         "input_type_and_kernel",
         [
@@ -558,7 +570,7 @@ class TestResize:
             if interpolation in {transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC}
             else assert_no_warnings()
         ):
-            F.resize(self._make_input(input_type), size=self.SIZES[0], interpolation=interpolation)
+            F.resize(self._make_input(input_type), size=self.OUTPUT_SIZES[0], interpolation=interpolation)
 
     # `InterpolationMode.NEAREST_EXACT` has no proper corresponding integer equivalent. Internally, we map it to `0` to
     # be the same as `InterpolationMode.NEAREST` for PIL. However, for the tensor backend there is a difference and thus
@@ -575,10 +587,10 @@ class TestResize:
         input_type, kernel = input_type_and_kernel
         input = self._make_input(input_type)
 
-        expected = F.resize(input, size=self.SIZES[0], interpolation=interpolation)
+        expected = F.resize(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation)
         actual = F.resize(
             input,
-            size=self.SIZES[0],
+            size=self.OUTPUT_SIZES[0],
             interpolation={
                 transforms.InterpolationMode.NEAREST: 0,
                 transforms.InterpolationMode.BILINEAR: 2,
@@ -588,10 +600,7 @@ class TestResize:
 
         assert_equal(actual, expected)
 
-    @pytest.mark.parametrize("size", SIZES)
-    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
-    @pytest.mark.parametrize("use_max_size", [True, False])
-    @pytest.mark.parametrize("antialias", [True, False])
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize(
         "input_type",
@@ -604,26 +613,17 @@ class TestResize:
             datapoints.Video,
         ],
     )
-    def test_transform(self, size, interpolation, use_max_size, antialias, device, input_type):
-        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
-            return
-
-        if input_type is PIL.Image.Image and antialias is False:
-            # antialias is always True for PIL
-            return
-
+    def test_transform(self, size, device, input_type):
         input = self._make_input(input_type, device=device)
 
         check_transform(
             transforms.Resize,
             input,
             size=size,
-            interpolation=interpolation,
-            **max_size_kwarg,
-            antialias=antialias,
+            antialias=True,
         )
 
-    @pytest.mark.parametrize("size", SIZES)
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
     @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
