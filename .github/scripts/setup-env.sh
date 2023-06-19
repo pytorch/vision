@@ -40,7 +40,7 @@ echo '::group::Create build environment'
 conda create \
   --name ci \
   --quiet --yes \
-  --channel=defaults --channel=pytorch-nightly \
+  --channel=defaults --channel=pytorch-nightly
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng libjpeg-turbo \
