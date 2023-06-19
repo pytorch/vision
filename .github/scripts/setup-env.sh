@@ -45,6 +45,7 @@ conda create \
   ninja cmake \
   libpng libjpeg-turbo \
   'ffmpeg<4.3'
+conda activate ci
 pip install --progress-bar=off --upgrade setuptools
 
 # See https://github.com/pytorch/vision/issues/6790
