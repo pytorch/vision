@@ -94,7 +94,6 @@ class StanfordCars(Dataset):
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
-
         images_dp, targets_dp = resource_dps
         if self._split == "train":
             targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))

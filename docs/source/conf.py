@@ -235,7 +235,6 @@ def patched_make_field(self, types, domain, items, **kw):
     # `kw` catches `env=None` needed for newer sphinx while maintaining
     #  backwards compatibility when passed along further down!
 
-    # type: (list, unicode, tuple) -> nodes.field  # noqa: F821
     def handle_item(fieldarg, content):
         par = nodes.paragraph()
         par += addnodes.literal_strong("", fieldarg)  # Patch: this line added
@@ -321,7 +320,6 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
     """
 
     if obj.__name__.endswith(("_Weights", "_QuantizedWeights")):
-
         if len(obj) == 0:
             lines[:] = ["There are no available pre-trained weights."]
             return
@@ -468,6 +466,5 @@ generate_weights_table(
 
 
 def setup(app):
-
     app.connect("autodoc-process-docstring", inject_minigalleries)
     app.connect("autodoc-process-docstring", inject_weight_metadata)

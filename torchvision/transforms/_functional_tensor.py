@@ -66,7 +66,6 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         return image
 
     if image.is_floating_point():
-
         # TODO: replace with dtype.is_floating_point when torchscript supports it
         if torch.tensor(0, dtype=dtype).is_floating_point():
             return image.to(dtype)
@@ -482,7 +481,6 @@ def _assert_grid_transform_inputs(
     supported_interpolation_modes: List[str],
     coeffs: Optional[List[float]] = None,
 ) -> None:
-
     if not (isinstance(img, torch.Tensor)):
         raise TypeError("Input img should be Tensor")
 
@@ -545,7 +543,6 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
 def _apply_grid_transform(
     img: Tensor, grid: Tensor, mode: str, fill: Optional[Union[int, float, List[float]]]
 ) -> Tensor:
-
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [grid.dtype])
 
     if img.shape[0] > 1:
@@ -619,7 +616,6 @@ def affine(
 
 
 def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
-
     # Inspired of PIL implementation:
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
 
@@ -765,7 +761,6 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
 
 
 def invert(img: Tensor) -> Tensor:
-
     _assert_image_tensor(img)
 
     if img.ndim < 3:
@@ -777,7 +772,6 @@ def invert(img: Tensor) -> Tensor:
 
 
 def posterize(img: Tensor, bits: int) -> Tensor:
-
     _assert_image_tensor(img)
 
     if img.ndim < 3:
@@ -791,7 +785,6 @@ def posterize(img: Tensor, bits: int) -> Tensor:
 
 
 def solarize(img: Tensor, threshold: float) -> Tensor:
-
     _assert_image_tensor(img)
 
     if img.ndim < 3:
@@ -839,7 +832,6 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
 
 
 def autocontrast(img: Tensor) -> Tensor:
-
     _assert_image_tensor(img)
 
     if img.ndim < 3:
@@ -886,7 +878,6 @@ def _equalize_single_image(img: Tensor) -> Tensor:
 
 
 def equalize(img: Tensor) -> Tensor:
-
     _assert_image_tensor(img)
 
     if not (3 <= img.ndim <= 4):
@@ -950,7 +941,6 @@ def elastic_transform(
     interpolation: str = "bilinear",
     fill: Optional[Union[int, float, List[float]]] = None,
 ) -> Tensor:
-
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 

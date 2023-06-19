@@ -114,7 +114,6 @@ class PCAM(Dataset):
         }
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
-
         images_dp, targets_dp = resource_dps
 
         images_dp = PCAMH5Reader(images_dp, key="x")

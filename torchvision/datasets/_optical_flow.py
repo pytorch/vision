@@ -34,7 +34,6 @@ class FlowDataset(ABC, VisionDataset):
     _has_builtin_flow_mask = False
 
     def __init__(self, root: str, transforms: Optional[Callable] = None) -> None:
-
         super().__init__(root=root)
         self.transforms = transforms
 
@@ -53,7 +52,6 @@ class FlowDataset(ABC, VisionDataset):
         pass
 
     def __getitem__(self, index: int) -> Union[T1, T2]:
-
         img1 = self._read_img(self._image_list[index][0])
         img2 = self._read_img(self._image_list[index][1])
 
@@ -481,7 +479,6 @@ def _read_flo(file_name: str) -> np.ndarray:
 
 
 def _read_16bits_png_with_flow_and_valid_mask(file_name: str) -> Tuple[np.ndarray, np.ndarray]:
-
     flow_and_valid = _read_png_16(file_name).to(torch.float32)
     flow, valid_flow_mask = flow_and_valid[:2, :, :], flow_and_valid[2, :, :]
     flow = (flow - 2**15) / 64  # This conversion is explained somewhere on the kitti archive

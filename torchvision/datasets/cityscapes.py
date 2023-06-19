@@ -137,7 +137,6 @@ class Cityscapes(VisionDataset):
         ]
 
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
-
             if split == "train_extra":
                 image_dir_zip = os.path.join(self.root, "leftImg8bit_trainextra.zip")
             else:

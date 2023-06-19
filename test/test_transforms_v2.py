@@ -1092,7 +1092,6 @@ class TestRandomPerspective:
 
 class TestElasticTransform:
     def test_assertions(self):
-
         with pytest.raises(TypeError, match="alpha should be float or a sequence of floats"):
             transforms.ElasticTransform({})
 
@@ -1382,7 +1381,6 @@ class TestRandomIoUCrop:
 
         n_samples = 5
         for _ in range(n_samples):
-
             params = transform._get_params(sample)
 
             if options == [2.0]:
@@ -1470,7 +1468,6 @@ class TestScaleJitter:
 
         n_samples = 5
         for _ in range(n_samples):
-
             params = transform._get_params([sample])
 
             assert "size" in params
@@ -1575,7 +1572,6 @@ class TestLinearTransformation:
         ],
     )
     def test__transform(self, inpt):
-
         v = 121 * torch.ones(3 * 8 * 8)
         m = torch.ones(3 * 8 * 8, 3 * 8 * 8)
         transform = transforms.LinearTransformation(m, v)
@@ -1773,7 +1769,6 @@ def test_antialias_warning():
 @pytest.mark.parametrize("dataset_return_type", (dict, tuple))
 @pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
 def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
-
     image = datapoints.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
     if image_type is PIL.Image:
         image = to_pil_image(image[0])
@@ -1947,7 +1942,6 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 )
 @pytest.mark.parametrize("sample_type", (tuple, dict))
 def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
-
     if sample_type is tuple and not isinstance(labels_getter, str):
         # The "lambda inputs: inputs["labels"]" labels_getter used in this test
         # doesn't work if the input is a tuple.
@@ -2049,7 +2043,6 @@ def test_sanitize_bounding_boxes_default_heuristic(key, sample_type):
 
 
 def test_sanitize_bounding_boxes_errors():
-
     good_bbox = datapoints.BoundingBox(
         [[0, 0, 10, 10]],
         format=datapoints.BoundingBoxFormat.XYXY,

@@ -200,7 +200,6 @@ class KeypointRCNN(FasterRCNN):
         num_keypoints=None,
         **kwargs,
     ):
-
         if not isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None))):
             raise TypeError(
                 "keypoint_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(keypoint_roi_pool)}"

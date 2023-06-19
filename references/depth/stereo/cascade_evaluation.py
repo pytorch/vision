@@ -203,7 +203,6 @@ def evaluate(model, loader, args, writer=None, step=None):
 
     for n_cascades in args.n_cascades:
         for n_iters in args.n_iterations:
-
             config = f"{n_cascades}c_{n_iters}i"
             config_image_folder = os.path.join(base_image_folder, config)
             os.makedirs(config_image_folder, exist_ok=True)

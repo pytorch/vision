@@ -68,7 +68,7 @@ class Caltech101(VisionDataset):
 
         self.index: List[int] = []
         self.y = []
-        for (i, c) in enumerate(self.categories):
+        for i, c in enumerate(self.categories):
             n = len(os.listdir(os.path.join(self.root, "101_ObjectCategories", c)))
             self.index.extend(range(1, n + 1))
             self.y.extend(n * [i])
@@ -179,7 +179,7 @@ class Caltech256(VisionDataset):
         self.categories = sorted(os.listdir(os.path.join(self.root, "256_ObjectCategories")))
         self.index: List[int] = []
         self.y = []
-        for (i, c) in enumerate(self.categories):
+        for i, c in enumerate(self.categories):
             n = len(
                 [
                     item

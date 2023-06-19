@@ -1140,7 +1140,6 @@ class TestRefDetTransforms:
     )
     def test_transform(self, t_ref, t, data_kwargs):
         for dp in self.make_datapoints(**data_kwargs):
-
             # We should use prototype transform first as reference transform performs inplace target update
             torch.manual_seed(12)
             output = t(dp)
@@ -1206,7 +1205,6 @@ class TestRefSegTransforms:
 
     def check(self, t, t_ref, data_kwargs=None):
         for dp, dp_ref in self.make_datapoints(**data_kwargs or dict()):
-
             self.set_seed()
             actual = actual_image, actual_mask = t(dp)
 

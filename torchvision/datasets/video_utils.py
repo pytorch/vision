@@ -113,7 +113,6 @@ class VideoClips:
         _audio_channels: int = 0,
         output_format: str = "THWC",
     ) -> None:
-
         self.video_paths = video_paths
         self.num_workers = num_workers
 

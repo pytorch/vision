@@ -66,7 +66,6 @@ class TestONNXExporter:
             self.ort_validate(onnx_io, test_inputs, test_ouputs)
 
     def ort_validate(self, onnx_io, inputs, outputs):
-
         inputs, _ = torch.jit._flatten(inputs)
         outputs, _ = torch.jit._flatten(outputs)
 

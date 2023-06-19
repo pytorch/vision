@@ -159,7 +159,6 @@ class DenseNet(nn.Module):
         num_classes: int = 1000,
         memory_efficient: bool = False,
     ) -> None:
-
         super().__init__()
         _log_api_usage_once(self)
 

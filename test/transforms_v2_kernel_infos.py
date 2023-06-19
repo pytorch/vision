@@ -830,7 +830,6 @@ def reference_inputs_rotate_bounding_box():
 
 
 def reference_rotate_bounding_box(bounding_box, *, format, spatial_size, angle, expand=False, center=None):
-
     if center is None:
         center = [spatial_size[1] * 0.5, spatial_size[0] * 0.5]
 
@@ -1161,7 +1160,6 @@ def sample_inputs_pad_video():
 
 
 def reference_pad_bounding_box(bounding_box, *, format, spatial_size, padding, padding_mode):
-
     left, right, top, bottom = _parse_pad_padding(padding)
 
     affine_matrix = np.array(

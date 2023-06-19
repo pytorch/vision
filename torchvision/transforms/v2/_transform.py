@@ -13,7 +13,6 @@ from torchvision.utils import _log_api_usage_once
 
 
 class Transform(nn.Module):
-
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
     _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor, PIL.Image.Image)

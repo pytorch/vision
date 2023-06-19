@@ -1724,7 +1724,6 @@ class RandomErasing(torch.nn.Module):
             img (Tensor): Erased Tensor image.
         """
         if torch.rand(1) < self.p:
-
             # cast self.value to script acceptable type
             if isinstance(self.value, (int, float)):
                 value = [float(self.value)]

@@ -110,7 +110,6 @@ class Kinetics(VisionDataset):
         _legacy: bool = False,
         output_format: str = "TCHW",
     ) -> None:
-
         # TODO: support test
         self.num_classes = verify_str_arg(num_classes, arg="num_classes", valid_values=["400", "600", "700"])
         self.extensions = extensions

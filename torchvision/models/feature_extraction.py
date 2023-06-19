@@ -443,7 +443,6 @@ def create_feature_extractor(
     is_training = model.training
 
     if all(arg is None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
-
         raise ValueError(
             "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
         )

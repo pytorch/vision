@@ -411,7 +411,6 @@ class TestResize:
     @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC, NEAREST_EXACT])
     @pytest.mark.parametrize("antialias", [None, True, False])
     def test_resized_crop(self, scale, ratio, size, interpolation, antialias, device):
-
         if antialias and interpolation in {NEAREST, NEAREST_EXACT}:
             pytest.skip(f"Can not resize if interpolation mode is {interpolation} and antialias=True")
 
@@ -429,7 +428,6 @@ class TestResize:
         _test_fn_save_load(fn, tmpdir)
 
     def test_antialias_default_warning(self):
-
         img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
 
         match = "The default value of the antialias"

@@ -476,7 +476,6 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
 def _apply_grid_transform(
     img: torch.Tensor, grid: torch.Tensor, mode: str, fill: datapoints._FillTypeJIT
 ) -> torch.Tensor:
-
     # We are using context knowledge that grid should have float dtype
     fp = img.dtype == grid.dtype
     float_img = img if fp else img.to(grid.dtype)
@@ -1253,7 +1252,6 @@ def crop_bounding_box(
     height: int,
     width: int,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
-
     # Crop or implicit pad if left and/or top have negative values:
     if format == datapoints.BoundingBoxFormat.XYXY:
         sub = [left, top, left, top]

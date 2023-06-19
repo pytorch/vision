@@ -482,7 +482,6 @@ class RAFT(nn.Module):
             raise ValueError("The update_block parameter should expose a 'hidden_state_size' attribute.")
 
     def forward(self, image1, image2, num_flow_updates: int = 12):
-
         batch_size, _, h, w = image1.shape
         if (h, w) != image2.shape[-2:]:
             raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")

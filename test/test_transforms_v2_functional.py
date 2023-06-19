@@ -905,7 +905,6 @@ def test_correctness_rotate_segmentation_mask_on_fixed_input(device):
     ],
 )
 def test_correctness_crop_bounding_box(device, format, top, left, height, width, expected_bboxes):
-
     # Expected bboxes computed using Albumentations:
     # import numpy as np
     # from albumentations.augmentations.crops.functional import crop_bbox_by_coords, normalize_bbox, denormalize_bbox

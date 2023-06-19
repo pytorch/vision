@@ -166,8 +166,7 @@ class RandomZoomOut(nn.Module):
         self.p = p
 
     @torch.jit.unused
-    def _get_fill_value(self, is_pil):
-        # type: (bool) -> int
+    def _get_fill_value(self, is_pil: bool) -> int:
         # We fake the type to make it work on JIT
         return tuple(int(x) for x in self.fill) if is_pil else 0
 
@@ -447,7 +446,6 @@ def _copy_paste(
     blending: bool = True,
     resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
 ) -> Tuple[torch.Tensor, Dict[str, Tensor]]:
-
     # Random paste targets selection:
     num_masks = len(paste_target["masks"])
 

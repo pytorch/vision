@@ -8,7 +8,6 @@ from .vision import VisionDataset
 
 
 class _LFW(VisionDataset):
-
     base_folder = "lfw-py"
     download_url_prefix = "http://vis-www.cs.umass.edu/lfw/"
 

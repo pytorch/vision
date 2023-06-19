@@ -30,7 +30,6 @@ class ConvexMaskPredictor(nn.Module):
         upsample_factor: int,
         multiplier: float = 0.25,
     ) -> None:
-
         super().__init__()
         self.mask_head = nn.Sequential(
             Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3),
@@ -91,7 +90,6 @@ def _check_window_specs(
     search_window_2d: Tuple[int, int] = (3, 3),
     search_dilate_2d: Tuple[int, int] = (1, 1),
 ) -> None:
-
     if not np.prod(search_window_1d) == np.prod(search_window_2d):
         raise ValueError(
             f"The 1D and 2D windows should contain the same number of elements. "
@@ -127,7 +125,6 @@ class IterativeCorrelationLayer(nn.Module):
         search_window_2d: Tuple[int, int] = (3, 3),
         search_dilate_2d: Tuple[int, int] = (1, 1),
     ) -> None:
-
         super().__init__()
         _check_window_specs(
             search_window_1d=search_window_1d,
@@ -986,7 +983,6 @@ def _crestereo(
     cross_attention_module: Callable[..., nn.Module],
     **kwargs,
 ) -> CREStereo:
-
     feature_encoder = kwargs.pop("feature_encoder", None) or raft.FeatureEncoder(
         block=feature_encoder_block,
         layers=feature_encoder_layers,

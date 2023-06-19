@@ -37,7 +37,6 @@ class StanfordCars(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-
         try:
             import scipy.io as sio
         except ImportError:

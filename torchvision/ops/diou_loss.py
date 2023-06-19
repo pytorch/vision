@@ -12,7 +12,6 @@ def distance_box_iou_loss(
     reduction: str = "none",
     eps: float = 1e-7,
 ) -> torch.Tensor:
-
     """
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
     distance between boxes' centers isn't zero. Indeed, for two exactly overlapping
@@ -69,7 +68,6 @@ def _diou_iou_loss(
     boxes2: torch.Tensor,
     eps: float = 1e-7,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-
     intsct, union = _loss_inter_union(boxes1, boxes2)
     iou = intsct / (union + eps)
     # smallest enclosing box

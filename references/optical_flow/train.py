@@ -181,7 +181,6 @@ def evaluate(model, args):
 def train_one_epoch(model, optimizer, scheduler, train_loader, logger, args):
     device = torch.device(args.device)
     for data_blob in logger.log_every(train_loader):
-
         optimizer.zero_grad()
 
         image1, image2, flow_gt, valid_flow_mask = (x.to(device) for x in data_blob)

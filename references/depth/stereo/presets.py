@@ -84,7 +84,6 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         erase_px_range: Tuple[int, int] = (50, 100),
         erase_num_repeats: int = 1,
     ) -> None:
-
         if scaling_type not in ["linear", "exponential"]:
             raise ValueError(f"Unknown scaling type: {scaling_type}. Available types: linear, exponential")
 

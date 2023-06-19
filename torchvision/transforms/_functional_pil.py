@@ -124,7 +124,6 @@ def adjust_gamma(
     gamma: float,
     gain: float = 1.0,
 ) -> Image.Image:
-
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
@@ -147,7 +146,6 @@ def pad(
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
     padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
 ) -> Image.Image:
-
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
@@ -228,7 +226,6 @@ def crop(
     height: int,
     width: int,
 ) -> Image.Image:
-
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
@@ -241,7 +238,6 @@ def resize(
     size: Union[List[int], int],
     interpolation: int = Image.BILINEAR,
 ) -> Image.Image:
-
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
     if not (isinstance(size, list) and len(size) == 2):
@@ -256,7 +252,6 @@ def _parse_fill(
     img: Image.Image,
     name: str = "fillcolor",
 ) -> Dict[str, Optional[Union[float, List[float], Tuple[float, ...]]]]:
-
     # Process fill color for affine transforms
     num_channels = get_image_num_channels(img)
     if fill is None:
@@ -286,7 +281,6 @@ def affine(
     interpolation: int = Image.NEAREST,
     fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
-
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
@@ -304,7 +298,6 @@ def rotate(
     center: Optional[Tuple[int, int]] = None,
     fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
-
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
@@ -319,7 +312,6 @@ def perspective(
     interpolation: int = Image.BICUBIC,
     fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
-
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 

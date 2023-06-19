@@ -197,7 +197,6 @@ class FasterRCNN(GeneralizedRCNN):
         bbox_reg_weights=None,
         **kwargs,
     ):
-
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
                 "backbone should contain an attribute out_channels "

@@ -441,7 +441,6 @@ def test_resize_antialias_error():
 
 
 def test_resize_antialias_default_warning():
-
     img = Image.new("RGB", size=(10, 10), color=127)
     # We make sure we don't warn for PIL images since the default behaviour doesn't change
     with warnings.catch_warnings():
@@ -1500,7 +1499,6 @@ def test_linear_transformation():
 
 @pytest.mark.parametrize("dtype", int_dtypes())
 def test_max_value(dtype):
-
     assert F_t._max_value(dtype) == torch.iinfo(dtype).max
     # remove float testing as it can lead to errors such as
     # runtime error: 5.7896e+76 is outside the range of representable values of type 'float'
@@ -1869,7 +1867,6 @@ def test_random_erasing(seed):
 
 
 def test_random_rotation():
-
     with pytest.raises(ValueError):
         transforms.RandomRotation(-0.7)
 
@@ -2043,7 +2040,6 @@ class TestAffine:
         return np.linalg.inv(result_matrix)
 
     def _test_transformation(self, angle, translate, scale, shear, pil_image, input_img, center=None):
-
         a_rad = math.radians(angle)
         s_rad = [math.radians(sh_) for sh_ in shear]
         cnt = [20, 20] if center is None else center
@@ -2167,7 +2163,6 @@ class TestAffine:
 
 
 def test_random_affine():
-
     with pytest.raises(ValueError):
         transforms.RandomAffine(-0.7)
     with pytest.raises(ValueError):

@@ -51,7 +51,6 @@ class TestModelsDetectionNegativeSamples:
         assert matched_gt_boxes[0].dtype == torch.float32
 
     def test_assign_targets_to_proposals(self):
-
         proposals = [torch.randint(-50, 50, (20, 4), dtype=torch.float32)]
         gt_boxes = [torch.zeros((0, 4), dtype=torch.float32)]
         gt_labels = [torch.tensor([[0]], dtype=torch.int64)]

@@ -57,7 +57,6 @@ class SBDataset(VisionDataset):
         download: bool = False,
         transforms: Optional[Callable] = None,
     ) -> None:
-
         try:
             from scipy.io import loadmat
 

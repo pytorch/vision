@@ -78,7 +78,6 @@ def normalize_dimensions(img_pil):
     ],
 )
 def test_decode_jpeg(img_path, pil_mode, mode):
-
     with Image.open(img_path) as img:
         is_cmyk = img.mode == "CMYK"
         if pil_mode is not None:
@@ -151,7 +150,6 @@ def test_damaged_corrupt_images(img_path):
     ],
 )
 def test_decode_png(img_path, pil_mode, mode):
-
     with Image.open(img_path) as img:
         if pil_mode is not None:
             img = img.convert(pil_mode)
@@ -399,7 +397,6 @@ def test_decode_jpeg_cuda_errors():
 
 
 def test_encode_jpeg_errors():
-
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.float32))
 

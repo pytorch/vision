@@ -186,7 +186,6 @@ class HttpResource(OnlineResource):
             return self.resolve()._download(root)
 
         for url in itertools.chain((self.url,), self.mirrors):
-
             try:
                 download_url(url, str(root), filename=self.file_name, md5=None)
             # TODO: make this more precise
