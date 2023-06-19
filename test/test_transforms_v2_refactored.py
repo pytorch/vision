@@ -1,3 +1,4 @@
+import contextlib
 import inspect
 import re
 from typing import get_type_hints
@@ -9,6 +10,7 @@ import pytest
 import torch
 import torchvision.transforms.v2 as transforms
 from common_utils import (
+    assert_equal,
     cache,
     cpu_and_gpu,
     make_bounding_box,
@@ -301,6 +303,12 @@ INTERPOLATION_MODES = [
 ]
 
 
+@contextlib.contextmanager
+def assert_warns_antialias_default_value():
+    with pytest.warns(UserWarning, match="The default value of the antialias parameter of all the resizing transforms"):
+        yield
+
+
 class TestResize:
     SPATIAL_SIZE = (17, 11)
     SIZES = [17, [17], (17,), [12, 13], (12, 13)]
@@ -389,6 +397,14 @@ class TestResize:
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1
 
+    @pytest.mark.parametrize("interpolation", set(transforms.InterpolationMode) - set(INTERPOLATION_MODES))
+    def test_pil_interpolation_compat_smoke(self, interpolation):
+        F.resize_image_pil(
+            self._make_input(PIL.Image.Image, dtype=torch.uint8, device="cpu"),
+            size=self.SIZES[0],
+            interpolation=interpolation,
+        )
+
     @pytest.mark.parametrize("size", SIZES)
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("use_max_size", [True, False])
@@ -416,7 +432,7 @@ class TestResize:
         check_kernel(F.resize_mask, self._make_input(datapoints.Mask, dtype=dtype), size=self.SIZES[-1])
 
     def test_kernel_video(self):
-        check_kernel(F.resize_video, self._make_input(datapoints.Video), size=self.SIZES[-1])
+        check_kernel(F.resize_video, self._make_input(datapoints.Video), size=self.SIZES[-1], antialias=True)
 
     @pytest.mark.parametrize(
         "input_type_and_kernel",
@@ -435,6 +451,7 @@ class TestResize:
             kernel,
             self._make_input(input_type),
             size=size,
+            antialias=True,
             check_scripted_smoke=not isinstance(size, int),
         )
 
@@ -450,6 +467,75 @@ class TestResize:
     def test_dispatcher_signature(self, kernel, input_type):
         check_dispatcher_signatures_match(F.resize, kernel=kernel, input_type=input_type)
 
+    def test_dispatcher_pil_antialias_warning(self):
+        with pytest.warns(UserWarning, match="Anti-alias option is always applied for PIL Image input"):
+            F.resize(self._make_input(PIL.Image.Image), size=self.SIZES[0], antialias=False)
+
+    @pytest.mark.parametrize("size", SIZES)
+    @pytest.mark.parametrize(
+        "input_type_and_kernel",
+        [
+            (datapoints.Image, F.resize_image_tensor),
+            (datapoints.BoundingBox, F.resize_bounding_box),
+            (datapoints.Mask, F.resize_mask),
+            (datapoints.Video, F.resize_video),
+        ],
+    )
+    def test_max_size_error(self, size, input_type_and_kernel):
+        input_type, kernel = input_type_and_kernel
+
+        if isinstance(size, int) or len(size) == 1:
+            max_size = (size if isinstance(size, int) else size[0]) - 1
+            match = "must be strictly greater than the requested size"
+        else:
+            # value can be anything other than None
+            max_size = -1
+            match = "size should be an int or a sequence of length 1"
+
+        with pytest.raises(ValueError, match=match):
+            F.resize(self._make_input(input_type), size=size, max_size=max_size, antialias=True)
+
+    @pytest.mark.parametrize(
+        "input_type_and_kernel",
+        [
+            (datapoints.Image, F.resize_image_tensor),
+            (datapoints.Video, F.resize_video),
+        ],
+    )
+    def test_antialias_warning(self, input_type_and_kernel):
+        input_type, kernel = input_type_and_kernel
+
+        with assert_warns_antialias_default_value():
+            F.resize(self._make_input(input_type), size=self.SIZES[0])
+
+    # `InterpolationMode.NEAREST_EXACT` has no proper corresponding integer equivalent. Internally, we map it to `0` to
+    # be the same as `InterpolationMode.NEAREST` for PIL. However, for the tensor backend there is a difference and thus
+    # we don't test it here.
+    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST_EXACT})
+    @pytest.mark.parametrize(
+        "input_type_and_kernel",
+        [
+            (datapoints.Image, F.resize_image_tensor),
+            (datapoints.Video, F.resize_video),
+        ],
+    )
+    def test_interpolation_int(self, interpolation, input_type_and_kernel):
+        input_type, kernel = input_type_and_kernel
+        input = self._make_input(input_type)
+
+        expected = F.resize(input, size=self.SIZES[0], interpolation=interpolation)
+        actual = F.resize(
+            input,
+            size=self.SIZES[0],
+            interpolation={
+                transforms.InterpolationMode.NEAREST: 0,
+                transforms.InterpolationMode.BILINEAR: 2,
+                transforms.InterpolationMode.BICUBIC: 3,
+            }[interpolation],
+        )
+
+        assert_equal(actual, expected)
+
     @pytest.mark.parametrize("size", SIZES)
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize("use_max_size", [True, False])
@@ -458,7 +544,6 @@ class TestResize:
     @pytest.mark.parametrize(
         "input_type",
         [
-            # FIXME: should we handle plain tensors and PIL images implicitly as done for the dispatcher?
             torch.Tensor,
             PIL.Image.Image,
             datapoints.Image,
@@ -469,6 +554,10 @@ class TestResize:
     )
     def test_transform(self, size, interpolation, use_max_size, antialias, device, input_type):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
+            return
+
+        if input_type is PIL.Image.Image and antialias is False:
+            # antialias is always True for PIL
             return
 
         input = self._make_input(input_type, device=device)
@@ -502,3 +591,7 @@ class TestResize:
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1
+
+    def test_transform_unknown_size_error(self):
+        with pytest.raises(ValueError, match="size can either be an integer or a list or tuple of one or two integers"):
+            transforms.Resize(size=object())
