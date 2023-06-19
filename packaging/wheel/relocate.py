@@ -2,7 +2,6 @@
 
 import glob
 import hashlib
-import io
 
 # Standard library imports
 import os
