@@ -415,6 +415,8 @@ class TestResize:
             interpolation=interpolation,
             **max_size_kwarg,
             antialias=antialias,
+            # The `InterpolationMode.BICUBIO` implementation on CUDA does not match PILs implementation well. Thus,
+            # instead of testing with an enormous tolerance, we disable the check all together.
             check_cuda_vs_cpu=False
             if interpolation is transforms.InterpolationMode.BICUBIC
             else dict(rtol=0, atol=1 / 255 if dtype.is_floating_point else 1),
