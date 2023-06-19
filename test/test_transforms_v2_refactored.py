@@ -401,17 +401,6 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        if device == "cuda":
-            if dtype.is_floating_point:
-                check_cuda_vs_cpu_atol = 1 / 255
-            elif interpolation is transforms.InterpolationMode.BICUBIC:
-                check_cuda_vs_cpu_atol = 30
-            else:
-                check_cuda_vs_cpu_atol = 1
-        else:
-            check_cuda_vs_cpu_atol = None
-        check_cuda_vs_cpu = dict(rtol=0, atol=check_cuda_vs_cpu_atol)
-
         check_kernel(
             F.resize_image_tensor,
             self._make_input(datapoints.Image, dtype=dtype, device=device),
@@ -419,7 +408,9 @@ class TestResize:
             interpolation=interpolation,
             **max_size_kwarg,
             antialias=antialias,
-            check_cuda_vs_cpu=check_cuda_vs_cpu,
+            check_cuda_vs_cpu=False
+            if interpolation is transforms.InterpolationMode.BICUBIC
+            else dict(rtol=0, atol=1 / 255 if dtype.is_floating_point else 1),
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
