@@ -11,7 +11,7 @@ namespace ops {
 namespace {
 
 // This should be in sync with `nmsThreadsPerBlock` in the metal kernel.
-constexpr int nmsThreadsPerBlock = sizeof(uint64_t) * 8;
+constexpr int64_t nmsThreadsPerBlock = sizeof(uint64_t) * 8;
 
 at::Tensor nms_kernel(const at::Tensor& dets, const at::Tensor& scores, double iou_threshold) {
   using namespace at::native::mps;
@@ -34,7 +34,7 @@ at::Tensor nms_kernel(const at::Tensor& dets, const at::Tensor& scores, double i
 
   auto order_t = std::get<1>(scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
   auto dets_sorted = dets.index_select(0, order_t).contiguous();
-  int dets_num = dets.size(0);
+  int64_t dets_num = dets.size(0);
   float iou_threshold_f = static_cast<float>(iou_threshold);
 
   const int col_blocks = (dets_num + nmsThreadsPerBlock - 1) / nmsThreadsPerBlock;
@@ -58,7 +58,7 @@ at::Tensor nms_kernel(const at::Tensor& dets, const at::Tensor& scores, double i
       [computeEncoder setComputePipelineState:visionPSO];
       [computeEncoder setBuffer:inputBuffer offset:dets_sorted.storage_offset() * dets_sorted.element_size() atIndex:0];
       [computeEncoder setBuffer:outputBuffer offset:mask.storage_offset() * mask.element_size() atIndex:1];
-      [computeEncoder setBytes:&dets_num length:sizeof(int) atIndex:2];
+      [computeEncoder setBytes:&dets_num length:sizeof(int64_t) atIndex:2];
       [computeEncoder setBytes:&iou_threshold_f length:sizeof(float) atIndex:3];
 
       // A threadGroup is equivalent to a cuda's block.
@@ -85,14 +85,14 @@ at::Tensor nms_kernel(const at::Tensor& dets, const at::Tensor& scores, double i
   at::Tensor keep = at::empty({dets_num}, dets.options().dtype(at::kLong).device(at::kCPU));
   int64_t* keep_out = keep.data_ptr<int64_t>();
 
-  for (int i = 0; i < dets_num; i++) {
-    int nblock = i / nmsThreadsPerBlock;
-    int inblock = i % nmsThreadsPerBlock;
+  for (int64_t i = 0; i < dets_num; i++) {
+    int64_t nblock = i / nmsThreadsPerBlock;
+    int64_t inblock = i % nmsThreadsPerBlock;
 
     if (!(remv[nblock] & (1ULL << inblock))) {
       keep_out[num_to_keep++] = i;
       unsigned long long* p = mask_host + i * col_blocks;
-      for (int j = nblock; j < col_blocks; j++) {
+      for (int64_t j = nblock; j < col_blocks; j++) {
         remv[j] |= p[j];
       }
     }

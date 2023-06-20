@@ -17,7 +17,7 @@ using namespace metal;
   for (index_t i = (tgid.x * tptg.x) + tid2.x; i < (n); \
        i += (tptg.x * n_tgs))
 
-#define MPS_1D_KERNEL_LOOP(i, n, n_tgs) MPS_1D_KERNEL_LOOP_T(i, n, n_tgs, int)
+#define MPS_1D_KERNEL_LOOP(i, n, n_tgs) MPS_1D_KERNEL_LOOP_T(i, n, n_tgs, uint)
 
 /*----------Utils----------*/
 
@@ -52,24 +52,24 @@ void atomic_add_float( device T* data_ptr, const T val)
 
   // atom_var should be 0 now, try to assign the addition result back to the atom_var (data_ptr).
   while ((fetched_uint = atomic_exchange_explicit( atom_var, assigning_uint /*desired*/, memory_order_relaxed)) != 0)  {
-    // If atom_var is not 0, i.e. fetched_uint != 0, it means that the data has been modified by other threads.
-    // Try to assign 0 and get the previous assigned addition result.
+    // If atom_var was not 0, i.e. fetched_uint != 0, it means that the data has been modified by other threads.
+    // Try to assign 0 and get the previously assigned addition result.
     uint fetched_uint_again = atomic_exchange_explicit(atom_var, 0 /*desired*/, memory_order_relaxed);
     T fetched_float_again = *( (thread T*) &fetched_uint_again );
     // Re-add again
     fetched_float = *((thread T*) &(fetched_uint));
-    // Previous assigned addition result + addition result from other threads.
+    // Previously assigned addition result + addition result from other threads.
     assigning_float = fetched_float_again + fetched_float;
     assigning_uint =  *( (thread uint*) &assigning_float);
   }
 #endif
 }
 
-template <typename T>
+template <typename T, typename integer_t>
 inline T bilinear_interpolate(
     constant T* input,
-    int64_t height,
-    int64_t width,
+    integer_t height,
+    integer_t width,
     T y,
     T x,
     uint index /* index for debug only*/) {
@@ -84,10 +84,10 @@ inline T bilinear_interpolate(
   if (x <= 0)
     x = 0;
 
-  int y_low = (int)y;
-  int x_low = (int)x;
-  int y_high;
-  int x_high;
+  integer_t y_low = (integer_t)y;
+  integer_t x_low = (integer_t)x;
+  integer_t y_high;
+  integer_t x_high;
 
   if (y_low >= height - 1) {
     y_high = y_low = height - 1;
@@ -119,20 +119,20 @@ inline T bilinear_interpolate(
   return val;
 }
 
-template <typename T>
+template <typename T, typename integer_t>
 void bilinear_interpolate_gradient(
-    int height,
-    int width,
+    integer_t height,
+    integer_t width,
     T y,
     T x,
     thread T& w1,
     thread T& w2,
     thread T& w3,
     thread T& w4,
-    thread int& x_low,
-    thread int& x_high,
-    thread int& y_low,
-    thread int& y_high,
+    thread integer_t& x_low,
+    thread integer_t& x_high,
+    thread integer_t& y_low,
+    thread integer_t& y_high,
     uint index /* index for debug only*/) {
   // deal with cases that inverse elements are out of feature map boundary
   if (y < -1.0 || y > height || x < -1.0 || x > width) {
@@ -147,8 +147,8 @@ void bilinear_interpolate_gradient(
   if (x <= 0)
     x = 0;
 
-  y_low = (int)y;
-  x_low = (int)x;
+  y_low = (integer_t)y;
+  x_low = (integer_t)x;
 
   if (y_low >= height - 1) {
     y_high = y_low = height - 1;
@@ -201,12 +201,12 @@ bool inline IoU(
 // This should be in sync with the one in nms_kernel.mm.
 // Since metal does not support dynamic array,
 // we need to make it static instead of deriving it from [[threads_per_threadgroup]].
-constant uint nmsThreadsPerBlock = sizeof(uint64_t) * 8;
+constant int64_t nmsThreadsPerBlock = sizeof(uint64_t) * 8;
 
 template<typename T, typename scalar_t>
 kernel void nms(constant  T        * dev_boxes     [[buffer(0)]],
                 device    uint64_t * mask          [[buffer(1)]],
-                constant  int      & n_boxes       [[buffer(2)]],
+                constant  int64_t  & n_boxes       [[buffer(2)]],
                 constant  float    & iou_threshold [[buffer(3)]],
                 uint2     tgid     [[threadgroup_position_in_grid]],
                 uint2     tid2     [[thread_position_in_threadgroup]]) {
@@ -237,7 +237,7 @@ kernel void nms(constant  T        * dev_boxes     [[buffer(0)]],
         t |= static_cast<uint64_t>(1) << i;  // discard 1 keep 0
       }
     }
-    const uint col_blocks = ceil_div(static_cast<uint>(n_boxes), nmsThreadsPerBlock);
+    const uint col_blocks = ceil_div(n_boxes, nmsThreadsPerBlock);
     mask[cur_box_idx * col_blocks + col_start] = t;
   }
 }
@@ -248,12 +248,12 @@ template                                                   \
 kernel void nms<DTYPE ## 4, DTYPE>(                        \
   constant DTYPE ## 4 * dev_boxes         [[buffer(0)]],   \
   device   uint64_t   * mask              [[buffer(1)]],   \
-  constant int        & n_boxes           [[buffer(2)]],   \
+  constant int64_t    & n_boxes           [[buffer(2)]],   \
   constant float      & iou_threshold     [[buffer(3)]],   \
   uint2    tgid   [[threadgroup_position_in_grid]],        \
   uint2    tid2   [[thread_position_in_threadgroup]]);
 
-template<typename T>
+template<typename T, typename integer_t>
 kernel void roi_align(
     constant T       * input          [[buffer(0)]],
     constant T       * rois           [[buffer(1)]],
@@ -272,13 +272,13 @@ kernel void roi_align(
     uint2     tid2   [[thread_position_in_threadgroup]]){
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
     // (n, c, ph, pw) is an element in the pooled output
-    int pw = index % pooled_width;
-    int ph = (index / pooled_width) % pooled_height;
-    int c = (index / pooled_width / pooled_height) % channels;
-    int n = index / pooled_width / pooled_height / channels;
+    integer_t pw = index % pooled_width;
+    integer_t ph = (index / pooled_width) % pooled_height;
+    integer_t c = (index / pooled_width / pooled_height) % channels;
+    integer_t n = index / pooled_width / pooled_height / channels;
 
     constant T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0];
+    integer_t roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
     T offset = aligned ? (T)0.5 : (T)0.0;
@@ -302,23 +302,23 @@ kernel void roi_align(
         input + (roi_batch_ind * channels + c) * height * width;
 
     // We use roi_bin_grid to sample the grid and mimic integral
-    int roi_bin_grid_h = (sampling_ratio > 0)
+    integer_t roi_bin_grid_h = (sampling_ratio > 0)
         ? sampling_ratio
         : ceil(roi_height / pooled_height); // e.g., = 2
-    int roi_bin_grid_w =
+    integer_t roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
 
     // We do average (integral) pooling inside a bin
     // When the grid is empty, output zeros.
-    const T count = max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
+    const T count = max(roi_bin_grid_h * roi_bin_grid_w, static_cast<integer_t>(1)); // e.g. = 4
 
     T output_val = 0.;
-    for (int iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
+    for (integer_t iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
     {
       const T y = roi_start_h + ph * bin_size_h +
           static_cast<T>(iy + .5f) * bin_size_h /
               static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
-      for (int ix = 0; ix < roi_bin_grid_w; ix++) {
+      for (integer_t ix = 0; ix < roi_bin_grid_w; ix++) {
         const T x = roi_start_w + pw * bin_size_w +
             static_cast<T>(ix + .5f) * bin_size_w /
                 static_cast<T>(roi_bin_grid_w);
@@ -333,10 +333,10 @@ kernel void roi_align(
   }
 }
 
-#define REGISTER_ROI_ALIGN_OP(DTYPE)                        \
+#define REGISTER_ROI_ALIGN_OP(DTYPE, INT_DTYPE)                        \
 template                                              \
 [[host_name("roi_align_" #DTYPE)]]                          \
-kernel void roi_align<DTYPE>(                   \
+kernel void roi_align<DTYPE, INT_DTYPE>(                   \
   constant DTYPE * input            [[buffer(0)]],   \
   constant DTYPE * rois             [[buffer(1)]],   \
   device   DTYPE * output           [[buffer(2)]],   \
@@ -353,7 +353,7 @@ kernel void roi_align<DTYPE>(                   \
   uint2     tptg   [[threads_per_threadgroup]],  \
   uint2     tid2   [[thread_position_in_threadgroup]]);
 
-template<typename T>
+template<typename T, typename integer_t>
 kernel void roi_align_backward(
     constant T       * grad_output    [[buffer(0)]],
     constant T       * rois           [[buffer(1)]],
@@ -377,13 +377,13 @@ kernel void roi_align_backward(
 
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
     // (n, c, ph, pw) is an element in the pooled output
-    int pw = index % pooled_width;
-    int ph = (index / pooled_width) % pooled_height;
-    int c = (index / pooled_width / pooled_height) % channels;
-    int n = index / pooled_width / pooled_height / channels;
+    integer_t pw = index % pooled_width;
+    integer_t ph = (index / pooled_width) % pooled_height;
+    integer_t c = (index / pooled_width / pooled_height) % channels;
+    integer_t n = index / pooled_width / pooled_height / channels;
 
     constant T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0];
+    integer_t roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
     T offset = aligned ? (T)0.5 : (T)0.0;
@@ -405,35 +405,35 @@ kernel void roi_align_backward(
 
     // We need to index the gradient using the tensor strides to access the
     // correct values.
-    const int output_offset = n * n_stride + c * c_stride;
+    const integer_t output_offset = n * n_stride + c * c_stride;
     constant T* offset_grad_output = grad_output + output_offset;
     const T grad_output_this_bin =
         offset_grad_output[ph * h_stride + pw * w_stride];
 
     // We use roi_bin_grid to sample the grid and mimic integral
-    int roi_bin_grid_h = (sampling_ratio > 0)
+    integer_t roi_bin_grid_h = (sampling_ratio > 0)
         ? sampling_ratio
         : ceil(roi_height / pooled_height); // e.g., = 2
-    int roi_bin_grid_w =
+    integer_t roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
 
     // We do average (integral) pooling inside a bin
     const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
 
-    const int input_offset = (roi_batch_ind * channels + c) * height * width;
+    const integer_t input_offset = (roi_batch_ind * channels + c) * height * width;
 
-    for (int iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
+    for (integer_t iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
     {
       const T y = roi_start_h + ph * bin_size_h +
           static_cast<T>(iy + .5f) * bin_size_h /
               static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
-      for (int ix = 0; ix < roi_bin_grid_w; ix++) {
+      for (integer_t ix = 0; ix < roi_bin_grid_w; ix++) {
         const T x = roi_start_w + pw * bin_size_w +
             static_cast<T>(ix + .5f) * bin_size_w /
                 static_cast<T>(roi_bin_grid_w);
 
         T w1, w2, w3, w4;
-        int x_low, x_high, y_low, y_high;
+        integer_t x_low, x_high, y_low, y_high;
 
         bilinear_interpolate_gradient(
             height,
@@ -467,10 +467,10 @@ kernel void roi_align_backward(
   } // MPS_1D_KERNEL_LOOP
 }
 
-#define REGISTER_ROI_ALIGN_BACKWARD_OP(DTYPE)        \
+#define REGISTER_ROI_ALIGN_BACKWARD_OP(DTYPE, INT_DTYPE)        \
 template                                             \
 [[host_name("roi_align_backward_" #DTYPE)]]          \
-kernel void roi_align_backward<DTYPE>(               \
+kernel void roi_align_backward<DTYPE, INT_DTYPE>(      \
     constant DTYPE   * grad_output    [[buffer(0)]], \
     constant DTYPE   * rois           [[buffer(1)]], \
     device   DTYPE   * grad_input     [[buffer(2)]], \
@@ -491,7 +491,7 @@ kernel void roi_align_backward<DTYPE>(               \
     uint2     tptg   [[threads_per_threadgroup]], \
     uint2     tid2   [[thread_position_in_threadgroup]]);
 
-template<typename T>
+template<typename T, typename integer_t>
 kernel void roi_pool(
     constant T       * input         [[buffer(0)]],
     constant T       * rois          [[buffer(1)]],
@@ -509,45 +509,45 @@ kernel void roi_pool(
     uint2     tid2   [[thread_position_in_threadgroup]]){
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
     // (n, c, ph, pw) is an element in the pooled output
-    int pw = index % pooled_width;
-    int ph = (index / pooled_width) % pooled_height;
-    int c = (index / pooled_width / pooled_height) % channels;
-    int n = index / pooled_width / pooled_height / channels;
+    integer_t pw = index % pooled_width;
+    integer_t ph = (index / pooled_width) % pooled_height;
+    integer_t c = (index / pooled_width / pooled_height) % channels;
+    integer_t n = index / pooled_width / pooled_height / channels;
 
     constant T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0];
-    int roi_start_w = round(offset_rois[1] * spatial_scale);
-    int roi_start_h = round(offset_rois[2] * spatial_scale);
-    int roi_end_w = round(offset_rois[3] * spatial_scale);
-    int roi_end_h = round(offset_rois[4] * spatial_scale);
+    integer_t roi_batch_ind = offset_rois[0];
+    integer_t roi_start_w = round(offset_rois[1] * spatial_scale);
+    integer_t roi_start_h = round(offset_rois[2] * spatial_scale);
+    integer_t roi_end_w = round(offset_rois[3] * spatial_scale);
+    integer_t roi_end_h = round(offset_rois[4] * spatial_scale);
 
     // Force malformed ROIs to be 1x1
-    int roi_width = max(roi_end_w - roi_start_w + 1, 1);
-    int roi_height = max(roi_end_h - roi_start_h + 1, 1);
+    integer_t roi_width = max(roi_end_w - roi_start_w + 1, static_cast<integer_t>(1));
+    integer_t roi_height = max(roi_end_h - roi_start_h + 1, static_cast<integer_t>(1));
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
-    int wstart = static_cast<int>(floor(static_cast<T>(pw) * bin_size_w));
-    int hend = static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
-    int wend = static_cast<int>(ceil(static_cast<T>(pw + 1) * bin_size_w));
+    integer_t hstart = static_cast<integer_t>(floor(static_cast<T>(ph) * bin_size_h));
+    integer_t wstart = static_cast<integer_t>(floor(static_cast<T>(pw) * bin_size_w));
+    integer_t hend = static_cast<integer_t>(ceil(static_cast<T>(ph + 1) * bin_size_h));
+    integer_t wend = static_cast<integer_t>(ceil(static_cast<T>(pw + 1) * bin_size_w));
 
     // Add roi offsets and clip to input boundaries
-    hstart = min(max(hstart + roi_start_h, 0), static_cast<int>(height));
-    hend = min(max(hend + roi_start_h, 0), static_cast<int>(height));
-    wstart = min(max(wstart + roi_start_w, 0), static_cast<int>(width));
-    wend = min(max(wend + roi_start_w, 0), static_cast<int>(width));
+    hstart = min(max(hstart + roi_start_h, static_cast<integer_t>(0)), static_cast<integer_t>(height));
+    hend = min(max(hend + roi_start_h, static_cast<integer_t>(0)), static_cast<integer_t>(height));
+    wstart = min(max(wstart + roi_start_w, static_cast<integer_t>(0)), static_cast<integer_t>(width));
+    wend = min(max(wend + roi_start_w, static_cast<integer_t>(0)), static_cast<integer_t>(width));
     bool is_empty = (hend <= hstart) || (wend <= wstart);
 
     // Define an empty pooling region to be zero
     T maxval = is_empty ? 0 : -FLT_MAX;
     // If nothing is pooled, argmax = -1 causes nothing to be backprop'd
-    int maxidx = -1;
+    integer_t maxidx = -1;
     constant T* offset_input =
         input + (roi_batch_ind * channels + c) * height * width;
-    for (int h = hstart; h < hend; ++h) {
-      for (int w = wstart; w < wend; ++w) {
-        int input_index = h * width + w;
+    for (integer_t h = hstart; h < hend; ++h) {
+      for (integer_t w = wstart; w < wend; ++w) {
+        integer_t input_index = h * width + w;
         if (offset_input[input_index] > maxval) {
           maxval = offset_input[input_index];
           maxidx = input_index;
@@ -559,10 +559,10 @@ kernel void roi_pool(
   }
 }
 
-#define REGISTER_ROI_POOL_OP(DTYPE)               \
+#define REGISTER_ROI_POOL_OP(DTYPE, INT_DTYPE)               \
 template                                          \
 [[host_name("roi_pool_" #DTYPE)]]                 \
-kernel void roi_pool<DTYPE>(                      \
+kernel void roi_pool<DTYPE, INT_DTYPE>(                      \
   constant DTYPE * input           [[buffer(0)]], \
   constant DTYPE * rois            [[buffer(1)]], \
   device   DTYPE * output          [[buffer(2)]], \
@@ -578,7 +578,7 @@ kernel void roi_pool<DTYPE>(                      \
   uint2     tptg   [[threads_per_threadgroup]], \
   uint2     tid2   [[thread_position_in_threadgroup]]);
 
-template<typename T>
+template<typename T, typename integer_t>
 kernel void roi_pool_backward(
     constant T       * grad_output   [[buffer(0)]],
     constant T       * rois          [[buffer(1)]],
@@ -601,19 +601,19 @@ kernel void roi_pool_backward(
 
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
     // (n, c, ph, pw) is an element in the pooled output
-    int pw = index % pooled_width;
-    int ph = (index / pooled_width) % pooled_height;
-    int c = (index / pooled_width / pooled_height) % channels;
-    int n = index / pooled_width / pooled_height / channels;
+    integer_t pw = index % pooled_width;
+    integer_t ph = (index / pooled_width) % pooled_height;
+    integer_t c = (index / pooled_width / pooled_height) % channels;
+    integer_t n = index / pooled_width / pooled_height / channels;
 
     constant T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0];
+    integer_t roi_batch_ind = offset_rois[0];
 
-    const int output_offset = n * n_stride + c * c_stride;
-    constant int64_t * argmax_data_offset =
+    const integer_t output_offset = n * n_stride + c * c_stride;
+    constant integer_t * argmax_data_offset =
         argmax_data + (n * channels + c) * pooled_height * pooled_width;
-    const int argmax = argmax_data_offset[ph * pooled_width + pw];
-    const int offset = (roi_batch_ind * channels + c) * height * width;
+    const integer_t argmax = argmax_data_offset[ph * pooled_width + pw];
+    const integer_t offset = (roi_batch_ind * channels + c) * height * width;
 
     if (argmax != -1) {
       atomic_add_float(grad_input + offset + argmax, static_cast<T>(grad_output[output_offset + ph * h_stride + pw * w_stride]));
@@ -622,10 +622,10 @@ kernel void roi_pool_backward(
   } // MPS_1D_KERNEL_LOOP
 }
 
-#define REGISTER_ROI_POOL_BACKWARD_OP(DTYPE)        \
+#define REGISTER_ROI_POOL_BACKWARD_OP(DTYPE, INT_DTYPE)        \
 template                                            \
 [[host_name("roi_pool_backward_" #DTYPE)]]          \
-kernel void roi_pool_backward<DTYPE>(               \
+kernel void roi_pool_backward<DTYPE, INT_DTYPE>(    \
     constant DTYPE   * grad_output   [[buffer(0)]], \
     constant DTYPE   * rois          [[buffer(1)]], \
     constant int64_t * argmax_data   [[buffer(2)]], \
@@ -645,7 +645,7 @@ kernel void roi_pool_backward<DTYPE>(               \
     uint2     tptg   [[threads_per_threadgroup]], \
     uint2     tid2   [[thread_position_in_threadgroup]]);
 
-template<typename T>
+template<typename T, typename integer_t>
 kernel void ps_roi_align(
     constant T       * input           [[buffer(0)]],
     constant T       * rois            [[buffer(1)]],
@@ -665,17 +665,17 @@ kernel void ps_roi_align(
     uint2     tid2   [[thread_position_in_threadgroup]]){
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
     // (n, c_out, ph, pw) is an element in the pooled output
-    int pw = index % pooled_width;
-    int ph = (index / pooled_width) % pooled_height;
-    int c_out = (index / pooled_width / pooled_height) % channels_out;
-    int n = index / pooled_width / pooled_height / channels_out;
+    integer_t pw = index % pooled_width;
+    integer_t ph = (index / pooled_width) % pooled_height;
+    integer_t c_out = (index / pooled_width / pooled_height) % channels_out;
+    integer_t n = index / pooled_width / pooled_height / channels_out;
 
     // (n, c_in, ph, pw) is the associated element in the input
-    int c_in = (c_out * pooled_height + ph) * pooled_width + pw;
+    integer_t c_in = (c_out * pooled_height + ph) * pooled_width + pw;
 
     // [start, end) interval for spatial sampling
     constant T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0];
+    integer_t roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
     T roi_start_w = offset_rois[1] * spatial_scale - static_cast<T>(0.5);
@@ -693,21 +693,21 @@ kernel void ps_roi_align(
     T wstart = static_cast<T>(pw) * bin_size_w + roi_start_w;
 
     // We use roi_bin_grid to sample the grid and mimic integral
-    int roi_bin_grid_h = (sampling_ratio > 0)
+    integer_t roi_bin_grid_h = (sampling_ratio > 0)
         ? sampling_ratio
         : ceil(roi_height / pooled_height);
-    int roi_bin_grid_w =
+    integer_t roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
     const T count = roi_bin_grid_h * roi_bin_grid_w;
 
     constant T* offset_input =
         input + (roi_batch_ind * channels + c_in) * height * width;
     T out_sum = 0;
-    for (int iy = 0; iy < roi_bin_grid_h; iy++) {
+    for (integer_t iy = 0; iy < roi_bin_grid_h; iy++) {
       const T y = hstart +
           static_cast<T>(iy + .5f) * bin_size_h /
               static_cast<T>(roi_bin_grid_h);
-      for (int ix = 0; ix < roi_bin_grid_w; ix++) {
+      for (integer_t ix = 0; ix < roi_bin_grid_w; ix++) {
         const T x = wstart +
             static_cast<T>(ix + .5f) * bin_size_w /
                 static_cast<T>(roi_bin_grid_w);
@@ -722,10 +722,10 @@ kernel void ps_roi_align(
   }
 }
 
-#define REGISTER_PS_ROI_ALIGN_OP(DTYPE)             \
+#define REGISTER_PS_ROI_ALIGN_OP(DTYPE, INT_DTYPE)             \
 template                                            \
 [[host_name("ps_roi_align_" #DTYPE)]]               \
-kernel void ps_roi_align<DTYPE>(                    \
+kernel void ps_roi_align<DTYPE, INT_DTYPE>(                    \
   constant DTYPE   * input           [[buffer(0)]], \
   constant DTYPE   * rois            [[buffer(1)]], \
   device   DTYPE   * output          [[buffer(2)]], \
@@ -743,7 +743,7 @@ kernel void ps_roi_align<DTYPE>(                    \
   uint2     tptg   [[threads_per_threadgroup]],      \
   uint2     tid2   [[thread_position_in_threadgroup]]);
 
-template<typename T>
+template<typename T, typename integer_t>
 kernel void ps_roi_align_backward(
     constant T       * grad_output     [[buffer(0)]],
     constant T       * rois            [[buffer(1)]],
@@ -764,12 +764,12 @@ kernel void ps_roi_align_backward(
 
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
     // (n, *, ph, pw) is an element in the pooled output
-    int pw = index % pooled_width;
-    int ph = (index / pooled_width) % pooled_height;
-    int n = index / pooled_width / pooled_height / channels_out;
+    integer_t pw = index % pooled_width;
+    integer_t ph = (index / pooled_width) % pooled_height;
+    integer_t n = index / pooled_width / pooled_height / channels_out;
 
     constant T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0];
+    integer_t roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
     T roi_start_w = offset_rois[1] * spatial_scale - static_cast<T>(0.5);
@@ -783,7 +783,7 @@ kernel void ps_roi_align_backward(
     T bin_size_h = roi_height / static_cast<T>(pooled_height);
     T bin_size_w = roi_width / static_cast<T>(pooled_width);
 
-    int c_in = channel_mapping[index];
+    integer_t c_in = channel_mapping[index];
 
     // Do not using floor/ceil; this implementation detail is critical
     T hstart = static_cast<T>(ph) * bin_size_h + roi_start_h;
@@ -792,26 +792,26 @@ kernel void ps_roi_align_backward(
     const T grad_output_this_bin = grad_output[index];
 
     // We use roi_bin_grid to sample the grid and mimic integral
-    int roi_bin_grid_h = (sampling_ratio > 0)
+    integer_t roi_bin_grid_h = (sampling_ratio > 0)
         ? sampling_ratio
         : ceil(roi_height / pooled_height); // e.g., = 2
-    int roi_bin_grid_w =
+    integer_t roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
     const T count = roi_bin_grid_h * roi_bin_grid_w;
 
-    const int offset = (roi_batch_ind * channels + c_in) * height * width;
+    const integer_t offset = (roi_batch_ind * channels + c_in) * height * width;
 
-    for (int iy = 0; iy < roi_bin_grid_h; iy++) {
+    for (integer_t iy = 0; iy < roi_bin_grid_h; iy++) {
       const T y = hstart +
           static_cast<T>(iy + .5f) * bin_size_h /
               static_cast<T>(roi_bin_grid_h);
-      for (int ix = 0; ix < roi_bin_grid_w; ix++) {
+      for (integer_t ix = 0; ix < roi_bin_grid_w; ix++) {
         const T x = wstart +
             static_cast<T>(ix + .5f) * bin_size_w /
                 static_cast<T>(roi_bin_grid_w);
 
         T w1, w2, w3, w4;
-        int x_low, x_high, y_low, y_high;
+        integer_t x_low, x_high, y_low, y_high;
 
         bilinear_interpolate_gradient(
             height,
@@ -844,10 +844,10 @@ kernel void ps_roi_align_backward(
   }
 }
 
-#define REGISTER_PS_ROI_ALIGN_BACKWARD_OP(DTYPE)      \
+#define REGISTER_PS_ROI_ALIGN_BACKWARD_OP(DTYPE, INT_DTYPE)      \
 template                                              \
 [[host_name("ps_roi_align_backward_" #DTYPE)]]        \
-kernel void ps_roi_align_backward<DTYPE>(             \
+kernel void ps_roi_align_backward<DTYPE, INT_DTYPE>(             \
     constant DTYPE   * grad_output     [[buffer(0)]], \
     constant DTYPE   * rois            [[buffer(1)]], \
     constant int64_t * channel_mapping [[buffer(2)]], \
@@ -865,7 +865,7 @@ kernel void ps_roi_align_backward<DTYPE>(             \
     uint2     tptg   [[threads_per_threadgroup]],      \
     uint2     tid2   [[thread_position_in_threadgroup]]);
 
-template<typename T>
+template<typename T, typename integer_t>
 kernel void ps_roi_pool(
     constant T       * input           [[buffer(0)]],
     constant T       * rois            [[buffer(1)]],
@@ -884,46 +884,46 @@ kernel void ps_roi_pool(
     uint2     tid2   [[thread_position_in_threadgroup]]){
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
     // (n, c_out, ph, pw) is an element in the pooled output
-    int pw = index % pooled_width;
-    int ph = (index / pooled_width) % pooled_height;
-    int c_out = (index / (pooled_width * pooled_height)) % channels_out;
-    int n = index / pooled_width / pooled_height / channels_out;
+    integer_t pw = index % pooled_width;
+    integer_t ph = (index / pooled_width) % pooled_height;
+    integer_t c_out = (index / (pooled_width * pooled_height)) % channels_out;
+    integer_t n = index / pooled_width / pooled_height / channels_out;
 
     // (n, c_in, ph, pw) is the associated element in the input
-    int c_in = (c_out * pooled_height + ph) * pooled_width + pw;
+    integer_t c_in = (c_out * pooled_height + ph) * pooled_width + pw;
 
     // [start, end) interval for spatial sampling
     constant T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0];
-    int roi_start_w = round(offset_rois[1] * spatial_scale);
-    int roi_start_h = round(offset_rois[2] * spatial_scale);
-    int roi_end_w = round(offset_rois[3] * spatial_scale);
-    int roi_end_h = round(offset_rois[4] * spatial_scale);
+    integer_t roi_batch_ind = offset_rois[0];
+    integer_t roi_start_w = round(offset_rois[1] * spatial_scale);
+    integer_t roi_start_h = round(offset_rois[2] * spatial_scale);
+    integer_t roi_end_w = round(offset_rois[3] * spatial_scale);
+    integer_t roi_end_h = round(offset_rois[4] * spatial_scale);
 
     // Force too small ROIs to be 1x1
-    int roi_width = max(roi_end_w - roi_start_w, 1);
-    int roi_height = max(roi_end_h - roi_start_h, 1);
+    integer_t roi_width = max(roi_end_w - roi_start_w, static_cast<integer_t>(1));
+    integer_t roi_height = max(roi_end_h - roi_start_h, static_cast<integer_t>(1));
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
-    int wstart = static_cast<int>(floor(static_cast<T>(pw) * bin_size_w));
-    int hend = static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
-    int wend = static_cast<int>(ceil(static_cast<T>(pw + 1) * bin_size_w));
+    integer_t hstart = static_cast<integer_t>(floor(static_cast<T>(ph) * bin_size_h));
+    integer_t wstart = static_cast<integer_t>(floor(static_cast<T>(pw) * bin_size_w));
+    integer_t hend = static_cast<integer_t>(ceil(static_cast<T>(ph + 1) * bin_size_h));
+    integer_t wend = static_cast<integer_t>(ceil(static_cast<T>(pw + 1) * bin_size_w));
 
     // Add roi offsets and clip to input boundaries
-    hstart = min(max(hstart + roi_start_h, 0), static_cast<int>(height - 1));
-    hend = min(max(hend + roi_start_h, 0), static_cast<int>(height - 1));
-    wstart = min(max(wstart + roi_start_w, 0), static_cast<int>(width - 1));
-    wend = min(max(wend + roi_start_w, 0), static_cast<int>(width - 1));
+    hstart = min(max(hstart + roi_start_h, static_cast<integer_t>(0)), static_cast<integer_t>(height - 1));
+    hend = min(max(hend + roi_start_h, static_cast<integer_t>(0)), static_cast<integer_t>(height - 1));
+    wstart = min(max(wstart + roi_start_w, static_cast<integer_t>(0)), static_cast<integer_t>(width - 1));
+    wend = min(max(wend + roi_start_w, static_cast<integer_t>(0)), static_cast<integer_t>(width - 1));
     bool is_empty = (hend <= hstart) || (wend <= wstart);
 
     constant T* offset_input =
         input + (roi_batch_ind * channels + c_in) * height * width;
     T out_sum = 0;
-    for (int h = hstart; h < hend; ++h) {
-      for (int w = wstart; w < wend; ++w) {
-        int input_index = h * width + w;
+    for (integer_t h = hstart; h < hend; ++h) {
+      for (integer_t w = wstart; w < wend; ++w) {
+        integer_t input_index = h * width + w;
         out_sum += offset_input[input_index];
       }
     }
@@ -934,10 +934,10 @@ kernel void ps_roi_pool(
   }
 }
 
-#define REGISTER_PS_ROI_POOL_OP(DTYPE)                        \
+#define REGISTER_PS_ROI_POOL_OP(DTYPE, INT_DTYPE)                        \
 template                                            \
 [[host_name("ps_roi_pool_" #DTYPE)]]                \
-kernel void ps_roi_pool<DTYPE>(                     \
+kernel void ps_roi_pool<DTYPE, INT_DTYPE>(                     \
   constant DTYPE   * input           [[buffer(0)]], \
   constant DTYPE   * rois            [[buffer(1)]], \
   device   DTYPE   * output          [[buffer(2)]], \
@@ -954,7 +954,7 @@ kernel void ps_roi_pool<DTYPE>(                     \
   uint2    tptg   [[threads_per_threadgroup]],       \
   uint2    tid2   [[thread_position_in_threadgroup]]);
 
-template<typename T>
+template<typename T, typename integer_t>
 kernel void ps_roi_pool_backward(
     constant T       * grad_output     [[buffer(0)]],
     constant T       * rois            [[buffer(1)]],
@@ -974,44 +974,44 @@ kernel void ps_roi_pool_backward(
 
   MPS_1D_KERNEL_LOOP(index, output_size, 1) {
     // (n, *, ph, pw) is an element in the pooled output
-    int pw = index % pooled_width;
-    int ph = (index / pooled_width) % pooled_height;
-    int n = index / pooled_width / pooled_height / channels_out;
+    integer_t pw = index % pooled_width;
+    integer_t ph = (index / pooled_width) % pooled_height;
+    integer_t n = index / pooled_width / pooled_height / channels_out;
 
     constant T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0];
-    int roi_start_w = round(offset_rois[1] * spatial_scale);
-    int roi_start_h = round(offset_rois[2] * spatial_scale);
-    int roi_end_w = round(offset_rois[3] * spatial_scale);
-    int roi_end_h = round(offset_rois[4] * spatial_scale);
+    integer_t roi_batch_ind = offset_rois[0];
+    integer_t roi_start_w = round(offset_rois[1] * spatial_scale);
+    integer_t roi_start_h = round(offset_rois[2] * spatial_scale);
+    integer_t roi_end_w = round(offset_rois[3] * spatial_scale);
+    integer_t roi_end_h = round(offset_rois[4] * spatial_scale);
 
     // Force too small ROIs to be 1x1
-    int roi_width = max(roi_end_w - roi_start_w, 1);
-    int roi_height = max(roi_end_h - roi_start_h, 1);
+    integer_t roi_width = max(roi_end_w - roi_start_w, static_cast<integer_t>(1));
+    integer_t roi_height = max(roi_end_h - roi_start_h, static_cast<integer_t>(1));
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
-    int wstart = static_cast<int>(floor(static_cast<T>(pw) * bin_size_w));
-    int hend = static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
-    int wend = static_cast<int>(ceil(static_cast<T>(pw + 1) * bin_size_w));
+    integer_t hstart = static_cast<integer_t>(floor(static_cast<T>(ph) * bin_size_h));
+    integer_t wstart = static_cast<integer_t>(floor(static_cast<T>(pw) * bin_size_w));
+    integer_t hend = static_cast<integer_t>(ceil(static_cast<T>(ph + 1) * bin_size_h));
+    integer_t wend = static_cast<integer_t>(ceil(static_cast<T>(pw + 1) * bin_size_w));
 
     // Add roi offsets and clip to input boundaries
-    hstart = min(max(hstart + roi_start_h, 0), static_cast<int>(height));
-    hend = min(max(hend + roi_start_h, 0), static_cast<int>(height));
-    wstart = min(max(wstart + roi_start_w, 0), static_cast<int>(width));
-    wend = min(max(wend + roi_start_w, 0), static_cast<int>(width));
+    hstart = min(max(hstart + roi_start_h, static_cast<integer_t>(0)), static_cast<integer_t>(height));
+    hend = min(max(hend + roi_start_h, static_cast<integer_t>(0)), static_cast<integer_t>(height));
+    wstart = min(max(wstart + roi_start_w, static_cast<integer_t>(0)), static_cast<integer_t>(width));
+    wend = min(max(wend + roi_start_w, static_cast<integer_t>(0)), static_cast<integer_t>(width));
     bool is_empty = (hend <= hstart) || (wend <= wstart);
 
-    int c_in = channel_mapping[index];
+    integer_t c_in = channel_mapping[index];
     T bin_area = (hend - hstart) * (wend - wstart);
     T diff_val = is_empty ? static_cast<T>(0) : grad_output[index] / bin_area;
 
-    const int offset = (roi_batch_ind * channels + c_in) * height * width;
+    const integer_t offset = (roi_batch_ind * channels + c_in) * height * width;
 
-    for (int h = hstart; h < hend; ++h) {
-      for (int w = wstart; w < wend; ++w) {
-        int grad_input_index = h * width + w;
+    for (integer_t h = hstart; h < hend; ++h) {
+      for (integer_t w = wstart; w < wend; ++w) {
+        integer_t grad_input_index = h * width + w;
         atomic_add_float(grad_input + offset + grad_input_index, diff_val);
       }
     }
@@ -1019,10 +1019,10 @@ kernel void ps_roi_pool_backward(
   } // MPS_1D_KERNEL_LOOP
 }
 
-#define REGISTER_PS_ROI_POOL_BACKWARD_OP(DTYPE)       \
+#define REGISTER_PS_ROI_POOL_BACKWARD_OP(DTYPE, INT_DTYPE)       \
 template                                              \
 [[host_name("ps_roi_pool_backward_" #DTYPE)]]         \
-kernel void ps_roi_pool_backward<DTYPE>(              \
+kernel void ps_roi_pool_backward<DTYPE, INT_DTYPE>(              \
     constant DTYPE   * grad_output     [[buffer(0)]], \
     constant DTYPE   * rois            [[buffer(1)]], \
     constant int64_t * channel_mapping [[buffer(2)]], \
@@ -1041,22 +1041,22 @@ kernel void ps_roi_pool_backward<DTYPE>(              \
 
 REGISTER_NMS_OP(float);
 REGISTER_NMS_OP(half);
-REGISTER_ROI_ALIGN_OP(float);
-REGISTER_ROI_ALIGN_OP(half);
-REGISTER_ROI_ALIGN_BACKWARD_OP(float);
-REGISTER_ROI_ALIGN_BACKWARD_OP(half);
-REGISTER_ROI_POOL_OP(float);
-REGISTER_ROI_POOL_OP(half);
-REGISTER_ROI_POOL_BACKWARD_OP(float);
-REGISTER_ROI_POOL_BACKWARD_OP(half);
-REGISTER_PS_ROI_ALIGN_OP(float);
-REGISTER_PS_ROI_ALIGN_OP(half);
-REGISTER_PS_ROI_ALIGN_BACKWARD_OP(float);
-REGISTER_PS_ROI_ALIGN_BACKWARD_OP(half);
-REGISTER_PS_ROI_POOL_OP(float);
-REGISTER_PS_ROI_POOL_OP(half);
-REGISTER_PS_ROI_POOL_BACKWARD_OP(float);
-REGISTER_PS_ROI_POOL_BACKWARD_OP(half);
+REGISTER_ROI_ALIGN_OP(float, int64_t);
+REGISTER_ROI_ALIGN_OP(half, int64_t);
+REGISTER_ROI_ALIGN_BACKWARD_OP(float, int64_t);
+REGISTER_ROI_ALIGN_BACKWARD_OP(half, int64_t);
+REGISTER_ROI_POOL_OP(float, int64_t);
+REGISTER_ROI_POOL_OP(half, int64_t);
+REGISTER_ROI_POOL_BACKWARD_OP(float, int64_t);
+REGISTER_ROI_POOL_BACKWARD_OP(half, int64_t);
+REGISTER_PS_ROI_ALIGN_OP(float, int64_t);
+REGISTER_PS_ROI_ALIGN_OP(half, int64_t);
+REGISTER_PS_ROI_ALIGN_BACKWARD_OP(float, int64_t);
+REGISTER_PS_ROI_ALIGN_BACKWARD_OP(half, int64_t);
+REGISTER_PS_ROI_POOL_OP(float, int64_t);
+REGISTER_PS_ROI_POOL_OP(half, int64_t);
+REGISTER_PS_ROI_POOL_BACKWARD_OP(float, int64_t);
+REGISTER_PS_ROI_POOL_BACKWARD_OP(half, int64_t);
 
 )VISION_METAL";
 
