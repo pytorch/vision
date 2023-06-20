@@ -23,6 +23,7 @@ from common_utils import (
 )
 from torch.testing import assert_close
 from torchvision import datapoints
+from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
 
 
@@ -636,15 +637,7 @@ class TestResize:
 
         expected = F.resize(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation, antialias=True)
         actual = F.resize(
-            input,
-            size=self.OUTPUT_SIZES[0],
-            interpolation={
-                transforms.InterpolationMode.NEAREST: 0,
-                transforms.InterpolationMode.BILINEAR: 2,
-                transforms.InterpolationMode.BICUBIC: 3,
-                transforms.InterpolationMode.NEAREST_EXACT: 0,
-            }[interpolation],
-            antialias=True,
+            input, size=self.OUTPUT_SIZES[0], interpolation=pil_modes_mapping[interpolation], antialias=True
         )
 
         assert_equal(actual, expected)
