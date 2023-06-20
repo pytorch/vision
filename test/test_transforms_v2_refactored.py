@@ -506,8 +506,7 @@ class TestResize:
 
         self._check_size(image, actual, size=size, **max_size_kwarg)
 
-        mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 1
+        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
@@ -529,8 +528,7 @@ class TestResize:
 
         self._check_size(image, actual, size=size, **max_size_kwarg)
 
-        mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 1
+        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
 
     @pytest.mark.parametrize("interpolation", set(transforms.InterpolationMode) - set(INTERPOLATION_MODES))
     @pytest.mark.parametrize(
