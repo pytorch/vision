@@ -7,8 +7,8 @@ namespace mps {
 
 static const char* METAL_VISION = R"VISION_METAL(
 
-#include <metal_stdlib>
 #include <metal_atomic>
+#include <metal_stdlib>
 using namespace metal;
 
 /*----------Macros----------*/
