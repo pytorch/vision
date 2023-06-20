@@ -639,3 +639,25 @@ class TestResize:
     def test_transform_unknown_size_error(self):
         with pytest.raises(ValueError, match="size can either be an integer or a list or tuple of one or two integers"):
             transforms.Resize(size=object())
+
+    @pytest.mark.parametrize(
+        "size", [min(INPUT_SIZE), [min(INPUT_SIZE)], (min(INPUT_SIZE),), list(INPUT_SIZE), tuple(INPUT_SIZE)]
+    )
+    @pytest.mark.parametrize(
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+    )
+    def test_noop(self, size, input_type):
+        input = self._make_input(input_type)
+
+        output = F.resize(input, size=size)
+
+        if isinstance(input, datapoints._datapoint.Datapoint):
+            # We can't test identity directly, since that checks for the identity of the Python object. Since all
+            # datapoints unwrap before a kernel and wrap again afterwards, the Python object changes. Thus, we just
+            # check for equality
+            assert_equal(output, input)
+        else:
+            # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
+            # is a good reason to break this, feel free to downgrade to a equality test as done above.
+            assert output is input
