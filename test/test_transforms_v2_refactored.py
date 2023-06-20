@@ -650,7 +650,7 @@ class TestResize:
     def test_noop(self, size, input_type):
         input = self._make_input(input_type)
 
-        output = F.resize(input, size=size)
+        output = F.resize(input, size=size, antialias=True)
 
         if isinstance(input, datapoints._datapoint.Datapoint):
             # We can't test identity directly, since that checks for the identity of the Python object. Since all
@@ -674,6 +674,6 @@ class TestResize:
 
         size = min(F.get_spatial_size(input))
         max_size = size + 1
-        output = F.resize(input, size=size, max_size=max_size)
+        output = F.resize(input, size=size, max_size=max_size, antialias=True)
 
         assert max(F.get_spatial_size(output)) == max_size
