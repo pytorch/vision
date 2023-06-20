@@ -566,12 +566,24 @@ class TestResize:
         assert mae < 1
 
     @pytest.mark.parametrize("interpolation", set(transforms.InterpolationMode) - set(INTERPOLATION_MODES))
-    def test_pil_interpolation_compat_smoke(self, interpolation):
-        F.resize_image_pil(
-            self._make_input(PIL.Image.Image, dtype=torch.uint8, device="cpu"),
-            size=self.OUTPUT_SIZES[0],
-            interpolation=interpolation,
-        )
+    @pytest.mark.parametrize(
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video],
+    )
+    def test_pil_interpolation_compat_smoke(self, interpolation, input_type):
+        input = self._make_input(input_type)
+
+        with (
+            contextlib.nullcontext()
+            if isinstance(input, PIL.Image.Image)
+            # This error is triggered in PyTorch core
+            else pytest.raises(NotImplementedError, match=f"got {interpolation.value.lower()}")
+        ):
+            F.resize(
+                input,
+                size=self.OUTPUT_SIZES[0],
+                interpolation=interpolation,
+            )
 
     def test_dispatcher_pil_antialias_warning(self):
         with pytest.warns(UserWarning, match="Anti-alias option is always applied for PIL Image input"):
