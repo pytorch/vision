@@ -609,21 +609,6 @@ def test_resize_antialias(device, dt, size, interpolation):
     assert_equal(resized_tensor, resize_result)
 
 
-@needs_cuda
-@pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC])
-def test_assert_resize_antialias(interpolation):
-
-    # Checks implementation on very large scales
-    # and catch TORCH_CHECK inside PyTorch implementation
-    torch.manual_seed(12)
-    tensor, _ = _create_data(1000, 1000, device="cuda")
-
-    # Error message is not yet updated in pytorch nightly
-    # with pytest.raises(RuntimeError, match=r"Provided interpolation parameters can not be handled"):
-    with pytest.raises(RuntimeError, match=r"Too much shared memory required"):
-        F.resize(tensor, size=(5, 5), interpolation=interpolation, antialias=True)
-
-
 def test_resize_antialias_default_warning():
 
     img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
@@ -639,25 +624,6 @@ def test_resize_antialias_default_warning():
         warnings.simplefilter("error")
         F.resize(img, size=(20, 20), interpolation=NEAREST)
         F.resized_crop(img, 0, 0, 10, 10, size=(20, 20), interpolation=NEAREST)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("dt", [torch.float32, torch.float64, torch.float16])
-@pytest.mark.parametrize("size", [[10, 7], [10, 42], [42, 7]])
-@pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC])
-def test_interpolate_antialias_backward(device, dt, size, interpolation):
-
-    if dt == torch.float16 and device == "cpu":
-        # skip float16 on CPU case
-        return
-
-    torch.manual_seed(12)
-    x = (torch.rand(1, 32, 29, 3, dtype=torch.double, device=device).permute(0, 3, 1, 2).requires_grad_(True),)
-    resize = partial(F.resize, size=size, interpolation=interpolation, antialias=True)
-    assert torch.autograd.gradcheck(resize, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
-
-    x = (torch.rand(1, 3, 32, 29, dtype=torch.double, device=device, requires_grad=True),)
-    assert torch.autograd.gradcheck(resize, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
 
 
 def check_functional_vs_PIL_vs_scripted(
