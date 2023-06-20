@@ -147,55 +147,28 @@ def _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs):
         dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
 
-def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs):
-    """Checks if the dispatcher correctly dispatches simple tensors to the ``*_image_tensor`` kernel and the input type
-    is preserved in doing so.
+def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
+    """Checks if the dispatcher correctly dispatches the input to the corresponding kernel and that the input type is
+    preserved in doing so. For bounding boxes also checks that the format is preserved.
     """
-    if type(input) is not torch.Tensor:
-        return
-
-    with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
-        output = dispatcher(input, *args, **kwargs)
+    if isinstance(input, datapoints._datapoint.Datapoint):
+        # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
+        # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
+        spy = mock.MagicMock(wraps=kernel)
+        with mock.patch.object(F, kernel.__name__, spy):
+            # Due to Python's name mangling, the `Datapoint.__F` attribute is only accessible from inside the class.
+            # Since that is not the case here, we need to prefix f"_{cls.__name__}"
+            # See https://docs.python.org/3/tutorial/classes.html#private-variables for details
+            with mock.patch.object(datapoints._datapoint.Datapoint, "_Datapoint__F", new=F):
+                output = dispatcher(input, *args, **kwargs)
 
         spy.assert_called_once()
-
-    # We cannot use `isinstance` here since all datapoints are instances of `torch.Tensor` as well
-    assert type(output) is torch.Tensor
-
-
-def _check_dispatcher_dispatch_pil(dispatcher, kernel, input, *args, **kwargs):
-    """Checks if the dispatcher correctly dispatches PIL images to the ``*_image_pil`` kernel  and the input type
-    is preserved in doing so.
-    """
-    if not isinstance(input, PIL.Image.Image):
-        return
-
-    with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
-        output = dispatcher(input, *args, **kwargs)
-
-        spy.assert_called_once()
-
-    assert isinstance(output, PIL.Image.Image)
-
-
-def _check_dispatcher_dispatch_datapoint(dispatcher, kernel, input, *args, **kwargs):
-    """Checks if the dispatcher ultimately correctly dispatches datapoints to corresponding kernel and the input type
-    is preserved in doing so. For bounding boxes also checks that the format is preserved.
-    """
-    if not isinstance(input, datapoints._datapoint.Datapoint):
-        return
-
-    # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
-    # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
-    spy = mock.MagicMock(wraps=kernel)
-    with mock.patch.object(F, kernel.__name__, spy):
-        # Due to Python's name mangling, the `Datapoint.__F` attribute is only accessible from inside the class.
-        # Since that is not the case here, we need to prefix f"_{cls.__name__}"
-        # See https://docs.python.org/3/tutorial/classes.html#private-variables for details
-        with mock.patch.object(datapoints._datapoint.Datapoint, "_Datapoint__F", new=F):
+    else:
+        with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
             output = dispatcher(input, *args, **kwargs)
 
-    spy.assert_called_once()
+            spy.assert_called_once()
+
     assert isinstance(output, type(input))
 
     if isinstance(input, datapoints.BoundingBox):
@@ -208,9 +181,7 @@ def check_dispatcher(
     input,
     *args,
     check_scripted_smoke=True,
-    check_dispatch_simple_tensor=True,
-    check_dispatch_pil=True,
-    check_dispatch_datapoint=True,
+    check_dispatch=True,
     **kwargs,
 ):
     with mock.patch("torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once) as spy:
@@ -225,14 +196,8 @@ def check_dispatcher(
     if check_scripted_smoke:
         _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs)
 
-    if check_dispatch_simple_tensor:
-        _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs)
-
-    if check_dispatch_pil:
-        _check_dispatcher_dispatch_pil(dispatcher, kernel, input, *args, **kwargs)
-
-    if check_dispatch_datapoint:
-        _check_dispatcher_dispatch_datapoint(dispatcher, kernel, input, *args, **kwargs)
+    if check_dispatch:
+        _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs)
 
 
 def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
