@@ -658,14 +658,14 @@ class TestResize:
 
         output = F.resize(input, size=size, antialias=True)
 
+        # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
+        # is a good reason to break this, feel free to downgrade to an equality check.
         if isinstance(input, datapoints._datapoint.Datapoint):
             # We can't test identity directly, since that checks for the identity of the Python object. Since all
-            # datapoints unwrap before a kernel and wrap again afterwards, the Python object changes. Thus, we just
-            # check for equality
-            assert_equal(output, input)
+            # datapoints unwrap before a kernel and wrap again afterwards, the Python object changes. Thus, we check
+            # that the underlying storage is the same
+            assert output.data_ptr() == input.data_ptr()
         else:
-            # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
-            # is a good reason to break this, feel free to downgrade to a equality test as done above.
             assert output is input
 
     @pytest.mark.parametrize(
