@@ -2,8 +2,8 @@
 #include <ATen/native/mps/OperationUtils.h>
 #include "mps_kernels.h"
 
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
 namespace vision {
 namespace ops {
@@ -13,47 +13,32 @@ namespace {
 // This should be in sync with `nmsThreadsPerBlock` in the metal kernel.
 constexpr int nmsThreadsPerBlock = sizeof(uint64_t) * 8;
 
-at::Tensor nms_kernel(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
-    double iou_threshold) {
-
+at::Tensor nms_kernel(const at::Tensor& dets, const at::Tensor& scores, double iou_threshold) {
   using namespace at::native::mps;
   TORCH_CHECK(dets.is_mps(), "dets must be a MPS tensor");
   TORCH_CHECK(scores.is_mps(), "scores must be a MPS tensor");
 
-  TORCH_CHECK(
-      dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
-  TORCH_CHECK(
-      dets.size(1) == 4,
-      "boxes should have 4 elements in dimension 1, got ",
-      dets.size(1));
-  TORCH_CHECK(
-      scores.dim() == 1,
-      "scores should be a 1d tensor, got ",
-      scores.dim(),
-      "D");
-  TORCH_CHECK(
-      dets.size(0) == scores.size(0),
-      "boxes and scores should have same number of elements in ",
-      "dimension 0, got ",
-      dets.size(0),
-      " and ",
-      scores.size(0))
-  
+  TORCH_CHECK(dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
+  TORCH_CHECK(dets.size(1) == 4, "boxes should have 4 elements in dimension 1, got ", dets.size(1));
+  TORCH_CHECK(scores.dim() == 1, "scores should be a 1d tensor, got ", scores.dim(), "D");
+  TORCH_CHECK(dets.size(0) == scores.size(0),
+              "boxes and scores should have same number of elements in ",
+              "dimension 0, got ",
+              dets.size(0),
+              " and ",
+              scores.size(0))
+
   if (dets.numel() == 0) {
     return at::empty({0}, dets.options().dtype(at::kLong));
   }
 
-  auto order_t = std::get<1>(
-      scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
+  auto order_t = std::get<1>(scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
   auto dets_sorted = dets.index_select(0, order_t).contiguous();
   int dets_num = dets.size(0);
   float iou_threshold_f = static_cast<float>(iou_threshold);
 
   const int col_blocks = (dets_num + nmsThreadsPerBlock - 1) / nmsThreadsPerBlock;
-  at::Tensor mask =
-    at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
+  at::Tensor mask = at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
 
   id<MTLBuffer> inputBuffer = getMTLBufferStorage(dets_sorted);
   id<MTLBuffer> outputBuffer = getMTLBufferStorage(mask);
@@ -92,15 +77,13 @@ at::Tensor nms_kernel(
   int64_t num_to_keep = 0;
 
   at::Tensor mask_cpu = mask.to(at::kCPU);
-  unsigned long long* mask_host =
-      (unsigned long long*)mask_cpu.data_ptr<int64_t>();
+  unsigned long long* mask_host = (unsigned long long*)mask_cpu.data_ptr<int64_t>();
 
   std::vector<unsigned long long> remv(col_blocks);
   memset(&remv[0], 0, sizeof(unsigned long long) * col_blocks);
-  
-  at::Tensor keep =
-      at::empty({dets_num}, dets.options().dtype(at::kLong).device(at::kCPU));
-  int64_t* keep_out = keep.data_ptr<int64_t>();  
+
+  at::Tensor keep = at::empty({dets_num}, dets.options().dtype(at::kLong).device(at::kCPU));
+  int64_t* keep_out = keep.data_ptr<int64_t>();
 
   for (int i = 0; i < dets_num; i++) {
     int nblock = i / nmsThreadsPerBlock;
@@ -116,8 +99,7 @@ at::Tensor nms_kernel(
   }
 
   return order_t.index(
-      {keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)
-           .to(order_t.device(), keep.scalar_type())});
+      {keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep).to(order_t.device(), keep.scalar_type())});
 }
 
 } // namespace
