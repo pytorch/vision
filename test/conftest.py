@@ -8,12 +8,13 @@ import torchvision
 
 torchvision.disable_beta_transforms_warning()
 
-from common_utils import CUDA_NOT_AVAILABLE_MSG, IN_FBCODE, IN_OSS_CI, IN_RE_WORKER, OSS_CI_GPU_NO_CUDA_MSG
+from common_utils import CUDA_NOT_AVAILABLE_MSG, MPS_NOT_AVAILABLE_MSG, IN_FBCODE, IN_OSS_CI, IN_RE_WORKER, OSS_CI_GPU_NO_CUDA_MSG, OSS_CI_GPU_NO_MPS_MSG
 
 
 def pytest_configure(config):
     # register an additional marker (see pytest_collection_modifyitems)
     config.addinivalue_line("markers", "needs_cuda: mark for tests that rely on a CUDA device")
+    config.addinivalue_line("markers", "needs_mps: mark for tests that rely on a MPS device")
     config.addinivalue_line("markers", "dont_collect: mark for tests that should not be collected")
 
 
@@ -37,11 +38,16 @@ def pytest_collection_modifyitems(items):
         # the "instances" of the tests where device == 'cuda' will have the 'needs_cuda' mark,
         # and the ones with device == 'cpu' won't have the mark.
         needs_cuda = item.get_closest_marker("needs_cuda") is not None
+        needs_mps = item.get_closest_marker("needs_mps") is not None
+
 
         if needs_cuda and not torch.cuda.is_available():
             # In general, we skip cuda tests on machines without a GPU
             # There are special cases though, see below
             item.add_marker(pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG))
+        
+        if needs_mps and not torch.backends.mps.is_available():
+            item.add_marker(pytest.mark.skip(reason=MPS_NOT_AVAILABLE_MSG))
 
         if IN_FBCODE:
             # fbcode doesn't like skipping tests, so instead we  just don't collect the test
@@ -60,6 +66,8 @@ def pytest_collection_modifyitems(items):
                 # Similar to what happens in RE workers: we don't need the OSS CI GPU machines
                 # to run the CPU-only tests.
                 item.add_marker(pytest.mark.skip(reason=OSS_CI_GPU_NO_CUDA_MSG))
+            if not needs_mps and torch.backends.mps.is_available():
+                item.add_marker(pytest.mark.skip(reason=OSS_CI_GPU_NO_MPS_MSG))
 
         if item.get_closest_marker("dont_collect") is not None:
             # currently, this is only used for some tests we're sure we don't want to run on fbcode

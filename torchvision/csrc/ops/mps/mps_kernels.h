@@ -13,7 +13,7 @@ using namespace metal;
 
 /*----------Macros----------*/
 
-#define MPS_1D_KERNEL_LOOP_T(i, n, n_tgs, index_t)                         \
+#define MPS_1D_KERNEL_LOOP_T(i, n, n_tgs, index_t)      \
   for (index_t i = (tgid.x * tptg.x) + tid2.x; i < (n); \
        i += (tptg.x * n_tgs))
 
@@ -27,28 +27,40 @@ inline T ceil_div(T n, T m) {
 }
 
 template <typename T>
-void atomic_add_float( device T* data_ptr, const float val)
+void atomic_add_float( device T* data_ptr, const T val)
 {
 #if __METAL_VERSION__ >= 300
+  // atomic_float is supported in Metal 3 (macOS Ventura) onward.
   device atomic_fetch_add_explicit((device atomic_float*) data_ptr, val, memory_order_relaxed);
 #else
   // https://github.com/ShoYamanishi/AppleNumericalComputing/blob/053f06c1f5a831095c4bcc29aaf11366fce5231e/03_dot/metal/dot.metal#L447-L472
+  // https://forums.developer.nvidia.com/t/atomicadd-float-float-atomicmul-float-float/14639
+  // Create an atomic uint pointer for atomic checking.
   device atomic_uint* atom_var = (device atomic_uint*)data_ptr;
+  // Create necessary storage.
   uint  fetched_uint,  assigning_uint;
-  float fetched_float, assigning_float;
+  T fetched_float, assigning_float;
 
-  fetched_uint = atomic_exchange_explicit( atom_var, 0, memory_order_relaxed );
-  fetched_float = *( (thread float*) &fetched_uint );
+  // Replace the value in atom_var with 0 and return the previous value in atom_var.
+  fetched_uint = atomic_exchange_explicit( atom_var, 0 /*desired*/, memory_order_relaxed);
+  // Read out the previous value as float.
+  fetched_float = *( (thread T*) &fetched_uint );
 
+  // Do addition and represent the addition result in uint for atomic checking.
   assigning_float = fetched_float + val;
-  assigning_uint =  *( (thread uint*) &assigning_float );
+  assigning_uint =  *((thread uint*) &assigning_float);
 
-  while ((fetched_uint = atomic_exchange_explicit( atom_var, assigning_uint, memory_order_relaxed)) != 0)  {
-    uint fetched_uint_again = atomic_exchange_explicit( atom_var, 0, memory_order_relaxed);
-    float fetched_float_again = *( (thread float*) &fetched_uint_again );
-    fetched_float = *( (thread float*) &(fetched_uint) );
+  // atom_var should be 0 now, try to assign the addition result back to the atom_var (data_ptr).
+  while ((fetched_uint = atomic_exchange_explicit( atom_var, assigning_uint /*desired*/, memory_order_relaxed)) != 0)  {
+    // If atom_var is not 0, i.e. fetched_uint != 0, it means that the data has been modified by other threads.
+    // Try to assign 0 and get the previous assigned addition result.
+    uint fetched_uint_again = atomic_exchange_explicit(atom_var, 0 /*desired*/, memory_order_relaxed);
+    T fetched_float_again = *( (thread T*) &fetched_uint_again );
+    // Re-add again
+    fetched_float = *((thread T*) &(fetched_uint));
+    // Previous assigned addition result + addition result from other threads.
     assigning_float = fetched_float_again + fetched_float;
-    assigning_uint =  *( (thread uint*) &assigning_float );
+    assigning_uint =  *( (thread uint*) &assigning_float);
   }
 #endif
 }
@@ -177,9 +189,10 @@ bool inline IoU(
   auto yy2 = min(a.w, b.w);
   auto w = max(static_cast<scalar_t>(0), xx2 - xx1);
   auto h = max(static_cast<scalar_t>(0), yy2 - yy1);
-  auto inter = w * h;
-  auto area_a = (a.z - a.x) * (a.w - a.y);
-  auto area_b = (b.z - b.x) * (b.w - b.y);
+  // Upcast to float before multiplications to circumvent precision issues in half.
+  auto inter = static_cast<float>(w) * static_cast<float>(h);
+  auto area_b = static_cast<float>(b.z - b.x) * static_cast<float>(b.w - b.y);
+  auto area_a = static_cast<float>(a.z - a.x) * static_cast<float>(a.w - a.y);
   return (inter / (area_a + area_b - inter)) > threshold;
 }
 
@@ -1081,6 +1094,6 @@ static id<MTLComputePipelineState> visionPipelineState(id<MTLDevice> device, con
   return pso;
 }
 
-}
-}
-}  // namespace
+} // namespace mps
+} // namespace ops
+} // namespace vision

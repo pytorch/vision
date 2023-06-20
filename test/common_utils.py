@@ -32,7 +32,9 @@ IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
+MPS_NOT_AVAILABLE_MSG = "MPS device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
+OSS_CI_GPU_NO_MPS_MSG = "We're in an OSS M1 machine, and this test doesn't need mps."
 
 
 @contextlib.contextmanager
@@ -139,7 +141,7 @@ def needs_cuda(test_func):
 
 
 def needs_mps(test_func):
-    import pytest
+    import pytest  # noqa
 
     return pytest.mark.needs_mps(test_func)
 

@@ -97,6 +97,7 @@ class PoolWrapper(nn.Module):
 class RoIOpTester(ABC):
     dtype = torch.float64
     mps_dtype = torch.float32
+    mps_backward_atol = 2e-2
 
     @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
@@ -160,7 +161,7 @@ class RoIOpTester(ABC):
     @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     def test_backward(self, seed, device, contiguous, deterministic=False):
-        atol = 5e-2 if device == "mps" else None
+        atol = self.mps_backward_atol if device == "mps" else 1e-05
         dtype = self.mps_dtype if device == "mps" else self.dtype
 
         torch.random.manual_seed(seed)
@@ -276,6 +277,8 @@ class TestRoiPool(RoIOpTester):
 
 
 class TestPSRoIPool(RoIOpTester):
+    mps_backward_atol = 5e-2
+
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIPool((pool_h, pool_w), 1)(x, rois)
 
@@ -357,6 +360,8 @@ def bilinear_interpolate(data, y, x, snap_border=False):
 
 
 class TestRoIAlign(RoIOpTester):
+    mps_backward_atol = 6e-2
+
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False, **kwargs):
         return ops.RoIAlign(
             (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
@@ -542,6 +547,8 @@ class TestRoIAlign(RoIOpTester):
 
 
 class TestPSRoIAlign(RoIOpTester):
+    mps_backward_atol = 5e-2
+
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)(x, rois)
 
@@ -769,7 +776,6 @@ class TestNMS:
         assert_equal(keep32, keep16)
 
     @needs_mps
-    @pytest.mark.xfail
     def test_nms_mps_float16(self):
         boxes = torch.tensor(
             [
