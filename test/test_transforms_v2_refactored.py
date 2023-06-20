@@ -352,24 +352,25 @@ class TestResize:
 
         return dict(max_size=max_size)
 
-    def _make_input(self, input_type, *, dtype=None, device="cpu"):
+    def _make_input(self, input_type, *, dtype=None, device="cpu", **kwargs):
         if input_type in {torch.Tensor, PIL.Image.Image, datapoints.Image}:
-            input = make_image(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device)
+            input = make_image(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device, **kwargs)
             if input_type is torch.Tensor:
                 input = input.as_subclass(torch.Tensor)
             elif input_type is PIL.Image.Image:
                 input = F.to_image_pil(input)
         elif input_type is datapoints.BoundingBox:
+            kwargs.setdefault("format", datapoints.BoundingBoxFormat.XYXY)
             input = make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYXY,
                 spatial_size=self.INPUT_SIZE,
                 dtype=dtype or torch.float32,
                 device=device,
+                **kwargs,
             )
         elif input_type is datapoints.Mask:
-            input = make_segmentation_mask(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device)
+            input = make_segmentation_mask(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device, **kwargs)
         elif input_type is datapoints.Video:
-            input = make_video(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device)
+            input = make_video(size=self.INPUT_SIZE, dtype=dtype or torch.uint8, device=device, **kwargs)
 
         return input
 
@@ -436,7 +437,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_box = self._make_input(datapoints.BoundingBox, dtype=dtype, device=device)
+        bounding_box = self._make_input(datapoints.BoundingBox, dtype=dtype, device=device, format=format)
         check_kernel(
             F.resize_bounding_box,
             bounding_box,
