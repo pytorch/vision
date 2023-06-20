@@ -19,7 +19,7 @@ using namespace metal;
 
 #define MPS_1D_KERNEL_LOOP(i, n, n_tgs) MPS_1D_KERNEL_LOOP_T(i, n, n_tgs, uint)
 
-/*----------Utils----------*/
+/*----------Helpers--------*/
 
 template <typename T>
 inline T ceil_div(T n, T m) {
@@ -27,15 +27,18 @@ inline T ceil_div(T n, T m) {
 }
 
 template <typename T>
-void atomic_add_float( device T* data_ptr, const T val)
+inline void atomic_add_float( device T* data_ptr, const T val)
 {
 #if __METAL_VERSION__ >= 300
   // atomic_float is supported in Metal 3 (macOS Ventura) onward.
   device atomic_fetch_add_explicit((device atomic_float*) data_ptr, val, memory_order_relaxed);
 #else
+  // Custom atomic addition implementation
   // https://github.com/ShoYamanishi/AppleNumericalComputing/blob/053f06c1f5a831095c4bcc29aaf11366fce5231e/03_dot/metal/dot.metal#L447-L472
   // https://forums.developer.nvidia.com/t/atomicadd-float-float-atomicmul-float-float/14639
-  // Create an atomic uint pointer for atomic checking.
+  // https://on-demand.gputechconf.com/gtc/2013/presentations/S3101-Atomic-Memory-Operations.pdf (See the last slide)
+  
+  // Create an atomic uint pointer for atomic transaction.
   device atomic_uint* atom_var = (device atomic_uint*)data_ptr;
   // Create necessary storage.
   uint  fetched_uint,  assigning_uint;
@@ -46,7 +49,7 @@ void atomic_add_float( device T* data_ptr, const T val)
   // Read out the previous value as float.
   fetched_float = *( (thread T*) &fetched_uint );
 
-  // Do addition and represent the addition result in uint for atomic checking.
+  // Do addition and represent the addition result in uint for atomic transaction.
   assigning_float = fetched_float + val;
   assigning_uint =  *((thread uint*) &assigning_float);
 
@@ -120,7 +123,7 @@ inline T bilinear_interpolate(
 }
 
 template <typename T, typename integer_t>
-void bilinear_interpolate_gradient(
+inline void bilinear_interpolate_gradient(
     integer_t height,
     integer_t width,
     T y,
@@ -179,7 +182,7 @@ void bilinear_interpolate_gradient(
 }
 
 template <typename T, typename scalar_t>
-bool inline IoU(
+inline bool IoU(
   constant T & a,
   threadgroup T & b,
   const float threshold) {
@@ -333,24 +336,24 @@ kernel void roi_align(
   }
 }
 
-#define REGISTER_ROI_ALIGN_OP(DTYPE, INT_DTYPE)                        \
-template                                              \
-[[host_name("roi_align_" #DTYPE)]]                          \
-kernel void roi_align<DTYPE, INT_DTYPE>(                   \
-  constant DTYPE * input            [[buffer(0)]],   \
-  constant DTYPE * rois             [[buffer(1)]],   \
-  device   DTYPE * output           [[buffer(2)]],   \
-  constant int64_t & output_size    [[buffer(3)]],   \
-  constant int64_t & channels       [[buffer(4)]],   \
-  constant int64_t & height         [[buffer(5)]],   \
-  constant int64_t & width          [[buffer(6)]],   \
-  constant int64_t & pooled_height  [[buffer(7)]],   \
-  constant int64_t & pooled_width   [[buffer(8)]],   \
-  constant int64_t & sampling_ratio [[buffer(9)]],   \
-  constant bool    & aligned        [[buffer(10)]],   \
-  constant float   & spatial_scale  [[buffer(11)]],   \
-  uint2     tgid   [[threadgroup_position_in_grid]],  \
-  uint2     tptg   [[threads_per_threadgroup]],  \
+#define REGISTER_ROI_ALIGN_OP(DTYPE, INT_DTYPE)         \
+template                                                \
+[[host_name("roi_align_" #DTYPE)]]                      \
+kernel void roi_align<DTYPE, INT_DTYPE>(                \
+  constant DTYPE * input            [[buffer(0)]],      \
+  constant DTYPE * rois             [[buffer(1)]],      \
+  device   DTYPE * output           [[buffer(2)]],      \
+  constant int64_t & output_size    [[buffer(3)]],      \
+  constant int64_t & channels       [[buffer(4)]],      \
+  constant int64_t & height         [[buffer(5)]],      \
+  constant int64_t & width          [[buffer(6)]],      \
+  constant int64_t & pooled_height  [[buffer(7)]],      \
+  constant int64_t & pooled_width   [[buffer(8)]],      \
+  constant int64_t & sampling_ratio [[buffer(9)]],      \
+  constant bool    & aligned        [[buffer(10)]],     \
+  constant float   & spatial_scale  [[buffer(11)]],     \
+  uint2     tgid   [[threadgroup_position_in_grid]],    \
+  uint2     tptg   [[threads_per_threadgroup]],         \
   uint2     tid2   [[thread_position_in_threadgroup]]);
 
 template<typename T, typename integer_t>
@@ -467,28 +470,28 @@ kernel void roi_align_backward(
   } // MPS_1D_KERNEL_LOOP
 }
 
-#define REGISTER_ROI_ALIGN_BACKWARD_OP(DTYPE, INT_DTYPE)        \
-template                                             \
-[[host_name("roi_align_backward_" #DTYPE)]]          \
-kernel void roi_align_backward<DTYPE, INT_DTYPE>(      \
-    constant DTYPE   * grad_output    [[buffer(0)]], \
-    constant DTYPE   * rois           [[buffer(1)]], \
-    device   DTYPE   * grad_input     [[buffer(2)]], \
-    constant int64_t & output_size    [[buffer(3)]], \
-    constant int64_t & channels       [[buffer(4)]], \
-    constant int64_t & height         [[buffer(5)]], \
-    constant int64_t & width          [[buffer(6)]], \
-    constant int64_t & pooled_height  [[buffer(7)]], \
-    constant int64_t & pooled_width   [[buffer(8)]], \
-    constant int64_t & sampling_ratio [[buffer(9)]], \
-    constant bool    & aligned        [[buffer(10)]], \
-    constant float   & spatial_scale  [[buffer(11)]], \
-    constant int64_t & n_stride       [[buffer(12)]], \
-    constant int64_t & c_stride       [[buffer(13)]], \
-    constant int64_t & h_stride       [[buffer(14)]], \
-    constant int64_t & w_stride       [[buffer(15)]], \
-    uint2     tgid   [[threadgroup_position_in_grid]], \
-    uint2     tptg   [[threads_per_threadgroup]], \
+#define REGISTER_ROI_ALIGN_BACKWARD_OP(DTYPE, INT_DTYPE)   \
+template                                                   \
+[[host_name("roi_align_backward_" #DTYPE)]]                \
+kernel void roi_align_backward<DTYPE, INT_DTYPE>(          \
+    constant DTYPE   * grad_output    [[buffer(0)]],       \
+    constant DTYPE   * rois           [[buffer(1)]],       \
+    device   DTYPE   * grad_input     [[buffer(2)]],       \
+    constant int64_t & output_size    [[buffer(3)]],       \
+    constant int64_t & channels       [[buffer(4)]],       \
+    constant int64_t & height         [[buffer(5)]],       \
+    constant int64_t & width          [[buffer(6)]],       \
+    constant int64_t & pooled_height  [[buffer(7)]],       \
+    constant int64_t & pooled_width   [[buffer(8)]],       \
+    constant int64_t & sampling_ratio [[buffer(9)]],       \
+    constant bool    & aligned        [[buffer(10)]],      \
+    constant float   & spatial_scale  [[buffer(11)]],      \
+    constant int64_t & n_stride       [[buffer(12)]],      \
+    constant int64_t & c_stride       [[buffer(13)]],      \
+    constant int64_t & h_stride       [[buffer(14)]],      \
+    constant int64_t & w_stride       [[buffer(15)]],      \
+    uint2     tgid   [[threadgroup_position_in_grid]],     \
+    uint2     tptg   [[threads_per_threadgroup]],          \
     uint2     tid2   [[thread_position_in_threadgroup]]);
 
 template<typename T, typename integer_t>
@@ -559,23 +562,23 @@ kernel void roi_pool(
   }
 }
 
-#define REGISTER_ROI_POOL_OP(DTYPE, INT_DTYPE)               \
-template                                          \
-[[host_name("roi_pool_" #DTYPE)]]                 \
-kernel void roi_pool<DTYPE, INT_DTYPE>(                      \
-  constant DTYPE * input           [[buffer(0)]], \
-  constant DTYPE * rois            [[buffer(1)]], \
-  device   DTYPE * output          [[buffer(2)]], \
-  device   int64_t * argmax_data   [[buffer(3)]], \
-  constant int64_t & output_size   [[buffer(4)]], \
-  constant int64_t & channels      [[buffer(5)]], \
-  constant int64_t & height        [[buffer(6)]], \
-  constant int64_t & width         [[buffer(7)]], \
-  constant int64_t & pooled_height [[buffer(8)]], \
-  constant int64_t & pooled_width  [[buffer(9)]], \
-  constant float   & spatial_scale [[buffer(10)]], \
-  uint2     tgid   [[threadgroup_position_in_grid]], \
-  uint2     tptg   [[threads_per_threadgroup]], \
+#define REGISTER_ROI_POOL_OP(DTYPE, INT_DTYPE)          \
+template                                                \
+[[host_name("roi_pool_" #DTYPE)]]                       \
+kernel void roi_pool<DTYPE, INT_DTYPE>(                 \
+  constant DTYPE * input           [[buffer(0)]],       \
+  constant DTYPE * rois            [[buffer(1)]],       \
+  device   DTYPE * output          [[buffer(2)]],       \
+  device   int64_t * argmax_data   [[buffer(3)]],       \
+  constant int64_t & output_size   [[buffer(4)]],       \
+  constant int64_t & channels      [[buffer(5)]],       \
+  constant int64_t & height        [[buffer(6)]],       \
+  constant int64_t & width         [[buffer(7)]],       \
+  constant int64_t & pooled_height [[buffer(8)]],       \
+  constant int64_t & pooled_width  [[buffer(9)]],       \
+  constant float   & spatial_scale [[buffer(10)]],      \
+  uint2     tgid   [[threadgroup_position_in_grid]],    \
+  uint2     tptg   [[threads_per_threadgroup]],         \
   uint2     tid2   [[thread_position_in_threadgroup]]);
 
 template<typename T, typename integer_t>
@@ -622,27 +625,27 @@ kernel void roi_pool_backward(
   } // MPS_1D_KERNEL_LOOP
 }
 
-#define REGISTER_ROI_POOL_BACKWARD_OP(DTYPE, INT_DTYPE)        \
-template                                            \
-[[host_name("roi_pool_backward_" #DTYPE)]]          \
-kernel void roi_pool_backward<DTYPE, INT_DTYPE>(    \
-    constant DTYPE   * grad_output   [[buffer(0)]], \
-    constant DTYPE   * rois          [[buffer(1)]], \
-    constant int64_t * argmax_data   [[buffer(2)]], \
-    device   DTYPE   * grad_input    [[buffer(3)]], \
-    constant int64_t & output_size   [[buffer(4)]], \
-    constant int64_t & channels      [[buffer(5)]], \
-    constant int64_t & height        [[buffer(6)]], \
-    constant int64_t & width         [[buffer(7)]], \
-    constant int64_t & pooled_height [[buffer(8)]], \
-    constant int64_t & pooled_width  [[buffer(9)]], \
-    constant float   & spatial_scale [[buffer(10)]], \
-    constant int64_t & n_stride      [[buffer(11)]], \
-    constant int64_t & c_stride      [[buffer(12)]], \
-    constant int64_t & h_stride      [[buffer(13)]], \
-    constant int64_t & w_stride      [[buffer(14)]], \
-    uint2     tgid   [[threadgroup_position_in_grid]], \
-    uint2     tptg   [[threads_per_threadgroup]], \
+#define REGISTER_ROI_POOL_BACKWARD_OP(DTYPE, INT_DTYPE)   \
+template                                                  \
+[[host_name("roi_pool_backward_" #DTYPE)]]                \
+kernel void roi_pool_backward<DTYPE, INT_DTYPE>(          \
+    constant DTYPE   * grad_output   [[buffer(0)]],       \
+    constant DTYPE   * rois          [[buffer(1)]],       \
+    constant int64_t * argmax_data   [[buffer(2)]],       \
+    device   DTYPE   * grad_input    [[buffer(3)]],       \
+    constant int64_t & output_size   [[buffer(4)]],       \
+    constant int64_t & channels      [[buffer(5)]],       \
+    constant int64_t & height        [[buffer(6)]],       \
+    constant int64_t & width         [[buffer(7)]],       \
+    constant int64_t & pooled_height [[buffer(8)]],       \
+    constant int64_t & pooled_width  [[buffer(9)]],       \
+    constant float   & spatial_scale [[buffer(10)]],      \
+    constant int64_t & n_stride      [[buffer(11)]],      \
+    constant int64_t & c_stride      [[buffer(12)]],      \
+    constant int64_t & h_stride      [[buffer(13)]],      \
+    constant int64_t & w_stride      [[buffer(14)]],      \
+    uint2     tgid   [[threadgroup_position_in_grid]],    \
+    uint2     tptg   [[threads_per_threadgroup]],         \
     uint2     tid2   [[thread_position_in_threadgroup]]);
 
 template<typename T, typename integer_t>
@@ -722,25 +725,25 @@ kernel void ps_roi_align(
   }
 }
 
-#define REGISTER_PS_ROI_ALIGN_OP(DTYPE, INT_DTYPE)             \
-template                                            \
-[[host_name("ps_roi_align_" #DTYPE)]]               \
-kernel void ps_roi_align<DTYPE, INT_DTYPE>(                    \
-  constant DTYPE   * input           [[buffer(0)]], \
-  constant DTYPE   * rois            [[buffer(1)]], \
-  device   DTYPE   * output          [[buffer(2)]], \
-  device   int64_t * channel_mapping [[buffer(3)]], \
-  constant int64_t & output_size     [[buffer(4)]], \
-  constant int64_t & channels        [[buffer(5)]], \
-  constant int64_t & height          [[buffer(6)]], \
-  constant int64_t & width           [[buffer(7)]], \
-  constant int64_t & pooled_height   [[buffer(8)]], \
-  constant int64_t & pooled_width    [[buffer(9)]], \
-  constant int64_t & sampling_ratio  [[buffer(10)]], \
-  constant int64_t & channels_out    [[buffer(11)]], \
-  constant float   & spatial_scale   [[buffer(12)]], \
-  uint2     tgid   [[threadgroup_position_in_grid]], \
-  uint2     tptg   [[threads_per_threadgroup]],      \
+#define REGISTER_PS_ROI_ALIGN_OP(DTYPE, INT_DTYPE)      \
+template                                                \
+[[host_name("ps_roi_align_" #DTYPE)]]                   \
+kernel void ps_roi_align<DTYPE, INT_DTYPE>(             \
+  constant DTYPE   * input           [[buffer(0)]],     \
+  constant DTYPE   * rois            [[buffer(1)]],     \
+  device   DTYPE   * output          [[buffer(2)]],     \
+  device   int64_t * channel_mapping [[buffer(3)]],     \
+  constant int64_t & output_size     [[buffer(4)]],     \
+  constant int64_t & channels        [[buffer(5)]],     \
+  constant int64_t & height          [[buffer(6)]],     \
+  constant int64_t & width           [[buffer(7)]],     \
+  constant int64_t & pooled_height   [[buffer(8)]],     \
+  constant int64_t & pooled_width    [[buffer(9)]],     \
+  constant int64_t & sampling_ratio  [[buffer(10)]],    \
+  constant int64_t & channels_out    [[buffer(11)]],    \
+  constant float   & spatial_scale   [[buffer(12)]],    \
+  uint2     tgid   [[threadgroup_position_in_grid]],    \
+  uint2     tptg   [[threads_per_threadgroup]],         \
   uint2     tid2   [[thread_position_in_threadgroup]]);
 
 template<typename T, typename integer_t>
@@ -844,25 +847,25 @@ kernel void ps_roi_align_backward(
   }
 }
 
-#define REGISTER_PS_ROI_ALIGN_BACKWARD_OP(DTYPE, INT_DTYPE)      \
-template                                              \
-[[host_name("ps_roi_align_backward_" #DTYPE)]]        \
-kernel void ps_roi_align_backward<DTYPE, INT_DTYPE>(             \
-    constant DTYPE   * grad_output     [[buffer(0)]], \
-    constant DTYPE   * rois            [[buffer(1)]], \
-    constant int64_t * channel_mapping [[buffer(2)]], \
-    device   DTYPE   * grad_input      [[buffer(3)]], \
-    constant int64_t & output_size     [[buffer(4)]], \
-    constant int64_t & channels        [[buffer(5)]], \
-    constant int64_t & height          [[buffer(6)]], \
-    constant int64_t & width           [[buffer(7)]], \
-    constant int64_t & pooled_height   [[buffer(8)]], \
-    constant int64_t & pooled_width    [[buffer(9)]], \
-    constant int64_t & sampling_ratio  [[buffer(10)]], \
-    constant int64_t & channels_out    [[buffer(11)]], \
-    constant float   & spatial_scale   [[buffer(12)]], \
-    uint2     tgid   [[threadgroup_position_in_grid]], \
-    uint2     tptg   [[threads_per_threadgroup]],      \
+#define REGISTER_PS_ROI_ALIGN_BACKWARD_OP(DTYPE, INT_DTYPE)   \
+template                                                      \
+[[host_name("ps_roi_align_backward_" #DTYPE)]]                \
+kernel void ps_roi_align_backward<DTYPE, INT_DTYPE>(          \
+    constant DTYPE   * grad_output     [[buffer(0)]],         \
+    constant DTYPE   * rois            [[buffer(1)]],         \
+    constant int64_t * channel_mapping [[buffer(2)]],         \
+    device   DTYPE   * grad_input      [[buffer(3)]],         \
+    constant int64_t & output_size     [[buffer(4)]],         \
+    constant int64_t & channels        [[buffer(5)]],         \
+    constant int64_t & height          [[buffer(6)]],         \
+    constant int64_t & width           [[buffer(7)]],         \
+    constant int64_t & pooled_height   [[buffer(8)]],         \
+    constant int64_t & pooled_width    [[buffer(9)]],         \
+    constant int64_t & sampling_ratio  [[buffer(10)]],        \
+    constant int64_t & channels_out    [[buffer(11)]],        \
+    constant float   & spatial_scale   [[buffer(12)]],        \
+    uint2     tgid   [[threadgroup_position_in_grid]],        \
+    uint2     tptg   [[threads_per_threadgroup]],             \
     uint2     tid2   [[thread_position_in_threadgroup]]);
 
 template<typename T, typename integer_t>
@@ -934,24 +937,24 @@ kernel void ps_roi_pool(
   }
 }
 
-#define REGISTER_PS_ROI_POOL_OP(DTYPE, INT_DTYPE)                        \
-template                                            \
-[[host_name("ps_roi_pool_" #DTYPE)]]                \
-kernel void ps_roi_pool<DTYPE, INT_DTYPE>(                     \
-  constant DTYPE   * input           [[buffer(0)]], \
-  constant DTYPE   * rois            [[buffer(1)]], \
-  device   DTYPE   * output          [[buffer(2)]], \
-  device   int64_t * channel_mapping [[buffer(3)]], \
-  constant int64_t & output_size     [[buffer(4)]], \
-  constant int64_t & channels        [[buffer(5)]], \
-  constant int64_t & height          [[buffer(6)]], \
-  constant int64_t & width           [[buffer(7)]], \
-  constant int64_t & pooled_height   [[buffer(8)]], \
-  constant int64_t & pooled_width    [[buffer(9)]], \
-  constant int64_t & channels_out    [[buffer(10)]], \
-  constant float   & spatial_scale   [[buffer(11)]], \
-  uint2    tgid   [[threadgroup_position_in_grid]],  \
-  uint2    tptg   [[threads_per_threadgroup]],       \
+#define REGISTER_PS_ROI_POOL_OP(DTYPE, INT_DTYPE)     \
+template                                              \
+[[host_name("ps_roi_pool_" #DTYPE)]]                  \
+kernel void ps_roi_pool<DTYPE, INT_DTYPE>(            \
+  constant DTYPE   * input           [[buffer(0)]],   \
+  constant DTYPE   * rois            [[buffer(1)]],   \
+  device   DTYPE   * output          [[buffer(2)]],   \
+  device   int64_t * channel_mapping [[buffer(3)]],   \
+  constant int64_t & output_size     [[buffer(4)]],   \
+  constant int64_t & channels        [[buffer(5)]],   \
+  constant int64_t & height          [[buffer(6)]],   \
+  constant int64_t & width           [[buffer(7)]],   \
+  constant int64_t & pooled_height   [[buffer(8)]],   \
+  constant int64_t & pooled_width    [[buffer(9)]],   \
+  constant int64_t & channels_out    [[buffer(10)]],  \
+  constant float   & spatial_scale   [[buffer(11)]],  \
+  uint2    tgid   [[threadgroup_position_in_grid]],   \
+  uint2    tptg   [[threads_per_threadgroup]],        \
   uint2    tid2   [[thread_position_in_threadgroup]]);
 
 template<typename T, typename integer_t>
@@ -1019,24 +1022,24 @@ kernel void ps_roi_pool_backward(
   } // MPS_1D_KERNEL_LOOP
 }
 
-#define REGISTER_PS_ROI_POOL_BACKWARD_OP(DTYPE, INT_DTYPE)       \
-template                                              \
-[[host_name("ps_roi_pool_backward_" #DTYPE)]]         \
-kernel void ps_roi_pool_backward<DTYPE, INT_DTYPE>(              \
-    constant DTYPE   * grad_output     [[buffer(0)]], \
-    constant DTYPE   * rois            [[buffer(1)]], \
-    constant int64_t * channel_mapping [[buffer(2)]], \
-    device   DTYPE   * grad_input      [[buffer(3)]], \
-    constant int64_t & output_size     [[buffer(4)]], \
-    constant int64_t & channels        [[buffer(5)]], \
-    constant int64_t & height          [[buffer(6)]], \
-    constant int64_t & width           [[buffer(7)]], \
-    constant int64_t & pooled_height   [[buffer(8)]], \
-    constant int64_t & pooled_width    [[buffer(9)]], \
-    constant int64_t & channels_out    [[buffer(10)]], \ 
-    constant float   & spatial_scale   [[buffer(11)]], \
-    uint2     tgid   [[threadgroup_position_in_grid]], \
-    uint2     tptg   [[threads_per_threadgroup]],      \
+#define REGISTER_PS_ROI_POOL_BACKWARD_OP(DTYPE, INT_DTYPE)   \
+template                                                     \
+[[host_name("ps_roi_pool_backward_" #DTYPE)]]                \
+kernel void ps_roi_pool_backward<DTYPE, INT_DTYPE>(          \
+    constant DTYPE   * grad_output     [[buffer(0)]],        \
+    constant DTYPE   * rois            [[buffer(1)]],        \
+    constant int64_t * channel_mapping [[buffer(2)]],        \
+    device   DTYPE   * grad_input      [[buffer(3)]],        \
+    constant int64_t & output_size     [[buffer(4)]],        \
+    constant int64_t & channels        [[buffer(5)]],        \
+    constant int64_t & height          [[buffer(6)]],        \
+    constant int64_t & width           [[buffer(7)]],        \
+    constant int64_t & pooled_height   [[buffer(8)]],        \
+    constant int64_t & pooled_width    [[buffer(9)]],        \
+    constant int64_t & channels_out    [[buffer(10)]],       \ 
+    constant float   & spatial_scale   [[buffer(11)]],       \
+    uint2     tgid   [[threadgroup_position_in_grid]],       \
+    uint2     tptg   [[threads_per_threadgroup]],            \
     uint2     tid2   [[thread_position_in_threadgroup]]);
 
 REGISTER_NMS_OP(float);
