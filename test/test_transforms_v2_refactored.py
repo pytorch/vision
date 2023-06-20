@@ -14,6 +14,7 @@ from common_utils import (
     assert_no_warnings,
     cache,
     cpu_and_gpu,
+    ignore_jit_no_profile_information_warning,
     make_bounding_box,
     make_detection_mask,
     make_image,
@@ -64,7 +65,8 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     kernel_scripted = _script(kernel)
 
     input = input.as_subclass(torch.Tensor)
-    actual = kernel_scripted(input, *args, **kwargs)
+    with ignore_jit_no_profile_information_warning():
+        actual = kernel_scripted(input, *args, **kwargs)
     expected = kernel(input, *args, **kwargs)
 
     assert_close(actual, expected, rtol=rtol, atol=atol)
@@ -140,7 +142,8 @@ def _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs):
         return
 
     dispatcher_scripted = _script(dispatcher)
-    dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
+    with ignore_jit_no_profile_information_warning():
+        dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
 
 def _check_dispatcher_dispatch_simple_tensor(dispatcher, kernel, input, *args, **kwargs):
@@ -302,7 +305,8 @@ def _check_transform_v1_compatibility(transform, input):
         assert type(transform).get_params is transform._v1_transform_cls.get_params
 
     scripted_transform = _script(transform)
-    scripted_transform(input)
+    with ignore_jit_no_profile_information_warning():
+        scripted_transform(input)
 
 
 def check_transform(transform_cls, input, *args, **kwargs):
@@ -617,7 +621,7 @@ class TestResize:
 
         input = self._make_input(input_type)
 
-        expected = F.resize(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation)
+        expected = F.resize(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation, antialias=True)
         actual = F.resize(
             input,
             size=self.OUTPUT_SIZES[0],
@@ -627,6 +631,7 @@ class TestResize:
                 transforms.InterpolationMode.BICUBIC: 3,
                 transforms.InterpolationMode.NEAREST_EXACT: 0,
             }[interpolation],
+            antialias=True,
         )
 
         assert_equal(actual, expected)

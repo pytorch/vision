@@ -7,6 +7,7 @@ import itertools
 import os
 import pathlib
 import random
+import re
 import shutil
 import sys
 import tempfile
@@ -889,4 +890,15 @@ def assert_no_warnings():
     # the warning filters. All changes that are made to the filters while in this context, will be reset upon exit.
     with warnings.catch_warnings():
         warnings.simplefilter("error")
+        yield
+
+
+@contextlib.contextmanager
+def ignore_jit_no_profile_information_warning():
+    # Calling a scripted object often triggers a warning like
+    # `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
+    # with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
+    # them.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=re.escape("operator() profile_node %"), category=UserWarning)
         yield
