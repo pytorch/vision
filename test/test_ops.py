@@ -10,7 +10,7 @@ import pytest
 import torch
 import torch.fx
 import torch.nn.functional as F
-from common_utils import assert_equal, cpu_and_gpu, cpu_and_gpu_and_mps, needs_cuda, needs_mps
+from common_utils import assert_equal, cpu_and_cuda, cpu_and_cuda_and_mps, needs_cuda, needs_mps
 from PIL import Image
 from torch import nn, Tensor
 from torch.autograd import gradcheck
@@ -99,7 +99,7 @@ class RoIOpTester(ABC):
     mps_dtype = torch.float32
     mps_backward_atol = 2e-2
 
-    @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     def test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, deterministic=False, **kwargs):
         dtype = self.mps_dtype if device == "mps" else self.dtype
@@ -129,7 +129,7 @@ class RoIOpTester(ABC):
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_is_leaf_node(self, device):
         op_obj = self.make_obj(wrap=True).to(device=device)
         graph_node_names = get_graph_node_names(op_obj)
@@ -138,7 +138,7 @@ class RoIOpTester(ABC):
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_torch_fx_trace(self, device, x_dtype=torch.float, rois_dtype=torch.float):
         op_obj = self.make_obj().to(device=device)
         graph_module = torch.fx.symbolic_trace(op_obj)
@@ -158,7 +158,7 @@ class RoIOpTester(ABC):
         torch.testing.assert_close(output_gt, output_fx, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize("seed", range(10))
-    @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     def test_backward(self, seed, device, contiguous, deterministic=False):
         atol = self.mps_backward_atol if device == "mps" else 1e-05
@@ -428,7 +428,7 @@ class TestRoIAlign(RoIOpTester):
         self._helper_boxes_shape(ops.roi_align)
 
     @pytest.mark.parametrize("aligned", (True, False))
-    @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
     def test_forward(self, device, contiguous, deterministic, aligned, x_dtype=None, rois_dtype=None):
@@ -460,7 +460,7 @@ class TestRoIAlign(RoIOpTester):
             )
 
     @pytest.mark.parametrize("seed", range(10))
-    @pytest.mark.parametrize("device", cpu_and_gpu_and_mps())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
     def test_backward(self, seed, device, contiguous, deterministic):
@@ -624,7 +624,7 @@ class TestMultiScaleRoIAlign:
         )
         assert repr(t) == expected_string
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_is_leaf_node(self, device):
         op_obj = self.make_obj(wrap=True).to(device=device)
         graph_node_names = get_graph_node_names(op_obj)
@@ -931,7 +931,7 @@ class TestDeformConv:
         )
         return DeformConvModuleWrapper(obj) if wrap else obj
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_is_leaf_node(self, device):
         op_obj = self.make_obj(wrap=True).to(device=device)
         graph_node_names = get_graph_node_names(op_obj)
@@ -940,7 +940,7 @@ class TestDeformConv:
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("batch_sz", (0, 33))
     def test_forward(self, device, contiguous, batch_sz, dtype=None):
@@ -992,7 +992,7 @@ class TestDeformConv:
             wrong_mask = torch.rand_like(mask[:, :2])
             layer(x, offset, wrong_mask)
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("batch_sz", (0, 33))
     def test_backward(self, device, contiguous, batch_sz):
@@ -1457,7 +1457,7 @@ def assert_empty_loss(iou_fn, dtype, device):
 
 class TestGeneralizedBoxIouLoss:
     # We refer to original test: https://github.com/facebookresearch/fvcore/blob/main/tests/test_giou_loss.py
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_giou_loss(self, dtype, device):
         box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
@@ -1485,7 +1485,7 @@ class TestGeneralizedBoxIouLoss:
         with pytest.raises(ValueError, match="Invalid"):
             ops.generalized_box_iou_loss(box1s, box2s, reduction="xyz")
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_empty_inputs(self, dtype, device):
         assert_empty_loss(ops.generalized_box_iou_loss, dtype, device)
@@ -1493,7 +1493,7 @@ class TestGeneralizedBoxIouLoss:
 
 class TestCompleteBoxIouLoss:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_ciou_loss(self, dtype, device):
         box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
 
@@ -1507,14 +1507,14 @@ class TestCompleteBoxIouLoss:
         with pytest.raises(ValueError, match="Invalid"):
             ops.complete_box_iou_loss(box1s, box2s, reduction="xyz")
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_empty_inputs(self, dtype, device):
         assert_empty_loss(ops.complete_box_iou_loss, dtype, device)
 
 
 class TestDistanceBoxIouLoss:
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_distance_iou_loss(self, dtype, device):
         box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
@@ -1529,7 +1529,7 @@ class TestDistanceBoxIouLoss:
         with pytest.raises(ValueError, match="Invalid"):
             ops.distance_box_iou_loss(box1s, box2s, reduction="xyz")
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_empty_distance_iou_inputs(self, dtype, device):
         assert_empty_loss(ops.distance_box_iou_loss, dtype, device)
@@ -1574,7 +1574,7 @@ class TestFocalLoss:
 
     @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
     @pytest.mark.parametrize("gamma", [0, 2])
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     @pytest.mark.parametrize("seed", [0, 1])
     def test_correct_ratio(self, alpha, gamma, device, dtype, seed):
@@ -1603,7 +1603,7 @@ class TestFocalLoss:
         torch.testing.assert_close(correct_ratio, loss_ratio, atol=tol, rtol=tol)
 
     @pytest.mark.parametrize("reduction", ["mean", "sum"])
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     @pytest.mark.parametrize("seed", [2, 3])
     def test_equal_ce_loss(self, reduction, device, dtype, seed):
@@ -1630,7 +1630,7 @@ class TestFocalLoss:
     @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
     @pytest.mark.parametrize("gamma", [0, 2])
     @pytest.mark.parametrize("reduction", ["none", "mean", "sum"])
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     @pytest.mark.parametrize("seed", [4, 5])
     def test_jit(self, alpha, gamma, reduction, device, dtype, seed):
@@ -1646,7 +1646,7 @@ class TestFocalLoss:
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
 
     # Raise ValueError for anonymous reduction mode
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_reduction_mode(self, device, dtype, reduction="xyz"):
         if device == "cpu" and dtype is torch.half:

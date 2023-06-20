@@ -124,14 +124,14 @@ def disable_console_output():
         yield
 
 
-def cpu_and_gpu():
+def cpu_and_cuda():
     import pytest  # noqa
 
     return ("cpu", pytest.param("cuda", marks=pytest.mark.needs_cuda))
 
 
-def cpu_and_gpu_and_mps():
-    return cpu_and_gpu() + (pytest.param("mps", marks=pytest.mark.needs_mps),)
+def cpu_and_cuda_and_mps():
+    return cpu_and_cuda() + (pytest.param("mps", marks=pytest.mark.needs_mps),)
 
 
 def needs_cuda(test_func):
