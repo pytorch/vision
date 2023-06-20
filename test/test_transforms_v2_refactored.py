@@ -661,3 +661,19 @@ class TestResize:
             # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
             # is a good reason to break this, feel free to downgrade to a equality test as done above.
             assert output is input
+
+    @pytest.mark.parametrize(
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+    )
+    def test_no_regression_5405(self, input_type):
+        # Checks that `max_size` is not ignored if `size == small_edge_size`
+        # See https://github.com/pytorch/vision/issues/5405
+
+        input = self._make_input(input_type)
+
+        size = min(F.get_spatial_size(input))
+        max_size = size + 1
+        output = F.resize(input, size=size, max_size=max_size)
+
+        assert max(F.get_spatial_size(output)) == max_size
