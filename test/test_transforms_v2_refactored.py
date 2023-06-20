@@ -603,15 +603,18 @@ class TestResize:
         ):
             F.resize(self._make_input(input_type), size=self.OUTPUT_SIZES[0], interpolation=interpolation)
 
-    # `InterpolationMode.NEAREST_EXACT` has no proper corresponding integer equivalent. Internally, we map it to `0` to
-    # be the same as `InterpolationMode.NEAREST` for PIL. However, for the tensor backend there is a difference and thus
-    # we don't test it here.
-    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST_EXACT})
+    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
         "input_type",
         [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video],
     )
     def test_interpolation_int(self, interpolation, input_type):
+        # `InterpolationMode.NEAREST_EXACT` has no proper corresponding integer equivalent. Internally, we map it to
+        # `0` to be the same as `InterpolationMode.NEAREST` for PIL. However, for the tensor backend there is a
+        # difference and thus we don't test it here.
+        if issubclass(input_type, torch.Tensor) and interpolation is transforms.InterpolationMode.NEAREST_EXACT:
+            return
+
         input = self._make_input(input_type)
 
         expected = F.resize(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation)
@@ -622,6 +625,7 @@ class TestResize:
                 transforms.InterpolationMode.NEAREST: 0,
                 transforms.InterpolationMode.BILINEAR: 2,
                 transforms.InterpolationMode.BICUBIC: 3,
+                transforms.InterpolationMode.NEAREST_EXACT: 0,
             }[interpolation],
         )
 
