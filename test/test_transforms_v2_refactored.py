@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import inspect
 import re
 from typing import get_type_hints
@@ -287,6 +288,13 @@ def check_transform(transform_cls, input, *args, **kwargs):
     _check_transform_v1_compatibility(transform, input)
 
 
+def make_parametrizable(fn):
+    def wrapper(*args, **kwargs):
+        return functools.partial(fn, *args, **kwargs)
+
+    return wrapper
+
+
 # We cannot use `list(transforms.InterpolationMode)` here, since it includes some PIL-only ones as well
 INTERPOLATION_MODES = [
     transforms.InterpolationMode.NEAREST,
@@ -481,47 +489,16 @@ class TestResize:
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
     @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
     @pytest.mark.parametrize("use_max_size", [True, False])
-    def test_kernel_image_tensor_correctness(self, size, interpolation, use_max_size):
+    @pytest.mark.parametrize("make_fn", [make_parametrizable(F.resize_image_tensor), transforms.Resize])
+    def test_image_correctness(self, size, interpolation, use_max_size, make_fn):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
-
-        actual = F.resize_image_tensor(
-            image,
-            size=size,
-            interpolation=interpolation,
-            **max_size_kwarg,
-            # antialias is always True for PIL
-            antialias=True,
-        )
-        expected = F.to_image_tensor(
-            F.resize_image_pil(
-                F.to_image_pil(image),
-                size=size,
-                interpolation=interpolation,
-                **max_size_kwarg,
-            )
-        )
-
-        self._check_size(image, actual, size=size, **max_size_kwarg)
-
-        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
-
-    @pytest.mark.parametrize("size", OUTPUT_SIZES)
-    # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
-    # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
-    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
-    @pytest.mark.parametrize("use_max_size", [True, False])
-    def test_transform_image_correctness(self, size, interpolation, use_max_size):
-        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
-            return
-
-        transform = transforms.Resize(size=size, interpolation=interpolation, **max_size_kwarg, antialias=True)
+        fn = make_fn(size=size, interpolation=interpolation, **max_size_kwarg, antialias=True)
 
         image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
 
-        actual = transform(image)
+        actual = fn(image)
         expected = F.to_image_tensor(
             F.resize_image_pil(F.to_image_pil(image), size=size, interpolation=interpolation, **max_size_kwarg)
         )
