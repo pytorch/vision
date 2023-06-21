@@ -1,10 +1,10 @@
 import contextlib
-import functools
 import inspect
 import re
 from typing import get_type_hints
 from unittest import mock
 
+import numpy as np
 import PIL.Image
 import pytest
 
@@ -288,9 +288,12 @@ def check_transform(transform_cls, input, *args, **kwargs):
     _check_transform_v1_compatibility(transform, input)
 
 
-def make_parametrizable(fn):
-    def wrapper(*args, **kwargs):
-        return functools.partial(fn, *args, **kwargs)
+def transform_cls_to_functional(transform_cls):
+    def wrapper(input, *args, **kwargs):
+        transform = transform_cls(*args, **kwargs)
+        return transform(input)
+
+    wrapper.__name__ = transform_cls.__name__
 
     return wrapper
 
@@ -308,6 +311,56 @@ INTERPOLATION_MODES = [
 def assert_warns_antialias_default_value():
     with pytest.warns(UserWarning, match="The default value of the antialias parameter of all the resizing transforms"):
         yield
+
+
+def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, affine_matrix):
+    def transform(bbox, affine_matrix_, format_, spatial_size_):
+        # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
+        in_dtype = bbox.dtype
+        if not torch.is_floating_point(bbox):
+            bbox = bbox.float()
+        bbox_xyxy = F.convert_format_bounding_box(
+            bbox.as_subclass(torch.Tensor),
+            old_format=format_,
+            new_format=datapoints.BoundingBoxFormat.XYXY,
+            inplace=True,
+        )
+        points = np.array(
+            [
+                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
+                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
+                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
+                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
+            ]
+        )
+        transformed_points = np.matmul(points, affine_matrix_.T)
+        out_bbox = torch.tensor(
+            [
+                np.min(transformed_points[:, 0]).item(),
+                np.min(transformed_points[:, 1]).item(),
+                np.max(transformed_points[:, 0]).item(),
+                np.max(transformed_points[:, 1]).item(),
+            ],
+            dtype=bbox_xyxy.dtype,
+        )
+        out_bbox = F.convert_format_bounding_box(
+            out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
+        )
+        # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+        out_bbox = F.clamp_bounding_box(out_bbox, format=format_, spatial_size=spatial_size_)
+        out_bbox = out_bbox.to(dtype=in_dtype)
+        return out_bbox
+
+    if bounding_box.ndim < 2:
+        bounding_box = [bounding_box]
+
+    expected_bboxes = [transform(bbox, affine_matrix, format, spatial_size) for bbox in bounding_box]
+    if len(expected_bboxes) > 1:
+        expected_bboxes = torch.stack(expected_bboxes)
+    else:
+        expected_bboxes = expected_bboxes[0]
+
+    return expected_bboxes
 
 
 class TestResize:
@@ -348,34 +401,33 @@ class TestResize:
 
         return input
 
-    def _check_size(self, input, output, *, size, max_size):
-        if isinstance(size, int) or len(size) == 1:
-            if not isinstance(size, int):
-                size = size[0]
+    def _compute_output_size(self, *, input_size, size, max_size):
+        if not (isinstance(size, int) or len(size) == 1):
+            return tuple(size)
 
-            old_height, old_width = F.get_spatial_size(input)
-            ratio = old_width / old_height
-            if ratio > 1:
-                new_height = size
-                new_width = int(ratio * new_height)
-            else:
-                new_width = size
-                new_height = int(new_width / ratio)
+        if not isinstance(size, int):
+            size = size[0]
 
-            if max_size is not None and max(new_height, new_width) > max_size:
-                # Need to recompute the aspect ratio, since it might have changed due to rounding
-                ratio = new_width / new_height
-                if ratio > 1:
-                    new_width = max_size
-                    new_height = int(new_width / ratio)
-                else:
-                    new_height = max_size
-                    new_width = int(new_height * ratio)
-
+        old_height, old_width = input_size
+        ratio = old_width / old_height
+        if ratio > 1:
+            new_height = size
+            new_width = int(ratio * new_height)
         else:
-            new_height, new_width = size
+            new_width = size
+            new_height = int(new_width / ratio)
 
-        assert F.get_spatial_size(output) == [new_height, new_width]
+        if max_size is not None and max(new_height, new_width) > max_size:
+            # Need to recompute the aspect ratio, since it might have changed due to rounding
+            ratio = new_width / new_height
+            if ratio > 1:
+                new_width = max_size
+                new_height = int(new_width / ratio)
+            else:
+                new_height = max_size
+                new_width = int(new_height * ratio)
+
+        return new_height, new_width
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
@@ -403,12 +455,12 @@ class TestResize:
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
-    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, size, format, use_max_size, dtype, device):
+    def test_kernel_bounding_box(self, format, size, use_max_size, dtype, device):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
@@ -485,28 +537,71 @@ class TestResize:
             antialias=True,
         )
 
+    def _check_output_size(self, input, output, *, size, max_size):
+        assert tuple(F.get_spatial_size(output)) == self._compute_output_size(
+            input_size=F.get_spatial_size(input), size=size, max_size=max_size
+        )
+
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
     @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
     @pytest.mark.parametrize("use_max_size", [True, False])
-    @pytest.mark.parametrize("make_fn", [make_parametrizable(F.resize_image_tensor), transforms.Resize])
-    def test_image_correctness(self, size, interpolation, use_max_size, make_fn):
+    @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
+    def test_image_correctness(self, size, interpolation, use_max_size, fn):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        fn = make_fn(size=size, interpolation=interpolation, **max_size_kwarg, antialias=True)
-
         image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
 
-        actual = fn(image)
+        actual = fn(image, size=size, interpolation=interpolation, **max_size_kwarg, antialias=True)
         expected = F.to_image_tensor(
-            F.resize_image_pil(F.to_image_pil(image), size=size, interpolation=interpolation, **max_size_kwarg)
+            F.resize(F.to_image_pil(image), size=size, interpolation=interpolation, **max_size_kwarg)
         )
 
-        self._check_size(image, actual, size=size, **max_size_kwarg)
-
+        self._check_output_size(image, actual, size=size, **max_size_kwarg)
         torch.testing.assert_close(actual, expected, atol=1, rtol=0)
+
+    def _reference_resize_bounding_box(self, bounding_box, *, size, max_size=None):
+        old_height, old_width = bounding_box.spatial_size
+        new_height, new_width = self._compute_output_size(
+            input_size=bounding_box.spatial_size, size=size, max_size=max_size
+        )
+
+        if (old_height, old_width) == (new_height, new_width):
+            return bounding_box
+
+        affine_matrix = np.array(
+            [
+                [new_width / old_width, 0, 0],
+                [0, new_height / old_height, 0],
+            ],
+            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+        )
+
+        expected_bboxes = reference_affine_bounding_box_helper(
+            bounding_box,
+            format=bounding_box.format,
+            spatial_size=(new_height, new_width),
+            affine_matrix=affine_matrix,
+        )
+        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes, spatial_size=(new_height, new_width))
+
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("use_max_size", [True, False])
+    @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
+    def test_bounding_box_correctness(self, format, size, use_max_size, fn):
+        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
+            return
+
+        bounding_box = self._make_input(datapoints.BoundingBox)
+
+        actual = fn(bounding_box, size=size, **max_size_kwarg)
+        expected = self._reference_resize_bounding_box(bounding_box, size=size, **max_size_kwarg)
+
+        self._check_output_size(bounding_box, actual, size=size, **max_size_kwarg)
+        torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("interpolation", set(transforms.InterpolationMode) - set(INTERPOLATION_MODES))
     @pytest.mark.parametrize(
