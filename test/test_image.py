@@ -195,7 +195,7 @@ def test_decode_png_errors():
     with pytest.raises(RuntimeError, match="Out of bound read in decode_png"):
         decode_png(read_file(os.path.join(DAMAGED_PNG, "sigsegv.png")))
     with pytest.raises(RuntimeError, match="Content is too small for png"):
-        decode_png(read_file(os.path.join(TOOSMALL_PNG, "toosmall.png")))
+        decode_png(read_file(os.path.join(TOOSMALL_PNG, "heapbof.png")))
 
 
 @pytest.mark.parametrize(
