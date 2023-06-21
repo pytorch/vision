@@ -122,7 +122,9 @@ def get_weight(name: str) -> WeightsEnum:
     base_module_name = ".".join(sys.modules[__name__].__name__.split(".")[:-1])
     base_module = importlib.import_module(base_module_name)
     model_modules = [base_module] + [
-        x[1] for x in inspect.getmembers(base_module, inspect.ismodule) if x[1].__file__.endswith("__init__.py")
+        x[1]
+        for x in inspect.getmembers(base_module, inspect.ismodule)
+        if x[1].__file__.endswith("__init__.py")  # type: ignore[union-attr]
     ]
 
     weights_enum = None
