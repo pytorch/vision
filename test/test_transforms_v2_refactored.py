@@ -387,6 +387,9 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
+        uint8_atol = 30 if transforms.InterpolationMode.BICUBIC else 1
+        check_cuda_vs_cpu_tolerances = dict(rtol=0, atol=uint8_atol / 255 if dtype.is_floating_point else uint8_atol)
+
         check_kernel(
             F.resize_image_tensor,
             self._make_input(datapoints.Image, dtype=dtype, device=device),
@@ -394,11 +397,9 @@ class TestResize:
             interpolation=interpolation,
             **max_size_kwarg,
             antialias=antialias,
-            # The `InterpolationMode.BICUBIC` implementation on CUDA does not match PILs implementation well. Thus,
-            # instead of testing with an enormous tolerance, we disable the check all together.
-            check_cuda_vs_cpu=False
-            if interpolation is transforms.InterpolationMode.BICUBIC
-            else dict(rtol=0, atol=1 / 255 if dtype.is_floating_point else 1),
+            # The `InterpolationMode.BICUBIC` implementation on CUDA does not match CPU implementation well. Thus,
+            # wee need to test with an enormous tolerance.
+            check_cuda_vs_cpu=check_cuda_vs_cpu_tolerances,
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
