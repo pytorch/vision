@@ -32,7 +32,6 @@ jobs:
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-
         ./.github/scripts/cmake.sh
 
   macos:
