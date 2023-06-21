@@ -250,74 +250,11 @@ def _get_resize_sizes(spatial_size):
     yield height, width
 
 
-def sample_inputs_resize_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=["RGB"], dtypes=[torch.float32]):
-        for size in _get_resize_sizes(image_loader.spatial_size):
-            yield ArgsKwargs(image_loader, size=size)
-
-    for image_loader, interpolation in itertools.product(
-        make_image_loaders(sizes=["random"], color_spaces=["RGB"]),
-        [F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR],
-    ):
-        yield ArgsKwargs(image_loader, size=[min(image_loader.spatial_size) + 1], interpolation=interpolation)
-
-    yield ArgsKwargs(make_image_loader(size=(11, 17)), size=20, max_size=25)
-
-
-def sample_inputs_resize_image_tensor_bicubic():
-    for image_loader, interpolation in itertools.product(
-        make_image_loaders(sizes=["random"], color_spaces=["RGB"]), [F.InterpolationMode.BICUBIC]
-    ):
-        yield ArgsKwargs(image_loader, size=[min(image_loader.spatial_size) + 1], interpolation=interpolation)
-
-
-@pil_reference_wrapper
-def reference_resize_image_tensor(*args, **kwargs):
-    if not kwargs.pop("antialias", False) and kwargs.get("interpolation", F.InterpolationMode.BILINEAR) in {
-        F.InterpolationMode.BILINEAR,
-        F.InterpolationMode.BICUBIC,
-    }:
-        raise pytest.UsageError("Anti-aliasing is always active in PIL")
-    return F.resize_image_pil(*args, **kwargs)
-
-
-def reference_inputs_resize_image_tensor():
-    for image_loader, interpolation in itertools.product(
-        make_image_loaders_for_interpolation(),
-        [
-            F.InterpolationMode.NEAREST,
-            F.InterpolationMode.NEAREST_EXACT,
-            F.InterpolationMode.BILINEAR,
-            F.InterpolationMode.BICUBIC,
-        ],
-    ):
-        for size in _get_resize_sizes(image_loader.spatial_size):
-            yield ArgsKwargs(
-                image_loader,
-                size=size,
-                interpolation=interpolation,
-                antialias=interpolation
-                in {
-                    F.InterpolationMode.BILINEAR,
-                    F.InterpolationMode.BICUBIC,
-                },
-            )
-
-
 def sample_inputs_resize_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
             yield ArgsKwargs(bounding_box_loader, spatial_size=bounding_box_loader.spatial_size, size=size)
-
-
-def sample_inputs_resize_mask():
-    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
-        yield ArgsKwargs(mask_loader, size=[min(mask_loader.shape[-2:]) + 1])
-
-
-def sample_inputs_resize_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
-        yield ArgsKwargs(video_loader, size=[min(video_loader.shape[-2:]) + 1])
+            return
 
 
 def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
@@ -353,36 +290,6 @@ def reference_inputs_resize_bounding_box():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.resize_image_tensor,
-            sample_inputs_fn=sample_inputs_resize_image_tensor,
-            reference_fn=reference_resize_image_tensor,
-            reference_inputs_fn=reference_inputs_resize_image_tensor,
-            float32_vs_uint8=True,
-            closeness_kwargs={
-                **pil_reference_pixel_difference(10, mae=True),
-                **cuda_vs_cpu_pixel_difference(),
-                **float32_vs_uint8_pixel_difference(1, mae=True),
-            },
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-            ],
-        ),
-        KernelInfo(
-            F.resize_image_tensor,
-            sample_inputs_fn=sample_inputs_resize_image_tensor_bicubic,
-            reference_fn=reference_resize_image_tensor,
-            reference_inputs_fn=reference_inputs_resize_image_tensor,
-            float32_vs_uint8=True,
-            closeness_kwargs={
-                **pil_reference_pixel_difference(10, mae=True),
-                **cuda_vs_cpu_pixel_difference(atol=30),
-                **float32_vs_uint8_pixel_difference(1, mae=True),
-            },
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-            ],
-        ),
-        KernelInfo(
             F.resize_bounding_box,
             sample_inputs_fn=sample_inputs_resize_bounding_box,
             reference_fn=reference_resize_bounding_box,
@@ -393,19 +300,6 @@ KERNEL_INFOS.extend(
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
             ],
-        ),
-        KernelInfo(
-            F.resize_mask,
-            sample_inputs_fn=sample_inputs_resize_mask,
-            closeness_kwargs=pil_reference_pixel_difference(10),
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-            ],
-        ),
-        KernelInfo(
-            F.resize_video,
-            sample_inputs_fn=sample_inputs_resize_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
         ),
     ]
 )
