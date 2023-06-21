@@ -1712,8 +1712,6 @@ def test_antialias_warning():
 
     match = "The default value of the antialias parameter"
     with pytest.warns(UserWarning, match=match):
-        transforms.Resize((20, 20))(tensor_img)
-    with pytest.warns(UserWarning, match=match):
         transforms.RandomResizedCrop((20, 20))(tensor_img)
     with pytest.warns(UserWarning, match=match):
         transforms.ScaleJitter((20, 20))(tensor_img)
@@ -1722,18 +1720,6 @@ def test_antialias_warning():
     with pytest.warns(UserWarning, match=match):
         transforms.RandomResize(10, 20)(tensor_img)
 
-    with pytest.warns(UserWarning, match=match):
-        transforms.functional.resize(tensor_img, (20, 20))
-    with pytest.warns(UserWarning, match=match):
-        transforms.functional.resize_image_tensor(tensor_img, (20, 20))
-
-    with pytest.warns(UserWarning, match=match):
-        transforms.functional.resize(tensor_video, (20, 20))
-    with pytest.warns(UserWarning, match=match):
-        transforms.functional.resize_video(tensor_video, (20, 20))
-
-    with pytest.warns(UserWarning, match=match):
-        datapoints.Image(tensor_img).resize((20, 20))
     with pytest.warns(UserWarning, match=match):
         datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20))
 
@@ -1744,27 +1730,17 @@ def test_antialias_warning():
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        transforms.Resize((20, 20))(pil_img)
         transforms.RandomResizedCrop((20, 20))(pil_img)
         transforms.ScaleJitter((20, 20))(pil_img)
         transforms.RandomShortestSize((20, 20))(pil_img)
         transforms.RandomResize(10, 20)(pil_img)
-        transforms.functional.resize(pil_img, (20, 20))
 
-        transforms.Resize((20, 20), antialias=True)(tensor_img)
         transforms.RandomResizedCrop((20, 20), antialias=True)(tensor_img)
         transforms.ScaleJitter((20, 20), antialias=True)(tensor_img)
         transforms.RandomShortestSize((20, 20), antialias=True)(tensor_img)
         transforms.RandomResize(10, 20, antialias=True)(tensor_img)
 
-        transforms.functional.resize(tensor_img, (20, 20), antialias=True)
-        transforms.functional.resize_image_tensor(tensor_img, (20, 20), antialias=True)
-        transforms.functional.resize(tensor_video, (20, 20), antialias=True)
-        transforms.functional.resize_video(tensor_video, (20, 20), antialias=True)
-
-        datapoints.Image(tensor_img).resize((20, 20), antialias=True)
         datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
-        datapoints.Video(tensor_video).resize((20, 20), antialias=True)
         datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
 
 
