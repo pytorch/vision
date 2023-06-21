@@ -71,12 +71,17 @@ pushd cpp_build
 # it to not load anything from other installed frameworks. Resources:
 # https://stackoverflow.com/questions/36523911/osx-homebrew-cmake-libpng-version-mismatch-issue
 # https://cmake.org/cmake/help/latest/variable/CMAKE_FIND_FRAMEWORK.html
+
+if [[ $OS_TYPE == windows ]]; then
+  mv "C:\Program Files (x86)\Microsoft Visual Studio\2022" "C:\Program Files (x86)\Microsoft Visual Studio\2022_1"
+fi
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
   -DCMAKE_FIND_FRAMEWORK=NEVER \
   -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cmake.bat" $JOBS
+  mv "C:\Program Files (x86)\Microsoft Visual Studio\2022_1" "C:\Program Files (x86)\Microsoft Visual Studio\2022"
 else
   make -j$JOBS
   make install
