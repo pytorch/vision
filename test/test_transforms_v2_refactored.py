@@ -244,8 +244,8 @@ def _check_dispatcher_datapoint_signature_match(dispatcher):
     datapoint_signature = inspect.signature(datapoint_method)
     datapoint_params = list(datapoint_signature.parameters.values())[1:]
 
-    # Because we use `from __future__ import annotations` inside the module where `datapoints._datapoint` is
-    # defined, the annotations are stored as strings. This makes them concrete again, so they can be compared to the
+    # Some annotations in the `datapoints._datapoint` module
+    # are stored as strings. The block below makes them concrete again (non-strings), so they can be compared to the
     # natively concrete dispatcher annotations.
     datapoint_annotations = get_type_hints(datapoint_method)
     for param in datapoint_params:
