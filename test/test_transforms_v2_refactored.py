@@ -14,7 +14,7 @@ from common_utils import (
     assert_equal,
     assert_no_warnings,
     cache,
-    cpu_and_gpu,
+    cpu_and_cuda,
     ignore_jit_no_profile_information_warning,
     make_bounding_box,
     make_detection_mask,
@@ -382,13 +382,15 @@ class TestResize:
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("antialias", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image_tensor(self, size, interpolation, use_max_size, antialias, dtype, device):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        uint8_atol = 30 if transforms.InterpolationMode.BICUBIC else 1
-        check_cuda_vs_cpu_tolerances = dict(rtol=0, atol=uint8_atol / 255 if dtype.is_floating_point else uint8_atol)
+        # In contrast to CPU, there is no native `InterpolationMode.BICUBIC` implementation for uint8 images on CUDA.
+        # Internally, it uses the float path. Thus, we need to test with an enormous tolerance here to account for that.
+        atol = 30 if transforms.InterpolationMode.BICUBIC and dtype is torch.uint8 else 1
+        check_cuda_vs_cpu_tolerances = dict(rtol=0, atol=atol / 255 if dtype.is_floating_point else atol)
 
         check_kernel(
             F.resize_image_tensor,
@@ -397,8 +399,6 @@ class TestResize:
             interpolation=interpolation,
             **max_size_kwarg,
             antialias=antialias,
-            # The `InterpolationMode.BICUBIC` implementation on CUDA does not match CPU implementation well. Thus,
-            # wee need to test with an enormous tolerance.
             check_cuda_vs_cpu=check_cuda_vs_cpu_tolerances,
             check_scripted_vs_eager=not isinstance(size, int),
         )
@@ -407,7 +407,7 @@ class TestResize:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_box(self, size, format, use_max_size, dtype, device):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
@@ -470,7 +470,7 @@ class TestResize:
         check_dispatcher_signatures_match(F.resize, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize(
         "input_type",
         [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
