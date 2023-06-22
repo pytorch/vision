@@ -98,6 +98,8 @@ jobs:
         set -euxo pipefail
 
         export PYTHON_VERSION=${{ matrix.python-version }}
+        export VC_YEAR=2019
+        export VSDEVCMD_ARGS=""
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
         
