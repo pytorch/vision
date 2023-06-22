@@ -1,13 +1,13 @@
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu, set_rng_seed
+from common_utils import cpu_and_cuda, set_rng_seed
 from torchvision.prototype import models
 
 
 @pytest.mark.parametrize("model_fn", (models.depth.stereo.raft_stereo_base,))
 @pytest.mark.parametrize("model_mode", ("standard", "scripted"))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_raft_stereo(model_fn, model_mode, dev):
     # A simple test to make sure the model can do forward pass and jit scriptable
     set_rng_seed(0)
@@ -40,7 +40,7 @@ def test_raft_stereo(model_fn, model_mode, dev):
 
 @pytest.mark.parametrize("model_fn", (models.depth.stereo.crestereo_base,))
 @pytest.mark.parametrize("model_mode", ("standard", "scripted"))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_crestereo(model_fn, model_mode, dev):
     set_rng_seed(0)
 
