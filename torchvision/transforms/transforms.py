@@ -199,7 +199,7 @@ class ConvertImageDtype(torch.nn.Module):
 
 
 class ToPILImage:
-    """Converts a tensor or an ndarray to PIL Image
+    """Convert a tensor or an ndarray to PIL Image
 
     This transform does not support torchscript.
 
