@@ -491,6 +491,15 @@ def reference_vertical_flip_bounding_box(bounding_box, *, format, spatial_size):
     return expected_bboxes
 
 
+def reference_inputs_vertical_flip_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders(extra_dims=[()]):
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
+        )
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -505,7 +514,7 @@ KERNEL_INFOS.extend(
             F.vertical_flip_bounding_box,
             sample_inputs_fn=sample_inputs_vertical_flip_bounding_box,
             reference_fn=reference_vertical_flip_bounding_box,
-            reference_inputs_fn=reference_inputs_flip_bounding_box,
+            reference_inputs_fn=reference_inputs_vertical_flip_bounding_box,
         ),
         KernelInfo(
             F.vertical_flip_mask,
