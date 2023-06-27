@@ -134,14 +134,14 @@ class Datapoint(torch.Tensor):
             return super().dtype
 
     def __deepcopy__(self: D, memo: Dict[int, Any]) -> D:
-        if id(self) in memo:
-            return memo[id(self)]
         # We need to detach first, since a plain `Tensor.clone` will be part of the computation graph, which does
         # *not* happen for `deepcopy(Tensor)`. A side-effect from detaching is that the `Tensor.requires_grad`
         # attribute is cleared, so we need to refill it before we return.
-        return self.wrap_like(self, self.detach().clone()).requires_grad_(
-            self.requires_grad
-        )  # type: ignore[return-value]
+        # Note: If the datapoint has extra metadata, there is no deepcopy of that happening here. These datapoint
+        # classes have to overwrite `__deepcopy__` themselves (possibly calling this method), unless the metadata
+        # values are immutable anyway, e.g. tuples or enums. In these cases deepcopy is a no-op and thus does not need
+        # to be handled explicitly. For example, `datapoints.BoundingBox` is relying on this behavior.
+        return self.detach().clone().requires_grad_(self.requires_grad)  # type: ignore[return-value]
 
     def horizontal_flip(self) -> Datapoint:
         return self
