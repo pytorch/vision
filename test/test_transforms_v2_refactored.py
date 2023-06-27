@@ -295,9 +295,9 @@ def check_transform(transform_cls, input, *args, **kwargs):
     _check_transform_v1_compatibility(transform, input)
 
 
-def transform_cls_to_functional(transform_cls, **default_kwargs):
+def transform_cls_to_functional(transform_cls, **transform_specific_kwargs):
     def wrapper(input, *args, **kwargs):
-        transform = transform_cls(*args, **{**default_kwargs, **kwargs})
+        transform = transform_cls(*args, **transform_specific_kwargs, **kwargs)
         return transform(input)
 
     wrapper.__name__ = transform_cls.__name__
