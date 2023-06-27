@@ -382,7 +382,39 @@ def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Te
     # distance between boxes' centers squared.
     return iou - (centers_distance_squared / diagonal_distance_squared), iou
 
+def masks_to_boundaries(masks: torch.Tensor, dilation_ratio: float = 0.02) -> torch.Tensor:
+    """
+    Compute the boundaries around the provided masks using morphological operations.
 
+    Returns a tensor of the same shape as the input masks containing the boundaries of each mask.
+
+    Args:
+    masks (Tensor[N, H, W]): masks to transform where N is the number of masks
+    and (H, W) are the spatial dimensions.
+    dilation_ratio (float, optional): ratio used for the dilation operation. Default: 0.02
+
+    Returns:
+    Tensor[N, H, W]: boundaries
+    """
+    # If no masks are provided, return an empty tensor
+    if masks.numel() == 0:
+        return torch.zeros_like(masks)
+
+    n, h, w = masks.shape
+    img_diag = math.sqrt(h ** 2 + w ** 2)
+    dilation = int(round(dilation_ratio * img_diag))
+    selem_size = dilation * 2 + 1
+    selem = torch.ones((n, 1, selem_size, selem_size), device=masks.device)
+
+    # Compute the boundaries for each mask
+    masks = masks.float().unsqueeze(1)
+    eroded_masks = F.conv2d(masks, selem, padding=dilation, groups=n)
+    eroded_masks = (eroded_masks == selem.view(n, -1).sum(1, keepdim=True)).byte()  # Make the output binary
+
+    contours = masks.byte() - eroded_masks
+
+    return contours.squeeze(1)
+    
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     """
     Compute the bounding boxes around the provided masks.
@@ -415,3 +447,4 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
         bounding_boxes[index, 3] = torch.max(y)
 
     return bounding_boxes
+
