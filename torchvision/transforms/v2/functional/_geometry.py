@@ -43,7 +43,8 @@ def horizontal_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-1)
 
 
-horizontal_flip_image_pil = _FP.hflip
+def horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
+    return _FP.hflip(image)
 
 
 def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:

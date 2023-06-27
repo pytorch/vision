@@ -407,59 +407,6 @@ def test_simple_tensor_heuristic(flat_inputs):
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
-class TestRandomHorizontalFlip:
-    def input_expected_image_tensor(self, p, dtype=torch.float32):
-        input = torch.tensor([[[0, 1], [0, 1]], [[1, 0], [1, 0]]], dtype=dtype)
-        expected = torch.tensor([[[1, 0], [1, 0]], [[0, 1], [0, 1]]], dtype=dtype)
-
-        return input, expected if p == 1 else input
-
-    def test_simple_tensor(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(input)
-
-        assert_equal(expected, actual)
-
-    def test_pil_image(self, p):
-        input, expected = self.input_expected_image_tensor(p, dtype=torch.uint8)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(to_pil_image(input))
-
-        assert_equal(expected, pil_to_tensor(actual))
-
-    def test_datapoints_image(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(datapoints.Image(input))
-
-        assert_equal(datapoints.Image(expected), actual)
-
-    def test_datapoints_mask(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(datapoints.Mask(input))
-
-        assert_equal(datapoints.Mask(expected), actual)
-
-    def test_datapoints_bounding_box(self, p):
-        input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(input)
-
-        expected_image_tensor = torch.tensor([5, 0, 10, 5]) if p == 1.0 else input
-        expected = datapoints.BoundingBox.wrap_like(input, expected_image_tensor)
-        assert_equal(expected, actual)
-        assert actual.format == expected.format
-        assert actual.spatial_size == expected.spatial_size
-
-
-@pytest.mark.parametrize("p", [0.0, 1.0])
 class TestRandomVerticalFlip:
     def input_expected_image_tensor(self, p, dtype=torch.float32):
         input = torch.tensor([[[1, 1], [0, 0]], [[1, 1], [0, 0]]], dtype=dtype)
