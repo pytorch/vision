@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
@@ -97,6 +97,11 @@ class BoundingBox(Datapoint):
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(format=self.format, spatial_size=self.spatial_size)
+
+    def __deepcopy__(self, memo: Dict[int, Any]) -> BoundingBox:
+        # We don't need to deepcopy the metadata, i.e. `format` and `spatial_size` here, since enums and tuples are
+        # immutable and thus `copy.deepcopy` is a no-op
+        return super().__deepcopy__(memo)
 
     def horizontal_flip(self) -> BoundingBox:
         output = self._F.horizontal_flip_bounding_box(

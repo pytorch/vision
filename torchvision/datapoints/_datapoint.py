@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
@@ -36,6 +36,7 @@ class Datapoint(torch.Tensor):
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
         torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
+        torch.Tensor.detach: lambda cls, input, output: cls.wrap_like(input, output),
         # We don't need to wrap the output of `Tensor.requires_grad_`, since it is an inplace operation and thus
         # retains the type automatically
         torch.Tensor.requires_grad_: lambda cls, input, output: output,
@@ -131,6 +132,16 @@ class Datapoint(torch.Tensor):
     def dtype(self) -> _dtype:  # type: ignore[override]
         with DisableTorchFunctionSubclass():
             return super().dtype
+
+    def __deepcopy__(self: D, memo: Dict[int, Any]) -> D:
+        if id(self) in memo:
+            return memo[id(self)]
+        # We need to detach first, since a plain `Tensor.clone` will be part of the computation graph, which does
+        # *not* happen for `deepcopy(Tensor)`. A side-effect from detaching is that the `Tensor.requires_grad`
+        # attribute is cleared, so we need to refill it before we return.
+        return self.wrap_like(self, self.detach().clone()).requires_grad_(
+            self.requires_grad
+        )  # type: ignore[return-value]
 
     def horizontal_flip(self) -> Datapoint:
         return self
