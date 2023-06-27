@@ -10,15 +10,10 @@ from torchvision.transforms import functional as _F
 
 @torch.jit.unused
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
-    call = ", num_output_channels=3" if num_output_channels == 3 else ""
-    replacement = "convert_color_space(..., color_space=datapoints.ColorSpace.GRAY)"
-    if num_output_channels == 3:
-        replacement = f"convert_color_space({replacement}, color_space=datapoints.ColorSpace.RGB)"
     warnings.warn(
-        f"The function `to_grayscale(...{call})` is deprecated in will be removed in a future release. "
-        f"Instead, please use `{replacement}`.",
+        "The function `to_grayscale` is deprecated in will be removed in a future release. "
+        "Instead, please use `rgb_to_grayscale`.",
     )
-
     return _F.to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
