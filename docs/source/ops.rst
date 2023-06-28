@@ -22,6 +22,7 @@ The below operators perform pre-processing as well as post-processing required i
 
     batched_nms
     masks_to_boxes
+    masks_to_boudnaries
     nms
     roi_align
     roi_pool
