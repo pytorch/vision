@@ -336,8 +336,20 @@ def _vision_transformer(
         **kwargs,
     )
 
+
     if weights:
-        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
+        state_dict = weights.get_state_dict(progress=progress, check_hash=True)
+
+        # Fix compatibility with legacy state dict
+        if "encoder.pos_embedding" in state_dict:
+            pos_embedding = state_dict["encoder.pos_embedding"]
+            pos_embedding = pos_embedding.permute(0, 2, 1)
+            pos_embedding = pos_embedding[:, :, 1:]
+            pos_embedding = pos_embedding.reshape(1, -1, 14, 14)
+            state_dict["pos_embedding"] = pos_embedding
+            del state_dict["encoder.pos_embedding"]
+
+        model.load_state_dict(state_dict)
 
     return model
 
