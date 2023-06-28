@@ -25,6 +25,8 @@ from common_utils import (
 )
 from torch.testing import assert_close
 from torchvision import datapoints
+
+from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
 
@@ -473,10 +475,9 @@ class TestResize:
         )
 
     @pytest.mark.parametrize(
-        "dtype_and_make_mask", [(torch.uint8, make_segmentation_mask), (torch.bool, make_detection_mask)]
+        ("dtype", "make_mask"), [(torch.uint8, make_segmentation_mask), (torch.bool, make_detection_mask)]
     )
-    def test_kernel_mask(self, dtype_and_make_mask):
-        dtype, make_mask = dtype_and_make_mask
+    def test_kernel_mask(self, dtype, make_mask):
         check_kernel(F.resize_mask, make_mask(dtype=dtype), size=self.OUTPUT_SIZES[-1])
 
     def test_kernel_video(self):
@@ -744,7 +745,7 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image_tensor(self, dtype, device):
-        check_kernel(F.horizontal_flip_image_tensor, self._make_input(torch.Tensor))
+        check_kernel(F.horizontal_flip_image_tensor, self._make_input(torch.Tensor, dtype=dtype, device=device))
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
@@ -860,3 +861,191 @@ class TestHorizontalFlip:
         output = transform(input)
 
         assert_equal(output, input)
+
+
+class TestAffine:
+    def _make_input(
+        self, input_type, *, dtype=None, device="cpu", spatial_size=(17, 11), mask_type="segmentation", **kwargs
+    ):
+        if input_type in {torch.Tensor, PIL.Image.Image, datapoints.Image}:
+            input = make_image(size=spatial_size, dtype=dtype or torch.uint8, device=device, **kwargs)
+            if input_type is torch.Tensor:
+                input = input.as_subclass(torch.Tensor)
+            elif input_type is PIL.Image.Image:
+                input = F.to_image_pil(input)
+        elif input_type is datapoints.BoundingBox:
+            kwargs.setdefault("format", datapoints.BoundingBoxFormat.XYXY)
+            input = make_bounding_box(
+                dtype=dtype or torch.float32,
+                device=device,
+                spatial_size=spatial_size,
+                **kwargs,
+            )
+        elif input_type is datapoints.Mask:
+            if mask_type == "segmentation":
+                make_mask = make_segmentation_mask
+                default_dtype = torch.uint8
+            elif mask_type == "detection":
+                make_mask = make_detection_mask
+                default_dtype = torch.bool
+            input = make_mask(size=spatial_size, dtype=dtype or default_dtype, device=device, **kwargs)
+        elif input_type is datapoints.Video:
+            input = make_video(size=spatial_size, dtype=dtype or torch.uint8, device=device, **kwargs)
+
+        return input
+
+    def _adapt_fill_for_int_dtype(self, value, *, dtype):
+        if value is None or dtype.is_floating_point:
+            return value
+
+        max_value = get_max_value(dtype)
+
+        if isinstance(value, (int, float)):
+            return type(value)(value * max_value)
+        elif isinstance(value, (list, tuple)):
+            return type(value)(type(v)(v * max_value) for v in value)
+
+    @pytest.mark.parametrize("angle", [1.0, 2])
+    @pytest.mark.parametrize("translate", [[1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)])
+    @pytest.mark.parametrize("scale", [0.5])
+    @pytest.mark.parametrize("shear", [1.0, 2, [1.0], [2], (1.0,), (2,), [1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)])
+    @pytest.mark.parametrize(
+        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+    )
+    @pytest.mark.parametrize(
+        "fill", [None, 1, 0.5, [1], [0.5], (1,), (0.5,), [1, 0, 1], [0.1, 0.2, 0.3], (1, 0, 1), (0.1, 0.2, 0.3)]
+    )
+    @pytest.mark.parametrize("center", [None, [1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image_tensor(self, angle, translate, scale, shear, interpolation, fill, center, dtype, device):
+        check_kernel(
+            F.affine_image_tensor,
+            self._make_input(torch.Tensor, dtype=dtype, device=device),
+            angle=angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+            interpolation=interpolation,
+            fill=self._adapt_fill_for_int_dtype(fill, dtype=dtype),
+            check_scripted_vs_eager=not (isinstance(shear, (int, float)) or isinstance(fill, (int, float))),
+            check_cuda_vs_cpu=dict(atol=1, rtol=0)
+            if dtype is torch.uint8 and interpolation is transforms.InterpolationMode.BILINEAR
+            else True,
+        )
+
+    # @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    # @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    # @pytest.mark.parametrize("device", cpu_and_cuda())
+    # def test_kernel_bounding_box(self, format, dtype, device):
+    #     bounding_box = self._make_input(datapoints.BoundingBox, dtype=dtype, device=device, format=format)
+    #     check_kernel(
+    #         F.horizontal_flip_bounding_box,
+    #         bounding_box,
+    #         format=format,
+    #         spatial_size=bounding_box.spatial_size,
+    #     )
+    #
+    # @pytest.mark.parametrize(
+    #     "dtype_and_make_mask", [(torch.uint8, make_segmentation_mask), (torch.bool, make_detection_mask)]
+    # )
+    # def test_kernel_mask(self, dtype_and_make_mask):
+    #     dtype, make_mask = dtype_and_make_mask
+    #     check_kernel(F.horizontal_flip_mask, make_mask(dtype=dtype))
+    #
+    # def test_kernel_video(self):
+    #     check_kernel(F.horizontal_flip_video, self._make_input(datapoints.Video))
+    #
+    # @pytest.mark.parametrize(
+    #     ("input_type", "kernel"),
+    #     [
+    #         (torch.Tensor, F.horizontal_flip_image_tensor),
+    #         (PIL.Image.Image, F.horizontal_flip_image_pil),
+    #         (datapoints.Image, F.horizontal_flip_image_tensor),
+    #         (datapoints.BoundingBox, F.horizontal_flip_bounding_box),
+    #         (datapoints.Mask, F.horizontal_flip_mask),
+    #         (datapoints.Video, F.horizontal_flip_video),
+    #     ],
+    # )
+    # def test_dispatcher(self, kernel, input_type):
+    #     check_dispatcher(F.horizontal_flip, kernel, self._make_input(input_type))
+    #
+    # @pytest.mark.parametrize(
+    #     ("input_type", "kernel"),
+    #     [
+    #         (torch.Tensor, F.resize_image_tensor),
+    #         (PIL.Image.Image, F.resize_image_pil),
+    #         (datapoints.Image, F.resize_image_tensor),
+    #         (datapoints.BoundingBox, F.resize_bounding_box),
+    #         (datapoints.Mask, F.resize_mask),
+    #         (datapoints.Video, F.resize_video),
+    #     ],
+    # )
+    # def test_dispatcher_signature(self, kernel, input_type):
+    #     check_dispatcher_signatures_match(F.resize, kernel=kernel, input_type=input_type)
+    #
+    # @pytest.mark.parametrize(
+    #     "input_type",
+    #     [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+    # )
+    # @pytest.mark.parametrize("device", cpu_and_cuda())
+    # def test_transform(self, input_type, device):
+    #     input = self._make_input(input_type, device=device)
+    #
+    #     check_transform(transforms.RandomHorizontalFlip, input, p=1)
+    #
+    # @pytest.mark.parametrize(
+    #     "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
+    # )
+    # def test_image_correctness(self, fn):
+    #     image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
+    #
+    #     actual = fn(image)
+    #     expected = F.to_image_tensor(F.horizontal_flip(F.to_image_pil(image)))
+    #
+    #     torch.testing.assert_close(actual, expected)
+    #
+    # def _reference_horizontal_flip_bounding_box(self, bounding_box):
+    #     affine_matrix = np.array(
+    #         [
+    #             [-1, 0, bounding_box.spatial_size[1]],
+    #             [0, 1, 0],
+    #         ],
+    #         dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+    #     )
+    #
+    #     expected_bboxes = reference_affine_bounding_box_helper(
+    #         bounding_box,
+    #         format=bounding_box.format,
+    #         spatial_size=bounding_box.spatial_size,
+    #         affine_matrix=affine_matrix,
+    #     )
+    #
+    #     return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
+    #
+    # @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    # @pytest.mark.parametrize(
+    #     "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
+    # )
+    # def test_bounding_box_correctness(self, format, fn):
+    #     bounding_box = self._make_input(datapoints.BoundingBox)
+    #
+    #     actual = fn(bounding_box)
+    #     expected = self._reference_horizontal_flip_bounding_box(bounding_box)
+    #
+    #     torch.testing.assert_close(actual, expected)
+    #
+    # @pytest.mark.parametrize(
+    #     "input_type",
+    #     [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+    # )
+    # @pytest.mark.parametrize("device", cpu_and_cuda())
+    # def test_transform_noop(self, input_type, device):
+    #     input = self._make_input(input_type, device=device)
+    #
+    #     transform = transforms.RandomHorizontalFlip(p=0)
+    #
+    #     output = transform(input)
+    #
+    #     assert_equal(output, input)
