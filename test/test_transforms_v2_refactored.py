@@ -804,7 +804,7 @@ class TestHorizontalFlip:
     def test_transform(self, input_type, device):
         input = self._make_input(input_type, device=device)
 
-        check_transform(transforms.RandomHorizontalFlip, input)
+        check_transform(transforms.RandomHorizontalFlip, input, p=1)
 
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
@@ -846,3 +846,17 @@ class TestHorizontalFlip:
         expected = self._reference_horizontal_flip_bounding_box(bounding_box)
 
         torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize(
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_noop(self, input_type, device):
+        input = self._make_input(input_type, device=device)
+
+        transform = transforms.RandomHorizontalFlip(p=0)
+
+        output = transform(input)
+
+        assert_equal(output, input)
