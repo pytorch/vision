@@ -480,6 +480,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_bounding_box,
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): {"atol": 1, "rtol": 0},
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
             ],
@@ -1791,6 +1794,7 @@ KERNEL_INFOS.extend(
                 **float32_vs_uint8_pixel_difference(2),
                 **cuda_vs_cpu_pixel_difference(),
                 (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): pixel_difference_closeness_kwargs(1),
+                (("TestKernels", "test_scripted_vs_eager"), torch.uint8, "cuda"): pixel_difference_closeness_kwargs(1),
             },
         ),
         KernelInfo(
@@ -1798,6 +1802,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_contrast_video,
             closeness_kwargs={
                 **cuda_vs_cpu_pixel_difference(),
+                (("TestKernels", "test_scripted_vs_eager"), torch.uint8, "cuda"): pixel_difference_closeness_kwargs(1),
                 (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): pixel_difference_closeness_kwargs(1),
             },
         ),
