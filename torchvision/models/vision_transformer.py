@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Callable, Dict, List, NamedTuple, Optional
 
 import torch
 import torch.nn as nn
@@ -35,200 +35,6 @@ class ConvStemConfig(NamedTuple):
     stride: int
     norm_layer: Callable[..., nn.Module] = nn.BatchNorm2d
     activation_layer: Callable[..., nn.Module] = nn.ReLU
-
-
-def window_partition(x: torch.Tensor, window_size: int):
-    """ Partition into non-overlapping windows with padding if needed.
-
-    Original version from https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/utils.py .
-
-    Args:
-        x (tensor): input tokens with [B, H, W, C].
-        window_size (int): window size.
-
-    Returns:
-        windows: windows after partition with [B * num_windows, window_size, window_size, C].
-        (Hp, Wp): padded height and width before partition
-    """
-    B, H, W, C = x.shape
-
-    pad_h = (window_size - H % window_size) % window_size
-    pad_w = (window_size - W % window_size) % window_size
-    if pad_h > 0 or pad_w > 0:
-        x = torch.nn.functional.pad(x, (0, 0, 0, pad_w, 0, pad_h))
-    Hp, Wp = H + pad_h, W + pad_w
-
-    x = x.view(B, Hp // window_size, window_size, Wp // window_size, window_size, C)
-    windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, window_size, C)
-    return windows, (Hp, Wp)
-
-
-def window_unpartition(windows: torch.Tensor, window_size: int, pad_hw: Tuple[int, int], hw: Tuple[int, int]):
-    """ Window unpartition into original sequences and removing padding.
-
-    Original version from https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/utils.py .
-
-    Args:
-        x (tensor): input tokens with [B * num_windows, window_size, window_size, C].
-        window_size (int): window size.
-        pad_hw (Tuple): padded height and width (Hp, Wp).
-        hw (Tuple): original height and width (H, W) before padding.
-
-    Returns:
-        x: unpartitioned sequences with [B, H, W, C].
-    """
-    Hp, Wp = pad_hw
-    H, W = hw
-    B = windows.shape[0] // (Hp * Wp // window_size // window_size)
-    x = windows.view(B, Hp // window_size, Wp // window_size, window_size, window_size, -1)
-    x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, Hp, Wp, -1)
-
-    if Hp > H or Wp > W:
-        x = x[:, :H, :W, :].contiguous()
-    return x
-
-
-def get_rel_pos(
-    q_size: int,
-    k_size: int,
-    rel_pos: torch.Tensor,
-):
-    """ Get relative positional embeddings according to the relative positions of query and key sizes.
-
-    Original version from https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/utils.py .
-
-    Args:
-        q_size (int): size of query q.
-        k_size (int): size of key k.
-        rel_pos (Tensor): relative position embeddings (L, C).
-
-    Returns:
-        Extracted positional embeddings according to relative positions.
-    """
-    max_rel_dist = int(2 * max(q_size, k_size) - 1)
-    # Interpolate rel pos if needed.
-    if rel_pos.shape[0] != max_rel_dist:
-        # Interpolate rel pos.
-        rel_pos_resized = torch.nn.functional.interpolate(
-            rel_pos.reshape(1, rel_pos.shape[0], -1).permute(0, 2, 1),
-            size=max_rel_dist,
-            mode="linear",
-        )
-        rel_pos_resized = rel_pos_resized.reshape(-1, max_rel_dist).permute(1, 0)
-    else:
-        rel_pos_resized = rel_pos
-
-    # Scale the coords with short length if shapes for q and k are different.
-    q_coords = torch.arange(q_size)[:, None] * max(k_size / q_size, 1.0)
-    k_coords = torch.arange(k_size)[None, :] * max(q_size / k_size, 1.0)
-    relative_coords = (q_coords - k_coords) + (k_size - 1) * max(q_size / k_size, 1.0)
-
-    return rel_pos_resized[relative_coords.long()]
-
-
-def add_decomposed_rel_pos(
-    attn: torch.Tensor,
-    q: torch.Tensor,
-    rel_pos_h: torch.Tensor,
-    rel_pos_w: torch.Tensor,
-    q_size: Tuple[int, int],
-    k_size: Tuple[int, int],
-):
-    """ Calculate decomposed Relative Positional Embeddings from :paper:`mvitv2`.
-
-    https://github.com/facebookresearch/mvit/blob/19786631e330df9f3622e5402b4a419a263a2c80/mvit/models/attention.py   # noqa B950
-
-    Args:
-        attn (Tensor): attention map.
-        q (Tensor): query q in the attention layer with shape (B, q_h * q_w, C).
-        rel_pos_h (Tensor): relative position embeddings (Lh, C) for height axis.
-        rel_pos_w (Tensor): relative position embeddings (Lw, C) for width axis.
-        q_size (Tuple): spatial sequence size of query q with (q_h, q_w).
-        k_size (Tuple): spatial sequence size of key k with (k_h, k_w).
-
-    Returns:
-        attn (Tensor): attention map with added relative positional embeddings.
-    """
-    q_h, q_w = q_size
-    k_h, k_w = k_size
-    Rh = get_rel_pos(q_h, k_h, rel_pos_h)
-    Rw = get_rel_pos(q_w, k_w, rel_pos_w)
-
-    B, _, dim = q.shape
-    r_q = q.reshape(B, q_h, q_w, dim)
-    rel_h = torch.einsum("bhwc,hkc->bhwk", r_q, Rh)
-    rel_w = torch.einsum("bhwc,wkc->bhwk", r_q, Rw)
-
-    attn = (
-        attn.view(B, q_h, q_w, k_h, k_w) + rel_h[:, :, :, :, None] + rel_w[:, :, :, None, :]
-    ).view(B, q_h * q_w, k_h * k_w)
-
-    return attn
-
-
-class Attention(nn.Module):
-    """ Multi-head Attention block with relative position embeddings.
-
-    Original version from https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/vit.py .
-    Reason for copying is that torch.MultiheadAttention does not support 4D tensors.
-    TODO: Find out why and make sure we can't use torch.MultiheadAttention instead.
-          This also includes `add_decomposed_rel_pos` and `get_rel_pos`.
-    """
-
-    def __init__(
-        self,
-        dim: int,
-        num_heads: int = 8,
-        qkv_bias: bool = True,
-        use_rel_pos: bool = False,
-        rel_pos_zero_init: bool = True,
-        input_size: Optional[Tuple[int, int]] = None,
-    ):
-        """
-        Args:
-            dim (int): Number of input channels.
-            num_heads (int): Number of attention heads.
-            qkv_bias (bool:  If True, add a learnable bias to query, key, value.
-            rel_pos (bool): If True, add relative positional embeddings to the attention map.
-            rel_pos_zero_init (bool): If True, zero initialize relative positional parameters.
-            input_size (int or None): Input resolution for calculating the relative positional
-                parameter size.
-        """
-        super().__init__()
-        self.num_heads = num_heads
-        head_dim = dim // num_heads
-        self.scale = head_dim**-0.5
-
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.proj = nn.Linear(dim, dim)
-
-        self.use_rel_pos = use_rel_pos
-        if self.use_rel_pos and input_size is not None:
-            # initialize relative positional embeddings
-            self.rel_pos_h = nn.Parameter(torch.zeros(2 * input_size[0] - 1, head_dim))
-            self.rel_pos_w = nn.Parameter(torch.zeros(2 * input_size[1] - 1, head_dim))
-
-            if not rel_pos_zero_init:
-                nn.init.trunc_normal_(self.rel_pos_h, std=0.02)
-                nn.init.trunc_normal_(self.rel_pos_w, std=0.02)
-
-    def forward(self, x: torch.Tensor):
-        B, H, W, _ = x.shape
-        # qkv with shape (3, B, nHead, H * W, C)
-        qkv = self.qkv(x).reshape(B, H * W, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
-        # q, k, v with shape (B * nHead, H * W, C)
-        q, k, v = qkv.reshape(3, B * self.num_heads, H * W, -1).unbind(0)
-
-        attn = (q * self.scale) @ k.transpose(-2, -1)
-
-        if self.use_rel_pos:
-            attn = add_decomposed_rel_pos(attn, q, self.rel_pos_h, self.rel_pos_w, (H, W), (H, W))
-
-        attn = attn.softmax(dim=-1)
-        x = (attn @ v).view(B, self.num_heads, H, W, -1).permute(0, 2, 3, 1, 4).reshape(B, H, W, -1)
-        x = self.proj(x)
-
-        return x
 
 
 class MLPBlock(MLP):
@@ -286,19 +92,15 @@ class EncoderBlock(nn.Module):
         hidden_dim: int,
         mlp_dim: int,
         dropout: float,
+        attention_dropout: float,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
-        window_size: int = 0,
     ):
         super().__init__()
         self.num_heads = num_heads
 
         # Attention block
         self.ln_1 = norm_layer(hidden_dim)
-        self.window_size = window_size
-        self.self_attention = Attention(
-            hidden_dim,
-            num_heads,
-        )
+        self.self_attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=attention_dropout, batch_first=True)
         self.dropout = nn.Dropout(dropout)
 
         # MLP block
@@ -306,26 +108,14 @@ class EncoderBlock(nn.Module):
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 4, f"Expected (batch_size, h, w, hidden_dim) got {input.shape}")
+        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
-
-        # Window partition
-        if self.window_size > 0:
-            H, W = x.shape[1], x.shape[2]
-            x, pad_hw = window_partition(x, self.window_size)
-
-        x = self.self_attention(x)
-
-        # Reverse window partition
-        if self.window_size > 0:
-            x = window_unpartition(x, self.window_size, pad_hw, (H, W))
-
+        x, _ = self.self_attention(x, x, x, need_weights=False)
         x = self.dropout(x)
         x = x + input
 
         y = self.ln_2(x)
         y = self.mlp(y)
-
         return x + y
 
 
@@ -334,28 +124,16 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        image_size: int,
-        patch_size: int,
         num_layers: int,
         num_heads: int,
         hidden_dim: int,
         mlp_dim: int,
         dropout: float,
+        attention_dropout: float,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
-        window_size: int = 0,
-        window_block_indexes: List[int] = [],
     ):
         super().__init__()
 
-        seq_length = (image_size // patch_size) ** 2
-
-        # Add a class token
-        self.class_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
-        seq_length += 1
-
-        # Note that batch_size is on the first dim because
-        # we have batch_first=True in nn.MultiAttention() by default
-        self.pos_embedding = nn.Parameter(torch.empty(1, seq_length, hidden_dim).normal_(std=0.02))  # from BERT
         self.dropout = nn.Dropout(dropout)
         layers: OrderedDict[str, nn.Module] = OrderedDict()
         for i in range(num_layers):
@@ -364,27 +142,14 @@ class Encoder(nn.Module):
                 hidden_dim,
                 mlp_dim,
                 dropout,
+                attention_dropout,
                 norm_layer,
-                window_size=window_size if i in window_block_indexes else 0,
             )
         self.layers = nn.Sequential(layers)
         self.ln = norm_layer(hidden_dim)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 4, f"Expected (batch_size, h, w, hidden_dim) got {input.shape}")
-
-        # Ignore the class token here
-        pos_embedding = self.pos_embedding[:, 1:]
-        size = int(math.sqrt(pos_embedding.shape[1]))
-        pos_embedding = torch.nn.functional.interpolate(
-            pos_embedding.reshape(1, size, size, -1).permute(0, 3, 1, 2),
-            size=(input.shape[1], input.shape[2]),
-            mode="bicubic",
-            align_corners=False,
-        )
-        pos_embedding = pos_embedding.permute(0, 2, 3, 1)
-
-        input = input + pos_embedding
+        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         return self.ln(self.layers(self.dropout(input)))
 
 
@@ -400,6 +165,7 @@ class VisionTransformer(nn.Module):
         hidden_dim: int,
         mlp_dim: int,
         dropout: float = 0.0,
+        attention_dropout: float = 0.0,
         num_classes: int = 1000,
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
@@ -413,10 +179,12 @@ class VisionTransformer(nn.Module):
         self.patch_size = patch_size
         self.hidden_dim = hidden_dim
         self.mlp_dim = mlp_dim
+        self.attention_dropout = attention_dropout
         self.dropout = dropout
         self.num_classes = num_classes
         self.representation_size = representation_size
         self.norm_layer = norm_layer
+        self.include_head = include_head
 
         if conv_stem_configs is not None:
             # As per https://arxiv.org/abs/2106.14881
@@ -444,50 +212,35 @@ class VisionTransformer(nn.Module):
                 in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size
             )
 
+        # Add a class token
+        self.class_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
+
+        # Note that batch_size is on the first dim because
+        # we have batch_first=True in nn.MultiAttention() by default
+        patch_dim = image_size // patch_size
+        self.pos_embedding = nn.Parameter(
+            torch.empty(1, hidden_dim, patch_dim, patch_dim).normal_(std=0.02)  # from BERT
+        )
+
         self.encoder = Encoder(
-            image_size,
-            patch_size,
             num_layers,
             num_heads,
             hidden_dim,
             mlp_dim,
             dropout,
+            attention_dropout,
             norm_layer,
-            window_size=14,
-            window_block_indexes=[
-                # 2, 5, 8 11 for global attention
-                0,
-                1,
-                3,
-                4,
-                6,
-                7,
-                9,
-                10,
-            ],
         )
 
-        if include_head:
-            heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
-            if representation_size is None:
-                heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
-            else:
-                heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
-                heads_layers["act"] = nn.Tanh()
-                heads_layers["head"] = nn.Linear(representation_size, num_classes)
-
-            self.heads = nn.Sequential(heads_layers)
-
-            if hasattr(self.heads, "pre_logits") and isinstance(self.heads.pre_logits, nn.Linear):
-                fan_in = self.heads.pre_logits.in_features
-                nn.init.trunc_normal_(self.heads.pre_logits.weight, std=math.sqrt(1 / fan_in))
-                nn.init.zeros_(self.heads.pre_logits.bias)
-
-            if isinstance(self.heads.head, nn.Linear):
-                nn.init.zeros_(self.heads.head.weight)
-                nn.init.zeros_(self.heads.head.bias)
+        heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
+        if representation_size is None:
+            heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
         else:
-            self.heads = None
+            heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
+            heads_layers["act"] = nn.Tanh()
+            heads_layers["head"] = nn.Linear(representation_size, num_classes)
+
+        self.heads = nn.Sequential(heads_layers)
 
         if isinstance(self.conv_proj, nn.Conv2d):
             # Init the patchify stem
@@ -503,30 +256,58 @@ class VisionTransformer(nn.Module):
             if self.conv_proj.conv_last.bias is not None:
                 nn.init.zeros_(self.conv_proj.conv_last.bias)
 
-    def patch_embed(self, x: torch.Tensor) -> torch.Tensor:
+        if hasattr(self.heads, "pre_logits") and isinstance(self.heads.pre_logits, nn.Linear):
+            fan_in = self.heads.pre_logits.in_features
+            nn.init.trunc_normal_(self.heads.pre_logits.weight, std=math.sqrt(1 / fan_in))
+            nn.init.zeros_(self.heads.pre_logits.bias)
+
+        if isinstance(self.heads.head, nn.Linear):
+            nn.init.zeros_(self.heads.head.weight)
+            nn.init.zeros_(self.heads.head.bias)
+
+
+    def forward(self, x: torch.Tensor):
+        # Compute patches from the image
         # (n, c, h, w) -> (n, hidden_dim, n_h, n_w)
         # Where n_h and n_w are the number of patches in the height and width
         x = self.conv_proj(x)
 
+        # Add the positional embedding, but resize to match the image first
+        pos_embedding = torch.nn.functional.interpolate(
+            self.pos_embedding,
+            size=(x.shape[2], x.shape[3]),
+            mode="bicubic",
+            align_corners=False,
+        )
+        x = x + pos_embedding
+
+        # Flatten the patches
+        n, hidden_dim, n_h, n_w = x.shape
         # (n, hidden_dim, n_h, n_w) -> (n, n_h, n_w, hidden_dim)
         x = x.permute(0, 2, 3, 1)
+        # (n, n_h, n_w, hidden_dim) -> (n, (n_h * n_w), hidden_dim)
+        x = x.reshape(n, (n_h * n_w), hidden_dim)
 
-        return x
-
-    def forward(self, x: torch.Tensor):
-        # Compute patches from the image
-        x = self.patch_embed(x)
+        # Add the class token
+        batch_class_token = self.class_token.expand(n, -1, -1)
+        x = torch.cat([batch_class_token, x], dim=1)
 
         # Encode the patches
         x = self.encoder(x)
 
-        if self.heads is not None:
+        if self.include_head:
             # Classifier "token" as used by standard language architectures
             x = x[:, 0]
             x = self.heads(x)
             return x
         else:
-            return x.permute(0, 3, 1, 2)
+            # Skip classifier token
+            x = x[:, 1:]
+            # (n, (n_h * n_w), hidden_dim) -> (n, n_h, n_w, hidden_dim)
+            x = x.reshape(n, n_h, n_w, hidden_dim)
+            # (n, n_h, n_w, hidden_dim) -> (n, hidden_dim, n_h, n_w)
+            x = x.permute(0, 3, 1, 2)
+            return x
 
 
 def _vision_transformer(
