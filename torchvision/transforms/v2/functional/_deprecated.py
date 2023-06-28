@@ -1,20 +1,10 @@
 import warnings
 from typing import Any, List, Union
 
-import PIL.Image
 import torch
 
 from torchvision import datapoints
 from torchvision.transforms import functional as _F
-
-
-@torch.jit.unused
-def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
-    warnings.warn(
-        "The function `to_grayscale` is deprecated in will be removed in a future release. "
-        "Instead, please use `rgb_to_grayscale`.",
-    )
-    return _F.to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
 @torch.jit.unused
