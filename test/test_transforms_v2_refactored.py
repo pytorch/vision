@@ -1,5 +1,6 @@
 import contextlib
 import inspect
+import math
 import re
 from typing import get_type_hints
 from unittest import mock
@@ -164,7 +165,7 @@ def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
     if isinstance(input, datapoints._datapoint.Datapoint):
         # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
         # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
-        spy = mock.MagicMock(wraps=kernel)
+        spy = mock.MagicMock(wraps=kernel, name=kernel.__name__)
         with mock.patch.object(F, kernel.__name__, spy):
             # Due to Python's name mangling, the `Datapoint.__F` attribute is only accessible from inside the class.
             # Since that is not the case here, we need to prefix f"_{cls.__name__}"
@@ -786,16 +787,16 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize(
         ("input_type", "kernel"),
         [
-            (torch.Tensor, F.resize_image_tensor),
-            (PIL.Image.Image, F.resize_image_pil),
-            (datapoints.Image, F.resize_image_tensor),
-            (datapoints.BoundingBox, F.resize_bounding_box),
-            (datapoints.Mask, F.resize_mask),
-            (datapoints.Video, F.resize_video),
+            (torch.Tensor, F.horizontal_flip_image_tensor),
+            (PIL.Image.Image, F.horizontal_flip_image_pil),
+            (datapoints.Image, F.horizontal_flip_image_tensor),
+            (datapoints.BoundingBox, F.horizontal_flip_bounding_box),
+            (datapoints.Mask, F.horizontal_flip_mask),
+            (datapoints.Video, F.horizontal_flip_video),
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.resize, kernel=kernel, input_type=input_type)
+        check_dispatcher_signatures_match(F.horizontal_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "input_type",
@@ -894,8 +895,9 @@ class TestAffine:
 
         return input
 
-    def _adapt_fill_for_int_dtype(self, value, *, dtype):
-        if value is None or dtype.is_floating_point:
+    def _adapt_fill(self, value, *, dtype):
+        """Adapt ``fill`` values in the range ``[0.0, 1.0]`` to the value range of the dtype"""
+        if value is None:
             return value
 
         max_value = get_max_value(dtype)
@@ -904,21 +906,75 @@ class TestAffine:
             return type(value)(value * max_value)
         elif isinstance(value, (list, tuple)):
             return type(value)(type(v)(v * max_value) for v in value)
+        else:
+            raise pytest.UsageError(
+                f"`fill` should be an int or float, or a list or tuple of the former, but got {value}"
+            )
 
-    @pytest.mark.parametrize("angle", [1.0, 2])
-    @pytest.mark.parametrize("translate", [[1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)])
-    @pytest.mark.parametrize("scale", [0.5])
-    @pytest.mark.parametrize("shear", [1.0, 2, [1.0], [2], (1.0,), (2,), [1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)])
+    _EXHAUSTIVE_TYPE_AFFINE_KWARGS = dict(
+        # float, int
+        angle=[-10.9, 18],
+        # two-list of float, two-list of int, two-tuple of float, two-tuple of int
+        translate=[[6.3, -0.6], [1, -3], (16.6, -6.6), (-2, 4)],
+        # float
+        scale=[0.5],
+        # float, int,
+        # one-list of float, one-list of int, one-tuple of float, one-tuple of int
+        # two-list of float, two-list of int, two-tuple of float, two-tuple of int
+        shear=[35.6, 38, [-37.7], [-23], (5.3,), (-52,), [5.4, 21.8], [-47, 51], (-11.2, 36.7), (8, -53)],
+        # None
+        # two-list of float, two-list of int, two-tuple of float, two-tuple of int
+        center=[None, [1.2, 4.9], [-3, 1], (2.5, -4.7), (3, 2)],
+    )
+    # The special case for `"shear"` makes sure we pick a value that is supported while JIT scripting
+    _MINIMAL_AFFINE_KWARGS = {
+        k: vs[0] if k != "shear" else next(v for v in vs if isinstance(v, list))
+        for k, vs in _EXHAUSTIVE_TYPE_AFFINE_KWARGS.items()
+    }
+    _CORRECTNESS_AFFINE_KWARGS = {
+        k: [v for v in vs if v is None or isinstance(v, float) or (isinstance(v, list) and len(v) > 1)]
+        for k, vs in _EXHAUSTIVE_TYPE_AFFINE_KWARGS.items()
+    }
+
+    _EXHAUSTIVE_TYPE_FILLS = [
+        None,
+        1,
+        0.5,
+        [1],
+        [0.2],
+        (0,),
+        (0.7,),
+        [1, 0, 1],
+        [0.1, 0.2, 0.3],
+        (0, 1, 0),
+        (0.9, 0.234, 0.314),
+    ]
+    _CORRECTNESS_FILL = [
+        v for v in _EXHAUSTIVE_TYPE_FILLS if v is None or isinstance(v, float) or (isinstance(v, list) and len(v) > 1)
+    ]
+
+    _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES = dict(
+        degrees=[30, (-15, 20)],
+        translate=[None, (0.5, 0.5)],
+        scale=[None, (0.75, 1.25)],
+        shear=[None, (12, 30, -17, 5), 10, (-5, 12)],
+    )
+    _CORRECTNESS_TRANSFORM_AFFINE_RANGES = {
+        k: next(v for v in vs if v is not None) for k, vs in _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES.items()
+    }
+
+    @pytest.mark.parametrize("angle", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"])
+    @pytest.mark.parametrize("translate", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["translate"])
+    @pytest.mark.parametrize("scale", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["scale"])
+    @pytest.mark.parametrize("shear", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"])
+    @pytest.mark.parametrize("center", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize(
         "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
     )
-    @pytest.mark.parametrize(
-        "fill", [None, 1, 0.5, [1], [0.5], (1,), (0.5,), [1, 0, 1], [0.1, 0.2, 0.3], (1, 0, 1), (0.1, 0.2, 0.3)]
-    )
-    @pytest.mark.parametrize("center", [None, [1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)])
+    @pytest.mark.parametrize("fill", _EXHAUSTIVE_TYPE_FILLS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, angle, translate, scale, shear, interpolation, fill, center, dtype, device):
+    def test_kernel_image_tensor(self, angle, translate, scale, shear, center, interpolation, fill, dtype, device):
         check_kernel(
             F.affine_image_tensor,
             self._make_input(torch.Tensor, dtype=dtype, device=device),
@@ -928,124 +984,315 @@ class TestAffine:
             shear=shear,
             center=center,
             interpolation=interpolation,
-            fill=self._adapt_fill_for_int_dtype(fill, dtype=dtype),
+            fill=self._adapt_fill(fill, dtype=dtype),
             check_scripted_vs_eager=not (isinstance(shear, (int, float)) or isinstance(fill, (int, float))),
             check_cuda_vs_cpu=dict(atol=1, rtol=0)
             if dtype is torch.uint8 and interpolation is transforms.InterpolationMode.BILINEAR
             else True,
         )
 
-    # @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    # @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
-    # @pytest.mark.parametrize("device", cpu_and_cuda())
-    # def test_kernel_bounding_box(self, format, dtype, device):
-    #     bounding_box = self._make_input(datapoints.BoundingBox, dtype=dtype, device=device, format=format)
-    #     check_kernel(
-    #         F.horizontal_flip_bounding_box,
-    #         bounding_box,
-    #         format=format,
-    #         spatial_size=bounding_box.spatial_size,
-    #     )
-    #
-    # @pytest.mark.parametrize(
-    #     "dtype_and_make_mask", [(torch.uint8, make_segmentation_mask), (torch.bool, make_detection_mask)]
-    # )
-    # def test_kernel_mask(self, dtype_and_make_mask):
-    #     dtype, make_mask = dtype_and_make_mask
-    #     check_kernel(F.horizontal_flip_mask, make_mask(dtype=dtype))
-    #
-    # def test_kernel_video(self):
-    #     check_kernel(F.horizontal_flip_video, self._make_input(datapoints.Video))
-    #
-    # @pytest.mark.parametrize(
-    #     ("input_type", "kernel"),
-    #     [
-    #         (torch.Tensor, F.horizontal_flip_image_tensor),
-    #         (PIL.Image.Image, F.horizontal_flip_image_pil),
-    #         (datapoints.Image, F.horizontal_flip_image_tensor),
-    #         (datapoints.BoundingBox, F.horizontal_flip_bounding_box),
-    #         (datapoints.Mask, F.horizontal_flip_mask),
-    #         (datapoints.Video, F.horizontal_flip_video),
-    #     ],
-    # )
-    # def test_dispatcher(self, kernel, input_type):
-    #     check_dispatcher(F.horizontal_flip, kernel, self._make_input(input_type))
-    #
-    # @pytest.mark.parametrize(
-    #     ("input_type", "kernel"),
-    #     [
-    #         (torch.Tensor, F.resize_image_tensor),
-    #         (PIL.Image.Image, F.resize_image_pil),
-    #         (datapoints.Image, F.resize_image_tensor),
-    #         (datapoints.BoundingBox, F.resize_bounding_box),
-    #         (datapoints.Mask, F.resize_mask),
-    #         (datapoints.Video, F.resize_video),
-    #     ],
-    # )
-    # def test_dispatcher_signature(self, kernel, input_type):
-    #     check_dispatcher_signatures_match(F.resize, kernel=kernel, input_type=input_type)
-    #
-    # @pytest.mark.parametrize(
-    #     "input_type",
-    #     [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
-    # )
-    # @pytest.mark.parametrize("device", cpu_and_cuda())
-    # def test_transform(self, input_type, device):
-    #     input = self._make_input(input_type, device=device)
-    #
-    #     check_transform(transforms.RandomHorizontalFlip, input, p=1)
-    #
-    # @pytest.mark.parametrize(
-    #     "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
-    # )
-    # def test_image_correctness(self, fn):
-    #     image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
-    #
-    #     actual = fn(image)
-    #     expected = F.to_image_tensor(F.horizontal_flip(F.to_image_pil(image)))
-    #
-    #     torch.testing.assert_close(actual, expected)
-    #
-    # def _reference_horizontal_flip_bounding_box(self, bounding_box):
-    #     affine_matrix = np.array(
-    #         [
-    #             [-1, 0, bounding_box.spatial_size[1]],
-    #             [0, 1, 0],
-    #         ],
-    #         dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
-    #     )
-    #
-    #     expected_bboxes = reference_affine_bounding_box_helper(
-    #         bounding_box,
-    #         format=bounding_box.format,
-    #         spatial_size=bounding_box.spatial_size,
-    #         affine_matrix=affine_matrix,
-    #     )
-    #
-    #     return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
-    #
-    # @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    # @pytest.mark.parametrize(
-    #     "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
-    # )
-    # def test_bounding_box_correctness(self, format, fn):
-    #     bounding_box = self._make_input(datapoints.BoundingBox)
-    #
-    #     actual = fn(bounding_box)
-    #     expected = self._reference_horizontal_flip_bounding_box(bounding_box)
-    #
-    #     torch.testing.assert_close(actual, expected)
-    #
-    # @pytest.mark.parametrize(
-    #     "input_type",
-    #     [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
-    # )
-    # @pytest.mark.parametrize("device", cpu_and_cuda())
-    # def test_transform_noop(self, input_type, device):
-    #     input = self._make_input(input_type, device=device)
-    #
-    #     transform = transforms.RandomHorizontalFlip(p=0)
-    #
-    #     output = transform(input)
-    #
-    #     assert_equal(output, input)
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("angle", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"])
+    @pytest.mark.parametrize("translate", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["translate"])
+    @pytest.mark.parametrize("scale", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["scale"])
+    @pytest.mark.parametrize("shear", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"])
+    @pytest.mark.parametrize("center", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_bounding_box(self, format, angle, translate, scale, shear, center, dtype, device):
+        bounding_box = self._make_input(datapoints.BoundingBox, dtype=dtype, device=device, format=format)
+        check_kernel(
+            F.affine_bounding_box,
+            bounding_box,
+            format=format,
+            spatial_size=bounding_box.spatial_size,
+            angle=angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+            check_scripted_vs_eager=not isinstance(shear, (int, float)),
+        )
+
+    @pytest.mark.parametrize("mask_type", ["segmentation", "detection"])
+    def test_kernel_mask(self, mask_type):
+        check_kernel(
+            F.affine_mask, self._make_input(datapoints.Mask, mask_type=mask_type), **self._MINIMAL_AFFINE_KWARGS
+        )
+
+    def test_kernel_video(self):
+        check_kernel(F.affine_video, self._make_input(datapoints.Video), **self._MINIMAL_AFFINE_KWARGS)
+
+    @pytest.mark.parametrize(
+        ("input_type", "kernel"),
+        [
+            (torch.Tensor, F.affine_image_tensor),
+            (PIL.Image.Image, F.affine_image_pil),
+            (datapoints.Image, F.affine_image_tensor),
+            (datapoints.BoundingBox, F.affine_bounding_box),
+            (datapoints.Mask, F.affine_mask),
+            (datapoints.Video, F.affine_video),
+        ],
+    )
+    def test_dispatcher(self, kernel, input_type):
+        check_dispatcher(F.affine, kernel, self._make_input(input_type), **self._MINIMAL_AFFINE_KWARGS)
+
+    @pytest.mark.parametrize(
+        ("input_type", "kernel"),
+        [
+            (torch.Tensor, F.affine_image_tensor),
+            (PIL.Image.Image, F.affine_image_pil),
+            (datapoints.Image, F.affine_image_tensor),
+            (datapoints.BoundingBox, F.affine_bounding_box),
+            (datapoints.Mask, F.affine_mask),
+            (datapoints.Video, F.affine_video),
+        ],
+    )
+    def test_dispatcher_signature(self, kernel, input_type):
+        check_dispatcher_signatures_match(F.affine, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, input_type, device):
+        input = self._make_input(input_type, device=device)
+
+        check_transform(transforms.RandomAffine, input, **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES)
+
+    @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
+    @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
+    @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
+    @pytest.mark.parametrize("shear", _CORRECTNESS_AFFINE_KWARGS["shear"])
+    @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
+    @pytest.mark.parametrize(
+        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+    )
+    @pytest.mark.parametrize("fill", _CORRECTNESS_FILL)
+    def test_functional_image_correctness(self, angle, translate, scale, shear, center, interpolation, fill):
+        image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
+
+        fill = self._adapt_fill(fill, dtype=torch.uint8)
+
+        actual = F.affine(
+            image,
+            angle=angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+            interpolation=interpolation,
+            fill=fill,
+        )
+        expected = F.to_image_tensor(
+            F.affine(
+                F.to_image_pil(image),
+                angle=angle,
+                translate=translate,
+                scale=scale,
+                shear=shear,
+                center=center,
+                interpolation=interpolation,
+                fill=fill,
+            )
+        )
+
+        mae = (actual.float() - expected.float()).abs().mean()
+        assert mae < 5
+
+    @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
+    @pytest.mark.parametrize(
+        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+    )
+    @pytest.mark.parametrize("fill", _CORRECTNESS_FILL)
+    @pytest.mark.parametrize("seed", list(range(10)))
+    def test_transform_image_correctness(self, center, interpolation, fill, seed):
+        image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
+
+        fill = self._adapt_fill(fill, dtype=torch.uint8)
+
+        transform = transforms.RandomAffine(
+            **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, center=center, interpolation=interpolation, fill=fill
+        )
+
+        torch.manual_seed(seed)
+        params = transform._get_params([image])
+
+        torch.manual_seed(seed)
+        actual = transform(image)
+
+        expected = F.to_image_tensor(
+            F.affine(F.to_image_pil(image), **params, center=center, interpolation=interpolation, fill=fill)
+        )
+
+        mae = (actual.float() - expected.float()).abs().mean()
+        assert mae < 7
+
+    def _compute_affine_matrix(self, *, angle, translate, scale, shear, center):
+        rot = math.radians(angle)
+        cx, cy = center
+        tx, ty = translate
+        sx, sy = [math.radians(s) for s in ([shear, 0.0] if isinstance(shear, (int, float)) else shear)]
+
+        c_matrix = np.array([[1, 0, cx], [0, 1, cy], [0, 0, 1]])
+        t_matrix = np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
+        c_matrix_inv = np.linalg.inv(c_matrix)
+        rs_matrix = np.array(
+            [
+                [scale * math.cos(rot), -scale * math.sin(rot), 0],
+                [scale * math.sin(rot), scale * math.cos(rot), 0],
+                [0, 0, 1],
+            ]
+        )
+        shear_x_matrix = np.array([[1, -math.tan(sx), 0], [0, 1, 0], [0, 0, 1]])
+        shear_y_matrix = np.array([[1, 0, 0], [-math.tan(sy), 1, 0], [0, 0, 1]])
+        rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
+        true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
+        return true_matrix
+
+    def _reference_affine_bounding_box(self, bounding_box, *, angle, translate, scale, shear, center):
+        if center is None:
+            center = [s * 0.5 for s in bounding_box.spatial_size[::-1]]
+
+        affine_matrix = self._compute_affine_matrix(
+            angle=angle, translate=translate, scale=scale, shear=shear, center=center
+        )
+        affine_matrix = affine_matrix[:2, :]
+
+        expected_bboxes = reference_affine_bounding_box_helper(
+            bounding_box,
+            format=bounding_box.format,
+            spatial_size=bounding_box.spatial_size,
+            affine_matrix=affine_matrix,
+        )
+
+        return expected_bboxes
+
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
+    @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
+    @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
+    @pytest.mark.parametrize("shear", _CORRECTNESS_AFFINE_KWARGS["shear"])
+    @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
+    def test_functional_bounding_box_correctness(self, format, angle, translate, scale, shear, center):
+        bounding_box = self._make_input(datapoints.BoundingBox, format=format)
+
+        actual = F.affine(
+            bounding_box,
+            angle=angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+        )
+        expected = self._reference_affine_bounding_box(
+            bounding_box,
+            angle=angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+        )
+
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
+    @pytest.mark.parametrize("seed", list(range(10)))
+    def test_transform_bounding_box_correctness(self, format, center, seed):
+        bounding_box = self._make_input(datapoints.BoundingBox, format=format)
+
+        transform = transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, center=center)
+
+        torch.manual_seed(seed)
+        params = transform._get_params([bounding_box])
+
+        torch.manual_seed(seed)
+        actual = transform(bounding_box)
+
+        expected = self._reference_affine_bounding_box(bounding_box, **params, center=center)
+
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("degrees", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["degrees"])
+    @pytest.mark.parametrize("translate", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["translate"])
+    @pytest.mark.parametrize("scale", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["scale"])
+    @pytest.mark.parametrize("shear", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["shear"])
+    @pytest.mark.parametrize("seed", list(range(10)))
+    def test_transform_get_params_bounds(self, degrees, translate, scale, shear, seed):
+        image = self._make_input(torch.Tensor)
+        height, width = F.get_spatial_size(image)
+
+        transform = transforms.RandomAffine(degrees=degrees, translate=translate, scale=scale, shear=shear)
+
+        torch.manual_seed(seed)
+        params = transform._get_params([image])
+
+        if isinstance(degrees, (int, float)):
+            assert -degrees <= params["angle"] <= degrees
+        else:
+            assert degrees[0] <= params["angle"] <= degrees[1]
+
+        if translate is not None:
+            width_max = int(round(translate[0] * width))
+            height_max = int(round(translate[1] * height))
+            assert -width_max <= params["translate"][0] <= width_max
+            assert -height_max <= params["translate"][1] <= height_max
+        else:
+            assert params["translate"] == (0, 0)
+
+        if scale is not None:
+            assert scale[0] <= params["scale"] <= scale[1]
+        else:
+            assert params["scale"] == 1.0
+
+        if shear is not None:
+            if isinstance(shear, (int, float)):
+                assert -shear <= params["shear"][0] <= shear
+                assert params["shear"][1] == 0.0
+            elif len(shear) == 2:
+                assert shear[0] <= params["shear"][0] <= shear[1]
+                assert params["shear"][1] == 0.0
+            elif len(shear) == 4:
+                assert shear[0] <= params["shear"][0] <= shear[1]
+                assert shear[2] <= params["shear"][1] <= shear[3]
+        else:
+            assert params["shear"] == (0, 0)
+
+    @pytest.mark.parametrize("param", ["degrees", "translate", "scale", "shear", "center"])
+    @pytest.mark.parametrize("value", [0, [0], [0, 0, 0]])
+    def test_transform_sequence_len_errors(self, param, value):
+        if param in {"degrees", "shear"} and not isinstance(value, list):
+            return
+
+        kwargs = {param: value}
+        if param != "degrees":
+            kwargs["degrees"] = 0
+
+        with pytest.raises(
+            ValueError if isinstance(value, list) else TypeError, match=f"{param} should be a sequence of length 2"
+        ):
+            transforms.RandomAffine(**kwargs)
+
+    def test_transform_negative_degrees_error(self):
+        with pytest.raises(ValueError, match="If degrees is a single number, it must be positive"):
+            transforms.RandomAffine(degrees=-1)
+
+    @pytest.mark.parametrize("translate", [[-1, 0], [2, 0], [-1, 2]])
+    def test_transform_translate_range_error(self, translate):
+        with pytest.raises(ValueError, match="translation values should be between 0 and 1"):
+            transforms.RandomAffine(degrees=0, translate=translate)
+
+    @pytest.mark.parametrize("scale", [[-1, 0], [0, -1], [-1, -1]])
+    def test_transform_scale_range_error(self, scale):
+        with pytest.raises(ValueError, match="scale values should be positive"):
+            transforms.RandomAffine(degrees=0, scale=scale)
+
+    def test_transform_negative_shear_error(self):
+        with pytest.raises(ValueError, match="If shear is a single number, it must be positive"):
+            transforms.RandomAffine(degrees=0, shear=-1)
+
+    def test_transform_unknown_fill_error(self):
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomAffine(degrees=0, fill="fill")
