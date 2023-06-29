@@ -974,9 +974,9 @@ class TestAffine:
             (param, value)
             for param, values in [
                 ("angle", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
-                ("translate", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
-                ("shear", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
-                ("center", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
+                ("translate", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["translate"]),
+                ("shear", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"]),
+                ("center", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"]),
                 ("interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]),
                 ("fill", _EXHAUSTIVE_TYPE_FILLS),
             ]
