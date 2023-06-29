@@ -16,7 +16,7 @@ import torchvision.transforms.v2 as transforms
 from common_utils import (
     assert_equal,
     assert_run_python_script,
-    cpu_and_gpu,
+    cpu_and_cuda,
     make_bounding_box,
     make_bounding_boxes,
     make_detection_mask,
@@ -173,7 +173,7 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
         ],
     )
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_common(self, transform, adapter, container_type, image_or_video, device):
         spatial_size = F.get_spatial_size(image_or_video)
         input = dict(
@@ -404,59 +404,6 @@ def test_simple_tensor_heuristic(flat_inputs):
 
     for input, output in zip(other_inputs, other_outputs):
         assert transform.was_applied(output, input)
-
-
-@pytest.mark.parametrize("p", [0.0, 1.0])
-class TestRandomHorizontalFlip:
-    def input_expected_image_tensor(self, p, dtype=torch.float32):
-        input = torch.tensor([[[0, 1], [0, 1]], [[1, 0], [1, 0]]], dtype=dtype)
-        expected = torch.tensor([[[1, 0], [1, 0]], [[0, 1], [0, 1]]], dtype=dtype)
-
-        return input, expected if p == 1 else input
-
-    def test_simple_tensor(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(input)
-
-        assert_equal(expected, actual)
-
-    def test_pil_image(self, p):
-        input, expected = self.input_expected_image_tensor(p, dtype=torch.uint8)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(to_pil_image(input))
-
-        assert_equal(expected, pil_to_tensor(actual))
-
-    def test_datapoints_image(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(datapoints.Image(input))
-
-        assert_equal(datapoints.Image(expected), actual)
-
-    def test_datapoints_mask(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(datapoints.Mask(input))
-
-        assert_equal(datapoints.Mask(expected), actual)
-
-    def test_datapoints_bounding_box(self, p):
-        input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(input)
-
-        expected_image_tensor = torch.tensor([5, 0, 10, 5]) if p == 1.0 else input
-        expected = datapoints.BoundingBox.wrap_like(input, expected_image_tensor)
-        assert_equal(expected, actual)
-        assert actual.format == expected.format
-        assert actual.spatial_size == expected.spatial_size
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
@@ -1363,7 +1310,7 @@ class TestRandomChoice:
 
 
 class TestRandomIoUCrop:
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("options", [[0.5, 0.9], [2.0]])
     def test__get_params(self, device, options, mocker):
         image = mocker.MagicMock(spec=datapoints.Image)
@@ -1708,8 +1655,6 @@ def test_antialias_warning():
 
     match = "The default value of the antialias parameter"
     with pytest.warns(UserWarning, match=match):
-        transforms.Resize((20, 20))(tensor_img)
-    with pytest.warns(UserWarning, match=match):
         transforms.RandomResizedCrop((20, 20))(tensor_img)
     with pytest.warns(UserWarning, match=match):
         transforms.ScaleJitter((20, 20))(tensor_img)
@@ -1718,18 +1663,6 @@ def test_antialias_warning():
     with pytest.warns(UserWarning, match=match):
         transforms.RandomResize(10, 20)(tensor_img)
 
-    with pytest.warns(UserWarning, match=match):
-        transforms.functional.resize(tensor_img, (20, 20))
-    with pytest.warns(UserWarning, match=match):
-        transforms.functional.resize_image_tensor(tensor_img, (20, 20))
-
-    with pytest.warns(UserWarning, match=match):
-        transforms.functional.resize(tensor_video, (20, 20))
-    with pytest.warns(UserWarning, match=match):
-        transforms.functional.resize_video(tensor_video, (20, 20))
-
-    with pytest.warns(UserWarning, match=match):
-        datapoints.Image(tensor_img).resize((20, 20))
     with pytest.warns(UserWarning, match=match):
         datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20))
 
@@ -1740,27 +1673,17 @@ def test_antialias_warning():
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        transforms.Resize((20, 20))(pil_img)
         transforms.RandomResizedCrop((20, 20))(pil_img)
         transforms.ScaleJitter((20, 20))(pil_img)
         transforms.RandomShortestSize((20, 20))(pil_img)
         transforms.RandomResize(10, 20)(pil_img)
-        transforms.functional.resize(pil_img, (20, 20))
 
-        transforms.Resize((20, 20), antialias=True)(tensor_img)
         transforms.RandomResizedCrop((20, 20), antialias=True)(tensor_img)
         transforms.ScaleJitter((20, 20), antialias=True)(tensor_img)
         transforms.RandomShortestSize((20, 20), antialias=True)(tensor_img)
         transforms.RandomResize(10, 20, antialias=True)(tensor_img)
 
-        transforms.functional.resize(tensor_img, (20, 20), antialias=True)
-        transforms.functional.resize_image_tensor(tensor_img, (20, 20), antialias=True)
-        transforms.functional.resize(tensor_video, (20, 20), antialias=True)
-        transforms.functional.resize_video(tensor_video, (20, 20), antialias=True)
-
-        datapoints.Image(tensor_img).resize((20, 20), antialias=True)
         datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
-        datapoints.Video(tensor_video).resize((20, 20), antialias=True)
         datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
 
 

@@ -156,261 +156,6 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
 KERNEL_INFOS = []
 
 
-def sample_inputs_horizontal_flip_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], dtypes=[torch.float32]):
-        yield ArgsKwargs(image_loader)
-
-
-def reference_inputs_horizontal_flip_image_tensor():
-    for image_loader in make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]):
-        yield ArgsKwargs(image_loader)
-
-
-def sample_inputs_horizontal_flip_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(
-        formats=[datapoints.BoundingBoxFormat.XYXY], dtypes=[torch.float32]
-    ):
-        yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, spatial_size=bounding_box_loader.spatial_size
-        )
-
-
-def sample_inputs_horizontal_flip_mask():
-    for image_loader in make_mask_loaders(sizes=["random"], dtypes=[torch.uint8]):
-        yield ArgsKwargs(image_loader)
-
-
-def sample_inputs_horizontal_flip_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
-        yield ArgsKwargs(video_loader)
-
-
-def reference_horizontal_flip_bounding_box(bounding_box, *, format, spatial_size):
-    affine_matrix = np.array(
-        [
-            [-1, 0, spatial_size[1]],
-            [0, 1, 0],
-        ],
-        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
-    )
-
-    expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
-    )
-
-    return expected_bboxes
-
-
-def reference_inputs_flip_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(extra_dims=[()]):
-        yield ArgsKwargs(
-            bounding_box_loader,
-            format=bounding_box_loader.format,
-            spatial_size=bounding_box_loader.spatial_size,
-        )
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.horizontal_flip_image_tensor,
-            kernel_name="horizontal_flip_image_tensor",
-            sample_inputs_fn=sample_inputs_horizontal_flip_image_tensor,
-            reference_fn=pil_reference_wrapper(F.horizontal_flip_image_pil),
-            reference_inputs_fn=reference_inputs_horizontal_flip_image_tensor,
-            float32_vs_uint8=True,
-        ),
-        KernelInfo(
-            F.horizontal_flip_bounding_box,
-            sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
-            reference_fn=reference_horizontal_flip_bounding_box,
-            reference_inputs_fn=reference_inputs_flip_bounding_box,
-        ),
-        KernelInfo(
-            F.horizontal_flip_mask,
-            sample_inputs_fn=sample_inputs_horizontal_flip_mask,
-        ),
-        KernelInfo(
-            F.horizontal_flip_video,
-            sample_inputs_fn=sample_inputs_horizontal_flip_video,
-        ),
-    ]
-)
-
-
-def _get_resize_sizes(spatial_size):
-    height, width = spatial_size
-    length = max(spatial_size)
-    yield length
-    yield [length]
-    yield (length,)
-    new_height = int(height * 0.75)
-    new_width = int(width * 1.25)
-    yield [new_height, new_width]
-    yield height, width
-
-
-def sample_inputs_resize_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=["RGB"], dtypes=[torch.float32]):
-        for size in _get_resize_sizes(image_loader.spatial_size):
-            yield ArgsKwargs(image_loader, size=size)
-
-    for image_loader, interpolation in itertools.product(
-        make_image_loaders(sizes=["random"], color_spaces=["RGB"]),
-        [F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR],
-    ):
-        yield ArgsKwargs(image_loader, size=[min(image_loader.spatial_size) + 1], interpolation=interpolation)
-
-    yield ArgsKwargs(make_image_loader(size=(11, 17)), size=20, max_size=25)
-
-
-def sample_inputs_resize_image_tensor_bicubic():
-    for image_loader, interpolation in itertools.product(
-        make_image_loaders(sizes=["random"], color_spaces=["RGB"]), [F.InterpolationMode.BICUBIC]
-    ):
-        yield ArgsKwargs(image_loader, size=[min(image_loader.spatial_size) + 1], interpolation=interpolation)
-
-
-@pil_reference_wrapper
-def reference_resize_image_tensor(*args, **kwargs):
-    if not kwargs.pop("antialias", False) and kwargs.get("interpolation", F.InterpolationMode.BILINEAR) in {
-        F.InterpolationMode.BILINEAR,
-        F.InterpolationMode.BICUBIC,
-    }:
-        raise pytest.UsageError("Anti-aliasing is always active in PIL")
-    return F.resize_image_pil(*args, **kwargs)
-
-
-def reference_inputs_resize_image_tensor():
-    for image_loader, interpolation in itertools.product(
-        make_image_loaders_for_interpolation(),
-        [
-            F.InterpolationMode.NEAREST,
-            F.InterpolationMode.NEAREST_EXACT,
-            F.InterpolationMode.BILINEAR,
-            F.InterpolationMode.BICUBIC,
-        ],
-    ):
-        for size in _get_resize_sizes(image_loader.spatial_size):
-            yield ArgsKwargs(
-                image_loader,
-                size=size,
-                interpolation=interpolation,
-                antialias=interpolation
-                in {
-                    F.InterpolationMode.BILINEAR,
-                    F.InterpolationMode.BICUBIC,
-                },
-            )
-
-
-def sample_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders():
-        for size in _get_resize_sizes(bounding_box_loader.spatial_size):
-            yield ArgsKwargs(bounding_box_loader, spatial_size=bounding_box_loader.spatial_size, size=size)
-
-
-def sample_inputs_resize_mask():
-    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
-        yield ArgsKwargs(mask_loader, size=[min(mask_loader.shape[-2:]) + 1])
-
-
-def sample_inputs_resize_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
-        yield ArgsKwargs(video_loader, size=[min(video_loader.shape[-2:]) + 1])
-
-
-def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
-    old_height, old_width = spatial_size
-    new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
-
-    if (old_height, old_width) == (new_height, new_width):
-        return bounding_box, (old_height, old_width)
-
-    affine_matrix = np.array(
-        [
-            [new_width / old_width, 0, 0],
-            [0, new_height / old_height, 0],
-        ],
-        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
-    )
-
-    expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box,
-        format=bounding_box.format,
-        spatial_size=(new_height, new_width),
-        affine_matrix=affine_matrix,
-    )
-    return expected_bboxes, (new_height, new_width)
-
-
-def reference_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
-        for size in _get_resize_sizes(bounding_box_loader.spatial_size):
-            yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.resize_image_tensor,
-            sample_inputs_fn=sample_inputs_resize_image_tensor,
-            reference_fn=reference_resize_image_tensor,
-            reference_inputs_fn=reference_inputs_resize_image_tensor,
-            float32_vs_uint8=True,
-            closeness_kwargs={
-                **pil_reference_pixel_difference(10, mae=True),
-                **cuda_vs_cpu_pixel_difference(),
-                **float32_vs_uint8_pixel_difference(1, mae=True),
-            },
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-            ],
-        ),
-        KernelInfo(
-            F.resize_image_tensor,
-            sample_inputs_fn=sample_inputs_resize_image_tensor_bicubic,
-            reference_fn=reference_resize_image_tensor,
-            reference_inputs_fn=reference_inputs_resize_image_tensor,
-            float32_vs_uint8=True,
-            closeness_kwargs={
-                **pil_reference_pixel_difference(10, mae=True),
-                **cuda_vs_cpu_pixel_difference(atol=30),
-                **float32_vs_uint8_pixel_difference(1, mae=True),
-            },
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-            ],
-        ),
-        KernelInfo(
-            F.resize_bounding_box,
-            sample_inputs_fn=sample_inputs_resize_bounding_box,
-            reference_fn=reference_resize_bounding_box,
-            reference_inputs_fn=reference_inputs_resize_bounding_box,
-            closeness_kwargs={
-                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
-            },
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-            ],
-        ),
-        KernelInfo(
-            F.resize_mask,
-            sample_inputs_fn=sample_inputs_resize_mask,
-            closeness_kwargs=pil_reference_pixel_difference(10),
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-            ],
-        ),
-        KernelInfo(
-            F.resize_video,
-            sample_inputs_fn=sample_inputs_resize_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
-        ),
-    ]
-)
-
-
 _AFFINE_KWARGS = combinations_grid(
     angle=[-87, 15, 90],
     translate=[(5, 5), (-5, -5)],
@@ -746,6 +491,15 @@ def reference_vertical_flip_bounding_box(bounding_box, *, format, spatial_size):
     return expected_bboxes
 
 
+def reference_inputs_vertical_flip_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders(extra_dims=[()]):
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
+        )
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -760,7 +514,7 @@ KERNEL_INFOS.extend(
             F.vertical_flip_bounding_box,
             sample_inputs_fn=sample_inputs_vertical_flip_bounding_box,
             reference_fn=reference_vertical_flip_bounding_box,
-            reference_inputs_fn=reference_inputs_flip_bounding_box,
+            reference_inputs_fn=reference_inputs_vertical_flip_bounding_box,
         ),
         KernelInfo(
             F.vertical_flip_mask,

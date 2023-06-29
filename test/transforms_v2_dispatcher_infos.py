@@ -139,29 +139,6 @@ xfails_pil_if_fill_sequence_needs_broadcast = xfails_pil(
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.horizontal_flip,
-        kernels={
-            datapoints.Image: F.horizontal_flip_image_tensor,
-            datapoints.Video: F.horizontal_flip_video,
-            datapoints.BoundingBox: F.horizontal_flip_bounding_box,
-            datapoints.Mask: F.horizontal_flip_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.horizontal_flip_image_pil, kernel_name="horizontal_flip_image_pil"),
-    ),
-    DispatcherInfo(
-        F.resize,
-        kernels={
-            datapoints.Image: F.resize_image_tensor,
-            datapoints.Video: F.resize_video,
-            datapoints.BoundingBox: F.resize_bounding_box,
-            datapoints.Mask: F.resize_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.resize_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("size"),
-        ],
-    ),
-    DispatcherInfo(
         F.affine,
         kernels={
             datapoints.Image: F.affine_image_tensor,

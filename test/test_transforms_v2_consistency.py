@@ -22,6 +22,7 @@ from common_utils import (
     make_image,
     make_images,
     make_segmentation_mask,
+    set_rng_seed,
 )
 from torch import nn
 from torchvision import datapoints, transforms as legacy_transforms
@@ -33,6 +34,12 @@ from torchvision.transforms.v2.functional import to_image_pil
 from torchvision.transforms.v2.utils import query_spatial_size
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
+
+
+@pytest.fixture(autouse=True)
+def fix_rng_seed():
+    set_rng_seed(0)
+    yield
 
 
 class NotScriptableArgsKwargs(ArgsKwargs):
