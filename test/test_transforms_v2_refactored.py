@@ -1,6 +1,5 @@
 import contextlib
 import inspect
-import itertools
 import math
 import re
 from typing import get_type_hints
@@ -973,13 +972,14 @@ class TestAffine:
         ("param", "value"),
         [
             (param, value)
-            for param, values in itertools.chain(
-                _EXHAUSTIVE_TYPE_AFFINE_KWARGS.items(),
-                [
-                    ("interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]),
-                    ("fill", _EXHAUSTIVE_TYPE_FILLS),
-                ],
-            )
+            for param, values in [
+                ("angle", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
+                ("translate", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
+                ("shear", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
+                ("center", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
+                ("interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]),
+                ("fill", _EXHAUSTIVE_TYPE_FILLS),
+            ]
             for value in values
         ],
     )
@@ -998,61 +998,31 @@ class TestAffine:
             else True,
         )
 
-    @pytest.mark.parametrize("angle", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"])
+    @pytest.mark.parametrize(
+        ("param", "value"),
+        [
+            (param, value)
+            for param, values in [
+                ("angle", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"]),
+                ("translate", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["translate"]),
+                ("shear", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"]),
+                ("center", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"]),
+            ]
+            for value in values
+        ],
+    )
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box_angle(self, angle, format, dtype, device):
+    def test_kernel_bounding_box(self, param, value, format, dtype, device):
         bounding_box = self._make_input(datapoints.BoundingBox, format=format, dtype=dtype, device=device)
         self._check_kernel(
             F.affine_bounding_box,
             self._make_input(datapoints.BoundingBox, format=format, dtype=dtype, device=device),
             format=format,
             spatial_size=bounding_box.spatial_size,
-            angle=angle,
-        )
-
-    @pytest.mark.parametrize("translate", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["translate"])
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box_translate(self, translate, format, dtype, device):
-        bounding_box = self._make_input(datapoints.BoundingBox, format=format, dtype=dtype, device=device)
-        self._check_kernel(
-            F.affine_bounding_box,
-            self._make_input(datapoints.BoundingBox, format=format, dtype=dtype, device=device),
-            format=format,
-            spatial_size=bounding_box.spatial_size,
-            translate=translate,
-        )
-
-    @pytest.mark.parametrize("shear", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"])
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box_shear(self, shear, format, dtype, device):
-        bounding_box = self._make_input(datapoints.BoundingBox, format=format, dtype=dtype, device=device)
-        self._check_kernel(
-            F.affine_bounding_box,
-            self._make_input(datapoints.BoundingBox, format=format, dtype=dtype, device=device),
-            format=format,
-            spatial_size=bounding_box.spatial_size,
-            shear=shear,
-            check_scripted_vs_eager=not isinstance(shear, (int, float)),
-        )
-
-    @pytest.mark.parametrize("center", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box_center(self, center, format, dtype, device):
-        bounding_box = self._make_input(datapoints.BoundingBox, format=format, dtype=dtype, device=device)
-        self._check_kernel(
-            F.affine_bounding_box,
-            self._make_input(datapoints.BoundingBox, format=format, dtype=dtype, device=device),
-            format=format,
-            spatial_size=bounding_box.spatial_size,
-            center=center,
+            **{param: value},
+            check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
         )
 
     @pytest.mark.parametrize("mask_type", ["segmentation", "detection"])
