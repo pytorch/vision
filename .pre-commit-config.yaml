@@ -11,12 +11,12 @@ repos:
       - id: end-of-file-fixer
 
   - repo: https://github.com/omnilib/ufmt
-    rev: v2.1.0
+    rev: v2.0.1
     hooks:
       - id: ufmt
         additional_dependencies:
-          - black == 23.3.0
-          - usort == 1.0.7
+          - black == 22.12.0
+          - usort == 1.0.5
 
   - repo: https://github.com/PyCQA/flake8
     rev: 6.0.0
