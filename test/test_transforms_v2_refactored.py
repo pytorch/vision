@@ -1,5 +1,6 @@
 import contextlib
 import inspect
+import itertools
 import math
 import re
 from typing import get_type_hints
@@ -968,71 +969,33 @@ class TestAffine:
         kwargs_.update(kwargs)
         check_kernel(kernel, input, *args, **kwargs_)
 
-    @pytest.mark.parametrize("angle", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"])
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor_angle(self, angle, dtype, device):
-        self._check_kernel(
-            F.affine_image_tensor,
-            self._make_input(torch.Tensor, dtype=dtype, device=device),
-            angle=angle,
-        )
-
-    @pytest.mark.parametrize("translate", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["translate"])
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor_translate(self, translate, dtype, device):
-        self._check_kernel(
-            F.affine_image_tensor,
-            self._make_input(torch.Tensor, dtype=dtype, device=device),
-            translate=translate,
-        )
-
-    @pytest.mark.parametrize("shear", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"])
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor_shear(self, shear, dtype, device):
-        self._check_kernel(
-            F.affine_image_tensor,
-            self._make_input(torch.Tensor, dtype=dtype, device=device),
-            shear=shear,
-            check_scripted_vs_eager=not isinstance(shear, (int, float)),
-        )
-
-    @pytest.mark.parametrize("center", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor_center(self, center, dtype, device):
-        self._check_kernel(
-            F.affine_image_tensor,
-            self._make_input(torch.Tensor, dtype=dtype, device=device),
-            center=center,
-        )
-
     @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+        ("param", "value"),
+        [
+            (param, value)
+            for param, values in itertools.chain(
+                _EXHAUSTIVE_TYPE_AFFINE_KWARGS.items(),
+                [
+                    ("interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]),
+                    ("fill", _EXHAUSTIVE_TYPE_FILLS),
+                ],
+            )
+            for value in values
+        ],
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor_interpolation(self, interpolation, dtype, device):
+    def test_kernel_image_tensor(self, param, value, dtype, device):
+        if param == "fill":
+            value = self._adapt_fill(value, dtype=dtype)
         self._check_kernel(
             F.affine_image_tensor,
             self._make_input(torch.Tensor, dtype=dtype, device=device),
-            interpolation=interpolation,
+            **{param: value},
+            check_scripted_vs_eager=not (param in {"shear", "fill"} and isinstance(value, (int, float))),
             check_cuda_vs_cpu=dict(atol=1, rtol=0)
-            if dtype is torch.uint8 and interpolation is transforms.InterpolationMode.BILINEAR
+            if dtype is torch.uint8 and param == "interpolation" and value is transforms.InterpolationMode.BILINEAR
             else True,
-        )
-
-    @pytest.mark.parametrize("fill", _EXHAUSTIVE_TYPE_FILLS)
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor_fill(self, fill, dtype, device):
-        self._check_kernel(
-            F.affine_image_tensor,
-            self._make_input(torch.Tensor, dtype=dtype, device=device),
-            fill=self._adapt_fill(fill, dtype=dtype),
-            check_scripted_vs_eager=not isinstance(fill, (int, float)),
         )
 
     @pytest.mark.parametrize("angle", _EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"])
