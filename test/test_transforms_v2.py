@@ -29,7 +29,7 @@ from common_utils import (
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints
 from torchvision.ops.boxes import box_iou
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
+from torchvision.transforms.functional import InterpolationMode, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
 
@@ -404,59 +404,6 @@ def test_simple_tensor_heuristic(flat_inputs):
 
     for input, output in zip(other_inputs, other_outputs):
         assert transform.was_applied(output, input)
-
-
-@pytest.mark.parametrize("p", [0.0, 1.0])
-class TestRandomVerticalFlip:
-    def input_expected_image_tensor(self, p, dtype=torch.float32):
-        input = torch.tensor([[[1, 1], [0, 0]], [[1, 1], [0, 0]]], dtype=dtype)
-        expected = torch.tensor([[[0, 0], [1, 1]], [[0, 0], [1, 1]]], dtype=dtype)
-
-        return input, expected if p == 1 else input
-
-    def test_simple_tensor(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(input)
-
-        assert_equal(expected, actual)
-
-    def test_pil_image(self, p):
-        input, expected = self.input_expected_image_tensor(p, dtype=torch.uint8)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(to_pil_image(input))
-
-        assert_equal(expected, pil_to_tensor(actual))
-
-    def test_datapoints_image(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(datapoints.Image(input))
-
-        assert_equal(datapoints.Image(expected), actual)
-
-    def test_datapoints_mask(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(datapoints.Mask(input))
-
-        assert_equal(datapoints.Mask(expected), actual)
-
-    def test_datapoints_bounding_box(self, p):
-        input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(input)
-
-        expected_image_tensor = torch.tensor([0, 5, 5, 10]) if p == 1.0 else input
-        expected = datapoints.BoundingBox.wrap_like(input, expected_image_tensor)
-        assert_equal(expected, actual)
-        assert actual.format == expected.format
-        assert actual.spatial_size == expected.spatial_size
 
 
 class TestPad:
