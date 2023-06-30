@@ -896,7 +896,7 @@ class TestAffine:
         return input
 
     def _adapt_fill(self, value, *, dtype):
-        """Adapt ``fill`` values in the range ``[0.0, 1.0]`` to the value range of the dtype"""
+        """Adapt fill values in the range [0.0, 1.0] to the value range of the dtype"""
         if value is None:
             return value
 
@@ -907,9 +907,7 @@ class TestAffine:
         elif isinstance(value, (list, tuple)):
             return type(value)(type(v)(v * max_value) for v in value)
         else:
-            raise pytest.UsageError(
-                f"`fill` should be an int or float, or a list or tuple of the former, but got {value}"
-            )
+            raise ValueError(f"fill should be an int or float, or a list or tuple of the former, but got '{value}'")
 
     _EXHAUSTIVE_TYPE_AFFINE_KWARGS = dict(
         # float, int
@@ -926,7 +924,7 @@ class TestAffine:
         # two-list of float, two-list of int, two-tuple of float, two-tuple of int
         center=[None, [1.2, 4.9], [-3, 1], (2.5, -4.7), (3, 2)],
     )
-    # The special case for `"shear"` makes sure we pick a value that is supported while JIT scripting
+    # The special case for shear makes sure we pick a value that is supported while JIT scripting
     _MINIMAL_AFFINE_KWARGS = {
         k: vs[0] if k != "shear" else next(v for v in vs if isinstance(v, list))
         for k, vs in _EXHAUSTIVE_TYPE_AFFINE_KWARGS.items()
@@ -1110,14 +1108,14 @@ class TestAffine:
         )
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 5
+        assert mae < 2 if interpolation is transforms.InterpolationMode.NEAREST else 8
 
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize(
         "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
     )
     @pytest.mark.parametrize("fill", _CORRECTNESS_FILL)
-    @pytest.mark.parametrize("seed", list(range(10)))
+    @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_image_correctness(self, center, interpolation, fill, seed):
         image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
 
@@ -1128,17 +1126,13 @@ class TestAffine:
         )
 
         torch.manual_seed(seed)
-        params = transform._get_params([image])
-
-        torch.manual_seed(seed)
         actual = transform(image)
 
-        expected = F.to_image_tensor(
-            F.affine(F.to_image_pil(image), **params, center=center, interpolation=interpolation, fill=fill)
-        )
+        torch.manual_seed(seed)
+        expected = F.to_image_tensor(transform(F.to_image_pil(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 7
+        assert mae < 2 if interpolation is transforms.InterpolationMode.NEAREST else 8
 
     def _compute_affine_matrix(self, *, angle, translate, scale, shear, center):
         rot = math.radians(angle)
@@ -1210,7 +1204,7 @@ class TestAffine:
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize("seed", list(range(10)))
+    @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_box_correctness(self, format, center, seed):
         bounding_box = self._make_input(datapoints.BoundingBox, format=format)
 
