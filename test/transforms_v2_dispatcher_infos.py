@@ -139,16 +139,6 @@ xfails_pil_if_fill_sequence_needs_broadcast = xfails_pil(
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.vertical_flip,
-        kernels={
-            datapoints.Image: F.vertical_flip_image_tensor,
-            datapoints.Video: F.vertical_flip_video,
-            datapoints.BoundingBox: F.vertical_flip_bounding_box,
-            datapoints.Mask: F.vertical_flip_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.vertical_flip_image_pil, kernel_name="vertical_flip_image_pil"),
-    ),
-    DispatcherInfo(
         F.rotate,
         kernels={
             datapoints.Image: F.rotate_image_tensor,

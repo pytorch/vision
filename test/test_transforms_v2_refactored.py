@@ -842,7 +842,7 @@ class TestHorizontalFlip:
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
     def test_bounding_box_correctness(self, format, fn):
-        bounding_box = self._make_input(datapoints.BoundingBox)
+        bounding_box = self._make_input(datapoints.BoundingBox, format=format)
 
         actual = fn(bounding_box)
         expected = self._reference_horizontal_flip_bounding_box(bounding_box)
@@ -1025,12 +1025,10 @@ class TestAffine:
 
     @pytest.mark.parametrize("mask_type", ["segmentation", "detection"])
     def test_kernel_mask(self, mask_type):
-        check_kernel(
-            F.affine_mask, self._make_input(datapoints.Mask, mask_type=mask_type), **self._MINIMAL_AFFINE_KWARGS
-        )
+        self._check_kernel(F.affine_mask, self._make_input(datapoints.Mask, mask_type=mask_type))
 
     def test_kernel_video(self):
-        check_kernel(F.affine_video, self._make_input(datapoints.Video), **self._MINIMAL_AFFINE_KWARGS)
+        self._check_kernel(F.affine_video, self._make_input(datapoints.Video))
 
     @pytest.mark.parametrize(
         ("input_type", "kernel"),
@@ -1301,3 +1299,143 @@ class TestAffine:
     def test_transform_unknown_fill_error(self):
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
+
+
+class TestVerticalFlip:
+    def _make_input(self, input_type, *, dtype=None, device="cpu", spatial_size=(17, 11), **kwargs):
+        if input_type in {torch.Tensor, PIL.Image.Image, datapoints.Image}:
+            input = make_image(size=spatial_size, dtype=dtype or torch.uint8, device=device, **kwargs)
+            if input_type is torch.Tensor:
+                input = input.as_subclass(torch.Tensor)
+            elif input_type is PIL.Image.Image:
+                input = F.to_image_pil(input)
+        elif input_type is datapoints.BoundingBox:
+            kwargs.setdefault("format", datapoints.BoundingBoxFormat.XYXY)
+            input = make_bounding_box(
+                dtype=dtype or torch.float32,
+                device=device,
+                spatial_size=spatial_size,
+                **kwargs,
+            )
+        elif input_type is datapoints.Mask:
+            input = make_segmentation_mask(size=spatial_size, dtype=dtype or torch.uint8, device=device, **kwargs)
+        elif input_type is datapoints.Video:
+            input = make_video(size=spatial_size, dtype=dtype or torch.uint8, device=device, **kwargs)
+
+        return input
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image_tensor(self, dtype, device):
+        check_kernel(F.vertical_flip_image_tensor, self._make_input(torch.Tensor, dtype=dtype, device=device))
+
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_bounding_box(self, format, dtype, device):
+        bounding_box = self._make_input(datapoints.BoundingBox, dtype=dtype, device=device, format=format)
+        check_kernel(
+            F.vertical_flip_bounding_box,
+            bounding_box,
+            format=format,
+            spatial_size=bounding_box.spatial_size,
+        )
+
+    @pytest.mark.parametrize(
+        "dtype_and_make_mask", [(torch.uint8, make_segmentation_mask), (torch.bool, make_detection_mask)]
+    )
+    def test_kernel_mask(self, dtype_and_make_mask):
+        dtype, make_mask = dtype_and_make_mask
+        check_kernel(F.vertical_flip_mask, make_mask(dtype=dtype))
+
+    def test_kernel_video(self):
+        check_kernel(F.vertical_flip_video, self._make_input(datapoints.Video))
+
+    @pytest.mark.parametrize(
+        ("input_type", "kernel"),
+        [
+            (torch.Tensor, F.vertical_flip_image_tensor),
+            (PIL.Image.Image, F.vertical_flip_image_pil),
+            (datapoints.Image, F.vertical_flip_image_tensor),
+            (datapoints.BoundingBox, F.vertical_flip_bounding_box),
+            (datapoints.Mask, F.vertical_flip_mask),
+            (datapoints.Video, F.vertical_flip_video),
+        ],
+    )
+    def test_dispatcher(self, kernel, input_type):
+        check_dispatcher(F.vertical_flip, kernel, self._make_input(input_type))
+
+    @pytest.mark.parametrize(
+        ("input_type", "kernel"),
+        [
+            (torch.Tensor, F.vertical_flip_image_tensor),
+            (PIL.Image.Image, F.vertical_flip_image_pil),
+            (datapoints.Image, F.vertical_flip_image_tensor),
+            (datapoints.BoundingBox, F.vertical_flip_bounding_box),
+            (datapoints.Mask, F.vertical_flip_mask),
+            (datapoints.Video, F.vertical_flip_video),
+        ],
+    )
+    def test_dispatcher_signature(self, kernel, input_type):
+        check_dispatcher_signatures_match(F.vertical_flip, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, input_type, device):
+        input = self._make_input(input_type, device=device)
+
+        check_transform(transforms.RandomVerticalFlip, input, p=1)
+
+    @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
+    def test_image_correctness(self, fn):
+        image = self._make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
+
+        actual = fn(image)
+        expected = F.to_image_tensor(F.vertical_flip(F.to_image_pil(image)))
+
+        torch.testing.assert_close(actual, expected)
+
+    def _reference_vertical_flip_bounding_box(self, bounding_box):
+        affine_matrix = np.array(
+            [
+                [1, 0, 0],
+                [0, -1, bounding_box.spatial_size[0]],
+            ],
+            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+        )
+
+        expected_bboxes = reference_affine_bounding_box_helper(
+            bounding_box,
+            format=bounding_box.format,
+            spatial_size=bounding_box.spatial_size,
+            affine_matrix=affine_matrix,
+        )
+
+        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
+
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
+    def test_bounding_box_correctness(self, format, fn):
+        bounding_box = self._make_input(datapoints.BoundingBox, format=format)
+
+        actual = fn(bounding_box)
+        expected = self._reference_vertical_flip_bounding_box(bounding_box)
+
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize(
+        "input_type",
+        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_noop(self, input_type, device):
+        input = self._make_input(input_type, device=device)
+
+        transform = transforms.RandomVerticalFlip(p=0)
+
+        output = transform(input)
+
+        assert_equal(output, input)
