@@ -408,8 +408,9 @@ def masks_to_boundaries(masks: torch.Tensor, dilation_ratio: float = 0.02) -> to
 
     # Compute the boundaries for each mask
     masks = masks.float().unsqueeze(1)
-    eroded_masks = F.conv2d(masks, selem, padding=dilation, groups=n)
-    eroded_masks = (eroded_masks == selem.view(n, -1).sum(1, keepdim=True)).byte()  # Make the output binary
+    eroded_masks = F.conv2d(masks, selem, padding=dilation)
+    # Make the output binary
+    eroded_masks = (eroded_masks == selem.view(n, -1).sum(-1).view(n, 1, 1, 1)).byte()
 
     contours = masks.byte() - eroded_masks
 
