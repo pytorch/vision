@@ -11,7 +11,7 @@ import torch
 import torch.fx
 import torch.nn.functional as F
 from common_utils import assert_equal, cpu_and_cuda, needs_cuda
-from PIL import Image
+from PIL import Image, ImageDraw
 from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
@@ -620,6 +620,32 @@ class TestMultiScaleRoIAlign:
         assert len(graph_node_names) == 2
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
+
+class TestMasksToBoundaries(ABC):
+
+    @pytest.mark.parametrize("device", ['cpu', 'cuda'])  
+    def test_masks_to_boundaries(self, device):
+        # Create masks
+        mask = torch.zeros(4, 32, 32, dtype=torch.bool)
+        mask[0, 1:10, 1:10] = True
+        mask[0, 12:20, 12:20] = True
+        mask[0, 15:18, 20:32] = True
+        mask[1, 15:23, 15:23] = True
+        mask[1, 22:33, 22:33] = True
+        mask[2, 1:5, 22:30] = True
+        mask[2, 5:14, 25:27] = True
+        pil_img = Image.new("L", (32, 32))
+        draw = ImageDraw.Draw(pil_img)
+        draw.ellipse([2, 7, 26, 26], fill=1, outline=1, width=1)
+        mask[3, ...] = torch.from_numpy(np.asarray(pil_img))
+        mask = mask.to(device)
+        dilation_ratio = 0.02
+        boundaries = ops.masks_to_boundaries(mask, dilation_ratio)
+        # Generate expected output
+        # TODO: How we generate handle the expected output?
+        # replace with actual code to generate expected output
+        expected_boundaries = torch.zeros_like(mask)  
+        torch.testing.assert_close(expected_boundaries, boundaries)
 
 
 class TestNMS:
