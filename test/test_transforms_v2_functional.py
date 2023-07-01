@@ -539,6 +539,7 @@ class TestDispatchers:
             (F.to_pil_image, F.to_image_pil),
             (F.elastic_transform, F.elastic),
             (F.convert_image_dtype, F.convert_dtype_image_tensor),
+            (F.to_grayscale, F.rgb_to_grayscale),
         ]
     ],
 )
@@ -662,77 +663,6 @@ def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
     rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
     true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
     return true_matrix
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_correctness_affine_bounding_box_on_fixed_input(device):
-    # Check transformation against known expected output
-    format = datapoints.BoundingBoxFormat.XYXY
-    spatial_size = (64, 64)
-    in_boxes = [
-        [20, 25, 35, 45],
-        [50, 5, 70, 22],
-        [spatial_size[1] // 2 - 10, spatial_size[0] // 2 - 10, spatial_size[1] // 2 + 10, spatial_size[0] // 2 + 10],
-        [1, 1, 5, 5],
-    ]
-    in_boxes = torch.tensor(in_boxes, dtype=torch.float64, device=device)
-    # Tested parameters
-    angle = 63
-    scale = 0.89
-    dx = 0.12
-    dy = 0.23
-
-    # Expected bboxes computed using albumentations:
-    # from albumentations.augmentations.geometric.functional import bbox_shift_scale_rotate
-    # from albumentations.augmentations.geometric.functional import normalize_bbox, denormalize_bbox
-    # expected_bboxes = []
-    # for in_box in in_boxes:
-    #     n_in_box = normalize_bbox(in_box, *spatial_size)
-    #     n_out_box = bbox_shift_scale_rotate(n_in_box, -angle, scale, dx, dy, *spatial_size)
-    #     out_box = denormalize_bbox(n_out_box, *spatial_size)
-    #     expected_bboxes.append(out_box)
-    expected_bboxes = [
-        (24.522435977922218, 34.375689508290854, 46.443125279998114, 54.3516575015695),
-        (54.88288587110401, 50.08453280875634, 76.44484547743795, 72.81332520036864),
-        (27.709526487041554, 34.74952648704156, 51.650473512958435, 58.69047351295844),
-        (48.56528888843238, 9.611532109828834, 53.35347829361575, 14.39972151501221),
-    ]
-
-    expected_bboxes = clamp_bounding_box(
-        datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
-    ).tolist()
-
-    output_boxes = F.affine_bounding_box(
-        in_boxes,
-        format=format,
-        spatial_size=spatial_size,
-        angle=angle,
-        translate=(dx * spatial_size[1], dy * spatial_size[0]),
-        scale=scale,
-        shear=(0, 0),
-    )
-
-    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_correctness_affine_segmentation_mask_on_fixed_input(device):
-    # Check transformation against known expected output and CPU/CUDA devices
-
-    # Create a fixed input segmentation mask with 2 square masks
-    # in top-left, bottom-left corners
-    mask = torch.zeros(1, 32, 32, dtype=torch.long, device=device)
-    mask[0, 2:10, 2:10] = 1
-    mask[0, 32 - 9 : 32 - 3, 3:9] = 2
-
-    # Rotate 90 degrees and scale
-    expected_mask = torch.rot90(mask, k=-1, dims=(-2, -1))
-    expected_mask = torch.nn.functional.interpolate(expected_mask[None, :].float(), size=(64, 64), mode="nearest")
-    expected_mask = expected_mask[0, :, 16 : 64 - 16, 16 : 64 - 16].long()
-
-    out_mask = F.affine_mask(mask, 90, [0.0, 0.0], 64.0 / 32.0, [0.0, 0.0])
-
-    torch.testing.assert_close(out_mask, expected_mask)
 
 
 @pytest.mark.parametrize("angle", range(-90, 90, 56))
@@ -947,18 +877,6 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
 
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
     torch.testing.assert_close(output_spatial_size, spatial_size)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_correctness_horizontal_flip_segmentation_mask_on_fixed_input(device):
-    mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
-    mask[:, :, 0] = 1
-
-    out_mask = F.horizontal_flip_mask(mask)
-
-    expected_mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
-    expected_mask[:, :, -1] = 1
-    torch.testing.assert_close(out_mask, expected_mask)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
