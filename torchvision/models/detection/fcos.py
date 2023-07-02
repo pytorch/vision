@@ -56,7 +56,6 @@ class FCOSHead(nn.Module):
         anchors: List[Tensor],
         matched_idxs: List[Tensor],
     ) -> Dict[str, Tensor]:
-
         cls_logits = head_outputs["cls_logits"]  # [N, HWA, C]
         bbox_regression = head_outputs["bbox_regression"]  # [N, HWA, 4]
         bbox_ctrness = head_outputs["bbox_ctrness"]  # [N, HWA, 1]
@@ -568,7 +567,6 @@ class FCOS(nn.Module):
                 like `scores`, `labels` and `mask` (for Mask R-CNN models).
         """
         if self.training:
-
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
             else:

@@ -192,7 +192,6 @@ class RegionProposalNetwork(torch.nn.Module):
     def assign_targets_to_anchors(
         self, anchors: List[Tensor], targets: List[Dict[str, Tensor]]
     ) -> Tuple[List[Tensor], List[Tensor]]:
-
         labels = []
         matched_gt_boxes = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
@@ -245,7 +244,6 @@ class RegionProposalNetwork(torch.nn.Module):
         image_shapes: List[Tuple[int, int]],
         num_anchors_per_level: List[int],
     ) -> Tuple[List[Tensor], List[Tensor]]:
-
         num_images = proposals.shape[0]
         device = proposals.device
         # do not backprop through objectness
@@ -338,7 +336,6 @@ class RegionProposalNetwork(torch.nn.Module):
         features: Dict[str, Tensor],
         targets: Optional[List[Dict[str, Tensor]]] = None,
     ) -> Tuple[List[Tensor], Dict[str, Tensor]]:
-
         """
         Args:
             images (ImageList): images for which we want to compute the predictions

@@ -155,7 +155,6 @@ class MetricLogger:
 
 
 def compute_metrics(flow_pred, flow_gt, valid_flow_mask=None):
-
     epe = ((flow_pred - flow_gt) ** 2).sum(dim=1).sqrt()
     flow_norm = (flow_gt**2).sum(dim=1).sqrt()
 

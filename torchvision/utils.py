@@ -161,7 +161,6 @@ def draw_bounding_boxes(
     font: Optional[str] = None,
     font_size: Optional[int] = None,
 ) -> torch.Tensor:
-
     """
     Draws bounding boxes on given image.
     The values of the input image should be uint8 between 0 and 255.
@@ -259,7 +258,6 @@ def draw_segmentation_masks(
     alpha: float = 0.8,
     colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
 ) -> torch.Tensor:
-
     """
     Draws segmentation masks on given RGB image.
     The values of the input image should be uint8 between 0 and 255.
@@ -327,7 +325,6 @@ def draw_keypoints(
     radius: int = 2,
     width: int = 3,
 ) -> torch.Tensor:
-
     """
     Draws Keypoints on given RGB image.
     The values of the input image should be uint8 between 0 and 255.
@@ -393,7 +390,6 @@ def draw_keypoints(
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
 @torch.no_grad()
 def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
-
     """
     Converts a flow to an RGB image.
 
@@ -427,7 +423,6 @@ def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
 
 @torch.no_grad()
 def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
-
     """
     Converts a batch of normalized flow to an RGB image.
 
@@ -556,7 +551,6 @@ def _parse_colors(
 
 
 def _log_api_usage_once(obj: Any) -> None:
-
     """
     Logs API usage(module and name) within an organization.
     In a large ecosystem, it's often useful to track the PyTorch and

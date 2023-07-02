@@ -743,7 +743,6 @@ def _maxvit(
     # kwargs,
     **kwargs: Any,
 ) -> MaxVit:
-
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]

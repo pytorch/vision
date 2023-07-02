@@ -275,7 +275,6 @@ class TestVideoApi:
         av_keyframes = []
         vr_keyframes = []
         if av_reader.streams.video:
-
             # get all keyframes using pyav. Then, seek randomly into video reader
             # and assert that all the returned values are in AV_KEYFRAMES
 

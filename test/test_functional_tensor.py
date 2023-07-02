@@ -67,7 +67,6 @@ def test_scale_channel():
 
 
 class TestRotate:
-
     ALL_DTYPES = [None, torch.float32, torch.float64, torch.float16]
     scripted_rotate = torch.jit.script(F.rotate)
     IMG_W = 26
@@ -153,7 +152,6 @@ class TestRotate:
 
 
 class TestAffine:
-
     ALL_DTYPES = [None, torch.float32, torch.float64, torch.float16]
     scripted_affine = torch.jit.script(F.affine)
 
@@ -379,7 +377,6 @@ def _get_data_dims_and_points_for_perspective():
 @pytest.mark.parametrize("fill", (None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1], (2.0,)))
 @pytest.mark.parametrize("fn", [F.perspective, torch.jit.script(F.perspective)])
 def test_perspective_pil_vs_tensor(device, dims_and_points, dt, fill, fn):
-
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
         return
@@ -411,7 +408,6 @@ def test_perspective_pil_vs_tensor(device, dims_and_points, dt, fill, fn):
 @pytest.mark.parametrize("dims_and_points", _get_data_dims_and_points_for_perspective())
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
 def test_perspective_batch(device, dims_and_points, dt):
-
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
         return
@@ -451,7 +447,6 @@ def test_perspective_interpolation_type():
 @pytest.mark.parametrize("max_size", [None, 34, 40, 1000])
 @pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST, NEAREST_EXACT])
 def test_resize(device, dt, size, max_size, interpolation):
-
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
         return
@@ -501,7 +496,6 @@ def test_resize(device, dt, size, max_size, interpolation):
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 def test_resize_asserts(device):
-
     tensor, pil_img = _create_data(26, 36, device=device)
 
     res1 = F.resize(tensor, size=32, interpolation=PIL.Image.BILINEAR)
@@ -521,7 +515,6 @@ def test_resize_asserts(device):
 @pytest.mark.parametrize("size", [[96, 72], [96, 420], [420, 72]])
 @pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC])
 def test_resize_antialias(device, dt, size, interpolation):
-
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
         return
@@ -570,7 +563,6 @@ def test_resize_antialias(device, dt, size, interpolation):
 
 
 def test_resize_antialias_default_warning():
-
     img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
 
     match = "The default value of the antialias"
@@ -589,7 +581,6 @@ def test_resize_antialias_default_warning():
 def check_functional_vs_PIL_vs_scripted(
     fn, fn_pil, fn_t, config, device, dtype, channels=3, tol=2.0 + 1e-10, agg_method="max"
 ):
-
     script_fn = torch.jit.script(fn)
     torch.manual_seed(15)
     tensor, pil_img = _create_data(26, 34, channels=channels, device=device)
@@ -1026,7 +1017,6 @@ def test_crop(device, top, left, height, width):
 @pytest.mark.parametrize("sigma", [[0.5, 0.5], (0.5, 0.5), (0.8, 0.8), (1.7, 1.7)])
 @pytest.mark.parametrize("fn", [F.gaussian_blur, torch.jit.script(F.gaussian_blur)])
 def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
-
     # true_cv2_results = {
     #     # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
     #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8)

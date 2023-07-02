@@ -26,7 +26,6 @@ class Conv3DSimple(nn.Conv3d):
     def __init__(
         self, in_planes: int, out_planes: int, midplanes: Optional[int] = None, stride: int = 1, padding: int = 1
     ) -> None:
-
         super().__init__(
             in_channels=in_planes,
             out_channels=out_planes,
@@ -68,7 +67,6 @@ class Conv3DNoTemporal(nn.Conv3d):
     def __init__(
         self, in_planes: int, out_planes: int, midplanes: Optional[int] = None, stride: int = 1, padding: int = 1
     ) -> None:
-
         super().__init__(
             in_channels=in_planes,
             out_channels=out_planes,
@@ -84,7 +82,6 @@ class Conv3DNoTemporal(nn.Conv3d):
 
 
 class BasicBlock(nn.Module):
-
     expansion = 1
 
     def __init__(
@@ -131,7 +128,6 @@ class Bottleneck(nn.Module):
         stride: int = 1,
         downsample: Optional[nn.Module] = None,
     ) -> None:
-
         super().__init__()
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 

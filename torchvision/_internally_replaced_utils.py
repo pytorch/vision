@@ -23,7 +23,6 @@ except ImportError:
 
 
 def _get_extension_path(lib_name):
-
     lib_dir = os.path.dirname(__file__)
     if os.name == "nt":
         # Register the main torchvision library location on the default DLL path

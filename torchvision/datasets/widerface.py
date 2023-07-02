@@ -167,7 +167,7 @@ class WIDERFace(VisionDataset):
         # Allow original archive to be deleted (zip). Only need the extracted images
         all_files = self.FILE_LIST.copy()
         all_files.append(self.ANNOTATIONS_FILE)
-        for (_, md5, filename) in all_files:
+        for _, md5, filename in all_files:
             file, ext = os.path.splitext(filename)
             extracted_dir = os.path.join(self.root, file)
             if not os.path.exists(extracted_dir):
@@ -180,7 +180,7 @@ class WIDERFace(VisionDataset):
             return
 
         # download and extract image data
-        for (file_id, md5, filename) in self.FILE_LIST:
+        for file_id, md5, filename in self.FILE_LIST:
             download_file_from_google_drive(file_id, self.root, filename, md5)
             filepath = os.path.join(self.root, filename)
             extract_archive(filepath)

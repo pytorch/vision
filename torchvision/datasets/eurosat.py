@@ -46,7 +46,6 @@ class EuroSAT(ImageFolder):
         return os.path.exists(self._data_folder)
 
     def download(self) -> None:
-
         if self._check_exists():
             return
 

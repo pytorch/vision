@@ -273,7 +273,6 @@ class BoxLinearCoder:
         return targets
 
     def decode(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:
-
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.

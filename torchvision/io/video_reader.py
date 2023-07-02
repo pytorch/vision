@@ -254,7 +254,7 @@ class VideoReader:
             (dict): dictionary containing duration and frame rate for every stream
         """
         if self.backend == "pyav":
-            metadata = {}  # type:  Dict[str, Any]
+            metadata: Dict[str, Any] = {}
             for stream in self.container.streams:
                 if stream.type not in metadata:
                     if stream.type == "video":

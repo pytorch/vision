@@ -19,7 +19,6 @@ def rand_float_range(size: Sequence[int], low: float, high: float) -> Tensor:
 
 
 class InterpolationStrategy:
-
     _valid_modes: List[str] = ["mixed", "bicubic", "bilinear"]
 
     def __init__(self, mode: str = "mixed") -> None:
@@ -156,7 +155,6 @@ class Normalize(torch.nn.Module):
         disparities: Tuple[T_FLOW, T_FLOW],
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
-
         img_left = F.normalize(images[0], mean=self.mean, std=self.std)
         img_right = F.normalize(images[1], mean=self.mean, std=self.std)
 
@@ -209,7 +207,6 @@ class AsymmetricColorJitter(T.ColorJitter):
         disparities: Tuple[T_FLOW, T_FLOW],
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
-
         if torch.rand(1) < self.p:
             # asymmetric: different transform for img1 and img2
             img_left = super().forward(images[0])
@@ -236,7 +233,6 @@ class AsymetricGammaAdjust(torch.nn.Module):
         disparities: Tuple[T_FLOW, T_FLOW],
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
-
         gamma = rand_float_range((1,), low=self.gamma_range[0], high=self.gamma_range[1]).item()
 
         if torch.rand(1) < self.p:
@@ -285,7 +281,6 @@ class RandomErase(torch.nn.Module):
         disparities: T_STEREO_TENSOR,
         masks: T_STEREO_TENSOR,
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
-
         if torch.rand(1) < self.p:
             return images, disparities, masks
 
@@ -342,7 +337,6 @@ class RandomOcclusion(torch.nn.Module):
         disparities: T_STEREO_TENSOR,
         masks: T_STEREO_TENSOR,
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
-
         left_image, right_image = images
 
         if torch.rand(1) < self.p:
@@ -421,7 +415,6 @@ class RandomHorizontalFlip(torch.nn.Module):
         disparities: Tuple[T_FLOW, T_FLOW],
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
-
         img_left, img_right = images
         dsp_left, dsp_right = disparities
         mask_left, mask_right = masks
@@ -522,7 +515,6 @@ class RandomRescaleAndCrop(torch.nn.Module):
         disparities: Tuple[T_FLOW, T_FLOW],
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
-
         img_left, img_right = images
         dsp_left, dsp_right = disparities
         mask_left, mask_right = masks

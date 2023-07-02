@@ -1214,7 +1214,6 @@ class RandomIoUCrop(Transform):
                 return dict(top=top, left=left, height=new_h, width=new_w, is_within_crop_area=is_within_crop_area)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-
         if len(params) < 1:
             return inpt
 

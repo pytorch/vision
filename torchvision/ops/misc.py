@@ -81,7 +81,6 @@ class ConvNormActivation(torch.nn.Sequential):
         bias: Optional[bool] = None,
         conv_layer: Callable[..., torch.nn.Module] = torch.nn.Conv2d,
     ) -> None:
-
         if padding is None:
             if isinstance(kernel_size, int) and isinstance(dilation, int):
                 padding = (kernel_size - 1) // 2 * dilation
@@ -155,7 +154,6 @@ class Conv2dNormActivation(ConvNormActivation):
         inplace: Optional[bool] = True,
         bias: Optional[bool] = None,
     ) -> None:
-
         super().__init__(
             in_channels,
             out_channels,
@@ -204,7 +202,6 @@ class Conv3dNormActivation(ConvNormActivation):
         inplace: Optional[bool] = True,
         bias: Optional[bool] = None,
     ) -> None:
-
         super().__init__(
             in_channels,
             out_channels,

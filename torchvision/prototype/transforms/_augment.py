@@ -128,7 +128,6 @@ class SimpleCopyPaste(Transform):
         resize_interpolation: F.InterpolationMode,
         antialias: Optional[bool],
     ) -> Tuple[datapoints._TensorImageType, Dict[str, Any]]:
-
         paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
         paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
         paste_labels = paste_target["labels"].wrap_like(
@@ -269,7 +268,6 @@ class SimpleCopyPaste(Transform):
         output_images, output_targets = [], []
 
         for image, target, paste_image, paste_target in zip(images, targets, images_rolled, targets_rolled):
-
             # Random paste targets selection:
             num_masks = len(paste_target["masks"])
 

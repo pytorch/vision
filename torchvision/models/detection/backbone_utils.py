@@ -120,7 +120,6 @@ def _resnet_fpn_extractor(
     extra_blocks: Optional[ExtraFPNBlock] = None,
     norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> BackboneWithFPN:
-
     # select layers that won't be frozen
     if trainable_layers < 0 or trainable_layers > 5:
         raise ValueError(f"Trainable layers should be in the range [0,5], got {trainable_layers}")

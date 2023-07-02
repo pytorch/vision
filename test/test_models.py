@@ -634,7 +634,6 @@ def test_fasterrcnn_switch_devices():
 
 
 def test_generalizedrcnn_transform_repr():
-
     min_size, max_size = 224, 299
     image_mean = [0.485, 0.456, 0.406]
     image_std = [0.229, 0.224, 0.225]
@@ -1033,7 +1032,6 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
 @pytest.mark.parametrize("model_fn", list_model_fns(models.optical_flow))
 @pytest.mark.parametrize("scripted", (False, True))
 def test_raft(model_fn, scripted):
-
     torch.manual_seed(0)
 
     # We need very small images, otherwise the pickle size would exceed the 50KB
@@ -1058,7 +1056,6 @@ def test_raft(model_fn, scripted):
 
 
 def test_presets_antialias():
-
     img = torch.randint(0, 256, size=(1, 3, 224, 224), dtype=torch.uint8)
 
     match = "The default value of the antialias parameter"

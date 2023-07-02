@@ -6,7 +6,6 @@ import torchvision.transforms.functional as F
 class ValidateModelInput(torch.nn.Module):
     # Pass-through transform that checks the shape and dtypes to make sure the model gets what it expects
     def forward(self, img1, img2, flow, valid_flow_mask):
-
         if not all(isinstance(arg, torch.Tensor) for arg in (img1, img2, flow, valid_flow_mask) if arg is not None):
             raise TypeError("This method expects all input arguments to be of type torch.Tensor.")
         if not all(arg.dtype == torch.float32 for arg in (img1, img2, flow) if arg is not None):
@@ -90,7 +89,6 @@ class AsymmetricColorJitter(T.ColorJitter):
         self.p = p
 
     def forward(self, img1, img2, flow, valid_flow_mask):
-
         if torch.rand(1) < self.p:
             # asymmetric: different transform for img1 and img2
             img1 = super().forward(img1)

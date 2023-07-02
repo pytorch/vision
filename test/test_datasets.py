@@ -278,7 +278,6 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, (dict, PIL.Image.Image))
 
     def inject_fake_data(self, tmpdir, config):
-
         tmpdir = pathlib.Path(tmpdir)
 
         mode_to_splits = {
@@ -1948,7 +1947,6 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
 
         num_examples = 2 if config["split"] == "train" else 3
         for split_dir in ("training", "testing"):
-
             datasets_utils.create_image_folder(
                 root / split_dir,
                 name="image_2",

@@ -31,7 +31,6 @@ class GTSRB(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-
         super().__init__(root, transform=transform, target_transform=target_transform)
 
         self._split = verify_str_arg(split, "split", ("train", "test"))
@@ -63,7 +62,6 @@ class GTSRB(VisionDataset):
         return len(self._samples)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
-
         path, target = self._samples[index]
         sample = PIL.Image.open(path).convert("RGB")
 

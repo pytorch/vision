@@ -130,7 +130,7 @@ class CelebA(VisionDataset):
         return CSV(headers, indices, torch.tensor(data_int))
 
     def _check_integrity(self) -> bool:
-        for (_, md5, filename) in self.file_list:
+        for _, md5, filename in self.file_list:
             fpath = os.path.join(self.root, self.base_folder, filename)
             _, ext = os.path.splitext(filename)
             # Allow original archive to be deleted (zip and 7z)
@@ -146,7 +146,7 @@ class CelebA(VisionDataset):
             print("Files already downloaded and verified")
             return
 
-        for (file_id, md5, filename) in self.file_list:
+        for file_id, md5, filename in self.file_list:
             download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
 
         extract_archive(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))

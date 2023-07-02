@@ -66,7 +66,6 @@ class StereoMatchingDataset(ABC, VisionDataset):
         paths_left_pattern: str,
         paths_right_pattern: Optional[str] = None,
     ) -> List[Tuple[str, Optional[str]]]:
-
         left_paths = list(sorted(glob(paths_left_pattern)))
 
         right_paths: List[Union[None, str]]

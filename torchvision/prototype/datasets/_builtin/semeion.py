@@ -25,7 +25,6 @@ class SEMEION(Dataset):
     """
 
     def __init__(self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False) -> None:
-
         self._categories = _info()["categories"]
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 

@@ -88,7 +88,6 @@ def _loss_inter_union(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
