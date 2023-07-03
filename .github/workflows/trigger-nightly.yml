@@ -8,6 +8,8 @@ on:
   pull_request:
     paths:
       - .github/workflows/trigger-nightly.yml
+permissions:
+  contents: write
 
 jobs:
   tag_nightly:
