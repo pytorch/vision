@@ -496,10 +496,10 @@ def make_image(
     size,
     *,
     color_space="RGB",
+    constant_alpha=True,
     batch_dims=(),
     dtype=torch.float32,
     device="cpu",
-    constant_alpha=True,
     memory_format=torch.contiguous_format,
 ):
     spatial_size = _parse_spatial_size(size)
@@ -629,57 +629,62 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
     ).reshape(low.shape)
 
 
+def make_bounding_box(
+    format=datapoints.BoundingBoxFormat.XYXY, spatial_size="random", batch_dims=(), dtype=torch.float32, device="cpu"
+):
+    if isinstance(format, str):
+        format = datapoints.BoundingBoxFormat[format]
+
+    spatial_size = _parse_spatial_size(spatial_size, name="spatial_size")
+
+    if any(dim == 0 for dim in batch_dims):
+        return datapoints.BoundingBox(
+            torch.empty(*batch_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
+        )
+
+    height, width = spatial_size
+    if format == datapoints.BoundingBoxFormat.XYXY:
+        x1 = torch.randint(0, width // 2, batch_dims)
+        y1 = torch.randint(0, height // 2, batch_dims)
+        x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
+        y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
+        parts = (x1, y1, x2, y2)
+    elif format == datapoints.BoundingBoxFormat.XYWH:
+        x = torch.randint(0, width // 2, batch_dims)
+        y = torch.randint(0, height // 2, batch_dims)
+        w = randint_with_tensor_bounds(1, width - x)
+        h = randint_with_tensor_bounds(1, height - y)
+        parts = (x, y, w, h)
+    elif format == datapoints.BoundingBoxFormat.CXCYWH:
+        cx = torch.randint(1, width - 1, batch_dims)
+        cy = torch.randint(1, height - 1, batch_dims)
+        w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
+        h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
+        parts = (cx, cy, w, h)
+    else:
+        raise ValueError(f"Can't make bounding box in format {format}")
+
+    return datapoints.BoundingBox(
+        torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
+    )
+
+
 def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dtype=torch.float32):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[format]
-    if format not in {
-        datapoints.BoundingBoxFormat.XYXY,
-        datapoints.BoundingBoxFormat.XYWH,
-        datapoints.BoundingBoxFormat.CXCYWH,
-    }:
-        raise pytest.UsageError(f"Can't make bounding box in format {format}")
 
     spatial_size = _parse_spatial_size(spatial_size, name="spatial_size")
 
     def fn(shape, dtype, device):
-        *extra_dims, num_coordinates = shape
+        *batch_dims, num_coordinates = shape
         if num_coordinates != 4:
             raise pytest.UsageError()
 
-        if any(dim == 0 for dim in extra_dims):
-            return datapoints.BoundingBox(
-                torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
-            )
-
-        height, width = spatial_size
-
-        if format == datapoints.BoundingBoxFormat.XYXY:
-            x1 = torch.randint(0, width // 2, extra_dims)
-            y1 = torch.randint(0, height // 2, extra_dims)
-            x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
-            y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
-            parts = (x1, y1, x2, y2)
-        elif format == datapoints.BoundingBoxFormat.XYWH:
-            x = torch.randint(0, width // 2, extra_dims)
-            y = torch.randint(0, height // 2, extra_dims)
-            w = randint_with_tensor_bounds(1, width - x)
-            h = randint_with_tensor_bounds(1, height - y)
-            parts = (x, y, w, h)
-        else:  # format == features.BoundingBoxFormat.CXCYWH:
-            cx = torch.randint(1, width - 1, extra_dims)
-            cy = torch.randint(1, height - 1, extra_dims)
-            w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
-            h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
-            parts = (cx, cy, w, h)
-
-        return datapoints.BoundingBox(
-            torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
+        return make_bounding_box(
+            format=format, spatial_size=spatial_size, batch_dims=batch_dims, dtype=dtype, device=device
         )
 
     return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
-
-
-make_bounding_box = from_loader(make_bounding_box_loader)
 
 
 def make_bounding_box_loaders(
@@ -700,19 +705,29 @@ class MaskLoader(TensorLoader):
     pass
 
 
+def make_detection_mask(size, *, num_objects="random", batch_dims=(), dtype=torch.bool, device="cpu"):
+    """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
+    spatial_size = _parse_spatial_size(size)
+    num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
+
+    data = torch.testing.make_tensor(
+        (*batch_dims, num_objects, *spatial_size), low=0, high=2, dtype=dtype, device=device
+    )
+    return datapoints.Mask(data)
+
+
 def make_detection_mask_loader(size="random", *, num_objects="random", extra_dims=(), dtype=torch.uint8):
     # This produces "detection" masks, i.e. `(*, N, H, W)`, where `N` denotes the number of objects
     size = _parse_spatial_size(size)
     num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
 
     def fn(shape, dtype, device):
-        data = torch.testing.make_tensor(shape, low=0, high=2, dtype=dtype, device=device)
-        return datapoints.Mask(data)
+        *batch_dims, num_objects, height, width = shape
+        return make_detection_mask(
+            (height, width), num_objects=num_objects, batch_dims=batch_dims, dtype=dtype, device=device
+        )
 
     return MaskLoader(fn, shape=(*extra_dims, num_objects, *size), dtype=dtype)
-
-
-make_detection_mask = from_loader(make_detection_mask_loader)
 
 
 def make_detection_mask_loaders(
@@ -728,19 +743,28 @@ def make_detection_mask_loaders(
 make_detection_masks = from_loaders(make_detection_mask_loaders)
 
 
-def make_segmentation_mask_loader(size="random", *, num_categories="random", extra_dims=(), dtype=torch.uint8):
-    # This produces "segmentation" masks, i.e. `(*, H, W)`, where the category is encoded in the values
-    size = _parse_spatial_size(size)
+def make_segmentation_mask(size, *, num_categories="random", batch_dims=(), dtype=torch.uint8, device="cpu"):
+    """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
+    spatial_size = _parse_spatial_size(size)
     num_categories = int(torch.randint(1, 11, ())) if num_categories == "random" else num_categories
 
+    data = torch.testing.make_tensor(
+        (*batch_dims, *spatial_size), low=0, high=num_categories, dtype=dtype, device=device
+    )
+    return datapoints.Mask(data)
+
+
+def make_segmentation_mask_loader(size="random", *, num_categories="random", extra_dims=(), dtype=torch.uint8):
+    # This produces "segmentation" masks, i.e. `(*, H, W)`, where the category is encoded in the values
+    spatial_size = _parse_spatial_size(size)
+
     def fn(shape, dtype, device):
-        data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=dtype, device=device)
-        return datapoints.Mask(data)
+        *batch_dims, height, width = shape
+        return make_segmentation_mask(
+            (height, width), num_categories=num_categories, batch_dims=batch_dims, dtype=dtype, device=device
+        )
 
-    return MaskLoader(fn, shape=(*extra_dims, *size), dtype=dtype)
-
-
-make_segmentation_mask = from_loader(make_segmentation_mask_loader)
+    return MaskLoader(fn, shape=(*extra_dims, *spatial_size), dtype=dtype)
 
 
 def make_segmentation_mask_loaders(
@@ -778,6 +802,12 @@ class VideoLoader(ImageLoader):
     pass
 
 
+def make_video(size, *, num_frames="random", batch_dims=(), **kwargs):
+    num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
+
+    return datapoints.Video(make_image(size=size, batch_dims=(*batch_dims, num_frames), **kwargs))
+
+
 def make_video_loader(
     size="random",
     *,
@@ -790,15 +820,18 @@ def make_video_loader(
     num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
     def fn(shape, dtype, device, memory_format):
-        video = make_image(
-            size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device, memory_format=memory_format
+        *batch_dims, num_frames, _, height, width = shape
+        return make_video(
+            (height, width),
+            num_frames=num_frames,
+            color_space=color_space,
+            batch_dims=batch_dims,
+            dtype=dtype,
+            device=device,
+            memory_format=memory_format,
         )
-        return datapoints.Video(video)
 
     return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
-
-
-make_video = from_loader(make_video_loader)
 
 
 def make_video_loaders(
