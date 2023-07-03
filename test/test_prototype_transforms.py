@@ -9,6 +9,7 @@ import torch
 from common_utils import (
     assert_equal,
     DEFAULT_EXTRA_DIMS,
+    DEFAULT_PORTRAIT_SPATIAL_SIZE,
     make_bounding_box,
     make_detection_mask,
     make_image,
@@ -79,8 +80,8 @@ def test_mixup_cutmix(transform, input):
     for unsup_data in [
         make_label(),
         make_bounding_box(format="XYXY"),
-        make_detection_mask(),
-        make_segmentation_mask(),
+        make_detection_mask(DEFAULT_PORTRAIT_SPATIAL_SIZE),
+        make_segmentation_mask(DEFAULT_PORTRAIT_SPATIAL_SIZE),
     ]:
         input_copy["unsupported"] = unsup_data
         with pytest.raises(TypeError, match=err_msg):
@@ -216,7 +217,7 @@ class TestFixedSizeCrop:
 
         flat_inputs = [
             make_image(spatial_size=spatial_size, color_space="RGB"),
-            make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=batch_shape),
+            make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=batch_shape),
         ]
         params = transform._get_params(flat_inputs)
 
@@ -312,9 +313,9 @@ class TestFixedSizeCrop:
         )
 
         bounding_boxes = make_bounding_box(
-            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(batch_size,)
+            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(batch_size,)
         )
-        masks = make_detection_mask(spatial_size=spatial_size)
+        masks = make_detection_mask(spatial_size=spatial_size, batch_dims=(batch_size,))
         labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
@@ -350,7 +351,7 @@ class TestFixedSizeCrop:
         )
 
         bounding_box = make_bounding_box(
-            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(batch_size,)
+            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(batch_size,)
         )
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
 
@@ -389,9 +390,9 @@ class TestPermuteDimensions:
     )
     def test_call(self, dims, inverse_dims):
         sample = dict(
-            image=make_image(),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
-            video=make_video(),
+            image=make_image(DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            video=make_video(DEFAULT_PORTRAIT_SPATIAL_SIZE),
             str="str",
             int=0,
         )
@@ -433,9 +434,9 @@ class TestTransposeDimensions:
     )
     def test_call(self, dims):
         sample = dict(
-            image=make_image(),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
-            video=make_video(),
+            image=make_image(DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            video=make_video(DEFAULT_PORTRAIT_SPATIAL_SIZE),
             str="str",
             int=0,
         )
@@ -496,7 +497,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         pil_image = to_image_pil(make_image(spatial_size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(spatial_size=size, num_objects=num_objects, dtype=torch.long),
         }
@@ -505,7 +506,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         tensor_image = torch.Tensor(make_image(spatial_size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(spatial_size=size, num_objects=num_objects, dtype=torch.long),
         }
@@ -514,7 +515,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         datapoint_image = make_image(spatial_size=size, color_space="RGB")
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(spatial_size=size, num_objects=num_objects, dtype=torch.long),
         }
