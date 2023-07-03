@@ -493,15 +493,9 @@ def get_num_channels(color_space):
 
 
 def make_image(
-    size,
-    *,
-    color_space="RGB",
-    batch_dims=(),
-    dtype=None,
-    device="cpu",
-    memory_format=torch.contiguous_format,
+    spatial_size, *, color_space="RGB", batch_dims=(), dtype=None, device="cpu", memory_format=torch.contiguous_format
 ):
-    spatial_size = _parse_spatial_size(size)
+    spatial_size = _parse_spatial_size(spatial_size)
     num_channels = get_num_channels(color_space)
     dtype = dtype or torch.uint8
     max_value = get_max_value(dtype)
@@ -707,9 +701,9 @@ class MaskLoader(TensorLoader):
     pass
 
 
-def make_detection_mask(size, *, num_objects="random", batch_dims=(), dtype=None, device="cpu"):
+def make_detection_mask(spatial_size, *, num_objects="random", batch_dims=(), dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
-    spatial_size = _parse_spatial_size(size)
+    spatial_size = _parse_spatial_size(spatial_size)
     num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
     dtype = dtype or torch.bool
 
@@ -746,9 +740,9 @@ def make_detection_mask_loaders(
 make_detection_masks = from_loaders(make_detection_mask_loaders)
 
 
-def make_segmentation_mask(size, *, num_categories="random", batch_dims=(), dtype=None, device="cpu"):
+def make_segmentation_mask(spatial_size, *, num_categories="random", batch_dims=(), dtype=None, device="cpu"):
     """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
-    spatial_size = _parse_spatial_size(size)
+    spatial_size = _parse_spatial_size(spatial_size)
     num_categories = int(torch.randint(1, 11, ())) if num_categories == "random" else num_categories
     dtype = dtype or torch.uint8
 
@@ -806,10 +800,9 @@ class VideoLoader(ImageLoader):
     pass
 
 
-def make_video(size, *, num_frames="random", batch_dims=(), **kwargs):
+def make_video(spatial_size, *, num_frames="random", batch_dims=(), **kwargs):
     num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
-
-    return datapoints.Video(make_image(size=size, batch_dims=(*batch_dims, num_frames), **kwargs))
+    return datapoints.Video(make_image(spatial_size, batch_dims=(*batch_dims, num_frames), **kwargs))
 
 
 def make_video_loader(

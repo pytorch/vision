@@ -11,9 +11,9 @@ from torchvision.transforms.v2.functional import to_image_pil
 from torchvision.transforms.v2.utils import has_all, has_any
 
 
-IMAGE = make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE, color_space="RGB")
+IMAGE = make_image(spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, color_space="RGB")
 BOUNDING_BOX = make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=IMAGE.spatial_size)
-MASK = make_detection_mask(size=IMAGE.spatial_size)
+MASK = make_detection_mask(spatial_size=IMAGE.spatial_size)
 
 
 @pytest.mark.parametrize(
