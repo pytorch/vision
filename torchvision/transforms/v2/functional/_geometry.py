@@ -921,7 +921,6 @@ def rotate_image_pil(
 
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
-        center = None
 
     return _FP.rotate(
         image, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
@@ -938,7 +937,6 @@ def rotate_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
-        center = None
 
     return _affine_bounding_box_with_expand(
         bounding_box,
