@@ -19,6 +19,12 @@ jobs:
         with:
           ref: main
           token: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
+      - uses: dev-drprasad/delete-older-releases@v0.2
+        with:
+          keep_latest: 30
+          delete_tag_pattern: nightly
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
       - name: Tag nightly from main
         run: |
           git tag -f nightly-${{ steps.date.outputs.date }}
