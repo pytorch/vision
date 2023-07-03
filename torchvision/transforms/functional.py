@@ -1248,7 +1248,7 @@ def affine(
 
 # Looks like to_grayscale() is a stand-alone functional that is never called
 # from the transform classes. Perhaps it's still here for BC? I can't be
-# bothered to dig. Anyway, this can be deprecated as we migrate to V2.
+# bothered to dig.
 @torch.jit.unused
 def to_grayscale(img, num_output_channels=1):
     """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.

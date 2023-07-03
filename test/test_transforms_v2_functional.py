@@ -14,7 +14,7 @@ import torch
 from common_utils import (
     assert_close,
     cache,
-    cpu_and_gpu,
+    cpu_and_cuda,
     DEFAULT_SQUARE_SPATIAL_SIZE,
     make_bounding_boxes,
     needs_cuda,
@@ -120,7 +120,7 @@ class TestKernels:
         [info for info in KERNEL_INFOS if info.logs_usage],
         args_kwargs_fn=lambda info: info.sample_inputs_fn(),
     )
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_logging(self, spy_on, info, args_kwargs, device):
         spy = spy_on(torch._C._log_api_usage_once)
 
@@ -131,7 +131,7 @@ class TestKernels:
 
     @ignore_jit_warning_no_profile
     @sample_inputs
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_scripted_vs_eager(self, test_id, info, args_kwargs, device):
         kernel_eager = info.kernel
         kernel_scripted = script(kernel_eager)
@@ -167,7 +167,7 @@ class TestKernels:
         ]
 
     @sample_inputs
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_batched_vs_single(self, test_id, info, args_kwargs, device):
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
@@ -208,7 +208,7 @@ class TestKernels:
         )
 
     @sample_inputs
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_no_inplace(self, info, args_kwargs, device):
         (input, *other_args), kwargs = args_kwargs.load(device)
         input = input.as_subclass(torch.Tensor)
@@ -240,7 +240,7 @@ class TestKernels:
         )
 
     @sample_inputs
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_dtype_and_device_consistency(self, info, args_kwargs, device):
         (input, *other_args), kwargs = args_kwargs.load(device)
         input = input.as_subclass(torch.Tensor)
@@ -320,7 +320,7 @@ class TestDispatchers:
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(),
     )
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_logging(self, spy_on, info, args_kwargs, device):
         spy = spy_on(torch._C._log_api_usage_once)
 
@@ -331,7 +331,7 @@ class TestDispatchers:
 
     @ignore_jit_warning_no_profile
     @image_sample_inputs
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_scripted_smoke(self, info, args_kwargs, device):
         dispatcher = script(info.dispatcher)
 
@@ -539,6 +539,7 @@ class TestDispatchers:
             (F.to_pil_image, F.to_image_pil),
             (F.elastic_transform, F.elastic),
             (F.convert_image_dtype, F.convert_dtype_image_tensor),
+            (F.to_grayscale, F.rgb_to_grayscale),
         ]
     ],
 )
@@ -553,7 +554,7 @@ def test_alias(alias, target):
         args_kwargs_fn=lambda info: info.sample_inputs_fn(),
     ),
 )
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_convert_dtype_image_tensor_dtype_and_device(info, args_kwargs, device):
     (input, *other_args), kwargs = args_kwargs.load(device)
     dtype = other_args[0] if other_args else kwargs.get("dtype", torch.float32)
@@ -564,7 +565,7 @@ def test_convert_dtype_image_tensor_dtype_and_device(info, args_kwargs, device):
     assert output.device == input.device
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("num_channels", [1, 3])
 def test_normalize_image_tensor_stats(device, num_channels):
     stats = pytest.importorskip("scipy.stats", reason="SciPy is not available")
@@ -664,77 +665,6 @@ def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
     return true_matrix
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
-def test_correctness_affine_bounding_box_on_fixed_input(device):
-    # Check transformation against known expected output
-    format = datapoints.BoundingBoxFormat.XYXY
-    spatial_size = (64, 64)
-    in_boxes = [
-        [20, 25, 35, 45],
-        [50, 5, 70, 22],
-        [spatial_size[1] // 2 - 10, spatial_size[0] // 2 - 10, spatial_size[1] // 2 + 10, spatial_size[0] // 2 + 10],
-        [1, 1, 5, 5],
-    ]
-    in_boxes = torch.tensor(in_boxes, dtype=torch.float64, device=device)
-    # Tested parameters
-    angle = 63
-    scale = 0.89
-    dx = 0.12
-    dy = 0.23
-
-    # Expected bboxes computed using albumentations:
-    # from albumentations.augmentations.geometric.functional import bbox_shift_scale_rotate
-    # from albumentations.augmentations.geometric.functional import normalize_bbox, denormalize_bbox
-    # expected_bboxes = []
-    # for in_box in in_boxes:
-    #     n_in_box = normalize_bbox(in_box, *spatial_size)
-    #     n_out_box = bbox_shift_scale_rotate(n_in_box, -angle, scale, dx, dy, *spatial_size)
-    #     out_box = denormalize_bbox(n_out_box, *spatial_size)
-    #     expected_bboxes.append(out_box)
-    expected_bboxes = [
-        (24.522435977922218, 34.375689508290854, 46.443125279998114, 54.3516575015695),
-        (54.88288587110401, 50.08453280875634, 76.44484547743795, 72.81332520036864),
-        (27.709526487041554, 34.74952648704156, 51.650473512958435, 58.69047351295844),
-        (48.56528888843238, 9.611532109828834, 53.35347829361575, 14.39972151501221),
-    ]
-
-    expected_bboxes = clamp_bounding_box(
-        datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
-    ).tolist()
-
-    output_boxes = F.affine_bounding_box(
-        in_boxes,
-        format=format,
-        spatial_size=spatial_size,
-        angle=angle,
-        translate=(dx * spatial_size[1], dy * spatial_size[0]),
-        scale=scale,
-        shear=(0, 0),
-    )
-
-    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-def test_correctness_affine_segmentation_mask_on_fixed_input(device):
-    # Check transformation against known expected output and CPU/CUDA devices
-
-    # Create a fixed input segmentation mask with 2 square masks
-    # in top-left, bottom-left corners
-    mask = torch.zeros(1, 32, 32, dtype=torch.long, device=device)
-    mask[0, 2:10, 2:10] = 1
-    mask[0, 32 - 9 : 32 - 3, 3:9] = 2
-
-    # Rotate 90 degrees and scale
-    expected_mask = torch.rot90(mask, k=-1, dims=(-2, -1))
-    expected_mask = torch.nn.functional.interpolate(expected_mask[None, :].float(), size=(64, 64), mode="nearest")
-    expected_mask = expected_mask[0, :, 16 : 64 - 16, 16 : 64 - 16].long()
-
-    out_mask = F.affine_mask(mask, 90, [0.0, 0.0], 64.0 / 32.0, [0.0, 0.0])
-
-    torch.testing.assert_close(out_mask, expected_mask)
-
-
 @pytest.mark.parametrize("angle", range(-90, 90, 56))
 @pytest.mark.parametrize("expand, center", [(True, None), (False, None), (False, (12, 14))])
 def test_correctness_rotate_bounding_box(angle, expand, center):
@@ -820,7 +750,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         torch.testing.assert_close(output_spatial_size, expected_spatial_size, atol=1, rtol=0)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("expand", [False])  # expand=True does not match D2
 def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
     # Check transformation against known expected output
@@ -876,7 +806,7 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_correctness_rotate_segmentation_mask_on_fixed_input(device):
     # Check transformation against known expected output and CPU/CUDA devices
 
@@ -892,7 +822,7 @@ def test_correctness_rotate_segmentation_mask_on_fixed_input(device):
     torch.testing.assert_close(out_mask, expected_mask)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "format",
     [datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH, datapoints.BoundingBoxFormat.CXCYWH],
@@ -949,19 +879,7 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
     torch.testing.assert_close(output_spatial_size, spatial_size)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
-def test_correctness_horizontal_flip_segmentation_mask_on_fixed_input(device):
-    mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
-    mask[:, :, 0] = 1
-
-    out_mask = F.horizontal_flip_mask(mask)
-
-    expected_mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
-    expected_mask[:, :, -1] = 1
-    torch.testing.assert_close(out_mask, expected_mask)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
     mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
     mask[:, 0, :] = 1
@@ -973,7 +891,7 @@ def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
     torch.testing.assert_close(out_mask, expected_mask)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "format",
     [datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH, datapoints.BoundingBoxFormat.CXCYWH],
@@ -1032,7 +950,7 @@ def _parse_padding(padding):
     return padding
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("padding", [[1], [1, 1], [1, 1, 2, 2]])
 def test_correctness_pad_bounding_box(device, padding):
     def _compute_expected_bbox(bbox, padding_):
@@ -1087,7 +1005,7 @@ def test_correctness_pad_bounding_box(device, padding):
         torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     mask = torch.ones((1, 3, 3), dtype=torch.long, device=device)
 
@@ -1098,7 +1016,7 @@ def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     torch.testing.assert_close(out_mask, expected_mask)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "startpoints, endpoints",
     [
@@ -1182,7 +1100,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=0, atol=1)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "output_size",
     [(18, 18), [18, 15], (16, 19), [12], [46, 48]],
@@ -1236,7 +1154,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         torch.testing.assert_close(output_spatial_size, output_size)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("output_size", [[4, 2], [4], [7, 6]])
 def test_correctness_center_crop_mask(device, output_size):
     def _compute_expected_mask(mask, output_size):
@@ -1260,7 +1178,7 @@ def test_correctness_center_crop_mask(device, output_size):
 
 
 # Copied from test/test_functional_tensor.py
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("spatial_size", ("small", "large"))
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize("ksize", [(3, 3), [3, 5], (23, 23)])
@@ -1357,7 +1275,7 @@ def test_equalize_image_tensor_edge_cases():
     assert output.unique().tolist() == [0, 255]
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_correctness_uniform_temporal_subsample(device):
     video = torch.arange(10, device=device)[:, None, None, None].expand(-1, 3, 8, 8)
     out_video = F.uniform_temporal_subsample(video, 5)
@@ -1395,3 +1313,13 @@ def test_memory_format_consistency_resize_image_tensor(test_id, info, args_kwarg
         assert expected_stride == output_stride, error_msg_fn("")
     else:
         assert False, error_msg_fn("")
+
+
+def test_resize_float16_no_rounding():
+    # Make sure Resize() doesn't round float16 images
+    # Non-regression test for https://github.com/pytorch/vision/issues/7667
+
+    img = torch.randint(0, 256, size=(1, 3, 100, 100), dtype=torch.float16)
+    out = F.resize(img, size=(10, 10))
+    assert out.dtype == torch.float16
+    assert (out.round() - out).sum() > 0

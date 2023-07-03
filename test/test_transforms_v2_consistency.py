@@ -22,6 +22,7 @@ from common_utils import (
     make_image,
     make_images,
     make_segmentation_mask,
+    set_rng_seed,
 )
 from torch import nn
 from torchvision import datapoints, transforms as legacy_transforms
@@ -33,6 +34,12 @@ from torchvision.transforms.v2.functional import to_image_pil
 from torchvision.transforms.v2.utils import query_spatial_size
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
+
+
+@pytest.fixture(autouse=True)
+def fix_rng_seed():
+    set_rng_seed(0)
+    yield
 
 
 class NotScriptableArgsKwargs(ArgsKwargs):
@@ -87,10 +94,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs([32]),
             ArgsKwargs((32, 29)),
             ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC),
             ArgsKwargs((30, 27), interpolation=PIL.Image.NEAREST),
             ArgsKwargs((35, 29), interpolation=PIL.Image.BILINEAR),
-            ArgsKwargs((34, 25), interpolation=PIL.Image.BICUBIC),
             NotScriptableArgsKwargs(31, max_size=32),
             ArgsKwargs([31], max_size=32),
             NotScriptableArgsKwargs(30, max_size=100),
@@ -100,6 +105,15 @@ CONSISTENCY_CONFIGS = [
         ],
         # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         closeness_kwargs=dict(rtol=0, atol=1),
+    ),
+    ConsistencyConfig(
+        v2_transforms.Resize,
+        legacy_transforms.Resize,
+        [
+            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC, antialias=True),
+            ArgsKwargs((34, 25), interpolation=PIL.Image.BICUBIC, antialias=True),
+        ],
+        closeness_kwargs=dict(rtol=0, atol=21),
     ),
     ConsistencyConfig(
         v2_transforms.CenterCrop,
@@ -309,14 +323,21 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(17, scale=(0.3, 0.7)),
             ArgsKwargs(25, ratio=(0.5, 1.5)),
             ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC),
             ArgsKwargs((31, 28), interpolation=PIL.Image.NEAREST),
-            ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC),
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
         # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         closeness_kwargs=dict(rtol=0, atol=1),
+    ),
+    ConsistencyConfig(
+        v2_transforms.RandomResizedCrop,
+        legacy_transforms.RandomResizedCrop,
+        [
+            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC, antialias=True),
+            ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC, antialias=True),
+        ],
+        closeness_kwargs=dict(rtol=0, atol=21),
     ),
     ConsistencyConfig(
         v2_transforms.RandomErasing,

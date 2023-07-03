@@ -43,7 +43,8 @@ def horizontal_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-1)
 
 
-horizontal_flip_image_pil = _FP.hflip
+def horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
+    return _FP.hflip(image)
 
 
 def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
@@ -92,7 +93,8 @@ def vertical_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-2)
 
 
-vertical_flip_image_pil = _FP.vflip
+def vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
+    return _FP.vflip(image)
 
 
 def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
@@ -190,14 +192,13 @@ def resize_image_tensor(
         if interpolation == InterpolationMode.NEAREST or interpolation == InterpolationMode.NEAREST_EXACT:
             # uint8 dtype can be included for cpu and cuda input if nearest mode
             acceptable_dtypes.append(torch.uint8)
-        elif (
-            interpolation == InterpolationMode.BILINEAR
-            and image.device.type == "cpu"
-            and "AVX2" in torch.backends.cpu.get_cpu_capability()
-        ):
-            # uint8 dtype support for bilinear mode is limited to cpu and
-            # according to our benchmarks non-AVX CPUs should prefer u8->f32->interpolate->u8 path
-            acceptable_dtypes.append(torch.uint8)
+        elif image.device.type == "cpu":
+            # uint8 dtype support for bilinear and bicubic is limited to cpu and
+            # according to our benchmarks, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
+            if (interpolation == InterpolationMode.BILINEAR and "AVX2" in torch.backends.cpu.get_cpu_capability()) or (
+                interpolation == InterpolationMode.BICUBIC
+            ):
+                acceptable_dtypes.append(torch.uint8)
 
         strides = image.stride()
         if image.is_contiguous(memory_format=torch.channels_last) and image.shape[0] == 1 and numel != strides[0]:
@@ -227,8 +228,11 @@ def resize_image_tensor(
 
         if need_cast:
             if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+                # This path is hit on non-AVX archs, or on GPU.
                 image = image.clamp_(min=0, max=255)
-            image = image.round_().to(dtype=dtype)
+            if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+                image = image.round_()
+            image = image.to(dtype=dtype)
 
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 

@@ -35,7 +35,7 @@ def channel_shuffle(x: Tensor, groups: int) -> Tensor:
     x = torch.transpose(x, 1, 2).contiguous()
 
     # flatten
-    x = x.view(batchsize, -1, height, width)
+    x = x.view(batchsize, num_channels, height, width)
 
     return x
 
