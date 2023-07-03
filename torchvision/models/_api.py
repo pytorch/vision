@@ -1,3 +1,4 @@
+import fnmatch
 import importlib
 import inspect
 import sys
@@ -6,7 +7,7 @@ from enum import Enum
 from functools import partial
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Type, TypeVar, Union
 
 from torch import nn
 
@@ -203,19 +204,37 @@ def register_model(name: Optional[str] = None) -> Callable[[Callable[..., M]], C
     return wrapper
 
 
-def list_models(module: Optional[ModuleType] = None) -> List[str]:
+def list_models(
+    module: Optional[ModuleType] = None,
+    include_filters: Union[Iterable[str], str, None] = None,
+    exclude_filters: Union[Iterable[str], str, None] = None,
+) -> List[str]:
     """
     Returns a list with the names of registered models.
 
     Args:
         module (ModuleType, optional): The module from which we want to extract the available models.
+        include_filters (str or Iterable[str], optional): Filters for including the models from the set of all models.
+            Filters are passed to fnmatch to match Unix shell-style wildcards. In case of many filters, the results is
+            the union of individual filters.
+        exclude_filters (str or Iterable[str], optional): Filters applied after include filters to remove models.
+            Filter are passed to fnmatch to match Unix shell-style wildcards. In case of many filters, the results is
+            the intersection of individual filters.
 
     Returns:
         models (list): A list with the names of available models.
     """
-    models = [
+    all_models = [
         k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
     ]
+    if include_filters is not None:
+        models: Set[str] = set()
+        if isinstance(include_filters, str):
+            include_filters = [include_filters]
+        for include_filter in include_filters:
+            models = models | set(fnmatch.filter(all_models, include_filter))
+    else:
+        models = all_models
     return sorted(models)
 
 

@@ -122,6 +122,53 @@ def test_list_models(module):
 
 
 @pytest.mark.parametrize(
+    "module", [models, models.detection, models.quantization, models.segmentation, models.video, models.optical_flow]
+)
+@pytest.mark.parametrize(
+    "include_filters",
+    [
+        None,
+        "*resnet*",
+        "*alexnet*",
+        "*not-existing-model-for-test?",
+        ["*resnet*", "*alexnet*"],
+        ["*resnet*", "*alexnet*", "*not-existing-model-for-test?"],
+        ("*resnet*", "*alexnet*"),
+        set(["*resnet*", "*alexnet*"]),
+        {"*resnet*": "test", "*alexnet*": "test"},
+    ],
+)
+def test_list_models_filters(module, include_filters):
+    def get_models_from_module(module):
+        return [
+            v.__name__
+            for k, v in module.__dict__.items()
+            if callable(v) and k[0].islower() and k[0] != "_" and k not in models._api.__all__
+        ]
+
+    # include
+    # string filter
+    if isinstance(include_filters, str):
+        include_filters_base = include_filters.strip("*?")
+        a = set(x for x in get_models_from_module(module) if include_filters_base in x)
+        b = set(x.replace("quantized_", "") for x in models.list_models(module, include_filters=include_filters))
+        assert a == b
+    # no filter
+    elif include_filters is None:
+        a = set(x for x in get_models_from_module(module))
+        b = set(x.replace("quantized_", "") for x in models.list_models(module, include_filters=include_filters))
+        assert a == b
+    # Collection of filters
+    else:
+        a = set()
+        for include_f in include_filters:
+            include_filters_base = include_f.strip("*?")
+            a = a | set(x for x in get_models_from_module(module) if include_filters_base in x)
+        b = set(x.replace("quantized_", "") for x in models.list_models(module, include_filters=include_filters))
+        assert a == b
+
+
+@pytest.mark.parametrize(
     "name, weight",
     [
         ("ResNet50_Weights.IMAGENET1K_V1", models.ResNet50_Weights.IMAGENET1K_V1),
