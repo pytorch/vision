@@ -15,20 +15,11 @@ jobs:
     name: Tag nightly from main
     runs-on: ubuntu-latest
     steps:
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - uses: actions/checkout@v2
         with:
           ref: main
-          token: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
-      - uses: dev-drprasad/delete-older-releases@v0.2.1
-        with:
-          keep_latest: 100
-          delete_tag_pattern: nightly
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Tag nightly from main
         run: |
-          git tag -f nightly-${{ steps.date.outputs.date }}
-          git push origin -f nightly-${{ steps.date.outputs.date }}
+          git tag -f nightly-build
+          git push origin -f nightly-build

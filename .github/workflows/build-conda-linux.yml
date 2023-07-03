@@ -9,9 +9,8 @@ on:
     tags:
         # NOTE: Binary build pipelines should only get triggered on release candidate or nightly builds
         # Release candidate tags look like: v1.11.0-rc1
-        # Nightly builds look like: nightly-2022-06-03
         - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
-        - nightly-.[0-9]+-.[0-9]+-.[0-9]+
+        - nightly-build
   workflow_dispatch:
 
 jobs:

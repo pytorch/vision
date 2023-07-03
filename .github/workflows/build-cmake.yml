@@ -8,7 +8,7 @@ on:
       - release/*
     tags:
         # Nightly builds look like: nightly-2022-06-03
-        - nightly-.[0-9]+-.[0-9]+-.[0-9]+
+        - nightly-build
   workflow_dispatch:
 
 jobs:
