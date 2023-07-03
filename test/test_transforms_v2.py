@@ -16,7 +16,7 @@ import torchvision.transforms.v2 as transforms
 from common_utils import (
     assert_equal,
     assert_run_python_script,
-    cpu_and_gpu,
+    cpu_and_cuda,
     make_bounding_box,
     make_bounding_boxes,
     make_detection_mask,
@@ -173,7 +173,7 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
         ],
     )
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_common(self, transform, adapter, container_type, image_or_video, device):
         spatial_size = F.get_spatial_size(image_or_video)
         input = dict(
@@ -1364,7 +1364,7 @@ class TestRandomChoice:
 
 
 class TestRandomIoUCrop:
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("options", [[0.5, 0.9], [2.0]])
     def test__get_params(self, device, options, mocker):
         image = mocker.MagicMock(spec=datapoints.Image)
