@@ -22,9 +22,9 @@ jobs:
         with:
           ref: main
           token: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
-      - uses: dev-drprasad/delete-older-releases@v0.2
+      - uses: dev-drprasad/delete-older-releases@v0.2.1
         with:
-          keep_latest: 500
+          keep_latest: 100
           delete_tag_pattern: nightly
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
