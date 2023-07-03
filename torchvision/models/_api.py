@@ -235,6 +235,14 @@ def list_models(
             models = models | set(fnmatch.filter(all_models, include_filter))
     else:
         models = all_models
+
+    if exclude_filters is not None:
+        if isinstance(models, list):
+            models = set(models)
+        if isinstance(exclude_filters, str):
+            exclude_filters = [exclude_filters]
+        for exclude_filter in exclude_filters:
+            models = models - set(fnmatch.filter(all_models, exclude_filter))
     return sorted(models)
 
 
