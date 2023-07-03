@@ -952,7 +952,7 @@ def test_adjust_contrast():
     torch.testing.assert_close(y_np, y_ans)
 
 
-@pytest.mark.skipif(Image.__version__ >= "7", reason="Temporarily disabled")
+@pytest.mark.skipif(int(Image.__version__.split(".")[0]) >= 7, reason="Temporarily disabled")
 def test_adjust_saturation():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
