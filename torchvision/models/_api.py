@@ -214,12 +214,12 @@ def list_models(
 
     Args:
         module (ModuleType, optional): The module from which we want to extract the available models.
-        include_filters (str or Iterable[str], optional): Filters for including the models from the set of all models.
+        include_filters (str or Iterable[str], optional): Filter(s) for including the models from the set of all models.
             Filters are passed to fnmatch to match Unix shell-style wildcards. In case of many filters, the results is
             the union of individual filters.
-        exclude_filters (str or Iterable[str], optional): Filters applied after include filters to remove models.
+        exclude_filters (str or Iterable[str], optional): Filter(s) applied after include_filters to remove models.
             Filter are passed to fnmatch to match Unix shell-style wildcards. In case of many filters, the results is
-            the intersection of individual filters.
+            removal of all the models that match any individual filter.
 
     Returns:
         models (list): A list with the names of available models.
