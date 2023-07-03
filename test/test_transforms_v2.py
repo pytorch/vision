@@ -29,7 +29,7 @@ from common_utils import (
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints
 from torchvision.ops.boxes import box_iou
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
+from torchvision.transforms.functional import InterpolationMode, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
 
@@ -406,59 +406,6 @@ def test_simple_tensor_heuristic(flat_inputs):
         assert transform.was_applied(output, input)
 
 
-@pytest.mark.parametrize("p", [0.0, 1.0])
-class TestRandomVerticalFlip:
-    def input_expected_image_tensor(self, p, dtype=torch.float32):
-        input = torch.tensor([[[1, 1], [0, 0]], [[1, 1], [0, 0]]], dtype=dtype)
-        expected = torch.tensor([[[0, 0], [1, 1]], [[0, 0], [1, 1]]], dtype=dtype)
-
-        return input, expected if p == 1 else input
-
-    def test_simple_tensor(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(input)
-
-        assert_equal(expected, actual)
-
-    def test_pil_image(self, p):
-        input, expected = self.input_expected_image_tensor(p, dtype=torch.uint8)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(to_pil_image(input))
-
-        assert_equal(expected, pil_to_tensor(actual))
-
-    def test_datapoints_image(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(datapoints.Image(input))
-
-        assert_equal(datapoints.Image(expected), actual)
-
-    def test_datapoints_mask(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(datapoints.Mask(input))
-
-        assert_equal(datapoints.Mask(expected), actual)
-
-    def test_datapoints_bounding_box(self, p):
-        input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(input)
-
-        expected_image_tensor = torch.tensor([0, 5, 5, 10]) if p == 1.0 else input
-        expected = datapoints.BoundingBox.wrap_like(input, expected_image_tensor)
-        assert_equal(expected, actual)
-        assert actual.format == expected.format
-        assert actual.spatial_size == expected.spatial_size
-
-
 class TestPad:
     def test_assertions(self):
         with pytest.raises(TypeError, match="Got inappropriate padding arg"):
@@ -592,80 +539,6 @@ class TestRandomZoomOut:
                 mocker.call(mask, **params, fill=fill_mask),
             ]
         fn.assert_has_calls(calls)
-
-
-class TestRandomRotation:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="is a single number, it must be positive"):
-            transforms.RandomRotation(-0.7)
-
-        for d in [[-0.7], [-0.7, 0, 0.7]]:
-            with pytest.raises(ValueError, match="degrees should be a sequence of length 2"):
-                transforms.RandomRotation(d)
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomRotation(12, fill="abc")
-
-        with pytest.raises(TypeError, match="center should be a sequence of length"):
-            transforms.RandomRotation(12, center=12)
-
-        with pytest.raises(ValueError, match="center should be a sequence of length"):
-            transforms.RandomRotation(12, center=[1, 2, 3])
-
-    def test__get_params(self):
-        angle_bound = 34
-        transform = transforms.RandomRotation(angle_bound)
-
-        params = transform._get_params(None)
-        assert -angle_bound <= params["angle"] <= angle_bound
-
-        angle_bounds = [12, 34]
-        transform = transforms.RandomRotation(angle_bounds)
-
-        params = transform._get_params(None)
-        assert angle_bounds[0] <= params["angle"] <= angle_bounds[1]
-
-    @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
-    @pytest.mark.parametrize("expand", [False, True])
-    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
-    @pytest.mark.parametrize("center", [None, [2.0, 3.0]])
-    def test__transform(self, degrees, expand, fill, center, mocker):
-        interpolation = InterpolationMode.BILINEAR
-        transform = transforms.RandomRotation(
-            degrees, interpolation=interpolation, expand=expand, fill=fill, center=center
-        )
-
-        if isinstance(degrees, (tuple, list)):
-            assert transform.degrees == [float(degrees[0]), float(degrees[1])]
-        else:
-            assert transform.degrees == [float(-degrees), float(degrees)]
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.rotate")
-        inpt = mocker.MagicMock(spec=datapoints.Image)
-        # vfdev-5, Feature Request: let's store params as Transform attribute
-        # This could be also helpful for users
-        # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params(inpt)
-
-        fill = transforms._utils._convert_fill_arg(fill)
-        fn.assert_called_once_with(inpt, **params, interpolation=interpolation, expand=expand, fill=fill, center=center)
-
-    @pytest.mark.parametrize("angle", [34, -87])
-    @pytest.mark.parametrize("expand", [False, True])
-    def test_boundingbox_spatial_size(self, angle, expand):
-        # Specific test for BoundingBox.rotate
-        bbox = datapoints.BoundingBox(
-            torch.tensor([1, 2, 3, 4]), format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(32, 32)
-        )
-        img = datapoints.Image(torch.rand(1, 3, 32, 32))
-
-        out_img = img.rotate(angle, expand=expand)
-        out_bbox = bbox.rotate(angle, expand=expand)
-
-        assert out_img.spatial_size == out_bbox.spatial_size
 
 
 class TestRandomCrop:
