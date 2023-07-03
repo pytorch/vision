@@ -8,20 +8,16 @@ on:
   pull_request:
     paths:
       - .github/workflows/trigger-nightly.yml
-permissions:
-  contents: write
-
 jobs:
   tag_nightly:
     if: ${{ github.repository == 'pytorch/vision' }}
     name: Tag nightly from main
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Tag nightly from main
-        run: |
+          token: ${{ secrets.VISION_GITHUB_DEPLOY_KEY }}
+      - run: |
           git tag -f nightly-build
           git push origin -f nightly-build

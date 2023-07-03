@@ -7,7 +7,6 @@ on:
       - main
       - release/*
     tags:
-        # Nightly builds look like: nightly-2022-06-03
         - nightly-build
   workflow_dispatch:
 
