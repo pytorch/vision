@@ -5,9 +5,7 @@ on:
     # every night at 4:30AM
     - cron: 30 4 * * *
   workflow_dispatch:
-  pull_request:
-    paths:
-      - .github/workflows/trigger-nightly.yml
+
 jobs:
   tag_nightly:
     if: ${{ github.repository == 'pytorch/vision' }}
