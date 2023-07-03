@@ -1105,7 +1105,7 @@ class TestRefDetTransforms:
 
         yield (pil_image, target)
 
-        tensor_image = torch.Tensor(make_image(spatial_size=size, color_space="RGB"))
+        tensor_image = torch.Tensor(make_image(spatial_size=size, color_space="RGB", dtype=torch.float32))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -1115,7 +1115,7 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        datapoint_image = make_image(spatial_size=size, color_space="RGB")
+        datapoint_image = make_image(spatial_size=size, color_space="RGB", dtype=torch.float32)
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
