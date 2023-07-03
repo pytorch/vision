@@ -493,7 +493,7 @@ def get_num_channels(color_space):
 
 
 def make_image(
-    spatial_size,
+    size,
     *,
     color_space="RGB",
     batch_dims=(),
@@ -502,7 +502,7 @@ def make_image(
     constant_alpha=True,
     memory_format=torch.contiguous_format,
 ):
-    spatial_size = _parse_spatial_size(spatial_size)
+    spatial_size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
     max_value = get_max_value(dtype)
 
