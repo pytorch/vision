@@ -356,7 +356,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  9.889 seconds)
+   **Total running time of the script:** ( 0 minutes  9.998 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:
