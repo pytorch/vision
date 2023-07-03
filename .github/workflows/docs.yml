@@ -4,12 +4,12 @@ on:
   pull_request:
   push:
     branches:
-      - nightly
       - main
       - release/*
     tags:
       - v[0-9]+.[0-9]+.[0-9]
       - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
+      - nightly-.[0-9]+-.[0-9]+-.[0-9]+
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
@@ -36,13 +36,13 @@ jobs:
         # Should we maybe always do this in `./.github/scripts/setup-env.sh` so that we don't
         # have to pay attention in all other workflows?
         export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
-        
+
         cd docs
-        
+
         echo '::group::Install doc requirements'
         pip install --progress-bar=off -r requirements.txt
         echo '::endgroup::'
-        
+
         if [[ ${{ github.event_name }} == push && (${{ github.ref_type }} == tag || (${{ github.ref_type }} == branch && ${{ github.ref_name }} == release/*)) ]]; then
           echo '::group::Enable version string sanitization'
           # This environment variable just has to exist and must not be empty. The actual value is arbitrary.
@@ -55,9 +55,9 @@ jobs:
         # cores (`-j auto`). Thus, we limit to a single process (`-j 1`) here.
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
-        
+
         cp -r build/html "${RUNNER_ARTIFACT_DIR}"
-        
+
         # On PRs we also want to upload the docs into our S3 bucket for preview.
         if [[ ${{ github.event_name == 'pull_request' }} ]]; then
           cp -r build/html/* "${RUNNER_DOCS_DIR}"
@@ -65,7 +65,7 @@ jobs:
 
   upload:
     needs: build
-    if: github.repository == 'pytorch/vision' && github.event_name == 'push' && 
+    if: github.repository == 'pytorch/vision' && github.event_name == 'push' &&
         ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
     permissions:
       contents: write
@@ -76,7 +76,7 @@ jobs:
       ref: gh-pages
       script: |
         set -euo pipefail
-        
+
         REF_TYPE=${{ github.ref_type }}
         REF_NAME=${{ github.ref_name }}
 
@@ -101,14 +101,14 @@ jobs:
         rm -rf "${TARGET_FOLDER}"/*
         mv "${RUNNER_ARTIFACT_DIR}"/html/* "${TARGET_FOLDER}"
         git add "${TARGET_FOLDER}" || true
-        
+
         if [[ "${TARGET_FOLDER}" == main ]]; then
           mkdir -p _static
           rm -rf _static/*
           cp -r "${TARGET_FOLDER}"/_static/* _static
           git add _static || true
         fi
-        
+
         git config user.name 'pytorchbot'
         git config user.email 'soumith+bot@pytorch.org'
         git commit -m "auto-generating sphinx docs" || true

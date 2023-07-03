@@ -4,9 +4,11 @@ on:
   pull_request:
   push:
     branches:
-      - nightly
       - main
       - release/*
+    tags:
+        # Nightly builds look like: nightly-2022-06-03
+        - nightly-.[0-9]+-.[0-9]+-.[0-9]+
   workflow_dispatch:
 
 jobs:

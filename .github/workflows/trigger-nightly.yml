@@ -12,11 +12,14 @@ jobs:
     name: Tag nightly from main
     runs-on: ubuntu-latest
     steps:
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - uses: actions/checkout@v2
         with:
           ref: main
           token: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
       - name: Tag nightly from main
         run: |
-          git tag -f nightly
-          git push origin -f nightly
+          git tag -f nightly-${{ steps.date.outputs.date }}
+          git push origin -f nightly-${{ steps.date.outputs.date }}
