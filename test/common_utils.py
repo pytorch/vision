@@ -496,14 +496,14 @@ def make_image(
     size,
     *,
     color_space="RGB",
-    constant_alpha=True,
     batch_dims=(),
-    dtype=torch.float32,
+    dtype=None,
     device="cpu",
     memory_format=torch.contiguous_format,
 ):
     spatial_size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
+    dtype = dtype or torch.uint8
     max_value = get_max_value(dtype)
 
     data = torch.testing.make_tensor(
@@ -514,7 +514,7 @@ def make_image(
         device=device,
         memory_format=memory_format,
     )
-    if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
+    if color_space in {"GRAY_ALPHA", "RGBA"}:
         data[..., -1, :, :] = max_value
 
     return datapoints.Image(data)
@@ -529,18 +529,19 @@ def make_image_loader(
     constant_alpha=True,
     memory_format=torch.contiguous_format,
 ):
+    if not constant_alpha:
+        raise ValueError("This should never happen")
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
     def fn(shape, dtype, device, memory_format):
-        *batch_dims, _, spatial_size = shape
+        *batch_dims, _, height, width = shape
         return make_image(
-            spatial_size,
+            (height, width),
             color_space=color_space,
             batch_dims=batch_dims,
             dtype=dtype,
             device=device,
-            constant_alpha=constant_alpha,
             memory_format=memory_format,
         )
 
@@ -630,12 +631,13 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
 
 
 def make_bounding_box(
-    format=datapoints.BoundingBoxFormat.XYXY, spatial_size="random", batch_dims=(), dtype=torch.float32, device="cpu"
+    format=datapoints.BoundingBoxFormat.XYXY, spatial_size="random", batch_dims=(), dtype=None, device="cpu"
 ):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[format]
 
     spatial_size = _parse_spatial_size(spatial_size, name="spatial_size")
+    dtype = dtype or torch.float32
 
     if any(dim == 0 for dim in batch_dims):
         return datapoints.BoundingBox(
@@ -705,10 +707,11 @@ class MaskLoader(TensorLoader):
     pass
 
 
-def make_detection_mask(size, *, num_objects="random", batch_dims=(), dtype=torch.bool, device="cpu"):
+def make_detection_mask(size, *, num_objects="random", batch_dims=(), dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
     spatial_size = _parse_spatial_size(size)
     num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
+    dtype = dtype or torch.bool
 
     data = torch.testing.make_tensor(
         (*batch_dims, num_objects, *spatial_size), low=0, high=2, dtype=dtype, device=device
@@ -743,10 +746,11 @@ def make_detection_mask_loaders(
 make_detection_masks = from_loaders(make_detection_mask_loaders)
 
 
-def make_segmentation_mask(size, *, num_categories="random", batch_dims=(), dtype=torch.uint8, device="cpu"):
+def make_segmentation_mask(size, *, num_categories="random", batch_dims=(), dtype=None, device="cpu"):
     """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
     spatial_size = _parse_spatial_size(size)
     num_categories = int(torch.randint(1, 11, ())) if num_categories == "random" else num_categories
+    dtype = dtype or torch.uint8
 
     data = torch.testing.make_tensor(
         (*batch_dims, *spatial_size), low=0, high=num_categories, dtype=dtype, device=device

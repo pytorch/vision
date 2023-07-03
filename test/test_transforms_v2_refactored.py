@@ -310,34 +310,24 @@ def transform_cls_to_functional(transform_cls, **transform_specific_kwargs):
 
 def make_input(input_type, *, dtype=None, device="cpu", spatial_size=(17, 11), mask_type="segmentation", **kwargs):
     if input_type in {torch.Tensor, PIL.Image.Image, datapoints.Image}:
-        input = make_image(size=spatial_size, dtype=dtype or torch.uint8, device=device, **kwargs)
+        input = make_image(size=spatial_size, dtype=dtype, device=device, **kwargs)
         if input_type is torch.Tensor:
             input = input.as_subclass(torch.Tensor)
         elif input_type is PIL.Image.Image:
             input = F.to_image_pil(input)
     elif input_type is datapoints.BoundingBox:
-        kwargs.setdefault("format", datapoints.BoundingBoxFormat.XYXY)
-        input = make_bounding_box(
-            dtype=dtype or torch.float32,
-            device=device,
-            spatial_size=spatial_size,
-            **kwargs,
-        )
+        input = make_bounding_box(dtype=dtype, device=device, spatial_size=spatial_size, **kwargs)
     elif input_type is datapoints.Mask:
-        if mask_type == "segmentation":
-            make_mask = make_segmentation_mask
-            default_dtype = torch.uint8
-        elif mask_type == "detection":
-            make_mask = make_detection_mask
-            default_dtype = torch.bool
-        else:
-            raise ValueError(f"`mask_type` can be `'segmentation'` or `'detection'`, but got {mask_type}.")
-        input = make_mask(size=spatial_size, dtype=dtype or default_dtype, device=device, **kwargs)
+        make_mask = {
+            "segmentation": make_segmentation_mask,
+            "detection": make_detection_mask,
+        }[mask_type]
+        input = make_mask(size=spatial_size, dtype=dtype, device=device, **kwargs)
     elif input_type is datapoints.Video:
-        input = make_video(size=spatial_size, dtype=dtype or torch.uint8, device=device, **kwargs)
+        input = make_video(size=spatial_size, dtype=dtype, device=device, **kwargs)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"Input type can either be torch.Tensor, PIL.Image.Image, or any TorchVision datapoint class, "
             f"but got {input_type} instead."
         )
 
