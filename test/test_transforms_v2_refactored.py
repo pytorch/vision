@@ -21,11 +21,18 @@ from common_utils import (
     make_image,
     make_segmentation_mask,
     make_video,
+    set_rng_seed,
 )
 from torch.testing import assert_close
 from torchvision import datapoints
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
+
+
+@pytest.fixture(autouse=True)
+def fix_rng_seed():
+    set_rng_seed(0)
+    yield
 
 
 def _to_tolerances(maybe_tolerance_dict):
