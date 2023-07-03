@@ -1450,7 +1450,7 @@ class TestRotate:
     def test_kernel_bounding_box(self, param, value, format, dtype, device):
         kwargs = {param: value}
         if param != "angle":
-            kwargs["angle"] = -10.9
+            kwargs["angle"] = self._MINIMAL_AFFINE_KWARGS["angle"]
 
         bounding_box = make_input(datapoints.BoundingBox, dtype=dtype, device=device, format=format)
 
