@@ -7,7 +7,7 @@ from enum import Enum
 from functools import partial
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Type, TypeVar, Union
 
 from torch import nn
 
@@ -228,7 +228,7 @@ def list_models(
         k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
     ]
     if include_filters is not None:
-        models: Set[str] = set()
+        models = set()
         if isinstance(include_filters, str):
             include_filters = [include_filters]
         for include_filter in include_filters:
