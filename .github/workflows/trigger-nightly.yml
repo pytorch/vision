@@ -5,6 +5,9 @@ on:
     # every night at 4:30AM
     - cron: 30 4 * * *
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/trigger-nightly.yml
 
 jobs:
   tag_nightly:
@@ -21,7 +24,7 @@ jobs:
           token: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
       - uses: dev-drprasad/delete-older-releases@v0.2
         with:
-          keep_latest: 30
+          keep_latest: 500
           delete_tag_pattern: nightly
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
