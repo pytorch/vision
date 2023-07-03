@@ -93,7 +93,8 @@ def vertical_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-2)
 
 
-vertical_flip_image_pil = _FP.vflip
+def vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
+    return _FP.vflip(image)
 
 
 def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
