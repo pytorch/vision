@@ -1512,8 +1512,7 @@ class TestRotate:
     @pytest.mark.parametrize(
         "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
     )
-    # TODO: investigate why expand=True leads to different shapes between PIL and tensor
-    @pytest.mark.parametrize("expand", [False])
+    @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     def test_functional_image_correctness(self, angle, center, interpolation, expand, fill):
         image = make_input(torch.Tensor, dtype=torch.uint8, device="cpu")
@@ -1534,8 +1533,7 @@ class TestRotate:
     @pytest.mark.parametrize(
         "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
     )
-    # TODO: investigate why expand=True leads to different shapes between PIL and tensor
-    @pytest.mark.parametrize("expand", [False])
+    @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_image_correctness(self, center, interpolation, expand, fill, seed):
