@@ -345,6 +345,21 @@ def make_input(input_type, *, dtype=None, device="cpu", spatial_size=(17, 11), m
 
 
 def param_value_parametrization(**kwargs):
+    """Helper function to turn
+
+    @pytest.mark.parametrize(
+        ("param", "value"),
+        ("a", 1),
+        ("a", 2),
+        ("a", 3),
+        ("b", -1.0)
+        ("b", 1.0)
+    )
+
+    into
+
+    @param_value_parametrization(a=[1, 2, 3], b=[-1.0, 1.0])
+    """
     return pytest.mark.parametrize(
         ("param", "value"),
         [(param, value) for param, values in kwargs.items() for value in values],
