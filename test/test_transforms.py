@@ -952,33 +952,6 @@ def test_adjust_contrast():
     torch.testing.assert_close(y_np, y_ans)
 
 
-@pytest.mark.skipif(Image.__version__ >= "7", reason="Temporarily disabled")
-def test_adjust_saturation():
-    x_shape = [2, 2, 3]
-    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = Image.fromarray(x_np, mode="RGB")
-
-    # test 0
-    y_pil = F.adjust_saturation(x_pil, 1)
-    y_np = np.array(y_pil)
-    torch.testing.assert_close(y_np, x_np)
-
-    # test 1
-    y_pil = F.adjust_saturation(x_pil, 0.5)
-    y_np = np.array(y_pil)
-    y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
-    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-    torch.testing.assert_close(y_np, y_ans)
-
-    # test 2
-    y_pil = F.adjust_saturation(x_pil, 2)
-    y_np = np.array(y_pil)
-    y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
-    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-    torch.testing.assert_close(y_np, y_ans)
-
-
 def test_adjust_hue():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]

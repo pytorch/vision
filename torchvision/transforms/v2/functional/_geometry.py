@@ -43,7 +43,8 @@ def horizontal_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-1)
 
 
-horizontal_flip_image_pil = _FP.hflip
+def horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
+    return _FP.hflip(image)
 
 
 def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
@@ -92,7 +93,8 @@ def vertical_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-2)
 
 
-vertical_flip_image_pil = _FP.vflip
+def vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
+    return _FP.vflip(image)
 
 
 def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
@@ -919,7 +921,6 @@ def rotate_image_pil(
 
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
-        center = None
 
     return _FP.rotate(
         image, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
@@ -936,7 +937,6 @@ def rotate_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
-        center = None
 
     return _affine_bounding_box_with_expand(
         bounding_box,
