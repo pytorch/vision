@@ -184,7 +184,6 @@ class VisionTransformer(nn.Module):
         self.num_classes = num_classes
         self.representation_size = representation_size
         self.norm_layer = norm_layer
-        self.include_head = include_head
 
         if conv_stem_configs is not None:
             # As per https://arxiv.org/abs/2106.14881
@@ -232,15 +231,26 @@ class VisionTransformer(nn.Module):
             norm_layer,
         )
 
-        heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
-        if representation_size is None:
-            heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
-        else:
-            heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
-            heads_layers["act"] = nn.Tanh()
-            heads_layers["head"] = nn.Linear(representation_size, num_classes)
+        self.heads = None
+        if include_head:
+            heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
+            if representation_size is None:
+                heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
+            else:
+                heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
+                heads_layers["act"] = nn.Tanh()
+                heads_layers["head"] = nn.Linear(representation_size, num_classes)
 
-        self.heads = nn.Sequential(heads_layers)
+            self.heads = nn.Sequential(heads_layers)
+
+            if hasattr(self.heads, "pre_logits") and isinstance(self.heads.pre_logits, nn.Linear):
+                fan_in = self.heads.pre_logits.in_features
+                nn.init.trunc_normal_(self.heads.pre_logits.weight, std=math.sqrt(1 / fan_in))
+                nn.init.zeros_(self.heads.pre_logits.bias)
+
+            if isinstance(self.heads.head, nn.Linear):
+                nn.init.zeros_(self.heads.head.weight)
+                nn.init.zeros_(self.heads.head.bias)
 
         if isinstance(self.conv_proj, nn.Conv2d):
             # Init the patchify stem
@@ -255,15 +265,6 @@ class VisionTransformer(nn.Module):
             )
             if self.conv_proj.conv_last.bias is not None:
                 nn.init.zeros_(self.conv_proj.conv_last.bias)
-
-        if hasattr(self.heads, "pre_logits") and isinstance(self.heads.pre_logits, nn.Linear):
-            fan_in = self.heads.pre_logits.in_features
-            nn.init.trunc_normal_(self.heads.pre_logits.weight, std=math.sqrt(1 / fan_in))
-            nn.init.zeros_(self.heads.pre_logits.bias)
-
-        if isinstance(self.heads.head, nn.Linear):
-            nn.init.zeros_(self.heads.head.weight)
-            nn.init.zeros_(self.heads.head.bias)
 
 
     def forward(self, x: torch.Tensor):
@@ -295,7 +296,7 @@ class VisionTransformer(nn.Module):
         # Encode the patches
         x = self.encoder(x)
 
-        if self.include_head:
+        if self.heads is not None:
             # Classifier "token" as used by standard language architectures
             x = x[:, 0]
             x = self.heads(x)
@@ -325,6 +326,7 @@ def _vision_transformer(
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
         _ovewrite_named_param(kwargs, "image_size", weights.meta["min_size"][0])
     image_size = kwargs.pop("image_size", 224)
+    include_head = kwargs.pop("include_head", True)
 
     model = VisionTransformer(
         image_size=image_size,
@@ -333,12 +335,18 @@ def _vision_transformer(
         num_heads=num_heads,
         hidden_dim=hidden_dim,
         mlp_dim=mlp_dim,
+        include_head=include_head,
         **kwargs,
     )
 
 
     if weights:
         state_dict = weights.get_state_dict(progress=progress, check_hash=True)
+
+        # Remove head if we don't include the head
+        if not include_head and "heads.head.weight" in state_dict and "heads.head.bias" in state_dict:
+            del state_dict["heads.head.weight"]
+            del state_dict["heads.head.bias"]
 
         # Fix compatibility with legacy state dict
         if "encoder.pos_embedding" in state_dict:
