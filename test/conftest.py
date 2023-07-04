@@ -15,7 +15,6 @@ from common_utils import (
     IN_RE_WORKER,
     MPS_NOT_AVAILABLE_MSG,
     OSS_CI_GPU_NO_CUDA_MSG,
-    OSS_CI_GPU_NO_MPS_MSG,
 )
 
 
@@ -73,8 +72,6 @@ def pytest_collection_modifyitems(items):
                 # Similar to what happens in RE workers: we don't need the OSS CI GPU machines
                 # to run the CPU-only tests.
                 item.add_marker(pytest.mark.skip(reason=OSS_CI_GPU_NO_CUDA_MSG))
-            if not needs_mps and torch.backends.mps.is_available():
-                item.add_marker(pytest.mark.skip(reason=OSS_CI_GPU_NO_MPS_MSG))
 
         if item.get_closest_marker("dont_collect") is not None:
             # currently, this is only used for some tests we're sure we don't want to run on fbcode

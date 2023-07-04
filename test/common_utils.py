@@ -36,7 +36,6 @@ IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 MPS_NOT_AVAILABLE_MSG = "MPS device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
-OSS_CI_GPU_NO_MPS_MSG = "We're in an OSS M1 machine, and this test doesn't need mps."
 
 
 @contextlib.contextmanager
