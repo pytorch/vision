@@ -399,6 +399,9 @@ class ArgsKwargs:
         )
 
 
+# new v2 default
+DEFAULT_SPATIAL_SIZE = (17, 11)
+# old v2 defaults
 DEFAULT_SQUARE_SPATIAL_SIZE = 15
 DEFAULT_LANDSCAPE_SPATIAL_SIZE = (7, 33)
 DEFAULT_PORTRAIT_SPATIAL_SIZE = (31, 9)
@@ -406,13 +409,12 @@ DEFAULT_SPATIAL_SIZES = (
     DEFAULT_LANDSCAPE_SPATIAL_SIZE,
     DEFAULT_PORTRAIT_SPATIAL_SIZE,
     DEFAULT_SQUARE_SPATIAL_SIZE,
-    "random",
 )
 
 
 def _parse_spatial_size(size, *, name="size"):
     if size == "random":
-        return tuple(torch.randint(15, 33, (2,)).tolist())
+        raise ValueError("This should never happen")
     elif isinstance(size, int) and size > 0:
         return (size, size)
     elif (
@@ -515,7 +517,7 @@ def make_image(
 
 
 def make_image_loader(
-    size="random",
+    size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     *,
     color_space="RGB",
     extra_dims=(),
@@ -563,7 +565,7 @@ make_images = from_loaders(make_image_loaders)
 
 
 def make_image_loader_for_interpolation(
-    size="random", *, color_space="RGB", dtype=torch.uint8, memory_format=torch.contiguous_format
+    size=(233, 147), *, color_space="RGB", dtype=torch.uint8, memory_format=torch.contiguous_format
 ):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
@@ -625,7 +627,7 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
 
 
 def make_bounding_box(
-    format=datapoints.BoundingBoxFormat.XYXY, spatial_size="random", batch_dims=(), dtype=None, device="cpu"
+    format=datapoints.BoundingBoxFormat.XYXY, spatial_size=DEFAULT_SPATIAL_SIZE, batch_dims=(), dtype=None, device="cpu"
 ):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[format]
@@ -665,7 +667,7 @@ def make_bounding_box(
     )
 
 
-def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dtype=torch.float32):
+def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.float32):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[format]
 
@@ -687,7 +689,7 @@ def make_bounding_box_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=tuple(datapoints.BoundingBoxFormat),
-    spatial_size="random",
+    spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     dtypes=(torch.float32, torch.float64, torch.int64),
 ):
     for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
@@ -701,10 +703,9 @@ class MaskLoader(TensorLoader):
     pass
 
 
-def make_detection_mask(spatial_size, *, num_objects="random", batch_dims=(), dtype=None, device="cpu"):
+def make_detection_mask(spatial_size, *, num_objects=5, batch_dims=(), dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
     spatial_size = _parse_spatial_size(spatial_size)
-    num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
     dtype = dtype or torch.bool
 
     data = torch.testing.make_tensor(
@@ -713,10 +714,9 @@ def make_detection_mask(spatial_size, *, num_objects="random", batch_dims=(), dt
     return datapoints.Mask(data)
 
 
-def make_detection_mask_loader(size="random", *, num_objects="random", extra_dims=(), dtype=torch.uint8):
+def make_detection_mask_loader(size=DEFAULT_PORTRAIT_SPATIAL_SIZE, *, num_objects=5, extra_dims=(), dtype=torch.uint8):
     # This produces "detection" masks, i.e. `(*, N, H, W)`, where `N` denotes the number of objects
     size = _parse_spatial_size(size)
-    num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
 
     def fn(shape, dtype, device):
         *batch_dims, num_objects, height, width = shape
@@ -729,7 +729,7 @@ def make_detection_mask_loader(size="random", *, num_objects="random", extra_dim
 
 def make_detection_mask_loaders(
     sizes=DEFAULT_SPATIAL_SIZES,
-    num_objects=(1, 0, "random"),
+    num_objects=(1, 0, 5),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8,),
 ):
@@ -740,10 +740,9 @@ def make_detection_mask_loaders(
 make_detection_masks = from_loaders(make_detection_mask_loaders)
 
 
-def make_segmentation_mask(spatial_size, *, num_categories="random", batch_dims=(), dtype=None, device="cpu"):
+def make_segmentation_mask(spatial_size, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
     """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
     spatial_size = _parse_spatial_size(spatial_size)
-    num_categories = int(torch.randint(1, 11, ())) if num_categories == "random" else num_categories
     dtype = dtype or torch.uint8
 
     data = torch.testing.make_tensor(
@@ -752,7 +751,9 @@ def make_segmentation_mask(spatial_size, *, num_categories="random", batch_dims=
     return datapoints.Mask(data)
 
 
-def make_segmentation_mask_loader(size="random", *, num_categories="random", extra_dims=(), dtype=torch.uint8):
+def make_segmentation_mask_loader(
+    size=DEFAULT_PORTRAIT_SPATIAL_SIZE, *, num_categories=10, extra_dims=(), dtype=torch.uint8
+):
     # This produces "segmentation" masks, i.e. `(*, H, W)`, where the category is encoded in the values
     spatial_size = _parse_spatial_size(size)
 
@@ -768,7 +769,7 @@ def make_segmentation_mask_loader(size="random", *, num_categories="random", ext
 def make_segmentation_mask_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
-    num_categories=(1, 2, "random"),
+    num_categories=(1, 2, 10),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8,),
 ):
@@ -782,8 +783,8 @@ make_segmentation_masks = from_loaders(make_segmentation_mask_loaders)
 def make_mask_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
-    num_objects=(1, 0, "random"),
-    num_categories=(1, 2, "random"),
+    num_objects=(1, 0, 5),
+    num_categories=(1, 2, 10),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8,),
 ):
@@ -800,21 +801,19 @@ class VideoLoader(ImageLoader):
     pass
 
 
-def make_video(spatial_size, *, num_frames="random", batch_dims=(), **kwargs):
-    num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
+def make_video(spatial_size, *, num_frames=3, batch_dims=(), **kwargs):
     return datapoints.Video(make_image(spatial_size, batch_dims=(*batch_dims, num_frames), **kwargs))
 
 
 def make_video_loader(
-    size="random",
+    size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     *,
     color_space="RGB",
-    num_frames="random",
+    num_frames=3,
     extra_dims=(),
     dtype=torch.uint8,
 ):
     size = _parse_spatial_size(size)
-    num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
     def fn(shape, dtype, device, memory_format):
         *batch_dims, num_frames, _, height, width = shape
@@ -838,7 +837,7 @@ def make_video_loaders(
         "GRAY",
         "RGB",
     ),
-    num_frames=(1, 0, "random"),
+    num_frames=(1, 0, 3),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8, torch.float32, torch.float64),
 ):

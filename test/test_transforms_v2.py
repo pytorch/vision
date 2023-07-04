@@ -290,7 +290,7 @@ class TestSmoke:
                         ],
                         dtypes=[torch.uint8],
                         extra_dims=[(), (4,)],
-                        **(dict(num_frames=["random"]) if fn is make_videos else dict()),
+                        **(dict(num_frames=[3]) if fn is make_videos else dict()),
                     )
                     for fn in [
                         make_images,

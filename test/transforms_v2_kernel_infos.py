@@ -11,6 +11,7 @@ import torchvision.transforms.v2.functional as F
 from common_utils import (
     ArgsKwargs,
     combinations_grid,
+    DEFAULT_PORTRAIT_SPATIAL_SIZE,
     get_num_channels,
     ImageLoader,
     InfoBase,
@@ -296,7 +297,7 @@ def sample_inputs_crop_bounding_box():
 
 
 def sample_inputs_crop_mask():
-    for mask_loader in make_mask_loaders(sizes=[(16, 17)], num_categories=["random"], num_objects=["random"]):
+    for mask_loader in make_mask_loaders(sizes=[(16, 17)], num_categories=[10], num_objects=[5]):
         yield ArgsKwargs(mask_loader, top=4, left=3, height=7, width=8)
 
 
@@ -306,7 +307,7 @@ def reference_inputs_crop_mask():
 
 
 def sample_inputs_crop_video():
-    for video_loader in make_video_loaders(sizes=[(16, 17)], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[(16, 17)], num_frames=[3]):
         yield ArgsKwargs(video_loader, top=4, left=3, height=7, width=8)
 
 
@@ -415,7 +416,7 @@ def sample_inputs_resized_crop_mask():
 
 
 def sample_inputs_resized_crop_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, **_RESIZED_CROP_PARAMS[0])
 
 
@@ -457,7 +458,7 @@ _PAD_PARAMS = combinations_grid(
 
 def sample_inputs_pad_image_tensor():
     make_pad_image_loaders = functools.partial(
-        make_image_loaders, sizes=["random"], color_spaces=["RGB"], dtypes=[torch.float32]
+        make_image_loaders, sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=["RGB"], dtypes=[torch.float32]
     )
 
     for image_loader, padding in itertools.product(
@@ -512,7 +513,7 @@ def sample_inputs_pad_bounding_box():
 
 
 def sample_inputs_pad_mask():
-    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+    for mask_loader in make_mask_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_categories=[10], num_objects=[5]):
         yield ArgsKwargs(mask_loader, padding=[1])
 
 
@@ -524,7 +525,7 @@ def reference_inputs_pad_mask():
 
 
 def sample_inputs_pad_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, padding=[1])
 
 
@@ -620,7 +621,7 @@ _ENDPOINTS = [[9, 8], [7, 6], [5, 4], [3, 2]]
 
 
 def sample_inputs_perspective_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"]):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(
                 image_loader, startpoints=None, endpoints=None, fill=fill, coefficients=_PERSPECTIVE_COEFFS[0]
@@ -672,7 +673,7 @@ def sample_inputs_perspective_bounding_box():
 
 
 def sample_inputs_perspective_mask():
-    for mask_loader in make_mask_loaders(sizes=["random"]):
+    for mask_loader in make_mask_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
         yield ArgsKwargs(mask_loader, startpoints=None, endpoints=None, coefficients=_PERSPECTIVE_COEFFS[0])
 
     yield ArgsKwargs(make_detection_mask_loader(), startpoints=_STARTPOINTS, endpoints=_ENDPOINTS)
@@ -686,7 +687,7 @@ def reference_inputs_perspective_mask():
 
 
 def sample_inputs_perspective_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, startpoints=None, endpoints=None, coefficients=_PERSPECTIVE_COEFFS[0])
 
     yield ArgsKwargs(make_video_loader(), startpoints=_STARTPOINTS, endpoints=_ENDPOINTS)
@@ -745,7 +746,7 @@ def _get_elastic_displacement(spatial_size):
 
 
 def sample_inputs_elastic_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"]):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
         displacement = _get_elastic_displacement(image_loader.spatial_size)
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
@@ -777,13 +778,13 @@ def sample_inputs_elastic_bounding_box():
 
 
 def sample_inputs_elastic_mask():
-    for mask_loader in make_mask_loaders(sizes=["random"]):
+    for mask_loader in make_mask_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
         displacement = _get_elastic_displacement(mask_loader.shape[-2:])
         yield ArgsKwargs(mask_loader, displacement=displacement)
 
 
 def sample_inputs_elastic_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         displacement = _get_elastic_displacement(video_loader.shape[-2:])
         yield ArgsKwargs(video_loader, displacement=displacement)
 
@@ -854,7 +855,7 @@ def sample_inputs_center_crop_bounding_box():
 
 
 def sample_inputs_center_crop_mask():
-    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+    for mask_loader in make_mask_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_categories=[10], num_objects=[5]):
         height, width = mask_loader.shape[-2:]
         yield ArgsKwargs(mask_loader, output_size=(height // 2, width // 2))
 
@@ -867,7 +868,7 @@ def reference_inputs_center_crop_mask():
 
 
 def sample_inputs_center_crop_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         height, width = video_loader.shape[-2:]
         yield ArgsKwargs(video_loader, output_size=(height // 2, width // 2))
 
@@ -947,7 +948,7 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_equalize_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader)
 
 
@@ -1008,7 +1009,7 @@ def reference_inputs_equalize_image_tensor():
 
 
 def sample_inputs_equalize_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader)
 
 
@@ -1031,7 +1032,7 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_invert_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader)
 
 
@@ -1041,7 +1042,7 @@ def reference_inputs_invert_image_tensor():
 
 
 def sample_inputs_invert_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader)
 
 
@@ -1067,7 +1068,7 @@ _POSTERIZE_BITS = [1, 4, 8]
 
 
 def sample_inputs_posterize_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader, bits=_POSTERIZE_BITS[0])
 
 
@@ -1080,7 +1081,7 @@ def reference_inputs_posterize_image_tensor():
 
 
 def sample_inputs_posterize_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, bits=_POSTERIZE_BITS[0])
 
 
@@ -1110,7 +1111,7 @@ def _get_solarize_thresholds(dtype):
 
 
 def sample_inputs_solarize_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader, threshold=next(_get_solarize_thresholds(image_loader.dtype)))
 
 
@@ -1125,7 +1126,7 @@ def uint8_to_float32_threshold_adapter(other_args, kwargs):
 
 
 def sample_inputs_solarize_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, threshold=next(_get_solarize_thresholds(video_loader.dtype)))
 
 
@@ -1149,7 +1150,7 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_autocontrast_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader)
 
 
@@ -1159,7 +1160,7 @@ def reference_inputs_autocontrast_image_tensor():
 
 
 def sample_inputs_autocontrast_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader)
 
 
@@ -1189,7 +1190,7 @@ _ADJUST_SHARPNESS_FACTORS = [0.1, 0.5]
 
 def sample_inputs_adjust_sharpness_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random", (2, 2)],
+        sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE, (2, 2)],
         color_spaces=("GRAY", "RGB"),
     ):
         yield ArgsKwargs(image_loader, sharpness_factor=_ADJUST_SHARPNESS_FACTORS[0])
@@ -1204,7 +1205,7 @@ def reference_inputs_adjust_sharpness_image_tensor():
 
 
 def sample_inputs_adjust_sharpness_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, sharpness_factor=_ADJUST_SHARPNESS_FACTORS[0])
 
 
@@ -1228,7 +1229,7 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_erase_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"]):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
         # FIXME: make the parameters more diverse
         h, w = 6, 7
         v = torch.rand(image_loader.num_channels, h, w)
@@ -1236,7 +1237,7 @@ def sample_inputs_erase_image_tensor():
 
 
 def sample_inputs_erase_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         # FIXME: make the parameters more diverse
         h, w = 6, 7
         v = torch.rand(video_loader.num_channels, h, w)
@@ -1261,7 +1262,7 @@ _ADJUST_BRIGHTNESS_FACTORS = [0.1, 0.5]
 
 
 def sample_inputs_adjust_brightness_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
 
 
@@ -1274,7 +1275,7 @@ def reference_inputs_adjust_brightness_image_tensor():
 
 
 def sample_inputs_adjust_brightness_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
 
 
@@ -1301,7 +1302,7 @@ _ADJUST_CONTRAST_FACTORS = [0.1, 0.5]
 
 
 def sample_inputs_adjust_contrast_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader, contrast_factor=_ADJUST_CONTRAST_FACTORS[0])
 
 
@@ -1314,7 +1315,7 @@ def reference_inputs_adjust_contrast_image_tensor():
 
 
 def sample_inputs_adjust_contrast_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, contrast_factor=_ADJUST_CONTRAST_FACTORS[0])
 
 
@@ -1353,7 +1354,7 @@ _ADJUST_GAMMA_GAMMAS_GAINS = [
 
 def sample_inputs_adjust_gamma_image_tensor():
     gamma, gain = _ADJUST_GAMMA_GAMMAS_GAINS[0]
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader, gamma=gamma, gain=gain)
 
 
@@ -1367,7 +1368,7 @@ def reference_inputs_adjust_gamma_image_tensor():
 
 def sample_inputs_adjust_gamma_video():
     gamma, gain = _ADJUST_GAMMA_GAMMAS_GAINS[0]
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, gamma=gamma, gain=gain)
 
 
@@ -1397,7 +1398,7 @@ _ADJUST_HUE_FACTORS = [-0.1, 0.5]
 
 
 def sample_inputs_adjust_hue_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader, hue_factor=_ADJUST_HUE_FACTORS[0])
 
 
@@ -1410,7 +1411,7 @@ def reference_inputs_adjust_hue_image_tensor():
 
 
 def sample_inputs_adjust_hue_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, hue_factor=_ADJUST_HUE_FACTORS[0])
 
 
@@ -1439,7 +1440,7 @@ _ADJUST_SATURATION_FACTORS = [0.1, 0.5]
 
 
 def sample_inputs_adjust_saturation_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=("GRAY", "RGB")):
+    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader, saturation_factor=_ADJUST_SATURATION_FACTORS[0])
 
 
@@ -1452,7 +1453,7 @@ def reference_inputs_adjust_saturation_image_tensor():
 
 
 def sample_inputs_adjust_saturation_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader, saturation_factor=_ADJUST_SATURATION_FACTORS[0])
 
 
@@ -1612,7 +1613,7 @@ _NORMALIZE_MEANS_STDS = [
 
 def sample_inputs_normalize_image_tensor():
     for image_loader, (mean, std) in itertools.product(
-        make_image_loaders(sizes=["random"], color_spaces=["RGB"], dtypes=[torch.float32]),
+        make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=["RGB"], dtypes=[torch.float32]),
         _NORMALIZE_MEANS_STDS,
     ):
         yield ArgsKwargs(image_loader, mean=mean, std=std)
@@ -1637,7 +1638,7 @@ def reference_inputs_normalize_image_tensor():
 def sample_inputs_normalize_video():
     mean, std = _NORMALIZE_MEANS_STDS[0]
     for video_loader in make_video_loaders(
-        sizes=["random"], color_spaces=["RGB"], num_frames=["random"], dtypes=[torch.float32]
+        sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=["RGB"], num_frames=[3], dtypes=[torch.float32]
     ):
         yield ArgsKwargs(video_loader, mean=mean, std=std)
 
@@ -1671,7 +1672,9 @@ def sample_inputs_convert_dtype_image_tensor():
             # conversion cannot be performed safely
             continue
 
-        for image_loader in make_image_loaders(sizes=["random"], color_spaces=["RGB"], dtypes=[input_dtype]):
+        for image_loader in make_image_loaders(
+            sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=["RGB"], dtypes=[input_dtype]
+        ):
             yield ArgsKwargs(image_loader, dtype=output_dtype)
 
 
@@ -1736,7 +1739,7 @@ def reference_inputs_convert_dtype_image_tensor():
 
 
 def sample_inputs_convert_dtype_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
         yield ArgsKwargs(video_loader)
 
 
@@ -1781,7 +1784,7 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_uniform_temporal_subsample_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=[4]):
+    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[4]):
         yield ArgsKwargs(video_loader, num_samples=2)
 
 
@@ -1797,7 +1800,9 @@ def reference_uniform_temporal_subsample_video(x, num_samples):
 
 
 def reference_inputs_uniform_temporal_subsample_video():
-    for video_loader in make_video_loaders(sizes=["random"], color_spaces=["RGB"], num_frames=[10]):
+    for video_loader in make_video_loaders(
+        sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=["RGB"], num_frames=[10]
+    ):
         for num_samples in range(1, video_loader.shape[-4] + 1):
             yield ArgsKwargs(video_loader, num_samples)
 
