@@ -495,18 +495,20 @@ def get_num_channels(color_space):
 
 
 def make_image(
-    spatial_size, *, color_space="RGB", batch_dims=(), dtype=None, device="cpu", memory_format=torch.contiguous_format
+    spatial_size=DEFAULT_SPATIAL_SIZE,
+    *,
+    color_space="RGB",
+    batch_dims=(),
+    dtype=None,
+    device="cpu",
+    memory_format=torch.contiguous_format,
 ):
-    spatial_size = _parse_spatial_size(spatial_size)
-    num_channels = get_num_channels(color_space)
-    dtype = dtype or torch.uint8
     max_value = get_max_value(dtype)
-
     data = torch.testing.make_tensor(
-        (*batch_dims, num_channels, *spatial_size),
+        (*batch_dims, get_num_channels(color_space), *spatial_size),
         low=0,
         high=max_value,
-        dtype=dtype,
+        dtype=dtype or torch.uint8,
         device=device,
         memory_format=memory_format,
     )
@@ -627,12 +629,16 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
 
 
 def make_bounding_box(
-    format=datapoints.BoundingBoxFormat.XYXY, spatial_size=DEFAULT_SPATIAL_SIZE, batch_dims=(), dtype=None, device="cpu"
+    spatial_size=DEFAULT_SPATIAL_SIZE,
+    *,
+    format=datapoints.BoundingBoxFormat.XYXY,
+    batch_dims=(),
+    dtype=None,
+    device="cpu",
 ):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[format]
 
-    spatial_size = _parse_spatial_size(spatial_size, name="spatial_size")
     dtype = dtype or torch.float32
 
     if any(dim == 0 for dim in batch_dims):
@@ -703,15 +709,17 @@ class MaskLoader(TensorLoader):
     pass
 
 
-def make_detection_mask(spatial_size, *, num_objects=5, batch_dims=(), dtype=None, device="cpu"):
+def make_detection_mask(spatial_size=DEFAULT_SPATIAL_SIZE, *, num_objects=5, batch_dims=(), dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
-    spatial_size = _parse_spatial_size(spatial_size)
-    dtype = dtype or torch.bool
-
-    data = torch.testing.make_tensor(
-        (*batch_dims, num_objects, *spatial_size), low=0, high=2, dtype=dtype, device=device
+    return datapoints.Mask(
+        torch.testing.make_tensor(
+            (*batch_dims, num_objects, *spatial_size),
+            low=0,
+            high=2,
+            dtype=dtype or torch.bool,
+            device=device,
+        )
     )
-    return datapoints.Mask(data)
 
 
 def make_detection_mask_loader(size=DEFAULT_PORTRAIT_SPATIAL_SIZE, *, num_objects=5, extra_dims=(), dtype=torch.uint8):
@@ -740,15 +748,19 @@ def make_detection_mask_loaders(
 make_detection_masks = from_loaders(make_detection_mask_loaders)
 
 
-def make_segmentation_mask(spatial_size, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
+def make_segmentation_mask(
+    spatial_size=DEFAULT_SPATIAL_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"
+):
     """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
-    spatial_size = _parse_spatial_size(spatial_size)
-    dtype = dtype or torch.uint8
-
-    data = torch.testing.make_tensor(
-        (*batch_dims, *spatial_size), low=0, high=num_categories, dtype=dtype, device=device
+    return datapoints.Mask(
+        torch.testing.make_tensor(
+            (*batch_dims, *spatial_size),
+            low=0,
+            high=num_categories,
+            dtype=dtype or torch.uint8,
+            device=device,
+        )
     )
-    return datapoints.Mask(data)
 
 
 def make_segmentation_mask_loader(
@@ -801,7 +813,7 @@ class VideoLoader(ImageLoader):
     pass
 
 
-def make_video(spatial_size, *, num_frames=3, batch_dims=(), **kwargs):
+def make_video(spatial_size=DEFAULT_SPATIAL_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
     return datapoints.Video(make_image(spatial_size, batch_dims=(*batch_dims, num_frames), **kwargs))
 
 

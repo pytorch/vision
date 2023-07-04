@@ -308,23 +308,23 @@ def transform_cls_to_functional(transform_cls, **transform_specific_kwargs):
     return wrapper
 
 
-def make_input(input_type, *, spatial_size=(17, 11), mask_type="segmentation", **kwargs):
+def make_input(input_type, *, mask_type="segmentation", **kwargs):
     if input_type in {torch.Tensor, PIL.Image.Image, datapoints.Image}:
-        input = make_image(spatial_size=spatial_size, **kwargs)
+        input = make_image(**kwargs)
         if input_type is torch.Tensor:
             input = input.as_subclass(torch.Tensor)
         elif input_type is PIL.Image.Image:
             input = F.to_image_pil(input)
     elif input_type is datapoints.BoundingBox:
-        input = make_bounding_box(spatial_size=spatial_size)
+        input = make_bounding_box()
     elif input_type is datapoints.Mask:
         make_mask = {
             "segmentation": make_segmentation_mask,
             "detection": make_detection_mask,
         }[mask_type]
-        input = make_mask(spatial_size, **kwargs)
+        input = make_mask(**kwargs)
     elif input_type is datapoints.Video:
-        input = make_video(spatial_size, **kwargs)
+        input = make_video(**kwargs)
     else:
         raise TypeError(
             f"Input type can either be torch.Tensor, PIL.Image.Image, or any TorchVision datapoint class, "
