@@ -206,20 +206,20 @@ def register_model(name: Optional[str] = None) -> Callable[[Callable[..., M]], C
 
 def list_models(
     module: Optional[ModuleType] = None,
-    include_filters: Union[Iterable[str], str, None] = None,
-    exclude_filters: Union[Iterable[str], str, None] = None,
+    include: Union[Iterable[str], str, None] = None,
+    exclude: Union[Iterable[str], str, None] = None,
 ) -> List[str]:
     """
     Returns a list with the names of registered models.
 
     Args:
         module (ModuleType, optional): The module from which we want to extract the available models.
-        include_filters (str or Iterable[str], optional): Filter(s) for including the models from the set of all models.
-            Filters are passed to fnmatch to match Unix shell-style wildcards. In case of many filters, the results is
-            the union of individual filters.
-        exclude_filters (str or Iterable[str], optional): Filter(s) applied after include_filters to remove models.
-            Filter are passed to fnmatch to match Unix shell-style wildcards. In case of many filters, the results is
-            removal of all the models that match any individual filter.
+        include (str or Iterable[str], optional): Filter(s) for including the models from the set of all models.
+            Filters are passed to `fnmatch <https://docs.python.org/3/library/fnmatch.html>`__ to match Unix shell-style
+            wildcards. In case of many filters, the results is the union of individual filters.
+        exclude (str or Iterable[str], optional): Filter(s) applied after include_filters to remove models.
+            Filter are passed to `fnmatch <https://docs.python.org/3/library/fnmatch.html>`__ to match Unix shell-style
+            wildcards. In case of many filters, the results is removal of all the models that match any individual filter.
 
     Returns:
         models (list): A list with the names of available models.
@@ -227,21 +227,20 @@ def list_models(
     all_models = [
         k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
     ]
-    if include_filters is not None:
+    if include is not None:
         models = set()
-        if isinstance(include_filters, str):
-            include_filters = [include_filters]
-        for include_filter in include_filters:
+        if isinstance(include, str):
+            include = [include]
+        for include_filter in include:
             models = models | set(fnmatch.filter(all_models, include_filter))
     else:
         models = all_models
 
-    if exclude_filters is not None:
-        if isinstance(models, list):
-            models = set(models)
-        if isinstance(exclude_filters, str):
-            exclude_filters = [exclude_filters]
-        for exclude_filter in exclude_filters:
+    if exclude is not None:
+        models = set(models)
+        if isinstance(exclude, str):
+            exclude = [exclude]
+        for exclude_filter in exclude:
             models = models - set(fnmatch.filter(all_models, exclude_filter))
     return sorted(models)
 

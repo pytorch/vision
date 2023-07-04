@@ -103,17 +103,18 @@ def test_weights_deserializable(name):
         assert pickle.loads(pickle.dumps(weights)) is weights
 
 
+def get_models_from_module(module):
+    return [
+        v.__name__
+        for k, v in module.__dict__.items()
+        if callable(v) and k[0].islower() and k[0] != "_" and k not in models._api.__all__
+    ]
+
+
 @pytest.mark.parametrize(
     "module", [models, models.detection, models.quantization, models.segmentation, models.video, models.optical_flow]
 )
 def test_list_models(module):
-    def get_models_from_module(module):
-        return [
-            v.__name__
-            for k, v in module.__dict__.items()
-            if callable(v) and k[0].islower() and k[0] != "_" and k not in models._api.__all__
-        ]
-
     a = set(get_models_from_module(module))
     b = set(x.replace("quantized_", "") for x in models.list_models(module))
 
@@ -122,12 +123,10 @@ def test_list_models(module):
 
 
 @pytest.mark.parametrize(
-    "module", [models, models.detection, models.quantization, models.segmentation, models.video, models.optical_flow]
-)
-@pytest.mark.parametrize(
     "include_filters",
     [
         None,
+        [],
         "*resnet*",
         ["*alexnet*"],
         "*not-existing-model-for-test?",
@@ -142,6 +141,7 @@ def test_list_models(module):
     "exclude_filters",
     [
         None,
+        [],
         "*resnet*",
         ["*alexnet*"],
         ["*not-existing-model-for-test?"],
@@ -152,49 +152,33 @@ def test_list_models(module):
         {"resnet34": "test", "**resnet1**": "test"},
     ],
 )
-def test_list_models_filters(module, include_filters, exclude_filters):
-    def get_models_from_module(module):
-        return [
-            v.__name__
-            for k, v in module.__dict__.items()
-            if callable(v) and k[0].islower() and k[0] != "_" and k not in models._api.__all__
-        ]
-
+def test_list_models_filters(include_filters, exclude_filters):
+    module = models
+    b = set(
+        x.replace("quantized_", "")
+        for x in models.list_models(module, include=include_filters, exclude=exclude_filters)
+    )
     # Test include filters
     # string filter
     if isinstance(include_filters, str):
         include_filters_base = include_filters.strip("*?")
         a = set(x for x in get_models_from_module(module) if include_filters_base in x)
-        b = set(
-            x.replace("quantized_", "")
-            for x in models.list_models(module, include_filters=include_filters, exclude_filters=exclude_filters)
-        )
     # no filter
     elif include_filters is None:
         a = set(x for x in get_models_from_module(module))
-        b = set(
-            x.replace("quantized_", "")
-            for x in models.list_models(module, include_filters=include_filters, exclude_filters=exclude_filters)
-        )
     # Collection of filters
     else:
         a = set()
         for include_f in include_filters:
             include_filters_base = include_f.strip("*?")
             a = a | set(x for x in get_models_from_module(module) if include_filters_base in x)
-        b = set(
-            x.replace("quantized_", "")
-            for x in models.list_models(module, include_filters=include_filters, exclude_filters=exclude_filters)
-        )
 
     # Test exclude filters
     if isinstance(exclude_filters, str):
         exclude_filters_base = exclude_filters.strip("*?")
         a_exclude = set(x for x in get_models_from_module(module) if exclude_filters_base in x)
         a = a - a_exclude
-    elif exclude_filters is None:
-        pass
-    else:
+    elif exclude_filters is not None:
         for exclude_f in exclude_filters:
             exclude_filters_base = exclude_f.strip("*?")
             a_exclude = set(x for x in get_models_from_module(module) if exclude_filters_base in x)
