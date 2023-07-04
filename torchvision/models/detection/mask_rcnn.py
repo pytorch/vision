@@ -588,6 +588,7 @@ def maskrcnn_resnet50_fpn_v2(
     return model
 
 
+@register_model()
 def maskrcnn_vit_b_16_sfpn(
     *,
     weights: Optional[WeightsEnum] = None,  # TODO: Change this to MaskRCNN_ViT_B_16_SFPN_V1_Weights
