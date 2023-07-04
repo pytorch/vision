@@ -108,6 +108,7 @@ at::Tensor roi_pool_backward_kernel(const at::Tensor& grad,
   using namespace at::native::mps;
   TORCH_CHECK(grad.is_mps(), "grad must be a MPS tensor");
   TORCH_CHECK(rois.is_mps(), "rois must be a MPS tensor");
+  TORCH_CHECK(grad.scalar_type() != at::kHalf, "MPS does not support roi_pool backward with float16 inputs.");
   TORCH_CHECK(argmax.is_mps(), "argmax must be a MPS tensor");
 
   at::TensorArg grad_t{grad, "input", 1}, rois_t{rois, "rois", 2}, argmax_t{argmax, "argmax", 3};

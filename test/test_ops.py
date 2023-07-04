@@ -101,19 +101,35 @@ class RoIOpTester(ABC):
 
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
-    def test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, deterministic=False, **kwargs):
-        dtype = self.mps_dtype if device == "mps" else self.dtype
-        x_dtype = dtype if x_dtype is None else x_dtype
-        rois_dtype = dtype if rois_dtype is None else rois_dtype
+    @pytest.mark.parametrize(
+        "dtype",
+        (
+            torch.float16,
+            torch.float32,
+            torch.float64,
+        ),
+        ids=str,
+    )
+    def test_forward(self, device, contiguous, dtype, deterministic=False, **kwargs):
+        if device == "mps" and dtype is torch.float64:
+            pytest.skip("MPS does not support float64")
+
+        tol = 1e-5
+        if dtype is torch.half:
+            if device == "mps":
+                tol = 5e-3
+            else:
+                tol = 4e-3
+
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS operations.
         n_channels = 2 * (pool_size**2)
-        x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
+        x = torch.rand(2, n_channels, 10, 10, dtype=dtype, device=device)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor(
             [[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]],  # format is (xyxy)
-            dtype=rois_dtype,
+            dtype=dtype,
             device=device,
         )
 
@@ -126,7 +142,6 @@ class RoIOpTester(ABC):
             x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, device=device, dtype=dtype, **kwargs
         )
 
-        tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -429,17 +444,17 @@ class TestRoIAlign(RoIOpTester):
 
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
+    @pytest.mark.parametrize("dtype", (torch.float16, torch.float32, torch.float64), ids=str)
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
-    def test_forward(self, device, contiguous, deterministic, aligned, x_dtype=None, rois_dtype=None):
+    def test_forward(self, device, contiguous, deterministic, aligned, dtype):
         if deterministic and device == "cpu":
             pytest.skip("cpu is always deterministic, don't retest")
         super().test_forward(
             device=device,
             contiguous=contiguous,
             deterministic=deterministic,
-            x_dtype=x_dtype,
-            rois_dtype=rois_dtype,
+            dtype=dtype,
             aligned=aligned,
         )
 
@@ -759,32 +774,22 @@ class TestNMS:
         with torch.cuda.amp.autocast():
             self.test_nms_cuda(iou=iou, dtype=dtype)
 
-    @needs_cuda
-    def test_nms_cuda_float16(self):
+    @pytest.mark.parametrize(
+        "device",
+        (
+            pytest.param("cuda", marks=pytest.mark.needs_cuda),
+            pytest.param("mps", marks=pytest.mark.needs_mps),
+        ),
+    )
+    def test_nms_float16(self, device):
         boxes = torch.tensor(
             [
                 [285.3538, 185.5758, 1193.5110, 851.4551],
                 [285.1472, 188.7374, 1192.4984, 851.0669],
                 [279.2440, 197.9812, 1189.4746, 849.2019],
             ]
-        ).cuda()
-        scores = torch.tensor([0.6370, 0.7569, 0.3966]).cuda()
-
-        iou_thres = 0.2
-        keep32 = ops.nms(boxes, scores, iou_thres)
-        keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
-        assert_equal(keep32, keep16)
-
-    @needs_mps
-    def test_nms_mps_float16(self):
-        boxes = torch.tensor(
-            [
-                [285.3538, 185.5758, 1193.5110, 851.4551],
-                [285.1472, 188.7374, 1192.4984, 851.0669],
-                [279.2440, 197.9812, 1189.4746, 849.2019],
-            ]
-        ).to("mps")
-        scores = torch.tensor([0.6370, 0.7569, 0.3966]).to("mps")
+        ).to(device)
+        scores = torch.tensor([0.6370, 0.7569, 0.3966]).to(device)
 
         iou_thres = 0.2
         keep32 = ops.nms(boxes, scores, iou_thres)

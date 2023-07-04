@@ -158,12 +158,12 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
     y = (
         from_K(roi_start_h)
         + ph[None, :, None] * from_K(bin_size_h)
-        + (iy[None, None, :] + 0.5) * from_K(bin_size_h / roi_bin_grid_h)
+        + (iy[None, None, :] + 0.5).to(input.dtype) * from_K(bin_size_h / roi_bin_grid_h)
     )  # [K, PH, IY]
     x = (
         from_K(roi_start_w)
         + pw[None, :, None] * from_K(bin_size_w)
-        + (ix[None, None, :] + 0.5) * from_K(bin_size_w / roi_bin_grid_w)
+        + (ix[None, None, :] + 0.5).to(input.dtype) * from_K(bin_size_w / roi_bin_grid_w)
     )  # [K, PW, IX]
     val = _bilinear_interpolate(input, roi_batch_ind, y, x, ymask, xmask)  # [K, C, PH, PW, IY, IX]
 

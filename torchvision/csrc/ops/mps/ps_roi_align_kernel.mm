@@ -119,6 +119,7 @@ at::Tensor ps_roi_align_backward_kernel(const at::Tensor& grad,
   using namespace at::native::mps;
   TORCH_CHECK(grad.is_mps(), "grad must be a MPS tensor");
   TORCH_CHECK(rois.is_mps(), "rois must be a MPS tensor");
+  TORCH_CHECK(grad.scalar_type() != at::kHalf, "MPS does not support ps_roi_align backward with float16 inputs.");
   TORCH_CHECK(channel_mapping.is_mps(), "channel_mapping must be a MPS tensor");
 
   at::TensorArg grad_t{grad, "input", 1}, rois_t{rois, "rois", 2},
