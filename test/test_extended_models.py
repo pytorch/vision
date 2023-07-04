@@ -127,6 +127,8 @@ def test_list_models(module):
     [
         None,
         [],
+        (),
+        {},
         "*resnet*",
         ["*alexnet*"],
         "*not-existing-model-for-test?",
@@ -142,6 +144,8 @@ def test_list_models(module):
     [
         None,
         [],
+        (),
+        {},
         "*resnet*",
         ["*alexnet*"],
         ["*not-existing-model-for-test?"],
@@ -163,10 +167,13 @@ def test_list_models_filters(include_filters, exclude_filters):
     if isinstance(include_filters, str):
         include_filters_base = include_filters.strip("*?")
         a = set(x for x in get_models_from_module(module) if include_filters_base in x)
-    # no filter
+    # No filter
     elif include_filters is None:
         a = set(x for x in get_models_from_module(module))
-    # Collection of filters
+    # Empty iterable
+    elif len(include_filters) == 0:
+        a = set(x for x in get_models_from_module(module))
+    # Iterable of filters
     else:
         a = set()
         for include_f in include_filters:

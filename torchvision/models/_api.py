@@ -227,7 +227,7 @@ def list_models(
     all_models = [
         k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
     ]
-    if include is not None:
+    if include:
         models = set()
         if isinstance(include, str):
             include = [include]
