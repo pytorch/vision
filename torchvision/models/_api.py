@@ -236,7 +236,7 @@ def list_models(
     else:
         models = all_models
 
-    if exclude is not None:
+    if exclude:
         models = set(models)
         if isinstance(exclude, str):
             exclude = [exclude]
