@@ -156,27 +156,26 @@ def test_list_models(module):
 )
 def test_list_models_filters(include_filters, exclude_filters):
     actual = set(models.list_models(models, include=include_filters, exclude=exclude_filters))
-    # Test include filters
+    classification_models = set(get_models_from_module(models))
+
     if isinstance(include_filters, str):
         include_filters = [include_filters]
-    # No filter
-    if not include_filters:
-        expected = set(x for x in get_models_from_module(models))
-    # Iterable of filters
-    else:
-        expected = set()
-        for include_f in include_filters:
-            include_filters_base = include_f.strip("*?")
-            expected = expected | set(x for x in get_models_from_module(models) if include_filters_base in x)
-
-    # Test exclude filters
     if isinstance(exclude_filters, str):
         exclude_filters = [exclude_filters]
+
+    if include_filters:
+        expected = set()
+        for include_f in include_filters:
+            include_f = include_f.strip("*?")
+            expected = expected | set(x for x in classification_models if include_f in x)
+    else:
+        expected = classification_models
+
     if exclude_filters:
         for exclude_f in exclude_filters:
-            exclude_filters_base = exclude_f.strip("*?")
-            if exclude_filters_base != "":
-                a_exclude = set(x for x in get_models_from_module(models) if exclude_filters_base in x)
+            exclude_f = exclude_f.strip("*?")
+            if exclude_f != "":
+                a_exclude = set(x for x in classification_models if exclude_f in x)
                 expected = expected - a_exclude
 
     assert expected == actual
