@@ -616,28 +616,31 @@ class BoundingBoxLoader(TensorLoader):
     spatial_size: Tuple[int, int]
 
 
-def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
-    low, high = torch.broadcast_tensors(
-        *[torch.as_tensor(arg) for arg in ((0, arg1) if arg2 is None else (arg1, arg2))]
-    )
-    return torch.stack(
-        [
-            torch.randint(low_scalar, high_scalar, (), **kwargs)
-            for low_scalar, high_scalar in zip(low.flatten().tolist(), high.flatten().tolist())
-        ]
-    ).reshape(low.shape)
-
-
 def make_bounding_box(
-    spatial_size=DEFAULT_SPATIAL_SIZE,
+    size=None,
     *,
     format=datapoints.BoundingBoxFormat.XYXY,
+    spatial_size=None,
     batch_dims=(),
     dtype=None,
     device="cpu",
 ):
+    def sample_position(values, max_value):
+        # We cannot use torch.randint directly here, because it only allows integer scalars as values for low and high.
+        # However, if we have batch_dims, we need tensors as limits.
+        return torch.stack([torch.randint(max_value - v, ()) for v in values.flatten().tolist()]).reshape(values.shape)
+
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[format]
+
+    if spatial_size is None:
+        if size is None:
+            spatial_size = DEFAULT_SPATIAL_SIZE
+        else:
+            height, width = size
+            height_margin, width_margin = torch.randint(10, (2,)).tolist()
+            spatial_size = (height + height_margin, width + width_margin)
+    spatial_height, spatial_width = spatial_size
 
     dtype = dtype or torch.float32
 
@@ -646,27 +649,28 @@ def make_bounding_box(
             torch.empty(*batch_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
         )
 
-    height, width = spatial_size
-    if format == datapoints.BoundingBoxFormat.XYXY:
-        x1 = torch.randint(0, width // 2, batch_dims)
-        y1 = torch.randint(0, height // 2, batch_dims)
-        x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
-        y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
-        parts = (x1, y1, x2, y2)
-    elif format == datapoints.BoundingBoxFormat.XYWH:
-        x = torch.randint(0, width // 2, batch_dims)
-        y = torch.randint(0, height // 2, batch_dims)
-        w = randint_with_tensor_bounds(1, width - x)
-        h = randint_with_tensor_bounds(1, height - y)
+    if size is None:
+        h = torch.randint(1, spatial_height - 1, batch_dims)
+        w = torch.randint(1, spatial_width - 1, batch_dims)
+    else:
+        h, w = [torch.full(batch_dims, v, dtype=torch.int) for v in size]
+
+    y = sample_position(h, spatial_height)
+    x = sample_position(w, spatial_width)
+
+    if format is datapoints.BoundingBoxFormat.XYWH:
         parts = (x, y, w, h)
-    elif format == datapoints.BoundingBoxFormat.CXCYWH:
-        cx = torch.randint(1, width - 1, batch_dims)
-        cy = torch.randint(1, height - 1, batch_dims)
-        w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
-        h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
+    elif format is datapoints.BoundingBoxFormat.XYXY:
+        x1, y1 = x, y
+        x2 = x1 + w
+        y2 = y1 + h
+        parts = (x1, y1, x2, y2)
+    elif format is datapoints.BoundingBoxFormat.CXCYWH:
+        cx = x + w / 2
+        cy = y + h / 2
         parts = (cx, cy, w, h)
     else:
-        raise ValueError(f"Can't make bounding box in format {format}")
+        raise ValueError(f"Format {format} is not supported")
 
     return datapoints.BoundingBox(
         torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size

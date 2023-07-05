@@ -261,6 +261,9 @@ KERNEL_INFOS.append(
         reference_fn=reference_convert_format_bounding_box,
         reference_inputs_fn=reference_inputs_convert_format_bounding_box,
         logs_usage=True,
+        closeness_kwargs={
+            (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
+        },
     ),
 )
 
