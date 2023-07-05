@@ -316,7 +316,7 @@ def make_input(input_type, *, mask_type="segmentation", **kwargs):
         elif input_type is PIL.Image.Image:
             input = F.to_image_pil(input)
     elif input_type is datapoints.BoundingBox:
-        input = make_bounding_box()
+        input = make_bounding_box(**kwargs)
     elif input_type is datapoints.Mask:
         make_mask = {
             "segmentation": make_segmentation_mask,
@@ -506,7 +506,7 @@ class TestResize:
 
         check_kernel(
             F.resize_image_tensor,
-            make_input(datapoints.Image, dtype=dtype, device=device, spatial_size=self.INPUT_SIZE),
+            make_input(datapoints.Image, dtype=dtype, device=device, size=self.INPUT_SIZE),
             size=size,
             interpolation=interpolation,
             **max_size_kwarg,
@@ -540,14 +540,14 @@ class TestResize:
     def test_kernel_mask(self, mask_type):
         check_kernel(
             F.resize_mask,
-            make_input(datapoints.Mask, spatial_size=self.INPUT_SIZE, mask_type=mask_type),
+            make_input(datapoints.Mask, size=self.INPUT_SIZE, mask_type=mask_type),
             size=self.OUTPUT_SIZES[-1],
         )
 
     def test_kernel_video(self):
         check_kernel(
             F.resize_video,
-            make_input(datapoints.Video, spatial_size=self.INPUT_SIZE),
+            make_input(datapoints.Video, size=self.INPUT_SIZE),
             size=self.OUTPUT_SIZES[-1],
             antialias=True,
         )
@@ -568,7 +568,7 @@ class TestResize:
         check_dispatcher(
             F.resize,
             kernel,
-            make_input(input_type, spatial_size=self.INPUT_SIZE),
+            make_input(input_type, size=self.INPUT_SIZE),
             size=size,
             antialias=True,
             check_scripted_smoke=not isinstance(size, int),
@@ -595,7 +595,7 @@ class TestResize:
         [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
     )
     def test_transform(self, size, device, input_type):
-        input = make_input(input_type, device=device, spatial_size=self.INPUT_SIZE)
+        input = make_input(input_type, device=device, size=self.INPUT_SIZE)
 
         check_transform(
             transforms.Resize,
@@ -619,7 +619,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        image = make_input(torch.Tensor, dtype=torch.uint8, device="cpu", spatial_size=self.INPUT_SIZE)
+        image = make_input(torch.Tensor, dtype=torch.uint8, device="cpu", size=self.INPUT_SIZE)
 
         actual = fn(image, size=size, interpolation=interpolation, **max_size_kwarg, antialias=True)
         expected = F.to_image_tensor(
@@ -662,7 +662,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_box = make_input(datapoints.BoundingBox, spatial_size=self.INPUT_SIZE)
+        bounding_box = make_input(datapoints.BoundingBox, size=self.INPUT_SIZE)
 
         actual = fn(bounding_box, size=size, **max_size_kwarg)
         expected = self._reference_resize_bounding_box(bounding_box, size=size, **max_size_kwarg)
@@ -676,7 +676,7 @@ class TestResize:
         [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video],
     )
     def test_pil_interpolation_compat_smoke(self, interpolation, input_type):
-        input = make_input(input_type, spatial_size=self.INPUT_SIZE)
+        input = make_input(input_type, size=self.INPUT_SIZE)
 
         with (
             contextlib.nullcontext()
@@ -692,9 +692,7 @@ class TestResize:
 
     def test_dispatcher_pil_antialias_warning(self):
         with pytest.warns(UserWarning, match="Anti-alias option is always applied for PIL Image input"):
-            F.resize(
-                make_input(PIL.Image.Image, spatial_size=self.INPUT_SIZE), size=self.OUTPUT_SIZES[0], antialias=False
-            )
+            F.resize(make_input(PIL.Image.Image, size=self.INPUT_SIZE), size=self.OUTPUT_SIZES[0], antialias=False)
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
@@ -711,7 +709,7 @@ class TestResize:
             match = "size should be an int or a sequence of length 1"
 
         with pytest.raises(ValueError, match=match):
-            F.resize(make_input(input_type, spatial_size=self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
+            F.resize(make_input(input_type, size=self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
@@ -725,7 +723,7 @@ class TestResize:
             else assert_no_warnings()
         ):
             F.resize(
-                make_input(input_type, spatial_size=self.INPUT_SIZE),
+                make_input(input_type, size=self.INPUT_SIZE),
                 size=self.OUTPUT_SIZES[0],
                 interpolation=interpolation,
             )
@@ -742,7 +740,7 @@ class TestResize:
         if issubclass(input_type, torch.Tensor) and interpolation is transforms.InterpolationMode.NEAREST_EXACT:
             return
 
-        input = make_input(input_type, spatial_size=self.INPUT_SIZE)
+        input = make_input(input_type, size=self.INPUT_SIZE)
 
         expected = F.resize(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation, antialias=True)
         actual = F.resize(
@@ -763,7 +761,10 @@ class TestResize:
         [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
     )
     def test_noop(self, size, input_type):
-        input = make_input(input_type, spatial_size=self.INPUT_SIZE)
+        input = make_input(
+            input_type,
+            **{"spatial_size" if issubclass(input_type, datapoints.BoundingBox) else "size": self.INPUT_SIZE},
+        )
 
         output = F.resize(input, size=size, antialias=True)
 
@@ -785,7 +786,7 @@ class TestResize:
         # Checks that `max_size` is not ignored if `size == small_edge_size`
         # See https://github.com/pytorch/vision/issues/5405
 
-        input = make_input(input_type, spatial_size=self.INPUT_SIZE)
+        input = make_input(input_type, size=self.INPUT_SIZE)
 
         size = min(F.get_spatial_size(input))
         max_size = size + 1

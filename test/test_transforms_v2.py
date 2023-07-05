@@ -168,8 +168,8 @@ class TestSmoke:
     @pytest.mark.parametrize(
         "image_or_video",
         [
-            make_image(spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
-            make_video(spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            make_video(size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
             next(make_pil_images(color_spaces=["RGB"])),
             next(make_vanilla_tensor_images()),
         ],
@@ -179,8 +179,8 @@ class TestSmoke:
         spatial_size = F.get_spatial_size(image_or_video)
         input = dict(
             image_or_video=image_or_video,
-            image_datapoint=make_image(spatial_size=spatial_size),
-            video_datapoint=make_video(spatial_size=spatial_size),
+            image_datapoint=make_image(size=spatial_size),
+            video_datapoint=make_video(size=spatial_size),
             image_pil=next(make_pil_images(sizes=[spatial_size], color_spaces=["RGB"])),
             bounding_box_xyxy=make_bounding_box(
                 format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(3,)
@@ -227,8 +227,8 @@ class TestSmoke:
                 format=datapoints.BoundingBoxFormat.CXCYWH,
                 spatial_size=spatial_size,
             ),
-            detection_mask=make_detection_mask(spatial_size=spatial_size),
-            segmentation_mask=make_segmentation_mask(spatial_size=spatial_size),
+            detection_mask=make_detection_mask(size=spatial_size),
+            segmentation_mask=make_segmentation_mask(size=spatial_size),
             int=0,
             float=0.0,
             bool=True,
@@ -353,7 +353,7 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
             next(make_vanilla_tensor_images()),
             next(make_pil_images()),
-            make_image(spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
             next(make_videos()),
         ],
         3,
@@ -1347,8 +1347,8 @@ class TestToDtype:
     )
     def test_call(self, dtype, expected_dtypes):
         sample = dict(
-            video=make_video(spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.int64),
-            image=make_image(spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.uint8),
+            video=make_video(size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.int64),
+            image=make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.uint8),
             bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, dtype=torch.float32),
             str="str",
             int=0,
