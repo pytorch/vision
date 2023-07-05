@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+43030cb) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+cbc36eb) &#x25BC</a>
     </div>
     
 
@@ -343,7 +343,8 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models._api</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">importlib</span>
+<span></span><span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
@@ -351,7 +352,7 @@
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
 <span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">ModuleType</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
 
@@ -548,19 +549,43 @@
     <span class="k">return</span> <span class="n">wrapper</span>
 
 
-<div class="viewcode-block" id="list_models"><a class="viewcode-back" href="../../../generated/torchvision.models.list_models.html#torchvision.models.list_models">[docs]</a><span class="k">def</span> <span class="nf">list_models</span><span class="p">(</span><span class="n">module</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ModuleType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<div class="viewcode-block" id="list_models"><a class="viewcode-back" href="../../../generated/torchvision.models.list_models.html#torchvision.models.list_models">[docs]</a><span class="k">def</span> <span class="nf">list_models</span><span class="p">(</span>
+    <span class="n">module</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ModuleType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">include</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a list with the names of registered models.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        module (ModuleType, optional): The module from which we want to extract the available models.</span>
+<span class="sd">        include (str or Iterable[str], optional): Filter(s) for including the models from the set of all models.</span>
+<span class="sd">            Filters are passed to `fnmatch &lt;https://docs.python.org/3/library/fnmatch.html&gt;`__ to match Unix shell-style</span>
+<span class="sd">            wildcards. In case of many filters, the results is the union of individual filters.</span>
+<span class="sd">        exclude (str or Iterable[str], optional): Filter(s) applied after include_filters to remove models.</span>
+<span class="sd">            Filter are passed to `fnmatch &lt;https://docs.python.org/3/library/fnmatch.html&gt;`__ to match Unix shell-style</span>
+<span class="sd">            wildcards. In case of many filters, the results is removal of all the models that match any individual filter.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        models (list): A list with the names of available models.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">models</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">all_models</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">BUILTIN_MODELS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">v</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span>
-    <span class="p">]</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">include</span><span class="p">:</span>
+        <span class="n">models</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">include</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">include</span> <span class="o">=</span> <span class="p">[</span><span class="n">include</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">include_filter</span> <span class="ow">in</span> <span class="n">include</span><span class="p">:</span>
+            <span class="n">models</span> <span class="o">=</span> <span class="n">models</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">all_models</span><span class="p">,</span> <span class="n">include_filter</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">models</span> <span class="o">=</span> <span class="n">all_models</span>
+
+    <span class="k">if</span> <span class="n">exclude</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exclude</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">exclude</span> <span class="o">=</span> <span class="p">[</span><span class="n">exclude</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">exclude_filter</span> <span class="ow">in</span> <span class="n">exclude</span><span class="p">:</span>
+            <span class="n">models</span> <span class="o">=</span> <span class="n">models</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">all_models</span><span class="p">,</span> <span class="n">exclude_filter</span><span class="p">))</span>
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">models</span><span class="p">)</span></div>
 
 
