@@ -146,6 +146,7 @@ def test_list_models(module):
         [],
         (),
         {},
+        "",
         "*resnet*",
         ["*alexnet*"],
         ["*not-existing-model-for-test?"],
