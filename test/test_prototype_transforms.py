@@ -9,7 +9,6 @@ import torch
 from common_utils import (
     assert_equal,
     DEFAULT_EXTRA_DIMS,
-    DEFAULT_PORTRAIT_SPATIAL_SIZE,
     make_bounding_box,
     make_detection_mask,
     make_image,
@@ -80,8 +79,8 @@ def test_mixup_cutmix(transform, input):
     for unsup_data in [
         make_label(),
         make_bounding_box(format="XYXY"),
-        make_detection_mask(DEFAULT_PORTRAIT_SPATIAL_SIZE),
-        make_segmentation_mask(DEFAULT_PORTRAIT_SPATIAL_SIZE),
+        make_detection_mask(),
+        make_segmentation_mask(),
     ]:
         input_copy["unsupported"] = unsup_data
         with pytest.raises(TypeError, match=err_msg):
@@ -390,9 +389,9 @@ class TestPermuteDimensions:
     )
     def test_call(self, dims, inverse_dims):
         sample = dict(
-            image=make_image(DEFAULT_PORTRAIT_SPATIAL_SIZE),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
-            video=make_video(DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            image=make_image(),
+            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            video=make_video(),
             str="str",
             int=0,
         )
@@ -434,9 +433,9 @@ class TestTransposeDimensions:
     )
     def test_call(self, dims):
         sample = dict(
-            image=make_image(DEFAULT_PORTRAIT_SPATIAL_SIZE),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
-            video=make_video(DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            image=make_image(),
+            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            video=make_video(),
             str="str",
             int=0,
         )

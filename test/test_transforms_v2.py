@@ -17,7 +17,6 @@ from common_utils import (
     assert_equal,
     assert_run_python_script,
     cpu_and_cuda,
-    DEFAULT_PORTRAIT_SPATIAL_SIZE,
     make_bounding_box,
     make_bounding_boxes,
     make_detection_mask,
@@ -168,8 +167,8 @@ class TestSmoke:
     @pytest.mark.parametrize(
         "image_or_video",
         [
-            make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
-            make_video(size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            make_image(),
+            make_video(),
             next(make_pil_images(color_spaces=["RGB"])),
             next(make_vanilla_tensor_images()),
         ],
@@ -353,7 +352,7 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
             next(make_vanilla_tensor_images()),
             next(make_pil_images()),
-            make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE),
+            make_image(),
             next(make_videos()),
         ],
         3,
@@ -1347,8 +1346,8 @@ class TestToDtype:
     )
     def test_call(self, dtype, expected_dtypes):
         sample = dict(
-            video=make_video(size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.int64),
-            image=make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.uint8),
+            video=make_video(dtype=torch.int64),
+            image=make_image(dtype=torch.uint8),
             bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, dtype=torch.float32),
             str="str",
             int=0,

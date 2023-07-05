@@ -17,7 +17,6 @@ from common_utils import (
     ArgsKwargs,
     assert_close,
     assert_equal,
-    DEFAULT_PORTRAIT_SPATIAL_SIZE,
     make_bounding_box,
     make_detection_mask,
     make_image,
@@ -709,14 +708,8 @@ get_params_parametrization = pytest.mark.parametrize(
             id=transform_cls.__name__,
         )
         for transform_cls, get_params_args_kwargs in [
-            (
-                v2_transforms.RandomResizedCrop,
-                ArgsKwargs(make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE), scale=[0.3, 0.7], ratio=[0.5, 1.5]),
-            ),
-            (
-                v2_transforms.RandomErasing,
-                ArgsKwargs(make_image(size=DEFAULT_PORTRAIT_SPATIAL_SIZE), scale=(0.3, 0.7), ratio=(0.5, 1.5)),
-            ),
+            (v2_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
+            (v2_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
             (v2_transforms.ElasticTransform, ArgsKwargs(alpha=[15.3, 27.2], sigma=[2.5, 3.9], size=[17, 31])),
             (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
