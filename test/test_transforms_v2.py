@@ -182,13 +182,13 @@ class TestSmoke:
             video_datapoint=make_video(size=spatial_size),
             image_pil=next(make_pil_images(sizes=[spatial_size], color_spaces=["RGB"])),
             bounding_box_xyxy=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(3,)
+                format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(3,)
             ),
             bounding_box_xywh=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYWH, spatial_size=spatial_size, extra_dims=(4,)
+                format=datapoints.BoundingBoxFormat.XYWH, spatial_size=spatial_size, batch_dims=(4,)
             ),
             bounding_box_cxcywh=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.CXCYWH, spatial_size=spatial_size, extra_dims=(5,)
+                format=datapoints.BoundingBoxFormat.CXCYWH, spatial_size=spatial_size, batch_dims=(5,)
             ),
             bounding_box_degenerate_xyxy=datapoints.BoundingBox(
                 [
@@ -289,7 +289,7 @@ class TestSmoke:
                         ],
                         dtypes=[torch.uint8],
                         extra_dims=[(), (4,)],
-                        **(dict(num_frames=["random"]) if fn is make_videos else dict()),
+                        **(dict(num_frames=[3]) if fn is make_videos else dict()),
                     )
                     for fn in [
                         make_images,
@@ -1124,7 +1124,7 @@ class TestRandomIoUCrop:
         transform = transforms.RandomIoUCrop()
 
         image = datapoints.Image(torch.rand(3, 32, 24))
-        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), extra_dims=(6,))
+        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), batch_dims=(6,))
         masks = make_detection_mask((32, 24), num_objects=6)
 
         sample = [image, bboxes, masks]
