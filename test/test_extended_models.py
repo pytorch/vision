@@ -168,10 +168,7 @@ def test_list_models_filters(include_filters, exclude_filters):
         include_filters_base = include_filters.strip("*?")
         a = set(x for x in get_models_from_module(module) if include_filters_base in x)
     # No filter
-    elif include_filters is None:
-        a = set(x for x in get_models_from_module(module))
-    # Empty iterable
-    elif len(include_filters) == 0:
+    elif not include_filters:
         a = set(x for x in get_models_from_module(module))
     # Iterable of filters
     else:
