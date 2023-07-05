@@ -180,10 +180,8 @@ def test_list_models_filters(include_filters, exclude_filters):
 
     # Test exclude filters
     if isinstance(exclude_filters, str):
-        exclude_filters_base = exclude_filters.strip("*?")
-        a_exclude = set(x for x in get_models_from_module(module) if exclude_filters_base in x)
-        a = a - a_exclude
-    elif exclude_filters is not None:
+        exclude_filters = [exclude_filters]
+    if exclude_filters:
         for exclude_f in exclude_filters:
             exclude_filters_base = exclude_f.strip("*?")
             a_exclude = set(x for x in get_models_from_module(module) if exclude_filters_base in x)
