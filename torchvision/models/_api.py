@@ -7,7 +7,7 @@ from enum import Enum
 from functools import partial
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Type, TypeVar, Union
 
 from torch import nn
 
@@ -224,11 +224,11 @@ def list_models(
     Returns:
         models (list): A list with the names of available models.
     """
-    all_models = [
+    all_models = {
         k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
-    ]
+    }
     if include:
-        models = set()
+        models: Set[str] = set()
         if isinstance(include, str):
             include = [include]
         for include_filter in include:
@@ -237,7 +237,6 @@ def list_models(
         models = all_models
 
     if exclude:
-        models = set(models)
         if isinstance(exclude, str):
             exclude = [exclude]
         for exclude_filter in exclude:
