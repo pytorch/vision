@@ -633,6 +633,32 @@ def make_bounding_box(
     dtype=None,
     device="cpu",
 ):
+    """
+    size: Size of the actual bounding box, i.e.
+        - (box[3] - box[1], box[2] - box[0]) for XYXY
+        - (H, W) for XYWH and CXCYWH
+    spatial_size: Size of the reference object, e.g. an image. Corresponds to the .spatial_size attribute on
+        returned datapoints.BoundingBox
+
+    To generate a valid joint sample, you need to set spatial_size here to the same value as size on the other maker
+    functions, e.g.
+
+    .. code::
+
+        image = make_image=(size=size)
+        bounding_box = make_bounding_box(spatial_size=size)
+        assert F.get_spatial_size(bounding_box) == F.get_spatial_size(image)
+
+    For convenience, if both size and spatial_size are omitted, spatial_size defaults to the same value as size for all
+    other maker functions, e.g.
+
+    .. code::
+
+        image = make_image=()
+        bounding_box = make_bounding_box()
+        assert F.get_spatial_size(bounding_box) == F.get_spatial_size(image)
+    """
+
     def sample_position(values, max_value):
         # We cannot use torch.randint directly here, because it only allows integer scalars as values for low and high.
         # However, if we have batch_dims, we need tensors as limits.
@@ -648,7 +674,6 @@ def make_bounding_box(
             height, width = size
             height_margin, width_margin = torch.randint(10, (2,)).tolist()
             spatial_size = (height + height_margin, width + width_margin)
-    spatial_height, spatial_width = spatial_size
 
     dtype = dtype or torch.float32
 
@@ -658,13 +683,12 @@ def make_bounding_box(
         )
 
     if size is None:
-        h = torch.randint(1, spatial_height - 1, batch_dims)
-        w = torch.randint(1, spatial_width - 1, batch_dims)
+        h, w = [torch.randint(1, s, batch_dims) for s in spatial_size]
     else:
-        h, w = [torch.full(batch_dims, v, dtype=torch.int) for v in size]
+        h, w = [torch.full(batch_dims, s, dtype=torch.int) for s in size]
 
-    y = sample_position(h, spatial_height)
-    x = sample_position(w, spatial_width)
+    y = sample_position(h, spatial_size[0])
+    x = sample_position(w, spatial_size[1])
 
     if format is datapoints.BoundingBoxFormat.XYWH:
         parts = (x, y, w, h)
