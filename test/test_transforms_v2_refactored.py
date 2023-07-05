@@ -748,9 +748,9 @@ class TestResize:
         ],
     )
     def test_noop(self, size, make_input):
-        input = make_input(**{"spatial_size" if make_input is make_bounding_box else "size": self.INPUT_SIZE})
+        input = make_input(self.INPUT_SIZE)
 
-        output = F.resize(input, size=size, antialias=True)
+        output = F.resize(input, size=F.get_spatial_size(input), antialias=True)
 
         # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
         # is a good reason to break this, feel free to downgrade to an equality check.
