@@ -20,6 +20,8 @@ from common_utils import (
     make_bounding_box,
     make_detection_mask,
     make_image,
+    make_image_pil,
+    make_image_tensor,
     make_segmentation_mask,
     make_video,
     set_rng_seed,
@@ -506,7 +508,7 @@ class TestResize:
 
         check_kernel(
             F.resize_image_tensor,
-            make_input(datapoints.Image, dtype=dtype, device=device, size=self.INPUT_SIZE),
+            make_image(self.INPUT_SIZE, dtype=dtype, device=device),
             size=size,
             interpolation=interpolation,
             **max_size_kwarg,
@@ -524,8 +526,11 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_box = make_input(
-            datapoints.BoundingBox, dtype=dtype, device=device, format=format, spatial_size=self.INPUT_SIZE
+        bounding_box = make_bounding_box(
+            format=format,
+            spatial_size=self.INPUT_SIZE,
+            dtype=dtype,
+            device=device,
         )
         check_kernel(
             F.resize_bounding_box,
@@ -536,53 +541,44 @@ class TestResize:
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
-    @pytest.mark.parametrize("mask_type", ["segmentation", "detection"])
-    def test_kernel_mask(self, mask_type):
-        check_kernel(
-            F.resize_mask,
-            make_input(datapoints.Mask, size=self.INPUT_SIZE, mask_type=mask_type),
-            size=self.OUTPUT_SIZES[-1],
-        )
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    def test_kernel_mask(self, make_mask):
+        check_kernel(F.resize_mask, make_mask(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1])
 
     def test_kernel_video(self):
-        check_kernel(
-            F.resize_video,
-            make_input(datapoints.Video, size=self.INPUT_SIZE),
-            size=self.OUTPUT_SIZES[-1],
-            antialias=True,
-        )
+        check_kernel(F.resize_video, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1], antialias=True)
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
-        ("input_type", "kernel"),
+        ("kernel", "make_input"),
         [
-            (torch.Tensor, F.resize_image_tensor),
-            (PIL.Image.Image, F.resize_image_pil),
-            (datapoints.Image, F.resize_image_tensor),
-            (datapoints.BoundingBox, F.resize_bounding_box),
-            (datapoints.Mask, F.resize_mask),
-            (datapoints.Video, F.resize_video),
+            (F.resize_image_tensor, make_image_tensor),
+            (F.resize_image_pil, make_image_pil),
+            (F.resize_image_tensor, make_image),
+            (F.resize_bounding_box, make_bounding_box),
+            (F.resize_mask, make_segmentation_mask),
+            (F.resize_video, make_video),
         ],
     )
-    def test_dispatcher(self, size, input_type, kernel):
+    def test_dispatcher(self, size, kernel, make_input):
         check_dispatcher(
             F.resize,
             kernel,
-            make_input(input_type, size=self.INPUT_SIZE),
+            make_input(self.INPUT_SIZE),
             size=size,
             antialias=True,
             check_scripted_smoke=not isinstance(size, int),
         )
 
     @pytest.mark.parametrize(
-        ("input_type", "kernel"),
+        ("kernel", "input_type"),
         [
-            (torch.Tensor, F.resize_image_tensor),
-            (PIL.Image.Image, F.resize_image_pil),
-            (datapoints.Image, F.resize_image_tensor),
-            (datapoints.BoundingBox, F.resize_bounding_box),
-            (datapoints.Mask, F.resize_mask),
-            (datapoints.Video, F.resize_video),
+            (F.resize_image_tensor, torch.Tensor),
+            (F.resize_image_pil, PIL.Image.Image),
+            (F.resize_image_tensor, datapoints.Image),
+            (F.resize_bounding_box, datapoints.BoundingBox),
+            (F.resize_mask, datapoints.Mask),
+            (F.resize_video, datapoints.Video),
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
@@ -591,18 +587,19 @@ class TestResize:
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize(
-        "input_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_box,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
     )
-    def test_transform(self, size, device, input_type):
-        input = make_input(input_type, device=device, size=self.INPUT_SIZE)
-
-        check_transform(
-            transforms.Resize,
-            input,
-            size=size,
-            antialias=True,
-        )
+    def test_transform(self, size, device, make_input):
+        check_transform(transforms.Resize, make_input(self.INPUT_SIZE, device=device), size=size, antialias=True)
 
     def _check_output_size(self, input, output, *, size, max_size):
         assert tuple(F.get_spatial_size(output)) == self._compute_output_size(
@@ -619,7 +616,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        image = make_input(torch.Tensor, dtype=torch.uint8, device="cpu", size=self.INPUT_SIZE)
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8)
 
         actual = fn(image, size=size, interpolation=interpolation, **max_size_kwarg, antialias=True)
         expected = F.to_image_tensor(
@@ -662,7 +659,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_box = make_input(datapoints.BoundingBox, size=self.INPUT_SIZE)
+        bounding_box = make_bounding_box(format=format, spatial_size=self.INPUT_SIZE)
 
         actual = fn(bounding_box, size=size, **max_size_kwarg)
         expected = self._reference_resize_bounding_box(bounding_box, size=size, **max_size_kwarg)
@@ -672,11 +669,11 @@ class TestResize:
 
     @pytest.mark.parametrize("interpolation", set(transforms.InterpolationMode) - set(INTERPOLATION_MODES))
     @pytest.mark.parametrize(
-        "input_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video],
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
     )
-    def test_pil_interpolation_compat_smoke(self, interpolation, input_type):
-        input = make_input(input_type, size=self.INPUT_SIZE)
+    def test_pil_interpolation_compat_smoke(self, interpolation, make_input):
+        input = make_input(self.INPUT_SIZE)
 
         with (
             contextlib.nullcontext()
@@ -696,10 +693,18 @@ class TestResize:
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
-        "input_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_box,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
     )
-    def test_max_size_error(self, size, input_type):
+    def test_max_size_error(self, size, make_input):
         if isinstance(size, int) or len(size) == 1:
             max_size = (size if isinstance(size, int) else size[0]) - 1
             match = "must be strictly greater than the requested size"
@@ -709,38 +714,38 @@ class TestResize:
             match = "size should be an int or a sequence of length 1"
 
         with pytest.raises(ValueError, match=match):
-            F.resize(make_input(input_type, size=self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
+            F.resize(make_input(self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
-        "input_type",
-        [torch.Tensor, datapoints.Image, datapoints.Video],
+        "make_input",
+        [make_image_tensor, make_image, make_video],
     )
-    def test_antialias_warning(self, interpolation, input_type):
+    def test_antialias_warning(self, interpolation, make_input):
         with (
             assert_warns_antialias_default_value()
             if interpolation in {transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC}
             else assert_no_warnings()
         ):
             F.resize(
-                make_input(input_type, size=self.INPUT_SIZE),
+                make_input(self.INPUT_SIZE),
                 size=self.OUTPUT_SIZES[0],
                 interpolation=interpolation,
             )
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
-        "input_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video],
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
     )
-    def test_interpolation_int(self, interpolation, input_type):
+    def test_interpolation_int(self, interpolation, make_input):
+        input = make_input(self.INPUT_SIZE)
+
         # `InterpolationMode.NEAREST_EXACT` has no proper corresponding integer equivalent. Internally, we map it to
         # `0` to be the same as `InterpolationMode.NEAREST` for PIL. However, for the tensor backend there is a
         # difference and thus we don't test it here.
-        if issubclass(input_type, torch.Tensor) and interpolation is transforms.InterpolationMode.NEAREST_EXACT:
+        if isinstance(input, torch.Tensor) and interpolation is transforms.InterpolationMode.NEAREST_EXACT:
             return
-
-        input = make_input(input_type, size=self.INPUT_SIZE)
 
         expected = F.resize(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation, antialias=True)
         actual = F.resize(
@@ -757,14 +762,19 @@ class TestResize:
         "size", [min(INPUT_SIZE), [min(INPUT_SIZE)], (min(INPUT_SIZE),), list(INPUT_SIZE), tuple(INPUT_SIZE)]
     )
     @pytest.mark.parametrize(
-        "input_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_box,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
     )
-    def test_noop(self, size, input_type):
-        input = make_input(
-            input_type,
-            **{"spatial_size" if issubclass(input_type, datapoints.BoundingBox) else "size": self.INPUT_SIZE},
-        )
+    def test_noop(self, size, make_input):
+        input = make_input(**{"spatial_size" if make_input is make_bounding_box else "size": self.INPUT_SIZE})
 
         output = F.resize(input, size=size, antialias=True)
 
@@ -779,14 +789,22 @@ class TestResize:
             assert output is input
 
     @pytest.mark.parametrize(
-        "input_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Video],
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_box,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
     )
-    def test_no_regression_5405(self, input_type):
+    def test_no_regression_5405(self, make_input):
         # Checks that `max_size` is not ignored if `size == small_edge_size`
         # See https://github.com/pytorch/vision/issues/5405
 
-        input = make_input(input_type, size=self.INPUT_SIZE)
+        input = make_input(self.INPUT_SIZE)
 
         size = min(F.get_spatial_size(input))
         max_size = size + 1
