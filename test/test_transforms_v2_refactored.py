@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import inspect
 import math
 import re
@@ -380,45 +381,92 @@ def assert_warns_antialias_default_value():
         yield
 
 
-def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, affine_matrix):
-    def transform(bbox):
-        # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
-        in_dtype = bbox.dtype
-        if not torch.is_floating_point(bbox):
-            bbox = bbox.float()
-        bbox_xyxy = F.convert_format_bounding_box(
-            bbox.as_subclass(torch.Tensor),
-            old_format=format,
-            new_format=datapoints.BoundingBoxFormat.XYXY,
-            inplace=True,
-        )
-        points = np.array(
-            [
-                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
-            ]
-        )
-        transformed_points = np.matmul(points, affine_matrix.T)
-        out_bbox = torch.tensor(
-            [
-                np.min(transformed_points[:, 0]).item(),
-                np.min(transformed_points[:, 1]).item(),
-                np.max(transformed_points[:, 0]).item(),
-                np.max(transformed_points[:, 1]).item(),
-            ],
-            dtype=bbox_xyxy.dtype,
-        )
-        out_bbox = F.convert_format_bounding_box(
-            out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-        )
-        # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-        out_bbox = F.clamp_bounding_box(out_bbox, format=format, spatial_size=spatial_size)
-        out_bbox = out_bbox.to(dtype=in_dtype)
-        return out_bbox
+def bounding_box_reference_handle_batching(reference_fn):
+    """Enable batching for single bounding box reference functions
 
-    return torch.stack([transform(b) for b in bounding_box.reshape(-1, 4).unbind()]).reshape(bounding_box.shape)
+    The wrapped function should take a datapoints.BoundingBox of shape (4,) as first positional input and return one of
+
+    1. a datapoints.BoundingBox of shape (4,) (reference for a dispatcher)
+    2. a torch.Tensor of shape (4,) (reference for a kernel)
+    3. a two-tuple of a torch.Tensor of shape (4,) and two-tuple of integers with the spatial size (height, width)
+
+    This wrapper accepts datapoints.BoundingBox'es of shape (*, 4) and returns the same
+    """
+
+    @functools.wraps(reference_fn)
+    def wrapper(bounding_box, *args, **kwargs):
+        outputs = [
+            reference_fn(datapoints.BoundingBox.wrap_like(bounding_box, b), *args, **kwargs)
+            for b in bounding_box.reshape(-1, 4).unbind()
+        ]
+
+        if isinstance(outputs[0], datapoints.BoundingBox):
+            spatial_sizes = [o.spatial_size for o in outputs]
+        elif isinstance(outputs[0], tuple):
+            outputs, spatial_sizes = zip(*outputs)
+        else:
+            spatial_sizes = [bounding_box.spatial_size]
+        spatial_size = spatial_sizes[0]
+        assert all(s == spatial_size for s in spatial_sizes[1:])
+
+        return datapoints.BoundingBox.wrap_like(
+            bounding_box, torch.stack(outputs).reshape(bounding_box.shape), spatial_size=spatial_size
+        )
+
+    return wrapper
+
+
+@bounding_box_reference_handle_batching
+def reference_affine_bounding_box_helper(bounding_box, *, affine_matrix, expand=False):
+    format = bounding_box.format
+    height, width = bounding_box.spatial_size
+    dtype = bounding_box.dtype
+
+    # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
+    input_xyxy = F.convert_format_bounding_box(
+        bounding_box.to(torch.float64, copy=True),
+        new_format=datapoints.BoundingBoxFormat.XYXY,
+        inplace=True,
+    )
+    x1, y1, x2, y2 = input_xyxy.tolist()
+
+    points = np.array(
+        [
+            [x1, y1, 1.0],
+            [x2, y1, 1.0],
+            [x1, y2, 1.0],
+            [x2, y2, 1.0],
+            # image frame
+            [0.0, 0.0, 1.0],
+            [0.0, height, 1.0],
+            [width, height, 1.0],
+            [width, 0.0, 1.0],
+        ]
+    )
+    transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
+
+    output_xyxy = [
+        float(np.min(transformed_points[:4, 0])),
+        float(np.min(transformed_points[:4, 1])),
+        float(np.max(transformed_points[:4, 0])),
+        float(np.max(transformed_points[:4, 1])),
+    ]
+    if expand:
+        x_translate = float(np.min(transformed_points[4:, 0]))
+        y_translate = float(np.min(transformed_points[4:, 1]))
+        output_xyxy[0] -= x_translate
+        output_xyxy[1] -= y_translate
+        output_xyxy[2] -= x_translate
+        output_xyxy[3] -= y_translate
+
+        height = int(height - 2 * y_translate)
+        width = int(width - 2 * x_translate)
+    output_xyxy = datapoints.BoundingBox(
+        output_xyxy, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(height, width)
+    )
+
+    # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+    return F.clamp_bounding_box(F.convert_format_bounding_box(output_xyxy, new_format=format)).to(dtype)
 
 
 class TestResize:
@@ -614,14 +662,12 @@ class TestResize:
                 [new_width / old_width, 0, 0],
                 [0, new_height / old_height, 0],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
         )
 
         expected_bboxes = reference_affine_bounding_box_helper(
             bounding_box,
-            format=bounding_box.format,
-            spatial_size=(new_height, new_width),
             affine_matrix=affine_matrix,
+            expand=True,
         )
         return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes, spatial_size=(new_height, new_width))
 
@@ -912,17 +958,11 @@ class TestHorizontalFlip:
                 [-1, 0, bounding_box.spatial_size[1]],
                 [0, 1, 0],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
         )
-
-        expected_bboxes = reference_affine_bounding_box_helper(
+        return reference_affine_bounding_box_helper(
             bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
             affine_matrix=affine_matrix,
         )
-
-        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize(
@@ -1164,25 +1204,18 @@ class TestAffine:
         shear_y_matrix = np.array([[1, 0, 0], [-math.tan(sy), 1, 0], [0, 0, 1]])
         rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
         true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
-        return true_matrix
+        return true_matrix[:2, :]
 
     def _reference_affine_bounding_box(self, bounding_box, *, angle, translate, scale, shear, center):
         if center is None:
             center = [s * 0.5 for s in bounding_box.spatial_size[::-1]]
 
-        affine_matrix = self._compute_affine_matrix(
-            angle=angle, translate=translate, scale=scale, shear=shear, center=center
-        )
-        affine_matrix = affine_matrix[:2, :]
-
-        expected_bboxes = reference_affine_bounding_box_helper(
+        return reference_affine_bounding_box_helper(
             bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
-            affine_matrix=affine_matrix,
+            affine_matrix=self._compute_affine_matrix(
+                angle=angle, translate=translate, scale=scale, shear=shear, center=center
+            ),
         )
-
-        return expected_bboxes
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
@@ -1389,17 +1422,11 @@ class TestVerticalFlip:
                 [1, 0, 0],
                 [0, -1, bounding_box.spatial_size[0]],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
         )
-
-        expected_bboxes = reference_affine_bounding_box_helper(
+        return reference_affine_bounding_box_helper(
             bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
             affine_matrix=affine_matrix,
         )
-
-        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
@@ -1585,10 +1612,6 @@ class TestRotate:
         assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
 
     def _reference_rotate_bounding_box(self, bounding_box, *, angle, expand, center):
-        # FIXME
-        if expand:
-            raise ValueError("This reference currently does not support expand=True")
-
         if center is None:
             center = [s * 0.5 for s in bounding_box.spatial_size[::-1]]
 
@@ -1600,23 +1623,14 @@ class TestRotate:
             [
                 [a, b, cx - cx * a - b * cy],
                 [-b, a, cy + cx * b - a * cy],
-            ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            ]
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
-            affine_matrix=affine_matrix,
-        )
-
-        return expected_bboxes
+        return reference_affine_bounding_box_helper(bounding_box, affine_matrix=affine_matrix, expand=expand)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
-    # TODO: add support for expand=True in the reference
-    @pytest.mark.parametrize("expand", [False])
+    @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     def test_functional_bounding_box_correctness(self, format, angle, expand, center):
         bounding_box = make_bounding_box(format=format)
@@ -1625,10 +1639,10 @@ class TestRotate:
         expected = self._reference_rotate_bounding_box(bounding_box, angle=angle, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
+        assert actual.spatial_size == expected.spatial_size
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    # TODO: add support for expand=True in the reference
-    @pytest.mark.parametrize("expand", [False])
+    @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_box_correctness(self, format, expand, center, seed):
@@ -1645,6 +1659,7 @@ class TestRotate:
         expected = self._reference_rotate_bounding_box(bounding_box, **params, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
+        assert actual.spatial_size == expected.spatial_size
 
     @pytest.mark.parametrize("degrees", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["degrees"])
     @pytest.mark.parametrize("seed", list(range(10)))
