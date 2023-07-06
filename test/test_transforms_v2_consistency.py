@@ -1090,7 +1090,7 @@ class TestRefDetTransforms:
 
         pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1098,9 +1098,9 @@ class TestRefDetTransforms:
 
         yield (pil_image, target)
 
-        tensor_image = torch.Tensor(make_image(size=size, color_space="RGB"))
+        tensor_image = torch.Tensor(make_image(size=size, color_space="RGB", dtype=torch.float32))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1108,9 +1108,9 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        datapoint_image = make_image(size=size, color_space="RGB")
+        datapoint_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
