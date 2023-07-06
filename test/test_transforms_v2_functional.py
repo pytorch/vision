@@ -1,5 +1,4 @@
 import inspect
-import math
 import os
 import re
 
@@ -642,29 +641,6 @@ class TestConvertFormatBoundingBox:
 #  `transforms_v2_kernel_infos.py`
 
 
-def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
-    rot = math.radians(angle_)
-    cx, cy = center_
-    tx, ty = translate_
-    sx, sy = [math.radians(sh_) for sh_ in shear_]
-
-    c_matrix = np.array([[1, 0, cx], [0, 1, cy], [0, 0, 1]])
-    t_matrix = np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
-    c_matrix_inv = np.linalg.inv(c_matrix)
-    rs_matrix = np.array(
-        [
-            [scale_ * math.cos(rot), -scale_ * math.sin(rot), 0],
-            [scale_ * math.sin(rot), scale_ * math.cos(rot), 0],
-            [0, 0, 1],
-        ]
-    )
-    shear_x_matrix = np.array([[1, -math.tan(sx), 0], [0, 1, 0], [0, 0, 1]])
-    shear_y_matrix = np.array([[1, 0, 0], [-math.tan(sy), 1, 0], [0, 0, 1]])
-    rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
-    true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
-    return true_matrix
-
-
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "format",
@@ -720,18 +696,6 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
 
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
     torch.testing.assert_close(output_spatial_size, spatial_size)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
-    mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
-    mask[:, 0, :] = 1
-
-    out_mask = F.vertical_flip_mask(mask)
-
-    expected_mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
-    expected_mask[:, -1, :] = 1
-    torch.testing.assert_close(out_mask, expected_mask)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
