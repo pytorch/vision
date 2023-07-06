@@ -1,6 +1,20 @@
 import torch
-from torchvision.transforms import autoaugment, transforms
 from torchvision.transforms.functional import InterpolationMode
+
+
+def get_modules(use_v2):
+    # We need lazy import to avoid the V2 warning in case just V1 is used
+    import torchvision
+
+    if use_v2:
+        import torchvision.transforms.v2
+
+        return torchvision.transforms.v2, torchvision.transforms.v2
+    else:
+        import torchvision.transforms
+        import torchvision.transforms.autoaugment
+
+        return torchvision.transforms, torchvision.transforms.autoaugment
 
 
 class ClassificationPresetTrain:
@@ -17,7 +31,10 @@ class ClassificationPresetTrain:
         augmix_severity=3,
         random_erase_prob=0.0,
         backend="pil",
+        use_v2=False,
     ):
+        transforms, auto_augment = get_modules(use_v2)
+
         trans = []
         backend = backend.lower()
         if backend == "tensor":
@@ -67,7 +84,9 @@ class ClassificationPresetEval:
         std=(0.229, 0.224, 0.225),
         interpolation=InterpolationMode.BILINEAR,
         backend="pil",
+        use_v2=False,
     ):
+        transforms, _ = get_modules(use_v2)
         trans = []
         backend = backend.lower()
         if backend == "tensor":
