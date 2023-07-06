@@ -786,6 +786,53 @@ class TestResize:
 
         assert max(F.get_spatial_size(output)) == max_size
 
+    def _check_stride(self, image, *, memory_format):
+        C, H, W = F.get_dimensions(image)
+        if memory_format is torch.contiguous_format:
+            expected_stride = (H * W, W, 1)
+        elif memory_format is torch.channels_last:
+            expected_stride = (1, W * C, C)
+        else:
+            raise ValueError(f"Unknown memory_format: {memory_format}")
+
+        assert image.stride() == expected_stride
+
+    # TODO: We can remove this test and related torchvision workaround
+    #  once we fixed related pytorch issue: https://github.com/pytorch/pytorch/issues/68430
+    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
+    @pytest.mark.parametrize("use_max_size", [True, False])
+    @pytest.mark.parametrize("antialias", [True, False])
+    @pytest.mark.parametrize("memory_format", [torch.contiguous_format, torch.channels_last])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image_tensor_memory_format_consistency(
+        self, interpolation, use_max_size, antialias, memory_format, dtype, device
+    ):
+        size = self.OUTPUT_SIZES[0]
+        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
+            return
+
+        input = make_image_tensor(self.INPUT_SIZE, dtype=dtype, device=device, memory_format=memory_format)
+
+        # Smoke test to make sure we aren't starting with wrong assumptions
+        self._check_stride(input, memory_format=memory_format)
+
+        output = F.resize_image_tensor(
+            input, size=size, interpolation=interpolation, **max_size_kwarg, antialias=antialias
+        )
+
+        self._check_stride(output, memory_format=memory_format)
+
+    def test_no_regression_7667(self):
+        # Checks that float16 images are not rounded
+        # See https://github.com/pytorch/vision/issues/7667
+
+        input = make_image_tensor(self.INPUT_SIZE, dtype=torch.float16)
+        output = F.resize_image_tensor(input, size=self.OUTPUT_SIZES[0])
+
+        assert output.dtype is torch.float16
+        assert (output.round() - output).abs().sum() > 0
+
 
 class TestHorizontalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
