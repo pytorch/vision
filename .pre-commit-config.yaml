@@ -6,6 +6,8 @@ repos:
       - id: check-toml
       - id: check-yaml
         exclude: packaging/.*
+        args:
+          - --allow-multiple-documents
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: end-of-file-fixer

@@ -139,68 +139,6 @@ xfails_pil_if_fill_sequence_needs_broadcast = xfails_pil(
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.horizontal_flip,
-        kernels={
-            datapoints.Image: F.horizontal_flip_image_tensor,
-            datapoints.Video: F.horizontal_flip_video,
-            datapoints.BoundingBox: F.horizontal_flip_bounding_box,
-            datapoints.Mask: F.horizontal_flip_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.horizontal_flip_image_pil, kernel_name="horizontal_flip_image_pil"),
-    ),
-    DispatcherInfo(
-        F.resize,
-        kernels={
-            datapoints.Image: F.resize_image_tensor,
-            datapoints.Video: F.resize_video,
-            datapoints.BoundingBox: F.resize_bounding_box,
-            datapoints.Mask: F.resize_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.resize_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("size"),
-        ],
-    ),
-    DispatcherInfo(
-        F.affine,
-        kernels={
-            datapoints.Image: F.affine_image_tensor,
-            datapoints.Video: F.affine_video,
-            datapoints.BoundingBox: F.affine_bounding_box,
-            datapoints.Mask: F.affine_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.affine_image_pil),
-        test_marks=[
-            *xfails_pil_if_fill_sequence_needs_broadcast,
-            xfail_jit_python_scalar_arg("shear"),
-            xfail_jit_python_scalar_arg("fill"),
-        ],
-    ),
-    DispatcherInfo(
-        F.vertical_flip,
-        kernels={
-            datapoints.Image: F.vertical_flip_image_tensor,
-            datapoints.Video: F.vertical_flip_video,
-            datapoints.BoundingBox: F.vertical_flip_bounding_box,
-            datapoints.Mask: F.vertical_flip_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.vertical_flip_image_pil, kernel_name="vertical_flip_image_pil"),
-    ),
-    DispatcherInfo(
-        F.rotate,
-        kernels={
-            datapoints.Image: F.rotate_image_tensor,
-            datapoints.Video: F.rotate_video,
-            datapoints.BoundingBox: F.rotate_bounding_box,
-            datapoints.Mask: F.rotate_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.rotate_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("fill"),
-            *xfails_pil_if_fill_sequence_needs_broadcast,
-        ],
-    ),
-    DispatcherInfo(
         F.crop,
         kernels={
             datapoints.Image: F.crop_image_tensor,

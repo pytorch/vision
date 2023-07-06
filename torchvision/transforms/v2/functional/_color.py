@@ -56,6 +56,11 @@ def rgb_to_grayscale(
         )
 
 
+# `to_grayscale` actually predates `rgb_to_grayscale` in v1, but only handles PIL images. Since `rgb_to_grayscale` is a
+# superset in terms of functionality and has the same signature, we alias here to avoid disruption.
+to_grayscale = rgb_to_grayscale
+
+
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
     ratio = float(ratio)
     fp = image1.is_floating_point()
