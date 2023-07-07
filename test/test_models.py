@@ -19,10 +19,12 @@ from common_utils import cpu_and_cuda, freeze_rng_state, map_nested_tensor_objec
 from PIL import Image
 from torchvision import models, transforms
 from torchvision.models import get_model_builder, list_models
+from torchvision.models.detection import yolo_darknet
 
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
+DARKNET_CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "yolov4-tiny-3l.cfg")
 
 
 @contextlib.contextmanager
@@ -380,6 +382,10 @@ _model_params = {
         "input_shape": (1, 3, 16, 224, 224),
     },
     "googlenet": {"init_weights": True},
+    "yolov4": {
+        "num_classes": 10,
+        "input_shape": (3, 224, 224),
+    },
 }
 # speeding up slow models:
 slow_models = [
@@ -476,6 +482,10 @@ _model_tests_values = {
     "fcos_resnet50_fpn": {
         "max_trainable": 5,
         "n_trn_params_per_layer": [54, 64, 83, 96, 106, 107],
+    },
+    "yolov4": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [138, 174, 234, 294, 318, 339],
     },
 }
 
@@ -790,6 +800,61 @@ def test_segmentation_model(model_fn, dev):
     _check_input_backprop(model, x)
 
 
+def check_model_output(out, model_name):
+    assert len(out) == 1
+
+    def compact(tensor):
+        tensor = tensor.cpu()
+        size = tensor.size()
+        elements_per_sample = functools.reduce(operator.mul, size[1:], 1)
+        if elements_per_sample > 30:
+            return compute_mean_std(tensor)
+        else:
+            return subsample_tensor(tensor)
+
+    def subsample_tensor(tensor):
+        num_elems = tensor.size(0)
+        num_samples = 20
+        if num_elems <= num_samples:
+            return tensor
+
+        ith_index = num_elems // num_samples
+        return tensor[ith_index - 1 :: ith_index]
+
+    def compute_mean_std(tensor):
+        # can't compute mean of integral tensor
+        tensor = tensor.to(torch.double)
+        mean = torch.mean(tensor)
+        std = torch.std(tensor)
+        return {"mean": mean, "std": std}
+
+    output = map_nested_tensor_object(out, tensor_map_fn=compact)
+    prec = 0.01
+    try:
+        # We first try to assert the entire output if possible. This is not
+        # only the best way to assert results but also handles the cases
+        # where we need to create a new expected result.
+        _assert_expected(output, model_name, prec=prec)
+    except AssertionError:
+        # Unfortunately detection models are flaky due to the unstable sort
+        # in NMS. If matching across all outputs fails, use the same approach
+        # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
+        # scores.
+        expected_file = _get_expected_file(model_name)
+        expected = torch.load(expected_file)
+        torch.testing.assert_close(
+            output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec, check_device=False, check_dtype=False
+        )
+
+        # Note: Fmassa proposed turning off NMS by adapting the threshold
+        # and then using the Hungarian algorithm as in DETR to find the
+        # best match between output and expected boxes and eliminate some
+        # of the flakiness. Worth exploring.
+        return False  # Partial validation performed
+
+    return True  # Full validation performed
+
+
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
 @pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_detection_model(model_fn, dev):
@@ -816,61 +881,7 @@ def test_detection_model(model_fn, dev):
         out = model(model_input)
     assert model_input[0] is x
 
-    def check_out(out):
-        assert len(out) == 1
-
-        def compact(tensor):
-            tensor = tensor.cpu()
-            size = tensor.size()
-            elements_per_sample = functools.reduce(operator.mul, size[1:], 1)
-            if elements_per_sample > 30:
-                return compute_mean_std(tensor)
-            else:
-                return subsample_tensor(tensor)
-
-        def subsample_tensor(tensor):
-            num_elems = tensor.size(0)
-            num_samples = 20
-            if num_elems <= num_samples:
-                return tensor
-
-            ith_index = num_elems // num_samples
-            return tensor[ith_index - 1 :: ith_index]
-
-        def compute_mean_std(tensor):
-            # can't compute mean of integral tensor
-            tensor = tensor.to(torch.double)
-            mean = torch.mean(tensor)
-            std = torch.std(tensor)
-            return {"mean": mean, "std": std}
-
-        output = map_nested_tensor_object(out, tensor_map_fn=compact)
-        prec = 0.01
-        try:
-            # We first try to assert the entire output if possible. This is not
-            # only the best way to assert results but also handles the cases
-            # where we need to create a new expected result.
-            _assert_expected(output, model_name, prec=prec)
-        except AssertionError:
-            # Unfortunately detection models are flaky due to the unstable sort
-            # in NMS. If matching across all outputs fails, use the same approach
-            # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
-            # scores.
-            expected_file = _get_expected_file(model_name)
-            expected = torch.load(expected_file)
-            torch.testing.assert_close(
-                output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec, check_device=False, check_dtype=False
-            )
-
-            # Note: Fmassa proposed turning off NMS by adapting the threshold
-            # and then using the Hungarian algorithm as in DETR to find the
-            # best match between output and expected boxes and eliminate some
-            # of the flakiness. Worth exploring.
-            return False  # Partial validation performed
-
-        return True  # Full validation performed
-
-    full_validation = check_out(out)
+    full_validation = check_model_output(out, model_name)
     _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
     if dev == "cuda":
@@ -878,7 +889,7 @@ def test_detection_model(model_fn, dev):
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
-                full_validation &= check_out(out)
+                full_validation &= check_model_output(out)
 
     if not full_validation:
         msg = (
@@ -893,32 +904,68 @@ def test_detection_model(model_fn, dev):
     _check_input_backprop(model, model_input)
 
 
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_yolo_darknet(dev):
+    set_rng_seed(0)
+    model_name = "yolo_darknet"
+    dtype = torch.get_default_dtype()
+    input_shape = (3, 224, 224)
+
+    model = yolo_darknet(DARKNET_CONFIG)
+    model.eval().to(device=dev, dtype=dtype)
+    x = _get_image(input_shape=input_shape, real_image=False, device=dev, dtype=dtype)
+    model_input = [x]
+    with torch.no_grad(), freeze_rng_state():
+        out = model(model_input)
+    assert model_input[0] is x
+
+    full_validation = check_model_output(out, model_name)
+    _check_jit_scriptable(model, ([x],), unwrapper=None, eager_out=out)
+
+    if dev == "cuda":
+        with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
+            out = model(model_input)
+            full_validation &= check_model_output(out, model_name)
+
+    if not full_validation:
+        msg = (
+            "The output of yolo_darknet could only be partially validated. "
+            "This is likely due to unit-test flakiness, but you may "
+            "want to do additional manual checks if you made "
+            "significant changes to the codebase."
+        )
+        warnings.warn(msg, RuntimeWarning)
+        pytest.skip(msg)
+
+    _check_input_backprop(model, model_input)
+
+
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
     model = model_fn(num_classes=50, weights=None, weights_backbone=None)
-    input_shape = (3, 300, 300)
+    input_shape = (3, 256, 256)  # YOLO models expect the input dimensions to be a multiple of 32 or 64.
     x = [torch.rand(input_shape)]
 
     # validate that targets are present in training
-    with pytest.raises(AssertionError):
+    with pytest.raises((AssertionError, ValueError)):
         model(x)
 
     # validate type
     targets = [{"boxes": 0.0}]
-    with pytest.raises(AssertionError):
+    with pytest.raises((AssertionError, TypeError)):
         model(x, targets=targets)
 
     # validate boxes shape
     for boxes in (torch.rand((4,)), torch.rand((1, 5))):
         targets = [{"boxes": boxes}]
-        with pytest.raises(AssertionError):
+        with pytest.raises((AssertionError, ValueError)):
             model(x, targets=targets)
 
     # validate that no degenerate boxes are present
     boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
     targets = [{"boxes": boxes}]
-    with pytest.raises(AssertionError):
+    with pytest.raises((AssertionError, ValueError)):
         model(x, targets=targets)
 
 

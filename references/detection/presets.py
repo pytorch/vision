@@ -53,6 +53,16 @@ class DetectionPresetTrain:
                     T.ConvertImageDtype(torch.float),
                 ]
             )
+        elif data_augmentation == "yolo":
+            self.transforms = T.Compose(
+                [
+                    T.ScaleJitter(target_size=(640, 640)),
+                    T.FixedSizeCrop(size=(640, 640), fill=mean),
+                    T.RandomHorizontalFlip(p=hflip_prob),
+                    T.PILToTensor(),
+                    T.ConvertImageDtype(torch.float),
+                ]
+            )
         else:
             raise ValueError(f'Unknown data augmentation policy "{data_augmentation}"')
 

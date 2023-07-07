@@ -1,7 +1,13 @@
 import pytest
 import torch
 from common_utils import assert_equal
-from torchvision.models.detection.anchor_utils import AnchorGenerator, DefaultBoxGenerator
+from torchvision.models.detection.anchor_utils import (
+    AnchorGenerator,
+    DefaultBoxGenerator,
+    global_xy,
+    grid_centers,
+    grid_offsets,
+)
 from torchvision.models.detection.image_list import ImageList
 
 
@@ -97,3 +103,40 @@ class Tester:
         assert tuple(dboxes[1].shape) == (4, 4)
         torch.testing.assert_close(dboxes[0], dboxes_output, rtol=1e-5, atol=1e-8)
         torch.testing.assert_close(dboxes[1], dboxes_output, rtol=1e-5, atol=1e-8)
+
+
+@pytest.mark.parametrize("width,height", [(10, 5)])
+def test_grid_offsets(width: int, height: int):
+    size = torch.tensor([width, height])
+    offsets = grid_offsets(size)
+    assert offsets.shape == (height, width, 2)
+    assert torch.equal(offsets[0, :, 0], torch.arange(width, dtype=offsets.dtype))
+    assert torch.equal(offsets[0, :, 1], torch.zeros(width, dtype=offsets.dtype))
+    assert torch.equal(offsets[:, 0, 0], torch.zeros(height, dtype=offsets.dtype))
+    assert torch.equal(offsets[:, 0, 1], torch.arange(height, dtype=offsets.dtype))
+
+
+@pytest.mark.parametrize("width,height", [(10, 5)])
+def test_grid_centers(width: int, height: int):
+    size = torch.tensor([width, height])
+    centers = grid_centers(size)
+    assert centers.shape == (height, width, 2)
+    assert torch.equal(centers[0, :, 0], 0.5 + torch.arange(width, dtype=torch.float))
+    assert torch.equal(centers[0, :, 1], 0.5 * torch.ones(width))
+    assert torch.equal(centers[:, 0, 0], 0.5 * torch.ones(height))
+    assert torch.equal(centers[:, 0, 1], 0.5 + torch.arange(height, dtype=torch.float))
+
+
+def test_global_xy():
+    xy = torch.ones((2, 4, 4, 3, 2)) * 0.5  # 4x4 grid of coordinates to the center of the cell.
+    image_size = torch.tensor([400, 200])
+    xy = global_xy(xy, image_size)
+    assert xy.shape == (2, 4, 4, 3, 2)
+    assert torch.all(xy[:, :, 0, :, 0] == 50)
+    assert torch.all(xy[:, 0, :, :, 1] == 25)
+    assert torch.all(xy[:, :, 1, :, 0] == 150)
+    assert torch.all(xy[:, 1, :, :, 1] == 75)
+    assert torch.all(xy[:, :, 2, :, 0] == 250)
+    assert torch.all(xy[:, 2, :, :, 1] == 125)
+    assert torch.all(xy[:, :, 3, :, 0] == 350)
+    assert torch.all(xy[:, 3, :, :, 1] == 175)
