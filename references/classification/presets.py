@@ -6,9 +6,11 @@ def get_module(use_v2):
     # We need a protected import to avoid the V2 warning in case just V1 is used
     if use_v2:
         import torchvision.transforms.v2
+
         return torchvision.transforms.v2
     else:
         import torchvision.transforms
+
         return torchvision.transforms
 
 
