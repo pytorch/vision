@@ -2,19 +2,14 @@ import torch
 from torchvision.transforms.functional import InterpolationMode
 
 
-def get_modules(use_v2):
-    # We need lazy import to avoid the V2 warning in case just V1 is used
-    import torchvision
-
+def get_module(use_v2):
+    # We need a protected import to avoid the V2 warning in case just V1 is used
     if use_v2:
         import torchvision.transforms.v2
-
-        return torchvision.transforms.v2, torchvision.transforms.v2
+        return torchvision.transforms.v2
     else:
         import torchvision.transforms
-        import torchvision.transforms.autoaugment
-
-        return torchvision.transforms, torchvision.transforms.autoaugment
+        return torchvision.transforms
 
 
 class ClassificationPresetTrain:
@@ -33,42 +28,42 @@ class ClassificationPresetTrain:
         backend="pil",
         use_v2=False,
     ):
-        transforms, auto_augment = get_modules(use_v2)
+        module = get_module(use_v2)
 
-        trans = []
+        transforms = []
         backend = backend.lower()
         if backend == "tensor":
-            trans.append(transforms.PILToTensor())
+            transforms.append(module.PILToTensor())
         elif backend != "pil":
             raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
 
-        trans.append(transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True))
+        transforms.append(module.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True))
         if hflip_prob > 0:
-            trans.append(transforms.RandomHorizontalFlip(hflip_prob))
+            transforms.append(module.RandomHorizontalFlip(hflip_prob))
         if auto_augment_policy is not None:
             if auto_augment_policy == "ra":
-                trans.append(autoaugment.RandAugment(interpolation=interpolation, magnitude=ra_magnitude))
+                transforms.append(module.RandAugment(interpolation=interpolation, magnitude=ra_magnitude))
             elif auto_augment_policy == "ta_wide":
-                trans.append(autoaugment.TrivialAugmentWide(interpolation=interpolation))
+                transforms.append(module.TrivialAugmentWide(interpolation=interpolation))
             elif auto_augment_policy == "augmix":
-                trans.append(autoaugment.AugMix(interpolation=interpolation, severity=augmix_severity))
+                transforms.append(module.AugMix(interpolation=interpolation, severity=augmix_severity))
             else:
-                aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
-                trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
+                aa_policy = module.AutoAugmentPolicy(auto_augment_policy)
+                transforms.append(module.AutoAugment(policy=aa_policy, interpolation=interpolation))
 
         if backend == "pil":
-            trans.append(transforms.PILToTensor())
+            transforms.append(module.PILToTensor())
 
-        trans.extend(
+        transforms.extend(
             [
-                transforms.ConvertImageDtype(torch.float),
-                transforms.Normalize(mean=mean, std=std),
+                module.ConvertImageDtype(torch.float),
+                module.Normalize(mean=mean, std=std),
             ]
         )
         if random_erase_prob > 0:
-            trans.append(transforms.RandomErasing(p=random_erase_prob))
+            transforms.append(module.RandomErasing(p=random_erase_prob))
 
-        self.transforms = transforms.Compose(trans)
+        self.transforms = module.Compose(transforms)
 
     def __call__(self, img):
         return self.transforms(img)
@@ -86,28 +81,28 @@ class ClassificationPresetEval:
         backend="pil",
         use_v2=False,
     ):
-        transforms, _ = get_modules(use_v2)
-        trans = []
+        module = get_module(use_v2)
+        transforms = []
         backend = backend.lower()
         if backend == "tensor":
-            trans.append(transforms.PILToTensor())
+            transforms.append(module.PILToTensor())
         elif backend != "pil":
             raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
 
-        trans += [
-            transforms.Resize(resize_size, interpolation=interpolation, antialias=True),
-            transforms.CenterCrop(crop_size),
+        transforms += [
+            module.Resize(resize_size, interpolation=interpolation, antialias=True),
+            module.CenterCrop(crop_size),
         ]
 
         if backend == "pil":
-            trans.append(transforms.PILToTensor())
+            transforms.append(module.PILToTensor())
 
-        trans += [
-            transforms.ConvertImageDtype(torch.float),
-            transforms.Normalize(mean=mean, std=std),
+        transforms += [
+            module.ConvertImageDtype(torch.float),
+            module.Normalize(mean=mean, std=std),
         ]
 
-        self.transforms = transforms.Compose(trans)
+        self.transforms = module.Compose(transforms)
 
     def __call__(self, img):
         return self.transforms(img)
