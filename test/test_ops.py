@@ -198,6 +198,22 @@ class RoIOpTester(ABC):
 
         gradcheck(script_func, (x,), atol=atol)
 
+    @needs_mps
+    def test_mps_error_inputs(self):
+        pool_size = 2
+        x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=torch.float16, device="mps", requires_grad=True)
+        rois = torch.tensor(
+            [[0, 0, 0, 4, 4], [0, 0, 2, 3, 4], [0, 2, 2, 4, 4]], dtype=torch.float16, device="mps"  # format is (xyxy)
+        )
+
+        def func(z):
+            return self.fn(z, rois, pool_size, pool_size, spatial_scale=1, sampling_ratio=1)
+
+        with pytest.raises(
+            RuntimeError, match="MPS does not support (?:ps_)?roi_(?:align|pool)? backward with float16 inputs."
+        ):
+            gradcheck(func, (x,))
+
     @needs_cuda
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
     @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
