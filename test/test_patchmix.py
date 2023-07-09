@@ -18,7 +18,7 @@ from torchvision.transforms.functional import to_pil_image
 @pytest.mark.parametrize("device", cpu_and_cuda())
 def test_patchmix(batch_size, prob, mix_num, device):
     data_set = datasets.ImageFolder(
-        root=os.path.join("/tmp/ILSVRC2012", "train"),
+        root='data/',
         transform=transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()]),
     )
     data_loader = DataLoader(dataset=data_set, batch_size=batch_size, num_workers=4, shuffle=True)
