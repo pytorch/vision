@@ -2,9 +2,6 @@
 #include <ATen/native/mps/OperationUtils.h>
 #include "mps_kernels.h"
 
-#include <cmath>
-#include <iostream>
-
 namespace vision {
 namespace ops {
 
