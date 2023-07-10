@@ -1,3 +1,4 @@
+# Importing Necessary classes and packages
 from functools import partial
 from typing import Any, Callable, List, Optional
 
@@ -15,7 +16,8 @@ from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interf
 __all__ = ["MobileNetV2", "MobileNet_V2_Weights", "mobilenet_v2"]
 
 
-# necessary for backwards compatibility
+# Necessary for backwards compatibility
+# Importing the Package Module from the Super Class nn(neural network)
 class InvertedResidual(nn.Module):
     def __init__(
         self, inp: int, oup: int, stride: int, expand_ratio: int, norm_layer: Optional[Callable[..., nn.Module]] = None
@@ -180,7 +182,7 @@ _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
 }
 
-
+# Deriving from Super Class WeightsEnum (Weights Enumerator)
 class MobileNet_V2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
