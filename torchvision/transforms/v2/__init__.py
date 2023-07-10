@@ -4,7 +4,7 @@ from . import functional, utils  # usort: skip
 
 from ._transform import Transform  # usort: skip
 
-from ._augment import RandomErasing
+from ._augment import Cutmix, Mixup, RandomErasing
 from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
 from ._color import (
     ColorJitter,

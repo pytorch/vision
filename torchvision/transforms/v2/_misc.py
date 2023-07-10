@@ -1,7 +1,5 @@
-import collections
 import warnings
-from contextlib import suppress
-from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Sequence, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -11,7 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size
+from ._utils import _get_defaultdict, _parse_labels_getter, _setup_float_or_seq, _setup_size
 from .utils import has_any, is_simple_tensor, query_bounding_box
 
 
@@ -298,66 +296,16 @@ class SanitizeBoundingBox(Transform):
         self.min_size = min_size
 
         self.labels_getter = labels_getter
-        self._labels_getter: Optional[Callable[[Any], Optional[torch.Tensor]]]
-        if labels_getter == "default":
-            self._labels_getter = self._find_labels_default_heuristic
-        elif callable(labels_getter):
-            self._labels_getter = labels_getter
-        elif isinstance(labels_getter, str):
-            self._labels_getter = lambda inputs: SanitizeBoundingBox._get_dict_or_second_tuple_entry(inputs)[
-                labels_getter  # type: ignore[index]
-            ]
-        elif labels_getter is None:
-            self._labels_getter = None
-        else:
-            raise ValueError(
-                "labels_getter should either be a str, callable, or 'default'. "
-                f"Got {labels_getter} of type {type(labels_getter)}."
-            )
-
-    @staticmethod
-    def _get_dict_or_second_tuple_entry(inputs: Any) -> Mapping[str, Any]:
-        # datasets outputs may be plain dicts like {"img": ..., "labels": ..., "bbox": ...}
-        # or tuples like (img, {"labels":..., "bbox": ...})
-        # This hacky helper accounts for both structures.
-        if isinstance(inputs, tuple):
-            inputs = inputs[1]
-
-        if not isinstance(inputs, collections.abc.Mapping):
-            raise ValueError(
-                f"If labels_getter is a str or 'default', "
-                f"then the input to forward() must be a dict or a tuple whose second element is a dict."
-                f" Got {type(inputs)} instead."
-            )
-        return inputs
-
-    @staticmethod
-    def _find_labels_default_heuristic(inputs: Dict[str, Any]) -> Optional[torch.Tensor]:
-        # Tries to find a "labels" key, otherwise tries for the first key that contains "label" - case insensitive
-        # Returns None if nothing is found
-        inputs = SanitizeBoundingBox._get_dict_or_second_tuple_entry(inputs)
-        candidate_key = None
-        with suppress(StopIteration):
-            candidate_key = next(key for key in inputs.keys() if key.lower() == "labels")
-        if candidate_key is None:
-            with suppress(StopIteration):
-                candidate_key = next(key for key in inputs.keys() if "label" in key.lower())
-        if candidate_key is None:
-            raise ValueError(
-                "Could not infer where the labels are in the sample. Try passing a callable as the labels_getter parameter?"
-                "If there are no samples and it is by design, pass labels_getter=None."
-            )
-        return inputs[candidate_key]
+        self._labels_getter = _parse_labels_getter(labels_getter)
 
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
 
-        if self._labels_getter is None:
-            labels = None
-        else:
-            labels = self._labels_getter(inputs)
-            if labels is not None and not isinstance(labels, torch.Tensor):
-                raise ValueError(f"The labels in the input to forward() must be a tensor, got {type(labels)} instead.")
+        labels = self._labels_getter(inputs)
+        if labels is not None and not isinstance(labels, torch.Tensor):
+            raise ValueError(
+                f"The labels in the input to forward() must be a tensor or None, got {type(labels)} instead."
+            )
 
         flat_inputs, spec = tree_flatten(inputs)
         # TODO: this enforces one single BoundingBox entry.
