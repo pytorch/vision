@@ -409,7 +409,7 @@ class Matcher:
         gt_pred_pairs_of_highest_quality = torch.where(match_quality_matrix == highest_quality_foreach_gt[:, None])
         # Example gt_pred_pairs_of_highest_quality:
         #   (tensor([0, 1, 1, 2, 2, 3, 3, 4, 5, 5]),
-        #.   tensor([39796, 32055, 32070, 39190, 40255, 40390, 41455, 45470, 45325, 46390]))
+        #    tensor([39796, 32055, 32070, 39190, 40255, 40390, 41455, 45470, 45325, 46390]))
         # Each element in the first tensor is a gt index, and each element in second tensor is a prediction index
         # Note how gt items 1, 2, 3, and 5 each have two ties
 
