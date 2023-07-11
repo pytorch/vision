@@ -11,13 +11,12 @@ import torchvision.transforms
 import utils
 from sampler import RASampler
 from torch import nn
+from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
-from transforms import get_batch_transform
+from transforms import get_mixup_cutmix
 
 
-def train_one_epoch(
-    model, criterion, optimizer, data_loader, batch_transform, device, epoch, args, model_ema=None, scaler=None
-):
+def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
@@ -25,8 +24,6 @@ def train_one_epoch(
 
     header = f"Epoch: [{epoch}]"
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
-        if batch_transform:
-            image, target = batch_transform(image, target)
         start_time = time.time()
         image, target = image.to(device), target.to(device)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
@@ -221,20 +218,28 @@ def main(args):
     val_dir = os.path.join(args.data_path, "val")
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
 
+    num_classes = len(dataset.classes)
+    mixup_cutmix = get_mixup_cutmix(
+        mixup_alpha=args.mixup_alpha, cutmix_alpha=args.cutmix_alpha, num_categories=num_classes, use_v2=args.use_v2
+    )
+    if mixup_cutmix is not None:
+
+        def collate_fn(batch):
+            return mixup_cutmix(*default_collate(batch))
+
+    else:
+        collate_fn = default_collate
+
     data_loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
         sampler=train_sampler,
         num_workers=args.workers,
         pin_memory=True,
+        collate_fn=collate_fn,
     )
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size, sampler=test_sampler, num_workers=args.workers, pin_memory=True
-    )
-
-    num_classes = len(dataset.classes)
-    batch_transform = get_batch_transform(
-        mixup_alpha=args.mixup_alpha, cutmix_alpha=args.cutmix_alpha, num_categories=num_classes, use_v2=args.use_v2
     )
 
     print("Creating model")
@@ -358,9 +363,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(
-            model, criterion, optimizer, data_loader, batch_transform, device, epoch, args, model_ema, scaler
-        )
+        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
         lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
         if model_ema:
