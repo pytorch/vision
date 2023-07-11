@@ -231,7 +231,6 @@ def get_coco(root, image_set, transforms, mode="instances", use_v2=False):
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
 
-    # TODO: cleanup
     if use_v2:
         dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
         # TODO: need to update target_keys to handle masks for segmentation!
