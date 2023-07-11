@@ -55,15 +55,15 @@ class Mask(Datapoint):
     def spatial_size(self) -> Tuple[int, int]:
         return tuple(self.shape[-2:])  # type: ignore[return-value]
 
-    def horizontal_flip(self) -> Mask:
+    def _horizontal_flip(self) -> Mask:
         output = self._F.horizontal_flip_mask(self.as_subclass(torch.Tensor))
         return Mask.wrap_like(self, output)
 
-    def vertical_flip(self) -> Mask:
+    def _vertical_flip(self) -> Mask:
         output = self._F.vertical_flip_mask(self.as_subclass(torch.Tensor))
         return Mask.wrap_like(self, output)
 
-    def resize(  # type: ignore[override]
+    def _resize(
         self,
         size: List[int],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
@@ -73,15 +73,15 @@ class Mask(Datapoint):
         output = self._F.resize_mask(self.as_subclass(torch.Tensor), size, max_size=max_size)
         return Mask.wrap_like(self, output)
 
-    def crop(self, top: int, left: int, height: int, width: int) -> Mask:
+    def _crop(self, top: int, left: int, height: int, width: int) -> Mask:
         output = self._F.crop_mask(self.as_subclass(torch.Tensor), top, left, height, width)
         return Mask.wrap_like(self, output)
 
-    def center_crop(self, output_size: List[int]) -> Mask:
+    def _center_crop(self, output_size: List[int]) -> Mask:
         output = self._F.center_crop_mask(self.as_subclass(torch.Tensor), output_size=output_size)
         return Mask.wrap_like(self, output)
 
-    def resized_crop(
+    def _resized_crop(
         self,
         top: int,
         left: int,
@@ -94,7 +94,7 @@ class Mask(Datapoint):
         output = self._F.resized_crop_mask(self.as_subclass(torch.Tensor), top, left, height, width, size=size)
         return Mask.wrap_like(self, output)
 
-    def pad(
+    def _pad(
         self,
         padding: List[int],
         fill: Optional[Union[int, float, List[float]]] = None,
@@ -103,7 +103,7 @@ class Mask(Datapoint):
         output = self._F.pad_mask(self.as_subclass(torch.Tensor), padding, padding_mode=padding_mode, fill=fill)
         return Mask.wrap_like(self, output)
 
-    def rotate(
+    def _rotate(
         self,
         angle: float,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
@@ -114,7 +114,7 @@ class Mask(Datapoint):
         output = self._F.rotate_mask(self.as_subclass(torch.Tensor), angle, expand=expand, center=center, fill=fill)
         return Mask.wrap_like(self, output)
 
-    def affine(
+    def _affine(
         self,
         angle: Union[int, float],
         translate: List[float],
@@ -135,7 +135,7 @@ class Mask(Datapoint):
         )
         return Mask.wrap_like(self, output)
 
-    def perspective(
+    def _perspective(
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
@@ -148,7 +148,7 @@ class Mask(Datapoint):
         )
         return Mask.wrap_like(self, output)
 
-    def elastic(
+    def _elastic(
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,

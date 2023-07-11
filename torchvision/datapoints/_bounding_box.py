@@ -98,19 +98,19 @@ class BoundingBox(Datapoint):
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(format=self.format, spatial_size=self.spatial_size)
 
-    def horizontal_flip(self) -> BoundingBox:
+    def _horizontal_flip(self) -> BoundingBox:
         output = self._F.horizontal_flip_bounding_box(
             self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
         )
         return BoundingBox.wrap_like(self, output)
 
-    def vertical_flip(self) -> BoundingBox:
+    def _vertical_flip(self) -> BoundingBox:
         output = self._F.vertical_flip_bounding_box(
             self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
         )
         return BoundingBox.wrap_like(self, output)
 
-    def resize(  # type: ignore[override]
+    def _resize(
         self,
         size: List[int],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -125,19 +125,19 @@ class BoundingBox(Datapoint):
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
-    def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
+    def _crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
         output, spatial_size = self._F.crop_bounding_box(
             self.as_subclass(torch.Tensor), self.format, top=top, left=left, height=height, width=width
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
-    def center_crop(self, output_size: List[int]) -> BoundingBox:
+    def _center_crop(self, output_size: List[int]) -> BoundingBox:
         output, spatial_size = self._F.center_crop_bounding_box(
             self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size, output_size=output_size
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
-    def resized_crop(
+    def _resized_crop(
         self,
         top: int,
         left: int,
@@ -152,7 +152,7 @@ class BoundingBox(Datapoint):
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
-    def pad(
+    def _pad(
         self,
         padding: Union[int, Sequence[int]],
         fill: Optional[Union[int, float, List[float]]] = None,
@@ -167,7 +167,7 @@ class BoundingBox(Datapoint):
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
-    def rotate(
+    def _rotate(
         self,
         angle: float,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
@@ -185,7 +185,7 @@ class BoundingBox(Datapoint):
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
-    def affine(
+    def _affine(
         self,
         angle: Union[int, float],
         translate: List[float],
@@ -207,7 +207,7 @@ class BoundingBox(Datapoint):
         )
         return BoundingBox.wrap_like(self, output)
 
-    def perspective(
+    def _perspective(
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
@@ -225,7 +225,7 @@ class BoundingBox(Datapoint):
         )
         return BoundingBox.wrap_like(self, output)
 
-    def elastic(
+    def _elastic(
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,

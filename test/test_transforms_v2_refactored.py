@@ -252,7 +252,7 @@ def _check_dispatcher_datapoint_signature_match(dispatcher):
     dispatcher_signature = inspect.signature(dispatcher)
     dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
 
-    datapoint_method = getattr(datapoints._datapoint.Datapoint, dispatcher.__name__)
+    datapoint_method = getattr(datapoints._datapoint.Datapoint, f"_{dispatcher.__name__}")
     datapoint_signature = inspect.signature(datapoint_method)
     datapoint_params = list(datapoint_signature.parameters.values())[1:]
 

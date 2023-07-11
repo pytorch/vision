@@ -79,7 +79,7 @@ def horizontal_flip(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return horizontal_flip_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.horizontal_flip()
+        return inpt._horizontal_flip()
     elif isinstance(inpt, PIL.Image.Image):
         return horizontal_flip_image_pil(inpt)
     else:
@@ -129,7 +129,7 @@ def vertical_flip(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return vertical_flip_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.vertical_flip()
+        return inpt._vertical_flip()
     elif isinstance(inpt, PIL.Image.Image):
         return vertical_flip_image_pil(inpt)
     else:
@@ -314,7 +314,7 @@ def resize(
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
+        return inpt._resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, PIL.Image.Image):
         if antialias is False:
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
@@ -843,7 +843,7 @@ def affine(
             center=center,
         )
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.affine(
+        return inpt._affine(
             angle, translate=translate, scale=scale, shear=shear, interpolation=interpolation, fill=fill, center=center
         )
     elif isinstance(inpt, PIL.Image.Image):
@@ -1004,7 +1004,7 @@ def rotate(
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.rotate(angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
+        return inpt._rotate(angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     elif isinstance(inpt, PIL.Image.Image):
         return rotate_image_pil(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     else:
@@ -1214,7 +1214,7 @@ def pad(
         return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
 
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.pad(padding, fill=fill, padding_mode=padding_mode)
+        return inpt._pad(padding, fill=fill, padding_mode=padding_mode)
     elif isinstance(inpt, PIL.Image.Image):
         return pad_image_pil(inpt, padding, fill=fill, padding_mode=padding_mode)
     else:
@@ -1292,7 +1292,7 @@ def crop(inpt: datapoints._InputTypeJIT, top: int, left: int, height: int, width
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return crop_image_tensor(inpt, top, left, height, width)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.crop(top, left, height, width)
+        return inpt._crop(top, left, height, width)
     elif isinstance(inpt, PIL.Image.Image):
         return crop_image_pil(inpt, top, left, height, width)
     else:
@@ -1554,7 +1554,7 @@ def perspective(
             inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
         )
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.perspective(
+        return inpt._perspective(
             startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
         )
     elif isinstance(inpt, PIL.Image.Image):
@@ -1742,7 +1742,7 @@ def elastic(
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.elastic(displacement, interpolation=interpolation, fill=fill)
+        return inpt._elastic(displacement, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, PIL.Image.Image):
         return elastic_image_pil(inpt, displacement, interpolation=interpolation, fill=fill)
     else:
@@ -1855,7 +1855,7 @@ def center_crop(inpt: datapoints._InputTypeJIT, output_size: List[int]) -> datap
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return center_crop_image_tensor(inpt, output_size)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.center_crop(output_size)
+        return inpt._center_crop(output_size)
     elif isinstance(inpt, PIL.Image.Image):
         return center_crop_image_pil(inpt, output_size)
     else:
@@ -1951,7 +1951,7 @@ def resized_crop(
             inpt, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
         )
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.resized_crop(top, left, height, width, antialias=antialias, size=size, interpolation=interpolation)
+        return inpt._resized_crop(top, left, height, width, antialias=antialias, size=size, interpolation=interpolation)
     elif isinstance(inpt, PIL.Image.Image):
         return resized_crop_image_pil(inpt, top, left, height, width, size=size, interpolation=interpolation)
     else:

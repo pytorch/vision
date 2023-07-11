@@ -46,7 +46,7 @@ def rgb_to_grayscale(
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return rgb_to_grayscale_image_tensor(inpt, num_output_channels=num_output_channels)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.rgb_to_grayscale(num_output_channels=num_output_channels)
+        return inpt._rgb_to_grayscale(num_output_channels=num_output_channels)
     elif isinstance(inpt, PIL.Image.Image):
         return rgb_to_grayscale_image_pil(inpt, num_output_channels=num_output_channels)
     else:
@@ -97,7 +97,7 @@ def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.adjust_brightness(brightness_factor=brightness_factor)
+        return inpt._adjust_brightness(brightness_factor=brightness_factor)
     elif isinstance(inpt, PIL.Image.Image):
         return adjust_brightness_image_pil(inpt, brightness_factor=brightness_factor)
     else:
@@ -141,7 +141,7 @@ def adjust_saturation(inpt: datapoints._InputTypeJIT, saturation_factor: float) 
     ):
         return adjust_saturation_image_tensor(inpt, saturation_factor=saturation_factor)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.adjust_saturation(saturation_factor=saturation_factor)
+        return inpt._adjust_saturation(saturation_factor=saturation_factor)
     elif isinstance(inpt, PIL.Image.Image):
         return adjust_saturation_image_pil(inpt, saturation_factor=saturation_factor)
     else:
@@ -183,7 +183,7 @@ def adjust_contrast(inpt: datapoints._InputTypeJIT, contrast_factor: float) -> d
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return adjust_contrast_image_tensor(inpt, contrast_factor=contrast_factor)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.adjust_contrast(contrast_factor=contrast_factor)
+        return inpt._adjust_contrast(contrast_factor=contrast_factor)
     elif isinstance(inpt, PIL.Image.Image):
         return adjust_contrast_image_pil(inpt, contrast_factor=contrast_factor)
     else:
@@ -261,7 +261,7 @@ def adjust_sharpness(inpt: datapoints._InputTypeJIT, sharpness_factor: float) ->
     ):
         return adjust_sharpness_image_tensor(inpt, sharpness_factor=sharpness_factor)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.adjust_sharpness(sharpness_factor=sharpness_factor)
+        return inpt._adjust_sharpness(sharpness_factor=sharpness_factor)
     elif isinstance(inpt, PIL.Image.Image):
         return adjust_sharpness_image_pil(inpt, sharpness_factor=sharpness_factor)
     else:
@@ -376,7 +376,7 @@ def adjust_hue(inpt: datapoints._InputTypeJIT, hue_factor: float) -> datapoints.
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return adjust_hue_image_tensor(inpt, hue_factor=hue_factor)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.adjust_hue(hue_factor=hue_factor)
+        return inpt._adjust_hue(hue_factor=hue_factor)
     elif isinstance(inpt, PIL.Image.Image):
         return adjust_hue_image_pil(inpt, hue_factor=hue_factor)
     else:
@@ -419,7 +419,7 @@ def adjust_gamma(inpt: datapoints._InputTypeJIT, gamma: float, gain: float = 1) 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return adjust_gamma_image_tensor(inpt, gamma=gamma, gain=gain)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.adjust_gamma(gamma=gamma, gain=gain)
+        return inpt._adjust_gamma(gamma=gamma, gain=gain)
     elif isinstance(inpt, PIL.Image.Image):
         return adjust_gamma_image_pil(inpt, gamma=gamma, gain=gain)
     else:
@@ -456,7 +456,7 @@ def posterize(inpt: datapoints._InputTypeJIT, bits: int) -> datapoints._InputTyp
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return posterize_image_tensor(inpt, bits=bits)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.posterize(bits=bits)
+        return inpt._posterize(bits=bits)
     elif isinstance(inpt, PIL.Image.Image):
         return posterize_image_pil(inpt, bits=bits)
     else:
@@ -487,7 +487,7 @@ def solarize(inpt: datapoints._InputTypeJIT, threshold: float) -> datapoints._In
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return solarize_image_tensor(inpt, threshold=threshold)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.solarize(threshold=threshold)
+        return inpt._solarize(threshold=threshold)
     elif isinstance(inpt, PIL.Image.Image):
         return solarize_image_pil(inpt, threshold=threshold)
     else:
@@ -540,7 +540,7 @@ def autocontrast(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return autocontrast_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.autocontrast()
+        return inpt._autocontrast()
     elif isinstance(inpt, PIL.Image.Image):
         return autocontrast_image_pil(inpt)
     else:
@@ -633,7 +633,7 @@ def equalize(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return equalize_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.equalize()
+        return inpt._equalize()
     elif isinstance(inpt, PIL.Image.Image):
         return equalize_image_pil(inpt)
     else:
@@ -667,7 +667,7 @@ def invert(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return invert_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.invert()
+        return inpt._invert()
     elif isinstance(inpt, PIL.Image.Image):
         return invert_image_pil(inpt)
     else:

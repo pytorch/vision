@@ -1417,12 +1417,12 @@ def test_antialias_warning():
         transforms.RandomResize(10, 20)(tensor_img)
 
     with pytest.warns(UserWarning, match=match):
-        datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20))
+        datapoints.Image(tensor_img)._resized_crop(0, 0, 10, 10, (20, 20))
 
     with pytest.warns(UserWarning, match=match):
-        datapoints.Video(tensor_video).resize((20, 20))
+        datapoints.Video(tensor_video)._resize((20, 20))
     with pytest.warns(UserWarning, match=match):
-        datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20))
+        datapoints.Video(tensor_video)._resized_crop(0, 0, 10, 10, (20, 20))
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -1436,8 +1436,8 @@ def test_antialias_warning():
         transforms.RandomShortestSize((20, 20), antialias=True)(tensor_img)
         transforms.RandomResize(10, 20, antialias=True)(tensor_img)
 
-        datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
-        datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
+        datapoints.Image(tensor_img)._resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
+        datapoints.Video(tensor_video)._resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
 
 
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))

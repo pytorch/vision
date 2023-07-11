@@ -58,15 +58,15 @@ class Video(Datapoint):
     def num_frames(self) -> int:
         return self.shape[-4]
 
-    def horizontal_flip(self) -> Video:
+    def _horizontal_flip(self) -> Video:
         output = self._F.horizontal_flip_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
-    def vertical_flip(self) -> Video:
+    def _vertical_flip(self) -> Video:
         output = self._F.vertical_flip_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
-    def resize(  # type: ignore[override]
+    def _resize(
         self,
         size: List[int],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -82,15 +82,15 @@ class Video(Datapoint):
         )
         return Video.wrap_like(self, output)
 
-    def crop(self, top: int, left: int, height: int, width: int) -> Video:
+    def _crop(self, top: int, left: int, height: int, width: int) -> Video:
         output = self._F.crop_video(self.as_subclass(torch.Tensor), top, left, height, width)
         return Video.wrap_like(self, output)
 
-    def center_crop(self, output_size: List[int]) -> Video:
+    def _center_crop(self, output_size: List[int]) -> Video:
         output = self._F.center_crop_video(self.as_subclass(torch.Tensor), output_size=output_size)
         return Video.wrap_like(self, output)
 
-    def resized_crop(
+    def _resized_crop(
         self,
         top: int,
         left: int,
@@ -112,7 +112,7 @@ class Video(Datapoint):
         )
         return Video.wrap_like(self, output)
 
-    def pad(
+    def _pad(
         self,
         padding: List[int],
         fill: Optional[Union[int, float, List[float]]] = None,
@@ -121,7 +121,7 @@ class Video(Datapoint):
         output = self._F.pad_video(self.as_subclass(torch.Tensor), padding, fill=fill, padding_mode=padding_mode)
         return Video.wrap_like(self, output)
 
-    def rotate(
+    def _rotate(
         self,
         angle: float,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
@@ -134,7 +134,7 @@ class Video(Datapoint):
         )
         return Video.wrap_like(self, output)
 
-    def affine(
+    def _affine(
         self,
         angle: Union[int, float],
         translate: List[float],
@@ -156,7 +156,7 @@ class Video(Datapoint):
         )
         return Video.wrap_like(self, output)
 
-    def perspective(
+    def _perspective(
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
@@ -174,7 +174,7 @@ class Video(Datapoint):
         )
         return Video.wrap_like(self, output)
 
-    def elastic(
+    def _elastic(
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -185,61 +185,61 @@ class Video(Datapoint):
         )
         return Video.wrap_like(self, output)
 
-    def rgb_to_grayscale(self, num_output_channels: int = 1) -> Video:
+    def _rgb_to_grayscale(self, num_output_channels: int = 1) -> Video:
         output = self._F.rgb_to_grayscale_image_tensor(
             self.as_subclass(torch.Tensor), num_output_channels=num_output_channels
         )
         return Video.wrap_like(self, output)
 
-    def adjust_brightness(self, brightness_factor: float) -> Video:
+    def _adjust_brightness(self, brightness_factor: float) -> Video:
         output = self._F.adjust_brightness_video(self.as_subclass(torch.Tensor), brightness_factor=brightness_factor)
         return Video.wrap_like(self, output)
 
-    def adjust_saturation(self, saturation_factor: float) -> Video:
+    def _adjust_saturation(self, saturation_factor: float) -> Video:
         output = self._F.adjust_saturation_video(self.as_subclass(torch.Tensor), saturation_factor=saturation_factor)
         return Video.wrap_like(self, output)
 
-    def adjust_contrast(self, contrast_factor: float) -> Video:
+    def _adjust_contrast(self, contrast_factor: float) -> Video:
         output = self._F.adjust_contrast_video(self.as_subclass(torch.Tensor), contrast_factor=contrast_factor)
         return Video.wrap_like(self, output)
 
-    def adjust_sharpness(self, sharpness_factor: float) -> Video:
+    def _adjust_sharpness(self, sharpness_factor: float) -> Video:
         output = self._F.adjust_sharpness_video(self.as_subclass(torch.Tensor), sharpness_factor=sharpness_factor)
         return Video.wrap_like(self, output)
 
-    def adjust_hue(self, hue_factor: float) -> Video:
+    def _adjust_hue(self, hue_factor: float) -> Video:
         output = self._F.adjust_hue_video(self.as_subclass(torch.Tensor), hue_factor=hue_factor)
         return Video.wrap_like(self, output)
 
-    def adjust_gamma(self, gamma: float, gain: float = 1) -> Video:
+    def _adjust_gamma(self, gamma: float, gain: float = 1) -> Video:
         output = self._F.adjust_gamma_video(self.as_subclass(torch.Tensor), gamma=gamma, gain=gain)
         return Video.wrap_like(self, output)
 
-    def posterize(self, bits: int) -> Video:
+    def _posterize(self, bits: int) -> Video:
         output = self._F.posterize_video(self.as_subclass(torch.Tensor), bits=bits)
         return Video.wrap_like(self, output)
 
-    def solarize(self, threshold: float) -> Video:
+    def _solarize(self, threshold: float) -> Video:
         output = self._F.solarize_video(self.as_subclass(torch.Tensor), threshold=threshold)
         return Video.wrap_like(self, output)
 
-    def autocontrast(self) -> Video:
+    def _autocontrast(self) -> Video:
         output = self._F.autocontrast_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
-    def equalize(self) -> Video:
+    def _equalize(self) -> Video:
         output = self._F.equalize_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
-    def invert(self) -> Video:
+    def _invert(self) -> Video:
         output = self._F.invert_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
-    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Video:
+    def _gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Video:
         output = self._F.gaussian_blur_video(self.as_subclass(torch.Tensor), kernel_size=kernel_size, sigma=sigma)
         return Video.wrap_like(self, output)
 
-    def normalize(self, mean: List[float], std: List[float], inplace: bool = False) -> Video:
+    def _normalize(self, mean: List[float], std: List[float], inplace: bool = False) -> Video:
         output = self._F.normalize_video(self.as_subclass(torch.Tensor), mean=mean, std=std, inplace=inplace)
         return Video.wrap_like(self, output)
 

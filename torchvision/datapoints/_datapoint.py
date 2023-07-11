@@ -142,15 +142,13 @@ class Datapoint(torch.Tensor):
         # `BoundingBox.clone()`.
         return self.detach().clone().requires_grad_(self.requires_grad)  # type: ignore[return-value]
 
-    def horizontal_flip(self) -> Datapoint:
+    def _horizontal_flip(self) -> Datapoint:
         return self
 
-    def vertical_flip(self) -> Datapoint:
+    def _vertical_flip(self) -> Datapoint:
         return self
 
-    # TODO: We have to ignore override mypy error as there is torch.Tensor built-in deprecated op: Tensor.resize
-    # https://github.com/pytorch/pytorch/blob/e8727994eb7cdb2ab642749d6549bc497563aa06/torch/_tensor.py#L588-L593
-    def resize(  # type: ignore[override]
+    def _resize(
         self,
         size: List[int],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -159,13 +157,13 @@ class Datapoint(torch.Tensor):
     ) -> Datapoint:
         return self
 
-    def crop(self, top: int, left: int, height: int, width: int) -> Datapoint:
+    def _crop(self, top: int, left: int, height: int, width: int) -> Datapoint:
         return self
 
-    def center_crop(self, output_size: List[int]) -> Datapoint:
+    def _center_crop(self, output_size: List[int]) -> Datapoint:
         return self
 
-    def resized_crop(
+    def _resized_crop(
         self,
         top: int,
         left: int,
@@ -177,7 +175,7 @@ class Datapoint(torch.Tensor):
     ) -> Datapoint:
         return self
 
-    def pad(
+    def _pad(
         self,
         padding: List[int],
         fill: Optional[Union[int, float, List[float]]] = None,
@@ -185,7 +183,7 @@ class Datapoint(torch.Tensor):
     ) -> Datapoint:
         return self
 
-    def rotate(
+    def _rotate(
         self,
         angle: float,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
@@ -195,7 +193,7 @@ class Datapoint(torch.Tensor):
     ) -> Datapoint:
         return self
 
-    def affine(
+    def _affine(
         self,
         angle: Union[int, float],
         translate: List[float],
@@ -207,7 +205,7 @@ class Datapoint(torch.Tensor):
     ) -> Datapoint:
         return self
 
-    def perspective(
+    def _perspective(
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
@@ -217,7 +215,7 @@ class Datapoint(torch.Tensor):
     ) -> Datapoint:
         return self
 
-    def elastic(
+    def _elastic(
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -225,43 +223,46 @@ class Datapoint(torch.Tensor):
     ) -> Datapoint:
         return self
 
-    def rgb_to_grayscale(self, num_output_channels: int = 1) -> Datapoint:
+    def _rgb_to_grayscale(self, num_output_channels: int = 1) -> Datapoint:
         return self
 
-    def adjust_brightness(self, brightness_factor: float) -> Datapoint:
+    def _adjust_brightness(self, brightness_factor: float) -> Datapoint:
         return self
 
-    def adjust_saturation(self, saturation_factor: float) -> Datapoint:
+    def _adjust_saturation(self, saturation_factor: float) -> Datapoint:
         return self
 
-    def adjust_contrast(self, contrast_factor: float) -> Datapoint:
+    def _adjust_contrast(self, contrast_factor: float) -> Datapoint:
         return self
 
-    def adjust_sharpness(self, sharpness_factor: float) -> Datapoint:
+    def _adjust_sharpness(self, sharpness_factor: float) -> Datapoint:
         return self
 
-    def adjust_hue(self, hue_factor: float) -> Datapoint:
+    def _adjust_hue(self, hue_factor: float) -> Datapoint:
         return self
 
-    def adjust_gamma(self, gamma: float, gain: float = 1) -> Datapoint:
+    def _adjust_gamma(self, gamma: float, gain: float = 1) -> Datapoint:
         return self
 
-    def posterize(self, bits: int) -> Datapoint:
+    def _posterize(self, bits: int) -> Datapoint:
         return self
 
-    def solarize(self, threshold: float) -> Datapoint:
+    def _solarize(self, threshold: float) -> Datapoint:
         return self
 
-    def autocontrast(self) -> Datapoint:
+    def _autocontrast(self) -> Datapoint:
         return self
 
-    def equalize(self) -> Datapoint:
+    def _equalize(self) -> Datapoint:
         return self
 
-    def invert(self) -> Datapoint:
+    def _invert(self) -> Datapoint:
         return self
 
-    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Datapoint:
+    def _gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Datapoint:
+        return self
+
+    def _normalize(self, mean: List[float], std: List[float], inplace: bool = False) -> Datapoint:
         return self
 
 

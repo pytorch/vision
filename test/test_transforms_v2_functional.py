@@ -424,7 +424,7 @@ class TestDispatchers:
     def test_dispatch_datapoint(self, info, args_kwargs, spy_on):
         (datapoint, *other_args), kwargs = args_kwargs.load()
 
-        method_name = info.id
+        method_name = f"_{info.id}"
         method = getattr(datapoint, method_name)
         datapoint_type = type(datapoint)
         spy = spy_on(method, module=datapoint_type.__module__, name=f"{datapoint_type.__name__}.{method_name}")

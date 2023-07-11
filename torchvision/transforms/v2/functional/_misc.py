@@ -63,7 +63,7 @@ def normalize(
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
     elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
-        return inpt.normalize(mean=mean, std=std, inplace=inplace)
+        return inpt._normalize(mean=mean, std=std, inplace=inplace)
     else:
         raise TypeError(
             f"Input can either be a plain tensor or an `Image` or `Video` datapoint, " f"but got {type(inpt)} instead."
@@ -174,7 +174,7 @@ def gaussian_blur(
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
+        return inpt._gaussian_blur(kernel_size=kernel_size, sigma=sigma)
     elif isinstance(inpt, PIL.Image.Image):
         return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
     else:

@@ -64,15 +64,15 @@ class Image(Datapoint):
     def num_channels(self) -> int:
         return self.shape[-3]
 
-    def horizontal_flip(self) -> Image:
+    def _horizontal_flip(self) -> Image:
         output = self._F.horizontal_flip_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
-    def vertical_flip(self) -> Image:
+    def _vertical_flip(self) -> Image:
         output = self._F.vertical_flip_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
-    def resize(  # type: ignore[override]
+    def _resize(
         self,
         size: List[int],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -84,15 +84,15 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
-    def crop(self, top: int, left: int, height: int, width: int) -> Image:
+    def _crop(self, top: int, left: int, height: int, width: int) -> Image:
         output = self._F.crop_image_tensor(self.as_subclass(torch.Tensor), top, left, height, width)
         return Image.wrap_like(self, output)
 
-    def center_crop(self, output_size: List[int]) -> Image:
+    def _center_crop(self, output_size: List[int]) -> Image:
         output = self._F.center_crop_image_tensor(self.as_subclass(torch.Tensor), output_size=output_size)
         return Image.wrap_like(self, output)
 
-    def resized_crop(
+    def _resized_crop(
         self,
         top: int,
         left: int,
@@ -114,7 +114,7 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
-    def pad(
+    def _pad(
         self,
         padding: List[int],
         fill: Optional[Union[int, float, List[float]]] = None,
@@ -123,7 +123,7 @@ class Image(Datapoint):
         output = self._F.pad_image_tensor(self.as_subclass(torch.Tensor), padding, fill=fill, padding_mode=padding_mode)
         return Image.wrap_like(self, output)
 
-    def rotate(
+    def _rotate(
         self,
         angle: float,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
@@ -136,7 +136,7 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
-    def affine(
+    def _affine(
         self,
         angle: Union[int, float],
         translate: List[float],
@@ -158,7 +158,7 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
-    def perspective(
+    def _perspective(
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
@@ -176,7 +176,7 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
-    def elastic(
+    def _elastic(
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -187,69 +187,69 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
-    def rgb_to_grayscale(self, num_output_channels: int = 1) -> Image:
+    def _rgb_to_grayscale(self, num_output_channels: int = 1) -> Image:
         output = self._F.rgb_to_grayscale_image_tensor(
             self.as_subclass(torch.Tensor), num_output_channels=num_output_channels
         )
         return Image.wrap_like(self, output)
 
-    def adjust_brightness(self, brightness_factor: float) -> Image:
+    def _adjust_brightness(self, brightness_factor: float) -> Image:
         output = self._F.adjust_brightness_image_tensor(
             self.as_subclass(torch.Tensor), brightness_factor=brightness_factor
         )
         return Image.wrap_like(self, output)
 
-    def adjust_saturation(self, saturation_factor: float) -> Image:
+    def _adjust_saturation(self, saturation_factor: float) -> Image:
         output = self._F.adjust_saturation_image_tensor(
             self.as_subclass(torch.Tensor), saturation_factor=saturation_factor
         )
         return Image.wrap_like(self, output)
 
-    def adjust_contrast(self, contrast_factor: float) -> Image:
+    def _adjust_contrast(self, contrast_factor: float) -> Image:
         output = self._F.adjust_contrast_image_tensor(self.as_subclass(torch.Tensor), contrast_factor=contrast_factor)
         return Image.wrap_like(self, output)
 
-    def adjust_sharpness(self, sharpness_factor: float) -> Image:
+    def _adjust_sharpness(self, sharpness_factor: float) -> Image:
         output = self._F.adjust_sharpness_image_tensor(
             self.as_subclass(torch.Tensor), sharpness_factor=sharpness_factor
         )
         return Image.wrap_like(self, output)
 
-    def adjust_hue(self, hue_factor: float) -> Image:
+    def _adjust_hue(self, hue_factor: float) -> Image:
         output = self._F.adjust_hue_image_tensor(self.as_subclass(torch.Tensor), hue_factor=hue_factor)
         return Image.wrap_like(self, output)
 
-    def adjust_gamma(self, gamma: float, gain: float = 1) -> Image:
+    def _adjust_gamma(self, gamma: float, gain: float = 1) -> Image:
         output = self._F.adjust_gamma_image_tensor(self.as_subclass(torch.Tensor), gamma=gamma, gain=gain)
         return Image.wrap_like(self, output)
 
-    def posterize(self, bits: int) -> Image:
+    def _posterize(self, bits: int) -> Image:
         output = self._F.posterize_image_tensor(self.as_subclass(torch.Tensor), bits=bits)
         return Image.wrap_like(self, output)
 
-    def solarize(self, threshold: float) -> Image:
+    def _solarize(self, threshold: float) -> Image:
         output = self._F.solarize_image_tensor(self.as_subclass(torch.Tensor), threshold=threshold)
         return Image.wrap_like(self, output)
 
-    def autocontrast(self) -> Image:
+    def _autocontrast(self) -> Image:
         output = self._F.autocontrast_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
-    def equalize(self) -> Image:
+    def _equalize(self) -> Image:
         output = self._F.equalize_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
-    def invert(self) -> Image:
+    def _invert(self) -> Image:
         output = self._F.invert_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
-    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
+    def _gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
         output = self._F.gaussian_blur_image_tensor(
             self.as_subclass(torch.Tensor), kernel_size=kernel_size, sigma=sigma
         )
         return Image.wrap_like(self, output)
 
-    def normalize(self, mean: List[float], std: List[float], inplace: bool = False) -> Image:
+    def _normalize(self, mean: List[float], std: List[float], inplace: bool = False) -> Image:
         output = self._F.normalize_image_tensor(self.as_subclass(torch.Tensor), mean=mean, std=std, inplace=inplace)
         return Image.wrap_like(self, output)
 
