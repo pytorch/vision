@@ -264,7 +264,7 @@ class SanitizeBoundingBox(Transform):
 
     This transform removes bounding boxes and their associated labels/masks that:
 
-    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - are below a given ``min_size`` or ``min_area``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
       call :class:`~torchvision.transforms.v2.ClampBoundingBox` first to avoid undesired removals.
 
@@ -277,6 +277,7 @@ class SanitizeBoundingBox(Transform):
 
     Args:
         min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
+        min_area (float, optional) The area below which bounding boxes are removed. Default is 1.
         labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.
             It can be a str in which case the input is expected to be a dict, and ``labels_getter`` then specifies
             the key whose value corresponds to the labels. It can also be a callable that takes the same input
@@ -289,6 +290,7 @@ class SanitizeBoundingBox(Transform):
     def __init__(
         self,
         min_size: float = 1.0,
+        min_area: float = 1.0,
         labels_getter: Union[Callable[[Any], Optional[torch.Tensor]], str, None] = "default",
     ) -> None:
         super().__init__()
@@ -296,6 +298,10 @@ class SanitizeBoundingBox(Transform):
         if min_size < 1:
             raise ValueError(f"min_size must be >= 1, got {min_size}.")
         self.min_size = min_size
+
+        if min_area < 1:
+            raise ValueError(f"min_area must be >= 1, got {min_area}.")
+        self.min_area = min_area
 
         self.labels_getter = labels_getter
         self._labels_getter: Optional[Callable[[Any], Optional[torch.Tensor]]]
@@ -381,10 +387,11 @@ class SanitizeBoundingBox(Transform):
             ),
         )
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
-        valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
+        valid = (ws >= self.min_size) & (hs >= self.min_size) & (ws * hs >= self.min_area)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
         image_h, image_w = boxes.spatial_size
+        valid &= (boxes >= 0).all(dim=-1)
         valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
         valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 

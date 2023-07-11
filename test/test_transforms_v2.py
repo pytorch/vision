@@ -1613,12 +1613,12 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     assert out["boxes"].shape[0] == out["masks"].shape[0] == out["label"].shape[0] == num_boxes_expected
 
 
-@pytest.mark.parametrize("min_size", (1, 10))
+@pytest.mark.parametrize("min_size,min_area", [(1, 1), (10, 1), (10, 101)])
 @pytest.mark.parametrize(
     "labels_getter", ("default", "labels", lambda inputs: inputs["labels"], None, lambda inputs: None)
 )
 @pytest.mark.parametrize("sample_type", (tuple, dict))
-def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
+def test_sanitize_bounding_boxes(min_size, min_area, labels_getter, sample_type):
 
     if sample_type is tuple and not isinstance(labels_getter, str):
         # The "lambda inputs: inputs["labels"]" labels_getter used in this test
@@ -1634,12 +1634,13 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         ([0, 0, 10, min_size - 1], False),  # W < min_size
         ([0, 0, 10, H + 1], False),  # Y2 > H
         ([0, 0, W + 1, 10], False),  # X2 > W
-        ([-1, 1, 10, 20], False),  # any < 0
-        ([0, 0, -1, 20], False),  # any < 0
-        ([0, 0, -10, -1], False),  # any < 0
-        ([0, 0, min_size, 10], True),  # H < min_size
-        ([0, 0, 10, min_size], True),  # W < min_size
-        ([0, 0, W, H], True),  # TODO: Is that actually OK?? Should it be -1?
+        ([-1, 1, 10, 20], False),  # X1 < 0
+        ([0, -1, 10, 20], False),  # Y1 < 0
+        ([0, 0, -1, 20], False),  # X2 < 0
+        ([0, 0, 10, -1], False),  # Y2 < 0
+        ([0, 0, min_size, 10], min_area / 10 <= min_size),  # H >= min_size
+        ([0, 0, 10, min_size], min_area / 10 <= min_size),  # W >= min_size
+        ([0, 0, W, H], True),
         ([1, 1, 30, 20], True),
         ([0, 0, 10, 10], True),
         ([1, 1, 30, 20], True),
@@ -1674,7 +1675,7 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         img = sample.pop("image")
         sample = (img, sample)
 
-    out = transforms.SanitizeBoundingBox(min_size=min_size, labels_getter=labels_getter)(sample)
+    out = transforms.SanitizeBoundingBox(min_size=min_size, min_area=min_area, labels_getter=labels_getter)(sample)
 
     if sample_type is tuple:
         out_image = out[0]
@@ -1730,6 +1731,8 @@ def test_sanitize_bounding_boxes_errors():
 
     with pytest.raises(ValueError, match="min_size must be >= 1"):
         transforms.SanitizeBoundingBox(min_size=0)
+    with pytest.raises(ValueError, match="min_area must be >= 1"):
+        transforms.SanitizeBoundingBox(min_area=0)
     with pytest.raises(ValueError, match="labels_getter should either be a str"):
         transforms.SanitizeBoundingBox(labels_getter=12)
 
