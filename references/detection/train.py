@@ -40,11 +40,11 @@ def copypaste_collate_fn(batch):
     return copypaste(*utils.collate_fn(batch))
 
 
-def get_dataset(name, image_set, transform, data_path):
+def get_dataset(name, image_set, transform, data_path, use_v2):
     paths = {"coco": (data_path, get_coco, 91), "coco_kp": (data_path, get_coco_kp, 2)}
     p, ds_fn, num_classes = paths[name]
 
-    ds = ds_fn(p, image_set=image_set, transforms=transform)
+    ds = ds_fn(p, image_set=image_set, transforms=transform, use_v2=use_v2)
     return ds, num_classes
 
 
@@ -185,8 +185,8 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
+    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path, args.use_v2)
+    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path, args.use_v2)
 
     print("Creating data loaders")
     if args.distributed:

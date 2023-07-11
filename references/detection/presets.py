@@ -90,8 +90,6 @@ class DetectionPresetEval:
         T, _ = get_modules(use_v2)
         transforms = []
         backend = backend.lower()
-        # Conversion may look a bit weird but the assumption of this transform is that the input is always a PIL image
-        # TODO: Is that still true when using v2, from the dataset???????
         if backend == "pil":
             # Note: we could just convert to pure tensors even in v2?
             transforms += [T.ToImageTensor() if use_v2 else T.PILToTensor()]
