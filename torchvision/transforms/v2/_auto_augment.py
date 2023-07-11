@@ -9,7 +9,7 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms import _functional_tensor as _FT
 from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.functional._meta import get_spatial_size
+from torchvision.transforms.v2.functional._meta import get_size
 
 from ._utils import _setup_fill_arg
 from .utils import check_type, is_simple_tensor
@@ -312,7 +312,7 @@ class AutoAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_spatial_size(image_or_video)
+        height, width = get_size(image_or_video)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -403,7 +403,7 @@ class RandAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_spatial_size(image_or_video)
+        height, width = get_size(image_or_video)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -474,7 +474,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_spatial_size(image_or_video)
+        height, width = get_size(image_or_video)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
@@ -568,7 +568,7 @@ class AugMix(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, orig_image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_spatial_size(orig_image_or_video)
+        height, width = get_size(orig_image_or_video)
 
         if isinstance(orig_image_or_video, torch.Tensor):
             image_or_video = orig_image_or_video

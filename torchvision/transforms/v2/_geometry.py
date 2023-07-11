@@ -22,7 +22,7 @@ from ._utils import (
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_spatial_size
+from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -267,7 +267,7 @@ class RandomResizedCrop(Transform):
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
         area = height * width
 
         log_ratio = self._log_ratio
@@ -558,7 +558,7 @@ class RandomZoomOut(_RandomApplyTransform):
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_h, orig_w = query_spatial_size(flat_inputs)
+        orig_h, orig_w = query_size(flat_inputs)
 
         r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
         canvas_width = int(orig_w * r)
@@ -735,7 +735,7 @@ class RandomAffine(Transform):
         self.center = center
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
 
         angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
         if self.translate is not None:
@@ -859,7 +859,7 @@ class RandomCrop(Transform):
         self.padding_mode = padding_mode
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        padded_height, padded_width = query_spatial_size(flat_inputs)
+        padded_height, padded_width = query_size(flat_inputs)
 
         if self.padding is not None:
             pad_left, pad_right, pad_top, pad_bottom = self.padding
@@ -972,7 +972,7 @@ class RandomPerspective(_RandomApplyTransform):
         self._fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
 
         distortion_scale = self.distortion_scale
 
@@ -1072,7 +1072,7 @@ class ElasticTransform(Transform):
         self._fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        size = list(query_spatial_size(flat_inputs))
+        size = list(query_size(flat_inputs))
 
         dx = torch.rand([1, 1] + size) * 2 - 1
         if self.sigma[0] > 0.0:
@@ -1164,7 +1164,7 @@ class RandomIoUCrop(Transform):
             )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_h, orig_w = query_spatial_size(flat_inputs)
+        orig_h, orig_w = query_size(flat_inputs)
         bboxes = query_bounding_box(flat_inputs)
 
         while True:
@@ -1282,7 +1282,7 @@ class ScaleJitter(Transform):
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_height, orig_width = query_spatial_size(flat_inputs)
+        orig_height, orig_width = query_size(flat_inputs)
 
         scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
         r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
@@ -1347,7 +1347,7 @@ class RandomShortestSize(Transform):
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_height, orig_width = query_spatial_size(flat_inputs)
+        orig_height, orig_width = query_size(flat_inputs)
 
         min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
         r = min_size / min(orig_height, orig_width)

@@ -164,7 +164,7 @@ class TestSimpleCopyPaste:
             labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
             "boxes": BoundingBox(
-                torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", spatial_size=(32, 32)
+                torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", canvas_size=(32, 32)
             ),
             "masks": Mask(masks),
             "labels": label_type(labels),
@@ -179,7 +179,7 @@ class TestSimpleCopyPaste:
             paste_labels = torch.nn.functional.one_hot(paste_labels, num_classes=5)
         paste_target = {
             "boxes": BoundingBox(
-                torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", spatial_size=(32, 32)
+                torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", canvas_size=(32, 32)
             ),
             "masks": Mask(paste_masks),
             "labels": label_type(paste_labels),

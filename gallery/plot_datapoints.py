@@ -76,11 +76,11 @@ print(image.shape, image.dtype)
 
 ########################################################################################################################
 # In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
-# :class:`~torchvision.datapoints.BoundingBox` stores the coordinate format as well as the spatial size of the
+# :class:`~torchvision.datapoints.BoundingBox` stores the coordinate format as well as the canvas size of the
 # corresponding image alongside the actual values:
 
 bounding_box = datapoints.BoundingBox(
-    [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=image.shape[-2:]
+    [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=F.get_size(image)
 )
 print(bounding_box)
 
@@ -108,7 +108,7 @@ class PennFudanDataset(torch.utils.data.Dataset):
         target["boxes"] = datapoints.BoundingBox(
             boxes,
             format=datapoints.BoundingBoxFormat.XYXY,
-            spatial_size=F.get_spatial_size(img),
+            canvas_size=F.get_size(img),
         )
         target["labels"] = labels
         target["masks"] = datapoints.Mask(masks)
@@ -129,7 +129,7 @@ class WrapPennFudanDataset:
         target["boxes"] = datapoints.BoundingBox(
             target["boxes"],
             format=datapoints.BoundingBoxFormat.XYXY,
-            spatial_size=F.get_spatial_size(img),
+            canvas_size=F.get_size(img),
         )
         target["masks"] = datapoints.Mask(target["masks"])
         return img, target

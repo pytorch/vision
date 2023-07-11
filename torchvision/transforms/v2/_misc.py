@@ -384,7 +384,7 @@ class SanitizeBoundingBox(Transform):
         valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
-        image_h, image_w = boxes.spatial_size
+        image_h, image_w = boxes.canvas_size
         valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
         valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
