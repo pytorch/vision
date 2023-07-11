@@ -50,13 +50,15 @@ def get_dataset(name, image_set, transform, data_path):
 
 def get_transform(train, args):
     if train:
-        return presets.DetectionPresetTrain(data_augmentation=args.data_augmentation)
+        return presets.DetectionPresetTrain(
+            data_augmentation=args.data_augmentation, backend=args.backend, use_v2=args.use_v2
+        )
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
         return lambda img, target: (trans(img), target)
     else:
-        return presets.DetectionPresetEval()
+        return presets.DetectionPresetEval(backend=args.backend, use_v2=args.use_v2)
 
 
 def get_args_parser(add_help=True):
@@ -159,10 +161,16 @@ def get_args_parser(add_help=True):
         help="Use CopyPaste data augmentation. Works only with data-augmentation='lsj'.",
     )
 
+    parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
+    parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
+
     return parser
 
 
 def main(args):
+    if args.backend.lower() == "datapoint" and not args.use_v2:
+        raise ValueError("Use --use-v2 if you want to use the datapoint backend.")
+
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
