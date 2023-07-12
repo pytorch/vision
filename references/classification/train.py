@@ -145,6 +145,7 @@ def load_data(traindir, valdir, args):
                 ra_magnitude=ra_magnitude,
                 augmix_severity=augmix_severity,
                 backend=args.backend,
+                use_v2=args.use_v2,
             ),
         )
         if args.cache_dataset:
@@ -172,6 +173,7 @@ def load_data(traindir, valdir, args):
                 resize_size=val_resize_size,
                 interpolation=interpolation,
                 backend=args.backend,
+                use_v2=args.use_v2,
             )
 
         dataset_test = torchvision.datasets.ImageFolder(
@@ -516,6 +518,7 @@ def get_args_parser(add_help=True):
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
     parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
+    parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
     return parser
 
 

@@ -216,7 +216,7 @@ class TestFixedSizeCrop:
 
         flat_inputs = [
             make_image(size=spatial_size, color_space="RGB"),
-            make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=batch_shape),
+            make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=batch_shape),
         ]
         params = transform._get_params(flat_inputs)
 
@@ -312,9 +312,9 @@ class TestFixedSizeCrop:
         )
 
         bounding_boxes = make_bounding_box(
-            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(batch_size,)
+            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(batch_size,)
         )
-        masks = make_detection_mask(size=spatial_size, extra_dims=(batch_size,))
+        masks = make_detection_mask(size=spatial_size, batch_dims=(batch_size,))
         labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
@@ -350,7 +350,7 @@ class TestFixedSizeCrop:
         )
 
         bounding_box = make_bounding_box(
-            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(batch_size,)
+            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(batch_size,)
         )
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
 
@@ -496,7 +496,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
@@ -505,7 +505,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         tensor_image = torch.Tensor(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
@@ -514,7 +514,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         datapoint_image = make_image(size=size, color_space="RGB")
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }

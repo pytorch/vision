@@ -29,7 +29,7 @@ from common_utils import (
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints
 from torchvision.ops.boxes import box_iou
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
+from torchvision.transforms.functional import InterpolationMode, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
 
@@ -182,13 +182,13 @@ class TestSmoke:
             video_datapoint=make_video(size=spatial_size),
             image_pil=next(make_pil_images(sizes=[spatial_size], color_spaces=["RGB"])),
             bounding_box_xyxy=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(3,)
+                format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(3,)
             ),
             bounding_box_xywh=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYWH, spatial_size=spatial_size, extra_dims=(4,)
+                format=datapoints.BoundingBoxFormat.XYWH, spatial_size=spatial_size, batch_dims=(4,)
             ),
             bounding_box_cxcywh=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.CXCYWH, spatial_size=spatial_size, extra_dims=(5,)
+                format=datapoints.BoundingBoxFormat.CXCYWH, spatial_size=spatial_size, batch_dims=(5,)
             ),
             bounding_box_degenerate_xyxy=datapoints.BoundingBox(
                 [
@@ -289,7 +289,7 @@ class TestSmoke:
                         ],
                         dtypes=[torch.uint8],
                         extra_dims=[(), (4,)],
-                        **(dict(num_frames=["random"]) if fn is make_videos else dict()),
+                        **(dict(num_frames=[3]) if fn is make_videos else dict()),
                     )
                     for fn in [
                         make_images,
@@ -404,112 +404,6 @@ def test_simple_tensor_heuristic(flat_inputs):
 
     for input, output in zip(other_inputs, other_outputs):
         assert transform.was_applied(output, input)
-
-
-@pytest.mark.parametrize("p", [0.0, 1.0])
-class TestRandomHorizontalFlip:
-    def input_expected_image_tensor(self, p, dtype=torch.float32):
-        input = torch.tensor([[[0, 1], [0, 1]], [[1, 0], [1, 0]]], dtype=dtype)
-        expected = torch.tensor([[[1, 0], [1, 0]], [[0, 1], [0, 1]]], dtype=dtype)
-
-        return input, expected if p == 1 else input
-
-    def test_simple_tensor(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(input)
-
-        assert_equal(expected, actual)
-
-    def test_pil_image(self, p):
-        input, expected = self.input_expected_image_tensor(p, dtype=torch.uint8)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(to_pil_image(input))
-
-        assert_equal(expected, pil_to_tensor(actual))
-
-    def test_datapoints_image(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(datapoints.Image(input))
-
-        assert_equal(datapoints.Image(expected), actual)
-
-    def test_datapoints_mask(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(datapoints.Mask(input))
-
-        assert_equal(datapoints.Mask(expected), actual)
-
-    def test_datapoints_bounding_box(self, p):
-        input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
-        transform = transforms.RandomHorizontalFlip(p=p)
-
-        actual = transform(input)
-
-        expected_image_tensor = torch.tensor([5, 0, 10, 5]) if p == 1.0 else input
-        expected = datapoints.BoundingBox.wrap_like(input, expected_image_tensor)
-        assert_equal(expected, actual)
-        assert actual.format == expected.format
-        assert actual.spatial_size == expected.spatial_size
-
-
-@pytest.mark.parametrize("p", [0.0, 1.0])
-class TestRandomVerticalFlip:
-    def input_expected_image_tensor(self, p, dtype=torch.float32):
-        input = torch.tensor([[[1, 1], [0, 0]], [[1, 1], [0, 0]]], dtype=dtype)
-        expected = torch.tensor([[[0, 0], [1, 1]], [[0, 0], [1, 1]]], dtype=dtype)
-
-        return input, expected if p == 1 else input
-
-    def test_simple_tensor(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(input)
-
-        assert_equal(expected, actual)
-
-    def test_pil_image(self, p):
-        input, expected = self.input_expected_image_tensor(p, dtype=torch.uint8)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(to_pil_image(input))
-
-        assert_equal(expected, pil_to_tensor(actual))
-
-    def test_datapoints_image(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(datapoints.Image(input))
-
-        assert_equal(datapoints.Image(expected), actual)
-
-    def test_datapoints_mask(self, p):
-        input, expected = self.input_expected_image_tensor(p)
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(datapoints.Mask(input))
-
-        assert_equal(datapoints.Mask(expected), actual)
-
-    def test_datapoints_bounding_box(self, p):
-        input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
-        transform = transforms.RandomVerticalFlip(p=p)
-
-        actual = transform(input)
-
-        expected_image_tensor = torch.tensor([0, 5, 5, 10]) if p == 1.0 else input
-        expected = datapoints.BoundingBox.wrap_like(input, expected_image_tensor)
-        assert_equal(expected, actual)
-        assert actual.format == expected.format
-        assert actual.spatial_size == expected.spatial_size
 
 
 class TestPad:
@@ -645,204 +539,6 @@ class TestRandomZoomOut:
                 mocker.call(mask, **params, fill=fill_mask),
             ]
         fn.assert_has_calls(calls)
-
-
-class TestRandomRotation:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="is a single number, it must be positive"):
-            transforms.RandomRotation(-0.7)
-
-        for d in [[-0.7], [-0.7, 0, 0.7]]:
-            with pytest.raises(ValueError, match="degrees should be a sequence of length 2"):
-                transforms.RandomRotation(d)
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomRotation(12, fill="abc")
-
-        with pytest.raises(TypeError, match="center should be a sequence of length"):
-            transforms.RandomRotation(12, center=12)
-
-        with pytest.raises(ValueError, match="center should be a sequence of length"):
-            transforms.RandomRotation(12, center=[1, 2, 3])
-
-    def test__get_params(self):
-        angle_bound = 34
-        transform = transforms.RandomRotation(angle_bound)
-
-        params = transform._get_params(None)
-        assert -angle_bound <= params["angle"] <= angle_bound
-
-        angle_bounds = [12, 34]
-        transform = transforms.RandomRotation(angle_bounds)
-
-        params = transform._get_params(None)
-        assert angle_bounds[0] <= params["angle"] <= angle_bounds[1]
-
-    @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
-    @pytest.mark.parametrize("expand", [False, True])
-    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
-    @pytest.mark.parametrize("center", [None, [2.0, 3.0]])
-    def test__transform(self, degrees, expand, fill, center, mocker):
-        interpolation = InterpolationMode.BILINEAR
-        transform = transforms.RandomRotation(
-            degrees, interpolation=interpolation, expand=expand, fill=fill, center=center
-        )
-
-        if isinstance(degrees, (tuple, list)):
-            assert transform.degrees == [float(degrees[0]), float(degrees[1])]
-        else:
-            assert transform.degrees == [float(-degrees), float(degrees)]
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.rotate")
-        inpt = mocker.MagicMock(spec=datapoints.Image)
-        # vfdev-5, Feature Request: let's store params as Transform attribute
-        # This could be also helpful for users
-        # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params(inpt)
-
-        fill = transforms._utils._convert_fill_arg(fill)
-        fn.assert_called_once_with(inpt, **params, interpolation=interpolation, expand=expand, fill=fill, center=center)
-
-    @pytest.mark.parametrize("angle", [34, -87])
-    @pytest.mark.parametrize("expand", [False, True])
-    def test_boundingbox_spatial_size(self, angle, expand):
-        # Specific test for BoundingBox.rotate
-        bbox = datapoints.BoundingBox(
-            torch.tensor([1, 2, 3, 4]), format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(32, 32)
-        )
-        img = datapoints.Image(torch.rand(1, 3, 32, 32))
-
-        out_img = img.rotate(angle, expand=expand)
-        out_bbox = bbox.rotate(angle, expand=expand)
-
-        assert out_img.spatial_size == out_bbox.spatial_size
-
-
-class TestRandomAffine:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="is a single number, it must be positive"):
-            transforms.RandomAffine(-0.7)
-
-        for d in [[-0.7], [-0.7, 0, 0.7]]:
-            with pytest.raises(ValueError, match="degrees should be a sequence of length 2"):
-                transforms.RandomAffine(d)
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomAffine(12, fill="abc")
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomAffine(12, fill="abc")
-
-        for kwargs in [
-            {"center": 12},
-            {"translate": 12},
-            {"scale": 12},
-        ]:
-            with pytest.raises(TypeError, match="should be a sequence of length"):
-                transforms.RandomAffine(12, **kwargs)
-
-        for kwargs in [{"center": [1, 2, 3]}, {"translate": [1, 2, 3]}, {"scale": [1, 2, 3]}]:
-            with pytest.raises(ValueError, match="should be a sequence of length"):
-                transforms.RandomAffine(12, **kwargs)
-
-        with pytest.raises(ValueError, match="translation values should be between 0 and 1"):
-            transforms.RandomAffine(12, translate=[-1.0, 2.0])
-
-        with pytest.raises(ValueError, match="scale values should be positive"):
-            transforms.RandomAffine(12, scale=[-1.0, 2.0])
-
-        with pytest.raises(ValueError, match="is a single number, it must be positive"):
-            transforms.RandomAffine(12, shear=-10)
-
-        for s in [[-0.7], [-0.7, 0, 0.7]]:
-            with pytest.raises(ValueError, match="shear should be a sequence of length 2"):
-                transforms.RandomAffine(12, shear=s)
-
-    @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
-    @pytest.mark.parametrize("translate", [None, [0.1, 0.2]])
-    @pytest.mark.parametrize("scale", [None, [0.7, 1.2]])
-    @pytest.mark.parametrize("shear", [None, 2.0, [5.0, 15.0], [1.0, 2.0, 3.0, 4.0]])
-    def test__get_params(self, degrees, translate, scale, shear, mocker):
-        image = mocker.MagicMock(spec=datapoints.Image)
-        image.num_channels = 3
-        image.spatial_size = (24, 32)
-        h, w = image.spatial_size
-
-        transform = transforms.RandomAffine(degrees, translate=translate, scale=scale, shear=shear)
-        params = transform._get_params([image])
-
-        if not isinstance(degrees, (list, tuple)):
-            assert -degrees <= params["angle"] <= degrees
-        else:
-            assert degrees[0] <= params["angle"] <= degrees[1]
-
-        if translate is not None:
-            w_max = int(round(translate[0] * w))
-            h_max = int(round(translate[1] * h))
-            assert -w_max <= params["translate"][0] <= w_max
-            assert -h_max <= params["translate"][1] <= h_max
-        else:
-            assert params["translate"] == (0, 0)
-
-        if scale is not None:
-            assert scale[0] <= params["scale"] <= scale[1]
-        else:
-            assert params["scale"] == 1.0
-
-        if shear is not None:
-            if isinstance(shear, float):
-                assert -shear <= params["shear"][0] <= shear
-                assert params["shear"][1] == 0.0
-            elif len(shear) == 2:
-                assert shear[0] <= params["shear"][0] <= shear[1]
-                assert params["shear"][1] == 0.0
-            else:
-                assert shear[0] <= params["shear"][0] <= shear[1]
-                assert shear[2] <= params["shear"][1] <= shear[3]
-        else:
-            assert params["shear"] == (0, 0)
-
-    @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
-    @pytest.mark.parametrize("translate", [None, [0.1, 0.2]])
-    @pytest.mark.parametrize("scale", [None, [0.7, 1.2]])
-    @pytest.mark.parametrize("shear", [None, 2.0, [5.0, 15.0], [1.0, 2.0, 3.0, 4.0]])
-    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
-    @pytest.mark.parametrize("center", [None, [2.0, 3.0]])
-    def test__transform(self, degrees, translate, scale, shear, fill, center, mocker):
-        interpolation = InterpolationMode.BILINEAR
-        transform = transforms.RandomAffine(
-            degrees,
-            translate=translate,
-            scale=scale,
-            shear=shear,
-            interpolation=interpolation,
-            fill=fill,
-            center=center,
-        )
-
-        if isinstance(degrees, (tuple, list)):
-            assert transform.degrees == [float(degrees[0]), float(degrees[1])]
-        else:
-            assert transform.degrees == [float(-degrees), float(degrees)]
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.affine")
-        inpt = mocker.MagicMock(spec=datapoints.Image)
-        inpt.num_channels = 3
-        inpt.spatial_size = (24, 32)
-
-        # vfdev-5, Feature Request: let's store params as Transform attribute
-        # This could be also helpful for users
-        # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params([inpt])
-
-        fill = transforms._utils._convert_fill_arg(fill)
-        fn.assert_called_once_with(inpt, **params, interpolation=interpolation, fill=fill, center=center)
 
 
 class TestRandomCrop:
@@ -1428,7 +1124,7 @@ class TestRandomIoUCrop:
         transform = transforms.RandomIoUCrop()
 
         image = datapoints.Image(torch.rand(3, 32, 24))
-        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), extra_dims=(6,))
+        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), batch_dims=(6,))
         masks = make_detection_mask((32, 24), num_objects=6)
 
         sample = [image, bboxes, masks]

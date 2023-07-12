@@ -293,24 +293,8 @@ class TestAffine:
             (33, (5, -4), 1.0, [0.0, 0.0], [0, 0, 0]),
             (45, [-5, 4], 1.2, [0.0, 0.0], (1, 2, 3)),
             (33, (-4, -8), 2.0, [0.0, 0.0], [255, 255, 255]),
-            (
-                85,
-                (10, -10),
-                0.7,
-                [0.0, 0.0],
-                [
-                    1,
-                ],
-            ),
-            (
-                0,
-                [0, 0],
-                1.0,
-                [
-                    35.0,
-                ],
-                (2.0,),
-            ),
+            (85, (10, -10), 0.7, [0.0, 0.0], [1]),
+            (0, [0, 0], 1.0, [35.0], (2.0,)),
             (-25, [0, 0], 1.2, [0.0, 15.0], None),
             (-45, [-10, 0], 0.7, [2.0, 5.0], None),
             (-45, [-10, -10], 1.2, [4.0, 5.0], None),
@@ -392,19 +376,7 @@ def _get_data_dims_and_points_for_perspective():
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("dims_and_points", _get_data_dims_and_points_for_perspective())
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
-@pytest.mark.parametrize(
-    "fill",
-    (
-        None,
-        [0, 0, 0],
-        [1, 2, 3],
-        [255, 255, 255],
-        [
-            1,
-        ],
-        (2.0,),
-    ),
-)
+@pytest.mark.parametrize("fill", (None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1], (2.0,)))
 @pytest.mark.parametrize("fn", [F.perspective, torch.jit.script(F.perspective)])
 def test_perspective_pil_vs_tensor(device, dims_and_points, dt, fill, fn):
 
@@ -475,19 +447,7 @@ def test_perspective_interpolation_type():
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
-@pytest.mark.parametrize(
-    "size",
-    [
-        32,
-        26,
-        [
-            32,
-        ],
-        [32, 32],
-        (32, 32),
-        [26, 35],
-    ],
-)
+@pytest.mark.parametrize("size", [32, 26, [32], [32, 32], (32, 32), [26, 35]])
 @pytest.mark.parametrize("max_size", [None, 34, 40, 1000])
 @pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST, NEAREST_EXACT])
 def test_resize(device, dt, size, max_size, interpolation):
