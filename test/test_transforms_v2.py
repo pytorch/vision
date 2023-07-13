@@ -1638,8 +1638,8 @@ def test_sanitize_bounding_boxes(min_size, min_area, labels_getter, sample_type)
         ([0, -1, 10, 20], False),  # Y1 < 0
         ([0, 0, -1, 20], False),  # X2 < 0
         ([0, 0, 10, -1], False),  # Y2 < 0
-        ([0, 0, min_size, 10], min_area / 10 <= min_size),  # H >= min_size
-        ([0, 0, 10, min_size], min_area / 10 <= min_size),  # W >= min_size
+        ([0, 0, min_size, 10], min_size * 10 >= min_area),  # H >= min_size
+        ([0, 0, 10, min_size], min_size * 10 >= min_area),  # W >= min_size
         ([0, 0, W, H], True),
         ([1, 1, 30, 20], True),
         ([0, 0, 10, 10], True),
