@@ -83,12 +83,12 @@ def test_decode_jpeg(img_path, pil_mode, mode):
     with Image.open(img_path) as img:
         is_cmyk = img.mode == "CMYK"
         if pil_mode is not None:
-            if is_cmyk:
+            if is_cmyk and mode == ImageReadMode.GRAY:
                 # libjpeg does not support the conversion
                 pytest.xfail("Decoding a CMYK jpeg isn't supported")
             img = img.convert(pil_mode)
         img_pil = torch.from_numpy(np.array(img))
-        if is_cmyk:
+        if is_cmyk and mode == ImageReadMode.UNCHANGED:
             # flip the colors to match libjpeg
             img_pil = 255 - img_pil
 

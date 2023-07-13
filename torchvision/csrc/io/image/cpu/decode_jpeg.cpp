@@ -112,7 +112,10 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
         }
         break;
       case IMAGE_READ_MODE_RGB:
-        if (cinfo.jpeg_color_space != JCS_RGB) {
+        if (cinfo.jpeg_color_space == JCS_CMYK ||
+            cinfo.jpeg_color_space == JCS_YCCK) {
+          cinfo.out_color_space = JCS_CMYK;
+        } else {
           cinfo.out_color_space = JCS_RGB;
           channels = 3;
         }
@@ -146,6 +149,19 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
      */
     jpeg_read_scanlines(&cinfo, &ptr, 1);
     ptr += stride;
+  }
+
+  if (mode == IMAGE_READ_MODE_RGB && channels == 4) {
+    // convert CMYK to RGB
+    auto k = tensor.index({"...", 3}).unsqueeze(-1);
+    auto cmy = tensor.index({"...", torch::indexing::Slice(0, 3)});
+    cmy = cmy.to(torch::CPU(torch::kInt32));
+    if (cinfo.saw_Adobe_marker) {
+      tensor = (k * cmy).div(255);
+    } else {
+      tensor = ((255 - k) * (255 - cmy)).div(255);
+    }
+    tensor = tensor.to(torch::CPU(torch::kU8));
   }
 
   jpeg_finish_decompress(&cinfo);
