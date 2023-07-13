@@ -31,7 +31,7 @@ def get_dataset(dir_path, name, image_set, transform):
 
 def get_transform(train, args):
     if train:
-        return presets.SegmentationPresetTrain(base_size=520, crop_size=480)
+        return presets.SegmentationPresetTrain(base_size=520, crop_size=480, backend=args.backend, use_v2=args.use_v2)
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
@@ -44,7 +44,7 @@ def get_transform(train, args):
 
         return preprocessing
     else:
-        return presets.SegmentationPresetEval(base_size=520)
+        return presets.SegmentationPresetEval(base_size=520, backend=args.backend, use_v2=args.use_v2)
 
 
 def criterion(inputs, target):
@@ -120,6 +120,9 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 
 def main(args):
+    if args.backend.lower() == "datapoint" and not args.use_v2:
+        raise ValueError("Use --use-v2 if you want to use the datapoint backend.")
+
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -307,6 +310,8 @@ def get_args_parser(add_help=True):
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
+    parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
+    parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
     return parser
 
 
