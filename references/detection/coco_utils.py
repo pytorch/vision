@@ -219,7 +219,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         return img, target
 
 
-def get_coco(root, image_set, transforms, mode="instances", use_v2=False):
+def get_coco(root, image_set, transforms, args, mode="instances"):
     anno_file_template = "{}_{}2017.json"
     PATHS = {
         "train": ("train2017", os.path.join("annotations", anno_file_template.format(mode, "train"))),
@@ -231,11 +231,14 @@ def get_coco(root, image_set, transforms, mode="instances", use_v2=False):
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
 
-    if use_v2:
+    if args.use_v2:
         dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
-        # TODO: need to update target_keys to handle masks for segmentation!
-        dataset = wrap_dataset_for_transforms_v2(dataset, target_keys={"boxes", "labels", "image_id"})
+        target_keys = ["boxes", "labels", "image_id"]
+        if args.with_masks:
+            target_keys += ["masks"]
+        dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
     else:
+        # TODO: handle with_masks for V1?
         t = [ConvertCocoPolysToMask()]
         if transforms is not None:
             t.append(transforms)
@@ -249,9 +252,3 @@ def get_coco(root, image_set, transforms, mode="instances", use_v2=False):
     # dataset = torch.utils.data.Subset(dataset, [i for i in range(500)])
 
     return dataset
-
-
-def get_coco_kp(root, image_set, transforms, use_v2=False):
-    if use_v2:
-        raise ValueError("KeyPoints aren't supported by transforms V2 yet.")
-    return get_coco(root, image_set, transforms, mode="person_keypoints")
