@@ -170,7 +170,7 @@ class PILToTensor:
 
 
 class ConvertImageDtype(torch.nn.Module):
-    """Convert a tensor image to the given ``dtype`` and scale the values accordingly.
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly. Note that this function assumes pixel values between 0 and 1.
 
     This function does not support PIL Image.
 
