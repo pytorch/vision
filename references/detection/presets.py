@@ -16,6 +16,8 @@ def get_modules(use_v2):
 
 
 class DetectionPresetTrain:
+    # Note: this transform assumes that the input to forward() are always PIL
+    # images, regardless of the backend parameter.
     def __init__(
         self,
         *,

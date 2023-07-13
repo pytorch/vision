@@ -40,16 +40,17 @@ def copypaste_collate_fn(batch):
     return copypaste(*utils.collate_fn(batch))
 
 
-def get_dataset(name, image_set, transform, data_path, use_v2):
-    paths = {"coco": (data_path, get_coco, 91), "coco_kp": (data_path, get_coco_kp, 2)}
-    p, ds_fn, num_classes = paths[name]
+def get_dataset(is_train, args):
+    image_set = "train" if is_train else "val"
+    paths = {"coco": (args.data_path, get_coco, 91), "coco_kp": (args.data_path, get_coco_kp, 2)}
+    p, ds_fn, num_classes = paths[args.dataset]
 
-    ds = ds_fn(p, image_set=image_set, transforms=transform, use_v2=use_v2)
+    ds = ds_fn(p, image_set=image_set, transforms=get_transform(is_train, args), use_v2=args.use_v2)
     return ds, num_classes
 
 
-def get_transform(train, args):
-    if train:
+def get_transform(is_train, args):
+    if is_train:
         return presets.DetectionPresetTrain(
             data_augmentation=args.data_augmentation, backend=args.backend, use_v2=args.use_v2
         )
@@ -185,8 +186,8 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path, args.use_v2)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path, args.use_v2)
+    dataset, num_classes = get_dataset(is_train=True, args=args)
+    dataset_test, _ = get_dataset(is_train=False, args=args)
 
     print("Creating data loaders")
     if args.distributed:
