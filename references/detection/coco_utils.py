@@ -10,24 +10,6 @@ from pycocotools.coco import COCO
 from torchvision.datasets import wrap_dataset_for_transforms_v2
 
 
-class FilterAndRemapCocoCategories:
-    def __init__(self, categories, remap=True):
-        self.categories = categories
-        self.remap = remap
-
-    def __call__(self, image, target):
-        anno = target["annotations"]
-        anno = [obj for obj in anno if obj["category_id"] in self.categories]
-        if not self.remap:
-            target["annotations"] = anno
-            return image, target
-        anno = copy.deepcopy(anno)
-        for obj in anno:
-            obj["category_id"] = self.categories.index(obj["category_id"])
-        target["annotations"] = anno
-        return image, target
-
-
 def convert_coco_poly_to_mask(segmentations, height, width):
     masks = []
     for polygons in segmentations:
