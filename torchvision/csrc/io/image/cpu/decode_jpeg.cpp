@@ -67,6 +67,61 @@ static void torch_jpeg_set_source_mgr(
   src->pub.next_input_byte = src->data;
 }
 
+inline void _convert_pixel_cmyk_to_rgb(
+    bool has_adobe_marker,
+    int c,
+    int m,
+    int y,
+    int k,
+    int& r,
+    int& g,
+    int& b) {
+  r = (has_adobe_marker) ? (k * c) / 255 : (255 - k) * (255 - c) / 255;
+  g = (has_adobe_marker) ? (k * m) / 255 : (255 - k) * (255 - m) / 255;
+  b = (has_adobe_marker) ? (k * y) / 255 : (255 - k) * (255 - y) / 255;
+}
+
+void convert_line_cmyk_to_rgb(
+    j_decompress_ptr cinfo,
+    const unsigned char* cmyk_line,
+    unsigned char* rgb_line) {
+  auto has_adobe_marker = cinfo->saw_Adobe_marker;
+  int width = cinfo->output_width;
+  for (int i = 0; i < width; ++i) {
+    int r, g, b;
+    int c = cmyk_line[i * 4 + 0];
+    int m = cmyk_line[i * 4 + 1];
+    int y = cmyk_line[i * 4 + 2];
+    int k = cmyk_line[i * 4 + 3];
+
+    _convert_pixel_cmyk_to_rgb(has_adobe_marker, c, m, y, k, r, g, b);
+
+    rgb_line[i * 3 + 0] = r;
+    rgb_line[i * 3 + 1] = g;
+    rgb_line[i * 3 + 2] = b;
+  }
+}
+
+void convert_line_cmyk_to_gray(
+    j_decompress_ptr cinfo,
+    const unsigned char* cmyk_line,
+    unsigned char* gray_line) {
+  auto has_adobe_marker = cinfo->saw_Adobe_marker;
+  int width = cinfo->output_width;
+  for (int i = 0; i < width; ++i) {
+    int r, g, b;
+    int c = cmyk_line[i * 4 + 0];
+    int m = cmyk_line[i * 4 + 1];
+    int y = cmyk_line[i * 4 + 2];
+    int k = cmyk_line[i * 4 + 3];
+
+    _convert_pixel_cmyk_to_rgb(has_adobe_marker, c, m, y, k, r, g, b);
+
+    float gray = 0.2989 * (float)r + 0.5870 * (float)g + 0.1140 * (float)b;
+    gray_line[i] = (unsigned char)gray;
+  }
+}
+
 } // namespace
 
 torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
@@ -102,23 +157,29 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   jpeg_read_header(&cinfo, TRUE);
 
   int channels = cinfo.num_components;
+  bool cmyk_to_rgb = false;
 
   if (mode != IMAGE_READ_MODE_UNCHANGED) {
     switch (mode) {
       case IMAGE_READ_MODE_GRAY:
-        if (cinfo.jpeg_color_space != JCS_GRAYSCALE) {
+        if (cinfo.jpeg_color_space == JCS_CMYK ||
+            cinfo.jpeg_color_space == JCS_YCCK) {
+          cinfo.out_color_space = JCS_CMYK;
+          cmyk_to_rgb = true;
+        } else {
           cinfo.out_color_space = JCS_GRAYSCALE;
-          channels = 1;
         }
+        channels = 1;
         break;
       case IMAGE_READ_MODE_RGB:
         if (cinfo.jpeg_color_space == JCS_CMYK ||
             cinfo.jpeg_color_space == JCS_YCCK) {
           cinfo.out_color_space = JCS_CMYK;
+          cmyk_to_rgb = true;
         } else {
           cinfo.out_color_space = JCS_RGB;
-          channels = 3;
         }
+        channels = 3;
         break;
       /*
        * Libjpeg does not support converting from CMYK to grayscale etc. There
@@ -142,26 +203,29 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   auto tensor =
       torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
   auto ptr = tensor.data_ptr<uint8_t>();
+  torch::Tensor temp_tensor;
+  if (cmyk_to_rgb) {
+    temp_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
+  }
+
   while (cinfo.output_scanline < cinfo.output_height) {
     /* jpeg_read_scanlines expects an array of pointers to scanlines.
      * Here the array is only one element long, but you could ask for
      * more than one scanline at a time if that's more convenient.
      */
-    jpeg_read_scanlines(&cinfo, &ptr, 1);
-    ptr += stride;
-  }
+    if (cmyk_to_rgb) {
+      auto temp_buffer = temp_tensor.data_ptr<uint8_t>();
+      jpeg_read_scanlines(&cinfo, &temp_buffer, 1);
 
-  if (mode == IMAGE_READ_MODE_RGB && channels == 4) {
-    // convert CMYK to RGB
-    auto k = tensor.index({"...", 3}).unsqueeze(-1);
-    auto cmy = tensor.index({"...", torch::indexing::Slice(0, 3)});
-    cmy = cmy.to(torch::CPU(torch::kInt32));
-    if (cinfo.saw_Adobe_marker) {
-      tensor = (k * cmy).div(255);
+      if (channels == 3) {
+        convert_line_cmyk_to_rgb(&cinfo, temp_buffer, ptr);
+      } else if (channels == 1) {
+        convert_line_cmyk_to_gray(&cinfo, temp_buffer, ptr);
+      }
     } else {
-      tensor = ((255 - k) * (255 - cmy)).div(255);
+      jpeg_read_scanlines(&cinfo, &ptr, 1);
     }
-    tensor = tensor.to(torch::CPU(torch::kU8));
+    ptr += stride;
   }
 
   jpeg_finish_decompress(&cinfo);
