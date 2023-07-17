@@ -29,7 +29,6 @@ class SegmentationPresetTrain:
         backend="pil",
         use_v2=False,
     ):
-        # TODO: V1 doesn't support tensor backend
         T, datapoints, v2_extras = get_modules(use_v2)
 
         transforms = []

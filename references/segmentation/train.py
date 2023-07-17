@@ -122,8 +122,9 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 
 def main(args):
-    if args.backend.lower() == "datapoint" and not args.use_v2:
-        raise ValueError("Use --use-v2 if you want to use the datapoint backend.")
+    if args.backend.lower() != "pil" and not args.use_v2:
+        # TODO: Support tensor backend in V1?
+        raise ValueError("Use --use-v2 if you want to use the datapoint or tensor backend.")
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
