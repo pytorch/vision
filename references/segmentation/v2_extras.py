@@ -1,3 +1,4 @@
+"""This file only exists to be lazy-imported and avoid V2-related import warnings when just using V1."""
 import torch
 from torchvision import datapoints
 from torchvision.transforms import v2

@@ -14,23 +14,25 @@ from torch.optim.lr_scheduler import PolynomialLR
 from torchvision.transforms import functional as F, InterpolationMode
 
 
-def get_dataset(dir_path, name, image_set, transform, args):
+def get_dataset(args, is_train):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode="segmentation", **kwargs)
 
     paths = {
-        "voc": (dir_path, torchvision.datasets.VOCSegmentation, 21),
-        "voc_aug": (dir_path, sbd, 21),
-        "coco": (dir_path, get_coco, 21),
+        "voc": (args.data_path, torchvision.datasets.VOCSegmentation, 21),
+        "voc_aug": (args.data_path, sbd, 21),
+        "coco": (args.data_path, get_coco, 21),
     }
-    p, ds_fn, num_classes = paths[name]
+    p, ds_fn, num_classes = paths[args.dataset]
 
-    ds = ds_fn(p, image_set=image_set, transforms=transform, use_v2=args.use_v2)
+    # FIXME: use_v2 only works for coco right now
+    image_set = "train" if is_train else "val"
+    ds = ds_fn(p, image_set=image_set, transforms=get_transform(is_train, args), use_v2=args.use_v2)
     return ds, num_classes
 
 
-def get_transform(train, args):
-    if train:
+def get_transform(is_train, args):
+    if is_train:
         return presets.SegmentationPresetTrain(base_size=520, crop_size=480, backend=args.backend, use_v2=args.use_v2)
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
@@ -137,8 +139,8 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args), args)
-    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args), args)
+    dataset, num_classes = get_dataset(args, "train", get_transform(True, args), args)
+    dataset_test, _ = get_dataset(args, "val", get_transform(False, args), args)
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
