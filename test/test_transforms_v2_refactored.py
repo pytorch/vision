@@ -27,7 +27,9 @@ from common_utils import (
     set_rng_seed,
 )
 from torch.testing import assert_close
+from torch.utils.data import DataLoader, default_collate
 from torchvision import datapoints
+from torchvision.datasets import FakeData
 
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
@@ -1634,3 +1636,102 @@ class TestRotate:
     def test_transform_unknown_fill_error(self):
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
+
+
+class TestCutMixMixUp:
+    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    @pytest.mark.parametrize("one_hot", [True, False])
+    def test_supported_cases(self, T, one_hot):
+
+        num_categories = 10
+        batch_size = 9
+        batch_size = 3
+        H, W = 12, 12
+
+        preproc = transforms.Compose([transforms.PILToTensor(), transforms.ToDtype(torch.float32)])
+        if one_hot:
+
+            class ToOneHot(torch.nn.Module):
+                def forward(self, inpt):
+                    img, label = inpt
+                    return img, torch.nn.functional.one_hot(label, num_classes=num_categories)
+
+            preproc = transforms.Compose([preproc, ToOneHot()])
+
+        dataset = FakeData(size=batch_size, image_size=(3, H, W), num_classes=num_categories, transforms=preproc)
+        cutmix_mixup = T(alpha=0.5, num_categories=num_categories)
+        dl = DataLoader(dataset, batch_size=batch_size)
+
+        # Input sanity checks
+        img, target = next(iter(dl))
+        assert isinstance(img, torch.Tensor) and isinstance(target, torch.Tensor)
+        assert target.shape == (batch_size, num_categories) if one_hot else (batch_size,)
+
+        # After Dataloader, as unpacked input
+        img, target = next(iter(dl))
+        assert target.shape == (batch_size, num_categories) if one_hot else (batch_size,)
+        img, target = cutmix_mixup(img, target)
+        assert img.shape == (batch_size, 3, H, W)
+        assert target.shape == (batch_size, num_categories)
+
+        # After Dataloader, as packed input
+        packed_from_dl = next(iter(dl))
+        assert isinstance(packed_from_dl, list)
+        img, target = cutmix_mixup(packed_from_dl)
+        assert img.shape == (batch_size, 3, H, W)
+        assert target.shape == (batch_size, num_categories)
+
+        # As collation function. We expect default_collate to be used by users.
+        def collate_fn(batch):
+            return cutmix_mixup(default_collate(batch))
+
+        dl = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn)
+        img, target = next(iter(dl))
+        assert img.shape == (batch_size, 3, H, W)
+        assert target.shape == (batch_size, num_categories)
+
+    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    def test_error(self, T):
+
+        num_categories = 10
+        batch_size = 9
+
+        # imgs = torch.randint(0, 256, (batch_size, 3, 12, 12), dtype=torch.uint8)
+        imgs = torch.rand(batch_size, 3, 12, 12)
+
+        for input_with_bad_type in (
+            F.to_pil_image(imgs[0]),
+            datapoints.Mask(torch.rand(12, 12)),
+            datapoints.BoundingBox(torch.rand(2, 4), format="XYXY", spatial_size=12),
+        ):
+            with pytest.raises(ValueError, match="does not support PIL images, "):
+                T(alpha=0.5)(input_with_bad_type)
+
+        with pytest.raises(ValueError, match="Could not infer where the labels are"):
+            T(alpha=0.5)({"img": imgs, "Nothing_else": 3})
+
+        with pytest.raises(ValueError, match="labels should be index based"):
+            # Note: the error message isn't ideal, but that's because the label heuristic found the img as the label
+            # It's OK, it's an edge-case. The important thing is that this fails loudly instead of passing silently
+            T(alpha=0.5)(imgs)
+
+        with pytest.raises(ValueError, match="When using the default labels_getter"):
+            T(alpha=0.5)(imgs, "not_a_tensor")
+
+        with pytest.raises(ValueError, match="When passing 2D labels"):
+            wrong_num_categories = num_categories + 1
+            T(alpha=0.5, num_categories=num_categories)(
+                imgs, torch.randint(0, 2, size=(batch_size, wrong_num_categories))
+            )
+
+        with pytest.raises(ValueError, match="but got a tensor of shape"):
+            T(alpha=0.5)(imgs, torch.randint(0, 2, size=(2, 3, 4)))
+
+        with pytest.raises(ValueError, match="Expected a batched input with 4 dims"):
+            T(alpha=0.5)(imgs[None, None], torch.randint(0, num_categories, size=(batch_size,)))
+
+        with pytest.raises(ValueError, match="does not match the batch size of the labels"):
+            T(alpha=0.5)(imgs, torch.randint(0, num_categories, size=(batch_size + 1,)))
+
+        with pytest.raises(ValueError, match="num_categories must be passed"):
+            T(alpha=0.5)(imgs, torch.randint(0, num_categories, size=(batch_size,)))

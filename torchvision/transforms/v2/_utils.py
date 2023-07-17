@@ -114,7 +114,8 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
     contains no "label-like" key.
 
     """
-    if isinstance(inputs, tuple):
+    # TODO: Document list and why
+    if isinstance(inputs, (tuple, list)):
         inputs = inputs[1]
 
     # Mixup, Cutmix

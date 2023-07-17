@@ -28,10 +28,11 @@ class FakeData(VisionDataset):
         image_size: Tuple[int, int, int] = (3, 224, 224),
         num_classes: int = 10,
         transform: Optional[Callable] = None,
+        transforms: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         random_offset: int = 0,
     ) -> None:
-        super().__init__(None, transform=transform, target_transform=target_transform)  # type: ignore[arg-type]
+        super().__init__(None, transform=transform, transforms=transforms, target_transform=target_transform)  # type: ignore[arg-type]
         self.size = size
         self.num_classes = num_classes
         self.image_size = image_size
@@ -60,6 +61,9 @@ class FakeData(VisionDataset):
             img = self.transform(img)
         if self.target_transform is not None:
             target = self.target_transform(target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+            return img, target  # We don't want to call item() on arbitrarily transformed targets
 
         return img, target.item()
 

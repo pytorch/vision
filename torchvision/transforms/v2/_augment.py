@@ -141,6 +141,7 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixupCutmix(Transform):
+    # TODO: num_categories -> num_classes?
     def __init__(self, *, alpha: float, num_categories: Optional[int] = None, labels_getter="default") -> None:
         super().__init__()
         self.alpha = alpha
@@ -156,23 +157,18 @@ class _BaseMixupCutmix(Transform):
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
         if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask):
-            raise TypeError(f"{type(self).__name__}() does not support PIL images, bounding boxes and masks.")
+            raise ValueError(f"{type(self).__name__}() does not support PIL images, bounding boxes and masks.")
 
         labels = self._labels_getter(inputs)
-        if labels is None:
-            raise RuntimeError(
-                "Couldn't find a label in the input. Use the labels_getter parameter to specify how to find labels."
-            )
-        elif not isinstance(labels, torch.Tensor):
+        if not isinstance(labels, torch.Tensor):
             raise ValueError(f"The labels must be a torch.Tensor, but got {type(labels)} instead.")
-        elif labels.ndim in {1, 2}:
-            if labels.ndim == 2 and self.num_categories is not None and labels.shape[-1] != self.num_categories:
-                raise ValueError(
-                    f"2D labels are assumed to be probability based, "
-                    f"but the number of elements in last dimension does not match the number of categories: "
-                    f"{labels.shape[-1]} != {self.num_categories}."
-                )
-        else:
+        elif labels.ndim == 2 and self.num_categories is not None and labels.shape[-1] != self.num_categories:
+            raise ValueError(
+                f"When passing 2D labels, "
+                f"the number of elements in last dimension must match num_categories: "
+                f"{labels.shape[-1]} != {self.num_categories}."
+            )
+        elif labels.ndim not in (1, 2):
             raise ValueError(
                 f"labels should be index based with shape (batch_size,) "
                 f"or probability based with shape (batch_size, num_categories), "
@@ -198,9 +194,10 @@ class _BaseMixupCutmix(Transform):
         return tree_unflatten(flat_outputs, spec)
 
     def _check_image_or_video(self, inpt: torch.Tensor, *, batch_size: int):
-        if inpt.ndim != (5 if isinstance(inpt, datapoints.Video) else 4):
+        expected_num_dims = 5 if isinstance(inpt, datapoints.Video) else 4
+        if inpt.ndim != expected_num_dims:
             raise ValueError(
-                f"The transform expects a batched input, but got an {type(inpt).__name__} with {inpt.ndim} dimensions."
+                f"Expected a batched input with {expected_num_dims} dims, but got {inpt.ndim} dimensions instead."
             )
         if inpt.shape[0] != batch_size:
             raise ValueError(
@@ -211,10 +208,7 @@ class _BaseMixupCutmix(Transform):
     def _mixup_label(self, label: torch.Tensor, *, lam: float) -> torch.Tensor:
         if label.ndim == 1:
             if self.num_categories is None:
-                raise ValueError(
-                    "Cannot transform an index based labels (1D tensor) into a probability based one (2D tensor), "
-                    "when num_categories is not set."
-                )
+                raise ValueError("num_categories must be passed if the labels are index-based (1D)")
             label = one_hot(label, num_classes=self.num_categories)
         if not label.dtype.is_floating_point:
             label = label.float()
