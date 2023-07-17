@@ -14,7 +14,7 @@ from torch.optim.lr_scheduler import PolynomialLR
 from torchvision.transforms import functional as F, InterpolationMode
 
 
-def get_dataset(dir_path, name, image_set, transform):
+def get_dataset(dir_path, name, image_set, transform, args):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode="segmentation", **kwargs)
 
@@ -25,7 +25,7 @@ def get_dataset(dir_path, name, image_set, transform):
     }
     p, ds_fn, num_classes = paths[name]
 
-    ds = ds_fn(p, image_set=image_set, transforms=transform)
+    ds = ds_fn(p, image_set=image_set, transforms=transform, use_v2=args.use_v2)
     return ds, num_classes
 
 
@@ -137,8 +137,8 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args))
-    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args))
+    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args), args)
+    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args), args)
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)

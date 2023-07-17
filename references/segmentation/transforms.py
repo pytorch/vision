@@ -6,28 +6,6 @@ from torchvision import transforms as T
 from torchvision.transforms import functional as F
 
 
-# class PadIfSmaller(PT.Transform):
-#     def __init__(self, size, fill=0):
-#         super().__init__()
-#         self.size = size
-#         self.fill = PT._geometry._setup_fill_arg(fill)
-
-#     def _get_params(self, sample):
-#         _, height, width = PT.utils.query_chw(sample)
-#         padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
-#         needs_padding = any(padding)
-#         return dict(padding=padding, needs_padding=needs_padding)
-
-#     def _transform(self, inpt, params):
-#         if not params["needs_padding"]:
-#             return inpt
-
-#         fill = self.fill[type(inpt)]
-#         fill = PT._utils._convert_fill_arg(fill)
-
-#         return PF.pad(inpt, padding=params["padding"], fill=fill)
-
-
 def pad_if_smaller(img, size, fill=0):
     min_size = min(img.size)
     if min_size < size:

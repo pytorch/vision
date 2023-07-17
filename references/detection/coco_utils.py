@@ -7,7 +7,6 @@ import torchvision
 import transforms as T
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
-from torchvision.datasets import wrap_dataset_for_transforms_v2
 
 
 class FilterAndRemapCocoCategories:
@@ -232,6 +231,8 @@ def get_coco(root, image_set, transforms, mode="instances", use_v2=False):
     ann_file = os.path.join(root, ann_file)
 
     if use_v2:
+        from torchvision.datasets import wrap_dataset_for_transforms_v2
+
         dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
         # TODO: need to update target_keys to handle masks for segmentation!
         dataset = wrap_dataset_for_transforms_v2(dataset, target_keys={"boxes", "labels", "image_id"})
