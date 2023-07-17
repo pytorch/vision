@@ -102,7 +102,7 @@ class RoIOpTester(ABC):
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize(
-        "dtype",
+        "x_dtype",
         (
             torch.float16,
             torch.float32,
@@ -110,12 +110,14 @@ class RoIOpTester(ABC):
         ),
         ids=str,
     )
-    def test_forward(self, device, contiguous, dtype, deterministic=False, **kwargs):
-        if device == "mps" and dtype is torch.float64:
+    def test_forward(self, device, contiguous, x_dtype, rois_dtype=None, deterministic=False, **kwargs):
+        if device == "mps" and x_dtype is torch.float64:
             pytest.skip("MPS does not support float64")
 
+        rois_dtype = x_dtype if rois_dtype is None else rois_dtype
+
         tol = 1e-5
-        if dtype is torch.half:
+        if x_dtype is torch.half:
             if device == "mps":
                 tol = 5e-3
             else:
@@ -124,12 +126,12 @@ class RoIOpTester(ABC):
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS operations.
         n_channels = 2 * (pool_size**2)
-        x = torch.rand(2, n_channels, 10, 10, dtype=dtype, device=device)
+        x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor(
             [[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]],  # format is (xyxy)
-            dtype=dtype,
+            dtype=rois_dtype,
             device=device,
         )
 
@@ -139,7 +141,7 @@ class RoIOpTester(ABC):
         # the following should be true whether we're running an autocast test or not.
         assert y.dtype == x.dtype
         gt_y = self.expected_fn(
-            x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, device=device, dtype=dtype, **kwargs
+            x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, device=device, dtype=x_dtype, **kwargs
         )
 
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
@@ -460,17 +462,18 @@ class TestRoIAlign(RoIOpTester):
 
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
-    @pytest.mark.parametrize("dtype", (torch.float16, torch.float32, torch.float64), ids=str)
+    @pytest.mark.parametrize("x_dtype", (torch.float16, torch.float32, torch.float64), ids=str)
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
-    def test_forward(self, device, contiguous, deterministic, aligned, dtype):
+    def test_forward(self, device, contiguous, deterministic, aligned, x_dtype, rois_dtype=None):
         if deterministic and device == "cpu":
             pytest.skip("cpu is always deterministic, don't retest")
         super().test_forward(
             device=device,
             contiguous=contiguous,
             deterministic=deterministic,
-            dtype=dtype,
+            x_dtype=x_dtype,
+            rois_dtype=rois_dtype,
             aligned=aligned,
         )
 
