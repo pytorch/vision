@@ -139,8 +139,8 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    dataset, num_classes = get_dataset(args, "train", get_transform(True, args), args)
-    dataset_test, _ = get_dataset(args, "val", get_transform(False, args), args)
+    dataset, num_classes = get_dataset(args, is_train=True)
+    dataset_test, _ = get_dataset(args, is_train=False)
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
