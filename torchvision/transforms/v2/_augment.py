@@ -148,7 +148,6 @@ class _BaseMixupCutmix(Transform):
 
         self.num_categories = num_categories
 
-        self.labels_getter = labels_getter
         self._labels_getter = _parse_labels_getter(labels_getter)
 
     def forward(self, *inputs):
@@ -161,10 +160,9 @@ class _BaseMixupCutmix(Transform):
 
         labels = self._labels_getter(inputs)
         if labels is None:
-            msg = "Couldn't find a label in the inputs."
-            if self.labels_getter == "default":
-                msg = f"{msg} To overwrite the default find behavior, pass a callable for labels_getter."
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                "Couldn't find a label in the input. Use the labels_getter parameter to specify how to find labels."
+            )
         elif not isinstance(labels, torch.Tensor):
             raise ValueError(f"The labels must be a torch.Tensor, but got {type(labels)} instead.")
         elif labels.ndim in {1, 2}:
@@ -176,8 +174,8 @@ class _BaseMixupCutmix(Transform):
                 )
         else:
             raise ValueError(
-                f"labels should be a index based with shape (batch_size,) "
-                f"or a probability based with shape (batch_size, num_categories), "
+                f"labels should be index based with shape (batch_size,) "
+                f"or probability based with shape (batch_size, num_categories), "
                 f"but got a tensor of shape {labels.shape} instead."
             )
 
@@ -189,8 +187,8 @@ class _BaseMixupCutmix(Transform):
             ),
         }
 
-        # By default, the labels will be False inside needs_transform_list, since they are a torch.Tensor, but coming
-        # after an image or video. However, since we want to handle them in _transform, we
+        # By default, the labels will be False inside needs_transform_list, since they are a torch.Tensor coming
+        # after an image or video. However, we need to handle them in _transform, so we make sure to set them to True
         needs_transform_list[next(idx for idx, inpt in enumerate(flat_inputs) if inpt is labels)] = True
         flat_outputs = [
             self._transform(inpt, params) if needs_transform else inpt
@@ -214,7 +212,7 @@ class _BaseMixupCutmix(Transform):
         if label.ndim == 1:
             if self.num_categories is None:
                 raise ValueError(
-                    "Cannot transform an index based labels (1D tensor) into an probability based one (2D tensor), "
+                    "Cannot transform an index based labels (1D tensor) into a probability based one (2D tensor), "
                     "when num_categories is not set."
                 )
             label = one_hot(label, num_classes=self.num_categories)

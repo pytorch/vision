@@ -123,7 +123,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
 
     if not isinstance(inputs, collections.abc.Mapping):
         raise ValueError(
-            f"When using the default labels_getter, the input passed to forward must be a dicstionary or a two-tuple "
+            f"When using the default labels_getter, the input passed to forward must be a dictionary or a two-tuple "
             f"whose second item is a dictionary or a tensor, but got {inputs} instead."
         )
 
