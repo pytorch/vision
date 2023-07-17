@@ -97,9 +97,16 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
             f"but got {target_keys}"
         )
 
-    return type(f"Wrapped{type(dataset).__name__}", (VisionDatasetDatapointWrapper, type(dataset)), {})(
-        dataset, target_keys
-    )
+    return type(
+        f"Wrapped{type(dataset).__name__}",
+        (type(dataset),),
+        {
+            "__init__": wrapped_init,
+            "__getattr__": wrapped_getattr,
+            "__getitem__": wrapped_getitem,
+            "__len__": wrapped_len,
+        },
+    )(dataset, target_keys)
 
 
 class WrapperFactories(dict):
@@ -118,77 +125,79 @@ class WrapperFactories(dict):
 WRAPPER_FACTORIES = WrapperFactories()
 
 
-class VisionDatasetDatapointWrapper:
-    def __init__(self, dataset, target_keys):
-        dataset_cls = type(dataset)
+def wrapped_init(self, dataset, target_keys):
+    dataset_cls = type(dataset)
 
-        if not isinstance(dataset, datasets.VisionDataset):
-            raise TypeError(
-                f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
-                f"but got a '{dataset_cls.__name__}' instead.\n"
-                f"For an example of how to perform the wrapping for custom datasets, see\n\n"
-                "https://pytorch.org/vision/main/auto_examples/plot_datapoints.html#do-i-have-to-wrap-the-output-of-the-datasets-myself"
-            )
+    if not isinstance(dataset, datasets.VisionDataset):
+        raise TypeError(
+            f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
+            f"but got a '{dataset_cls.__name__}' instead.\n"
+            f"For an example of how to perform the wrapping for custom datasets, see\n\n"
+            "https://pytorch.org/vision/main/auto_examples/plot_datapoints.html#do-i-have-to-wrap-the-output-of-the-datasets-myself"
+        )
 
-        for cls in dataset_cls.mro():
-            if cls in WRAPPER_FACTORIES:
-                wrapper_factory = WRAPPER_FACTORIES[cls]
-                if target_keys is not None and cls not in {
-                    datasets.CocoDetection,
-                    datasets.VOCDetection,
-                    datasets.Kitti,
-                    datasets.WIDERFace,
-                }:
-                    raise ValueError(
-                        f"`target_keys` is currently only supported for `CocoDetection`, `VOCDetection`, `Kitti`, "
-                        f"and `WIDERFace`, but got {cls.__name__}."
-                    )
-                break
-            elif cls is datasets.VisionDataset:
-                # TODO: If we have documentation on how to do that, put a link in the error message.
-                msg = f"No wrapper exists for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
-                if dataset_cls in datasets.__dict__.values():
-                    msg = (
-                        f"{msg} If an automated wrapper for this dataset would be useful for you, "
-                        f"please open an issue at https://github.com/pytorch/vision/issues."
-                    )
-                raise TypeError(msg)
+    for cls in dataset_cls.mro():
+        if cls in WRAPPER_FACTORIES:
+            wrapper_factory = WRAPPER_FACTORIES[cls]
+            if target_keys is not None and cls not in {
+                datasets.CocoDetection,
+                datasets.VOCDetection,
+                datasets.Kitti,
+                datasets.WIDERFace,
+            }:
+                raise ValueError(
+                    f"`target_keys` is currently only supported for `CocoDetection`, `VOCDetection`, `Kitti`, "
+                    f"and `WIDERFace`, but got {cls.__name__}."
+                )
+            break
+        elif cls is datasets.VisionDataset:
+            # TODO: If we have documentation on how to do that, put a link in the error message.
+            msg = f"No wrapper exists for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
+            if dataset_cls in datasets.__dict__.values():
+                msg = (
+                    f"{msg} If an automated wrapper for this dataset would be useful for you, "
+                    f"please open an issue at https://github.com/pytorch/vision/issues."
+                )
+            raise TypeError(msg)
 
-        self._dataset = dataset
-        self._wrapper = wrapper_factory(dataset, target_keys)
+    self._dataset = dataset
+    self._wrapper = wrapper_factory(dataset, target_keys)
 
-        # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
-        # Although internally, `datasets.VisionDataset` merges `transform` and `target_transform` into the joint
-        # `transforms`
-        # https://github.com/pytorch/vision/blob/135a0f9ea9841b6324b4fe8974e2543cbb95709a/torchvision/datasets/vision.py#L52-L54
-        # some (if not most) datasets still use `transform` and `target_transform` individually. Thus, we need to
-        # disable all three here to be able to extract the untransformed sample to wrap.
-        self.transform, dataset.transform = dataset.transform, None
-        self.target_transform, dataset.target_transform = dataset.target_transform, None
-        self.transforms, dataset.transforms = dataset.transforms, None
+    # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
+    # Although internally, `datasets.VisionDataset` merges `transform` and `target_transform` into the joint
+    # `transforms`
+    # https://github.com/pytorch/vision/blob/135a0f9ea9841b6324b4fe8974e2543cbb95709a/torchvision/datasets/vision.py#L52-L54
+    # some (if not most) datasets still use `transform` and `target_transform` individually. Thus, we need to
+    # disable all three here to be able to extract the untransformed sample to wrap.
+    self.transform, dataset.transform = dataset.transform, None
+    self.target_transform, dataset.target_transform = dataset.target_transform, None
+    self.transforms, dataset.transforms = dataset.transforms, None
 
-    def __getattr__(self, item):
-        with contextlib.suppress(AttributeError):
-            return object.__getattribute__(self, item)
 
-        return getattr(self._dataset, item)
+def wrapped_getattr(self, item):
+    with contextlib.suppress(AttributeError):
+        return object.__getattribute__(self, item)
 
-    def __getitem__(self, idx):
-        # This gets us the raw sample since we disabled the transforms for the underlying dataset in the constructor
-        # of this class
-        sample = self._dataset[idx]
+    return getattr(self._dataset, item)
 
-        sample = self._wrapper(idx, sample)
 
-        # Regardless of whether the user has supplied the transforms individually (`transform` and `target_transform`)
-        # or joint (`transforms`), we can access the full functionality through `transforms`
-        if self.transforms is not None:
-            sample = self.transforms(*sample)
+def wrapped_getitem(self, idx):
+    # This gets us the raw sample since we disabled the transforms for the underlying dataset in the constructor
+    # of this class
+    sample = self._dataset[idx]
 
-        return sample
+    sample = self._wrapper(idx, sample)
 
-    def __len__(self):
-        return len(self._dataset)
+    # Regardless of whether the user has supplied the transforms individually (`transform` and `target_transform`)
+    # or joint (`transforms`), we can access the full functionality through `transforms`
+    if self.transforms is not None:
+        sample = self.transforms(*sample)
+
+    return sample
+
+
+def wrapped_len(self):
+    return len(self._dataset)
 
 
 def raise_not_supported(description):
