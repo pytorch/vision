@@ -170,23 +170,6 @@ def test_all_configs(test):
     return wrapper
 
 
-def combinations_grid(**kwargs):
-    """Creates a grid of input combinations.
-
-    Each element in the returned sequence is a dictionary containing one possible combination as values.
-
-    Example:
-        >>> combinations_grid(foo=("bar", "baz"), spam=("eggs", "ham"))
-        [
-            {'foo': 'bar', 'spam': 'eggs'},
-            {'foo': 'bar', 'spam': 'ham'},
-            {'foo': 'baz', 'spam': 'eggs'},
-            {'foo': 'baz', 'spam': 'ham'}
-        ]
-    """
-    return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
-
-
 class DatasetTestCase(unittest.TestCase):
     """Abstract base class for all dataset testcases.
 
@@ -584,17 +567,28 @@ class DatasetTestCase(unittest.TestCase):
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
-        from torchvision.datapoints import wrap_dataset_for_transforms_v2
         from torchvision.datapoints._datapoint import Datapoint
+        from torchvision.datasets import wrap_dataset_for_transforms_v2
 
         try:
             with self.create_dataset(config) as (dataset, info):
-                wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
-                assert isinstance(wrapped_dataset, self.DATASET_CLASS)
-                assert len(wrapped_dataset) == info["num_examples"]
+                for target_keys in [None, "all"]:
+                    if target_keys is not None and self.DATASET_CLASS not in {
+                        torchvision.datasets.CocoDetection,
+                        torchvision.datasets.VOCDetection,
+                        torchvision.datasets.Kitti,
+                        torchvision.datasets.WIDERFace,
+                    }:
+                        with self.assertRaisesRegex(ValueError, "`target_keys` is currently only supported for"):
+                            wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                        continue
 
-                wrapped_sample = wrapped_dataset[0]
-                assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
+                    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                    assert isinstance(wrapped_dataset, self.DATASET_CLASS)
+                    assert len(wrapped_dataset) == info["num_examples"]
+
+                    wrapped_sample = wrapped_dataset[0]
+                    assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
         except TypeError as error:
             msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
             if str(error).startswith(msg):

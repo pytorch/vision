@@ -1,3 +1,4 @@
+import fnmatch
 import importlib
 import inspect
 import sys
@@ -6,7 +7,7 @@ from enum import Enum
 from functools import partial
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Type, TypeVar, Union
 
 from torch import nn
 
@@ -85,8 +86,8 @@ class WeightsEnum(Enum):
                 )
         return obj
 
-    def get_state_dict(self, progress: bool) -> Mapping[str, Any]:
-        return load_state_dict_from_url(self.url, progress=progress)
+    def get_state_dict(self, *args: Any, **kwargs: Any) -> Mapping[str, Any]:
+        return load_state_dict_from_url(self.url, *args, **kwargs)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self._name_}"
@@ -122,7 +123,9 @@ def get_weight(name: str) -> WeightsEnum:
     base_module_name = ".".join(sys.modules[__name__].__name__.split(".")[:-1])
     base_module = importlib.import_module(base_module_name)
     model_modules = [base_module] + [
-        x[1] for x in inspect.getmembers(base_module, inspect.ismodule) if x[1].__file__.endswith("__init__.py")
+        x[1]
+        for x in inspect.getmembers(base_module, inspect.ismodule)
+        if x[1].__file__.endswith("__init__.py")  # type: ignore[union-attr]
     ]
 
     weights_enum = None
@@ -201,19 +204,43 @@ def register_model(name: Optional[str] = None) -> Callable[[Callable[..., M]], C
     return wrapper
 
 
-def list_models(module: Optional[ModuleType] = None) -> List[str]:
+def list_models(
+    module: Optional[ModuleType] = None,
+    include: Union[Iterable[str], str, None] = None,
+    exclude: Union[Iterable[str], str, None] = None,
+) -> List[str]:
     """
     Returns a list with the names of registered models.
 
     Args:
         module (ModuleType, optional): The module from which we want to extract the available models.
+        include (str or Iterable[str], optional): Filter(s) for including the models from the set of all models.
+            Filters are passed to `fnmatch <https://docs.python.org/3/library/fnmatch.html>`__ to match Unix shell-style
+            wildcards. In case of many filters, the results is the union of individual filters.
+        exclude (str or Iterable[str], optional): Filter(s) applied after include_filters to remove models.
+            Filter are passed to `fnmatch <https://docs.python.org/3/library/fnmatch.html>`__ to match Unix shell-style
+            wildcards. In case of many filters, the results is removal of all the models that match any individual filter.
 
     Returns:
         models (list): A list with the names of available models.
     """
-    models = [
+    all_models = {
         k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
-    ]
+    }
+    if include:
+        models: Set[str] = set()
+        if isinstance(include, str):
+            include = [include]
+        for include_filter in include:
+            models = models | set(fnmatch.filter(all_models, include_filter))
+    else:
+        models = all_models
+
+    if exclude:
+        if isinstance(exclude, str):
+            exclude = [exclude]
+        for exclude_filter in exclude:
+            models = models - set(fnmatch.filter(all_models, exclude_filter))
     return sorted(models)
 
 

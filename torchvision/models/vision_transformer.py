@@ -332,7 +332,7 @@ def _vision_transformer(
     )
 
     if weights:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
     return model
 

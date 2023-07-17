@@ -298,6 +298,8 @@ def get_extensions():
     use_jpeg = use_jpeg and jpeg_found
     if use_jpeg:
         print("Building torchvision with JPEG image support")
+        print(f"  libpng include path: {jpeg_include}")
+        print(f"  libpng lib path: {jpeg_lib}")
         image_link_flags.append("jpeg")
         if jpeg_conda:
             image_library += [jpeg_lib]
@@ -323,11 +325,14 @@ def get_extensions():
     image_macros += [("NVJPEG_FOUND", str(int(use_nvjpeg)))]
 
     image_path = os.path.join(extensions_dir, "io", "image")
-    image_src = (
-        glob.glob(os.path.join(image_path, "*.cpp"))
-        + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
-        + glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
-    )
+    image_src = glob.glob(os.path.join(image_path, "*.cpp")) + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
+
+    if is_rocm_pytorch:
+        image_src += glob.glob(os.path.join(image_path, "hip", "*.cpp"))
+        # we need to exclude this in favor of the hipified source
+        image_src.remove(os.path.join(image_path, "image.cpp"))
+    else:
+        image_src += glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
 
     if use_png or use_jpeg:
         ext_modules.append(
@@ -435,8 +440,8 @@ def get_extensions():
                     "swresample",
                     "swscale",
                 ],
-                extra_compile_args=["-std=c++14"] if os.name != "nt" else ["/std:c++14", "/MP"],
-                extra_link_args=["-std=c++14" if os.name != "nt" else "/std:c++14"],
+                extra_compile_args=["-std=c++17"] if os.name != "nt" else ["/std:c++17", "/MP"],
+                extra_link_args=["-std=c++17" if os.name != "nt" else "/std:c++17"],
             )
         )
 
@@ -523,7 +528,7 @@ if __name__ == "__main__":
 
     write_version_file()
 
-    with open("README.rst") as f:
+    with open("README.md") as f:
         readme = f.read()
 
     setup(
@@ -535,6 +540,7 @@ if __name__ == "__main__":
         url="https://github.com/pytorch/vision",
         description="image and video datasets and models for torch deep learning",
         long_description=readme,
+        long_description_content_type="text/markdown",
         license="BSD",
         # Package info
         packages=find_packages(exclude=("test",)),

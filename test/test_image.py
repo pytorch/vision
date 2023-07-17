@@ -32,6 +32,7 @@ DAMAGED_JPEG = os.path.join(IMAGE_ROOT, "damaged_jpeg")
 DAMAGED_PNG = os.path.join(IMAGE_ROOT, "damaged_png")
 ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 INTERLACED_PNG = os.path.join(IMAGE_ROOT, "interlaced_png")
+TOOSMALL_PNG = os.path.join(IMAGE_ROOT, "toosmall_png")
 IS_WINDOWS = sys.platform in ("win32", "cygwin")
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 
@@ -193,6 +194,8 @@ def test_decode_png_errors():
         decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
     with pytest.raises(RuntimeError, match="Out of bound read in decode_png"):
         decode_png(read_file(os.path.join(DAMAGED_PNG, "sigsegv.png")))
+    with pytest.raises(RuntimeError, match="Content is too small for png"):
+        decode_png(read_file(os.path.join(TOOSMALL_PNG, "heapbof.png")))
 
 
 @pytest.mark.parametrize(
@@ -367,6 +370,13 @@ def test_decode_jpeg_cuda(mode, img_path, scripted):
 
     # Some difference expected between jpeg implementations
     assert (img.float() - img_nvjpeg.cpu().float()).abs().mean() < 2
+
+
+@needs_cuda
+def test_decode_image_cuda_raises():
+    data = torch.randint(0, 127, size=(255,), device="cuda", dtype=torch.uint8)
+    with pytest.raises(RuntimeError):
+        decode_image(data)
 
 
 @needs_cuda

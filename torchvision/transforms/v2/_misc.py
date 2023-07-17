@@ -1,7 +1,7 @@
 import collections
 import warnings
 from contextlib import suppress
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -15,16 +15,29 @@ from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size
 from .utils import has_any, is_simple_tensor, query_bounding_box
 
 
+# TODO: do we want/need to expose this?
 class Identity(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return inpt
 
 
 class Lambda(Transform):
+    """[BETA] Apply a user-defined function as a transform.
+
+    .. v2betastatus:: Lambda transform
+
+    This transform does not support torchscript.
+
+    Args:
+        lambd (function): Lambda/function to be used for transform.
+    """
+
+    _transformed_types = (object,)
+
     def __init__(self, lambd: Callable[[Any], Any], *types: Type):
         super().__init__()
         self.lambd = lambd
-        self.types = types or (object,)
+        self.types = types or self._transformed_types
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, self.types):
@@ -42,6 +55,26 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
+    """[BETA] Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
+
+    .. v2betastatus:: LinearTransformation transform
+
+    This transform does not support PIL Image.
+    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
+    subtract mean_vector from it which is then followed by computing the dot
+    product with the transformation matrix and then reshaping the tensor to its
+    original shape.
+
+    Applications:
+        whitening transformation: Suppose X is a column vector zero-centered data.
+        Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+        perform SVD on this matrix and pass it as transformation_matrix.
+
+    Args:
+        transformation_matrix (Tensor): tensor [D x D], D = C x H x W
+        mean_vector (Tensor): tensor [D], D = C x H x W
+    """
+
     _v1_transform_cls = _transforms.LinearTransformation
 
     _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
@@ -105,6 +138,26 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
+    """[BETA] Normalize a tensor image or video with mean and standard deviation.
+
+    .. v2betastatus:: Normalize transform
+
+    This transform does not support PIL Image.
+    Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
+    channels, this transform will normalize each channel of the input
+    ``torch.*Tensor`` i.e.,
+    ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
+
+    .. note::
+        This transform acts out of place, i.e., it does not mutate the input tensor.
+
+    Args:
+        mean (sequence): Sequence of means for each channel.
+        std (sequence): Sequence of standard deviations for each channel.
+        inplace(bool,optional): Bool to make this operation in-place.
+
+    """
+
     _v1_transform_cls = _transforms.Normalize
     _transformed_types = (datapoints.Image, is_simple_tensor, datapoints.Video)
 
@@ -125,6 +178,21 @@ class Normalize(Transform):
 
 
 class GaussianBlur(Transform):
+    """[BETA] Blurs image with randomly chosen Gaussian blur.
+
+    .. v2betastatus:: GausssianBlur transform
+
+    If the input is a Tensor, it is expected
+    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        kernel_size (int or sequence): Size of the Gaussian kernel.
+        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+            creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
+            of float (min, max), sigma is chosen uniformly at random to lie in the
+            given range.
+    """
+
     _v1_transform_cls = _transforms.GaussianBlur
 
     def __init__(
@@ -157,6 +225,17 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
+    """[BETA] Converts the input to a specific dtype - this does not scale values.
+
+    .. v2betastatus:: ToDtype transform
+
+    Args:
+        dtype (``torch.dtype`` or dict of ``Datapoint`` -> ``torch.dtype``): The dtype to convert to.
+            A dict can be passed to specify per-datapoint conversions, e.g.
+            ``dtype={datapoints.Image: torch.float32, datapoints.Video:
+            torch.float64}``.
+    """
+
     _transformed_types = (torch.Tensor,)
 
     def __init__(self, dtype: Union[torch.dtype, Dict[Type, Optional[torch.dtype]]]) -> None:
@@ -178,10 +257,34 @@ class ToDtype(Transform):
         return inpt.to(dtype=dtype)
 
 
-class SanitizeBoundingBoxes(Transform):
-    # This removes boxes and their corresponding labels:
-    # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
-    # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
+class SanitizeBoundingBox(Transform):
+    """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
+
+    .. v2betastatus:: SanitizeBoundingBox transform
+
+    This transform removes bounding boxes and their associated labels/masks that:
+
+    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - have any coordinate outside of their corresponding image. You may want to
+      call :class:`~torchvision.transforms.v2.ClampBoundingBox` first to avoid undesired removals.
+
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models. It is critical to call this transform if
+    :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.
+    If you want to be extra careful, you may call it after all transforms that
+    may modify bounding boxes but once at the end should be enough in most
+    cases.
+
+    Args:
+        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
+        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.
+            It can be a str in which case the input is expected to be a dict, and ``labels_getter`` then specifies
+            the key whose value corresponds to the labels. It can also be a callable that takes the same input
+            as the transform, and returns the labels.
+            By default, this will try to find a "labels" key in the input, if
+            the input is a dict or it is a tuple whose second element is a dict.
+            This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
+    """
 
     def __init__(
         self,
@@ -201,7 +304,9 @@ class SanitizeBoundingBoxes(Transform):
         elif callable(labels_getter):
             self._labels_getter = labels_getter
         elif isinstance(labels_getter, str):
-            self._labels_getter = lambda inputs: inputs[labels_getter]
+            self._labels_getter = lambda inputs: SanitizeBoundingBox._get_dict_or_second_tuple_entry(inputs)[
+                labels_getter  # type: ignore[index]
+            ]
         elif labels_getter is None:
             self._labels_getter = None
         else:
@@ -211,9 +316,26 @@ class SanitizeBoundingBoxes(Transform):
             )
 
     @staticmethod
+    def _get_dict_or_second_tuple_entry(inputs: Any) -> Mapping[str, Any]:
+        # datasets outputs may be plain dicts like {"img": ..., "labels": ..., "bbox": ...}
+        # or tuples like (img, {"labels":..., "bbox": ...})
+        # This hacky helper accounts for both structures.
+        if isinstance(inputs, tuple):
+            inputs = inputs[1]
+
+        if not isinstance(inputs, collections.abc.Mapping):
+            raise ValueError(
+                f"If labels_getter is a str or 'default', "
+                f"then the input to forward() must be a dict or a tuple whose second element is a dict."
+                f" Got {type(inputs)} instead."
+            )
+        return inputs
+
+    @staticmethod
     def _find_labels_default_heuristic(inputs: Dict[str, Any]) -> Optional[torch.Tensor]:
-        # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
+        # Tries to find a "labels" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
+        inputs = SanitizeBoundingBox._get_dict_or_second_tuple_entry(inputs)
         candidate_key = None
         with suppress(StopIteration):
             candidate_key = next(key for key in inputs.keys() if key.lower() == "labels")
@@ -229,12 +351,6 @@ class SanitizeBoundingBoxes(Transform):
 
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
-
-        if isinstance(self.labels_getter, str) and not isinstance(inputs, collections.abc.Mapping):
-            raise ValueError(
-                f"If labels_getter is a str or 'default' (got {self.labels_getter}), "
-                f"then the input to forward() must be a dict. Got {type(inputs)} instead."
-            )
 
         if self._labels_getter is None:
             labels = None
@@ -283,10 +399,15 @@ class SanitizeBoundingBoxes(Transform):
         return tree_unflatten(flat_outputs, spec)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        is_label = inpt is not None and inpt is params["labels"]
+        is_bounding_box_or_mask = isinstance(inpt, (datapoints.BoundingBox, datapoints.Mask))
 
-        if (inpt is not None and inpt is params["labels"]) or isinstance(
-            inpt, (datapoints.BoundingBox, datapoints.Mask)
-        ):
-            inpt = inpt[params["valid"]]
+        if not (is_label or is_bounding_box_or_mask):
+            return inpt
 
-        return inpt
+        output = inpt[params["valid"]]
+
+        if is_label:
+            return output
+
+        return type(inpt).wrap_like(inpt, output)

@@ -13,6 +13,38 @@ from .utils import is_simple_tensor, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
+    """[BETA] Randomly select a rectangle region in the input image or video and erase its pixels.
+
+    .. v2betastatus:: RandomErasing transform
+
+    This transform does not support PIL Image.
+    'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
+
+    Args:
+        p (float, optional): probability that the random erasing operation will be performed.
+        scale (tuple of float, optional): range of proportion of erased area against input image.
+        ratio (tuple of float, optional): range of aspect ratio of erased area.
+        value (number or tuple of numbers): erasing value. Default is 0. If a single int, it is used to
+            erase all pixels. If a tuple of length 3, it is used to erase
+            R, G, B channels respectively.
+            If a str of 'random', erasing each pixel with random values.
+        inplace (bool, optional): boolean to make this transform inplace. Default set to False.
+
+    Returns:
+        Erased input.
+
+    Example:
+        >>> from torchvision.transforms import v2 as transforms
+        >>>
+        >>> transform = transforms.Compose([
+        >>>   transforms.RandomHorizontalFlip(),
+        >>>   transforms.PILToTensor(),
+        >>>   transforms.ConvertImageDtype(torch.float),
+        >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>>   transforms.RandomErasing(),
+        >>> ])
+    """
+
     _v1_transform_cls = _transforms.RandomErasing
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:

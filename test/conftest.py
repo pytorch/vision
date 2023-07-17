@@ -3,6 +3,11 @@ import random
 import numpy as np
 import pytest
 import torch
+import torchvision
+
+
+torchvision.disable_beta_transforms_warning()
+
 from common_utils import CUDA_NOT_AVAILABLE_MSG, IN_FBCODE, IN_OSS_CI, IN_RE_WORKER, OSS_CI_GPU_NO_CUDA_MSG
 
 
@@ -28,7 +33,7 @@ def pytest_collection_modifyitems(items):
         # The needs_cuda mark will exist if the test was explicitly decorated with
         # the @needs_cuda decorator. It will also exist if it was parametrized with a
         # parameter that has the mark: for example if a test is parametrized with
-        # @pytest.mark.parametrize('device', cpu_and_gpu())
+        # @pytest.mark.parametrize('device', cpu_and_cuda())
         # the "instances" of the tests where device == 'cuda' will have the 'needs_cuda' mark,
         # and the ones with device == 'cpu' won't have the mark.
         needs_cuda = item.get_closest_marker("needs_cuda") is not None

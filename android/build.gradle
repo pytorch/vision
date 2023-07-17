@@ -14,7 +14,7 @@ allprojects {
 
             androidSupportAppCompatV7Version = "28.0.0"
             fbjniJavaOnlyVersion = "0.0.3"
-            soLoaderNativeLoaderVersion = "0.10.4"
+            soLoaderNativeLoaderVersion = "0.10.5"
             pytorchAndroidVersion = "1.12"
         }
 

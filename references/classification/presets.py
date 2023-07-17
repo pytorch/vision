@@ -1,6 +1,17 @@
 import torch
-from torchvision.transforms import autoaugment, transforms
 from torchvision.transforms.functional import InterpolationMode
+
+
+def get_module(use_v2):
+    # We need a protected import to avoid the V2 warning in case just V1 is used
+    if use_v2:
+        import torchvision.transforms.v2
+
+        return torchvision.transforms.v2
+    else:
+        import torchvision.transforms
+
+        return torchvision.transforms
 
 
 class ClassificationPresetTrain:
@@ -16,31 +27,45 @@ class ClassificationPresetTrain:
         ra_magnitude=9,
         augmix_severity=3,
         random_erase_prob=0.0,
+        backend="pil",
+        use_v2=False,
     ):
-        trans = [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+        module = get_module(use_v2)
+
+        transforms = []
+        backend = backend.lower()
+        if backend == "tensor":
+            transforms.append(module.PILToTensor())
+        elif backend != "pil":
+            raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
+
+        transforms.append(module.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True))
         if hflip_prob > 0:
-            trans.append(transforms.RandomHorizontalFlip(hflip_prob))
+            transforms.append(module.RandomHorizontalFlip(hflip_prob))
         if auto_augment_policy is not None:
             if auto_augment_policy == "ra":
-                trans.append(autoaugment.RandAugment(interpolation=interpolation, magnitude=ra_magnitude))
+                transforms.append(module.RandAugment(interpolation=interpolation, magnitude=ra_magnitude))
             elif auto_augment_policy == "ta_wide":
-                trans.append(autoaugment.TrivialAugmentWide(interpolation=interpolation))
+                transforms.append(module.TrivialAugmentWide(interpolation=interpolation))
             elif auto_augment_policy == "augmix":
-                trans.append(autoaugment.AugMix(interpolation=interpolation, severity=augmix_severity))
+                transforms.append(module.AugMix(interpolation=interpolation, severity=augmix_severity))
             else:
-                aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
-                trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
-        trans.extend(
+                aa_policy = module.AutoAugmentPolicy(auto_augment_policy)
+                transforms.append(module.AutoAugment(policy=aa_policy, interpolation=interpolation))
+
+        if backend == "pil":
+            transforms.append(module.PILToTensor())
+
+        transforms.extend(
             [
-                transforms.PILToTensor(),
-                transforms.ConvertImageDtype(torch.float),
-                transforms.Normalize(mean=mean, std=std),
+                module.ConvertImageDtype(torch.float),
+                module.Normalize(mean=mean, std=std),
             ]
         )
         if random_erase_prob > 0:
-            trans.append(transforms.RandomErasing(p=random_erase_prob))
+            transforms.append(module.RandomErasing(p=random_erase_prob))
 
-        self.transforms = transforms.Compose(trans)
+        self.transforms = module.Compose(transforms)
 
     def __call__(self, img):
         return self.transforms(img)
@@ -55,17 +80,31 @@ class ClassificationPresetEval:
         mean=(0.485, 0.456, 0.406),
         std=(0.229, 0.224, 0.225),
         interpolation=InterpolationMode.BILINEAR,
+        backend="pil",
+        use_v2=False,
     ):
+        module = get_module(use_v2)
+        transforms = []
+        backend = backend.lower()
+        if backend == "tensor":
+            transforms.append(module.PILToTensor())
+        elif backend != "pil":
+            raise ValueError(f"backend can be 'tensor' or 'pil', but got {backend}")
 
-        self.transforms = transforms.Compose(
-            [
-                transforms.Resize(resize_size, interpolation=interpolation),
-                transforms.CenterCrop(crop_size),
-                transforms.PILToTensor(),
-                transforms.ConvertImageDtype(torch.float),
-                transforms.Normalize(mean=mean, std=std),
-            ]
-        )
+        transforms += [
+            module.Resize(resize_size, interpolation=interpolation, antialias=True),
+            module.CenterCrop(crop_size),
+        ]
+
+        if backend == "pil":
+            transforms.append(module.PILToTensor())
+
+        transforms += [
+            module.ConvertImageDtype(torch.float),
+            module.Normalize(mean=mean, std=std),
+        ]
+
+        self.transforms = module.Compose(transforms)
 
     def __call__(self, img):
         return self.transforms(img)

@@ -3,7 +3,7 @@
 #include <c10/cuda/CUDAGuard.h>
 #include <float.h>
 #include <torch/library.h>
-#include <ATen/cuda/Atomic.cuh>
+#include <ATen/native/cuda/KernelUtils.cuh>
 
 #include "cuda_helpers.h"
 
@@ -94,7 +94,8 @@ __global__ void roi_pool_backward_kernel_impl(
     int n_stride,
     int c_stride,
     int h_stride,
-    int w_stride) {
+    int w_stride,
+    const int memory_span) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -104,19 +105,21 @@ __global__ void roi_pool_backward_kernel_impl(
 
     const T* offset_rois = rois + n * 5;
     int roi_batch_ind = offset_rois[0];
-    T* grad_input_offset =
-        grad_input + ((roi_batch_ind * channels + c) * height * width);
 
-    int output_offset = n * n_stride + c * c_stride;
+    const int output_offset = n * n_stride + c * c_stride;
     const int* argmax_data_offset =
         argmax_data + (n * channels + c) * pooled_height * pooled_width;
-    int argmax = argmax_data_offset[ph * pooled_width + pw];
+    const int argmax = argmax_data_offset[ph * pooled_width + pw];
+    const int offset = (roi_batch_ind * channels + c) * height * width;
 
     if (argmax != -1) {
-      gpuAtomicAdd(
-          grad_input_offset + argmax,
+      at::native::fastAtomicAdd(
+          grad_input,
+          offset + argmax,
+          memory_span,
           static_cast<T>(
-              grad_output[output_offset + ph * h_stride + pw * w_stride]));
+              grad_output[output_offset + ph * h_stride + pw * w_stride]),
+          true);
     }
   }
 }
@@ -232,6 +235,8 @@ at::Tensor roi_pool_backward_kernel(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
+  at::globalContext().alertNotDeterministic("roi_pool_backward_kernel");
+
   auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "roi_pool_backward_kernel", [&] {
@@ -251,7 +256,8 @@ at::Tensor roi_pool_backward_kernel(
             n_stride,
             c_stride,
             h_stride,
-            w_stride);
+            w_stride,
+            grad_input.numel());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
