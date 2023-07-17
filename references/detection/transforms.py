@@ -293,11 +293,13 @@ class ScaleJitter(nn.Module):
         target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias=True,
     ):
         super().__init__()
         self.target_size = target_size
         self.scale_range = scale_range
         self.interpolation = interpolation
+        self.antialias = antialias
 
     def forward(
         self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
@@ -315,14 +317,17 @@ class ScaleJitter(nn.Module):
         new_width = int(orig_width * r)
         new_height = int(orig_height * r)
 
-        image = F.resize(image, [new_height, new_width], interpolation=self.interpolation)
+        image = F.resize(image, [new_height, new_width], interpolation=self.interpolation, antialias=self.antialias)
 
         if target is not None:
             target["boxes"][:, 0::2] *= new_width / orig_width
             target["boxes"][:, 1::2] *= new_height / orig_height
             if "masks" in target:
                 target["masks"] = F.resize(
-                    target["masks"], [new_height, new_width], interpolation=InterpolationMode.NEAREST
+                    target["masks"],
+                    [new_height, new_width],
+                    interpolation=InterpolationMode.NEAREST,
+                    antialias=self.antialias,
                 )
 
         return image, target
