@@ -1641,13 +1641,12 @@ class TestRotate:
 
 class TestCutMixMixUp:
     # TODO: Does it work when labels are already dirichlet-distributed? like does Compose([Mixup(), CutMix()]) work?
-    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup, "Compose"])
     @pytest.mark.parametrize("one_hot", [True, False])
-    def test_supported_cases(self, T, one_hot):
+    def test_supported_input_structure(self, T, one_hot):
 
         num_categories = 10
-        num_samples = 9
-        batch_size = 3
+        batch_size = 32
         H, W = 12, 12
 
         preproc = transforms.Compose([transforms.PILToTensor(), transforms.ToDtype(torch.float32)])
@@ -1660,8 +1659,16 @@ class TestCutMixMixUp:
 
             preproc = transforms.Compose([preproc, ToOneHot()])
 
-        dataset = FakeData(size=num_samples, image_size=(3, H, W), num_classes=num_categories, transforms=preproc)
-        cutmix_mixup = T(alpha=0.5, num_categories=num_categories)
+        dataset = FakeData(size=batch_size, image_size=(3, H, W), num_classes=num_categories, transforms=preproc)
+        if T == "Compose":
+            cutmix = transforms.Cutmix(alpha=0.5, num_categories=num_categories)
+            mixup = transforms.Mixup(alpha=0.5, num_categories=num_categories)
+            cutmix_mixup = transforms.Compose([cutmix, mixup])
+            expected_num_non_zero_labels = 3  # see common_checks
+        else:
+            cutmix_mixup = T(alpha=0.5, num_categories=num_categories)
+            expected_num_non_zero_labels = 2  # see common_checks
+
         dl = DataLoader(dataset, batch_size=batch_size)
 
         # Input sanity checks
@@ -1669,33 +1676,49 @@ class TestCutMixMixUp:
         assert isinstance(img, torch.Tensor) and isinstance(target, torch.Tensor)
         assert target.shape == (batch_size, num_categories) if one_hot else (batch_size,)
 
-        def common_checks(img, target):
+        def check_output(img, target):
+            print(target)
             assert img.shape == (batch_size, 3, H, W)
             assert target.shape == (batch_size, num_categories)
             torch.testing.assert_close(target.sum(axis=-1), torch.ones(batch_size))
-            # assert each target only has 2 non-zero values (or 1 if there was no mixup/cutmix)
+            # Below we check the number of non-zero values in the target tensor.
+            # When just CutMix() (or just MixUp()) is called, we should expect 2
+            # non-zero label values per sample. Although, it may happen that
+            # only 1 non-zero value is present, basically if the transform had
+            # no effect. Here we make sure that:
+            # - there is at least one sample with 2 non-zero values
+            # - there is no sample with more than 2 non-zero values
+            # When CutMix() and MixUp() are called in sequence together, we
+            # should expect 3 instead of 2. That's the
+            # expected_num_non_zero_labels threshold.
             num_non_zero_values = (target != 0).sum(axis=-1)
-            assert ((num_non_zero_values == 1) | (num_non_zero_values == 2)).all()
+            assert (num_non_zero_values == expected_num_non_zero_labels).any()
+            assert (num_non_zero_values <= expected_num_non_zero_labels).all()
+            assert (num_non_zero_values > 0).all()  # Note: we already know that from target.sum(axis=-1) check above
 
         # After Dataloader, as unpacked input
         img, target = next(iter(dl))
         assert target.shape == (batch_size, num_categories) if one_hot else (batch_size,)
         img, target = cutmix_mixup(img, target)
-        common_checks(img, target)
+        check_output(img, target)
 
         # After Dataloader, as packed input
         packed_from_dl = next(iter(dl))
         assert isinstance(packed_from_dl, list)
         img, target = cutmix_mixup(packed_from_dl)
-        common_checks(img, target)
+        check_output(img, target)
 
         # As collation function. We expect default_collate to be used by users.
-        def collate_fn(batch):
+        def collate_fn_1(batch):
             return cutmix_mixup(default_collate(batch))
 
-        dl = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn)
-        img, target = next(iter(dl))
-        common_checks(img, target)
+        def collate_fn_2(batch):
+            return cutmix_mixup(*default_collate(batch))
+
+        for collate_fn in (collate_fn_1, collate_fn_2):
+            dl = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn)
+            img, target = next(iter(dl))
+            check_output(img, target)
 
     @needs_cuda
     @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
