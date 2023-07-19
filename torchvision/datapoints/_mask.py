@@ -63,16 +63,6 @@ class Mask(Datapoint):
         output = self._F.vertical_flip_mask(self.as_subclass(torch.Tensor))
         return Mask.wrap_like(self, output)
 
-    def resize(  # type: ignore[override]
-        self,
-        size: List[int],
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        max_size: Optional[int] = None,
-        antialias: Optional[Union[str, bool]] = "warn",
-    ) -> Mask:
-        output = self._F.resize_mask(self.as_subclass(torch.Tensor), size, max_size=max_size)
-        return Mask.wrap_like(self, output)
-
     def crop(self, top: int, left: int, height: int, width: int) -> Mask:
         output = self._F.crop_mask(self.as_subclass(torch.Tensor), top, left, height, width)
         return Mask.wrap_like(self, output)

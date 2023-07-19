@@ -72,18 +72,6 @@ class Image(Datapoint):
         output = self._F.vertical_flip_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
-    def resize(  # type: ignore[override]
-        self,
-        size: List[int],
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        max_size: Optional[int] = None,
-        antialias: Optional[Union[str, bool]] = "warn",
-    ) -> Image:
-        output = self._F.resize_image_tensor(
-            self.as_subclass(torch.Tensor), size, interpolation=interpolation, max_size=max_size, antialias=antialias
-        )
-        return Image.wrap_like(self, output)
-
     def crop(self, top: int, left: int, height: int, width: int) -> Image:
         output = self._F.crop_image_tensor(self.as_subclass(torch.Tensor), top, left, height, width)
         return Image.wrap_like(self, output)

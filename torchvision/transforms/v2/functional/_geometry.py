@@ -25,7 +25,7 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import clamp_bounding_box, convert_format_bounding_box, get_spatial_size_image_pil
 
-from ._utils import is_simple_tensor
+from ._utils import _get_kernel, is_simple_tensor, register_kernel
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -158,6 +158,32 @@ def _compute_resized_output_size(
     return __compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
 
+def resize(
+    inpt: datapoints._InputTypeJIT,
+    size: List[int],
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    max_size: Optional[int] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
+) -> datapoints._InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(resize)
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        kernel = _get_kernel(resize, type(inpt))
+        return kernel(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
+    elif isinstance(inpt, PIL.Image.Image):
+        if antialias is False:
+            warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
+        return resize_image_pil(inpt, size, interpolation=interpolation, max_size=max_size)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
+
+
+@register_kernel(resize, datapoints.Image)
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -274,6 +300,11 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
     return output
 
 
+@register_kernel(resize, datapoints.Mask)
+def _resize_mask_dispatch(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None, **kwargs):
+    return resize_mask(mask, size, max_size=max_size)
+
+
 def resize_bounding_box(
     bounding_box: torch.Tensor, spatial_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
@@ -292,6 +323,17 @@ def resize_bounding_box(
     )
 
 
+@register_kernel(resize, datapoints.BoundingBox, datapoint_wrapping=False)
+def _resize_bounding_box_dispatch(
+    bounding_box: datapoints.BoundingBox, size: List[int], max_size: Optional[int] = None, **kwargs
+):
+    output, spatial_size = resize_bounding_box(
+        bounding_box.as_subclass(torch.Tensor), bounding_box.spatial_size, size, max_size=max_size
+    )
+    return datapoints.BoundingBox.wrap_like(bounding_box, output, spatial_size=spatial_size)
+
+
+@register_kernel(resize, datapoints.Video)
 def resize_video(
     video: torch.Tensor,
     size: List[int],
@@ -300,30 +342,6 @@ def resize_video(
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
     return resize_image_tensor(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
-
-
-def resize(
-    inpt: datapoints._InputTypeJIT,
-    size: List[int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    max_size: Optional[int] = None,
-    antialias: Optional[Union[str, bool]] = "warn",
-) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(resize)
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
-    elif isinstance(inpt, PIL.Image.Image):
-        if antialias is False:
-            warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
-        return resize_image_pil(inpt, size, interpolation=interpolation, max_size=max_size)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
 
 
 def _affine_parse_args(

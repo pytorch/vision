@@ -165,17 +165,20 @@ def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
     preserved in doing so. For bounding boxes also checks that the format is preserved.
     """
     if isinstance(input, datapoints._datapoint.Datapoint):
-        # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
-        # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
-        spy = mock.MagicMock(wraps=kernel, name=kernel.__name__)
-        with mock.patch.object(F, kernel.__name__, spy):
-            # Due to Python's name mangling, the `Datapoint.__F` attribute is only accessible from inside the class.
-            # Since that is not the case here, we need to prefix f"_{cls.__name__}"
-            # See https://docs.python.org/3/tutorial/classes.html#private-variables for details
-            with mock.patch.object(datapoints._datapoint.Datapoint, "_Datapoint__F", new=F):
-                output = dispatcher(input, *args, **kwargs)
+        if dispatcher is F.resize:
+            output = dispatcher(input, *args, **kwargs)
+        else:
+            # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
+            # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
+            spy = mock.MagicMock(wraps=kernel, name=kernel.__name__)
+            with mock.patch.object(F, kernel.__name__, spy):
+                # Due to Python's name mangling, the `Datapoint.__F` attribute is only accessible from inside the class.
+                # Since that is not the case here, we need to prefix f"_{cls.__name__}"
+                # See https://docs.python.org/3/tutorial/classes.html#private-variables for details
+                with mock.patch.object(datapoints._datapoint.Datapoint, "_Datapoint__F", new=F):
+                    output = dispatcher(input, *args, **kwargs)
 
-        spy.assert_called_once()
+            spy.assert_called_once()
     else:
         with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
             output = dispatcher(input, *args, **kwargs)
@@ -249,6 +252,8 @@ def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
 
 def _check_dispatcher_datapoint_signature_match(dispatcher):
     """Checks if the signature of the dispatcher matches the corresponding method signature on the Datapoint class."""
+    if dispatcher is F.resize:
+        return
     dispatcher_signature = inspect.signature(dispatcher)
     dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
 

@@ -110,21 +110,6 @@ class BoundingBox(Datapoint):
         )
         return BoundingBox.wrap_like(self, output)
 
-    def resize(  # type: ignore[override]
-        self,
-        size: List[int],
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        max_size: Optional[int] = None,
-        antialias: Optional[Union[str, bool]] = "warn",
-    ) -> BoundingBox:
-        output, spatial_size = self._F.resize_bounding_box(
-            self.as_subclass(torch.Tensor),
-            spatial_size=self.spatial_size,
-            size=size,
-            max_size=max_size,
-        )
-        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
-
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
         output, spatial_size = self._F.crop_bounding_box(
             self.as_subclass(torch.Tensor), self.format, top=top, left=left, height=height, width=width
