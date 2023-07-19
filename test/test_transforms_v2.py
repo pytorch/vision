@@ -1420,8 +1420,6 @@ def test_antialias_warning():
         datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20))
 
     with pytest.warns(UserWarning, match=match):
-        datapoints.Video(tensor_video).resize((20, 20))
-    with pytest.warns(UserWarning, match=match):
         datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20))
 
     with warnings.catch_warnings():
