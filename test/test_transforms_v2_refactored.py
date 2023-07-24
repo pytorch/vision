@@ -1677,7 +1677,6 @@ class TestCutMixMixUp:
         assert target.shape == (batch_size, num_categories) if one_hot else (batch_size,)
 
         def check_output(img, target):
-            print(target)
             assert img.shape == (batch_size, 3, H, W)
             assert target.shape == (batch_size, num_categories)
             torch.testing.assert_close(target.sum(axis=-1), torch.ones(batch_size))
