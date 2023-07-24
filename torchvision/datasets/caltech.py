@@ -46,9 +46,10 @@ class Caltech101(VisionDataset):
         if isinstance(target_type, str):
             target_type = [target_type]
         self.target_type = [
-            verify_str_arg(t, "target_type", ("category", "annotation", "bounding_box", "contour")) for t in target_type
+            verify_str_arg(t, "target_type", ("category", "annotation", "box_coord", "obj_contour"))
+            for t in target_type
         ]
-        self._load_annotation_file = any(t in self.target_type for t in ["annotation", "bounding_box", "contour"])
+        self._load_annotation_file = any(t in self.target_type for t in ["annotation", "box_coord", "obj_contour"])
 
         if download:
             self.download()
@@ -114,9 +115,9 @@ class Caltech101(VisionDataset):
                 target.append(self.y[index])
             elif t == "annotation":
                 target.append({"obj_contour": annotation["obj_contour"], "box_coord": annotation["box_coord"]})
-            elif t == "bounding_box":
+            elif t == "box_coord":
                 target.append(annotation["box_coord"][0, [2, 0, 3, 1]].astype(np.int32))
-            elif t == "contour":
+            elif t == "obj_contour":
                 target.append(annotation["obj_contour"].T + annotation["box_coord"][:, [2, 0]])
         target = tuple(target) if len(target) > 1 else target[0]
 
