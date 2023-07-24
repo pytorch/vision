@@ -43,8 +43,14 @@ def copypaste_collate_fn(batch):
 def get_dataset(is_train, args):
     image_set = "train" if is_train else "val"
     num_classes, mode = {"coco": (91, "instances"), "coco_kp": (2, "person_keypoints")}[args.dataset]
+    with_masks = "mask" in args.model
     ds = get_coco(
-        root=args.data_path, image_set=image_set, transforms=get_transform(is_train, args), args=args, mode=mode
+        root=args.data_path,
+        image_set=image_set,
+        transforms=get_transform(is_train, args),
+        mode=mode,
+        use_v2=args.use_v2,
+        with_masks=with_masks,
     )
     return ds, num_classes
 
@@ -68,7 +74,12 @@ def get_args_parser(add_help=True):
     parser = argparse.ArgumentParser(description="PyTorch Detection Training", add_help=add_help)
 
     parser.add_argument("--data-path", default="/datasets01/COCO/022719/", type=str, help="dataset path")
-    parser.add_argument("--dataset", default="coco", type=str, help="dataset name. Use coco for object detection and instance segmentation and coco_kp for Keypoint detection")
+    parser.add_argument(
+        "--dataset",
+        default="coco",
+        type=str,
+        help="dataset name. Use coco for object detection and instance segmentation and coco_kp for Keypoint detection",
+    )
     parser.add_argument("--model", default="maskrcnn_resnet50_fpn", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
@@ -164,14 +175,6 @@ def get_args_parser(add_help=True):
 
     parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
     parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
-    parser.add_argument(
-        "--with-masks",
-        action="store_true",
-        help=(
-            "Whether the dataset should return masks. Only relevant when --use-v2 is passed. "
-            "True by default when using mask_rcnn."
-        ),
-    )
 
     return parser
 
@@ -185,9 +188,6 @@ def main(args):
         raise ValueError("Oops, if you want Keypoint detection, set --dataset coco_kp")
     if args.dataset == "coco_kp" and args.use_v2:
         raise ValueError("KeyPoint detection doesn't support V2 transforms yet")
-
-    if "mask" in args.model:
-        args.with_masks = True
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
