@@ -68,7 +68,7 @@ def get_args_parser(add_help=True):
     parser = argparse.ArgumentParser(description="PyTorch Detection Training", add_help=add_help)
 
     parser.add_argument("--data-path", default="/datasets01/COCO/022719/", type=str, help="dataset path")
-    parser.add_argument("--dataset", default="coco", type=str, help="dataset name. Use coco_kp for Keypoint detection")
+    parser.add_argument("--dataset", default="coco", type=str, help="dataset name. Use coco for object detection and instance segmentation and coco_kp for Keypoint detection")
     parser.add_argument("--model", default="maskrcnn_resnet50_fpn", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
@@ -188,8 +188,6 @@ def main(args):
 
     if "mask" in args.model:
         args.with_masks = True
-
-    print(args.model)
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
