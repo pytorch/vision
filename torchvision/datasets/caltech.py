@@ -2,6 +2,7 @@ import os
 import os.path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+import numpy as np
 from PIL import Image
 
 from .utils import download_and_extract_archive, verify_str_arg
@@ -44,7 +45,10 @@ class Caltech101(VisionDataset):
         os.makedirs(self.root, exist_ok=True)
         if isinstance(target_type, str):
             target_type = [target_type]
-        self.target_type = [verify_str_arg(t, "target_type", ("category", "annotation")) for t in target_type]
+        self.target_type = [
+            verify_str_arg(t, "target_type", ("category", "annotation", "bounding_box", "contour")) for t in target_type
+        ]
+        self._load_annotation_file = any(t in self.target_type for t in ["annotation", "bounding_box", "contour"])
 
         if download:
             self.download()
@@ -92,20 +96,28 @@ class Caltech101(VisionDataset):
             )
         )
 
-        target: Any = []
+        target: List = []
+        annotation = (
+            scipy.io.loadmat(
+                os.path.join(
+                    self.root,
+                    "Annotations",
+                    self.annotation_categories[self.y[index]],
+                    f"annotation_{self.index[index]:04d}.mat",
+                )
+            )
+            if self._load_annotation_file
+            else None
+        )
         for t in self.target_type:
             if t == "category":
                 target.append(self.y[index])
             elif t == "annotation":
-                data = scipy.io.loadmat(
-                    os.path.join(
-                        self.root,
-                        "Annotations",
-                        self.annotation_categories[self.y[index]],
-                        f"annotation_{self.index[index]:04d}.mat",
-                    )
-                )
-                target.append(data["obj_contour"])
+                target.append({"obj_contour": annotation["obj_contour"], "box_coord": annotation["box_coord"]})
+            elif t == "bounding_box":
+                target.append(annotation["box_coord"][0, [2, 0, 3, 1]].astype(np.int32))
+            elif t == "contour":
+                target.append(annotation["obj_contour"].T + annotation["box_coord"][:, [2, 0]])
         target = tuple(target) if len(target) > 1 else target[0]
 
         if self.transform is not None:
