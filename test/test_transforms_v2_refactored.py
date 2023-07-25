@@ -1645,8 +1645,8 @@ class TestCompose:
 
     class PackedInputTransform(nn.Module):
         def forward(self, sample):
-            image, label = sample
-            return image, label
+            assert len(sample) == 2
+            return sample
 
     class UnpackedInputTransform(nn.Module):
         def forward(self, image, label):
