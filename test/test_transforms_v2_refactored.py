@@ -1669,8 +1669,12 @@ class TestCompose:
     )
     @pytest.mark.parametrize("unpack", [True, False])
     def test_packed_unpacked(self, transform_clss, unpack):
-        if (unpack and any(issubclass(cls, self.PackedInputTransform) for cls in transform_clss)) or (
-            not unpack and any(issubclass(cls, self.UnpackedInputTransform) for cls in transform_clss)
+        if any(
+            unpack
+            and issubclass(cls, self.PackedInputTransform)
+            or not unpack
+            and issubclass(cls, self.UnpackedInputTransform)
+            for cls in transform_clss
         ):
             return
 
