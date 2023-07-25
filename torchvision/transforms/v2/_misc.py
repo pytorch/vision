@@ -225,7 +225,8 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
-    """[BETA] Converts the input to a specific dtype - this does not scale values.
+    # TODO FINISH DOCS  !!!
+    """[BETA] Converts the input to a specific dtype.
 
     .. v2betastatus:: ToDtype transform
 
@@ -234,13 +235,15 @@ class ToDtype(Transform):
             A dict can be passed to specify per-datapoint conversions, e.g.
             ``dtype={datapoints.Image: torch.float32, datapoints.Video:
             torch.float64}``.
+        scale:
     """
 
     _transformed_types = (torch.Tensor,)
 
-    def __init__(self, dtype: Union[torch.dtype, Dict[Type, Optional[torch.dtype]]]) -> None:
+    def __init__(self, dtype: Union[torch.dtype, Dict[Type, Optional[torch.dtype]]], scale: bool = False) -> None:
         super().__init__()
         if not isinstance(dtype, dict):
+            # TODO: only care about images or videos when passing a single dtype?
             dtype = _get_defaultdict(dtype)
         if torch.Tensor in dtype and any(cls in dtype for cls in [datapoints.Image, datapoints.Video]):
             warnings.warn(
@@ -249,12 +252,29 @@ class ToDtype(Transform):
                 "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
             )
         self.dtype = dtype
+        self.scale = scale
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        dtype = self.dtype[type(inpt)]
+        if type(inpt) in self.dtype:
+            dtype = self.dtype[type(inpt)]
+        elif "others" in self.dtype:
+            dtype = self.dtype["others"]
+        else:
+            raise ValueError(
+                f"No dtype was specified for type {type(inpt)}. "
+                'You can use "others" as a catch-all key in the dtype dict '
+                'e.g. dtype={..., "others": None} to pass-through the rest of the inputs.'
+            )
+
+        supports_scaling = is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video))
         if dtype is None:
+            if self.scale and supports_scaling:
+                warnings.warn(
+                    "scale was set to True but no dtype was specified for images or videos: no scaling will be done."
+                )
             return inpt
-        return inpt.to(dtype=dtype)
+
+        return F.to_dtype(inpt, dtype=dtype, scale=self.scale)
 
 
 class SanitizeBoundingBox(Transform):

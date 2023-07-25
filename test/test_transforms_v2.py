@@ -105,7 +105,7 @@ def normalize_adapter(transform, input, device):
             continue
         elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor)):
             # normalize doesn't support integer images
-            value = F.convert_dtype(value, torch.float32)
+            value = F.to_dtype(value, torch.float32, scale=True)
         adapted_input[key] = value
     return adapted_input
 
@@ -146,7 +146,7 @@ class TestSmoke:
             (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
             (transforms.ClampBoundingBox(), None),
             (transforms.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.CXCYWH), None),
-            (transforms.ConvertDtype(), None),
+            (transforms.ConvertImageDtype(), None),
             (transforms.GaussianBlur(kernel_size=3), None),
             (
                 transforms.LinearTransformation(
