@@ -26,6 +26,8 @@ from common_utils import (
     make_video,
     set_rng_seed,
 )
+
+from torch import nn
 from torch.testing import assert_close
 from torchvision import datapoints
 
@@ -1634,3 +1636,52 @@ class TestRotate:
     def test_transform_unknown_fill_error(self):
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
+
+
+class TestCompose:
+    class BuiltinTransform(transforms.Transform):
+        def _transform(self, inpt, params):
+            return inpt
+
+    class PackedInputTransform(nn.Module):
+        def forward(self, sample):
+            image, label = sample
+            return image, label
+
+    class UnpackedInputTransform(nn.Module):
+        def forward(self, image, label):
+            return image, label
+
+    @pytest.mark.parametrize(
+        "transform_clss",
+        [
+            [BuiltinTransform],
+            [PackedInputTransform],
+            [UnpackedInputTransform],
+            [BuiltinTransform, BuiltinTransform],
+            [PackedInputTransform, PackedInputTransform],
+            [UnpackedInputTransform, UnpackedInputTransform],
+            [BuiltinTransform, PackedInputTransform, BuiltinTransform],
+            [BuiltinTransform, UnpackedInputTransform, BuiltinTransform],
+            [PackedInputTransform, BuiltinTransform, PackedInputTransform],
+            [UnpackedInputTransform, BuiltinTransform, UnpackedInputTransform],
+        ],
+    )
+    @pytest.mark.parametrize("unpack", [True, False])
+    def test_packed_unpacked(self, transform_clss, unpack):
+        if (unpack and any(issubclass(cls, self.PackedInputTransform) for cls in transform_clss)) or (
+            not unpack and any(issubclass(cls, self.UnpackedInputTransform) for cls in transform_clss)
+        ):
+            return
+
+        transform = transforms.Compose([cls() for cls in transform_clss])
+
+        image = make_image()
+        label = torch.tensor(3)
+        packed_input = (image, label)
+
+        output = transform(*packed_input if unpack else (packed_input,))
+
+        assert isinstance(output, tuple) and len(output) == 2
+        assert output[0] is image
+        assert output[1] is label
