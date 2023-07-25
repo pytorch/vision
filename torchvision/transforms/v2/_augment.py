@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import PIL.Image
 import torch
@@ -142,7 +142,7 @@ class RandomErasing(_RandomApplyTransform):
 
 class _BaseMixupCutmix(Transform):
     # TODO: num_categories -> num_classes?
-    def __init__(self, *, alpha: float, num_categories: Optional[int] = None, labels_getter="default") -> None:
+    def __init__(self, *, alpha: float, num_categories: int, labels_getter="default") -> None:
         super().__init__()
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
@@ -161,18 +161,10 @@ class _BaseMixupCutmix(Transform):
 
         labels = self._labels_getter(inputs)
         if not isinstance(labels, torch.Tensor):
-            raise ValueError(f"The labels must be a torch.Tensor, but got {type(labels)} instead.")
-        elif labels.ndim == 2 and self.num_categories is not None and labels.shape[-1] != self.num_categories:
+            raise ValueError(f"The labels must be a tensor, but got {type(labels)} instead.")
+        elif labels.ndim != 1:
             raise ValueError(
-                f"When passing 2D labels, "
-                f"the number of elements in last dimension must match num_categories: "
-                f"{labels.shape[-1]} != {self.num_categories}."
-            )
-        elif labels.ndim not in (1, 2):
-            raise ValueError(
-                f"labels should be index based with shape (batch_size,) "
-                f"or probability based with shape (batch_size, num_categories), "
-                f"but got a tensor of shape {labels.shape} instead."
+                f"labels tensor should be of shape (batch_size,) " f"but got shape {labels.shape} instead."
             )
 
         params = {
@@ -206,10 +198,7 @@ class _BaseMixupCutmix(Transform):
             )
 
     def _mixup_label(self, label: torch.Tensor, *, lam: float) -> torch.Tensor:
-        if label.ndim == 1:
-            if self.num_categories is None:
-                raise ValueError("num_categories must be passed if the labels are index-based (1D)")
-            label = one_hot(label, num_classes=self.num_categories)
+        label = one_hot(label, num_classes=self.num_categories)
         if not label.dtype.is_floating_point:
             label = label.float()
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
