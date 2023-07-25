@@ -1640,8 +1640,7 @@ class TestRotate:
 
 
 class TestCutMixMixUp:
-    # TODO: Does it work when labels are already dirichlet-distributed? like does Compose([Mixup(), CutMix()]) work?
-    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup, "Compose"])
+    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup, "CutMixMixUp", "MixUpCutMix"])
     @pytest.mark.parametrize("one_hot", [True, False])
     def test_supported_input_structure(self, T, one_hot):
 
@@ -1660,11 +1659,14 @@ class TestCutMixMixUp:
             preproc = transforms.Compose([preproc, ToOneHot()])
 
         dataset = FakeData(size=batch_size, image_size=(3, H, W), num_classes=num_categories, transforms=preproc)
-        if T == "Compose":
+        if isinstance(T, str):
+            expected_num_non_zero_labels = 3  # see common_checks
             cutmix = transforms.Cutmix(alpha=0.5, num_categories=num_categories)
             mixup = transforms.Mixup(alpha=0.5, num_categories=num_categories)
-            cutmix_mixup = transforms.Compose([cutmix, mixup])
-            expected_num_non_zero_labels = 3  # see common_checks
+            if T == "CutMixMixUp":
+                cutmix_mixup = transforms.Compose([cutmix, mixup])
+            else:
+                cutmix_mixup = transforms.Compose([mixup, cutmix])
         else:
             cutmix_mixup = T(alpha=0.5, num_categories=num_categories)
             expected_num_non_zero_labels = 2  # see common_checks
@@ -1677,7 +1679,6 @@ class TestCutMixMixUp:
         assert target.shape == (batch_size, num_categories) if one_hot else (batch_size,)
 
         def check_output(img, target):
-            print(target)
             assert img.shape == (batch_size, 3, H, W)
             assert target.shape == (batch_size, num_categories)
             torch.testing.assert_close(target.sum(axis=-1), torch.ones(batch_size))
@@ -1739,8 +1740,8 @@ class TestCutMixMixUp:
         num_categories = 10
         batch_size = 9
 
-        # imgs = torch.randint(0, 256, (batch_size, 3, 12, 12), dtype=torch.uint8)
         imgs = torch.rand(batch_size, 3, 12, 12)
+        cutmix_mixup = T(alpha=0.5)
 
         for input_with_bad_type in (
             F.to_pil_image(imgs[0]),
@@ -1748,18 +1749,18 @@ class TestCutMixMixUp:
             datapoints.BoundingBox(torch.rand(2, 4), format="XYXY", spatial_size=12),
         ):
             with pytest.raises(ValueError, match="does not support PIL images, "):
-                T(alpha=0.5)(input_with_bad_type)
+                cutmix_mixup(input_with_bad_type)
 
         with pytest.raises(ValueError, match="Could not infer where the labels are"):
-            T(alpha=0.5)({"img": imgs, "Nothing_else": 3})
+            cutmix_mixup({"img": imgs, "Nothing_else": 3})
 
         with pytest.raises(ValueError, match="labels should be index based"):
             # Note: the error message isn't ideal, but that's because the label heuristic found the img as the label
             # It's OK, it's an edge-case. The important thing is that this fails loudly instead of passing silently
-            T(alpha=0.5)(imgs)
+            cutmix_mixup(imgs)
 
         with pytest.raises(ValueError, match="When using the default labels_getter"):
-            T(alpha=0.5)(imgs, "not_a_tensor")
+            cutmix_mixup(imgs, "not_a_tensor")
 
         with pytest.raises(ValueError, match="When passing 2D labels"):
             wrong_num_categories = num_categories + 1
@@ -1768,13 +1769,13 @@ class TestCutMixMixUp:
             )
 
         with pytest.raises(ValueError, match="but got a tensor of shape"):
-            T(alpha=0.5)(imgs, torch.randint(0, 2, size=(2, 3, 4)))
+            cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3, 4)))
 
         with pytest.raises(ValueError, match="Expected a batched input with 4 dims"):
-            T(alpha=0.5)(imgs[None, None], torch.randint(0, num_categories, size=(batch_size,)))
+            cutmix_mixup(imgs[None, None], torch.randint(0, num_categories, size=(batch_size,)))
 
         with pytest.raises(ValueError, match="does not match the batch size of the labels"):
-            T(alpha=0.5)(imgs, torch.randint(0, num_categories, size=(batch_size + 1,)))
+            cutmix_mixup(imgs, torch.randint(0, num_categories, size=(batch_size + 1,)))
 
         with pytest.raises(ValueError, match="num_categories must be passed"):
-            T(alpha=0.5)(imgs, torch.randint(0, num_categories, size=(batch_size,)))
+            cutmix_mixup(imgs, torch.randint(0, num_categories, size=(batch_size,)))
