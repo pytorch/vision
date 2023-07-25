@@ -1640,10 +1640,10 @@ class TestRotate:
 
 class TestCutMixMixUp:
     class DummyDataset:
-        def __init__(self, size, num_categories):
+        def __init__(self, size, num_classes):
             self.size = size
-            self.num_categories = num_categories
-            assert size < num_categories
+            self.num_classes = num_classes
+            assert size < num_classes
 
         def __getitem__(self, idx):
             img = torch.rand(3, 100, 100)
@@ -1657,11 +1657,11 @@ class TestCutMixMixUp:
     def test_supported_input_structure(self, T):
 
         batch_size = 32
-        num_categories = 100
+        num_classes = 100
 
-        dataset = self.DummyDataset(size=batch_size, num_categories=num_categories)
+        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
 
-        cutmix_mixup = T(alpha=0.5, num_categories=num_categories)
+        cutmix_mixup = T(alpha=0.5, num_classes=num_classes)
 
         dl = DataLoader(dataset, batch_size=batch_size)
 
@@ -1673,7 +1673,7 @@ class TestCutMixMixUp:
 
         def check_output(img, target):
             assert img.shape == (batch_size, *input_img_size)
-            assert target.shape == (batch_size, num_categories)
+            assert target.shape == (batch_size, num_classes)
             torch.testing.assert_close(target.sum(axis=-1), torch.ones(batch_size))
             num_non_zero_labels = (target != 0).sum(axis=-1)
             assert (num_non_zero_labels == 2).all()
@@ -1705,24 +1705,24 @@ class TestCutMixMixUp:
     @needs_cuda
     @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
     def test_cpu_vs_gpu(self, T):
-        num_categories = 10
+        num_classes = 10
         batch_size = 3
         H, W = 12, 12
 
         imgs = torch.rand(batch_size, 3, H, W).to("cuda")
-        labels = torch.randint(0, num_categories, (batch_size,)).to("cuda")
-        cutmix_mixup = T(alpha=0.5, num_categories=num_categories)
+        labels = torch.randint(0, num_classes, (batch_size,)).to("cuda")
+        cutmix_mixup = T(alpha=0.5, num_classes=num_classes)
 
         _check_kernel_cuda_vs_cpu(cutmix_mixup, input=(imgs, labels), rtol=None, atol=None)
 
     @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
     def test_error(self, T):
 
-        num_categories = 10
+        num_classes = 10
         batch_size = 9
 
         imgs = torch.rand(batch_size, 3, 12, 12)
-        cutmix_mixup = T(alpha=0.5, num_categories=num_categories)
+        cutmix_mixup = T(alpha=0.5, num_classes=num_classes)
 
         for input_with_bad_type in (
             F.to_pil_image(imgs[0]),
@@ -1747,15 +1747,15 @@ class TestCutMixMixUp:
             cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3)))
 
         with pytest.raises(ValueError, match="Expected a batched input with 4 dims"):
-            cutmix_mixup(imgs[None, None], torch.randint(0, num_categories, size=(batch_size,)))
+            cutmix_mixup(imgs[None, None], torch.randint(0, num_classes, size=(batch_size,)))
 
         with pytest.raises(ValueError, match="does not match the batch size of the labels"):
-            cutmix_mixup(imgs, torch.randint(0, num_categories, size=(batch_size + 1,)))
+            cutmix_mixup(imgs, torch.randint(0, num_classes, size=(batch_size + 1,)))
 
         with pytest.raises(ValueError, match="labels tensor should be of shape"):
             # The purpose of this check is more about documenting the current
             # behaviour of what happens on a Compose(), rather than actually
             # asserting the expected behaviour. We may support Compose() in the
             # future, e.g. for 2 consecutive CutMix?
-            labels = torch.randint(0, num_categories, size=(batch_size,))
+            labels = torch.randint(0, num_classes, size=(batch_size,))
             transforms.Compose([cutmix_mixup, cutmix_mixup])(imgs, labels)

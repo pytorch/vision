@@ -141,13 +141,12 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixupCutmix(Transform):
-    # TODO: num_categories -> num_classes?
-    def __init__(self, *, alpha: float, num_categories: int, labels_getter="default") -> None:
+    def __init__(self, *, alpha: float, num_classes: int, labels_getter="default") -> None:
         super().__init__()
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-        self.num_categories = num_categories
+        self.num_classes = num_classes
 
         self._labels_getter = _parse_labels_getter(labels_getter)
 
@@ -198,7 +197,7 @@ class _BaseMixupCutmix(Transform):
             )
 
     def _mixup_label(self, label: torch.Tensor, *, lam: float) -> torch.Tensor:
-        label = one_hot(label, num_classes=self.num_categories)
+        label = one_hot(label, num_classes=self.num_classes)
         if not label.dtype.is_floating_point:
             label = label.float()
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
