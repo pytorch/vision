@@ -1647,8 +1647,8 @@ class TestCutMixMixUp:
             assert size < num_categories
 
         def __getitem__(self, idx):
-            img = torch.rand(3, 12, 12)
-            label = idx
+            img = torch.rand(3, 100, 100)
+            label = idx  # This ensures all labels in a batch are unique and makes testing easier
             if self.one_hot:
                 label = torch.nn.functional.one_hot(torch.tensor(label), num_classes=self.num_categories)
             return img, label
@@ -1672,7 +1672,6 @@ class TestCutMixMixUp:
                 cutmix_mixup = transforms.Compose([cutmix, mixup])
             else:
                 cutmix_mixup = transforms.Compose([mixup, cutmix])
-            # When both CutMix and MixUp
             expected_num_non_zero_labels = 3
         else:
             cutmix_mixup = T(alpha=0.5, num_categories=num_categories)
@@ -1682,11 +1681,12 @@ class TestCutMixMixUp:
 
         # Input sanity checks
         img, target = next(iter(dl))
+        input_img_size = img.shape[-3:]
         assert isinstance(img, torch.Tensor) and isinstance(target, torch.Tensor)
         assert target.shape == (batch_size, num_categories) if one_hot else (batch_size,)
 
         def check_output(img, target):
-            assert img.shape == (batch_size, 3, 12, 12)
+            assert img.shape == (batch_size, *input_img_size)
             assert target.shape == (batch_size, num_categories)
             torch.testing.assert_close(target.sum(axis=-1), torch.ones(batch_size))
             num_non_zero_labels = (target != 0).sum(axis=-1)

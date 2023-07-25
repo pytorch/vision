@@ -243,8 +243,8 @@ class Cutmix(_BaseMixupCutmix):
 
         H, W = query_spatial_size(flat_inputs)
 
-        r_x = torch.randint(W, ())
-        r_y = torch.randint(H, ())
+        r_x = torch.randint(W, size=(1,))
+        r_y = torch.randint(H, size=(1,))
 
         r = 0.5 * math.sqrt(1.0 - lam)
         r_w_half = int(r * W)
