@@ -217,7 +217,10 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     # The following is a normalized 3x3 kernel with 1s in the edges and a 5 in the middle.
     kernel_dtype = image.dtype if fp else torch.float32
     a, b = 1.0 / 13.0, 5.0 / 13.0
-    kernel = torch.tensor([[a, a, a], [a, b, a], [a, a, a]], dtype=kernel_dtype, device=image.device)
+    kernel = torch.tensor([[a, a, a], [a, b, a], [a, a, a]], dtype=kernel_dtype)
+    if image.device.type == "cuda":
+        kernel.pin_memory()
+    kernel = kernel.to(device=image.device, non_blocking=True)
     kernel = kernel.expand(num_channels, 1, 3, 3)
 
     # We copy and cast at the same time to avoid modifications on the original data

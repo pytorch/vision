@@ -585,14 +585,16 @@ class AugMix(_AutoAugmentBase):
         # Sample the beta weights for combining the original and augmented image or video. To get Beta, we use a
         # Dirichlet with 2 parameters. The 1st column stores the weights of the original and the 2nd the ones of
         # augmented image or video.
-        m = self._sample_dirichlet(
-            torch.tensor([self.alpha, self.alpha], device=batch.device).expand(batch_dims[0], -1)
-        )
+        alpha = torch.scalar_tensor(self.alpha)
+        if batch.device.type == "cuda":
+            alpha = alpha.pin_memory()
+        alpha = alpha.to(device=batch.device, non_blocking=True)
+        m = self._sample_dirichlet(alpha.expand(batch_dims[0], 2))
 
         # Sample the mixing weights and combine them with the ones sampled from Beta for the augmented images or videos.
-        combined_weights = self._sample_dirichlet(
-            torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(batch_dims[0], -1)
-        ) * m[:, 1].reshape([batch_dims[0], -1])
+        combined_weights = self._sample_dirichlet(alpha.expand(batch_dims[0], self.mixture_width)) * m[:, 1].reshape(
+            [batch_dims[0], -1]
+        )
 
         mix = m[:, 0].reshape(batch_dims) * batch
         for i in range(self.mixture_width):

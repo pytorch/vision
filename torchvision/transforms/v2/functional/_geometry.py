@@ -285,7 +285,10 @@ def resize_bounding_box(
 
     w_ratio = new_width / old_width
     h_ratio = new_height / old_height
-    ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
+    ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio])
+    if bounding_box.device.type == "cuda":
+        ratios.pin_memory()
+    ratios = ratios.to(device=bounding_box.device, non_blocking=True)
     return (
         bounding_box.mul(ratios).to(bounding_box.dtype),
         (new_height, new_width),
@@ -500,7 +503,10 @@ def _apply_grid_transform(
         float_img, mask = torch.tensor_split(float_img, indices=(-1,), dim=-3)
         mask = mask.expand_as(float_img)
         fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]  # type: ignore[arg-type]
-        fill_img = torch.tensor(fill_list, dtype=float_img.dtype, device=float_img.device).view(1, -1, 1, 1)
+        fill_img = torch.tensor(fill_list, dtype=float_img.dtype).view(1, -1, 1, 1)
+        if float_img.device.type == "cuda":
+            fill_img.contiguous().pin_memory()
+        fill_img = fill_img.to(device=float_img.device, non_blocking=True)
         if mode == "nearest":
             bool_mask = mask < 0.5
             float_img[bool_mask] = fill_img.expand_as(float_img)[bool_mask]
@@ -569,7 +575,9 @@ def _affine_grid(
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta = theta.transpose(1, 2).div_(torch.tensor([0.5 * w, 0.5 * h], dtype=dtype, device=device))
+    rescaled_theta = theta.transpose(1, 2)
+    rescaled_theta[..., 0] /= 0.5 * w
+    rescaled_theta[..., 1] /= 0.5 * h
     output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
     return output_grid.view(1, oh, ow, 2)
 
@@ -615,7 +623,10 @@ def affine_image_tensor(
     _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-    theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
+    theta = torch.tensor(matrix, dtype=dtype).reshape(1, 2, 3)
+    if image.device.type == "cuda":
+        theta.pin_memory()
+    theta = theta.to(device=image.device, non_blocking=True)
     grid = _affine_grid(theta, w=width, h=height, ow=width, oh=height)
     output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
@@ -684,15 +695,10 @@ def _affine_bounding_box_with_expand(
         center = [width * 0.5, height * 0.5]
 
     affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False)
-    transposed_affine_matrix = (
-        torch.tensor(
-            affine_vector,
-            dtype=dtype,
-            device=device,
-        )
-        .reshape(2, 3)
-        .T
-    )
+    transposed_affine_matrix = torch.tensor(affine_vector, dtype=dtype).reshape(2, 3).T
+    if device.type == "cuda":
+        transposed_affine_matrix.contiguous().pin_memory()
+    transposed_affine_matrix = transposed_affine_matrix.to(device=device, non_blocking=True)
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
     # Single point structure is similar to
@@ -896,7 +902,10 @@ def rotate_image_tensor(
 
         ow, oh = _compute_affine_output_size(matrix, width, height) if expand else (width, height)
         dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-        theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
+        theta = torch.tensor(matrix, dtype=dtype).reshape(1, 2, 3)
+        if image.device.type == "cuda":
+            theta.pin_memory()
+        theta = theta.to(device=image.device, non_blocking=True)
         grid = _affine_grid(theta, w=width, h=height, ow=ow, oh=oh)
         output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
@@ -1123,7 +1132,10 @@ def _pad_with_vector_fill(
 
     output = _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
     left, right, top, bottom = torch_padding
-    fill = torch.tensor(fill, dtype=image.dtype, device=image.device).reshape(-1, 1, 1)
+    fill = torch.tensor(fill, dtype=image.dtype).reshape(-1, 1, 1)
+    if image.device.type == "cuda":
+        fill.pin_memory()
+    fill = fill.to(image.device, non_blocking=True)
 
     if top > 0:
         output[..., :top, :] = fill
@@ -1182,7 +1194,11 @@ def pad_bounding_box(
         pad = [left, top, left, top]
     else:
         pad = [left, top, 0, 0]
-    bounding_box = bounding_box + torch.tensor(pad, dtype=bounding_box.dtype, device=bounding_box.device)
+    pad_t = torch.tensor(pad, dtype=bounding_box.dtype)
+    if bounding_box.device.type == "cuda":
+        pad_t.pin_memory()
+    pad_t = pad_t.to(device=bounding_box.device, non_blocking=True)
+    bounding_box = bounding_box + pad_t
 
     height, width = spatial_size
     height += top + bottom
@@ -1260,7 +1276,12 @@ def crop_bounding_box(
     else:
         sub = [left, top, 0, 0]
 
-    bounding_box = bounding_box - torch.tensor(sub, dtype=bounding_box.dtype, device=bounding_box.device)
+    sub_t = torch.tensor(sub, dtype=bounding_box.dtype)
+    if bounding_box.device.type == "cuda":
+        sub_t.pin_memory()
+    sub_t = sub_t.to(device=bounding_box.device, non_blocking=True)
+
+    bounding_box = bounding_box - sub_t
     spatial_size = (height, width)
 
     return clamp_bounding_box(bounding_box, format=format, spatial_size=spatial_size), spatial_size
@@ -1310,10 +1331,13 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
     # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #
-    theta1 = torch.tensor(
-        [[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype, device=device
-    )
-    theta2 = torch.tensor([[[coeffs[6], coeffs[7], 1.0], [coeffs[6], coeffs[7], 1.0]]], dtype=dtype, device=device)
+    theta1 = torch.tensor([[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype)
+    theta2 = torch.tensor([[[coeffs[6], coeffs[7], 1.0], [coeffs[6], coeffs[7], 1.0]]], dtype=dtype)
+    if device.type == "cuda":
+        theta1.pin_memory()
+        theta2.pin_memory()
+    theta1 = theta1.to(device=device, non_blocking=True)
+    theta2 = theta2.to(device=device, non_blocking=True)
 
     d = 0.5
     base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
@@ -1323,7 +1347,9 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta1 = theta1.transpose(1, 2).div_(torch.tensor([0.5 * ow, 0.5 * oh], dtype=dtype, device=device))
+    rescaled_theta1 = theta1.transpose(1, 2)
+    rescaled_theta1[..., 0] /= 0.5 * ow
+    rescaled_theta1[..., 1] /= 0.5 * oh
     shape = (1, oh * ow, 3)
     output_grid1 = base_grid.view(shape).bmm(rescaled_theta1)
     output_grid2 = base_grid.view(shape).bmm(theta2.transpose(1, 2))
@@ -1462,14 +1488,16 @@ def perspective_bounding_box(
     ]
 
     theta1 = torch.tensor(
-        [[inv_coeffs[0], inv_coeffs[1], inv_coeffs[2]], [inv_coeffs[3], inv_coeffs[4], inv_coeffs[5]]],
-        dtype=dtype,
-        device=device,
+        [[inv_coeffs[0], inv_coeffs[1], inv_coeffs[2]], [inv_coeffs[3], inv_coeffs[4], inv_coeffs[5]]], dtype=dtype
     )
 
-    theta2 = torch.tensor(
-        [[inv_coeffs[6], inv_coeffs[7], 1.0], [inv_coeffs[6], inv_coeffs[7], 1.0]], dtype=dtype, device=device
-    )
+    theta2 = torch.tensor([[inv_coeffs[6], inv_coeffs[7], 1.0], [inv_coeffs[6], inv_coeffs[7], 1.0]], dtype=dtype)
+
+    if device.type == "cuda":
+        theta1.pin_memory()
+        theta2.pin_memory()
+    theta1 = theta1.to(device=device, non_blocking=True)
+    theta2 = theta2.to(device=device, non_blocking=True)
 
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
@@ -1609,7 +1637,9 @@ def elastic_image_tensor(
         needs_unsquash = False
 
     if displacement.dtype != dtype or displacement.device != device:
-        displacement = displacement.to(dtype=dtype, device=device)
+        if displacement.device == "cpu" and device.type == "cuda":
+            displacement.contiguous().pin_memory()
+        displacement = displacement.to(dtype=dtype, device=device, non_blocking=True)
 
     image_height, image_width = shape[-2:]
     grid = _create_identity_grid((image_height, image_width), device=device, dtype=dtype).add_(displacement)
@@ -1662,7 +1692,9 @@ def elastic_bounding_box(
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
 
     if displacement.dtype != dtype or displacement.device != device:
-        displacement = displacement.to(dtype=dtype, device=device)
+        if displacement.device == "cpu" and device.type == "cuda":
+            displacement.contiguous().pin_memory()
+        displacement = displacement.to(dtype=dtype, device=device, non_blocking=True)
 
     original_shape = bounding_box.shape
     # TODO: first cast to float if bbox is int64 before convert_format_bounding_box
@@ -1683,7 +1715,10 @@ def elastic_bounding_box(
     index_x, index_y = index_xy[:, 0], index_xy[:, 1]
 
     # Transform points:
-    t_size = torch.tensor(spatial_size[::-1], device=displacement.device, dtype=displacement.dtype)
+    t_size = torch.tensor(spatial_size[::-1], dtype=displacement.dtype)
+    if device.type == "cuda":
+        t_size.pin_memory()
+    t_size = t_size.to(device=displacement.device, non_blocking=True)
     transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
 
     transformed_points = transformed_points.reshape(-1, 4, 2)
