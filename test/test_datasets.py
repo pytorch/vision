@@ -112,7 +112,7 @@ class STL10TestCase(datasets_utils.ImageDatasetTestCase):
 
 class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Caltech101
-    FEATURE_TYPES = (PIL.Image.Image, (int, np.ndarray, tuple))
+    FEATURE_TYPES = (PIL.Image.Image, (int, np.ndarray, dict, tuple))
 
     ADDITIONAL_CONFIGS = combinations_grid(
         target_type=(

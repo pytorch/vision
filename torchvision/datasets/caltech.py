@@ -19,10 +19,16 @@ class Caltech101(VisionDataset):
     Args:
         root (string): Root directory of dataset where directory
             ``caltech101`` exists or will be saved to if download is set to True.
-        target_type (string or list, optional): Type of target to use, ``category`` or
-            ``annotation``. Can also be a list to output a tuple with all specified
-            target types.  ``category`` represents the target class, and
-            ``annotation`` is a list of points from a hand-generated outline.
+        target_type (string or list, optional): Type of target to use, ``category``, ``annotation``, ``box_coord``, or
+            ``obj_contours``. Can also be a list to output a tuple with all specified target types. The targets
+            represent:
+
+                - ``category`` (int): Target class
+                - ``annotation`` (dict): Raw annotation including the bounding box in Y1Y2X1X2 format and the contour
+                  vertices in relative coordinates to the bounding box.
+                - ``box_coord`` (np.ndarray, shape=(1, 4), dtype=int): Bounding box in XYXY format
+                - ``obj_contours`` (np.ndarray, shape=(N, 2) dtype=float): Contour vertices in XY format
+
             Defaults to ``category``.
         transform (callable, optional): A function/transform that takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
@@ -116,7 +122,7 @@ class Caltech101(VisionDataset):
             elif t == "annotation":
                 target.append({"obj_contour": annotation["obj_contour"], "box_coord": annotation["box_coord"]})
             elif t == "box_coord":
-                target.append(annotation["box_coord"][0, [2, 0, 3, 1]].astype(np.int32))
+                target.append(annotation["box_coord"][:, [2, 0, 3, 1]].astype(np.int32))
             elif t == "obj_contour":
                 target.append(annotation["obj_contour"].T + annotation["box_coord"][:, [2, 0]])
         target = tuple(target) if len(target) > 1 else target[0]
