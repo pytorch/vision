@@ -127,6 +127,7 @@ def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[str, pathlib.Path, BinaryIO],
     format: Optional[str] = None,
+    gray_image: bool = False,
     **kwargs,
 ) -> None:
     """
@@ -138,6 +139,8 @@ def save_image(
         fp (string or file object): A filename or a file object
         format(Optional):  If omitted, the format to use is determined from the filename extension.
             If a file object was used instead of a filename, this parameter should always be used.
+        gray_image(bool, optional): If ``True``, the image will be tranformed to gray images that only have one channel.
+            As a result, the storage cost will be reduced by two-thirds. Default: ``False``.
         **kwargs: Other arguments are documented in ``make_grid``.
     """
 
@@ -147,6 +150,8 @@ def save_image(
     # Add 0.5 after unnormalizing to [0, 255] to round to the nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
+    if gray_image:
+        im = im.convert('L')
     im.save(fp, format=format)
 
 
