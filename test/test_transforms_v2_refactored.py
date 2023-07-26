@@ -1697,11 +1697,11 @@ class TestToDtype:
     @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
-    def test_transform(self, make_input, input_dtype, output_dtype, device, scale):
+    @pytest.mark.parametrize("as_dict", (True, False))
+    def test_transform(self, make_input, input_dtype, output_dtype, device, scale, as_dict):
         input = make_input(dtype=input_dtype, device=device)
-        # TODO: This shouldn't be needed, fix it.
-        output_dtype = {"others": torch.float32}
-
+        if as_dict:
+            output_dtype = {type(input): output_dtype}
         check_transform(transforms.ToDtype, input, dtype=output_dtype, scale=scale)
 
     def reference_convert_dtype_image_tensor(self, image, dtype=torch.float, scale=False):
@@ -1754,3 +1754,70 @@ class TestToDtype:
             torch.testing.assert_close(out, expected, atol=1, rtol=0)
         else:
             torch.testing.assert_close(out, expected)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        (
+            make_image_tensor,
+            make_image,
+            make_video,
+        ),
+    )
+    def test_behaviour(self, make_input):
+        def was_scaled(inpt):
+            # this assumes the target dtype is float
+            return inpt.max() <= 1
+
+        H, W = 10, 10
+        sample = {
+            "img": make_input(size=(H, W), dtype=torch.uint8),
+            "bbox": make_bounding_box(size=(H, W)),
+            "mask": make_detection_mask(size=(H, W)),
+        }
+
+        img_dtype = sample["img"].dtype
+
+        bbox_dtype = sample["bbox"].dtype
+        assert bbox_dtype == torch.float32
+
+        mask_dtype = sample["mask"].dtype
+        assert mask_dtype == torch.bool
+
+        # only img gets transformed when dtype isn't a dict
+        for scale in (True, False):
+            out = transforms.ToDtype(dtype=torch.float32, scale=scale)(sample)
+            assert out["img"].dtype == torch.float32
+            if scale:
+                assert was_scaled(out["img"])
+            else:
+                assert not was_scaled(out["img"])
+            assert out["bbox"].dtype == bbox_dtype
+            assert out["mask"].dtype == mask_dtype
+
+        # make sure "others" works as a catch-all and that None means no conversion
+        out = transforms.ToDtype(dtype={datapoints.Mask: torch.int64, "others": None})(sample)
+        assert out["img"].dtype == img_dtype
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype != mask_dtype
+        assert out["mask"].dtype == torch.int64
+
+        # Typical use-case: want to convert dtype and scale for img and just dtype for masks.
+        # This just makes sure we now have a decent API for this
+        out = transforms.ToDtype(
+            dtype={type(sample["img"]): torch.float32, datapoints.Mask: torch.int64, "others": None}, scale=True
+        )(sample)
+        assert out["img"].dtype == torch.float32
+        assert was_scaled(out["img"])
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype != mask_dtype
+        assert out["mask"].dtype == torch.int64
+
+        with pytest.raises(ValueError, match="No dtype was specified for"):
+            out = transforms.ToDtype(dtype={datapoints.Mask: torch.float32})(sample)
+        with pytest.warns(UserWarning, match=re.escape("plain `torch.Tensor` will *not* be transformed")):
+            transforms.ToDtype(dtype={torch.Tensor: torch.float32, datapoints.Image: torch.float32})
+        with pytest.warns(UserWarning, match="no scaling will be done"):
+            out = transforms.ToDtype(dtype={"others": None}, scale=True)(sample)
+        assert out["img"].dtype == img_dtype
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype == mask_dtype
