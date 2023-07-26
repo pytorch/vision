@@ -66,11 +66,11 @@ def _check_kernel_cuda_vs_cpu(kernel, input, *args, rtol, atol, **kwargs):
 
 
 @cache
-def _script(fn):
+def _script(obj):
     try:
-        return torch.jit.script(fn)
+        return torch.jit.script(obj)
     except Exception as error:
-        name = getattr(fn, "__name__", fn.__class__.__name__)
+        name = getattr(obj, "__name__", obj.__class__.__name__)
         raise AssertionError(f"Trying to `torch.jit.script` '{name}' raised the error above.") from error
 
 
@@ -1658,7 +1658,7 @@ class TestToDtype:
         check_kernel(
             kernel,
             make_input(dtype=input_dtype, device=device),
-            expect_same_dtype=False,
+            expect_same_dtype=input_dtype is output_dtype,
             dtype=output_dtype,
             scale=scale,
         )
@@ -1680,7 +1680,11 @@ class TestToDtype:
             F.to_dtype,
             kernel,
             make_input(dtype=input_dtype, device=device),
-            check_dispatch=False,  # TODO: the check would pass if we were to use the non-datapoint dependent logic of _check_dispatcher_dispatch ¯\_(ツ)_/¯
+            # TODO: we could leave check_dispatch to True but it currently fails
+            # in _check_dispatcher_dispatch because there is no to_dtype() method on the datapoints.
+            # We should be able to put this back if we change the dispatch
+            # mechanism e.g. via https://github.com/pytorch/vision/pull/7733
+            check_dispatch=False,
             dtype=output_dtype,
             scale=scale,
         )
@@ -1695,6 +1699,7 @@ class TestToDtype:
     @pytest.mark.parametrize("scale", (True, False))
     def test_transform(self, make_input, input_dtype, output_dtype, device, scale):
         input = make_input(dtype=input_dtype, device=device)
+        # TODO: This shouldn't be needed, fix it.
         output_dtype = {"others": torch.float32}
 
         check_transform(transforms.ToDtype, input, dtype=output_dtype, scale=scale)
@@ -1714,7 +1719,7 @@ class TestToDtype:
                 if output_dtype.is_floating_point:
                     return value
                 else:
-                    return int(decimal.Decimal(value) * torch.iinfo(output_dtype).max)
+                    return round(decimal.Decimal(value) * torch.iinfo(output_dtype).max)
             else:
                 input_max_value = torch.iinfo(input_dtype).max
 
@@ -1732,18 +1737,20 @@ class TestToDtype:
 
         return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype)
 
-    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
-    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8, torch.int64])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
-    def test_against_ref(self, input_dtype, output_dtype, device, scale):
+    def test_image_correctness(self, input_dtype, output_dtype, device, scale):
+        if input_dtype.is_floating_point and output_dtype == torch.int64:
+            pytest.xfail("float to int64 conversion is not supported")
+
         input = make_image(dtype=input_dtype, device=device)
 
         out = F.to_dtype(input, dtype=output_dtype, scale=scale)
         expected = self.reference_convert_dtype_image_tensor(input, dtype=output_dtype, scale=scale)
 
-        if output_dtype is torch.uint8 and scale:
-            # TODO: is this actually normal? Why wasn't this a problem before?
+        if input_dtype.is_floating_point and output_dtype is torch.uint8 and scale:
             torch.testing.assert_close(out, expected, atol=1, rtol=0)
         else:
             torch.testing.assert_close(out, expected)

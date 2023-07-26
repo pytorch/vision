@@ -5,6 +5,7 @@ from ._utils import is_simple_tensor  # usort: skip
 from ._meta import (
     clamp_bounding_box,
     convert_format_bounding_box,
+    convert_image_dtype,
     to_dtype,
     to_dtype_image_tensor,
     to_dtype_video,

@@ -297,11 +297,11 @@ def _num_value_bits(dtype: torch.dtype) -> int:
 
 
 def to_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
-    if not scale:
-        return image.to(dtype)
 
     if image.dtype == dtype:
         return image
+    elif not scale:
+        return image.to(dtype)
 
     float_input = image.is_floating_point()
     if torch.jit.is_scripting():
@@ -348,6 +348,10 @@ def to_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float,
             return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
 
 
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float32) -> torch.Tensor:
+    return to_dtype_image_tensor(image, dtype=dtype, scale=True)
+
+
 def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     return to_dtype_image_tensor(video, dtype, scale=scale)
 
@@ -364,6 +368,7 @@ def to_dtype(inpt: datapoints._InputTypeJIT, dtype: torch.dtype = torch.float, s
     elif isinstance(inpt, datapoints.Video):
         output = to_dtype_video(inpt.as_subclass(torch.Tensor), dtype, scale=scale)
         return datapoints.Video.wrap_like(inpt, output)
-    elif not isinstance(inpt, torch.Tensor):
-        raise TypeError(f"Expected a tensor or a datapoint, but got {type(inpt)} instead.")
-    return inpt.to(dtype)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        return inpt.to(dtype)
+    else:
+        raise TypeError("Input can either be a plain tensor or a datapoint, " f"but got {type(inpt)} instead. ")

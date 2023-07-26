@@ -64,9 +64,8 @@ class ConvertImageDtype(Transform):
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, inpt: datapoints._TensorImageType, params: Dict[str, Any]) -> datapoints._TensorImageType:
-        output = F.to_dtype_image_tensor(inpt.as_subclass(torch.Tensor), self.dtype, scale=True)
-        return datapoints.Image.wrap_like(inpt, output)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.to_dtype(inpt, dtype=self.dtype, scale=True)
 
 
 class ClampBoundingBox(Transform):
