@@ -348,6 +348,7 @@ def to_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float,
             return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
 
 
+# We encourage users to use to_dtype() instead but we keep this for BC
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float32) -> torch.Tensor:
     return to_dtype_image_tensor(image, dtype=dtype, scale=True)
 
