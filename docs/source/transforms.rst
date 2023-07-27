@@ -234,7 +234,6 @@ Conversion
     v2.PILToTensor
     v2.ToImageTensor
     ConvertImageDtype
-    v2.ConvertDtype
     v2.ConvertImageDtype
     v2.ToDtype
     v2.ConvertBoundingBoxFormat
