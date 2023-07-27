@@ -1642,6 +1642,7 @@ class TestRotate:
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
 
+
 class TestCompose:
     class BuiltinTransform(transforms.Transform):
         def _transform(self, inpt, params):
@@ -1701,6 +1702,7 @@ class TestCompose:
             assert isinstance(output, tuple) and len(output) == 2
             assert output[0] is image
             assert output[1] is label
+
 
 class TestToDtype:
     @pytest.mark.parametrize(

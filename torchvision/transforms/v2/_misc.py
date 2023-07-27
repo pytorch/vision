@@ -225,17 +225,21 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
-    # TODO FINISH DOCS  !!!
-    """[BETA] Converts the input to a specific dtype.
+    """[BETA] Converts the input to a specific dtype, optionally scaling the values for images or videos.
 
     .. v2betastatus:: ToDtype transform
 
+    .. note::
+        ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.
+
     Args:
         dtype (``torch.dtype`` or dict of ``Datapoint`` -> ``torch.dtype``): The dtype to convert to.
+            If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted
+            to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.
             A dict can be passed to specify per-datapoint conversions, e.g.
-            ``dtype={datapoints.Image: torch.float32, datapoints.Video:
-            torch.float64}``.
-        scale:
+            ``dtype={datapoints.Image: torch.float32, datapoints.Mask: torch.int64, "others":None}``. The "others"
+            key can be used as a catch-all for any other datapoint type, and ``None`` means no conversion.
+        scale (bool, optional): Whether to scale the values for images or videos. Default: ``False``.
     """
 
     _transformed_types = (torch.Tensor,)
