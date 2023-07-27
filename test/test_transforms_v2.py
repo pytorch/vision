@@ -1,7 +1,6 @@
 import itertools
 import pathlib
 import random
-import re
 import textwrap
 import warnings
 from collections import defaultdict
