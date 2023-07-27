@@ -503,12 +503,13 @@ def make_image(
     device="cpu",
     memory_format=torch.contiguous_format,
 ):
+    dtype = dtype or torch.uint8
     max_value = get_max_value(dtype)
     data = torch.testing.make_tensor(
         (*batch_dims, get_num_channels(color_space), *size),
         low=0,
         high=max_value,
-        dtype=dtype or torch.uint8,
+        dtype=dtype,
         device=device,
         memory_format=memory_format,
     )
