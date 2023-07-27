@@ -1832,19 +1832,15 @@ class TestToDtype:
             return inpt.max() <= 1
 
         H, W = 10, 10
+        img_dtype = torch.uint8
+        bbox_dtype = torch.float32
+        mask_dtype = torch.bool
         sample = {
-            "img": make_input(size=(H, W), dtype=torch.uint8),
-            "bbox": make_bounding_box(size=(H, W)),
-            "mask": make_detection_mask(size=(H, W)),
+            "img": make_input(size=(H, W), dtype=img_dtype),
+            "bbox": make_bounding_box(size=(H, W), dtype=bbox_dtype),
+            "mask": make_detection_mask(size=(H, W), dtype=mask_dtype),
         }
 
-        img_dtype = sample["img"].dtype
-
-        bbox_dtype = sample["bbox"].dtype
-        assert bbox_dtype == torch.float32
-
-        mask_dtype = sample["mask"].dtype
-        assert mask_dtype == torch.bool
 
         # only img gets transformed when dtype isn't a dict
         for scale in (True, False):

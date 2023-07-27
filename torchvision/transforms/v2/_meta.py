@@ -37,7 +37,7 @@ class ConvertImageDtype(Transform):
     .. v2betastatus:: ConvertImageDtype transform
 
     .. warning::
-        Consider using ToDtype(dtype, scale=True) instead.
+        Consider using ``ToDtype(dtype, scale=True)`` instead. See :class:`~torchvision.transforms.v2.ToDtype`.
 
     This function does not support PIL Image.
 
