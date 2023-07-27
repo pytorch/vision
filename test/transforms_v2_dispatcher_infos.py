@@ -357,16 +357,6 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.convert_dtype,
-        kernels={
-            datapoints.Image: F.convert_dtype_image_tensor,
-            datapoints.Video: F.convert_dtype_video,
-        },
-        test_marks=[
-            skip_dispatch_datapoint,
-        ],
-    ),
-    DispatcherInfo(
         F.uniform_temporal_subsample,
         kernels={
             datapoints.Video: F.uniform_temporal_subsample_video,

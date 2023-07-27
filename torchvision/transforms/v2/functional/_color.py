@@ -9,7 +9,7 @@ from torchvision.transforms._functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import _num_value_bits, convert_dtype_image_tensor
+from ._meta import _num_value_bits, to_dtype_image_tensor
 from ._utils import _get_kernel, _register_explicit_noops, _register_kernel_internal, is_simple_tensor
 
 
@@ -358,7 +358,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
         return image
 
     orig_dtype = image.dtype
-    image = convert_dtype_image_tensor(image, torch.float32)
+    image = to_dtype_image_tensor(image, torch.float32, scale=True)
 
     image = _rgb_to_hsv(image)
     h, s, v = image.unbind(dim=-3)
@@ -366,7 +366,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     image = torch.stack((h, s, v), dim=-3)
     image_hue_adj = _hsv_to_rgb(image)
 
-    return convert_dtype_image_tensor(image_hue_adj, orig_dtype)
+    return to_dtype_image_tensor(image_hue_adj, orig_dtype, scale=True)
 
 
 adjust_hue_image_pil = _FP.adjust_hue
@@ -400,7 +400,7 @@ def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1
     # The input image is either assumed to be at [0, 1] scale (if float) or is converted to that scale (if integer).
     # Since the gamma is non-negative, the output remains at [0, 1] scale.
     if not torch.is_floating_point(image):
-        output = convert_dtype_image_tensor(image, torch.float32).pow_(gamma)
+        output = to_dtype_image_tensor(image, torch.float32, scale=True).pow_(gamma)
     else:
         output = image.pow(gamma)
 
@@ -409,7 +409,7 @@ def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1
         # of the output can go beyond [0, 1].
         output = output.mul_(gain).clamp_(0.0, 1.0)
 
-    return convert_dtype_image_tensor(output, image.dtype)
+    return to_dtype_image_tensor(output, image.dtype, scale=True)
 
 
 adjust_gamma_image_pil = _FP.adjust_gamma
@@ -572,7 +572,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     # Since we need to convert in most cases anyway and out of the acceptable dtypes mentioned in 1. `torch.uint8` is
     # by far the most common, we choose it as base.
     output_dtype = image.dtype
-    image = convert_dtype_image_tensor(image, torch.uint8)
+    image = to_dtype_image_tensor(image, torch.uint8, scale=True)
 
     # The histogram is computed by using the flattened image as index. For example, a pixel value of 127 in the image
     # corresponds to adding 1 to index 127 in the histogram.
@@ -623,7 +623,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     equalized_image = lut.gather(dim=-1, index=flat_image).view_as(image)
 
     output = torch.where(valid_equalization, equalized_image, image)
-    return convert_dtype_image_tensor(output, output_dtype)
+    return to_dtype_image_tensor(output, output_dtype, scale=True)
 
 
 equalize_image_pil = _FP.equalize

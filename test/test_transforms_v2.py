@@ -1,7 +1,6 @@
 import itertools
 import pathlib
 import random
-import re
 import textwrap
 import warnings
 from collections import defaultdict
@@ -105,7 +104,7 @@ def normalize_adapter(transform, input, device):
             continue
         elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor)):
             # normalize doesn't support integer images
-            value = F.convert_dtype(value, torch.float32)
+            value = F.to_dtype(value, torch.float32, scale=True)
         adapted_input[key] = value
     return adapted_input
 
@@ -146,7 +145,7 @@ class TestSmoke:
             (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
             (transforms.ClampBoundingBox(), None),
             (transforms.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.CXCYWH), None),
-            (transforms.ConvertDtype(), None),
+            (transforms.ConvertImageDtype(), None),
             (transforms.GaussianBlur(kernel_size=3), None),
             (
                 transforms.LinearTransformation(
@@ -1324,61 +1323,6 @@ class TestRandomResize:
         mock_resize.assert_called_with(
             inpt_sentinel, size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
         )
-
-
-class TestToDtype:
-    @pytest.mark.parametrize(
-        ("dtype", "expected_dtypes"),
-        [
-            (
-                torch.float64,
-                {
-                    datapoints.Video: torch.float64,
-                    datapoints.Image: torch.float64,
-                    datapoints.BoundingBox: torch.float64,
-                },
-            ),
-            (
-                {datapoints.Video: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
-                {datapoints.Video: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
-            ),
-        ],
-    )
-    def test_call(self, dtype, expected_dtypes):
-        sample = dict(
-            video=make_video(dtype=torch.int64),
-            image=make_image(dtype=torch.uint8),
-            bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, dtype=torch.float32),
-            str="str",
-            int=0,
-        )
-
-        transform = transforms.ToDtype(dtype)
-        transformed_sample = transform(sample)
-
-        for key, value in sample.items():
-            value_type = type(value)
-            transformed_value = transformed_sample[key]
-
-            # make sure the transformation retains the type
-            assert isinstance(transformed_value, value_type)
-
-            if isinstance(value, torch.Tensor):
-                assert transformed_value.dtype is expected_dtypes[value_type]
-            else:
-                assert transformed_value is value
-
-    @pytest.mark.filterwarnings("error")
-    def test_plain_tensor_call(self):
-        tensor = torch.empty((), dtype=torch.float32)
-        transform = transforms.ToDtype({torch.Tensor: torch.float64})
-
-        assert transform(tensor).dtype is torch.float64
-
-    @pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
-    def test_plain_tensor_warning(self, other_type):
-        with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
-            transforms.ToDtype(dtype={torch.Tensor: torch.float32, other_type: torch.float64})
 
 
 class TestUniformTemporalSubsample:
