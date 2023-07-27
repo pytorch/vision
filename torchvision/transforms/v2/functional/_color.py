@@ -10,7 +10,7 @@ from torchvision.transforms._functional_tensor import _max_value
 from torchvision.utils import _log_api_usage_once
 
 from ._meta import _num_value_bits, convert_dtype_image_tensor
-from ._utils import is_simple_tensor
+from ._utils import _get_kernel, is_simple_tensor, register_kernel
 
 
 def _rgb_to_grayscale_image_tensor(
@@ -69,6 +69,25 @@ def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Te
     return output if fp else output.to(image1.dtype)
 
 
+def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) -> datapoints._InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_brightness)
+
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        kernel = _get_kernel(adjust_brightness, type(inpt))
+        return kernel(inpt, brightness_factor=brightness_factor)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        return inpt.adjust_brightness(brightness_factor=brightness_factor)
+    elif isinstance(inpt, PIL.Image.Image):
+        return adjust_brightness_image_pil(inpt, brightness_factor=brightness_factor)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
+
+
+@register_kernel(adjust_brightness, datapoints.Image)
 def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     if brightness_factor < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
@@ -86,25 +105,9 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
 adjust_brightness_image_pil = _FP.adjust_brightness
 
 
+@register_kernel(adjust_brightness, datapoints.Video)
 def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     return adjust_brightness_image_tensor(video, brightness_factor=brightness_factor)
-
-
-def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(adjust_brightness)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.adjust_brightness(brightness_factor=brightness_factor)
-    elif isinstance(inpt, PIL.Image.Image):
-        return adjust_brightness_image_pil(inpt, brightness_factor=brightness_factor)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
 
 
 def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float) -> torch.Tensor:

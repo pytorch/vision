@@ -167,7 +167,7 @@ def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
     preserved in doing so. For bounding boxes also checks that the format is preserved.
     """
     if isinstance(input, datapoints._datapoint.Datapoint):
-        if dispatcher is F.resize:
+        if dispatcher in {F.resize, F.adjust_brightness}:
             output = dispatcher(input, *args, **kwargs)
         else:
             # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
@@ -254,7 +254,7 @@ def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
 
 def _check_dispatcher_datapoint_signature_match(dispatcher):
     """Checks if the signature of the dispatcher matches the corresponding method signature on the Datapoint class."""
-    if dispatcher is F.resize:
+    if dispatcher in {F.resize, F.adjust_brightness}:
         return
     dispatcher_signature = inspect.signature(dispatcher)
     dispatcher_params = list(dispatcher_signature.parameters.values())[1:]

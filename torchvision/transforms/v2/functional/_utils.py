@@ -20,12 +20,23 @@ def register_kernel(dispatcher, datapoint_cls, *, datapoint_wrapping=True):
 
         return wrapper
 
+    registry = _KERNEL_REGISTRY.get(dispatcher, {})
+
     def decorator(kernel):
-        _KERNEL_REGISTRY[(dispatcher, datapoint_cls)] = datapoint_wrapper(kernel) if datapoint_wrapping else kernel
+        registry[datapoint_cls] = datapoint_wrapper(kernel) if datapoint_wrapping else kernel
         return kernel
 
     return decorator
 
 
+def _noop(inpt, *args, **kwargs):
+    return inpt
+
+
 def _get_kernel(dispatcher, datapoint_cls):
-    return _KERNEL_REGISTRY[(dispatcher, datapoint_cls)]
+    registry = _KERNEL_REGISTRY.get(dispatcher, {})
+
+    if datapoint_cls in registry:
+        return registry[datapoint_cls]
+
+    return _noop
