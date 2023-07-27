@@ -141,7 +141,7 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixupCutmix(Transform):
-    def __init__(self, *, alpha: float, num_classes: int, labels_getter="default") -> None:
+    def __init__(self, *, alpha: float = 1, num_classes: int, labels_getter="default") -> None:
         super().__init__()
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
@@ -204,6 +204,26 @@ class _BaseMixupCutmix(Transform):
 
 
 class Mixup(_BaseMixupCutmix):
+    """[BETA] Apply Mixup to the provided batch of images and labels.
+
+    .. v2betastatus:: Mixup transform
+
+    Paper: `mixup: Beyond Empirical Risk Minimization <https://arxiv.org/abs/1710.09412>`_.
+
+    See :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+
+    In the input, the labels are expected to be a tensor of shape ``(batch_size,)``. They will be transformed
+    into a tensor of shape ``(batch_size, num_classes)``.
+
+    Args:
+        alpha (float, optional): hyperparameter of the Beta distribution used for mixup. Default is 1.
+        num_classes (int): number of classes in the batch. Used for one-hot-encoding.
+        labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
+            By default, this will pick the second parameter a the labels if it's a tensor. This covers the most
+            common scenario where this transform is called as ``Mixup()(imgs_batch, labels_batch)``.
+            It can also be a callable that takes the same input as the transform, and returns the labels.
+    """
+
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))  # type: ignore[arg-type]
 
@@ -226,6 +246,27 @@ class Mixup(_BaseMixupCutmix):
 
 
 class Cutmix(_BaseMixupCutmix):
+    """[BETA] Apply Cutmix to the provided batch of images and labels.
+
+    .. v2betastatus:: Cutmix transform
+
+    Paper: `CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features
+    <https://arxiv.org/abs/1905.04899>`_.
+
+    See :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+
+    In the input, the labels are expected to be a tensor of shape ``(batch_size,)``. They will be transformed
+    into a tensor of shape ``(batch_size, num_classes)``.
+
+    Args:
+        alpha (float, optional): hyperparameter of the Beta distribution used for mixup. Default is 1.
+        num_classes (int): number of classes in the batch. Used for one-hot-encoding.
+        labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
+            By default, this will pick the second parameter a the labels if it's a tensor. This covers the most
+            common scenario where this transform is called as ``Cutmix()(imgs_batch, labels_batch)``.
+            It can also be a callable that takes the same input as the transform, and returns the labels.
+    """
+
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
