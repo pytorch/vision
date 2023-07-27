@@ -94,14 +94,14 @@ def get_coco(root, image_set, transforms, use_v2=False):
     ann_file = os.path.join(root, ann_file)
 
     # The 2 "Compose" below achieve the same thing: converting coco detection
-    # samples into coco segmentation They just do it with slightly different
-    # implementation. We could refactor and unify, but keeping them separate
-    # helps keeping the v2 version clean
+    # samples into segmentation-compatible samples. They just do it with
+    # slightly different implementations. We could refactor and unify, but
+    # keeping them separate helps keeping the v2 version clean
     if use_v2:
         import v2_extras
         from torchvision.datasets import wrap_dataset_for_transforms_v2
 
-        transforms = Compose([v2_extras.CocoDetectionToSegmentation(), transforms])
+        transforms = Compose([v2_extras.CocoDetectionToVOCSegmentation(), transforms])
         dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
         dataset = wrap_dataset_for_transforms_v2(dataset, target_keys={"masks", "labels"})
     else:

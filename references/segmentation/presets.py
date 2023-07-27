@@ -56,13 +56,10 @@ class SegmentationPresetTrain:
             transforms += [T.PILToTensor()]
 
         if use_v2:
-            # TODO: This is really bad UX, we should make this easier and less error prone
-            dtype= {
-                (datapoints.Image if backend == "datapoint" else torch.Tensor): None,
-                datapoints.Mask: torch.int64,
-            }
-            transforms += [T.ToDtype(dtype=dtype)]
-            transforms += [T.ConvertDtype(dtype=torch.float)]
+            img_type = datapoints.Image if backend == "datapoint" else torch.Tensor
+            transforms += [
+                T.ToDtype(dtype={img_type: torch.float32, datapoints.Mask: torch.int64, "others": None}, scale=True)
+            ]
         else:
             # No need to explicitly convert masks as they're magically int64 already
             transforms += [T.ConvertImageDtype(torch.float)]

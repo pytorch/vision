@@ -16,16 +16,20 @@ from torchvision.transforms import functional as F, InterpolationMode
 
 def get_dataset(args, is_train):
     def sbd(*args, **kwargs):
+        kwargs.pop("use_v2")
         return torchvision.datasets.SBDataset(*args, mode="segmentation", **kwargs)
 
+    def voc(*args, **kwargs):
+        kwargs.pop("use_v2")
+        return torchvision.datasets.VOCSegmentation(*args, **kwargs)
+
     paths = {
-        "voc": (args.data_path, torchvision.datasets.VOCSegmentation, 21),
+        "voc": (args.data_path, voc, 21),
         "voc_aug": (args.data_path, sbd, 21),
         "coco": (args.data_path, get_coco, 21),
     }
     p, ds_fn, num_classes = paths[args.dataset]
 
-    # FIXME: use_v2 only works for coco right now
     image_set = "train" if is_train else "val"
     ds = ds_fn(p, image_set=image_set, transforms=get_transform(is_train, args), use_v2=args.use_v2)
     return ds, num_classes
@@ -125,6 +129,8 @@ def main(args):
     if args.backend.lower() != "pil" and not args.use_v2:
         # TODO: Support tensor backend in V1?
         raise ValueError("Use --use-v2 if you want to use the datapoint or tensor backend.")
+    if args.use_v2 and args.dataset != "coco":
+        raise ValueError("v2 is only support supported for coco dataset for now.")
 
     if args.output_dir:
         utils.mkdir(args.output_dir)

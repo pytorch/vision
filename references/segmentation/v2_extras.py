@@ -26,7 +26,7 @@ class PadIfSmaller(v2.Transform):
         return v2.functional.pad(inpt, padding=params["padding"], fill=fill)
 
 
-class CocoDetectionToSegmentation(v2.Transform):
+class CocoDetectionToVOCSegmentation(v2.Transform):
     """Turn samples from datasets.CocoDetection into the same format as VOCSegmentation.
 
     This is achieved in two steps:
