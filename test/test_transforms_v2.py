@@ -1614,9 +1614,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 
 
 @pytest.mark.parametrize("min_size", (1, 10))
-@pytest.mark.parametrize(
-    "labels_getter", ("default", "labels", lambda inputs: inputs["labels"], None, lambda inputs: None)
-)
+@pytest.mark.parametrize("labels_getter", ("default", lambda inputs: inputs["labels"], None, lambda inputs: None))
 @pytest.mark.parametrize("sample_type", (tuple, dict))
 def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
 
@@ -1704,22 +1702,6 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         assert out_labels.tolist() == valid_indices
 
 
-@pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
-@pytest.mark.parametrize("sample_type", (tuple, dict))
-def test_sanitize_bounding_boxes_default_heuristic(key, sample_type):
-    labels = torch.arange(10)
-    sample = {key: labels, "another_key": "whatever"}
-    if sample_type is tuple:
-        sample = (None, sample, "whatever_again")
-    assert transforms.SanitizeBoundingBox._find_labels_default_heuristic(sample) is labels
-
-    if key.lower() != "labels":
-        # If "labels" is in the dict (case-insensitive),
-        # it takes precedence over other keys which would otherwise be a match
-        d = {key: "something_else", "labels": labels}
-        assert transforms.SanitizeBoundingBox._find_labels_default_heuristic(d) is labels
-
-
 def test_sanitize_bounding_boxes_errors():
 
     good_bbox = datapoints.BoundingBox(
@@ -1730,16 +1712,12 @@ def test_sanitize_bounding_boxes_errors():
 
     with pytest.raises(ValueError, match="min_size must be >= 1"):
         transforms.SanitizeBoundingBox(min_size=0)
-    with pytest.raises(ValueError, match="labels_getter should either be a str"):
+    with pytest.raises(ValueError, match="labels_getter should either be 'default'"):
         transforms.SanitizeBoundingBox(labels_getter=12)
 
     with pytest.raises(ValueError, match="Could not infer where the labels are"):
         bad_labels_key = {"bbox": good_bbox, "BAD_KEY": torch.arange(good_bbox.shape[0])}
         transforms.SanitizeBoundingBox()(bad_labels_key)
-
-    with pytest.raises(ValueError, match="If labels_getter is a str or 'default'"):
-        not_a_dict = (good_bbox, torch.arange(good_bbox.shape[0]))
-        transforms.SanitizeBoundingBox()(not_a_dict)
 
     with pytest.raises(ValueError, match="must be a tensor"):
         not_a_tensor = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0]).tolist()}

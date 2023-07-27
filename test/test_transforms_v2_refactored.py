@@ -1759,3 +1759,19 @@ class TestCutMixMixUp:
             # future, e.g. for 2 consecutive CutMix?
             labels = torch.randint(0, num_classes, size=(batch_size,))
             transforms.Compose([cutmix_mixup, cutmix_mixup])(imgs, labels)
+
+
+@pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
+@pytest.mark.parametrize("sample_type", (tuple, list, dict))
+def test_labels_getter_default_heuristic(key, sample_type):
+    labels = torch.arange(10)
+    sample = {key: labels, "another_key": "whatever"}
+    if sample_type is not dict:
+        sample = sample_type((None, sample, "whatever_again"))
+    assert transforms._utils._find_labels_default_heuristic(sample) is labels
+
+    if key.lower() != "labels":
+        # If "labels" is in the dict (case-insensitive),
+        # it takes precedence over other keys which would otherwise be a match
+        d = {key: "something_else", "labels": labels}
+        assert transforms._utils._find_labels_default_heuristic(d) is labels
