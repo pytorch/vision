@@ -244,7 +244,9 @@ class ToDtype(Transform):
 
     _transformed_types = (torch.Tensor,)
 
-    def __init__(self, dtype: Union[torch.dtype, Dict[Type, Optional[torch.dtype]]], scale: bool = False) -> None:
+    def __init__(
+        self, dtype: Union[torch.dtype, Dict[Union[Type, str], Optional[torch.dtype]]], scale: bool = False
+    ) -> None:
         super().__init__()
 
         if not isinstance(dtype, (dict, torch.dtype)):
@@ -265,11 +267,12 @@ class ToDtype(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(self.dtype, torch.dtype):
-            # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype is a simple torch.dtype
+            # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
+            # is a simple torch.dtype
             if not is_simple_tensor(inpt) and not isinstance(inpt, (datapoints.Image, datapoints.Video)):
                 return inpt
 
-            dtype = self.dtype
+            dtype: Optional[torch.dtype] = self.dtype
         elif type(inpt) in self.dtype:
             dtype = self.dtype[type(inpt)]
         elif "others" in self.dtype:
