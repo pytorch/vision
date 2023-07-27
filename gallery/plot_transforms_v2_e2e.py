@@ -29,7 +29,7 @@ def show(sample):
     image, target = sample
     if isinstance(image, PIL.Image.Image):
         image = F.to_image_tensor(image)
-    image = F.convert_dtype(image, torch.uint8)
+    image = F.to_dtype(image, torch.uint8, scale=True)
     annotated_image = draw_bounding_boxes(image, target["boxes"], colors="yellow", width=3)
 
     fig, ax = plt.subplots()
