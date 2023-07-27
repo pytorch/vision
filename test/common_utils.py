@@ -27,7 +27,7 @@ from PIL import Image
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import datapoints, io
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import convert_dtype_image_tensor, to_image_pil, to_image_tensor
+from torchvision.transforms.v2.functional import to_dtype_image_tensor, to_image_pil, to_image_tensor
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
@@ -602,7 +602,7 @@ def make_image_loader_for_interpolation(
             image_tensor = image_tensor.to(device=device, memory_format=memory_format, copy=True)
         else:
             image_tensor = image_tensor.to(device=device)
-        image_tensor = convert_dtype_image_tensor(image_tensor, dtype=dtype)
+        image_tensor = to_dtype_image_tensor(image_tensor, dtype=dtype, scale=True)
 
         return datapoints.Image(image_tensor)
 

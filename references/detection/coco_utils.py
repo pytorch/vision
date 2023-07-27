@@ -1,4 +1,3 @@
-import copy
 import os
 
 import torch
@@ -8,24 +7,6 @@ import transforms as T
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
 from torchvision.datasets import wrap_dataset_for_transforms_v2
-
-
-class FilterAndRemapCocoCategories:
-    def __init__(self, categories, remap=True):
-        self.categories = categories
-        self.remap = remap
-
-    def __call__(self, image, target):
-        anno = target["annotations"]
-        anno = [obj for obj in anno if obj["category_id"] in self.categories]
-        if not self.remap:
-            target["annotations"] = anno
-            return image, target
-        anno = copy.deepcopy(anno)
-        for obj in anno:
-            obj["category_id"] = self.categories.index(obj["category_id"])
-        target["annotations"] = anno
-        return image, target
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):
@@ -219,7 +200,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         return img, target
 
 
-def get_coco(root, image_set, transforms, mode="instances", use_v2=False):
+def get_coco(root, image_set, transforms, mode="instances", use_v2=False, with_masks=False):
     anno_file_template = "{}_{}2017.json"
     PATHS = {
         "train": ("train2017", os.path.join("annotations", anno_file_template.format(mode, "train"))),
@@ -233,9 +214,12 @@ def get_coco(root, image_set, transforms, mode="instances", use_v2=False):
 
     if use_v2:
         dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
-        # TODO: need to update target_keys to handle masks for segmentation!
-        dataset = wrap_dataset_for_transforms_v2(dataset, target_keys={"boxes", "labels", "image_id"})
+        target_keys = ["boxes", "labels", "image_id"]
+        if with_masks:
+            target_keys += ["masks"]
+        dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
     else:
+        # TODO: handle with_masks for V1?
         t = [ConvertCocoPolysToMask()]
         if transforms is not None:
             t.append(transforms)
@@ -249,9 +233,3 @@ def get_coco(root, image_set, transforms, mode="instances", use_v2=False):
     # dataset = torch.utils.data.Subset(dataset, [i for i in range(500)])
 
     return dataset
-
-
-def get_coco_kp(root, image_set, transforms, use_v2=False):
-    if use_v2:
-        raise ValueError("KeyPoints aren't supported by transforms V2 yet.")
-    return get_coco(root, image_set, transforms, mode="person_keypoints")

@@ -1,4 +1,5 @@
 import contextlib
+import decimal
 import inspect
 import math
 import re
@@ -29,6 +30,7 @@ from common_utils import (
 
 from torch import nn
 from torch.testing import assert_close
+from torch.utils._pytree import tree_map
 from torchvision import datapoints
 
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
@@ -66,11 +68,12 @@ def _check_kernel_cuda_vs_cpu(kernel, input, *args, rtol, atol, **kwargs):
 
 
 @cache
-def _script(fn):
+def _script(obj):
     try:
-        return torch.jit.script(fn)
+        return torch.jit.script(obj)
     except Exception as error:
-        raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
+        name = getattr(obj, "__name__", obj.__class__.__name__)
+        raise AssertionError(f"Trying to `torch.jit.script` '{name}' raised the error above.") from error
 
 
 def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
@@ -127,6 +130,7 @@ def check_kernel(
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
     check_batched_vs_unbatched=True,
+    expect_same_dtype=True,
     **kwargs,
 ):
     initial_input_version = input._version
@@ -139,7 +143,8 @@ def check_kernel(
     # check that no inplace operation happened
     assert input._version == initial_input_version
 
-    assert output.dtype == input.dtype
+    if expect_same_dtype:
+        assert output.dtype == input.dtype
     assert output.device == input.device
 
     if check_cuda_vs_cpu:
@@ -276,7 +281,7 @@ def check_dispatcher_signatures_match(dispatcher, *, kernel, input_type):
 def _check_transform_v1_compatibility(transform, input):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
     ``get_params`` method, is scriptable, and the scripted version can be called without error."""
-    if not hasattr(transform, "_v1_transform_cls"):
+    if transform._v1_transform_cls is None:
         return
 
     if type(input) is not torch.Tensor:
@@ -1697,3 +1702,193 @@ class TestCompose:
             assert isinstance(output, tuple) and len(output) == 2
             assert output[0] is image
             assert output[1] is label
+
+
+class TestToDtype:
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.to_dtype_image_tensor, make_image_tensor),
+            (F.to_dtype_image_tensor, make_image),
+            (F.to_dtype_video, make_video),
+        ],
+    )
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("scale", (True, False))
+    def test_kernel(self, kernel, make_input, input_dtype, output_dtype, device, scale):
+        check_kernel(
+            kernel,
+            make_input(dtype=input_dtype, device=device),
+            expect_same_dtype=input_dtype is output_dtype,
+            dtype=output_dtype,
+            scale=scale,
+        )
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.to_dtype_image_tensor, make_image_tensor),
+            (F.to_dtype_image_tensor, make_image),
+            (F.to_dtype_video, make_video),
+        ],
+    )
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("scale", (True, False))
+    def test_dispatcher(self, kernel, make_input, input_dtype, output_dtype, device, scale):
+        check_dispatcher(
+            F.to_dtype,
+            kernel,
+            make_input(dtype=input_dtype, device=device),
+            # TODO: we could leave check_dispatch to True but it currently fails
+            # in _check_dispatcher_dispatch because there is no to_dtype() method on the datapoints.
+            # We should be able to put this back if we change the dispatch
+            # mechanism e.g. via https://github.com/pytorch/vision/pull/7733
+            check_dispatch=False,
+            dtype=output_dtype,
+            scale=scale,
+        )
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_bounding_box, make_segmentation_mask, make_video],
+    )
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("scale", (True, False))
+    @pytest.mark.parametrize("as_dict", (True, False))
+    def test_transform(self, make_input, input_dtype, output_dtype, device, scale, as_dict):
+        input = make_input(dtype=input_dtype, device=device)
+        if as_dict:
+            output_dtype = {type(input): output_dtype}
+        check_transform(transforms.ToDtype, input, dtype=output_dtype, scale=scale)
+
+    def reference_convert_dtype_image_tensor(self, image, dtype=torch.float, scale=False):
+        input_dtype = image.dtype
+        output_dtype = dtype
+
+        if not scale:
+            return image.to(dtype)
+
+        if output_dtype == input_dtype:
+            return image
+
+        def fn(value):
+            if input_dtype.is_floating_point:
+                if output_dtype.is_floating_point:
+                    return value
+                else:
+                    return round(decimal.Decimal(value) * torch.iinfo(output_dtype).max)
+            else:
+                input_max_value = torch.iinfo(input_dtype).max
+
+                if output_dtype.is_floating_point:
+                    return float(decimal.Decimal(value) / input_max_value)
+                else:
+                    output_max_value = torch.iinfo(output_dtype).max
+
+                    if input_max_value > output_max_value:
+                        factor = (input_max_value + 1) // (output_max_value + 1)
+                        return value / factor
+                    else:
+                        factor = (output_max_value + 1) // (input_max_value + 1)
+                        return value * factor
+
+        return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype, device=image.device)
+
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("scale", (True, False))
+    def test_image_correctness(self, input_dtype, output_dtype, device, scale):
+        if input_dtype.is_floating_point and output_dtype == torch.int64:
+            pytest.xfail("float to int64 conversion is not supported")
+
+        input = make_image(dtype=input_dtype, device=device)
+
+        out = F.to_dtype(input, dtype=output_dtype, scale=scale)
+        expected = self.reference_convert_dtype_image_tensor(input, dtype=output_dtype, scale=scale)
+
+        if input_dtype.is_floating_point and not output_dtype.is_floating_point and scale:
+            torch.testing.assert_close(out, expected, atol=1, rtol=0)
+        else:
+            torch.testing.assert_close(out, expected)
+
+    def was_scaled(self, inpt):
+        # this assumes the target dtype is float
+        return inpt.max() <= 1
+
+    def make_inpt_with_bbox_and_mask(self, make_input):
+        H, W = 10, 10
+        inpt_dtype = torch.uint8
+        bbox_dtype = torch.float32
+        mask_dtype = torch.bool
+        sample = {
+            "inpt": make_input(size=(H, W), dtype=inpt_dtype),
+            "bbox": make_bounding_box(size=(H, W), dtype=bbox_dtype),
+            "mask": make_detection_mask(size=(H, W), dtype=mask_dtype),
+        }
+
+        return sample, inpt_dtype, bbox_dtype, mask_dtype
+
+    @pytest.mark.parametrize("make_input", (make_image_tensor, make_image, make_video))
+    @pytest.mark.parametrize("scale", (True, False))
+    def test_dtype_not_a_dict(self, make_input, scale):
+        # assert only inpt gets transformed when dtype isn't a dict
+
+        sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
+        out = transforms.ToDtype(dtype=torch.float32, scale=scale)(sample)
+
+        assert out["inpt"].dtype != inpt_dtype
+        assert out["inpt"].dtype == torch.float32
+        if scale:
+            assert self.was_scaled(out["inpt"])
+        else:
+            assert not self.was_scaled(out["inpt"])
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype == mask_dtype
+
+    @pytest.mark.parametrize("make_input", (make_image_tensor, make_image, make_video))
+    def test_others_catch_all_and_none(self, make_input):
+        # make sure "others" works as a catch-all and that None means no conversion
+
+        sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
+        out = transforms.ToDtype(dtype={datapoints.Mask: torch.int64, "others": None})(sample)
+        assert out["inpt"].dtype == inpt_dtype
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype != mask_dtype
+        assert out["mask"].dtype == torch.int64
+
+    @pytest.mark.parametrize("make_input", (make_image_tensor, make_image, make_video))
+    def test_typical_use_case(self, make_input):
+        # Typical use-case: want to convert dtype and scale for inpt and just dtype for masks.
+        # This just makes sure we now have a decent API for this
+
+        sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
+        out = transforms.ToDtype(
+            dtype={type(sample["inpt"]): torch.float32, datapoints.Mask: torch.int64, "others": None}, scale=True
+        )(sample)
+        assert out["inpt"].dtype != inpt_dtype
+        assert out["inpt"].dtype == torch.float32
+        assert self.was_scaled(out["inpt"])
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype != mask_dtype
+        assert out["mask"].dtype == torch.int64
+
+    @pytest.mark.parametrize("make_input", (make_image_tensor, make_image, make_video))
+    def test_errors_warnings(self, make_input):
+        sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
+
+        with pytest.raises(ValueError, match="No dtype was specified for"):
+            out = transforms.ToDtype(dtype={datapoints.Mask: torch.float32})(sample)
+        with pytest.warns(UserWarning, match=re.escape("plain `torch.Tensor` will *not* be transformed")):
+            transforms.ToDtype(dtype={torch.Tensor: torch.float32, datapoints.Image: torch.float32})
+        with pytest.warns(UserWarning, match="no scaling will be done"):
+            out = transforms.ToDtype(dtype={"others": None}, scale=True)(sample)
+        assert out["inpt"].dtype == inpt_dtype
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype == mask_dtype
