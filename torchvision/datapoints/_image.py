@@ -181,12 +181,6 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
-    def adjust_brightness(self, brightness_factor: float) -> Image:
-        output = self._F.adjust_brightness_image_tensor(
-            self.as_subclass(torch.Tensor), brightness_factor=brightness_factor
-        )
-        return Image.wrap_like(self, output)
-
     def adjust_saturation(self, saturation_factor: float) -> Image:
         output = self._F.adjust_saturation_image_tensor(
             self.as_subclass(torch.Tensor), saturation_factor=saturation_factor

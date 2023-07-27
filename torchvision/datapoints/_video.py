@@ -175,10 +175,6 @@ class Video(Datapoint):
         )
         return Video.wrap_like(self, output)
 
-    def adjust_brightness(self, brightness_factor: float) -> Video:
-        output = self._F.adjust_brightness_video(self.as_subclass(torch.Tensor), brightness_factor=brightness_factor)
-        return Video.wrap_like(self, output)
-
     def adjust_saturation(self, saturation_factor: float) -> Video:
         output = self._F.adjust_saturation_video(self.as_subclass(torch.Tensor), saturation_factor=saturation_factor)
         return Video.wrap_like(self, output)

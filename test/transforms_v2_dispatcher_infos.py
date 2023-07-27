@@ -290,14 +290,6 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.adjust_brightness,
-        kernels={
-            datapoints.Image: F.adjust_brightness_image_tensor,
-            datapoints.Video: F.adjust_brightness_video,
-        },
-        pil_kernel_info=PILKernelInfo(F.adjust_brightness_image_pil, kernel_name="adjust_brightness_image_pil"),
-    ),
-    DispatcherInfo(
         F.adjust_contrast,
         kernels={
             datapoints.Image: F.adjust_contrast_image_tensor,

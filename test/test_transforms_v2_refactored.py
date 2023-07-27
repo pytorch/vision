@@ -1730,3 +1730,53 @@ class TestCompose:
             assert isinstance(output, tuple) and len(output) == 2
             assert output[0] is image
             assert output[1] is label
+
+
+class TestAdjustBrightness:
+    _CORRECTNESS_BRIGHTNESS_FACTORS = [0.5, 0.0, 1.0, 5.0]
+    _DEFAULT_BRIGHTNESS_FACTOR = _CORRECTNESS_BRIGHTNESS_FACTORS[0]
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.adjust_brightness_image_tensor, make_image),
+            (F.adjust_brightness_video, make_video),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel(self, kernel, make_input, dtype, device):
+        check_kernel(kernel, make_input(dtype=dtype, device=device), brightness_factor=self._DEFAULT_BRIGHTNESS_FACTOR)
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.adjust_brightness_image_tensor, make_image_tensor),
+            (F.adjust_brightness_image_pil, make_image_pil),
+            (F.adjust_brightness_image_tensor, make_image),
+            (F.adjust_brightness_video, make_video),
+        ],
+    )
+    def test_dispatcher(self, kernel, make_input):
+        check_dispatcher(F.adjust_brightness, kernel, make_input(), brightness_factor=self._DEFAULT_BRIGHTNESS_FACTOR)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_brightness_image_tensor, torch.Tensor),
+            (F.adjust_brightness_image_pil, PIL.Image.Image),
+            (F.adjust_brightness_image_tensor, datapoints.Image),
+            (F.adjust_brightness_video, datapoints.Video),
+        ],
+    )
+    def test_dispatcher_signature(self, kernel, input_type):
+        check_dispatcher_signatures_match(F.adjust_brightness, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("brightness_factor", _CORRECTNESS_BRIGHTNESS_FACTORS)
+    def test_image_correctness(self, brightness_factor):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.adjust_brightness(image, brightness_factor=brightness_factor)
+        expected = F.to_image_tensor(F.adjust_brightness(F.to_image_pil(image), brightness_factor=brightness_factor))
+
+        torch.testing.assert_close(actual, expected)

@@ -74,10 +74,10 @@ def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) 
         _log_api_usage_once(adjust_brightness)
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         kernel = _get_kernel(adjust_brightness, type(inpt))
         return kernel(inpt, brightness_factor=brightness_factor)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.adjust_brightness(brightness_factor=brightness_factor)
     elif isinstance(inpt, PIL.Image.Image):
         return adjust_brightness_image_pil(inpt, brightness_factor=brightness_factor)
     else:
@@ -105,7 +105,8 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
     return output if fp else output.to(image.dtype)
 
 
-adjust_brightness_image_pil = _FP.adjust_brightness
+def adjust_brightness_image_pil(image: PIL.Image.Image, brightness_factor: float) -> PIL.Image.Image:
+    return _FP.adjust_brightness(image, brightness_factor=brightness_factor)
 
 
 @_register_kernel_internal(adjust_brightness, datapoints.Video)

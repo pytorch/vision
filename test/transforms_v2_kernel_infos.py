@@ -1261,46 +1261,6 @@ KERNEL_INFOS.extend(
     ]
 )
 
-_ADJUST_BRIGHTNESS_FACTORS = [0.1, 0.5]
-
-
-def sample_inputs_adjust_brightness_image_tensor():
-    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
-        yield ArgsKwargs(image_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
-
-
-def reference_inputs_adjust_brightness_image_tensor():
-    for image_loader, brightness_factor in itertools.product(
-        make_image_loaders(color_spaces=("GRAY", "RGB"), extra_dims=[()], dtypes=[torch.uint8]),
-        _ADJUST_BRIGHTNESS_FACTORS,
-    ):
-        yield ArgsKwargs(image_loader, brightness_factor=brightness_factor)
-
-
-def sample_inputs_adjust_brightness_video():
-    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
-        yield ArgsKwargs(video_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.adjust_brightness_image_tensor,
-            kernel_name="adjust_brightness_image_tensor",
-            sample_inputs_fn=sample_inputs_adjust_brightness_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_brightness_image_pil),
-            reference_inputs_fn=reference_inputs_adjust_brightness_image_tensor,
-            float32_vs_uint8=True,
-            closeness_kwargs=float32_vs_uint8_pixel_difference(),
-        ),
-        KernelInfo(
-            F.adjust_brightness_video,
-            sample_inputs_fn=sample_inputs_adjust_brightness_video,
-        ),
-    ]
-)
-
-
 _ADJUST_CONTRAST_FACTORS = [0.1, 0.5]
 
 

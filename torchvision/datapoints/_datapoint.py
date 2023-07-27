@@ -217,9 +217,6 @@ class Datapoint(torch.Tensor):
     def rgb_to_grayscale(self, num_output_channels: int = 1) -> Datapoint:
         return self
 
-    def adjust_brightness(self, brightness_factor: float) -> Datapoint:
-        return self
-
     def adjust_saturation(self, saturation_factor: float) -> Datapoint:
         return self
 
