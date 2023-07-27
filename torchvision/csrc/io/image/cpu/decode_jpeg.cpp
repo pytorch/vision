@@ -157,7 +157,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   jpeg_read_header(&cinfo, TRUE);
 
   int channels = cinfo.num_components;
-  bool cmyk_to_rgb = false;
+  bool cmyk_to_rgb_or_gray = false;
 
   if (mode != IMAGE_READ_MODE_UNCHANGED) {
     switch (mode) {
@@ -165,7 +165,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
         if (cinfo.jpeg_color_space == JCS_CMYK ||
             cinfo.jpeg_color_space == JCS_YCCK) {
           cinfo.out_color_space = JCS_CMYK;
-          cmyk_to_rgb = true;
+          cmyk_to_rgb_or_gray = true;
         } else {
           cinfo.out_color_space = JCS_GRAYSCALE;
         }
@@ -175,7 +175,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
         if (cinfo.jpeg_color_space == JCS_CMYK ||
             cinfo.jpeg_color_space == JCS_YCCK) {
           cinfo.out_color_space = JCS_CMYK;
-          cmyk_to_rgb = true;
+          cmyk_to_rgb_or_gray = true;
         } else {
           cinfo.out_color_space = JCS_RGB;
         }
@@ -204,7 +204,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
       torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
   auto ptr = tensor.data_ptr<uint8_t>();
   torch::Tensor temp_tensor;
-  if (cmyk_to_rgb) {
+  if (cmyk_to_rgb_or_gray) {
     temp_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
   }
 
@@ -213,7 +213,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
      * Here the array is only one element long, but you could ask for
      * more than one scanline at a time if that's more convenient.
      */
-    if (cmyk_to_rgb) {
+    if (cmyk_to_rgb_or_gray) {
       auto temp_buffer = temp_tensor.data_ptr<uint8_t>();
       jpeg_read_scanlines(&cinfo, &temp_buffer, 1);
 
