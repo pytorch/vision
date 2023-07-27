@@ -276,12 +276,11 @@ class SanitizeBoundingBox(Transform):
     Args:
         min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
         labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.
-            It can be a str in which case the input is expected to be a dict, and ``labels_getter`` then specifies
-            the key whose value corresponds to the labels. It can also be a callable that takes the same input
-            as the transform, and returns the labels.
-            By default, this will try to find a "labels" key in the input, if
+            By default, this will try to find a "labels" key in the input (case-insensitive), if
             the input is a dict or it is a tuple whose second element is a dict.
             This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
+            It can also be a callable that takes the same input
+            as the transform, and returns the labels.
     """
 
     def __init__(

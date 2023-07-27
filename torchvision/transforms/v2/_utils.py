@@ -102,19 +102,18 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
     """
     This heuristic covers three cases:
 
-    1. The input is two-tuple whose second item is a labels tensor. This happens for already batched classification
-       inputs for Mixup and Cutmix.
-    2. The input is a two-tuple whose second item is a dictionary that contains the labels tensor under a label-like
-       (see below) key. This happens for the inputs of detection models.
+    1. The input is 2-tuple or 2-list whose second item is a labels tensor. This happens for already batched
+       classification inputs for Mixup and Cutmix (typically after the Dataloder).
+    2. The input is a 2-tuple or 2-list whose second item is a dictionary that contains the labels tensor
+       under a label-like (see below) key. This happens for the inputs of detection models.
     3. The input is a dictionary that is structured as the one from 2.
 
     What is "label-like" key? We first search for an case-insensitive match of 'labels' inside the keys of the
     dictionary. This is the name our detection models expect. If we can't find that, we look for a case-insensitive
     match of the term 'label' anywhere inside the key, i.e. 'FooLaBeLBar'. If we can't find that either, the dictionary
     contains no "label-like" key.
-
     """
-    # TODO: Document list and why
+
     if isinstance(inputs, (tuple, list)):
         inputs = inputs[1]
 
@@ -128,7 +127,6 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
             f"whose second item is a dictionary or a tensor, but got {inputs} instead."
         )
 
-    # Tries to find a "labels" key, otherwise tries for the first key that contains "label" - case insensitive
     candidate_key = None
     with suppress(StopIteration):
         candidate_key = next(key for key in inputs.keys() if key.lower() == "labels")
