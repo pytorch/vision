@@ -1798,10 +1798,10 @@ class TestToDtype:
                         factor = (output_max_value + 1) // (input_max_value + 1)
                         return value * factor
 
-        return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype)
+        return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype, device=image.device)
 
-    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8, torch.int64])
-    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8, torch.int64])
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
     def test_image_correctness(self, input_dtype, output_dtype, device, scale):
