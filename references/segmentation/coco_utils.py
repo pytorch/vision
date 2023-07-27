@@ -68,11 +68,6 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
         # if more than 1k pixels occupied in the image
         return sum(obj["area"] for obj in anno) > 1000
 
-    if not isinstance(dataset, torchvision.datasets.CocoDetection):
-        raise TypeError(
-            f"This function expects dataset of type torchvision.datasets.CocoDetection, instead  got {type(dataset)}"
-        )
-
     ids = []
     for ds_idx, img_id in enumerate(dataset.ids):
         ann_ids = dataset.coco.getAnnIds(imgIds=img_id, iscrowd=None)
@@ -86,7 +81,7 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
     return dataset
 
 
-def get_coco(root, image_set, transforms):
+def get_coco(root, image_set, transforms, use_v2=False):
     PATHS = {
         "train": ("train2017", os.path.join("annotations", "instances_train2017.json")),
         "val": ("val2017", os.path.join("annotations", "instances_val2017.json")),
@@ -94,13 +89,24 @@ def get_coco(root, image_set, transforms):
     }
     CAT_LIST = [0, 5, 2, 16, 9, 44, 6, 3, 17, 62, 21, 67, 18, 19, 4, 1, 64, 20, 63, 7, 72]
 
-    transforms = Compose([FilterAndRemapCocoCategories(CAT_LIST, remap=True), ConvertCocoPolysToMask(), transforms])
-
     img_folder, ann_file = PATHS[image_set]
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
 
-    dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
+    # The 2 "Compose" below achieve the same thing: converting coco detection
+    # samples into segmentation-compatible samples. They just do it with
+    # slightly different implementations. We could refactor and unify, but
+    # keeping them separate helps keeping the v2 version clean
+    if use_v2:
+        import v2_extras
+        from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+        transforms = Compose([v2_extras.CocoDetectionToVOCSegmentation(), transforms])
+        dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
+        dataset = wrap_dataset_for_transforms_v2(dataset, target_keys={"masks", "labels"})
+    else:
+        transforms = Compose([FilterAndRemapCocoCategories(CAT_LIST, remap=True), ConvertCocoPolysToMask(), transforms])
+        dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
 
     if image_set == "train":
         dataset = _coco_remove_images_without_annotations(dataset, CAT_LIST)
