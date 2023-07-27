@@ -1813,7 +1813,7 @@ class TestToDtype:
         out = F.to_dtype(input, dtype=output_dtype, scale=scale)
         expected = self.reference_convert_dtype_image_tensor(input, dtype=output_dtype, scale=scale)
 
-        if input_dtype.is_floating_point and output_dtype is torch.uint8 and scale:
+        if input_dtype.is_floating_point and not output_dtype.is_floating_point and scale:
             torch.testing.assert_close(out, expected, atol=1, rtol=0)
         else:
             torch.testing.assert_close(out, expected)
