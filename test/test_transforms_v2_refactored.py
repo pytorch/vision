@@ -34,6 +34,7 @@ from torchvision import datapoints
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2.functional._utils import _KERNEL_REGISTRY
 
 
 @pytest.fixture(autouse=True)
@@ -426,6 +427,33 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
         return out_bbox
 
     return torch.stack([transform(b) for b in bounding_box.reshape(-1, 4).unbind()]).reshape(bounding_box.shape)
+
+
+@pytest.mark.parametrize(
+    ("dispatcher", "registered_datapoint_clss"),
+    [(dispatcher, set(registry.keys())) for dispatcher, registry in _KERNEL_REGISTRY.items()],
+)
+def test_exhaustive_kernel_registration(dispatcher, registered_datapoint_clss):
+    missing = {
+        datapoints.Image,
+        datapoints.BoundingBox,
+        datapoints.Mask,
+        datapoints.Video,
+    } - registered_datapoint_clss
+    if missing:
+        names = sorted(f"datapoints.{cls.__name__}" for cls in missing)
+        raise AssertionError(
+            "\n".join(
+                [
+                    f"The dispatcher '{dispatcher.__name__}' hs no kernels registered for",
+                    "",
+                    *[f"- {name}" for name in names],
+                    "",
+                    f"If available, register the kernels with @_register_kernel_internal({dispatcher.__name__}, ...).",
+                    f"If not, register explicit no-ops with _register_explicit_noops({dispatcher.__name__}, {', '.join(names)})",
+                ]
+            )
+        )
 
 
 class TestResize:

@@ -77,6 +77,24 @@ def _noop(inpt, *args, **kwargs):
     return inpt
 
 
+def _register_explicit_noops(dispatcher, *datapoints_clss):
+    """
+    Although this looks redundant with the no-op behavior of _get_kernel, this explicit registration prevents users
+    from registering kernels for builtin datapoints on builtin dispatchers that rely on the no-op behavior.
+
+    For example, without explicit no-op registration the following would be valid user code:
+
+    .. code::
+        from torchvision.transforms.v2 import functional as F
+
+        @F.register_kernel(F.adjust_brightness, datapoints.BoundingBox)
+        def lol(...):
+            ...
+    """
+    for datapoint_cls in datapoints_clss:
+        register_kernel(dispatcher, datapoint_cls)(_noop)
+
+
 def _get_kernel(dispatcher, datapoint_cls):
     registry = _KERNEL_REGISTRY.get(dispatcher)
     if not registry:
