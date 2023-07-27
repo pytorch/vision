@@ -372,4 +372,4 @@ def to_dtype(inpt: datapoints._InputTypeJIT, dtype: torch.dtype = torch.float, s
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.to(dtype)
     else:
-        raise TypeError("Input can either be a plain tensor or a datapoint, " f"but got {type(inpt)} instead. ")
+        raise TypeError(f"Input can either be a plain tensor or a datapoint, but got {type(inpt)} instead.")
