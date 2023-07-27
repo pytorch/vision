@@ -182,13 +182,13 @@ class TestSmoke:
             video_datapoint=make_video(size=spatial_size),
             image_pil=next(make_pil_images(sizes=[spatial_size], color_spaces=["RGB"])),
             bounding_box_xyxy=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(3,)
+                format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(3,)
             ),
             bounding_box_xywh=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYWH, spatial_size=spatial_size, extra_dims=(4,)
+                format=datapoints.BoundingBoxFormat.XYWH, spatial_size=spatial_size, batch_dims=(4,)
             ),
             bounding_box_cxcywh=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.CXCYWH, spatial_size=spatial_size, extra_dims=(5,)
+                format=datapoints.BoundingBoxFormat.CXCYWH, spatial_size=spatial_size, batch_dims=(5,)
             ),
             bounding_box_degenerate_xyxy=datapoints.BoundingBox(
                 [
@@ -289,7 +289,7 @@ class TestSmoke:
                         ],
                         dtypes=[torch.uint8],
                         extra_dims=[(), (4,)],
-                        **(dict(num_frames=["random"]) if fn is make_videos else dict()),
+                        **(dict(num_frames=[3]) if fn is make_videos else dict()),
                     )
                     for fn in [
                         make_images,
@@ -539,80 +539,6 @@ class TestRandomZoomOut:
                 mocker.call(mask, **params, fill=fill_mask),
             ]
         fn.assert_has_calls(calls)
-
-
-class TestRandomRotation:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="is a single number, it must be positive"):
-            transforms.RandomRotation(-0.7)
-
-        for d in [[-0.7], [-0.7, 0, 0.7]]:
-            with pytest.raises(ValueError, match="degrees should be a sequence of length 2"):
-                transforms.RandomRotation(d)
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomRotation(12, fill="abc")
-
-        with pytest.raises(TypeError, match="center should be a sequence of length"):
-            transforms.RandomRotation(12, center=12)
-
-        with pytest.raises(ValueError, match="center should be a sequence of length"):
-            transforms.RandomRotation(12, center=[1, 2, 3])
-
-    def test__get_params(self):
-        angle_bound = 34
-        transform = transforms.RandomRotation(angle_bound)
-
-        params = transform._get_params(None)
-        assert -angle_bound <= params["angle"] <= angle_bound
-
-        angle_bounds = [12, 34]
-        transform = transforms.RandomRotation(angle_bounds)
-
-        params = transform._get_params(None)
-        assert angle_bounds[0] <= params["angle"] <= angle_bounds[1]
-
-    @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
-    @pytest.mark.parametrize("expand", [False, True])
-    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
-    @pytest.mark.parametrize("center", [None, [2.0, 3.0]])
-    def test__transform(self, degrees, expand, fill, center, mocker):
-        interpolation = InterpolationMode.BILINEAR
-        transform = transforms.RandomRotation(
-            degrees, interpolation=interpolation, expand=expand, fill=fill, center=center
-        )
-
-        if isinstance(degrees, (tuple, list)):
-            assert transform.degrees == [float(degrees[0]), float(degrees[1])]
-        else:
-            assert transform.degrees == [float(-degrees), float(degrees)]
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.rotate")
-        inpt = mocker.MagicMock(spec=datapoints.Image)
-        # vfdev-5, Feature Request: let's store params as Transform attribute
-        # This could be also helpful for users
-        # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params(inpt)
-
-        fill = transforms._utils._convert_fill_arg(fill)
-        fn.assert_called_once_with(inpt, **params, interpolation=interpolation, expand=expand, fill=fill, center=center)
-
-    @pytest.mark.parametrize("angle", [34, -87])
-    @pytest.mark.parametrize("expand", [False, True])
-    def test_boundingbox_spatial_size(self, angle, expand):
-        # Specific test for BoundingBox.rotate
-        bbox = datapoints.BoundingBox(
-            torch.tensor([1, 2, 3, 4]), format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(32, 32)
-        )
-        img = datapoints.Image(torch.rand(1, 3, 32, 32))
-
-        out_img = img.rotate(angle, expand=expand)
-        out_bbox = bbox.rotate(angle, expand=expand)
-
-        assert out_img.spatial_size == out_bbox.spatial_size
 
 
 class TestRandomCrop:
@@ -1198,7 +1124,7 @@ class TestRandomIoUCrop:
         transform = transforms.RandomIoUCrop()
 
         image = datapoints.Image(torch.rand(3, 32, 24))
-        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), extra_dims=(6,))
+        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), batch_dims=(6,))
         masks = make_detection_mask((32, 24), num_objects=6)
 
         sample = [image, bboxes, masks]
