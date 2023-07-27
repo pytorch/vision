@@ -450,7 +450,7 @@ def test_exhaustive_kernel_registration(dispatcher, registered_datapoint_clss):
         raise AssertionError(
             "\n".join(
                 [
-                    f"The dispatcher '{dispatcher.__name__}' hs no kernels registered for",
+                    f"The dispatcher '{dispatcher.__name__}' has no kernel registered for",
                     "",
                     *[f"- {name}" for name in names],
                     "",

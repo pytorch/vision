@@ -10,7 +10,7 @@ from torchvision.transforms._functional_tensor import _max_value
 from torchvision.utils import _log_api_usage_once
 
 from ._meta import _num_value_bits, to_dtype_image_tensor
-from ._utils import _get_kernel, _register_explicit_noops, _register_kernel_internal, is_simple_tensor
+from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, is_simple_tensor
 
 
 def _rgb_to_grayscale_image_tensor(
@@ -87,7 +87,7 @@ def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) 
         )
 
 
-_register_explicit_noops(adjust_brightness, datapoints.BoundingBox, datapoints.Mask)
+_register_explicit_noop(adjust_brightness, datapoints.BoundingBox, datapoints.Mask)
 
 
 @_register_kernel_internal(adjust_brightness, datapoints.Image)

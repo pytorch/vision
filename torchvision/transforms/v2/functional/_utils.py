@@ -77,7 +77,7 @@ def _noop(inpt, *args, **kwargs):
     return inpt
 
 
-def _register_explicit_noops(dispatcher, *datapoints_clss):
+def _register_explicit_noop(dispatcher, *datapoints_classes):
     """
     Although this looks redundant with the no-op behavior of _get_kernel, this explicit registration prevents users
     from registering kernels for builtin datapoints on builtin dispatchers that rely on the no-op behavior.
@@ -91,8 +91,8 @@ def _register_explicit_noops(dispatcher, *datapoints_clss):
         def lol(...):
             ...
     """
-    for datapoint_cls in datapoints_clss:
-        register_kernel(dispatcher, datapoint_cls)(_noop)
+    for cls in datapoints_classes:
+        register_kernel(dispatcher, cls)(_noop)
 
 
 def _get_kernel(dispatcher, datapoint_cls):
