@@ -1,7 +1,9 @@
 import functools
+import inspect
 from typing import Any
 
 import torch
+from torchvision import datapoints
 from torchvision.datapoints._datapoint import Datapoint
 
 
@@ -12,14 +14,48 @@ def is_simple_tensor(inpt: Any) -> bool:
 _KERNEL_REGISTRY = {}
 
 
-def register_kernel(dispatcher, datapoint_cls, *, datapoint_wrapping=True):
-    def datapoint_wrapper(kernel):
-        @functools.wraps(kernel)
-        def wrapper(inpt, *args, **kwargs):
-            return type(inpt).wrap_like(inpt, kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs))
+def _kernel_wrapper_internal(dispatcher, kernel):
+    dispatcher_params = list(inspect.signature(dispatcher).parameters)[1:]
+    kernel_params = list(inspect.signature(kernel).parameters)[1:]
 
-        return wrapper
+    needs_args_kwargs_handling = kernel_params != dispatcher_params
 
+    # this avoids converting list -> set at runtime below
+    kernel_params = set(kernel_params)
+
+    @functools.wraps(kernel)
+    def wrapper(inpt, *args, **kwargs):
+        input_type = type(inpt)
+
+        if needs_args_kwargs_handling:
+            # Convert args to kwargs to simplify further processing
+            kwargs.update(dict(zip(dispatcher_params, args)))
+            args = ()
+
+            # drop parameters that are not relevant for the kernel, but have a default value
+            # in the dispatcher
+            for kwarg in kwargs.keys() - kernel_params:
+                del kwargs[kwarg]
+
+            # add parameters that are passed implicitly to the dispatcher as metadata,
+            # but have to be explicit for the kernel
+            for kwarg in input_type.__annotations__.keys() & kernel_params:
+                kwargs[kwarg] = getattr(inpt, kwarg)
+
+        output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
+
+        if isinstance(inpt, datapoints.BoundingBox) and isinstance(output, tuple):
+            output, spatial_size = output
+            metadata = dict(spatial_size=spatial_size)
+        else:
+            metadata = dict()
+
+        return input_type.wrap_like(inpt, output, **metadata)
+
+    return wrapper
+
+
+def _register_kernel_internal(dispatcher, datapoint_cls, *, wrap_kernel=True):
     registry = _KERNEL_REGISTRY.setdefault(dispatcher, {})
     if datapoint_cls in registry:
         raise TypeError(
@@ -27,10 +63,14 @@ def register_kernel(dispatcher, datapoint_cls, *, datapoint_wrapping=True):
         )
 
     def decorator(kernel):
-        registry[datapoint_cls] = datapoint_wrapper(kernel) if datapoint_wrapping else kernel
+        registry[datapoint_cls] = _kernel_wrapper_internal(dispatcher, kernel) if wrap_kernel else kernel
         return kernel
 
     return decorator
+
+
+def register_kernel(dispatcher, datapoint_cls):
+    return _register_kernel_internal(dispatcher, datapoint_cls, wrap_kernel=False)
 
 
 def _noop(inpt, *args, **kwargs):

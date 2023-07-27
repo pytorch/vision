@@ -25,7 +25,7 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import clamp_bounding_box, convert_format_bounding_box, get_spatial_size_image_pil
 
-from ._utils import _get_kernel, is_simple_tensor, register_kernel
+from ._utils import _get_kernel, _register_kernel_internal, is_simple_tensor
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -183,7 +183,7 @@ def resize(
         )
 
 
-@register_kernel(resize, datapoints.Image)
+@_register_kernel_internal(resize, datapoints.Image)
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -285,6 +285,7 @@ def resize_image_pil(
     return image.resize((new_width, new_height), resample=pil_modes_mapping[interpolation])
 
 
+@_register_kernel_internal(resize, datapoints.Mask)
 def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -300,11 +301,7 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
     return output
 
 
-@register_kernel(resize, datapoints.Mask)
-def _resize_mask_dispatch(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None, **kwargs):
-    return resize_mask(mask, size, max_size=max_size)
-
-
+@_register_kernel_internal(resize, datapoints.BoundingBox)
 def resize_bounding_box(
     bounding_box: torch.Tensor, spatial_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
@@ -323,17 +320,7 @@ def resize_bounding_box(
     )
 
 
-@register_kernel(resize, datapoints.BoundingBox, datapoint_wrapping=False)
-def _resize_bounding_box_dispatch(
-    bounding_box: datapoints.BoundingBox, size: List[int], max_size: Optional[int] = None, **kwargs
-):
-    output, spatial_size = resize_bounding_box(
-        bounding_box.as_subclass(torch.Tensor), bounding_box.spatial_size, size, max_size=max_size
-    )
-    return datapoints.BoundingBox.wrap_like(bounding_box, output, spatial_size=spatial_size)
-
-
-@register_kernel(resize, datapoints.Video)
+@_register_kernel_internal(resize, datapoints.Video)
 def resize_video(
     video: torch.Tensor,
     size: List[int],

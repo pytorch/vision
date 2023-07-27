@@ -10,7 +10,7 @@ from torchvision.transforms._functional_tensor import _max_value
 from torchvision.utils import _log_api_usage_once
 
 from ._meta import _num_value_bits, convert_dtype_image_tensor
-from ._utils import _get_kernel, is_simple_tensor, register_kernel
+from ._utils import _get_kernel, _register_kernel_internal, is_simple_tensor
 
 
 def _rgb_to_grayscale_image_tensor(
@@ -87,7 +87,7 @@ def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) 
         )
 
 
-@register_kernel(adjust_brightness, datapoints.Image)
+@_register_kernel_internal(adjust_brightness, datapoints.Image)
 def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     if brightness_factor < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
@@ -105,7 +105,7 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
 adjust_brightness_image_pil = _FP.adjust_brightness
 
 
-@register_kernel(adjust_brightness, datapoints.Video)
+@_register_kernel_internal(adjust_brightness, datapoints.Video)
 def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     return adjust_brightness_image_tensor(video, brightness_factor=brightness_factor)
 
