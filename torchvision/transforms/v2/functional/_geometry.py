@@ -25,7 +25,7 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import clamp_bounding_box, convert_format_bounding_box, get_spatial_size_image_pil
 
-from ._utils import _get_kernel, _register_kernel_internal, is_simple_tensor
+from ._utils import _get_kernel, is_simple_tensor
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -183,7 +183,6 @@ def resize(
         )
 
 
-@_register_kernel_internal(resize, datapoints.Image)
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -285,7 +284,6 @@ def resize_image_pil(
     return image.resize((new_width, new_height), resample=pil_modes_mapping[interpolation])
 
 
-@_register_kernel_internal(resize, datapoints.Mask)
 def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -301,7 +299,6 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
     return output
 
 
-@_register_kernel_internal(resize, datapoints.BoundingBox)
 def resize_bounding_box(
     bounding_box: torch.Tensor, spatial_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
@@ -320,7 +317,6 @@ def resize_bounding_box(
     )
 
 
-@_register_kernel_internal(resize, datapoints.Video)
 def resize_video(
     video: torch.Tensor,
     size: List[int],

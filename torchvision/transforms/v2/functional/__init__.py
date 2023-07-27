@@ -170,3 +170,70 @@ from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_vi
 from ._type_conversion import pil_to_tensor, to_image_pil, to_image_tensor, to_pil_image
 
 from ._deprecated import get_image_size, to_tensor  # usort: skip
+
+
+def _register_builtin_kernels():
+    import functools
+    import inspect
+
+    import torch
+    from torchvision import datapoints
+
+    from ._utils import _KERNEL_REGISTRY, _noop
+
+    def default_kernel_wrapper(dispatcher, kernel):
+        dispatcher_params = list(inspect.signature(dispatcher).parameters)[1:]
+        kernel_params = list(inspect.signature(kernel).parameters)[1:]
+
+        needs_args_kwargs_handling = kernel_params != dispatcher_params
+
+        # this avoids converting list -> set at runtime below
+        kernel_params = set(kernel_params)
+
+        @functools.wraps(kernel)
+        def wrapper(inpt, *args, **kwargs):
+            input_type = type(inpt)
+
+            if needs_args_kwargs_handling:
+                # Convert args to kwargs to simplify further processing
+                kwargs.update(dict(zip(dispatcher_params, args)))
+                args = ()
+
+                # drop parameters that are not relevant for the kernel, but have a default value
+                # in the dispatcher
+                for kwarg in kwargs.keys() - kernel_params:
+                    del kwargs[kwarg]
+
+                # add parameters that are passed implicitly to the dispatcher as metadata,
+                # but have to be explicit for the kernel
+                for kwarg in input_type.__annotations__.keys() & kernel_params:
+                    kwargs[kwarg] = getattr(inpt, kwarg)
+
+            output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
+
+            if isinstance(inpt, datapoints.BoundingBox) and isinstance(output, tuple):
+                output, spatial_size = output
+                metadata = dict(spatial_size=spatial_size)
+            else:
+                metadata = dict()
+
+            return input_type.wrap_like(inpt, output, **metadata)
+
+        return wrapper
+
+    def register(dispatcher, datapoint_cls, kernel):
+        _KERNEL_REGISTRY.setdefault(dispatcher, {})[datapoint_cls] = default_kernel_wrapper(dispatcher, kernel)
+
+    register(resize, datapoints.Image, resize_image_tensor)
+    register(resize, datapoints.BoundingBox, resize_bounding_box)
+    register(resize, datapoints.Mask, resize_mask)
+    register(resize, datapoints.Video, resize_video)
+
+    register(adjust_brightness, datapoints.Image, adjust_brightness_image_tensor)
+    register(adjust_brightness, datapoints.BoundingBox, _noop)
+    register(adjust_brightness, datapoints.Mask, _noop)
+    register(adjust_brightness, datapoints.Video, adjust_brightness_video)
+
+
+_register_builtin_kernels()
+del _register_builtin_kernels
