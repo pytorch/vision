@@ -557,15 +557,43 @@ class RandomApply(torch.nn.Module):
         return format_string
 
 
-class RandomOrder(RandomTransforms):
-    """Apply a list of transformations in a random order. This transform does not support torchscript."""
+class RandomOrder(torch.nn.Module):
+    """Apply a list of transformations in a random order.
+    
+    .. note::
+        In order to script the transformation, please use ``torch.nn.ModuleList`` as input instead of list/tuple of
+        transforms as shown below:
 
-    def __call__(self, img):
-        order = list(range(len(self.transforms)))
-        random.shuffle(order)
+        >>> transforms = transforms.RandomOrder(torch.nn.ModuleList([
+        >>>     transforms.ColorJitter(),
+        >>> ]), p=0.3)
+        >>> scripted_transforms = torch.jit.script(transforms)
+
+        Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor``, does not require
+        `lambda` functions or ``PIL.Image``.
+        
+    Args:
+        transforms (sequence or torch.nn.Module): list of transformations
+    """
+
+    def __init__(self, transforms):
+        super().__init__()
+        _log_api_usage_once(self)
+        self.transforms = transforms
+
+    def forward(self, img):
+        order = torch.randperm(len(self.transforms))
         for i in order:
             img = self.transforms[i](img)
         return img
+
+    def __repr__(self) -> str:
+        format_string = self.__class__.__name__ + "("
+        for t in self.transforms:
+            format_string += "\n"
+            format_string += f"    {t}"
+        format_string += "\n)"
+        return format_string
 
 
 class RandomChoice(RandomTransforms):
