@@ -40,7 +40,7 @@ class ToTensor(Transform):
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
-            "Instead, please use `transforms.Compose([transforms.ToImageTensor(), transforms.ConvertImageDtype()])`."
+            "Instead, please use `v2.Compose([transforms.ToImageTensor(), v2.ToDtype(torch.float32, scale=True)])`."
         )
         super().__init__()
 
