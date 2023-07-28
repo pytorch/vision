@@ -191,7 +191,7 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.ConvertDtype,
+        v2_transforms.ConvertImageDtype,
         legacy_transforms.ConvertImageDtype,
         [
             ArgsKwargs(torch.float16),
