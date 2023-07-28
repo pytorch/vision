@@ -3,11 +3,11 @@ import warnings
 from typing import Any, Callable, Dict, Type
 
 import torch
-from torchvision.datapoints._datapoint import Datapoint
+from torchvision import datapoints
 
 
 def is_simple_tensor(inpt: Any) -> bool:
-    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, Datapoint)
+    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, datapoints.Datapoint)
 
 
 _KERNEL_REGISTRY: Dict[Callable, Dict[Type, Callable]] = {}

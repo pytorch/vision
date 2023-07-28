@@ -3,7 +3,6 @@ import decimal
 import inspect
 import math
 import re
-from typing import get_type_hints
 from unittest import mock
 
 import numpy as np
@@ -178,28 +177,28 @@ def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
     """Checks if the dispatcher correctly dispatches the input to the corresponding kernel and that the input type is
     preserved in doing so. For bounding boxes also checks that the format is preserved.
     """
-    if isinstance(input, datapoints._datapoint.Datapoint):
-        if dispatcher in {F.resize, F.adjust_brightness}:
-            output = dispatcher(input, *args, **kwargs)
-        else:
-            # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
-            # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
-            spy = mock.MagicMock(wraps=kernel, name=kernel.__name__)
-            with mock.patch.object(F, kernel.__name__, spy):
-                # Due to Python's name mangling, the `Datapoint.__F` attribute is only accessible from inside the class.
-                # Since that is not the case here, we need to prefix f"_{cls.__name__}"
-                # See https://docs.python.org/3/tutorial/classes.html#private-variables for details
-                with mock.patch.object(datapoints._datapoint.Datapoint, "_Datapoint__F", new=F):
-                    output = dispatcher(input, *args, **kwargs)
+    input_type = type(input)
 
-            spy.assert_called_once()
+    if isinstance(input, datapoints.Datapoint):
+        wrapped_kernel = _KERNEL_REGISTRY[dispatcher][input_type]
+
+        # In case the wrapper was decorated with @functools.wraps, we can make the check more strict and test if the
+        # proper kernel was wrapped
+        if hasattr(wrapped_kernel, "__wrapped__"):
+            assert wrapped_kernel.__wrapped__ is kernel
+
+        spy = mock.MagicMock(wraps=wrapped_kernel, name=wrapped_kernel.__name__)
+        with mock.patch.dict(_KERNEL_REGISTRY[dispatcher], values={input_type: spy}):
+            output = dispatcher(input, *args, **kwargs)
+
+        spy.assert_called_once()
     else:
         with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
             output = dispatcher(input, *args, **kwargs)
 
             spy.assert_called_once()
 
-    assert isinstance(output, type(input))
+    assert isinstance(output, input_type)
 
     if isinstance(input, datapoints.BoundingBoxes):
         assert output.format == input.format
@@ -214,14 +213,12 @@ def check_dispatcher(
     check_dispatch=True,
     **kwargs,
 ):
+    unknown_input = object()
     with mock.patch("torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once) as spy:
-        dispatcher(input, *args, **kwargs)
+        with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
+            dispatcher(unknown_input, *args, **kwargs)
 
         spy.assert_any_call(f"{dispatcher.__module__}.{dispatcher.__name__}")
-
-    unknown_input = object()
-    with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
-        dispatcher(unknown_input, *args, **kwargs)
 
     if check_scripted_smoke:
         _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs)
@@ -230,18 +227,18 @@ def check_dispatcher(
         _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs)
 
 
-def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
+def check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
     """Checks if the signature of the dispatcher matches the kernel signature."""
-    dispatcher_signature = inspect.signature(dispatcher)
-    dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
+    dispatcher_params = list(inspect.signature(dispatcher).parameters.values())[1:]
+    kernel_params = list(inspect.signature(kernel).parameters.values())[1:]
 
-    kernel_signature = inspect.signature(kernel)
-    kernel_params = list(kernel_signature.parameters.values())[1:]
-
-    if issubclass(input_type, datapoints._datapoint.Datapoint):
+    if issubclass(input_type, datapoints.Datapoint):
         # We filter out metadata that is implicitly passed to the dispatcher through the input datapoint, but has to be
         # explicitly passed to the kernel.
-        kernel_params = [param for param in kernel_params if param.name not in input_type.__annotations__.keys()]
+        explicit_metadata = {
+            datapoints.BoundingBoxes: {"format", "canvas_size"},
+        }
+        kernel_params = [param for param in kernel_params if param.name not in explicit_metadata.get(input_type, set())]
 
     dispatcher_params = iter(dispatcher_params)
     for dispatcher_param, kernel_param in zip(dispatcher_params, kernel_params):
@@ -262,32 +259,6 @@ def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
             dispatcher_param._annotation = kernel_param._annotation = inspect.Parameter.empty
 
         assert dispatcher_param == kernel_param
-
-
-def _check_dispatcher_datapoint_signature_match(dispatcher):
-    """Checks if the signature of the dispatcher matches the corresponding method signature on the Datapoint class."""
-    if dispatcher in {F.resize, F.adjust_brightness}:
-        return
-    dispatcher_signature = inspect.signature(dispatcher)
-    dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
-
-    datapoint_method = getattr(datapoints._datapoint.Datapoint, dispatcher.__name__)
-    datapoint_signature = inspect.signature(datapoint_method)
-    datapoint_params = list(datapoint_signature.parameters.values())[1:]
-
-    # Some annotations in the `datapoints._datapoint` module
-    # are stored as strings. The block below makes them concrete again (non-strings), so they can be compared to the
-    # natively concrete dispatcher annotations.
-    datapoint_annotations = get_type_hints(datapoint_method)
-    for param in datapoint_params:
-        param._annotation = datapoint_annotations[param.name]
-
-    assert dispatcher_params == datapoint_params
-
-
-def check_dispatcher_signatures_match(dispatcher, *, kernel, input_type):
-    _check_dispatcher_kernel_signature_match(dispatcher, kernel=kernel, input_type=input_type)
-    _check_dispatcher_datapoint_signature_match(dispatcher)
 
 
 def _check_transform_v1_compatibility(transform, input):
@@ -461,7 +432,7 @@ def test_exhaustive_kernel_registration(dispatcher, registered_datapoint_clss):
                     *[f"- {name}" for name in names],
                     "",
                     f"If available, register the kernels with @_register_kernel_internal({dispatcher.__name__}, ...).",
-                    f"If not, register explicit no-ops with @_register_explicit_noops({', '.join(names)})",
+                    f"If not, register explicit no-ops with @_register_explicit_noop({', '.join(names)})",
                 ]
             )
         )
@@ -602,7 +573,7 @@ class TestResize:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.resize, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.resize, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -800,7 +771,7 @@ class TestResize:
 
         # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
         # is a good reason to break this, feel free to downgrade to an equality check.
-        if isinstance(input, datapoints._datapoint.Datapoint):
+        if isinstance(input, datapoints.Datapoint):
             # We can't test identity directly, since that checks for the identity of the Python object. Since all
             # datapoints unwrap before a kernel and wrap again afterwards, the Python object changes. Thus, we check
             # that the underlying storage is the same
@@ -884,7 +855,7 @@ class TestHorizontalFlip:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.horizontal_flip, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.horizontal_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1067,7 +1038,7 @@ class TestAffine:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.affine, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.affine, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1363,7 +1334,7 @@ class TestVerticalFlip:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.vertical_flip, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.vertical_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1520,7 +1491,7 @@ class TestRotate:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.rotate, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.rotate, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1971,7 +1942,7 @@ class TestAdjustBrightness:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.adjust_brightness, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.adjust_brightness, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize("brightness_factor", _CORRECTNESS_BRIGHTNESS_FACTORS)
     def test_image_correctness(self, brightness_factor):

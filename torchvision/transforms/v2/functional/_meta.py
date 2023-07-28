@@ -18,7 +18,7 @@ def get_dimensions(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJI
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_dimensions_image_tensor(inpt)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    elif isinstance(inpt, datapoints.Datapoint):
         kernel = _get_kernel(get_dimensions, type(inpt))
         return kernel(inpt)
     elif isinstance(inpt, PIL.Image.Image):
@@ -58,7 +58,7 @@ def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoType
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_num_channels_image_tensor(inpt)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    elif isinstance(inpt, datapoints.Datapoint):
         kernel = _get_kernel(get_num_channels, type(inpt))
         return kernel(inpt)
     elif isinstance(inpt, PIL.Image.Image):
@@ -101,7 +101,7 @@ def get_size(inpt: datapoints._InputTypeJIT) -> List[int]:
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_size_image_tensor(inpt)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    elif isinstance(inpt, datapoints.Datapoint):
         kernel = _get_kernel(get_size, type(inpt))
         return kernel(inpt)
     elif isinstance(inpt, PIL.Image.Image):
@@ -151,7 +151,7 @@ def get_num_frames(inpt: datapoints._VideoTypeJIT) -> int:
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_num_frames_video(inpt)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    elif isinstance(inpt, datapoints.Datapoint):
         kernel = _get_kernel(get_num_frames, type(inpt))
         return kernel(inpt)
     else:

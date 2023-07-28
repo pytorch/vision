@@ -3,8 +3,6 @@ import math
 import os
 import re
 
-from typing import get_type_hints
-
 import numpy as np
 import PIL.Image
 import pytest
@@ -421,22 +419,6 @@ class TestDispatchers:
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(),
     )
-    def test_dispatch_datapoint(self, info, args_kwargs, spy_on):
-        (datapoint, *other_args), kwargs = args_kwargs.load()
-
-        method_name = info.id
-        method = getattr(datapoint, method_name)
-        datapoint_type = type(datapoint)
-        spy = spy_on(method, module=datapoint_type.__module__, name=f"{datapoint_type.__name__}.{method_name}")
-
-        info.dispatcher(datapoint, *other_args, **kwargs)
-
-        spy.assert_called_once()
-
-    @make_info_args_kwargs_parametrization(
-        DISPATCHER_INFOS,
-        args_kwargs_fn=lambda info: info.sample_inputs(),
-    )
     def test_datapoint_output_type(self, info, args_kwargs):
         (datapoint, *other_args), kwargs = args_kwargs.load()
 
@@ -462,9 +444,12 @@ class TestDispatchers:
         kernel_params = list(kernel_signature.parameters.values())[1:]
 
         # We filter out metadata that is implicitly passed to the dispatcher through the input datapoint, but has to be
-        # explicit passed to the kernel.
-        datapoint_type_metadata = datapoint_type.__annotations__.keys()
-        kernel_params = [param for param in kernel_params if param.name not in datapoint_type_metadata]
+        # explicitly passed to the kernel.
+        input_type = {v: k for k, v in dispatcher_info.kernels.items()}.get(kernel_info.kernel)
+        explicit_metadata = {
+            datapoints.BoundingBoxes: {"format", "canvas_size"},
+        }
+        kernel_params = [param for param in kernel_params if param.name not in explicit_metadata.get(input_type, set())]
 
         dispatcher_params = iter(dispatcher_params)
         for dispatcher_param, kernel_param in zip(dispatcher_params, kernel_params):
@@ -480,28 +465,6 @@ class TestDispatchers:
                 ) from None
 
             assert dispatcher_param == kernel_param
-
-    @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
-    def test_dispatcher_datapoint_signatures_consistency(self, info):
-        try:
-            datapoint_method = getattr(datapoints._datapoint.Datapoint, info.id)
-        except AttributeError:
-            pytest.skip("Dispatcher doesn't support arbitrary datapoint dispatch.")
-
-        dispatcher_signature = inspect.signature(info.dispatcher)
-        dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
-
-        datapoint_signature = inspect.signature(datapoint_method)
-        datapoint_params = list(datapoint_signature.parameters.values())[1:]
-
-        # Because we use `from __future__ import annotations` inside the module where `datapoints._datapoint` is
-        # defined, the annotations are stored as strings. This makes them concrete again, so they can be compared to the
-        # natively concrete dispatcher annotations.
-        datapoint_annotations = get_type_hints(datapoint_method)
-        for param in datapoint_params:
-            param._annotation = datapoint_annotations[param.name]
-
-        assert dispatcher_params == datapoint_params
 
     @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
     def test_unkown_type(self, info):

@@ -17,12 +17,12 @@ def uniform_temporal_subsample(inpt: datapoints._VideoTypeJIT, num_samples: int)
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return uniform_temporal_subsample_video(inpt, num_samples)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    elif isinstance(inpt, datapoints.Datapoint):
         kernel = _get_kernel(uniform_temporal_subsample, type(inpt))
         return kernel(inpt, num_samples)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, " f"but got {type(inpt)} instead."
+            f"Input can either be a plain tensor or any TorchVision datapoint, but got {type(inpt)} instead."
         )
 
 

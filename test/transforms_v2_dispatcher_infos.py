@@ -69,14 +69,15 @@ class DispatcherInfo(InfoBase):
             import itertools
 
             for args_kwargs in sample_inputs:
-                for name in itertools.chain(
-                    datapoint_type.__annotations__.keys(),
-                    # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
-                    #  per-dispatcher level. However, so far there is no option for that.
-                    (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
-                ):
-                    if name in args_kwargs.kwargs:
-                        del args_kwargs.kwargs[name]
+                if hasattr(datapoint_type, "__annotations__"):
+                    for name in itertools.chain(
+                        datapoint_type.__annotations__.keys(),
+                        # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
+                        #  per-dispatcher level. However, so far there is no option for that.
+                        (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
+                    ):
+                        if name in args_kwargs.kwargs:
+                            del args_kwargs.kwargs[name]
 
                 yield args_kwargs
 

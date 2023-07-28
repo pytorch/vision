@@ -32,7 +32,7 @@ def normalize(
         _log_api_usage_once(normalize)
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    elif isinstance(inpt, datapoints.Datapoint):
         kernel = _get_kernel(normalize, type(inpt))
         return kernel(inpt, mean=mean, std=std, inplace=inplace)
     else:
@@ -82,6 +82,27 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
     return normalize_image_tensor(video, mean, std, inplace=inplace)
 
 
+@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
+def gaussian_blur(
+    inpt: datapoints._InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> datapoints._InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(gaussian_blur)
+
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
+    elif isinstance(inpt, datapoints.Datapoint):
+        kernel = _get_kernel(gaussian_blur, type(inpt))
+        return kernel(inpt, kernel_size=kernel_size, sigma=sigma)
+    elif isinstance(inpt, PIL.Image.Image):
+        return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
+
+
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
     lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0) * sigma)
     x = torch.linspace(-lim, lim, steps=kernel_size, dtype=dtype, device=device)
@@ -98,6 +119,7 @@ def _get_gaussian_kernel2d(
     return kernel2d
 
 
+@_register_kernel_internal(gaussian_blur, datapoints.Image)
 def gaussian_blur_image_tensor(
     image: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
@@ -171,29 +193,11 @@ def gaussian_blur_image_pil(
     return to_pil_image(output, mode=image.mode)
 
 
+@_register_kernel_internal(gaussian_blur, datapoints.Video)
 def gaussian_blur_video(
     video: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
     return gaussian_blur_image_tensor(video, kernel_size, sigma)
-
-
-def gaussian_blur(
-    inpt: datapoints._InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
-) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(gaussian_blur)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
-    elif isinstance(inpt, PIL.Image.Image):
-        return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
 
 
 def to_dtype(
@@ -204,7 +208,7 @@ def to_dtype(
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return to_dtype_image_tensor(inpt, dtype, scale=scale)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    elif isinstance(inpt, datapoints.Datapoint):
         kernel = _get_kernel(to_dtype, type(inpt))
         return kernel(inpt, dtype, scale=scale)
     else:

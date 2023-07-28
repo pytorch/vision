@@ -25,7 +25,7 @@ def erase(
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    elif isinstance(inpt, datapoints.Datapoint):
         kernel = _get_kernel(erase, type(inpt))
         return kernel(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
     elif isinstance(inpt, PIL.Image.Image):
