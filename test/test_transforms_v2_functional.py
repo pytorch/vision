@@ -283,12 +283,12 @@ class TestKernels:
         adapted_other_args, adapted_kwargs = info.float32_vs_uint8(other_args, kwargs)
 
         actual = info.kernel(
-            F.convert_dtype_image_tensor(input, dtype=torch.float32),
+            F.to_dtype_image_tensor(input, dtype=torch.float32, scale=True),
             *adapted_other_args,
             **adapted_kwargs,
         )
 
-        expected = F.convert_dtype_image_tensor(info.kernel(input, *other_args, **kwargs), dtype=torch.float32)
+        expected = F.to_dtype_image_tensor(info.kernel(input, *other_args, **kwargs), dtype=torch.float32, scale=True)
 
         assert_close(
             actual,
@@ -538,31 +538,12 @@ class TestDispatchers:
             (F.get_image_num_channels, F.get_num_channels),
             (F.to_pil_image, F.to_image_pil),
             (F.elastic_transform, F.elastic),
-            (F.convert_image_dtype, F.convert_dtype_image_tensor),
             (F.to_grayscale, F.rgb_to_grayscale),
         ]
     ],
 )
 def test_alias(alias, target):
     assert alias is target
-
-
-@pytest.mark.parametrize(
-    ("info", "args_kwargs"),
-    make_info_args_kwargs_params(
-        KERNEL_INFOS_MAP[F.convert_dtype_image_tensor],
-        args_kwargs_fn=lambda info: info.sample_inputs_fn(),
-    ),
-)
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_convert_dtype_image_tensor_dtype_and_device(info, args_kwargs, device):
-    (input, *other_args), kwargs = args_kwargs.load(device)
-    dtype = other_args[0] if other_args else kwargs.get("dtype", torch.float32)
-
-    output = info.kernel(input, dtype)
-
-    assert output.dtype == dtype
-    assert output.device == input.device
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())

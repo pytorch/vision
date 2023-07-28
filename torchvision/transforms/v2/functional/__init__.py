@@ -5,10 +5,6 @@ from ._utils import is_simple_tensor  # usort: skip
 from ._meta import (
     clamp_bounding_box,
     convert_format_bounding_box,
-    convert_dtype_image_tensor,
-    convert_dtype,
-    convert_dtype_video,
-    convert_image_dtype,
     get_dimensions_image_tensor,
     get_dimensions_image_pil,
     get_dimensions,
@@ -158,6 +154,7 @@ from ._geometry import (
     vflip,
 )
 from ._misc import (
+    convert_image_dtype,
     gaussian_blur,
     gaussian_blur_image_pil,
     gaussian_blur_image_tensor,
@@ -165,6 +162,9 @@ from ._misc import (
     normalize,
     normalize_image_tensor,
     normalize_video,
+    to_dtype,
+    to_dtype_image_tensor,
+    to_dtype_video,
 )
 from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
 from ._type_conversion import pil_to_tensor, to_image_pil, to_image_tensor, to_pil_image
