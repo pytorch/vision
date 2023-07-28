@@ -9,7 +9,7 @@ from torchvision.transforms._functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import _num_value_bits, to_dtype_image_tensor
+from ._misc import _num_value_bits, to_dtype_image_tensor
 from ._utils import is_simple_tensor
 
 
