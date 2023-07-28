@@ -69,6 +69,7 @@ def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Te
     return output if fp else output.to(image1.dtype)
 
 
+@_register_explicit_noop(datapoints.BoundingBox, datapoints.Mask)
 def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(adjust_brightness)
@@ -85,9 +86,6 @@ def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) 
             f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
             f"but got {type(inpt)} instead."
         )
-
-
-_register_explicit_noop(adjust_brightness, datapoints.BoundingBox, datapoints.Mask)
 
 
 @_register_kernel_internal(adjust_brightness, datapoints.Image)

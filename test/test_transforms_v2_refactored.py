@@ -455,7 +455,7 @@ def test_exhaustive_kernel_registration(dispatcher, registered_datapoint_clss):
                     *[f"- {name}" for name in names],
                     "",
                     f"If available, register the kernels with @_register_kernel_internal({dispatcher.__name__}, ...).",
-                    f"If not, register explicit no-ops with _register_explicit_noops({dispatcher.__name__}, {', '.join(names)})",
+                    f"If not, register explicit no-ops with @_register_explicit_noops({', '.join(names)})",
                 ]
             )
         )
