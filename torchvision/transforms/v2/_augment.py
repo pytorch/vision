@@ -204,7 +204,7 @@ class _BaseMixupCutmix(Transform):
 
 
 class Mixup(_BaseMixupCutmix):
-    """[BETA] Apply Mixup to the provided batch of images and labels.
+    """[BETA] Apply MixUp to the provided batch of images and labels.
 
     .. v2betastatus:: Mixup transform
 
@@ -246,7 +246,7 @@ class Mixup(_BaseMixupCutmix):
 
 
 class Cutmix(_BaseMixupCutmix):
-    """[BETA] Apply Cutmix to the provided batch of images and labels.
+    """[BETA] Apply CutMix to the provided batch of images and labels.
 
     .. v2betastatus:: Cutmix transform
 

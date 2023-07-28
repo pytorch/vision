@@ -1,7 +1,7 @@
 
 """
 ===========================
-How to use Cutmix and Mixup
+How to use CutMix and MixUp
 ===========================
 
 TODO
