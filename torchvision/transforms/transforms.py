@@ -566,7 +566,7 @@ class RandomOrder(torch.nn.Module):
 
         >>> transforms = transforms.RandomOrder(torch.nn.ModuleList([
         >>>     transforms.ColorJitter(),
-        >>> ]), p=0.3)
+        >>> ]))
         >>> scripted_transforms = torch.jit.script(transforms)
 
         Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor``, does not require
@@ -584,7 +584,7 @@ class RandomOrder(torch.nn.Module):
     def forward(self, img):
         order = torch.randperm(len(self.transforms))
         for i in order:
-            img = self.transforms[i](img)
+            img = self.transforms[i.item()](img)
         return img
 
     def __repr__(self) -> str:
