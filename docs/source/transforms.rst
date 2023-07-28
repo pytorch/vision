@@ -234,7 +234,6 @@ Conversion
     v2.PILToTensor
     v2.ToImageTensor
     ConvertImageDtype
-    v2.ConvertDtype
     v2.ConvertImageDtype
     v2.ToDtype
     v2.ConvertBoundingBoxFormat
@@ -261,6 +260,22 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     v2.TrivialAugmentWide
     AugMix
     v2.AugMix
+
+Cutmix - Mixup
+--------------
+
+Cutmix and Mixup are special transforms that
+are meant to be used on batches rather than on individual images, because they
+are combining pairs of images together. These can be used after the dataloader,
+or part of a collation function. See
+:ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    v2.Cutmix
+    v2.Mixup
 
 .. _functional_transforms:
 
