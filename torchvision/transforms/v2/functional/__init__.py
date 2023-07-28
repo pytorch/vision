@@ -5,10 +5,10 @@ from ._utils import is_simple_tensor  # usort: skip
 from ._meta import (
     clamp_bounding_box,
     convert_format_bounding_box,
-    convert_dtype_image_tensor,
-    convert_dtype,
-    convert_dtype_video,
     convert_image_dtype,
+    to_dtype,
+    to_dtype_image_tensor,
+    to_dtype_video,
     get_dimensions_image_tensor,
     get_dimensions_image_pil,
     get_dimensions,

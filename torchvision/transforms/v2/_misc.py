@@ -9,7 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _get_defaultdict, _parse_labels_getter, _setup_float_or_seq, _setup_size
+from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
 from .utils import has_any, is_simple_tensor, query_bounding_box
 
 
@@ -223,36 +223,76 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
-    """[BETA] Converts the input to a specific dtype - this does not scale values.
+    """[BETA] Converts the input to a specific dtype, optionally scaling the values for images or videos.
 
     .. v2betastatus:: ToDtype transform
 
+    .. note::
+        ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.
+
     Args:
         dtype (``torch.dtype`` or dict of ``Datapoint`` -> ``torch.dtype``): The dtype to convert to.
+            If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted
+            to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.
             A dict can be passed to specify per-datapoint conversions, e.g.
-            ``dtype={datapoints.Image: torch.float32, datapoints.Video:
-            torch.float64}``.
+            ``dtype={datapoints.Image: torch.float32, datapoints.Mask: torch.int64, "others":None}``. The "others"
+            key can be used as a catch-all for any other datapoint type, and ``None`` means no conversion.
+        scale (bool, optional): Whether to scale the values for images or videos. Default: ``False``.
     """
 
     _transformed_types = (torch.Tensor,)
 
-    def __init__(self, dtype: Union[torch.dtype, Dict[Type, Optional[torch.dtype]]]) -> None:
+    def __init__(
+        self, dtype: Union[torch.dtype, Dict[Union[Type, str], Optional[torch.dtype]]], scale: bool = False
+    ) -> None:
         super().__init__()
-        if not isinstance(dtype, dict):
-            dtype = _get_defaultdict(dtype)
-        if torch.Tensor in dtype and any(cls in dtype for cls in [datapoints.Image, datapoints.Video]):
+
+        if not isinstance(dtype, (dict, torch.dtype)):
+            raise ValueError(f"dtype must be a dict or a torch.dtype, got {type(dtype)} instead")
+
+        if (
+            isinstance(dtype, dict)
+            and torch.Tensor in dtype
+            and any(cls in dtype for cls in [datapoints.Image, datapoints.Video])
+        ):
             warnings.warn(
                 "Got `dtype` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
                 "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
                 "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
             )
         self.dtype = dtype
+        self.scale = scale
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        dtype = self.dtype[type(inpt)]
+        if isinstance(self.dtype, torch.dtype):
+            # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
+            # is a simple torch.dtype
+            if not is_simple_tensor(inpt) and not isinstance(inpt, (datapoints.Image, datapoints.Video)):
+                return inpt
+
+            dtype: Optional[torch.dtype] = self.dtype
+        elif type(inpt) in self.dtype:
+            dtype = self.dtype[type(inpt)]
+        elif "others" in self.dtype:
+            dtype = self.dtype["others"]
+        else:
+            raise ValueError(
+                f"No dtype was specified for type {type(inpt)}. "
+                "If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. "
+                "If you're passing a dict as dtype, "
+                'you can use "others" as a catch-all key '
+                'e.g. dtype={datapoints.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
+            )
+
+        supports_scaling = is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video))
         if dtype is None:
+            if self.scale and supports_scaling:
+                warnings.warn(
+                    "scale was set to True but no dtype was specified for images or videos: no scaling will be done."
+                )
             return inpt
-        return inpt.to(dtype=dtype)
+
+        return F.to_dtype(inpt, dtype=dtype, scale=self.scale)
 
 
 class SanitizeBoundingBox(Transform):
