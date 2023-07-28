@@ -141,7 +141,7 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixupCutmix(Transform):
-    def __init__(self, *, alpha: float = 1, num_classes: int, labels_getter="default") -> None:
+    def __init__(self, *, alpha: float = 1., num_classes: int, labels_getter="default") -> None:
         super().__init__()
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
@@ -210,7 +210,14 @@ class Mixup(_BaseMixupCutmix):
 
     Paper: `mixup: Beyond Empirical Risk Minimization <https://arxiv.org/abs/1710.09412>`_.
 
-    See :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+    .. note::
+        This transform is meant to be used on **batches** of samples, not
+        individual images. See
+        :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage
+        examples.
+        The sample pairing is deterministic and done by matching consecutive
+        samples in the batch, so the batch needs to be shuffled (this is an
+        implementation detail, not a guaranteed convention.)
 
     In the input, the labels are expected to be a tensor of shape ``(batch_size,)``. They will be transformed
     into a tensor of shape ``(batch_size, num_classes)``.
@@ -253,7 +260,14 @@ class Cutmix(_BaseMixupCutmix):
     Paper: `CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features
     <https://arxiv.org/abs/1905.04899>`_.
 
-    See :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+    .. note::
+        This transform is meant to be used on **batches** of samples, not
+        individual images. See
+        :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage
+        examples.
+        The sample pairing is deterministic and done by matching consecutive
+        samples in the batch, so the batch needs to be shuffled (this is an
+        implementation detail, not a guaranteed convention.)
 
     In the input, the labels are expected to be a tensor of shape ``(batch_size,)``. They will be transformed
     into a tensor of shape ``(batch_size, num_classes)``.
