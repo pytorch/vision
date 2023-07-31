@@ -23,7 +23,7 @@ from ._utils import (
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_spatial_size
+from .utils import has_all, has_any, is_simple_tensor, query_bounding_boxes, query_spatial_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -32,7 +32,7 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     .. v2betastatus:: RandomHorizontalFlip transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -52,7 +52,7 @@ class RandomVerticalFlip(_RandomApplyTransform):
     .. v2betastatus:: RandomVerticalFlip transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -72,7 +72,7 @@ class Resize(Transform):
     .. v2betastatus:: Resize transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -166,7 +166,7 @@ class CenterCrop(Transform):
     .. v2betastatus:: CenterCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -194,7 +194,7 @@ class RandomResizedCrop(Transform):
     .. v2betastatus:: RandomResizedCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -372,8 +372,8 @@ class FiveCrop(Transform):
         return F.five_crop(inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, datapoints.BoundingBox, datapoints.Mask):
-            raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
+        if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
+            raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
 
 class TenCrop(Transform):
@@ -415,8 +415,8 @@ class TenCrop(Transform):
         self.vertical_flip = vertical_flip
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, datapoints.BoundingBox, datapoints.Mask):
-            raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
+        if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
+            raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
     def _transform(
         self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
@@ -441,7 +441,7 @@ class Pad(Transform):
     .. v2betastatus:: Pad transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -526,7 +526,7 @@ class RandomZoomOut(_RandomApplyTransform):
         output_height = input_height * r
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -585,7 +585,7 @@ class RandomRotation(Transform):
     .. v2betastatus:: RandomRotation transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -658,7 +658,7 @@ class RandomAffine(Transform):
     .. v2betastatus:: RandomAffine transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -779,7 +779,7 @@ class RandomCrop(Transform):
     .. v2betastatus:: RandomCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -934,7 +934,7 @@ class RandomPerspective(_RandomApplyTransform):
     .. v2betastatus:: RandomPerspective transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1020,7 +1020,7 @@ class ElasticTransform(Transform):
     .. v2betastatus:: RandomPerspective transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1111,15 +1111,15 @@ class RandomIoUCrop(Transform):
 
     .. v2betastatus:: RandomIoUCrop transform
 
-    This transformation requires an image or video data and ``datapoints.BoundingBox`` in the input.
+    This transformation requires an image or video data and ``datapoints.BoundingBoxes`` in the input.
 
     .. warning::
         In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`
-        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBox`, either immediately
+        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately
         after or later in the transforms pipeline.
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1156,7 +1156,7 @@ class RandomIoUCrop(Transform):
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
-            has_all(flat_inputs, datapoints.BoundingBox)
+            has_all(flat_inputs, datapoints.BoundingBoxes)
             and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
         ):
             raise TypeError(
@@ -1166,7 +1166,7 @@ class RandomIoUCrop(Transform):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         orig_h, orig_w = query_spatial_size(flat_inputs)
-        bboxes = query_bounding_box(flat_inputs)
+        bboxes = query_bounding_boxes(flat_inputs)
 
         while True:
             # sample an option
@@ -1194,7 +1194,7 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_box(
+                xyxy_bboxes = F.convert_format_bounding_boxes(
                     bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
                 )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
@@ -1221,9 +1221,9 @@ class RandomIoUCrop(Transform):
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
-        if isinstance(output, datapoints.BoundingBox):
+        if isinstance(output, datapoints.BoundingBoxes):
             # We "mark" the invalid boxes as degenreate, and they can be
-            # removed by a later call to SanitizeBoundingBox()
+            # removed by a later call to SanitizeBoundingBoxes()
             output[~params["is_within_crop_area"]] = 0
 
         return output
@@ -1236,7 +1236,7 @@ class ScaleJitter(Transform):
     .. v2betastatus:: ScaleJitter transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1302,7 +1302,7 @@ class RandomShortestSize(Transform):
     .. v2betastatus:: RandomShortestSize transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1381,7 +1381,7 @@ class RandomResize(Transform):
         output_height = size
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
