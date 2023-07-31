@@ -4,7 +4,7 @@ from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, Tupl
 
 import torch
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
-from torchvision.datapoints import BoundingBox
+from torchvision.datapoints import BBoxes
 from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
@@ -144,7 +144,7 @@ class CelebA(Dataset):
             image=image,
             identity=Label(int(identity["identity"])),
             attributes={attr: value == "1" for attr, value in attributes.items()},
-            bounding_box=BoundingBox(
+            bounding_box=BBoxes(
                 [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
                 format="xywh",
                 spatial_size=image.spatial_size,

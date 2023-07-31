@@ -2,7 +2,7 @@ import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import CSVDictParser, Demultiplexer, Filter, IterDataPipe, Mapper, Zipper
-from torchvision.datapoints import BoundingBox
+from torchvision.datapoints import BBoxes
 from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
@@ -76,7 +76,7 @@ class GTSRB(Dataset):
         (path, buffer), csv_info = data
         label = int(csv_info["ClassId"])
 
-        bounding_box = BoundingBox(
+        bounding_box = BBoxes(
             [int(csv_info[k]) for k in ("Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2")],
             format="xyxy",
             spatial_size=(int(csv_info["Height"]), int(csv_info["Width"])),

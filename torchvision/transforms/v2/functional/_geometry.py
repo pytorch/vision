@@ -52,17 +52,17 @@ def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
 
 
 def horizontal_flip_bounding_box(
-    bounding_box: torch.Tensor, format: datapoints.BoundingBoxFormat, spatial_size: Tuple[int, int]
+    bounding_box: torch.Tensor, format: datapoints.BBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
     bounding_box = bounding_box.clone().reshape(-1, 4)
 
-    if format == datapoints.BoundingBoxFormat.XYXY:
+    if format == datapoints.BBoxFormat.XYXY:
         bounding_box[:, [2, 0]] = bounding_box[:, [0, 2]].sub_(spatial_size[1]).neg_()
-    elif format == datapoints.BoundingBoxFormat.XYWH:
+    elif format == datapoints.BBoxFormat.XYWH:
         bounding_box[:, 0].add_(bounding_box[:, 2]).sub_(spatial_size[1]).neg_()
-    else:  # format == datapoints.BoundingBoxFormat.CXCYWH:
+    else:  # format == datapoints.BBoxFormat.CXCYWH:
         bounding_box[:, 0].sub_(spatial_size[1]).neg_()
 
     return bounding_box.reshape(shape)
@@ -102,17 +102,17 @@ def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
 
 
 def vertical_flip_bounding_box(
-    bounding_box: torch.Tensor, format: datapoints.BoundingBoxFormat, spatial_size: Tuple[int, int]
+    bounding_box: torch.Tensor, format: datapoints.BBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
     bounding_box = bounding_box.clone().reshape(-1, 4)
 
-    if format == datapoints.BoundingBoxFormat.XYXY:
+    if format == datapoints.BBoxFormat.XYXY:
         bounding_box[:, [1, 3]] = bounding_box[:, [3, 1]].sub_(spatial_size[0]).neg_()
-    elif format == datapoints.BoundingBoxFormat.XYWH:
+    elif format == datapoints.BBoxFormat.XYWH:
         bounding_box[:, 1].add_(bounding_box[:, 3]).sub_(spatial_size[0]).neg_()
-    else:  # format == datapoints.BoundingBoxFormat.CXCYWH:
+    else:  # format == datapoints.BBoxFormat.CXCYWH:
         bounding_box[:, 1].sub_(spatial_size[0]).neg_()
 
     return bounding_box.reshape(shape)
@@ -652,7 +652,7 @@ def affine_image_pil(
 
 def _affine_bounding_box_with_expand(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     spatial_size: Tuple[int, int],
     angle: Union[int, float],
     translate: List[float],
@@ -671,7 +671,7 @@ def _affine_bounding_box_with_expand(
     device = bounding_box.device
     bounding_box = (
         convert_format_bounding_box(
-            bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+            bounding_box, old_format=format, new_format=datapoints.BBoxFormat.XYXY, inplace=True
         )
     ).reshape(-1, 4)
 
@@ -730,9 +730,9 @@ def _affine_bounding_box_with_expand(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         spatial_size = (new_height, new_width)
 
-    out_bboxes = clamp_bounding_box(out_bboxes, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size)
+    out_bboxes = clamp_bounding_box(out_bboxes, format=datapoints.BBoxFormat.XYXY, spatial_size=spatial_size)
     out_bboxes = convert_format_bounding_box(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        out_bboxes, old_format=datapoints.BBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
     out_bboxes = out_bboxes.to(original_dtype)
@@ -741,7 +741,7 @@ def _affine_bounding_box_with_expand(
 
 def affine_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     spatial_size: Tuple[int, int],
     angle: Union[int, float],
     translate: List[float],
@@ -929,7 +929,7 @@ def rotate_image_pil(
 
 def rotate_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     spatial_size: Tuple[int, int],
     angle: float,
     expand: bool = False,
@@ -1167,7 +1167,7 @@ def pad_mask(
 
 def pad_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     spatial_size: Tuple[int, int],
     padding: List[int],
     padding_mode: str = "constant",
@@ -1178,7 +1178,7 @@ def pad_bounding_box(
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
-    if format == datapoints.BoundingBoxFormat.XYXY:
+    if format == datapoints.BBoxFormat.XYXY:
         pad = [left, top, left, top]
     else:
         pad = [left, top, 0, 0]
@@ -1247,7 +1247,7 @@ crop_image_pil = _FP.crop
 
 def crop_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     top: int,
     left: int,
     height: int,
@@ -1255,7 +1255,7 @@ def crop_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
 
     # Crop or implicit pad if left and/or top have negative values:
-    if format == datapoints.BoundingBoxFormat.XYXY:
+    if format == datapoints.BBoxFormat.XYXY:
         sub = [left, top, left, top]
     else:
         sub = [left, top, 0, 0]
@@ -1411,7 +1411,7 @@ def perspective_image_pil(
 
 def perspective_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     spatial_size: Tuple[int, int],
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
@@ -1425,7 +1425,7 @@ def perspective_bounding_box(
     original_shape = bounding_box.shape
     # TODO: first cast to float if bbox is int64 before convert_format_bounding_box
     bounding_box = (
-        convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
@@ -1492,14 +1492,14 @@ def perspective_bounding_box(
 
     out_bboxes = clamp_bounding_box(
         torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype),
-        format=datapoints.BoundingBoxFormat.XYXY,
+        format=datapoints.BBoxFormat.XYXY,
         spatial_size=spatial_size,
     )
 
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        out_bboxes, old_format=datapoints.BBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
@@ -1650,7 +1650,7 @@ def _create_identity_grid(size: Tuple[int, int], device: torch.device, dtype: to
 
 def elastic_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     spatial_size: Tuple[int, int],
     displacement: torch.Tensor,
 ) -> torch.Tensor:
@@ -1667,7 +1667,7 @@ def elastic_bounding_box(
     original_shape = bounding_box.shape
     # TODO: first cast to float if bbox is int64 before convert_format_bounding_box
     bounding_box = (
-        convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     id_grid = _create_identity_grid(spatial_size, device=device, dtype=dtype)
@@ -1690,12 +1690,12 @@ def elastic_bounding_box(
     out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
     out_bboxes = clamp_bounding_box(
         torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype),
-        format=datapoints.BoundingBoxFormat.XYXY,
+        format=datapoints.BBoxFormat.XYXY,
         spatial_size=spatial_size,
     )
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        out_bboxes, old_format=datapoints.BBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
@@ -1820,7 +1820,7 @@ def center_crop_image_pil(image: PIL.Image.Image, output_size: List[int]) -> PIL
 
 def center_crop_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     spatial_size: Tuple[int, int],
     output_size: List[int],
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
@@ -1895,7 +1895,7 @@ def resized_crop_image_pil(
 
 def resized_crop_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: datapoints.BBoxFormat,
     top: int,
     left: int,
     height: int,

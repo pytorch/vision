@@ -193,7 +193,7 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
         bbox_xyxy = F.convert_format_bounding_box(
             bbox.as_subclass(torch.Tensor),
             old_format=format_,
-            new_format=datapoints.BoundingBoxFormat.XYXY,
+            new_format=datapoints.BBoxFormat.XYXY,
             inplace=True,
         )
         points = np.array(
@@ -215,7 +215,7 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
             dtype=bbox_xyxy.dtype,
         )
         out_bbox = F.convert_format_bounding_box(
-            out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
+            out_bbox, old_format=datapoints.BBoxFormat.XYXY, new_format=format_, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
         out_bbox = F.clamp_bounding_box(out_bbox, format=format_, spatial_size=spatial_size_)
@@ -235,7 +235,7 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
 
 
 def sample_inputs_convert_format_bounding_box():
-    formats = list(datapoints.BoundingBoxFormat)
+    formats = list(datapoints.BBoxFormat)
     for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
         yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
 
@@ -666,7 +666,7 @@ def sample_inputs_perspective_bounding_box():
             coefficients=_PERSPECTIVE_COEFFS[0],
         )
 
-    format = datapoints.BoundingBoxFormat.XYXY
+    format = datapoints.BBoxFormat.XYXY
     loader = make_bounding_box_loader(format=format)
     yield ArgsKwargs(
         loader, format=format, spatial_size=loader.spatial_size, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS

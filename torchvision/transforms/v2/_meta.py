@@ -4,39 +4,39 @@ from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F, Transform
 
 
-class ConvertBoundingBoxFormat(Transform):
+class ConvertBBoxFormat(Transform):
     """[BETA] Convert bounding box coordinates to the given ``format``, eg from "CXCYWH" to "XYXY".
 
-    .. v2betastatus:: ConvertBoundingBoxFormat transform
+    .. v2betastatus:: ConvertBBoxFormat transform
 
     Args:
-        format (str or datapoints.BoundingBoxFormat): output bounding box format.
-            Possible values are defined by :class:`~torchvision.datapoints.BoundingBoxFormat` and
+        format (str or datapoints.BBoxFormat): output bounding box format.
+            Possible values are defined by :class:`~torchvision.datapoints.BBoxFormat` and
             string values match the enums, e.g. "XYXY" or "XYWH" etc.
     """
 
-    _transformed_types = (datapoints.BoundingBox,)
+    _transformed_types = (datapoints.BBoxes,)
 
-    def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
+    def __init__(self, format: Union[str, datapoints.BBoxFormat]) -> None:
         super().__init__()
         if isinstance(format, str):
-            format = datapoints.BoundingBoxFormat[format]
+            format = datapoints.BBoxFormat[format]
         self.format = format
 
-    def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
+    def _transform(self, inpt: datapoints.BBoxes, params: Dict[str, Any]) -> datapoints.BBoxes:
         return F.convert_format_bounding_box(inpt, new_format=self.format)  # type: ignore[return-value]
 
 
-class ClampBoundingBox(Transform):
+class ClampBBoxes(Transform):
     """[BETA] Clamp bounding boxes to their corresponding image dimensions.
 
     The clamping is done according to the bounding boxes' ``spatial_size`` meta-data.
 
-    .. v2betastatus:: ClampBoundingBox transform
+    .. v2betastatus:: ClampBBoxes transform
 
     """
 
-    _transformed_types = (datapoints.BoundingBox,)
+    _transformed_types = (datapoints.BBoxes,)
 
-    def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
+    def _transform(self, inpt: datapoints.BBoxes, params: Dict[str, Any]) -> datapoints.BBoxes:
         return F.clamp_bounding_box(inpt)  # type: ignore[return-value]

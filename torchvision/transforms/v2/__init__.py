@@ -39,7 +39,7 @@ from ._geometry import (
     ScaleJitter,
     TenCrop,
 )
-from ._meta import ClampBoundingBox, ConvertBoundingBoxFormat
+from ._meta import ClampBBoxes, ConvertBBoxFormat
 from ._misc import (
     ConvertImageDtype,
     GaussianBlur,
@@ -47,7 +47,7 @@ from ._misc import (
     Lambda,
     LinearTransformation,
     Normalize,
-    SanitizeBoundingBox,
+    SanitizeBBoxes,
     ToDtype,
 )
 from ._temporal import UniformTemporalSubsample
