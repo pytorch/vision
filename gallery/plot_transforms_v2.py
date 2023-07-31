@@ -29,8 +29,8 @@ def load_data():
 
     masks = datapoints.Mask(merged_masks == labels.view(-1, 1, 1))
 
-    bounding_boxes = datapoints.BoundingBox(
-        masks_to_boxes(masks), format=datapoints.BoundingBoxFormat.XYXY, spatial_size=image.shape[-2:]
+    bounding_boxes = datapoints.BoundingBoxes(
+        masks_to_boxes(masks), format=datapoints.BoundingBoxesFormat.XYXY, spatial_size=image.shape[-2:]
     )
 
     return path, image, bounding_boxes, masks, labels
