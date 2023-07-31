@@ -47,7 +47,7 @@ assert image.data_ptr() == tensor.data_ptr()
 #
 # * :class:`~torchvision.datapoints.Image`
 # * :class:`~torchvision.datapoints.Video`
-# * :class:`~torchvision.datapoints.BoundingBox`
+# * :class:`~torchvision.datapoints.BoundingBoxes`
 # * :class:`~torchvision.datapoints.Mask`
 #
 # How do I construct a datapoint?
@@ -76,11 +76,11 @@ print(image.shape, image.dtype)
 
 ########################################################################################################################
 # In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
-# :class:`~torchvision.datapoints.BoundingBox` stores the coordinate format as well as the canvas size of the
+# :class:`~torchvision.datapoints.BoundingBoxes` stores the coordinate format as well as the spatial size of the
 # corresponding image alongside the actual values:
 
-bounding_box = datapoints.BoundingBox(
-    [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=F.get_size(image)
+bounding_box = datapoints.BoundingBoxes(
+    [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=image.shape[-2:]
 )
 print(bounding_box)
 
@@ -105,7 +105,7 @@ class PennFudanDataset(torch.utils.data.Dataset):
     def __getitem__(self, item):
         ...
 
-        target["boxes"] = datapoints.BoundingBox(
+        target["boxes"] = datapoints.BoundingBoxes(
             boxes,
             format=datapoints.BoundingBoxFormat.XYXY,
             canvas_size=F.get_size(img),
@@ -126,7 +126,7 @@ class PennFudanDataset(torch.utils.data.Dataset):
 
 class WrapPennFudanDataset:
     def __call__(self, img, target):
-        target["boxes"] = datapoints.BoundingBox(
+        target["boxes"] = datapoints.BoundingBoxes(
             target["boxes"],
             format=datapoints.BoundingBoxFormat.XYXY,
             canvas_size=F.get_size(img),
@@ -147,7 +147,7 @@ def get_transform(train):
 ########################################################################################################################
 # .. note::
 #
-#    If both :class:`~torchvision.datapoints.BoundingBox`'es and :class:`~torchvision.datapoints.Mask`'s are included in
+#    If both :class:`~torchvision.datapoints.BoundingBoxes`'es and :class:`~torchvision.datapoints.Mask`'s are included in
 #    the sample, ``torchvision.transforms.v2`` will transform them both. Meaning, if you don't need both, dropping or
 #    at least not wrapping the obsolete parts, can lead to a significant performance boost.
 #

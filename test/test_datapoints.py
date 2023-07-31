@@ -27,7 +27,7 @@ def test_mask_instance(data):
     "format", ["XYXY", "CXCYWH", datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH]
 )
 def test_bbox_instance(data, format):
-    bboxes = datapoints.BoundingBox(data, format=format, canvas_size=(32, 32))
+    bboxes = datapoints.BoundingBoxes(data, format=format, canvas_size=(32, 32))
     assert isinstance(bboxes, torch.Tensor)
     assert bboxes.ndim == 2 and bboxes.shape[1] == 4
     if isinstance(format, str):
@@ -164,7 +164,7 @@ def test_wrap_like():
     [
         datapoints.Image(torch.rand(3, 16, 16)),
         datapoints.Video(torch.rand(2, 3, 16, 16)),
-        datapoints.BoundingBox([0.0, 1.0, 2.0, 3.0], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=(10, 10)),
+        datapoints.BoundingBoxes([0.0, 1.0, 2.0, 3.0], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=(10, 10)),
         datapoints.Mask(torch.randint(0, 256, (16, 16), dtype=torch.uint8)),
     ],
 )

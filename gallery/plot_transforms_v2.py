@@ -29,7 +29,7 @@ def load_data():
 
     masks = datapoints.Mask(merged_masks == labels.view(-1, 1, 1))
 
-    bounding_boxes = datapoints.BoundingBox(
+    bounding_boxes = datapoints.BoundingBoxes(
         masks_to_boxes(masks), format=datapoints.BoundingBoxFormat.XYXY, canvas_size=image.shape[-2:]
     )
 

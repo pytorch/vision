@@ -44,7 +44,7 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
           the target and wrap the data in the corresponding ``torchvision.datapoints``. The original keys are
           preserved. If ``target_keys`` is ommitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`~torchvision.datasets.CelebA`: The target for ``target_type="bbox"`` is converted to the ``XYXY``
-          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBox` datapoint.
+          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBoxes` datapoint.
         * :class:`~torchvision.datasets.Kitti`: Instead returning the target as list of dicts, the wrapper returns a
           dict of lists. In addition, the key-value-pairs ``"boxes"`` and ``"labels"`` are added and wrap the data
           in the corresponding ``torchvision.datapoints``. The original keys are preserved. If ``target_keys`` is
@@ -56,7 +56,7 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
           a dictionary with the key-value-pairs ``"masks"`` (as :class:`~torchvision.datapoints.Mask` datapoint) and
           ``"labels"``.
         * :class:`~torchvision.datasets.WIDERFace`: The value for key ``"bbox"`` in the target is converted to ``XYXY``
-          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBox` datapoint.
+          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBoxes` datapoint.
 
     Image classification datasets
 
@@ -360,8 +360,8 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             target["image_id"] = image_id
 
         if "boxes" in target_keys:
-            target["boxes"] = F.convert_format_bounding_box(
-                datapoints.BoundingBox(
+            target["boxes"] = F.convert_format_bounding_boxes(
+                datapoints.BoundingBoxes(
                     batched_target["bbox"],
                     format=datapoints.BoundingBoxFormat.XYWH,
                     canvas_size=canvas_size,
@@ -442,7 +442,7 @@ def voc_detection_wrapper_factory(dataset, target_keys):
             target = {}
 
         if "boxes" in target_keys:
-            target["boxes"] = datapoints.BoundingBox(
+            target["boxes"] = datapoints.BoundingBoxes(
                 [
                     [int(bndbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")]
                     for bndbox in batched_instances["bndbox"]
@@ -481,8 +481,8 @@ def celeba_wrapper_factory(dataset, target_keys):
             target,
             target_types=dataset.target_type,
             type_wrappers={
-                "bbox": lambda item: F.convert_format_bounding_box(
-                    datapoints.BoundingBox(
+                "bbox": lambda item: F.convert_format_bounding_boxes(
+                    datapoints.BoundingBoxes(
                         item,
                         format=datapoints.BoundingBoxFormat.XYWH,
                         canvas_size=(image.height, image.width),
@@ -532,7 +532,7 @@ def kitti_wrapper_factory(dataset, target_keys):
         target = {}
 
         if "boxes" in target_keys:
-            target["boxes"] = datapoints.BoundingBox(
+            target["boxes"] = datapoints.BoundingBoxes(
                 batched_target["bbox"],
                 format=datapoints.BoundingBoxFormat.XYXY,
                 canvas_size=(image.height, image.width),
@@ -628,8 +628,8 @@ def widerface_wrapper(dataset, target_keys):
         target = {key: target[key] for key in target_keys}
 
         if "bbox" in target_keys:
-            target["bbox"] = F.convert_format_bounding_box(
-                datapoints.BoundingBox(
+            target["bbox"] = F.convert_format_bounding_boxes(
+                datapoints.BoundingBoxes(
                     target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, canvas_size=(image.height, image.width)
                 ),
                 new_format=datapoints.BoundingBoxFormat.XYXY,

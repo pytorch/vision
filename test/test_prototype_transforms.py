@@ -20,7 +20,7 @@ from common_utils import (
 
 from prototype_common_utils import make_label, make_one_hot_labels
 
-from torchvision.datapoints import BoundingBox, BoundingBoxFormat, Image, Mask, Video
+from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
 from torchvision.transforms.v2._utils import _convert_fill_arg
 from torchvision.transforms.v2.functional import InterpolationMode, pil_to_tensor, to_image_pil
@@ -101,10 +101,10 @@ class TestSimpleCopyPaste:
             self.create_fake_image(mocker, Image),
             # labels, bboxes, masks
             mocker.MagicMock(spec=datapoints.Label),
-            mocker.MagicMock(spec=BoundingBox),
+            mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
             # labels, bboxes, masks
-            mocker.MagicMock(spec=BoundingBox),
+            mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
         ]
 
@@ -122,11 +122,11 @@ class TestSimpleCopyPaste:
             self.create_fake_image(mocker, image_type),
             # labels, bboxes, masks
             mocker.MagicMock(spec=label_type),
-            mocker.MagicMock(spec=BoundingBox),
+            mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
             # labels, bboxes, masks
             mocker.MagicMock(spec=label_type),
-            mocker.MagicMock(spec=BoundingBox),
+            mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
         ]
 
@@ -142,7 +142,7 @@ class TestSimpleCopyPaste:
 
         for target in targets:
             for key, type_ in [
-                ("boxes", BoundingBox),
+                ("boxes", BoundingBoxes),
                 ("masks", Mask),
                 ("labels", label_type),
             ]:
@@ -163,7 +163,7 @@ class TestSimpleCopyPaste:
         if label_type == datapoints.OneHotLabel:
             labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
-            "boxes": BoundingBox(
+            "boxes": BoundingBoxes(
                 torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", canvas_size=(32, 32)
             ),
             "masks": Mask(masks),
@@ -178,7 +178,7 @@ class TestSimpleCopyPaste:
         if label_type == datapoints.OneHotLabel:
             paste_labels = torch.nn.functional.one_hot(paste_labels, num_classes=5)
         paste_target = {
-            "boxes": BoundingBox(
+            "boxes": BoundingBoxes(
                 torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", canvas_size=(32, 32)
             ),
             "masks": Mask(paste_masks),
@@ -215,8 +215,8 @@ class TestFixedSizeCrop:
         transform = transforms.FixedSizeCrop(size=crop_size)
 
         flat_inputs = [
-            make_image(canvas_size, color_space="RGB"),
-            make_bounding_box(canvas_size, format=BoundingBoxFormat.XYXY, batch_dims=batch_shape),
+            make_image(size=canvas_size, color_space="RGB"),
+            make_bounding_box(format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=batch_shape),
         ]
         params = transform._get_params(flat_inputs)
 
@@ -311,8 +311,10 @@ class TestFixedSizeCrop:
             ),
         )
 
-        bounding_boxes = make_bounding_box(canvas_size, format=BoundingBoxFormat.XYXY, batch_dims=(batch_size,))
-        masks = make_detection_mask(canvas_size, batch_dims=(batch_size,))
+        bounding_boxes = make_bounding_box(
+            format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(batch_size,)
+        )
+        masks = make_detection_mask(size=canvas_size, batch_dims=(batch_size,))
         labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
@@ -330,7 +332,7 @@ class TestFixedSizeCrop:
         assert_equal(output["masks"], masks[is_valid])
         assert_equal(output["labels"], labels[is_valid])
 
-    def test__transform_bounding_box_clamping(self, mocker):
+    def test__transform_bounding_boxes_clamping(self, mocker):
         batch_size = 3
         canvas_size = (10, 10)
 
@@ -347,13 +349,15 @@ class TestFixedSizeCrop:
             ),
         )
 
-        bounding_box = make_bounding_box(canvas_size, format=BoundingBoxFormat.XYXY, batch_dims=(batch_size,))
-        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
+        bounding_boxes = make_bounding_box(
+            format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(batch_size,)
+        )
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_boxes")
 
         transform = transforms.FixedSizeCrop((-1, -1))
         mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
 
-        transform(bounding_box)
+        transform(bounding_boxes)
 
         mock.assert_called_once()
 
@@ -386,7 +390,7 @@ class TestPermuteDimensions:
     def test_call(self, dims, inverse_dims):
         sample = dict(
             image=make_image(),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            bounding_boxes=make_bounding_box(format=BoundingBoxFormat.XYXY),
             video=make_video(),
             str="str",
             int=0,
@@ -430,7 +434,7 @@ class TestTransposeDimensions:
     def test_call(self, dims):
         sample = dict(
             image=make_image(),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            bounding_boxes=make_bounding_box(format=BoundingBoxFormat.XYXY),
             video=make_video(),
             str="str",
             int=0,
@@ -492,27 +496,27 @@ def test_fixed_sized_crop_against_detection_reference():
 
         pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
-            "masks": make_detection_mask(size, num_objects=num_objects, dtype=torch.long),
+            "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
 
         yield (pil_image, target)
 
-        tensor_image = torch.Tensor(make_image(size, color_space="RGB"))
+        tensor_image = torch.Tensor(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
-            "masks": make_detection_mask(size, num_objects=num_objects, dtype=torch.long),
+            "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
 
         yield (tensor_image, target)
 
-        datapoint_image = make_image(size, color_space="RGB")
+        datapoint_image = make_image(size=size, color_space="RGB")
         target = {
-            "boxes": make_bounding_box(size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
-            "masks": make_detection_mask(size, num_objects=num_objects, dtype=torch.long),
+            "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
 
         yield (datapoint_image, target)
