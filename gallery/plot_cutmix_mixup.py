@@ -109,8 +109,10 @@ for images, labels in dataloader:
 
 from torch.utils.data import default_collate
 
+
 def collate_fn(batch):
     return cutmix_or_mixup(*default_collate(batch))
+
 
 dataloader = DataLoader(dataset, batch_size=4, shuffle=True, num_workers=2, collate_fn=collate_fn)
 
@@ -140,8 +142,11 @@ batch = {
         "some_other_key": "this is going to be passed-through"
     }
 }
+
+
 def labels_getter(batch):
     return batch["target"]["classes"]
+
 
 out = v2.Cutmix(num_classes=NUM_CLASSES, labels_getter=labels_getter)(batch)
 print(f"{out['imgs'].shape = }, {out['target']['classes'].shape = }")
