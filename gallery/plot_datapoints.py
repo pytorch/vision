@@ -80,7 +80,7 @@ print(image.shape, image.dtype)
 # corresponding image alongside the actual values:
 
 bounding_box = datapoints.BoundingBoxes(
-    [17, 16, 344, 495], format=datapoints.BoundingBoxesFormat.XYXY, spatial_size=image.shape[-2:]
+    [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=image.shape[-2:]
 )
 print(bounding_box)
 
@@ -107,7 +107,7 @@ class PennFudanDataset(torch.utils.data.Dataset):
 
         target["boxes"] = datapoints.BoundingBoxes(
             boxes,
-            format=datapoints.BoundingBoxesFormat.XYXY,
+            format=datapoints.BoundingBoxFormat.XYXY,
             spatial_size=F.get_spatial_size(img),
         )
         target["labels"] = labels
@@ -128,7 +128,7 @@ class WrapPennFudanDataset:
     def __call__(self, img, target):
         target["boxes"] = datapoints.BoundingBoxes(
             target["boxes"],
-            format=datapoints.BoundingBoxesFormat.XYXY,
+            format=datapoints.BoundingBoxFormat.XYXY,
             spatial_size=F.get_spatial_size(img),
         )
         target["masks"] = datapoints.Mask(target["masks"])
