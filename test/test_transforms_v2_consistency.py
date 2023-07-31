@@ -31,6 +31,7 @@ from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
 from torchvision.transforms.v2.functional import to_image_pil
 from torchvision.transforms.v2.utils import query_spatial_size
+from torchvision.transforms.v2._utils import _get_fill
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
@@ -1180,7 +1181,7 @@ class PadIfSmaller(v2_transforms.Transform):
         if not params["needs_padding"]:
             return inpt
 
-        fill = self.fill[type(inpt)]
+        fill = _get_fill(self.fill, type(inpt))
         return prototype_F.pad(inpt, padding=params["padding"], fill=fill)
 
 
