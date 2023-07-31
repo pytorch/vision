@@ -12,7 +12,7 @@ from torchvision.transforms.v2.utils import has_all, has_any
 
 
 IMAGE = make_image(color_space="RGB")
-BOUNDING_BOX = make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=IMAGE.spatial_size)
+BOUNDING_BOX = make_bounding_box(format=datapoints.BBoxFormat.XYXY, spatial_size=IMAGE.spatial_size)
 MASK = make_detection_mask(size=IMAGE.spatial_size)
 
 
@@ -20,20 +20,20 @@ MASK = make_detection_mask(size=IMAGE.spatial_size)
     ("sample", "types", "expected"),
     [
         ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BoundingBoxes,), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BBoxes,), True),
         ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Mask,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BoundingBoxes), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BBoxes), True),
         ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.Mask), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BoundingBoxes, datapoints.Mask), True),
-        ((MASK,), (datapoints.Image, datapoints.BoundingBoxes), False),
+        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BBoxes, datapoints.Mask), True),
+        ((MASK,), (datapoints.Image, datapoints.BBoxes), False),
         ((BOUNDING_BOX,), (datapoints.Image, datapoints.Mask), False),
-        ((IMAGE,), (datapoints.BoundingBoxes, datapoints.Mask), False),
+        ((IMAGE,), (datapoints.BBoxes, datapoints.Mask), False),
         (
             (IMAGE, BOUNDING_BOX, MASK),
-            (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask),
+            (datapoints.Image, datapoints.BBoxes, datapoints.Mask),
             True,
         ),
-        ((), (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask), False),
+        ((), (datapoints.Image, datapoints.BBoxes, datapoints.Mask), False),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda obj: isinstance(obj, datapoints.Image),), True),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: False,), False),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: True,), True),
@@ -58,30 +58,30 @@ def test_has_any(sample, types, expected):
     ("sample", "types", "expected"),
     [
         ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BoundingBoxes,), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BBoxes,), True),
         ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Mask,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BoundingBoxes), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BBoxes), True),
         ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.Mask), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BoundingBoxes, datapoints.Mask), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BBoxes, datapoints.Mask), True),
         (
             (IMAGE, BOUNDING_BOX, MASK),
-            (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask),
+            (datapoints.Image, datapoints.BBoxes, datapoints.Mask),
             True,
         ),
-        ((BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BoundingBoxes), False),
+        ((BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BBoxes), False),
         ((BOUNDING_BOX, MASK), (datapoints.Image, datapoints.Mask), False),
-        ((IMAGE, MASK), (datapoints.BoundingBoxes, datapoints.Mask), False),
+        ((IMAGE, MASK), (datapoints.BBoxes, datapoints.Mask), False),
         (
             (IMAGE, BOUNDING_BOX, MASK),
-            (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask),
+            (datapoints.Image, datapoints.BBoxes, datapoints.Mask),
             True,
         ),
-        ((BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask), False),
-        ((IMAGE, MASK), (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask), False),
-        ((IMAGE, BOUNDING_BOX), (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask), False),
+        ((BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BBoxes, datapoints.Mask), False),
+        ((IMAGE, MASK), (datapoints.Image, datapoints.BBoxes, datapoints.Mask), False),
+        ((IMAGE, BOUNDING_BOX), (datapoints.Image, datapoints.BBoxes, datapoints.Mask), False),
         (
             (IMAGE, BOUNDING_BOX, MASK),
-            (lambda obj: isinstance(obj, (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask)),),
+            (lambda obj: isinstance(obj, (datapoints.Image, datapoints.BBoxes, datapoints.Mask)),),
             True,
         ),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: False,), False),

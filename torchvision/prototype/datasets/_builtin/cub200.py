@@ -15,7 +15,7 @@ from torchdata.datapipes.iter import (
     Mapper,
 )
 from torchdata.datapipes.map import IterToMapConverter
-from torchvision.datapoints import BoundingBoxes
+from torchvision.datapoints import BBoxes
 from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
@@ -137,7 +137,7 @@ class CUB200(Dataset):
         _, (bounding_boxes_data, segmentation_data) = data
         segmentation_path, segmentation_buffer = segmentation_data
         return dict(
-            bounding_boxes=BoundingBoxes(
+            bounding_boxes=BBoxes(
                 [float(part) for part in bounding_boxes_data[1:]], format="xywh", spatial_size=spatial_size
             ),
             segmentation_path=segmentation_path,
@@ -158,7 +158,7 @@ class CUB200(Dataset):
         content = read_mat(buffer)
         return dict(
             ann_path=path,
-            bounding_boxes=BoundingBoxes(
+            bounding_boxes=BBoxes(
                 [int(content["bbox"][coord]) for coord in ("left", "bottom", "right", "top")],
                 format="xyxy",
                 spatial_size=spatial_size,

@@ -39,9 +39,9 @@ class FixedSizeCrop(Transform):
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
             )
 
-        if has_any(flat_inputs, datapoints.BoundingBoxes) and not has_any(flat_inputs, Label, OneHotLabel):
+        if has_any(flat_inputs, datapoints.BBoxes) and not has_any(flat_inputs, Label, OneHotLabel):
             raise TypeError(
-                f"If a BoundingBoxes is contained in the input sample, "
+                f"If a BBoxes is contained in the input sample, "
                 f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
             )
 
@@ -77,7 +77,7 @@ class FixedSizeCrop(Transform):
             )
             bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, spatial_size=spatial_size)
             height_and_width = F.convert_format_bounding_boxes(
-                bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
+                bounding_boxes, old_format=format, new_format=datapoints.BBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
         else:
@@ -112,8 +112,8 @@ class FixedSizeCrop(Transform):
         if params["is_valid"] is not None:
             if isinstance(inpt, (Label, OneHotLabel, datapoints.Mask)):
                 inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
-            elif isinstance(inpt, datapoints.BoundingBoxes):
-                inpt = datapoints.BoundingBoxes.wrap_like(
+            elif isinstance(inpt, datapoints.BBoxes):
+                inpt = datapoints.BBoxes.wrap_like(
                     inpt,
                     F.clamp_bounding_boxes(
                         inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size

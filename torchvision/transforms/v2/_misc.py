@@ -332,16 +332,16 @@ class ConvertImageDtype(Transform):
         return F.to_dtype(inpt, dtype=self.dtype, scale=True)
 
 
-class SanitizeBoundingBoxes(Transform):
+class SanitizeBBoxes(Transform):
     """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
-    .. v2betastatus:: SanitizeBoundingBoxes transform
+    .. v2betastatus:: SanitizeBBoxes transform
 
     This transform removes bounding boxes and their associated labels/masks that:
 
     - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
-      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
+      call :class:`~torchvision.transforms.v2.ClampBBoxes` first to avoid undesired removals.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
@@ -384,7 +384,7 @@ class SanitizeBoundingBoxes(Transform):
             )
 
         flat_inputs, spec = tree_flatten(inputs)
-        # TODO: this enforces one single BoundingBoxes entry.
+        # TODO: this enforces one single BBoxes entry.
         # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
         # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
         boxes = query_bounding_boxes(flat_inputs)
@@ -398,10 +398,10 @@ class SanitizeBoundingBoxes(Transform):
             )
 
         boxes = cast(
-            datapoints.BoundingBoxes,
+            datapoints.BBoxes,
             F.convert_format_bounding_boxes(
                 boxes,
-                new_format=datapoints.BoundingBoxFormat.XYXY,
+                new_format=datapoints.BBoxFormat.XYXY,
             ),
         )
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
@@ -415,7 +415,7 @@ class SanitizeBoundingBoxes(Transform):
         params = dict(valid=valid, labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
-            # _transform() will only care about BoundingBoxeses and the labels
+            # _transform() will only care about BBoxeses and the labels
             self._transform(inpt, params)
             for inpt in flat_inputs
         ]
@@ -424,7 +424,7 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_boxes_or_mask = isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask))
+        is_bounding_boxes_or_mask = isinstance(inpt, (datapoints.BBoxes, datapoints.Mask))
 
         if not (is_label or is_bounding_boxes_or_mask):
             return inpt

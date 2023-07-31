@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torchvision import datapoints
-from torchvision.datapoints import BoundingBoxFormat
+from torchvision.datapoints import BBoxFormat
 from torchvision.transforms import _functional_pil as _FP
 
 from torchvision.utils import _log_api_usage_once
@@ -109,7 +109,7 @@ def get_spatial_size_mask(mask: torch.Tensor) -> List[int]:
 
 
 @torch.jit.unused
-def get_spatial_size_bounding_boxes(bounding_boxes: datapoints.BoundingBoxes) -> List[int]:
+def get_spatial_size_bounding_boxes(bounding_boxes: datapoints.BBoxes) -> List[int]:
     return list(bounding_boxes.spatial_size)
 
 
@@ -119,7 +119,7 @@ def get_spatial_size(inpt: datapoints._InputTypeJIT) -> List[int]:
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_spatial_size_image_tensor(inpt)
-    elif isinstance(inpt, (datapoints.Image, datapoints.Video, datapoints.BoundingBoxes, datapoints.Mask)):
+    elif isinstance(inpt, (datapoints.Image, datapoints.Video, datapoints.BBoxes, datapoints.Mask)):
         return list(inpt.spatial_size)
     elif isinstance(inpt, PIL.Image.Image):
         return get_spatial_size_image_pil(inpt)
@@ -186,21 +186,21 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
 
 
 def _convert_format_bounding_boxes(
-    bounding_boxes: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
+    bounding_boxes: torch.Tensor, old_format: BBoxFormat, new_format: BBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
 
     if new_format == old_format:
         return bounding_boxes
 
     # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
-    if old_format == BoundingBoxFormat.XYWH:
+    if old_format == BBoxFormat.XYWH:
         bounding_boxes = _xywh_to_xyxy(bounding_boxes, inplace)
-    elif old_format == BoundingBoxFormat.CXCYWH:
+    elif old_format == BBoxFormat.CXCYWH:
         bounding_boxes = _cxcywh_to_xyxy(bounding_boxes, inplace)
 
-    if new_format == BoundingBoxFormat.XYWH:
+    if new_format == BBoxFormat.XYWH:
         bounding_boxes = _xyxy_to_xywh(bounding_boxes, inplace)
-    elif new_format == BoundingBoxFormat.CXCYWH:
+    elif new_format == BBoxFormat.CXCYWH:
         bounding_boxes = _xyxy_to_cxcywh(bounding_boxes, inplace)
 
     return bounding_boxes
@@ -208,12 +208,12 @@ def _convert_format_bounding_boxes(
 
 def convert_format_bounding_boxes(
     inpt: datapoints._InputTypeJIT,
-    old_format: Optional[BoundingBoxFormat] = None,
-    new_format: Optional[BoundingBoxFormat] = None,
+    old_format: Optional[BBoxFormat] = None,
+    new_format: Optional[BBoxFormat] = None,
     inplace: bool = False,
 ) -> datapoints._InputTypeJIT:
     # This being a kernel / dispatcher hybrid, we need an option to pass `old_format` explicitly for simple tensor
-    # inputs as well as extract it from `datapoints.BoundingBoxes` inputs. However, putting a default value on
+    # inputs as well as extract it from `datapoints.BBoxes` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
     # default error that would be thrown if `new_format` had no default value.
     if new_format is None:
@@ -226,13 +226,13 @@ def convert_format_bounding_boxes(
         if old_format is None:
             raise ValueError("For simple tensor inputs, `old_format` has to be passed.")
         return _convert_format_bounding_boxes(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
-    elif isinstance(inpt, datapoints.BoundingBoxes):
+    elif isinstance(inpt, datapoints.BBoxes):
         if old_format is not None:
             raise ValueError("For bounding box datapoint inputs, `old_format` must not be passed.")
         output = _convert_format_bounding_boxes(
             inpt.as_subclass(torch.Tensor), old_format=inpt.format, new_format=new_format, inplace=inplace
         )
-        return datapoints.BoundingBoxes.wrap_like(inpt, output, format=new_format)
+        return datapoints.BBoxes.wrap_like(inpt, output, format=new_format)
     else:
         raise TypeError(
             f"Input can either be a plain tensor or a bounding box datapoint, but got {type(inpt)} instead."
@@ -240,26 +240,24 @@ def convert_format_bounding_boxes(
 
 
 def _clamp_bounding_boxes(
-    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
+    bounding_boxes: torch.Tensor, format: BBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
+    #  BBoxFormat instead of converting back and forth
     in_dtype = bounding_boxes.dtype
     bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
     xyxy_boxes = convert_format_bounding_boxes(
-        bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+        bounding_boxes, old_format=format, new_format=datapoints.BBoxFormat.XYXY, inplace=True
     )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    out_boxes = convert_format_bounding_boxes(
-        xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True
-    )
+    out_boxes = convert_format_bounding_boxes(xyxy_boxes, old_format=BBoxFormat.XYXY, new_format=format, inplace=True)
     return out_boxes.to(in_dtype)
 
 
 def clamp_bounding_boxes(
     inpt: datapoints._InputTypeJIT,
-    format: Optional[BoundingBoxFormat] = None,
+    format: Optional[BBoxFormat] = None,
     spatial_size: Optional[Tuple[int, int]] = None,
 ) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
@@ -269,13 +267,13 @@ def clamp_bounding_boxes(
         if format is None or spatial_size is None:
             raise ValueError("For simple tensor inputs, `format` and `spatial_size` has to be passed.")
         return _clamp_bounding_boxes(inpt, format=format, spatial_size=spatial_size)
-    elif isinstance(inpt, datapoints.BoundingBoxes):
+    elif isinstance(inpt, datapoints.BBoxes):
         if format is not None or spatial_size is not None:
             raise ValueError("For bounding box datapoint inputs, `format` and `spatial_size` must not be passed.")
         output = _clamp_bounding_boxes(
             inpt.as_subclass(torch.Tensor), format=inpt.format, spatial_size=inpt.spatial_size
         )
-        return datapoints.BoundingBoxes.wrap_like(inpt, output)
+        return datapoints.BBoxes.wrap_like(inpt, output)
     else:
         raise TypeError(
             f"Input can either be a plain tensor or a bounding box datapoint, but got {type(inpt)} instead."

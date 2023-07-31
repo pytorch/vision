@@ -9,8 +9,8 @@ from torchvision._utils import sequence_to_str
 from torchvision.transforms.v2.functional import get_dimensions, get_spatial_size, is_simple_tensor
 
 
-def query_bounding_boxes(flat_inputs: List[Any]) -> datapoints.BoundingBoxes:
-    bounding_boxes = [inpt for inpt in flat_inputs if isinstance(inpt, datapoints.BoundingBoxes)]
+def query_bounding_boxes(flat_inputs: List[Any]) -> datapoints.BBoxes:
+    bounding_boxes = [inpt for inpt in flat_inputs if isinstance(inpt, datapoints.BBoxes)]
     if not bounding_boxes:
         raise TypeError("No bounding box was found in the sample")
     elif len(bounding_boxes) > 1:
@@ -36,9 +36,7 @@ def query_spatial_size(flat_inputs: List[Any]) -> Tuple[int, int]:
     sizes = {
         tuple(get_spatial_size(inpt))
         for inpt in flat_inputs
-        if isinstance(
-            inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video, datapoints.Mask, datapoints.BoundingBoxes)
-        )
+        if isinstance(inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video, datapoints.Mask, datapoints.BBoxes))
         or is_simple_tensor(inpt)
     }
     if not sizes:

@@ -155,7 +155,7 @@ class _BaseMixupCutmix(Transform):
         flat_inputs, spec = tree_flatten(inputs)
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
-        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBoxes, datapoints.Mask):
+        if has_any(flat_inputs, PIL.Image.Image, datapoints.BBoxes, datapoints.Mask):
             raise ValueError(f"{type(self).__name__}() does not support PIL images, bounding boxes and masks.")
 
         labels = self._labels_getter(inputs)

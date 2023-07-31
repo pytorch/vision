@@ -23,15 +23,13 @@ def test_mask_instance(data):
 
 
 @pytest.mark.parametrize("data", [torch.randint(0, 32, size=(5, 4)), [[0, 0, 5, 5], [2, 2, 7, 7]]])
-@pytest.mark.parametrize(
-    "format", ["XYXY", "CXCYWH", datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH]
-)
+@pytest.mark.parametrize("format", ["XYXY", "CXCYWH", datapoints.BBoxFormat.XYXY, datapoints.BBoxFormat.XYWH])
 def test_bbox_instance(data, format):
-    bboxes = datapoints.BoundingBoxes(data, format=format, spatial_size=(32, 32))
+    bboxes = datapoints.BBoxes(data, format=format, spatial_size=(32, 32))
     assert isinstance(bboxes, torch.Tensor)
     assert bboxes.ndim == 2 and bboxes.shape[1] == 4
     if isinstance(format, str):
-        format = datapoints.BoundingBoxFormat[(format.upper())]
+        format = datapoints.BBoxFormat[(format.upper())]
     assert bboxes.format == format
 
 
@@ -164,7 +162,7 @@ def test_wrap_like():
     [
         datapoints.Image(torch.rand(3, 16, 16)),
         datapoints.Video(torch.rand(2, 3, 16, 16)),
-        datapoints.BoundingBoxes([0.0, 1.0, 2.0, 3.0], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10)),
+        datapoints.BBoxes([0.0, 1.0, 2.0, 3.0], format=datapoints.BBoxFormat.XYXY, spatial_size=(10, 10)),
         datapoints.Mask(torch.randint(0, 256, (16, 16), dtype=torch.uint8)),
     ],
 )
