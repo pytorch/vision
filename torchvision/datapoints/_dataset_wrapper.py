@@ -8,7 +8,6 @@ import contextlib
 from collections import defaultdict
 
 import torch
-from torch.utils.data import Dataset
 
 from torchvision import datapoints, datasets
 from torchvision.transforms.v2 import functional as F
@@ -98,7 +97,16 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
             f"but got {target_keys}"
         )
 
-    return VisionDatasetDatapointWrapper(dataset, target_keys)
+    # Imagine we have isinstance(dataset, datasets.ImageNet). This will create a new class with the name
+    # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetDatapointWrapper (see below) as well as the
+    # original ImageNet class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks,
+    # while we can still inject everything that we need.
+    wrapped_dataset_cls = type(f"Wrapped{type(dataset).__name__}", (VisionDatasetDatapointWrapper, type(dataset)), {})
+    # Since VisionDatasetDatapointWrapper comes before ImageNet in the MRO, calling the class hits
+    # VisionDatasetDatapointWrapper.__init__ first. Since we are never doing super().__init__(...), the constructor of
+    # ImageNet is never hit. That is by design, since we don't want to create the dataset instance again, but rather
+    # have the existing instance as attribute on the new object.
+    return wrapped_dataset_cls(dataset, target_keys)
 
 
 class WrapperFactories(dict):
@@ -117,7 +125,7 @@ class WrapperFactories(dict):
 WRAPPER_FACTORIES = WrapperFactories()
 
 
-class VisionDatasetDatapointWrapper(Dataset):
+class VisionDatasetDatapointWrapper:
     def __init__(self, dataset, target_keys):
         dataset_cls = type(dataset)
 
