@@ -143,7 +143,7 @@ class RandomErasing(_RandomApplyTransform):
 class _BaseMixupCutmix(Transform):
     def __init__(self, *, alpha: float = 1., num_classes: int, labels_getter="default") -> None:
         super().__init__()
-        self.alpha = alpha
+        self.alpha = float(alpha)
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
         self.num_classes = num_classes
