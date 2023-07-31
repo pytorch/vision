@@ -272,7 +272,9 @@ def clamp_bounding_boxes(
     elif isinstance(inpt, datapoints.BoundingBoxes):
         if format is not None or spatial_size is not None:
             raise ValueError("For bounding box datapoint inputs, `format` and `spatial_size` must not be passed.")
-        output = _clamp_bounding_boxes(inpt.as_subclass(torch.Tensor), format=inpt.format, spatial_size=inpt.spatial_size)
+        output = _clamp_bounding_boxes(
+            inpt.as_subclass(torch.Tensor), format=inpt.format, spatial_size=inpt.spatial_size
+        )
         return datapoints.BoundingBoxes.wrap_like(inpt, output)
     else:
         raise TypeError(

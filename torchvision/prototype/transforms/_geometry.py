@@ -115,7 +115,9 @@ class FixedSizeCrop(Transform):
             elif isinstance(inpt, datapoints.BoundingBoxes):
                 inpt = datapoints.BoundingBoxes.wrap_like(
                     inpt,
-                    F.clamp_bounding_boxes(inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size),
+                    F.clamp_bounding_boxes(
+                        inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size
+                    ),
                 )
 
         if params["needs_pad"]:

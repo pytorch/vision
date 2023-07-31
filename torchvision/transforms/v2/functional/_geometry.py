@@ -1826,7 +1826,9 @@ def center_crop_bounding_boxes(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *spatial_size)
-    return crop_bounding_boxes(bounding_boxes, format, top=crop_top, left=crop_left, height=crop_height, width=crop_width)
+    return crop_bounding_boxes(
+        bounding_boxes, format, top=crop_top, left=crop_left, height=crop_height, width=crop_width
+    )
 
 
 def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
