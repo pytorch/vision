@@ -98,7 +98,7 @@ for images, labels in dataloader:
 # :func:`torch.nn.functional.cross_entropy`.
 #
 # As part of the collation function
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Passing the transforms after the DataLoader is the simplest way to use CutMix
 # and MixUp, but one disadvantage is that it does not take advantage of the
