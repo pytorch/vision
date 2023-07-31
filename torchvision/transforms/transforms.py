@@ -559,7 +559,7 @@ class RandomApply(torch.nn.Module):
 
 class RandomOrder(torch.nn.Module):
     """Apply a list of transformations in a random order.
-    
+
     .. note::
         In order to script the transformation, please use ``torch.nn.ModuleList`` as input instead of list/tuple of
         transforms as shown below:
@@ -571,7 +571,7 @@ class RandomOrder(torch.nn.Module):
 
         Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor``, does not require
         `lambda` functions or ``PIL.Image``.
-        
+
     Args:
         transforms (sequence or torch.nn.Module): list of transformations
     """
