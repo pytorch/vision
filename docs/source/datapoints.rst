@@ -15,5 +15,5 @@ see e.g. :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`.
     Image
     Video
     BoundingBoxFormat
-    BoundingBox
+    BoundingBoxes
     Mask
