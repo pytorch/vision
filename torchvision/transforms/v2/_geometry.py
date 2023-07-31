@@ -17,6 +17,7 @@ from ._utils import (
     _check_padding_arg,
     _check_padding_mode_arg,
     _check_sequence_input,
+    _get_fill,
     _setup_angle,
     _setup_fill_arg,
     _setup_float_or_seq,
@@ -504,7 +505,7 @@ class Pad(Transform):
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
@@ -574,7 +575,7 @@ class RandomZoomOut(_RandomApplyTransform):
         return dict(padding=padding)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -640,7 +641,7 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.rotate(
             inpt,
             **params,
@@ -762,7 +763,7 @@ class RandomAffine(Transform):
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.affine(
             inpt,
             **params,
@@ -918,7 +919,7 @@ class RandomCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
-            fill = self._fill[type(inpt)]
+            fill = _get_fill(self._fill, type(inpt))
             inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         if params["needs_crop"]:
@@ -1002,7 +1003,7 @@ class RandomPerspective(_RandomApplyTransform):
         return dict(coefficients=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.perspective(
             inpt,
             None,
@@ -1095,7 +1096,7 @@ class ElasticTransform(Transform):
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.elastic(
             inpt,
             **params,

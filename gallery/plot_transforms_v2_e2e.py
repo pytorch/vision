@@ -10,7 +10,6 @@ well as the new ``torchvision.transforms.v2`` v2 API.
 """
 
 import pathlib
-from collections import defaultdict
 
 import PIL.Image
 
@@ -99,9 +98,7 @@ show(sample)
 transform = transforms.Compose(
     [
         transforms.RandomPhotometricDistort(),
-        transforms.RandomZoomOut(
-            fill=defaultdict(lambda: 0, {PIL.Image.Image: (123, 117, 104)})
-        ),
+        transforms.RandomZoomOut(fill={PIL.Image.Image: (123, 117, 104), "others": 0}),
         transforms.RandomIoUCrop(),
         transforms.RandomHorizontalFlip(),
         transforms.ToImageTensor(),

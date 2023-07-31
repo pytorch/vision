@@ -11,7 +11,7 @@ from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, Interp
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._meta import get_spatial_size
 
-from ._utils import _setup_fill_arg
+from ._utils import _get_fill, _setup_fill_arg
 from .utils import check_type, is_simple_tensor
 
 
@@ -82,7 +82,7 @@ class _AutoAugmentBase(Transform):
         interpolation: Union[InterpolationMode, int],
         fill: Dict[Type, datapoints._FillTypeJIT],
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-        fill_ = fill[type(image)]
+        fill_ = _get_fill(fill, type(image))
 
         if transform_id == "Identity":
             return image

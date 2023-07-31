@@ -4,7 +4,6 @@ import importlib.util
 import inspect
 import random
 import re
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -1243,7 +1242,7 @@ class TestRefSegTransforms:
                 seg_transforms.RandomCrop(size=480),
                 v2_transforms.Compose(
                     [
-                        PadIfSmaller(size=480, fill=defaultdict(lambda: 0, {datapoints.Mask: 255})),
+                        PadIfSmaller(size=480, fill={datapoints.Mask: 255, "others": 0}),
                         v2_transforms.RandomCrop(size=480),
                     ]
                 ),

@@ -3,7 +3,6 @@ import pathlib
 import random
 import textwrap
 import warnings
-from collections import defaultdict
 
 import numpy as np
 
@@ -1491,7 +1490,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     elif data_augmentation == "ssd":
         t = [
             transforms.RandomPhotometricDistort(p=1),
-            transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0}), p=1),
+            transforms.RandomZoomOut(fill={"others": (123.0, 117.0, 104.0), datapoints.Mask: 0}, p=1),
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(p=1),
             to_tensor,
