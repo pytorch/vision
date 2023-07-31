@@ -97,10 +97,10 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
             f"but got {target_keys}"
         )
 
-    # Imagine we have isinstance(dataset, datasets.ImageNet). This will create a type with the name "WrappedImageNet" at
-    # runtime that doubly inherits from VisionDatasetDatapointWrapper (see below) as well as the original ImageNet
-    # class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks, while we can
-    # still inject everything that we need.
+    # Imagine we have isinstance(dataset, datasets.ImageNet). This will create a new class with the name
+    # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetDatapointWrapper (see below) as well as the
+    # original ImageNet class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks,
+    # while we can still inject everything that we need.
     wrapped_dataset_cls = type(f"Wrapped{type(dataset).__name__}", (VisionDatasetDatapointWrapper, type(dataset)), {})
     # Since VisionDatasetDatapointWrapper comes before ImageNet in the MRO, calling the class hits
     # VisionDatasetDatapointWrapper.__init__ first. Since we are never doing super().__init__(...), the constructor of
