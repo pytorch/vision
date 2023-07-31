@@ -90,7 +90,7 @@ class StanfordCars(Dataset):
             path=path,
             image=image,
             label=Label(target[4] - 1, categories=self._categories),
-            bounding_box=BoundingBoxes(target[:4], format="xyxy", spatial_size=image.spatial_size),
+            bounding_boxes=BoundingBoxes(target[:4], format="xyxy", spatial_size=image.spatial_size),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

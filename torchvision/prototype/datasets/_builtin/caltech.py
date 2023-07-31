@@ -112,7 +112,7 @@ class Caltech101(Dataset):
             image_path=image_path,
             image=image,
             ann_path=ann_path,
-            bounding_box=BoundingBoxes(
+            bounding_boxes=BoundingBoxes(
                 ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]],
                 format="xyxy",
                 spatial_size=image.spatial_size,

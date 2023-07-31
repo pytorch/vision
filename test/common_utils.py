@@ -647,8 +647,8 @@ def make_bounding_box(
     .. code::
 
         image = make_image=(size=size)
-        bounding_box = make_bounding_box(spatial_size=size)
-        assert F.get_spatial_size(bounding_box) == F.get_spatial_size(image)
+        bounding_boxes = make_bounding_box(spatial_size=size)
+        assert F.get_spatial_size(bounding_boxes) == F.get_spatial_size(image)
 
     For convenience, if both size and spatial_size are omitted, spatial_size defaults to the same value as size for all
     other maker functions, e.g.
@@ -656,8 +656,8 @@ def make_bounding_box(
     .. code::
 
         image = make_image=()
-        bounding_box = make_bounding_box()
-        assert F.get_spatial_size(bounding_box) == F.get_spatial_size(image)
+        bounding_boxes = make_bounding_box()
+        assert F.get_spatial_size(bounding_boxes) == F.get_spatial_size(image)
     """
 
     def sample_position(values, max_value):

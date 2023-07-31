@@ -137,15 +137,15 @@ class CelebA(Dataset):
         path, buffer = image_data
 
         image = EncodedImage.from_file(buffer)
-        (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = ann_data
+        (_, identity), (_, attributes), (_, bounding_boxes), (_, landmarks) = ann_data
 
         return dict(
             path=path,
             image=image,
             identity=Label(int(identity["identity"])),
             attributes={attr: value == "1" for attr, value in attributes.items()},
-            bounding_box=BoundingBoxes(
-                [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
+            bounding_boxes=BoundingBoxes(
+                [int(bounding_boxes[key]) for key in ("x_1", "y_1", "width", "height")],
                 format="xywh",
                 spatial_size=image.spatial_size,
             ),

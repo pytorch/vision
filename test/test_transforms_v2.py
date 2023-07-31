@@ -46,8 +46,8 @@ def make_pil_images(*args, **kwargs):
 
 
 def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
-    for bounding_box in make_bounding_boxes(*args, **kwargs):
-        yield bounding_box.data
+    for bounding_boxes in make_bounding_boxes(*args, **kwargs):
+        yield bounding_boxes.data
 
 
 def parametrize(transforms_with_inputs):
@@ -180,16 +180,16 @@ class TestSmoke:
             image_datapoint=make_image(size=spatial_size),
             video_datapoint=make_video(size=spatial_size),
             image_pil=next(make_pil_images(sizes=[spatial_size], color_spaces=["RGB"])),
-            bounding_box_xyxy=make_bounding_box(
+            bounding_boxes_xyxy=make_bounding_box(
                 format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(3,)
             ),
-            bounding_box_xywh=make_bounding_box(
+            bounding_boxes_xywh=make_bounding_box(
                 format=datapoints.BoundingBoxFormat.XYWH, spatial_size=spatial_size, batch_dims=(4,)
             ),
-            bounding_box_cxcywh=make_bounding_box(
+            bounding_boxes_cxcywh=make_bounding_box(
                 format=datapoints.BoundingBoxFormat.CXCYWH, spatial_size=spatial_size, batch_dims=(5,)
             ),
-            bounding_box_degenerate_xyxy=datapoints.BoundingBoxes(
+            bounding_boxes_degenerate_xyxy=datapoints.BoundingBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height
@@ -201,7 +201,7 @@ class TestSmoke:
                 format=datapoints.BoundingBoxFormat.XYXY,
                 spatial_size=spatial_size,
             ),
-            bounding_box_degenerate_xywh=datapoints.BoundingBoxes(
+            bounding_boxes_degenerate_xywh=datapoints.BoundingBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height
@@ -213,7 +213,7 @@ class TestSmoke:
                 format=datapoints.BoundingBoxFormat.XYWH,
                 spatial_size=spatial_size,
             ),
-            bounding_box_degenerate_cxcywh=datapoints.BoundingBoxes(
+            bounding_boxes_degenerate_cxcywh=datapoints.BoundingBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height

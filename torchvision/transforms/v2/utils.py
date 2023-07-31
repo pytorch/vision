@@ -9,7 +9,7 @@ from torchvision._utils import sequence_to_str
 from torchvision.transforms.v2.functional import get_dimensions, get_spatial_size, is_simple_tensor
 
 
-def query_bounding_box(flat_inputs: List[Any]) -> datapoints.BoundingBoxes:
+def query_bounding_boxes(flat_inputs: List[Any]) -> datapoints.BoundingBoxes:
     bounding_boxes = [inpt for inpt in flat_inputs if isinstance(inpt, datapoints.BoundingBoxes)]
     if not bounding_boxes:
         raise TypeError("No bounding box was found in the sample")

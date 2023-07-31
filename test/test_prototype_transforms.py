@@ -332,7 +332,7 @@ class TestFixedSizeCrop:
         assert_equal(output["masks"], masks[is_valid])
         assert_equal(output["labels"], labels[is_valid])
 
-    def test__transform_bounding_box_clamping(self, mocker):
+    def test__transform_bounding_boxes_clamping(self, mocker):
         batch_size = 3
         spatial_size = (10, 10)
 
@@ -349,15 +349,15 @@ class TestFixedSizeCrop:
             ),
         )
 
-        bounding_box = make_bounding_box(
+        bounding_boxes = make_bounding_box(
             format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(batch_size,)
         )
-        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_boxes")
 
         transform = transforms.FixedSizeCrop((-1, -1))
         mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
 
-        transform(bounding_box)
+        transform(bounding_boxes)
 
         mock.assert_called_once()
 
@@ -390,7 +390,7 @@ class TestPermuteDimensions:
     def test_call(self, dims, inverse_dims):
         sample = dict(
             image=make_image(),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            bounding_boxes=make_bounding_box(format=BoundingBoxFormat.XYXY),
             video=make_video(),
             str="str",
             int=0,
@@ -434,7 +434,7 @@ class TestTransposeDimensions:
     def test_call(self, dims):
         sample = dict(
             image=make_image(),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            bounding_boxes=make_bounding_box(format=BoundingBoxFormat.XYXY),
             video=make_video(),
             str="str",
             int=0,
