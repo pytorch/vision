@@ -27,7 +27,7 @@ from PIL import Image
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import datapoints, io
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import convert_dtype_image_tensor, to_image_pil, to_image_tensor
+from torchvision.transforms.v2.functional import to_dtype_image_tensor, to_image_pil, to_image_tensor
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
@@ -503,12 +503,13 @@ def make_image(
     device="cpu",
     memory_format=torch.contiguous_format,
 ):
+    dtype = dtype or torch.uint8
     max_value = get_max_value(dtype)
     data = torch.testing.make_tensor(
         (*batch_dims, get_num_channels(color_space), *size),
         low=0,
         high=max_value,
-        dtype=dtype or torch.uint8,
+        dtype=dtype,
         device=device,
         memory_format=memory_format,
     )
@@ -601,7 +602,7 @@ def make_image_loader_for_interpolation(
             image_tensor = image_tensor.to(device=device, memory_format=memory_format, copy=True)
         else:
             image_tensor = image_tensor.to(device=device)
-        image_tensor = convert_dtype_image_tensor(image_tensor, dtype=dtype)
+        image_tensor = to_dtype_image_tensor(image_tensor, dtype=dtype, scale=True)
 
         return datapoints.Image(image_tensor)
 
@@ -619,7 +620,7 @@ def make_image_loaders_for_interpolation(
 
 
 @dataclasses.dataclass
-class BoundingBoxLoader(TensorLoader):
+class BoundingBoxesLoader(TensorLoader):
     format: datapoints.BoundingBoxFormat
     spatial_size: Tuple[int, int]
 
@@ -638,7 +639,7 @@ def make_bounding_box(
         - (box[3] - box[1], box[2] - box[0]) for XYXY
         - (H, W) for XYWH and CXCYWH
     spatial_size: Size of the reference object, e.g. an image. Corresponds to the .spatial_size attribute on
-        returned datapoints.BoundingBox
+        returned datapoints.BoundingBoxes
 
     To generate a valid joint sample, you need to set spatial_size here to the same value as size on the other maker
     functions, e.g.
@@ -646,8 +647,8 @@ def make_bounding_box(
     .. code::
 
         image = make_image=(size=size)
-        bounding_box = make_bounding_box(spatial_size=size)
-        assert F.get_spatial_size(bounding_box) == F.get_spatial_size(image)
+        bounding_boxes = make_bounding_box(spatial_size=size)
+        assert F.get_spatial_size(bounding_boxes) == F.get_spatial_size(image)
 
     For convenience, if both size and spatial_size are omitted, spatial_size defaults to the same value as size for all
     other maker functions, e.g.
@@ -655,8 +656,8 @@ def make_bounding_box(
     .. code::
 
         image = make_image=()
-        bounding_box = make_bounding_box()
-        assert F.get_spatial_size(bounding_box) == F.get_spatial_size(image)
+        bounding_boxes = make_bounding_box()
+        assert F.get_spatial_size(bounding_boxes) == F.get_spatial_size(image)
     """
 
     def sample_position(values, max_value):
@@ -678,7 +679,7 @@ def make_bounding_box(
     dtype = dtype or torch.float32
 
     if any(dim == 0 for dim in batch_dims):
-        return datapoints.BoundingBox(
+        return datapoints.BoundingBoxes(
             torch.empty(*batch_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
         )
 
@@ -704,7 +705,7 @@ def make_bounding_box(
     else:
         raise ValueError(f"Format {format} is not supported")
 
-    return datapoints.BoundingBox(
+    return datapoints.BoundingBoxes(
         torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
     )
 
@@ -724,7 +725,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORT
             format=format, spatial_size=spatial_size, batch_dims=batch_dims, dtype=dtype, device=device
         )
 
-    return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
+    return BoundingBoxesLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
 
 
 def make_bounding_box_loaders(

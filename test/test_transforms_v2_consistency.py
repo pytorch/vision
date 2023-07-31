@@ -191,7 +191,7 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.ConvertDtype,
+        v2_transforms.ConvertImageDtype,
         legacy_transforms.ConvertImageDtype,
         [
             ArgsKwargs(torch.float16),
@@ -1127,7 +1127,7 @@ class TestRefDetTransforms:
                 v2_transforms.Compose(
                     [
                         v2_transforms.RandomIoUCrop(),
-                        v2_transforms.SanitizeBoundingBox(labels_getter=lambda sample: sample[1]["labels"]),
+                        v2_transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
                     ]
                 ),
                 {"with_mask": False},
