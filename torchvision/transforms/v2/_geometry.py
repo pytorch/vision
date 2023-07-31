@@ -537,7 +537,7 @@ class RandomZoomOut(_RandomApplyTransform):
             ``Mask`` will be filled with 0.
         side_range (sequence of floats, optional): tuple of two floats defines minimum and maximum factors to
             scale the input size.
-        p (float, optional): probability of the input being flipped. Default value is 0.5
+        p (float, optional): probability that the zoom operation will be performed.
     """
 
     def __init__(
