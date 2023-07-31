@@ -10,7 +10,7 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
-from .utils import has_any, is_simple_tensor, query_bounding_boxes
+from .utils import has_any, is_simple_tensor, query_bboxes
 
 
 # TODO: do we want/need to expose this?
@@ -387,7 +387,7 @@ class SanitizeBBoxes(Transform):
         # TODO: this enforces one single BBoxes entry.
         # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
         # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
-        boxes = query_bounding_boxes(flat_inputs)
+        boxes = query_bboxes(flat_inputs)
 
         if boxes.ndim != 2:
             raise ValueError(f"boxes must be of shape (num_boxes, 4), got {boxes.shape}")
@@ -399,7 +399,7 @@ class SanitizeBBoxes(Transform):
 
         boxes = cast(
             datapoints.BBoxes,
-            F.convert_format_bounding_boxes(
+            F.convert_format_bboxes(
                 boxes,
                 new_format=datapoints.BBoxFormat.XYXY,
             ),
@@ -424,9 +424,9 @@ class SanitizeBBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_boxes_or_mask = isinstance(inpt, (datapoints.BBoxes, datapoints.Mask))
+        is_bboxes_or_mask = isinstance(inpt, (datapoints.BBoxes, datapoints.Mask))
 
-        if not (is_label or is_bounding_boxes_or_mask):
+        if not (is_label or is_bboxes_or_mask):
             return inpt
 
         output = inpt[params["valid"]]

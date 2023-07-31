@@ -112,7 +112,7 @@ class CUB200(Dataset):
             return 1
         elif path.name == "images.txt":
             return 2
-        elif path.name == "bounding_boxes.txt":
+        elif path.name == "bboxes.txt":
             return 3
         else:
             return None
@@ -134,12 +134,10 @@ class CUB200(Dataset):
     def _2011_prepare_ann(
         self, data: Tuple[str, Tuple[List[str], Tuple[str, BinaryIO]]], spatial_size: Tuple[int, int]
     ) -> Dict[str, Any]:
-        _, (bounding_boxes_data, segmentation_data) = data
+        _, (bboxes_data, segmentation_data) = data
         segmentation_path, segmentation_buffer = segmentation_data
         return dict(
-            bounding_boxes=BBoxes(
-                [float(part) for part in bounding_boxes_data[1:]], format="xywh", spatial_size=spatial_size
-            ),
+            bboxes=BBoxes([float(part) for part in bboxes_data[1:]], format="xywh", spatial_size=spatial_size),
             segmentation_path=segmentation_path,
             segmentation=EncodedImage.from_file(segmentation_buffer),
         )
@@ -158,7 +156,7 @@ class CUB200(Dataset):
         content = read_mat(buffer)
         return dict(
             ann_path=path,
-            bounding_boxes=BBoxes(
+            bboxes=BBoxes(
                 [int(content["bbox"][coord]) for coord in ("left", "bottom", "right", "top")],
                 format="xyxy",
                 spatial_size=spatial_size,
@@ -191,7 +189,7 @@ class CUB200(Dataset):
         prepare_ann_fn: Callable
         if self._year == "2011":
             archive_dp, segmentations_dp = resource_dps
-            images_dp, split_dp, image_files_dp, bounding_boxes_dp = Demultiplexer(
+            images_dp, split_dp, image_files_dp, bboxes_dp = Demultiplexer(
                 archive_dp, 4, self._2011_classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
             )
 
@@ -204,11 +202,11 @@ class CUB200(Dataset):
             split_dp = Mapper(split_dp, getitem(0))
             split_dp = Mapper(split_dp, image_files_map.__getitem__)
 
-            bounding_boxes_dp = CSVParser(bounding_boxes_dp, dialect="cub200")
-            bounding_boxes_dp = Mapper(bounding_boxes_dp, image_files_map.__getitem__, input_col=0)
+            bboxes_dp = CSVParser(bboxes_dp, dialect="cub200")
+            bboxes_dp = Mapper(bboxes_dp, image_files_map.__getitem__, input_col=0)
 
             anns_dp = IterKeyZipper(
-                bounding_boxes_dp,
+                bboxes_dp,
                 segmentations_dp,
                 key_fn=getitem(0),
                 ref_key_fn=self._2011_segmentation_key,

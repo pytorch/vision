@@ -7,7 +7,7 @@ from torchvision import datapoints
 from torchvision.prototype.datapoints import Label, OneHotLabel
 from torchvision.transforms.v2 import functional as F, Transform
 from torchvision.transforms.v2._utils import _setup_fill_arg, _setup_size
-from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_bounding_boxes, query_spatial_size
+from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_bboxes, query_spatial_size
 
 
 class FixedSizeCrop(Transform):
@@ -59,25 +59,25 @@ class FixedSizeCrop(Transform):
         top = int(offset_height * r)
         left = int(offset_width * r)
 
-        bounding_boxes: Optional[torch.Tensor]
+        bboxes: Optional[torch.Tensor]
         try:
-            bounding_boxes = query_bounding_boxes(flat_inputs)
+            bboxes = query_bboxes(flat_inputs)
         except ValueError:
-            bounding_boxes = None
+            bboxes = None
 
-        if needs_crop and bounding_boxes is not None:
-            format = bounding_boxes.format
-            bounding_boxes, spatial_size = F.crop_bounding_boxes(
-                bounding_boxes.as_subclass(torch.Tensor),
+        if needs_crop and bboxes is not None:
+            format = bboxes.format
+            bboxes, spatial_size = F.crop_bboxes(
+                bboxes.as_subclass(torch.Tensor),
                 format=format,
                 top=top,
                 left=left,
                 height=new_height,
                 width=new_width,
             )
-            bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, spatial_size=spatial_size)
-            height_and_width = F.convert_format_bounding_boxes(
-                bounding_boxes, old_format=format, new_format=datapoints.BBoxFormat.XYWH
+            bboxes = F.clamp_bboxes(bboxes, format=format, spatial_size=spatial_size)
+            height_and_width = F.convert_format_bboxes(
+                bboxes, old_format=format, new_format=datapoints.BBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
         else:
@@ -115,9 +115,7 @@ class FixedSizeCrop(Transform):
             elif isinstance(inpt, datapoints.BBoxes):
                 inpt = datapoints.BBoxes.wrap_like(
                     inpt,
-                    F.clamp_bounding_boxes(
-                        inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size
-                    ),
+                    F.clamp_bboxes(inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size),
                 )
 
         if params["needs_pad"]:

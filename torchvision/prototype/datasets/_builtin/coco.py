@@ -126,7 +126,7 @@ class Coco(Dataset):
             ),
             areas=torch.as_tensor([ann["area"] for ann in anns]),
             crowds=torch.as_tensor([ann["iscrowd"] for ann in anns], dtype=torch.bool),
-            bounding_boxes=BBoxes(
+            bboxes=BBoxes(
                 [ann["bbox"] for ann in anns],
                 format="xywh",
                 spatial_size=spatial_size,

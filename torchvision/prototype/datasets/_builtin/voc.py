@@ -103,7 +103,7 @@ class VOC(Dataset):
         anns = self._parse_detection_ann(buffer)
         instances = anns["object"]
         return dict(
-            bounding_boxes=BBoxes(
+            bboxes=BBoxes(
                 [
                     [int(instance["bndbox"][part]) for part in ("xmin", "ymin", "xmax", "ymax")]
                     for instance in instances

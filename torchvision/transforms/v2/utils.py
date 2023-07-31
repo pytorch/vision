@@ -9,13 +9,13 @@ from torchvision._utils import sequence_to_str
 from torchvision.transforms.v2.functional import get_dimensions, get_spatial_size, is_simple_tensor
 
 
-def query_bounding_boxes(flat_inputs: List[Any]) -> datapoints.BBoxes:
-    bounding_boxes = [inpt for inpt in flat_inputs if isinstance(inpt, datapoints.BBoxes)]
-    if not bounding_boxes:
+def query_bboxes(flat_inputs: List[Any]) -> datapoints.BBoxes:
+    bboxes = [inpt for inpt in flat_inputs if isinstance(inpt, datapoints.BBoxes)]
+    if not bboxes:
         raise TypeError("No bounding box was found in the sample")
-    elif len(bounding_boxes) > 1:
+    elif len(bboxes) > 1:
         raise ValueError("Found multiple bounding boxes in the sample")
-    return bounding_boxes.pop()
+    return bboxes.pop()
 
 
 def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:

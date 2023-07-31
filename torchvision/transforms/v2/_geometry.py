@@ -22,7 +22,7 @@ from ._utils import (
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import has_all, has_any, is_simple_tensor, query_bounding_boxes, query_spatial_size
+from .utils import has_all, has_any, is_simple_tensor, query_bboxes, query_spatial_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -1165,7 +1165,7 @@ class RandomIoUCrop(Transform):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         orig_h, orig_w = query_spatial_size(flat_inputs)
-        bboxes = query_bounding_boxes(flat_inputs)
+        bboxes = query_bboxes(flat_inputs)
 
         while True:
             # sample an option
@@ -1193,7 +1193,7 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_boxes(
+                xyxy_bboxes = F.convert_format_bboxes(
                     bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BBoxFormat.XYXY
                 )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])

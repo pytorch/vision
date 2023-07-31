@@ -13,7 +13,7 @@ from PIL import Image, ImageColor, ImageDraw, ImageFont
 __all__ = [
     "make_grid",
     "save_image",
-    "draw_bounding_boxes",
+    "draw_bboxes",
     "draw_segmentation_masks",
     "draw_keypoints",
     "flow_to_image",
@@ -151,7 +151,7 @@ def save_image(
 
 
 @torch.no_grad()
-def draw_bounding_boxes(
+def draw_bboxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
     labels: Optional[List[str]] = None,
@@ -189,7 +189,7 @@ def draw_bounding_boxes(
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(draw_bounding_boxes)
+        _log_api_usage_once(draw_bboxes)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
     elif image.dtype != torch.uint8:

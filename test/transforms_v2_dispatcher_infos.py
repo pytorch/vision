@@ -143,7 +143,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.crop_image_tensor,
             datapoints.Video: F.crop_video,
-            datapoints.BBoxes: F.crop_bounding_boxes,
+            datapoints.BBoxes: F.crop_bboxes,
             datapoints.Mask: F.crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.crop_image_pil, kernel_name="crop_image_pil"),
@@ -153,7 +153,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.resized_crop_image_tensor,
             datapoints.Video: F.resized_crop_video,
-            datapoints.BBoxes: F.resized_crop_bounding_boxes,
+            datapoints.BBoxes: F.resized_crop_bboxes,
             datapoints.Mask: F.resized_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.resized_crop_image_pil),
@@ -163,7 +163,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.pad_image_tensor,
             datapoints.Video: F.pad_video,
-            datapoints.BBoxes: F.pad_bounding_boxes,
+            datapoints.BBoxes: F.pad_bboxes,
             datapoints.Mask: F.pad_mask,
         },
         pil_kernel_info=PILKernelInfo(F.pad_image_pil, kernel_name="pad_image_pil"),
@@ -185,7 +185,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.perspective_image_tensor,
             datapoints.Video: F.perspective_video,
-            datapoints.BBoxes: F.perspective_bounding_boxes,
+            datapoints.BBoxes: F.perspective_bboxes,
             datapoints.Mask: F.perspective_mask,
         },
         pil_kernel_info=PILKernelInfo(F.perspective_image_pil),
@@ -199,7 +199,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.elastic_image_tensor,
             datapoints.Video: F.elastic_video,
-            datapoints.BBoxes: F.elastic_bounding_boxes,
+            datapoints.BBoxes: F.elastic_bboxes,
             datapoints.Mask: F.elastic_mask,
         },
         pil_kernel_info=PILKernelInfo(F.elastic_image_pil),
@@ -210,7 +210,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.center_crop_image_tensor,
             datapoints.Video: F.center_crop_video,
-            datapoints.BBoxes: F.center_crop_bounding_boxes,
+            datapoints.BBoxes: F.center_crop_bboxes,
             datapoints.Mask: F.center_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
@@ -374,15 +374,15 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.clamp_bounding_boxes,
-        kernels={datapoints.BBoxes: F.clamp_bounding_boxes},
+        F.clamp_bboxes,
+        kernels={datapoints.BBoxes: F.clamp_bboxes},
         test_marks=[
             skip_dispatch_datapoint,
         ],
     ),
     DispatcherInfo(
-        F.convert_format_bounding_boxes,
-        kernels={datapoints.BBoxes: F.convert_format_bounding_boxes},
+        F.convert_format_bboxes,
+        kernels={datapoints.BBoxes: F.convert_format_bboxes},
         test_marks=[
             skip_dispatch_datapoint,
         ],

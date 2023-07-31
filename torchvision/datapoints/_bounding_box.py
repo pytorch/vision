@@ -44,10 +44,10 @@ class BBoxes(Datapoint):
 
     @classmethod
     def _wrap(cls, tensor: torch.Tensor, *, format: BBoxFormat, spatial_size: Tuple[int, int]) -> BBoxes:
-        bounding_boxes = tensor.as_subclass(cls)
-        bounding_boxes.format = format
-        bounding_boxes.spatial_size = spatial_size
-        return bounding_boxes
+        bboxes = tensor.as_subclass(cls)
+        bboxes.format = format
+        bboxes.spatial_size = spatial_size
+        return bboxes
 
     def __new__(
         cls,
@@ -99,13 +99,13 @@ class BBoxes(Datapoint):
         return self._make_repr(format=self.format, spatial_size=self.spatial_size)
 
     def horizontal_flip(self) -> BBoxes:
-        output = self._F.horizontal_flip_bounding_boxes(
+        output = self._F.horizontal_flip_bboxes(
             self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
         )
         return BBoxes.wrap_like(self, output)
 
     def vertical_flip(self) -> BBoxes:
-        output = self._F.vertical_flip_bounding_boxes(
+        output = self._F.vertical_flip_bboxes(
             self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
         )
         return BBoxes.wrap_like(self, output)
@@ -117,7 +117,7 @@ class BBoxes(Datapoint):
         max_size: Optional[int] = None,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> BBoxes:
-        output, spatial_size = self._F.resize_bounding_boxes(
+        output, spatial_size = self._F.resize_bboxes(
             self.as_subclass(torch.Tensor),
             spatial_size=self.spatial_size,
             size=size,
@@ -126,13 +126,13 @@ class BBoxes(Datapoint):
         return BBoxes.wrap_like(self, output, spatial_size=spatial_size)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BBoxes:
-        output, spatial_size = self._F.crop_bounding_boxes(
+        output, spatial_size = self._F.crop_bboxes(
             self.as_subclass(torch.Tensor), self.format, top=top, left=left, height=height, width=width
         )
         return BBoxes.wrap_like(self, output, spatial_size=spatial_size)
 
     def center_crop(self, output_size: List[int]) -> BBoxes:
-        output, spatial_size = self._F.center_crop_bounding_boxes(
+        output, spatial_size = self._F.center_crop_bboxes(
             self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size, output_size=output_size
         )
         return BBoxes.wrap_like(self, output, spatial_size=spatial_size)
@@ -147,7 +147,7 @@ class BBoxes(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> BBoxes:
-        output, spatial_size = self._F.resized_crop_bounding_boxes(
+        output, spatial_size = self._F.resized_crop_bboxes(
             self.as_subclass(torch.Tensor), self.format, top, left, height, width, size=size
         )
         return BBoxes.wrap_like(self, output, spatial_size=spatial_size)
@@ -158,7 +158,7 @@ class BBoxes(Datapoint):
         fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> BBoxes:
-        output, spatial_size = self._F.pad_bounding_boxes(
+        output, spatial_size = self._F.pad_bboxes(
             self.as_subclass(torch.Tensor),
             format=self.format,
             spatial_size=self.spatial_size,
@@ -175,7 +175,7 @@ class BBoxes(Datapoint):
         center: Optional[List[float]] = None,
         fill: _FillTypeJIT = None,
     ) -> BBoxes:
-        output, spatial_size = self._F.rotate_bounding_boxes(
+        output, spatial_size = self._F.rotate_bboxes(
             self.as_subclass(torch.Tensor),
             format=self.format,
             spatial_size=self.spatial_size,
@@ -195,7 +195,7 @@ class BBoxes(Datapoint):
         fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BBoxes:
-        output = self._F.affine_bounding_boxes(
+        output = self._F.affine_bboxes(
             self.as_subclass(torch.Tensor),
             self.format,
             self.spatial_size,
@@ -215,7 +215,7 @@ class BBoxes(Datapoint):
         fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> BBoxes:
-        output = self._F.perspective_bounding_boxes(
+        output = self._F.perspective_bboxes(
             self.as_subclass(torch.Tensor),
             format=self.format,
             spatial_size=self.spatial_size,
@@ -231,7 +231,7 @@ class BBoxes(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: _FillTypeJIT = None,
     ) -> BBoxes:
-        output = self._F.elastic_bounding_boxes(
+        output = self._F.elastic_bboxes(
             self.as_subclass(torch.Tensor), self.format, self.spatial_size, displacement=displacement
         )
         return BBoxes.wrap_like(self, output)

@@ -98,7 +98,7 @@ def test_draw_boxes():
     boxes_cp = boxes.clone()
     labels = ["a", "b", "c", "d"]
     colors = ["green", "#FF00FF", (0, 255, 0), "red"]
-    result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, fill=True)
+    result = utils.draw_bboxes(img, boxes, labels=labels, colors=colors, fill=True)
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_util.png")
     if not os.path.exists(path):
@@ -118,17 +118,17 @@ def test_draw_boxes():
 @pytest.mark.parametrize("colors", [None, ["red", "blue", "#FF00FF", (1, 34, 122)], "red", "#FF00FF", (1, 34, 122)])
 def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
-    utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
+    utils.draw_bboxes(img, boxes, fill=False, width=7, colors=colors)
 
     with pytest.raises(ValueError, match="Number of colors must be equal or larger than the number of objects"):
-        utils.draw_bounding_boxes(image=img, boxes=boxes, colors=[])
+        utils.draw_bboxes(image=img, boxes=boxes, colors=[])
 
 
 def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
     boxes_cp = boxes.clone()
-    result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors="white")
+    result = utils.draw_bboxes(img, boxes, fill=False, width=7, colors="white")
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_vanilla.png")
     if not os.path.exists(path):
@@ -145,7 +145,7 @@ def test_draw_boxes_vanilla():
 def test_draw_boxes_grayscale():
     img = torch.full((1, 4, 4), fill_value=255, dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 3, 3]], dtype=torch.int64)
-    bboxed_img = utils.draw_bounding_boxes(image=img, boxes=boxes, colors=["#1BBC9B"])
+    bboxed_img = utils.draw_bboxes(image=img, boxes=boxes, colors=["#1BBC9B"])
     assert bboxed_img.size(0) == 3
 
 
@@ -160,33 +160,33 @@ def test_draw_invalid_boxes():
     colors_wrong = ["pink", "blue"]
 
     with pytest.raises(TypeError, match="Tensor expected"):
-        utils.draw_bounding_boxes(img_tp, boxes)
+        utils.draw_bboxes(img_tp, boxes)
     with pytest.raises(ValueError, match="Tensor uint8 expected"):
-        utils.draw_bounding_boxes(img_wrong1, boxes)
+        utils.draw_bboxes(img_wrong1, boxes)
     with pytest.raises(ValueError, match="Pass individual images, not batches"):
-        utils.draw_bounding_boxes(img_wrong2, boxes)
+        utils.draw_bboxes(img_wrong2, boxes)
     with pytest.raises(ValueError, match="Only grayscale and RGB images are supported"):
-        utils.draw_bounding_boxes(img_wrong2[0][:2], boxes)
+        utils.draw_bboxes(img_wrong2[0][:2], boxes)
     with pytest.raises(ValueError, match="Number of boxes"):
-        utils.draw_bounding_boxes(img_correct, boxes, labels_wrong)
+        utils.draw_bboxes(img_correct, boxes, labels_wrong)
     with pytest.raises(ValueError, match="Number of colors"):
-        utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
+        utils.draw_bboxes(img_correct, boxes, colors=colors_wrong)
     with pytest.raises(ValueError, match="Boxes need to be in"):
-        utils.draw_bounding_boxes(img_correct, boxes_wrong)
+        utils.draw_bboxes(img_correct, boxes_wrong)
 
 
 def test_draw_boxes_warning():
     img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
 
     with pytest.warns(UserWarning, match=re.escape("Argument 'font_size' will be ignored since 'font' is not set.")):
-        utils.draw_bounding_boxes(img, boxes, font_size=11)
+        utils.draw_bboxes(img, boxes, font_size=11)
 
 
 def test_draw_no_boxes():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     boxes = torch.full((0, 4), 0, dtype=torch.float)
     with pytest.warns(UserWarning, match=re.escape("boxes doesn't contain any box. No box was drawn")):
-        res = utils.draw_bounding_boxes(img, boxes)
+        res = utils.draw_bboxes(img, boxes)
         # Check that the function didn't change the image
         assert res.eq(img).all()
 

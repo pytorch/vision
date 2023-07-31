@@ -625,7 +625,7 @@ class BBoxesLoader(TensorLoader):
     spatial_size: Tuple[int, int]
 
 
-def make_bounding_box(
+def make_bbox(
     size=None,
     *,
     format=datapoints.BBoxFormat.XYXY,
@@ -647,8 +647,8 @@ def make_bounding_box(
     .. code::
 
         image = make_image=(size=size)
-        bounding_boxes = make_bounding_box(spatial_size=size)
-        assert F.get_spatial_size(bounding_boxes) == F.get_spatial_size(image)
+        bboxes = make_bbox(spatial_size=size)
+        assert F.get_spatial_size(bboxes) == F.get_spatial_size(image)
 
     For convenience, if both size and spatial_size are omitted, spatial_size defaults to the same value as size for all
     other maker functions, e.g.
@@ -656,8 +656,8 @@ def make_bounding_box(
     .. code::
 
         image = make_image=()
-        bounding_boxes = make_bounding_box()
-        assert F.get_spatial_size(bounding_boxes) == F.get_spatial_size(image)
+        bboxes = make_bbox()
+        assert F.get_spatial_size(bboxes) == F.get_spatial_size(image)
     """
 
     def sample_position(values, max_value):
@@ -710,7 +710,7 @@ def make_bounding_box(
     )
 
 
-def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.float32):
+def make_bbox_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.float32):
     if isinstance(format, str):
         format = datapoints.BBoxFormat[format]
 
@@ -721,14 +721,12 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORT
         if num_coordinates != 4:
             raise pytest.UsageError()
 
-        return make_bounding_box(
-            format=format, spatial_size=spatial_size, batch_dims=batch_dims, dtype=dtype, device=device
-        )
+        return make_bbox(format=format, spatial_size=spatial_size, batch_dims=batch_dims, dtype=dtype, device=device)
 
     return BBoxesLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
 
 
-def make_bounding_box_loaders(
+def make_bbox_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=tuple(datapoints.BBoxFormat),
@@ -736,10 +734,10 @@ def make_bounding_box_loaders(
     dtypes=(torch.float32, torch.float64, torch.int64),
 ):
     for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
-        yield make_bounding_box_loader(**params, spatial_size=spatial_size)
+        yield make_bbox_loader(**params, spatial_size=spatial_size)
 
 
-make_bounding_boxes = from_loaders(make_bounding_box_loaders)
+make_bboxes = from_loaders(make_bbox_loaders)
 
 
 class MaskLoader(TensorLoader):

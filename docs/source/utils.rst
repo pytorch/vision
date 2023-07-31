@@ -12,7 +12,7 @@ visualization <sphx_glr_auto_examples_plot_visualization_utils.py>`.
     :toctree: generated/
     :template: function.rst
 
-    draw_bounding_boxes
+    draw_bboxes
     draw_segmentation_masks
     draw_keypoints
     flow_to_image

@@ -925,7 +925,7 @@ class CelebAMockData:
         cls._make_ann_file(root, "list_attr_celeba.txt", data, field_names=(*field_names, ""))
 
     @classmethod
-    def _make_bounding_boxes_file(cls, root, image_file_names):
+    def _make_bboxes_file(cls, root, image_file_names):
         field_names = ("image_id", "x_1", "y_1", "width", "height")
         data = [
             [f"{name}  ", *[f"{coord:3d}" for coord in make_tensor((4,), low=0, dtype=torch.int).tolist()]]
@@ -960,7 +960,7 @@ class CelebAMockData:
         for make_ann_file_fn in (
             cls._make_identity_file,
             cls._make_attributes_file,
-            cls._make_bounding_boxes_file,
+            cls._make_bboxes_file,
             cls._make_landmarks_file,
         ):
             make_ann_file_fn(root, image_file_names)
@@ -1342,7 +1342,7 @@ class CUB2002011MockData(_CUB200MockData):
         with open(archive_folder / "train_test_split.txt", "w") as file:
             file.write("\n".join(f"{image_id} {split_id}" for image_id, split_id in zip(image_ids, split_ids)))
 
-        with open(archive_folder / "bounding_boxes.txt", "w") as file:
+        with open(archive_folder / "bboxes.txt", "w") as file:
             file.write(
                 "\n".join(
                     " ".join(

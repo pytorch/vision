@@ -4,7 +4,7 @@ import pytest
 import torch
 
 import torchvision.transforms.v2.utils
-from common_utils import make_bounding_box, make_detection_mask, make_image
+from common_utils import make_bbox, make_detection_mask, make_image
 
 from torchvision import datapoints
 from torchvision.transforms.v2.functional import to_image_pil
@@ -12,7 +12,7 @@ from torchvision.transforms.v2.utils import has_all, has_any
 
 
 IMAGE = make_image(color_space="RGB")
-BOUNDING_BOX = make_bounding_box(format=datapoints.BBoxFormat.XYXY, spatial_size=IMAGE.spatial_size)
+BOUNDING_BOX = make_bbox(format=datapoints.BBoxFormat.XYXY, spatial_size=IMAGE.spatial_size)
 MASK = make_detection_mask(size=IMAGE.spatial_size)
 
 

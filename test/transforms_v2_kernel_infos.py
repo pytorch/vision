@@ -14,8 +14,8 @@ from common_utils import (
     get_num_channels,
     ImageLoader,
     InfoBase,
-    make_bounding_box_loader,
-    make_bounding_box_loaders,
+    make_bbox_loader,
+    make_bbox_loaders,
     make_detection_mask_loader,
     make_image_loader,
     make_image_loaders,
@@ -184,13 +184,13 @@ def float32_vs_uint8_fill_adapter(other_args, kwargs):
     return other_args, dict(kwargs, fill=fill)
 
 
-def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, spatial_size, affine_matrix):
+def reference_affine_bboxes_helper(bboxes, *, format, spatial_size, affine_matrix):
     def transform(bbox, affine_matrix_, format_, spatial_size_):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
         if not torch.is_floating_point(bbox):
             bbox = bbox.float()
-        bbox_xyxy = F.convert_format_bounding_boxes(
+        bbox_xyxy = F.convert_format_bboxes(
             bbox.as_subclass(torch.Tensor),
             old_format=format_,
             new_format=datapoints.BBoxFormat.XYXY,
@@ -214,18 +214,18 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, spatial_si
             ],
             dtype=bbox_xyxy.dtype,
         )
-        out_bbox = F.convert_format_bounding_boxes(
+        out_bbox = F.convert_format_bboxes(
             out_bbox, old_format=datapoints.BBoxFormat.XYXY, new_format=format_, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-        out_bbox = F.clamp_bounding_boxes(out_bbox, format=format_, spatial_size=spatial_size_)
+        out_bbox = F.clamp_bboxes(out_bbox, format=format_, spatial_size=spatial_size_)
         out_bbox = out_bbox.to(dtype=in_dtype)
         return out_bbox
 
-    if bounding_boxes.ndim < 2:
-        bounding_boxes = [bounding_boxes]
+    if bboxes.ndim < 2:
+        bboxes = [bboxes]
 
-    expected_bboxes = [transform(bbox, affine_matrix, format, spatial_size) for bbox in bounding_boxes]
+    expected_bboxes = [transform(bbox, affine_matrix, format, spatial_size) for bbox in bboxes]
     if len(expected_bboxes) > 1:
         expected_bboxes = torch.stack(expected_bboxes)
     else:
@@ -234,30 +234,30 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, spatial_si
     return expected_bboxes
 
 
-def sample_inputs_convert_format_bounding_boxes():
+def sample_inputs_convert_format_bboxes():
     formats = list(datapoints.BBoxFormat)
-    for bounding_boxes_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
-        yield ArgsKwargs(bounding_boxes_loader, old_format=bounding_boxes_loader.format, new_format=new_format)
+    for bboxes_loader, new_format in itertools.product(make_bbox_loaders(formats=formats), formats):
+        yield ArgsKwargs(bboxes_loader, old_format=bboxes_loader.format, new_format=new_format)
 
 
-def reference_convert_format_bounding_boxes(bounding_boxes, old_format, new_format):
-    return torchvision.ops.box_convert(
-        bounding_boxes, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
-    ).to(bounding_boxes.dtype)
+def reference_convert_format_bboxes(bboxes, old_format, new_format):
+    return torchvision.ops.box_convert(bboxes, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()).to(
+        bboxes.dtype
+    )
 
 
-def reference_inputs_convert_format_bounding_boxes():
-    for args_kwargs in sample_inputs_convert_format_bounding_boxes():
+def reference_inputs_convert_format_bboxes():
+    for args_kwargs in sample_inputs_convert_format_bboxes():
         if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
 
 KERNEL_INFOS.append(
     KernelInfo(
-        F.convert_format_bounding_boxes,
-        sample_inputs_fn=sample_inputs_convert_format_bounding_boxes,
-        reference_fn=reference_convert_format_bounding_boxes,
-        reference_inputs_fn=reference_inputs_convert_format_bounding_boxes,
+        F.convert_format_bboxes,
+        sample_inputs_fn=sample_inputs_convert_format_bboxes,
+        reference_fn=reference_convert_format_bboxes,
+        reference_inputs_fn=reference_inputs_convert_format_bboxes,
         logs_usage=True,
         closeness_kwargs={
             (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
@@ -290,11 +290,9 @@ def reference_inputs_crop_image_tensor():
         yield ArgsKwargs(image_loader, **params)
 
 
-def sample_inputs_crop_bounding_boxes():
-    for bounding_boxes_loader, params in itertools.product(
-        make_bounding_box_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]
-    ):
-        yield ArgsKwargs(bounding_boxes_loader, format=bounding_boxes_loader.format, **params)
+def sample_inputs_crop_bboxes():
+    for bboxes_loader, params in itertools.product(make_bbox_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]):
+        yield ArgsKwargs(bboxes_loader, format=bboxes_loader.format, **params)
 
 
 def sample_inputs_crop_mask():
@@ -312,27 +310,27 @@ def sample_inputs_crop_video():
         yield ArgsKwargs(video_loader, top=4, left=3, height=7, width=8)
 
 
-def reference_crop_bounding_boxes(bounding_boxes, *, format, top, left, height, width):
+def reference_crop_bboxes(bboxes, *, format, top, left, height, width):
     affine_matrix = np.array(
         [
             [1, 0, -left],
             [0, 1, -top],
         ],
-        dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
+        dtype="float64" if bboxes.dtype == torch.float64 else "float32",
     )
 
     spatial_size = (height, width)
-    expected_bboxes = reference_affine_bounding_boxes_helper(
-        bounding_boxes, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    expected_bboxes = reference_affine_bboxes_helper(
+        bboxes, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
     )
     return expected_bboxes, spatial_size
 
 
-def reference_inputs_crop_bounding_boxes():
-    for bounding_boxes_loader, params in itertools.product(
-        make_bounding_box_loaders(extra_dims=((), (4,))), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]
+def reference_inputs_crop_bboxes():
+    for bboxes_loader, params in itertools.product(
+        make_bbox_loaders(extra_dims=((), (4,))), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]
     ):
-        yield ArgsKwargs(bounding_boxes_loader, format=bounding_boxes_loader.format, **params)
+        yield ArgsKwargs(bboxes_loader, format=bboxes_loader.format, **params)
 
 
 KERNEL_INFOS.extend(
@@ -346,10 +344,10 @@ KERNEL_INFOS.extend(
             float32_vs_uint8=True,
         ),
         KernelInfo(
-            F.crop_bounding_boxes,
-            sample_inputs_fn=sample_inputs_crop_bounding_boxes,
-            reference_fn=reference_crop_bounding_boxes,
-            reference_inputs_fn=reference_inputs_crop_bounding_boxes,
+            F.crop_bboxes,
+            sample_inputs_fn=sample_inputs_crop_bboxes,
+            reference_fn=reference_crop_bboxes,
+            reference_inputs_fn=reference_inputs_crop_bboxes,
         ),
         KernelInfo(
             F.crop_mask,
@@ -406,9 +404,9 @@ def reference_inputs_resized_crop_image_tensor():
         )
 
 
-def sample_inputs_resized_crop_bounding_boxes():
-    for bounding_boxes_loader in make_bounding_box_loaders():
-        yield ArgsKwargs(bounding_boxes_loader, format=bounding_boxes_loader.format, **_RESIZED_CROP_PARAMS[0])
+def sample_inputs_resized_crop_bboxes():
+    for bboxes_loader in make_bbox_loaders():
+        yield ArgsKwargs(bboxes_loader, format=bboxes_loader.format, **_RESIZED_CROP_PARAMS[0])
 
 
 def sample_inputs_resized_crop_mask():
@@ -436,8 +434,8 @@ KERNEL_INFOS.extend(
             },
         ),
         KernelInfo(
-            F.resized_crop_bounding_boxes,
-            sample_inputs_fn=sample_inputs_resized_crop_bounding_boxes,
+            F.resized_crop_bboxes,
+            sample_inputs_fn=sample_inputs_resized_crop_bboxes,
         ),
         KernelInfo(
             F.resized_crop_mask,
@@ -500,14 +498,14 @@ def reference_inputs_pad_image_tensor():
             yield ArgsKwargs(image_loader, fill=fill, **params)
 
 
-def sample_inputs_pad_bounding_boxes():
-    for bounding_boxes_loader, padding in itertools.product(
-        make_bounding_box_loaders(), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
+def sample_inputs_pad_bboxes():
+    for bboxes_loader, padding in itertools.product(
+        make_bbox_loaders(), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
     ):
         yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            spatial_size=bounding_boxes_loader.spatial_size,
+            bboxes_loader,
+            format=bboxes_loader.format,
+            spatial_size=bboxes_loader.spatial_size,
             padding=padding,
             padding_mode="constant",
         )
@@ -530,7 +528,7 @@ def sample_inputs_pad_video():
         yield ArgsKwargs(video_loader, padding=[1])
 
 
-def reference_pad_bounding_boxes(bounding_boxes, *, format, spatial_size, padding, padding_mode):
+def reference_pad_bboxes(bboxes, *, format, spatial_size, padding, padding_mode):
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
@@ -539,26 +537,26 @@ def reference_pad_bounding_boxes(bounding_boxes, *, format, spatial_size, paddin
             [1, 0, left],
             [0, 1, top],
         ],
-        dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
+        dtype="float64" if bboxes.dtype == torch.float64 else "float32",
     )
 
     height = spatial_size[0] + top + bottom
     width = spatial_size[1] + left + right
 
-    expected_bboxes = reference_affine_bounding_boxes_helper(
-        bounding_boxes, format=format, spatial_size=(height, width), affine_matrix=affine_matrix
+    expected_bboxes = reference_affine_bboxes_helper(
+        bboxes, format=format, spatial_size=(height, width), affine_matrix=affine_matrix
     )
     return expected_bboxes, (height, width)
 
 
-def reference_inputs_pad_bounding_boxes():
-    for bounding_boxes_loader, padding in itertools.product(
-        make_bounding_box_loaders(extra_dims=((), (4,))), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
+def reference_inputs_pad_bboxes():
+    for bboxes_loader, padding in itertools.product(
+        make_bbox_loaders(extra_dims=((), (4,))), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
     ):
         yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            spatial_size=bounding_boxes_loader.spatial_size,
+            bboxes_loader,
+            format=bboxes_loader.format,
+            spatial_size=bboxes_loader.spatial_size,
             padding=padding,
             padding_mode="constant",
         )
@@ -591,10 +589,10 @@ KERNEL_INFOS.extend(
             ],
         ),
         KernelInfo(
-            F.pad_bounding_boxes,
-            sample_inputs_fn=sample_inputs_pad_bounding_boxes,
-            reference_fn=reference_pad_bounding_boxes,
-            reference_inputs_fn=reference_inputs_pad_bounding_boxes,
+            F.pad_bboxes,
+            sample_inputs_fn=sample_inputs_pad_bboxes,
+            reference_fn=reference_pad_bboxes,
+            reference_inputs_fn=reference_inputs_pad_bboxes,
             test_marks=[
                 xfail_jit_python_scalar_arg("padding"),
             ],
@@ -655,19 +653,19 @@ def reference_inputs_perspective_image_tensor():
             )
 
 
-def sample_inputs_perspective_bounding_boxes():
-    for bounding_boxes_loader in make_bounding_box_loaders():
+def sample_inputs_perspective_bboxes():
+    for bboxes_loader in make_bbox_loaders():
         yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            spatial_size=bounding_boxes_loader.spatial_size,
+            bboxes_loader,
+            format=bboxes_loader.format,
+            spatial_size=bboxes_loader.spatial_size,
             startpoints=None,
             endpoints=None,
             coefficients=_PERSPECTIVE_COEFFS[0],
         )
 
     format = datapoints.BBoxFormat.XYXY
-    loader = make_bounding_box_loader(format=format)
+    loader = make_bbox_loader(format=format)
     yield ArgsKwargs(
         loader, format=format, spatial_size=loader.spatial_size, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS
     )
@@ -712,8 +710,8 @@ KERNEL_INFOS.extend(
             test_marks=[xfail_jit_python_scalar_arg("fill")],
         ),
         KernelInfo(
-            F.perspective_bounding_boxes,
-            sample_inputs_fn=sample_inputs_perspective_bounding_boxes,
+            F.perspective_bboxes,
+            sample_inputs_fn=sample_inputs_perspective_bboxes,
             closeness_kwargs={
                 **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
                 **scripted_vs_eager_float64_tolerances("cuda", atol=1e-6, rtol=1e-6),
@@ -767,13 +765,13 @@ def reference_inputs_elastic_image_tensor():
             yield ArgsKwargs(image_loader, interpolation=interpolation, displacement=displacement, fill=fill)
 
 
-def sample_inputs_elastic_bounding_boxes():
-    for bounding_boxes_loader in make_bounding_box_loaders():
-        displacement = _get_elastic_displacement(bounding_boxes_loader.spatial_size)
+def sample_inputs_elastic_bboxes():
+    for bboxes_loader in make_bbox_loaders():
+        displacement = _get_elastic_displacement(bboxes_loader.spatial_size)
         yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            spatial_size=bounding_boxes_loader.spatial_size,
+            bboxes_loader,
+            format=bboxes_loader.format,
+            spatial_size=bboxes_loader.spatial_size,
             displacement=displacement,
         )
 
@@ -804,8 +802,8 @@ KERNEL_INFOS.extend(
             test_marks=[xfail_jit_python_scalar_arg("fill")],
         ),
         KernelInfo(
-            F.elastic_bounding_boxes,
-            sample_inputs_fn=sample_inputs_elastic_bounding_boxes,
+            F.elastic_bboxes,
+            sample_inputs_fn=sample_inputs_elastic_bboxes,
         ),
         KernelInfo(
             F.elastic_mask,
@@ -845,12 +843,12 @@ def reference_inputs_center_crop_image_tensor():
         yield ArgsKwargs(image_loader, output_size=output_size)
 
 
-def sample_inputs_center_crop_bounding_boxes():
-    for bounding_boxes_loader, output_size in itertools.product(make_bounding_box_loaders(), _CENTER_CROP_OUTPUT_SIZES):
+def sample_inputs_center_crop_bboxes():
+    for bboxes_loader, output_size in itertools.product(make_bbox_loaders(), _CENTER_CROP_OUTPUT_SIZES):
         yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            spatial_size=bounding_boxes_loader.spatial_size,
+            bboxes_loader,
+            format=bboxes_loader.format,
+            spatial_size=bboxes_loader.spatial_size,
             output_size=output_size,
         )
 
@@ -887,8 +885,8 @@ KERNEL_INFOS.extend(
             ],
         ),
         KernelInfo(
-            F.center_crop_bounding_boxes,
-            sample_inputs_fn=sample_inputs_center_crop_bounding_boxes,
+            F.center_crop_bboxes,
+            sample_inputs_fn=sample_inputs_center_crop_bboxes,
             test_marks=[
                 xfail_jit_python_scalar_arg("output_size"),
             ],
@@ -1482,19 +1480,19 @@ KERNEL_INFOS.extend(
 )
 
 
-def sample_inputs_clamp_bounding_boxes():
-    for bounding_boxes_loader in make_bounding_box_loaders():
+def sample_inputs_clamp_bboxes():
+    for bboxes_loader in make_bbox_loaders():
         yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            spatial_size=bounding_boxes_loader.spatial_size,
+            bboxes_loader,
+            format=bboxes_loader.format,
+            spatial_size=bboxes_loader.spatial_size,
         )
 
 
 KERNEL_INFOS.append(
     KernelInfo(
-        F.clamp_bounding_boxes,
-        sample_inputs_fn=sample_inputs_clamp_bounding_boxes,
+        F.clamp_bboxes,
+        sample_inputs_fn=sample_inputs_clamp_bboxes,
         logs_usage=True,
     )
 )

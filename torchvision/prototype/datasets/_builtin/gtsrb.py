@@ -76,7 +76,7 @@ class GTSRB(Dataset):
         (path, buffer), csv_info = data
         label = int(csv_info["ClassId"])
 
-        bounding_boxes = BBoxes(
+        bboxes = BBoxes(
             [int(csv_info[k]) for k in ("Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2")],
             format="xyxy",
             spatial_size=(int(csv_info["Height"]), int(csv_info["Width"])),
@@ -86,7 +86,7 @@ class GTSRB(Dataset):
             "path": path,
             "image": EncodedImage.from_file(buffer),
             "label": Label(label, categories=self._categories),
-            "bounding_boxes": bounding_boxes,
+            "bboxes": bboxes,
         }
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

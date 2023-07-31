@@ -16,8 +16,8 @@ from common_utils import (
     assert_equal,
     assert_run_python_script,
     cpu_and_cuda,
-    make_bounding_box,
-    make_bounding_boxes,
+    make_bbox,
+    make_bboxes,
     make_detection_mask,
     make_image,
     make_images,
@@ -45,9 +45,9 @@ def make_pil_images(*args, **kwargs):
         yield to_pil_image(image)
 
 
-def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
-    for bounding_boxes in make_bounding_boxes(*args, **kwargs):
-        yield bounding_boxes.data
+def make_vanilla_tensor_bboxes(*args, **kwargs):
+    for bboxes in make_bboxes(*args, **kwargs):
+        yield bboxes.data
 
 
 def parametrize(transforms_with_inputs):
@@ -180,16 +180,10 @@ class TestSmoke:
             image_datapoint=make_image(size=spatial_size),
             video_datapoint=make_video(size=spatial_size),
             image_pil=next(make_pil_images(sizes=[spatial_size], color_spaces=["RGB"])),
-            bounding_boxes_xyxy=make_bounding_box(
-                format=datapoints.BBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(3,)
-            ),
-            bounding_boxes_xywh=make_bounding_box(
-                format=datapoints.BBoxFormat.XYWH, spatial_size=spatial_size, batch_dims=(4,)
-            ),
-            bounding_boxes_cxcywh=make_bounding_box(
-                format=datapoints.BBoxFormat.CXCYWH, spatial_size=spatial_size, batch_dims=(5,)
-            ),
-            bounding_boxes_degenerate_xyxy=datapoints.BBoxes(
+            bboxes_xyxy=make_bbox(format=datapoints.BBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(3,)),
+            bboxes_xywh=make_bbox(format=datapoints.BBoxFormat.XYWH, spatial_size=spatial_size, batch_dims=(4,)),
+            bboxes_cxcywh=make_bbox(format=datapoints.BBoxFormat.CXCYWH, spatial_size=spatial_size, batch_dims=(5,)),
+            bboxes_degenerate_xyxy=datapoints.BBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height
@@ -201,7 +195,7 @@ class TestSmoke:
                 format=datapoints.BBoxFormat.XYXY,
                 spatial_size=spatial_size,
             ),
-            bounding_boxes_degenerate_xywh=datapoints.BBoxes(
+            bboxes_degenerate_xywh=datapoints.BBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height
@@ -213,7 +207,7 @@ class TestSmoke:
                 format=datapoints.BBoxFormat.XYWH,
                 spatial_size=spatial_size,
             ),
-            bounding_boxes_degenerate_cxcywh=datapoints.BBoxes(
+            bboxes_degenerate_cxcywh=datapoints.BBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height
@@ -1121,7 +1115,7 @@ class TestRandomIoUCrop:
         transform = transforms.RandomIoUCrop()
 
         image = datapoints.Image(torch.rand(3, 32, 24))
-        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), batch_dims=(6,))
+        bboxes = make_bbox(format="XYXY", spatial_size=(32, 24), batch_dims=(6,))
         masks = make_detection_mask((32, 24), num_objects=6)
 
         sample = [image, bboxes, masks]
@@ -1558,7 +1552,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 @pytest.mark.parametrize("min_size", (1, 10))
 @pytest.mark.parametrize("labels_getter", ("default", lambda inputs: inputs["labels"], None, lambda inputs: None))
 @pytest.mark.parametrize("sample_type", (tuple, dict))
-def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
+def test_sanitize_bboxes(min_size, labels_getter, sample_type):
 
     if sample_type is tuple and not isinstance(labels_getter, str):
         # The "lambda inputs: inputs["labels"]" labels_getter used in this test
@@ -1644,7 +1638,7 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         assert out_labels.tolist() == valid_indices
 
 
-def test_sanitize_bounding_boxes_errors():
+def test_sanitize_bboxes_errors():
 
     good_bbox = datapoints.BBoxes(
         [[0, 0, 10, 10]],

@@ -100,7 +100,7 @@ class CelebA(Dataset):
             sha256="f0e5da289d5ccf75ffe8811132694922b60f2af59256ed362afa03fefba324d0",
             file_name="list_attr_celeba.txt",
         )
-        bounding_boxes = GDriveResource(
+        bboxes = GDriveResource(
             "0B7EVK8r0v71pbThiMVRxWXZ4dU0",
             sha256="7487a82e57c4bb956c5445ae2df4a91ffa717e903c5fa22874ede0820c8ec41b",
             file_name="list_bbox_celeba.txt",
@@ -110,7 +110,7 @@ class CelebA(Dataset):
             sha256="6c02a87569907f6db2ba99019085697596730e8129f67a3d61659f198c48d43b",
             file_name="list_landmarks_align_celeba.txt",
         )
-        return [splits, images, identities, attributes, bounding_boxes, landmarks]
+        return [splits, images, identities, attributes, bboxes, landmarks]
 
     def _filter_split(self, data: Tuple[str, Dict[str, str]]) -> bool:
         split_id = {
@@ -137,15 +137,15 @@ class CelebA(Dataset):
         path, buffer = image_data
 
         image = EncodedImage.from_file(buffer)
-        (_, identity), (_, attributes), (_, bounding_boxes), (_, landmarks) = ann_data
+        (_, identity), (_, attributes), (_, bboxes), (_, landmarks) = ann_data
 
         return dict(
             path=path,
             image=image,
             identity=Label(int(identity["identity"])),
             attributes={attr: value == "1" for attr, value in attributes.items()},
-            bounding_boxes=BBoxes(
-                [int(bounding_boxes[key]) for key in ("x_1", "y_1", "width", "height")],
+            bboxes=BBoxes(
+                [int(bboxes[key]) for key in ("x_1", "y_1", "width", "height")],
                 format="xywh",
                 spatial_size=image.spatial_size,
             ),
@@ -156,7 +156,7 @@ class CelebA(Dataset):
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
-        splits_dp, images_dp, identities_dp, attributes_dp, bounding_boxes_dp, landmarks_dp = resource_dps
+        splits_dp, images_dp, identities_dp, attributes_dp, bboxes_dp, landmarks_dp = resource_dps
 
         splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))
         splits_dp = Filter(splits_dp, self._filter_split)
@@ -169,7 +169,7 @@ class CelebA(Dataset):
                 for dp, fieldnames in (
                     (identities_dp, ("image_id", "identity")),
                     (attributes_dp, None),
-                    (bounding_boxes_dp, None),
+                    (bboxes_dp, None),
                     (landmarks_dp, None),
                 )
             ]

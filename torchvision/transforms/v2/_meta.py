@@ -24,7 +24,7 @@ class ConvertBBoxFormat(Transform):
         self.format = format
 
     def _transform(self, inpt: datapoints.BBoxes, params: Dict[str, Any]) -> datapoints.BBoxes:
-        return F.convert_format_bounding_boxes(inpt, new_format=self.format)  # type: ignore[return-value]
+        return F.convert_format_bboxes(inpt, new_format=self.format)  # type: ignore[return-value]
 
 
 class ClampBBoxes(Transform):
@@ -39,4 +39,4 @@ class ClampBBoxes(Transform):
     _transformed_types = (datapoints.BBoxes,)
 
     def _transform(self, inpt: datapoints.BBoxes, params: Dict[str, Any]) -> datapoints.BBoxes:
-        return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]
+        return F.clamp_bboxes(inpt)  # type: ignore[return-value]
