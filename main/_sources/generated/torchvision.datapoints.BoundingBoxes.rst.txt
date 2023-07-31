@@ -3,8 +3,8 @@
 .. currentmodule:: torchvision.datapoints
 
 
-BoundingBox
-===========
+BoundingBoxes
+=============
 
-.. autoclass:: BoundingBox
+.. autoclass:: BoundingBoxes
     :members:

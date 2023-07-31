@@ -52,7 +52,7 @@ well as the new ``torchvision.transforms.v2`` v2 API.
         image, target = sample
         if isinstance(image, PIL.Image.Image):
             image = F.to_image_tensor(image)
-        image = F.convert_dtype(image, torch.uint8)
+        image = F.to_dtype(image, torch.uint8, scale=True)
         annotated_image = draw_bounding_boxes(image, target["boxes"], colors="yellow", width=3)
 
         fig, ax = plt.subplots()
@@ -156,7 +156,7 @@ items down the line, but you can pass the ``target_type`` parameter for fine-gra
 
     <class 'PIL.Image.Image'>
     <class 'dict'> ['image_id', 'boxes', 'labels']
-    <class 'torchvision.datapoints._bounding_box.BoundingBox'> <class 'torch.Tensor'>
+    <class 'torchvision.datapoints._bounding_box.BoundingBoxes'> <class 'torch.Tensor'>
 
 
 
@@ -205,7 +205,7 @@ With the dataset properly set up, we can now define the augmentation pipeline. T
             transforms.RandomHorizontalFlip(),
             transforms.ToImageTensor(),
             transforms.ConvertImageDtype(torch.float32),
-            transforms.SanitizeBoundingBox(),
+            transforms.SanitizeBoundingBoxes(),
         ]
     )
 
@@ -219,7 +219,7 @@ With the dataset properly set up, we can now define the augmentation pipeline. T
 .. GENERATED FROM PYTHON SOURCE LINES 114-121
 
 .. note::
-   Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBox` transform is a no-op in this example, but it
+   Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
    should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
    the corresponding labels and optionally masks. It is particularly critical to add it if
    :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
@@ -305,7 +305,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.837 seconds)
+   **Total running time of the script:** ( 0 minutes  2.868 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms_v2_e2e.py:

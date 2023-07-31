@@ -3,8 +3,8 @@
 .. currentmodule:: torchvision.transforms.v2
 
 
-ConvertDtype
-============
+Cutmix
+======
 
-.. autoclass:: ConvertDtype
+.. autoclass:: Cutmix
     :members:

@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+a6dea86) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+8d4e879) &#x25BC</a>
     </div>
     
 
@@ -360,7 +360,7 @@
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><code class="xref py py-class docutils literal notranslate"><span class="pre">v2.ToTensor</span></code> is deprecated and will be removed in a future release.
-Please use instead <code class="docutils literal notranslate"><span class="pre">transforms.Compose([transforms.ToImageTensor(),</span> <span class="pre">transforms.ConvertImageDtype()])</span></code>.</p>
+Please use instead <code class="docutils literal notranslate"><span class="pre">v2.Compose([transforms.ToImageTensor(),</span> <span class="pre">v2.ToDtype(torch.float32,</span> <span class="pre">scale=True)])</span></code>.</p>
 </div>
 <p>This transform does not support torchscript.</p>
 <p>Converts a PIL Image or numpy.ndarray (H x W x C) in the range

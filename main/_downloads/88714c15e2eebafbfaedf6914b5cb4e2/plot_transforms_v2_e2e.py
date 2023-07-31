@@ -29,7 +29,7 @@ def show(sample):
     image, target = sample
     if isinstance(image, PIL.Image.Image):
         image = F.to_image_tensor(image)
-    image = F.convert_dtype(image, torch.uint8)
+    image = F.to_dtype(image, torch.uint8, scale=True)
     annotated_image = draw_bounding_boxes(image, target["boxes"], colors="yellow", width=3)
 
     fig, ax = plt.subplots()
@@ -106,13 +106,13 @@ transform = transforms.Compose(
         transforms.RandomHorizontalFlip(),
         transforms.ToImageTensor(),
         transforms.ConvertImageDtype(torch.float32),
-        transforms.SanitizeBoundingBox(),
+        transforms.SanitizeBoundingBoxes(),
     ]
 )
 
 ########################################################################################################################
 # .. note::
-#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBox` transform is a no-op in this example, but it
+#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
 #    should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
 #    the corresponding labels and optionally masks. It is particularly critical to add it if
 #    :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.

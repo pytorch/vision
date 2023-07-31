@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+a6dea86) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+8d4e879) &#x25BC</a>
     </div>
     
 
@@ -367,7 +367,7 @@
     <span class="n">_setup_float_or_seq</span><span class="p">,</span>
     <span class="n">_setup_size</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">has_all</span><span class="p">,</span> <span class="n">has_any</span><span class="p">,</span> <span class="n">is_simple_tensor</span><span class="p">,</span> <span class="n">query_bounding_box</span><span class="p">,</span> <span class="n">query_spatial_size</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">has_all</span><span class="p">,</span> <span class="n">has_any</span><span class="p">,</span> <span class="n">is_simple_tensor</span><span class="p">,</span> <span class="n">query_bounding_boxes</span><span class="p">,</span> <span class="n">query_spatial_size</span>
 
 
 <div class="viewcode-block" id="RandomHorizontalFlip"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomHorizontalFlip.html#torchvision.transforms.v2.RandomHorizontalFlip">[docs]</a><span class="k">class</span> <span class="nc">RandomHorizontalFlip</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
@@ -376,7 +376,7 @@
 <span class="sd">    .. v2betastatus:: RandomHorizontalFlip transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -396,7 +396,7 @@
 <span class="sd">    .. v2betastatus:: RandomVerticalFlip transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -416,7 +416,7 @@
 <span class="sd">    .. v2betastatus:: Resize transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -510,7 +510,7 @@
 <span class="sd">    .. v2betastatus:: CenterCrop transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -538,7 +538,7 @@
 <span class="sd">    .. v2betastatus:: RandomResizedCrop transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -716,8 +716,8 @@
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">five_crop</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;BoundingBox&#39;es and Mask&#39;s are not supported by </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;BoundingBoxes&#39;es and Mask&#39;s are not supported by </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TenCrop"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.TenCrop.html#torchvision.transforms.v2.TenCrop">[docs]</a><span class="k">class</span> <span class="nc">TenCrop</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
@@ -759,8 +759,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span> <span class="o">=</span> <span class="n">vertical_flip</span>
 
     <span class="k">def</span> <span class="nf">_check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;BoundingBox&#39;es and Mask&#39;s are not supported by </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;BoundingBoxes&#39;es and Mask&#39;s are not supported by </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">datapoints</span><span class="o">.</span><span class="n">_ImageType</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">_VideoType</span><span class="p">],</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
@@ -785,7 +785,7 @@
 <span class="sd">    .. v2betastatus:: Pad transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -870,7 +870,7 @@
 <span class="sd">        output_height = input_height * r</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -882,7 +882,7 @@
 <span class="sd">            ``Mask`` will be filled with 0.</span>
 <span class="sd">        side_range (sequence of floats, optional): tuple of two floats defines minimum and maximum factors to</span>
 <span class="sd">            scale the input size.</span>
-<span class="sd">        p (float, optional): probability of the input being flipped. Default value is 0.5</span>
+<span class="sd">        p (float, optional): probability that the zoom operation will be performed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -929,7 +929,7 @@
 <span class="sd">    .. v2betastatus:: RandomRotation transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1002,7 +1002,7 @@
 <span class="sd">    .. v2betastatus:: RandomAffine transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1123,7 +1123,7 @@
 <span class="sd">    .. v2betastatus:: RandomCrop transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1278,7 +1278,7 @@
 <span class="sd">    .. v2betastatus:: RandomPerspective transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1364,7 +1364,7 @@
 <span class="sd">    .. v2betastatus:: RandomPerspective transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1455,15 +1455,15 @@
 
 <span class="sd">    .. v2betastatus:: RandomIoUCrop transform</span>
 
-<span class="sd">    This transformation requires an image or video data and ``datapoints.BoundingBox`` in the input.</span>
+<span class="sd">    This transformation requires an image or video data and ``datapoints.BoundingBoxes`` in the input.</span>
 
 <span class="sd">    .. warning::</span>
 <span class="sd">        In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`</span>
-<span class="sd">        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBox`, either immediately</span>
+<span class="sd">        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately</span>
 <span class="sd">        after or later in the transforms pipeline.</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1500,7 +1500,7 @@
 
     <span class="k">def</span> <span class="nf">_check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-            <span class="n">has_all</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">)</span>
+            <span class="n">has_all</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span>
             <span class="ow">and</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">is_simple_tensor</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
@@ -1510,7 +1510,7 @@
 
     <span class="k">def</span> <span class="nf">_get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">orig_h</span><span class="p">,</span> <span class="n">orig_w</span> <span class="o">=</span> <span class="n">query_spatial_size</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">)</span>
-        <span class="n">bboxes</span> <span class="o">=</span> <span class="n">query_bounding_box</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">)</span>
+        <span class="n">bboxes</span> <span class="o">=</span> <span class="n">query_bounding_boxes</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">)</span>
 
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="c1"># sample an option</span>
@@ -1538,7 +1538,7 @@
                     <span class="k">continue</span>
 
                 <span class="c1"># check for any valid boxes with centers within the crop area</span>
-                <span class="n">xyxy_bboxes</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_format_bounding_box</span><span class="p">(</span>
+                <span class="n">xyxy_bboxes</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_format_bounding_boxes</span><span class="p">(</span>
                     <span class="n">bboxes</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">bboxes</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span>
                 <span class="p">)</span>
                 <span class="n">cx</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">xyxy_bboxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">xyxy_bboxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
@@ -1565,9 +1565,9 @@
 
         <span class="n">output</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">],</span> <span class="n">left</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">],</span> <span class="n">height</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;height&quot;</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">):</span>
             <span class="c1"># We &quot;mark&quot; the invalid boxes as degenreate, and they can be</span>
-            <span class="c1"># removed by a later call to SanitizeBoundingBox()</span>
+            <span class="c1"># removed by a later call to SanitizeBoundingBoxes()</span>
             <span class="n">output</span><span class="p">[</span><span class="o">~</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;is_within_crop_area&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="k">return</span> <span class="n">output</span></div>
@@ -1580,7 +1580,7 @@
 <span class="sd">    .. v2betastatus:: ScaleJitter transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1646,7 +1646,7 @@
 <span class="sd">    .. v2betastatus:: RandomShortestSize transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1725,7 +1725,7 @@
 <span class="sd">        output_height = size</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)</span>
+<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 

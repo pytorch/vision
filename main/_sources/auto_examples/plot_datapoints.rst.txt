@@ -91,7 +91,7 @@ So far :mod:`torchvision.datapoints` supports four types of datapoints:
 
 * :class:`~torchvision.datapoints.Image`
 * :class:`~torchvision.datapoints.Video`
-* :class:`~torchvision.datapoints.BoundingBox`
+* :class:`~torchvision.datapoints.BoundingBoxes`
 * :class:`~torchvision.datapoints.Mask`
 
 How do I construct a datapoint?
@@ -179,7 +179,7 @@ In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.dat
 .. GENERATED FROM PYTHON SOURCE LINES 78-81
 
 In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
-:class:`~torchvision.datapoints.BoundingBox` stores the coordinate format as well as the spatial size of the
+:class:`~torchvision.datapoints.BoundingBoxes` stores the coordinate format as well as the spatial size of the
 corresponding image alongside the actual values:
 
 .. GENERATED FROM PYTHON SOURCE LINES 81-88
@@ -187,7 +187,7 @@ corresponding image alongside the actual values:
 .. code-block:: default
 
 
-    bounding_box = datapoints.BoundingBox(
+    bounding_box = datapoints.BoundingBoxes(
         [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=image.shape[-2:]
     )
     print(bounding_box)
@@ -201,7 +201,7 @@ corresponding image alongside the actual values:
 
  .. code-block:: none
 
-    BoundingBox([ 17,  16, 344, 495], format=BoundingBoxFormat.XYXY, spatial_size=torch.Size([512, 512]))
+    BoundingBoxes([ 17,  16, 344, 495], format=BoundingBoxFormat.XYXY, spatial_size=torch.Size([512, 512]))
 
 
 
@@ -232,7 +232,7 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
         def __getitem__(self, item):
             ...
 
-            target["boxes"] = datapoints.BoundingBox(
+            target["boxes"] = datapoints.BoundingBoxes(
                 boxes,
                 format=datapoints.BoundingBoxFormat.XYXY,
                 spatial_size=F.get_spatial_size(img),
@@ -266,7 +266,7 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
 
     class WrapPennFudanDataset:
         def __call__(self, img, target):
-            target["boxes"] = datapoints.BoundingBox(
+            target["boxes"] = datapoints.BoundingBoxes(
                 target["boxes"],
                 format=datapoints.BoundingBoxFormat.XYXY,
                 spatial_size=F.get_spatial_size(img),
@@ -295,7 +295,7 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
 
 .. note::
 
-   If both :class:`~torchvision.datapoints.BoundingBox`'es and :class:`~torchvision.datapoints.Mask`'s are included in
+   If both :class:`~torchvision.datapoints.BoundingBoxes`'es and :class:`~torchvision.datapoints.Mask`'s are included in
    the sample, ``torchvision.transforms.v2`` will transform them both. Meaning, if you don't need both, dropping or
    at least not wrapping the obsolete parts, can lead to a significant performance boost.
 

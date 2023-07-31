@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+a6dea86) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+8d4e879) &#x25BC</a>
     </div>
     
 
@@ -667,10 +667,10 @@ produce the same results.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Lambda.html#torchvision.transforms.v2.Lambda" title="torchvision.transforms.v2.Lambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Lambda</span></code></a>(lambd, *types)</p></td>
 <td><p>[BETA] Apply a user-defined function as a transform.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.SanitizeBoundingBox.html#torchvision.transforms.v2.SanitizeBoundingBox" title="torchvision.transforms.v2.SanitizeBoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.SanitizeBoundingBox</span></code></a>([min_size, labels_getter])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.SanitizeBoundingBoxes.html#torchvision.transforms.v2.SanitizeBoundingBoxes" title="torchvision.transforms.v2.SanitizeBoundingBoxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.SanitizeBoundingBoxes</span></code></a>([min_size, ...])</p></td>
 <td><p>[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ClampBoundingBox.html#torchvision.transforms.v2.ClampBoundingBox" title="torchvision.transforms.v2.ClampBoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ClampBoundingBox</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ClampBoundingBoxes.html#torchvision.transforms.v2.ClampBoundingBoxes" title="torchvision.transforms.v2.ClampBoundingBoxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ClampBoundingBoxes</span></code></a>()</p></td>
 <td><p>[BETA] Clamp bounding boxes to their corresponding image dimensions.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.UniformTemporalSubsample.html#torchvision.transforms.v2.UniformTemporalSubsample" title="torchvision.transforms.v2.UniformTemporalSubsample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.UniformTemporalSubsample</span></code></a>(num_samples)</p></td>
@@ -717,16 +717,13 @@ scaling, we mean e.g. that a <code class="docutils literal notranslate"><span cl
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.ConvertImageDtype.html#torchvision.transforms.ConvertImageDtype" title="torchvision.transforms.ConvertImageDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvertImageDtype</span></code></a>(dtype)</p></td>
 <td><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertDtype.html#torchvision.transforms.v2.ConvertDtype" title="torchvision.transforms.v2.ConvertDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertDtype</span></code></a>([dtype])</p></td>
-<td><p>[BETA] Convert input image or video to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertImageDtype.html#torchvision.transforms.v2.ConvertImageDtype" title="torchvision.transforms.v2.ConvertImageDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertImageDtype</span></code></a>([dtype])</p></td>
+<td><p>[BETA] Convert input image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertImageDtype.html#torchvision.transforms.v2.ConvertImageDtype" title="torchvision.transforms.v2.ConvertImageDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertImageDtype</span></code></a></p></td>
-<td><p>alias of <a class="reference internal" href="generated/torchvision.transforms.v2.ConvertDtype.html#torchvision.transforms.v2.ConvertDtype" title="torchvision.transforms.v2._meta.ConvertDtype"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvertDtype</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype" title="torchvision.transforms.v2.ToDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToDtype</span></code></a>(dtype[, scale])</p></td>
+<td><p>[BETA] Converts the input to a specific dtype, optionally scaling the values for images or videos.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype" title="torchvision.transforms.v2.ToDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToDtype</span></code></a>(dtype)</p></td>
-<td><p>[BETA] Converts the input to a specific dtype - this does not scale values.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertBoundingBoxFormat.html#torchvision.transforms.v2.ConvertBoundingBoxFormat" title="torchvision.transforms.v2.ConvertBoundingBoxFormat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertBoundingBoxFormat</span></code></a>(format)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertBoundingBoxFormat.html#torchvision.transforms.v2.ConvertBoundingBoxFormat" title="torchvision.transforms.v2.ConvertBoundingBoxFormat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertBoundingBoxFormat</span></code></a>(format)</p></td>
 <td><p>[BETA] Convert bounding box coordinates to the given <code class="docutils literal notranslate"><span class="pre">format</span></code>, eg from &quot;CXCYWH&quot; to &quot;XYXY&quot;.</p></td>
 </tr>
 </tbody>
@@ -771,6 +768,24 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.AugMix.html#torchvision.transforms.v2.AugMix" title="torchvision.transforms.v2.AugMix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.AugMix</span></code></a>([severity, mixture_width, ...])</p></td>
 <td><p><p>[BETA] AugMix data augmentation method based on <a class="reference external" href="https://arxiv.org/abs/1912.02781">&quot;AugMix: A Simple Data Processing Method to Improve Robustness and Uncertainty&quot;</a>.</p>
 </p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cutmix-mixup">
+<h2>Cutmix - Mixup<a class="headerlink" href="#cutmix-mixup" title="Permalink to this heading">¶</a></h2>
+<p>Cutmix and Mixup are special transforms that
+are meant to be used on batches rather than on individual images, because they
+are combining pairs of images together. These can be used after the dataloader,
+or part of a collation function. See
+<a class="reference internal" href="auto_examples/plot_cutmix_mixup.html#sphx-glr-auto-examples-plot-cutmix-mixup-py"><span class="std std-ref">How to use Cutmix and Mixup</span></a> for detailed usage examples.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Cutmix.html#torchvision.transforms.v2.Cutmix" title="torchvision.transforms.v2.Cutmix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Cutmix</span></code></a>(*[, alpha, labels_getter])</p></td>
+<td><p>[BETA] Apply Cutmix to the provided batch of images and labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Mixup.html#torchvision.transforms.v2.Mixup" title="torchvision.transforms.v2.Mixup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Mixup</span></code></a>(*[, alpha, labels_getter])</p></td>
+<td><p>[BETA] Apply Mixup to the provided batch of images and labels.</p></td>
 </tr>
 </tbody>
 </table>
@@ -985,6 +1000,7 @@ you can use a functional transform to build transform classes with custom behavi
 <li><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
 <li><a class="reference internal" href="#conversion">Conversion</a></li>
 <li><a class="reference internal" href="#auto-augmentation">Auto-Augmentation</a></li>
+<li><a class="reference internal" href="#cutmix-mixup">Cutmix - Mixup</a></li>
 <li><a class="reference internal" href="#functional-transforms">Functional Transforms</a></li>
 </ul>
 </li>

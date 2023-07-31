@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+a6dea86) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+8d4e879) &#x25BC</a>
     </div>
     
 
@@ -389,7 +389,7 @@
 <span class="sd">          the target and wrap the data in the corresponding ``torchvision.datapoints``. The original keys are</span>
 <span class="sd">          preserved. If ``target_keys`` is ommitted, returns only the values for the ``&quot;boxes&quot;`` and ``&quot;labels&quot;``.</span>
 <span class="sd">        * :class:`~torchvision.datasets.CelebA`: The target for ``target_type=&quot;bbox&quot;`` is converted to the ``XYXY``</span>
-<span class="sd">          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBox` datapoint.</span>
+<span class="sd">          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBoxes` datapoint.</span>
 <span class="sd">        * :class:`~torchvision.datasets.Kitti`: Instead returning the target as list of dicts, the wrapper returns a</span>
 <span class="sd">          dict of lists. In addition, the key-value-pairs ``&quot;boxes&quot;`` and ``&quot;labels&quot;`` are added and wrap the data</span>
 <span class="sd">          in the corresponding ``torchvision.datapoints``. The original keys are preserved. If ``target_keys`` is</span>
@@ -401,7 +401,7 @@
 <span class="sd">          a dictionary with the key-value-pairs ``&quot;masks&quot;`` (as :class:`~torchvision.datapoints.Mask` datapoint) and</span>
 <span class="sd">          ``&quot;labels&quot;``.</span>
 <span class="sd">        * :class:`~torchvision.datasets.WIDERFace`: The value for key ``&quot;bbox&quot;`` in the target is converted to ``XYXY``</span>
-<span class="sd">          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBox` datapoint.</span>
+<span class="sd">          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBoxes` datapoint.</span>
 
 <span class="sd">    Image classification datasets</span>
 
@@ -705,8 +705,8 @@
             <span class="n">target</span><span class="p">[</span><span class="s2">&quot;image_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image_id</span>
 
         <span class="k">if</span> <span class="s2">&quot;boxes&quot;</span> <span class="ow">in</span> <span class="n">target_keys</span><span class="p">:</span>
-            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_format_bounding_box</span><span class="p">(</span>
-                <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">(</span>
+            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_format_bounding_boxes</span><span class="p">(</span>
+                <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span>
                     <span class="n">batched_target</span><span class="p">[</span><span class="s2">&quot;bbox&quot;</span><span class="p">],</span>
                     <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">,</span>
                     <span class="n">spatial_size</span><span class="o">=</span><span class="n">spatial_size</span><span class="p">,</span>
@@ -787,7 +787,7 @@
             <span class="n">target</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">if</span> <span class="s2">&quot;boxes&quot;</span> <span class="ow">in</span> <span class="n">target_keys</span><span class="p">:</span>
-            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">(</span>
+            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span>
                 <span class="p">[</span>
                     <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">bndbox</span><span class="p">[</span><span class="n">part</span><span class="p">])</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;xmin&quot;</span><span class="p">,</span> <span class="s2">&quot;ymin&quot;</span><span class="p">,</span> <span class="s2">&quot;xmax&quot;</span><span class="p">,</span> <span class="s2">&quot;ymax&quot;</span><span class="p">)]</span>
                     <span class="k">for</span> <span class="n">bndbox</span> <span class="ow">in</span> <span class="n">batched_instances</span><span class="p">[</span><span class="s2">&quot;bndbox&quot;</span><span class="p">]</span>
@@ -826,8 +826,8 @@
             <span class="n">target</span><span class="p">,</span>
             <span class="n">target_types</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">target_type</span><span class="p">,</span>
             <span class="n">type_wrappers</span><span class="o">=</span><span class="p">{</span>
-                <span class="s2">&quot;bbox&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_format_bounding_box</span><span class="p">(</span>
-                    <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">(</span>
+                <span class="s2">&quot;bbox&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_format_bounding_boxes</span><span class="p">(</span>
+                    <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span>
                         <span class="n">item</span><span class="p">,</span>
                         <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">,</span>
                         <span class="n">spatial_size</span><span class="o">=</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">width</span><span class="p">),</span>
@@ -877,7 +877,7 @@
         <span class="n">target</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">if</span> <span class="s2">&quot;boxes&quot;</span> <span class="ow">in</span> <span class="n">target_keys</span><span class="p">:</span>
-            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">(</span>
+            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span>
                 <span class="n">batched_target</span><span class="p">[</span><span class="s2">&quot;bbox&quot;</span><span class="p">],</span>
                 <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
                 <span class="n">spatial_size</span><span class="o">=</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">width</span><span class="p">),</span>
@@ -973,8 +973,8 @@
         <span class="n">target</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">target</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">target_keys</span><span class="p">}</span>
 
         <span class="k">if</span> <span class="s2">&quot;bbox&quot;</span> <span class="ow">in</span> <span class="n">target_keys</span><span class="p">:</span>
-            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;bbox&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_format_bounding_box</span><span class="p">(</span>
-                <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBox</span><span class="p">(</span>
+            <span class="n">target</span><span class="p">[</span><span class="s2">&quot;bbox&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_format_bounding_boxes</span><span class="p">(</span>
+                <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span>
                     <span class="n">target</span><span class="p">[</span><span class="s2">&quot;bbox&quot;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">,</span> <span class="n">spatial_size</span><span class="o">=</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
                 <span class="p">),</span>
                 <span class="n">new_format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>

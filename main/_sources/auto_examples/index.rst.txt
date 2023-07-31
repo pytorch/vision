@@ -14,6 +14,23 @@ Below is a gallery of examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="TODO">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_cutmix_mixup_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">How to use Cutmix and Mixup</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
 
 .. only:: html
@@ -173,6 +190,7 @@ Below is a gallery of examples
 .. toctree::
    :hidden:
 
+   /auto_examples/plot_cutmix_mixup
    /auto_examples/plot_scripted_tensor_transforms
    /auto_examples/plot_transforms_v2
    /auto_examples/plot_datapoints
