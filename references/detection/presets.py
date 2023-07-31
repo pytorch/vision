@@ -77,8 +77,8 @@ class DetectionPresetTrain:
 
         if use_v2:
             transforms += [
-                T.ConvertBBoxFormat(datapoints.BBoxFormat.XYXY),
-                T.SanitizeBBoxes(),
+                T.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.XYXY),
+                T.SanitizeBoundingBoxes(),
             ]
 
         self.transforms = T.Compose(transforms)

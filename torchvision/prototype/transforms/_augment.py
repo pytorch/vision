@@ -26,7 +26,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
             and has_any(flat_inputs, proto_datapoints.OneHotLabel)
         ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
-        if has_any(flat_inputs, PIL.Image.Image, datapoints.BBoxes, datapoints.Mask, proto_datapoints.Label):
+        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBoxes, datapoints.Mask, proto_datapoints.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
             )
@@ -176,7 +176,7 @@ class SimpleCopyPaste(Transform):
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
         boxes = F.convert_format_bounding_box(
-            xyxy_boxes, old_format=datapoints.BBoxFormat.XYXY, new_format=bbox_format, inplace=True
+            xyxy_boxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
 
@@ -185,7 +185,7 @@ class SimpleCopyPaste(Transform):
 
         # Check for degenerated boxes and remove them
         boxes = F.convert_format_bounding_box(
-            out_target["boxes"], old_format=bbox_format, new_format=datapoints.BBoxFormat.XYXY
+            out_target["boxes"], old_format=bbox_format, new_format=datapoints.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
         if degenerate_boxes.any():
@@ -201,14 +201,14 @@ class SimpleCopyPaste(Transform):
         self, flat_sample: List[Any]
     ) -> Tuple[List[datapoints._TensorImageType], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
-        # with List[image], List[BBoxes], List[Mask], List[Label]
+        # with List[image], List[BoundingBoxes], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
             if isinstance(obj, datapoints.Image) or is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
                 images.append(F.to_image_tensor(obj))
-            elif isinstance(obj, datapoints.BBoxes):
+            elif isinstance(obj, datapoints.BoundingBoxes):
                 bboxes.append(obj)
             elif isinstance(obj, datapoints.Mask):
                 masks.append(obj)
@@ -218,7 +218,7 @@ class SimpleCopyPaste(Transform):
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain equal sized list of Images, "
-                "BBoxeses, Masks and Labels or OneHotLabels."
+                "BoundingBoxeses, Masks and Labels or OneHotLabels."
             )
 
         targets = []
@@ -244,8 +244,8 @@ class SimpleCopyPaste(Transform):
             elif is_simple_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
-            elif isinstance(obj, datapoints.BBoxes):
-                flat_sample[i] = datapoints.BBoxes.wrap_like(obj, output_targets[c1]["boxes"])
+            elif isinstance(obj, datapoints.BoundingBoxes):
+                flat_sample[i] = datapoints.BoundingBoxes.wrap_like(obj, output_targets[c1]["boxes"])
                 c1 += 1
             elif isinstance(obj, datapoints.Mask):
                 flat_sample[i] = datapoints.Mask.wrap_like(obj, output_targets[c2]["masks"])

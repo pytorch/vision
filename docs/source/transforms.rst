@@ -206,8 +206,8 @@ Miscellaneous
     v2.RandomErasing
     Lambda
     v2.Lambda
-    v2.SanitizeBBoxes
-    v2.ClampBBoxes
+    v2.SanitizeBoundingBoxes
+    v2.ClampBoundingBoxes
     v2.UniformTemporalSubsample
 
 .. _conversion_transforms:
@@ -236,7 +236,7 @@ Conversion
     ConvertImageDtype
     v2.ConvertImageDtype
     v2.ToDtype
-    v2.ConvertBBoxFormat
+    v2.ConvertBoundingBoxFormat
 
 Auto-Augmentation
 -----------------

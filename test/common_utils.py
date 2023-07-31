@@ -620,15 +620,15 @@ def make_image_loaders_for_interpolation(
 
 
 @dataclasses.dataclass
-class BBoxesLoader(TensorLoader):
-    format: datapoints.BBoxFormat
+class BoundingBoxesLoader(TensorLoader):
+    format: datapoints.BoundingBoxFormat
     spatial_size: Tuple[int, int]
 
 
 def make_bounding_box(
     size=None,
     *,
-    format=datapoints.BBoxFormat.XYXY,
+    format=datapoints.BoundingBoxFormat.XYXY,
     spatial_size=None,
     batch_dims=(),
     dtype=None,
@@ -639,7 +639,7 @@ def make_bounding_box(
         - (box[3] - box[1], box[2] - box[0]) for XYXY
         - (H, W) for XYWH and CXCYWH
     spatial_size: Size of the reference object, e.g. an image. Corresponds to the .spatial_size attribute on
-        returned datapoints.BBoxes
+        returned datapoints.BoundingBoxes
 
     To generate a valid joint sample, you need to set spatial_size here to the same value as size on the other maker
     functions, e.g.
@@ -666,7 +666,7 @@ def make_bounding_box(
         return torch.stack([torch.randint(max_value - v, ()) for v in values.flatten().tolist()]).reshape(values.shape)
 
     if isinstance(format, str):
-        format = datapoints.BBoxFormat[format]
+        format = datapoints.BoundingBoxFormat[format]
 
     if spatial_size is None:
         if size is None:
@@ -679,7 +679,7 @@ def make_bounding_box(
     dtype = dtype or torch.float32
 
     if any(dim == 0 for dim in batch_dims):
-        return datapoints.BBoxes(
+        return datapoints.BoundingBoxes(
             torch.empty(*batch_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
         )
 
@@ -691,28 +691,28 @@ def make_bounding_box(
     y = sample_position(h, spatial_size[0])
     x = sample_position(w, spatial_size[1])
 
-    if format is datapoints.BBoxFormat.XYWH:
+    if format is datapoints.BoundingBoxFormat.XYWH:
         parts = (x, y, w, h)
-    elif format is datapoints.BBoxFormat.XYXY:
+    elif format is datapoints.BoundingBoxFormat.XYXY:
         x1, y1 = x, y
         x2 = x1 + w
         y2 = y1 + h
         parts = (x1, y1, x2, y2)
-    elif format is datapoints.BBoxFormat.CXCYWH:
+    elif format is datapoints.BoundingBoxFormat.CXCYWH:
         cx = x + w / 2
         cy = y + h / 2
         parts = (cx, cy, w, h)
     else:
         raise ValueError(f"Format {format} is not supported")
 
-    return datapoints.BBoxes(
+    return datapoints.BoundingBoxes(
         torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
     )
 
 
 def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.float32):
     if isinstance(format, str):
-        format = datapoints.BBoxFormat[format]
+        format = datapoints.BoundingBoxFormat[format]
 
     spatial_size = _parse_spatial_size(spatial_size, name="spatial_size")
 
@@ -725,13 +725,13 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORT
             format=format, spatial_size=spatial_size, batch_dims=batch_dims, dtype=dtype, device=device
         )
 
-    return BBoxesLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
+    return BoundingBoxesLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
 
 
 def make_bounding_box_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
-    formats=tuple(datapoints.BBoxFormat),
+    formats=tuple(datapoints.BoundingBoxFormat),
     spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     dtypes=(torch.float32, torch.float64, torch.int64),
 ):

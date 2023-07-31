@@ -1127,7 +1127,7 @@ class TestRefDetTransforms:
                 v2_transforms.Compose(
                     [
                         v2_transforms.RandomIoUCrop(),
-                        v2_transforms.SanitizeBBoxes(labels_getter=lambda sample: sample[1]["labels"]),
+                        v2_transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
                     ]
                 ),
                 {"with_mask": False},

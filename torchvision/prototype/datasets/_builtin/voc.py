@@ -5,7 +5,7 @@ from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
 from xml.etree import ElementTree
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
-from torchvision.datapoints import BBoxes
+from torchvision.datapoints import BoundingBoxes
 from torchvision.datasets import VOCDetection
 from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -103,7 +103,7 @@ class VOC(Dataset):
         anns = self._parse_detection_ann(buffer)
         instances = anns["object"]
         return dict(
-            bounding_boxes=BBoxes(
+            bounding_boxes=BoundingBoxes(
                 [
                     [int(instance["bndbox"][part]) for part in ("xmin", "ymin", "xmax", "ymax")]
                     for instance in instances

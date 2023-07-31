@@ -138,8 +138,8 @@ class Datapoint(torch.Tensor):
         # *not* happen for `deepcopy(Tensor)`. A side-effect from detaching is that the `Tensor.requires_grad`
         # attribute is cleared, so we need to refill it before we return.
         # Note: We don't explicitly handle deep-copying of the metadata here. The only metadata we currently have is
-        # `BBoxes.format` and `BBoxes.spatial_size`, which are immutable and thus implicitly deep-copied by
-        # `BBoxes.clone()`.
+        # `BoundingBoxes.format` and `BoundingBoxes.spatial_size`, which are immutable and thus implicitly deep-copied by
+        # `BoundingBoxes.clone()`.
         return self.detach().clone().requires_grad_(self.requires_grad)  # type: ignore[return-value]
 
     def horizontal_flip(self) -> Datapoint:
