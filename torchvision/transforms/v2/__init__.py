@@ -39,8 +39,17 @@ from ._geometry import (
     ScaleJitter,
     TenCrop,
 )
-from ._meta import ClampBoundingBox, ConvertBoundingBoxFormat, ConvertImageDtype
-from ._misc import GaussianBlur, Identity, Lambda, LinearTransformation, Normalize, SanitizeBoundingBox, ToDtype
+from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat
+from ._misc import (
+    ConvertImageDtype,
+    GaussianBlur,
+    Identity,
+    Lambda,
+    LinearTransformation,
+    Normalize,
+    SanitizeBoundingBoxes,
+    ToDtype,
+)
 from ._temporal import UniformTemporalSubsample
 from ._type_conversion import PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
