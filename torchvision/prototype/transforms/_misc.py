@@ -1,13 +1,27 @@
+import functools
 import warnings
-from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
+from collections import defaultdict
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import torch
 
 from torchvision import datapoints
 from torchvision.transforms.v2 import Transform
 
-from torchvision.transforms.v2._utils import _get_defaultdict
 from torchvision.transforms.v2.utils import is_simple_tensor
+
+
+T = TypeVar("T")
+
+
+def _default_arg(value: T) -> T:
+    return value
+
+
+def _get_defaultdict(default: T) -> Dict[Any, T]:
+    # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
+    # If it were possible, we could replace this with `defaultdict(lambda: default)`
+    return defaultdict(functools.partial(_default_arg, default))
 
 
 class PermuteDimensions(Transform):
