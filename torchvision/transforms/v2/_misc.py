@@ -10,7 +10,7 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
-from .utils import has_any, is_simple_tensor, query_bounding_box
+from .utils import has_any, is_simple_tensor, query_bounding_boxes
 
 
 # TODO: do we want/need to expose this?
@@ -332,16 +332,16 @@ class ConvertImageDtype(Transform):
         return F.to_dtype(inpt, dtype=self.dtype, scale=True)
 
 
-class SanitizeBoundingBox(Transform):
+class SanitizeBoundingBoxes(Transform):
     """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
-    .. v2betastatus:: SanitizeBoundingBox transform
+    .. v2betastatus:: SanitizeBoundingBoxes transform
 
     This transform removes bounding boxes and their associated labels/masks that:
 
     - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
-      call :class:`~torchvision.transforms.v2.ClampBoundingBox` first to avoid undesired removals.
+      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
@@ -384,10 +384,10 @@ class SanitizeBoundingBox(Transform):
             )
 
         flat_inputs, spec = tree_flatten(inputs)
-        # TODO: this enforces one single BoundingBox entry.
+        # TODO: this enforces one single BoundingBoxes entry.
         # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
         # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
-        boxes = query_bounding_box(flat_inputs)
+        boxes = query_bounding_boxes(flat_inputs)
 
         if boxes.ndim != 2:
             raise ValueError(f"boxes must be of shape (num_boxes, 4), got {boxes.shape}")
@@ -398,8 +398,8 @@ class SanitizeBoundingBox(Transform):
             )
 
         boxes = cast(
-            datapoints.BoundingBox,
-            F.convert_format_bounding_box(
+            datapoints.BoundingBoxes,
+            F.convert_format_bounding_boxes(
                 boxes,
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             ),
@@ -415,7 +415,7 @@ class SanitizeBoundingBox(Transform):
         params = dict(valid=valid, labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
-            # _transform() will only care about BoundingBoxes and the labels
+            # _transform() will only care about BoundingBoxeses and the labels
             self._transform(inpt, params)
             for inpt in flat_inputs
         ]
@@ -424,9 +424,9 @@ class SanitizeBoundingBox(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_box_or_mask = isinstance(inpt, (datapoints.BoundingBox, datapoints.Mask))
+        is_bounding_boxes_or_mask = isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask))
 
-        if not (is_label or is_bounding_box_or_mask):
+        if not (is_label or is_bounding_boxes_or_mask):
             return inpt
 
         output = inpt[params["valid"]]

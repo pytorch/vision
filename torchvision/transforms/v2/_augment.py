@@ -141,9 +141,9 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixupCutmix(Transform):
-    def __init__(self, *, alpha: float = 1, num_classes: int, labels_getter="default") -> None:
+    def __init__(self, *, alpha: float = 1.0, num_classes: int, labels_getter="default") -> None:
         super().__init__()
-        self.alpha = alpha
+        self.alpha = float(alpha)
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
         self.num_classes = num_classes
@@ -155,7 +155,7 @@ class _BaseMixupCutmix(Transform):
         flat_inputs, spec = tree_flatten(inputs)
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
-        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask):
+        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBoxes, datapoints.Mask):
             raise ValueError(f"{type(self).__name__}() does not support PIL images, bounding boxes and masks.")
 
         labels = self._labels_getter(inputs)
@@ -204,13 +204,20 @@ class _BaseMixupCutmix(Transform):
 
 
 class Mixup(_BaseMixupCutmix):
-    """[BETA] Apply Mixup to the provided batch of images and labels.
+    """[BETA] Apply MixUp to the provided batch of images and labels.
 
     .. v2betastatus:: Mixup transform
 
     Paper: `mixup: Beyond Empirical Risk Minimization <https://arxiv.org/abs/1710.09412>`_.
 
-    See :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+    .. note::
+        This transform is meant to be used on **batches** of samples, not
+        individual images. See
+        :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage
+        examples.
+        The sample pairing is deterministic and done by matching consecutive
+        samples in the batch, so the batch needs to be shuffled (this is an
+        implementation detail, not a guaranteed convention.)
 
     In the input, the labels are expected to be a tensor of shape ``(batch_size,)``. They will be transformed
     into a tensor of shape ``(batch_size, num_classes)``.
@@ -246,14 +253,21 @@ class Mixup(_BaseMixupCutmix):
 
 
 class Cutmix(_BaseMixupCutmix):
-    """[BETA] Apply Cutmix to the provided batch of images and labels.
+    """[BETA] Apply CutMix to the provided batch of images and labels.
 
     .. v2betastatus:: Cutmix transform
 
     Paper: `CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features
     <https://arxiv.org/abs/1905.04899>`_.
 
-    See :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+    .. note::
+        This transform is meant to be used on **batches** of samples, not
+        individual images. See
+        :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage
+        examples.
+        The sample pairing is deterministic and done by matching consecutive
+        samples in the batch, so the batch needs to be shuffled (this is an
+        implementation detail, not a guaranteed convention.)
 
     In the input, the labels are expected to be a tensor of shape ``(batch_size,)``. They will be transformed
     into a tensor of shape ``(batch_size, num_classes)``.
