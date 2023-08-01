@@ -1922,7 +1922,7 @@ class TestCutMixMixUp:
 
         dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
 
-        cutmix_mixup = T(alpha=0.5, num_classes=num_classes)
+        cutmix_mixup = T(num_classes=num_classes)
 
         dl = DataLoader(dataset, batch_size=batch_size)
 
