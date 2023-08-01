@@ -8,7 +8,6 @@ import contextlib
 from collections import defaultdict
 
 import torch
-from torch.utils.data import Dataset
 
 from torchvision import datapoints, datasets
 from torchvision.transforms.v2 import functional as F
@@ -98,7 +97,16 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
             f"but got {target_keys}"
         )
 
-    return VisionDatasetDatapointWrapper(dataset, target_keys)
+    # Imagine we have isinstance(dataset, datasets.ImageNet). This will create a new class with the name
+    # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetDatapointWrapper (see below) as well as the
+    # original ImageNet class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks,
+    # while we can still inject everything that we need.
+    wrapped_dataset_cls = type(f"Wrapped{type(dataset).__name__}", (VisionDatasetDatapointWrapper, type(dataset)), {})
+    # Since VisionDatasetDatapointWrapper comes before ImageNet in the MRO, calling the class hits
+    # VisionDatasetDatapointWrapper.__init__ first. Since we are never doing super().__init__(...), the constructor of
+    # ImageNet is never hit. That is by design, since we don't want to create the dataset instance again, but rather
+    # have the existing instance as attribute on the new object.
+    return wrapped_dataset_cls(dataset, target_keys)
 
 
 class WrapperFactories(dict):
@@ -117,7 +125,7 @@ class WrapperFactories(dict):
 WRAPPER_FACTORIES = WrapperFactories()
 
 
-class VisionDatasetDatapointWrapper(Dataset):
+class VisionDatasetDatapointWrapper:
     def __init__(self, dataset, target_keys):
         dataset_cls = type(dataset)
 
@@ -333,13 +341,13 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         default={"image_id", "boxes", "labels"},
     )
 
-    def segmentation_to_mask(segmentation, *, spatial_size):
+    def segmentation_to_mask(segmentation, *, canvas_size):
         from pycocotools import mask
 
         segmentation = (
-            mask.frPyObjects(segmentation, *spatial_size)
+            mask.frPyObjects(segmentation, *canvas_size)
             if isinstance(segmentation, dict)
-            else mask.merge(mask.frPyObjects(segmentation, *spatial_size))
+            else mask.merge(mask.frPyObjects(segmentation, *canvas_size))
         )
         return torch.from_numpy(mask.decode(segmentation))
 
@@ -351,7 +359,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         if not target:
             return image, dict(image_id=image_id)
 
-        spatial_size = tuple(F.get_spatial_size(image))
+        canvas_size = tuple(F.get_size(image))
 
         batched_target = list_of_dicts_to_dict_of_lists(target)
         target = {}
@@ -364,7 +372,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
                 datapoints.BoundingBoxes(
                     batched_target["bbox"],
                     format=datapoints.BoundingBoxFormat.XYWH,
-                    spatial_size=spatial_size,
+                    canvas_size=canvas_size,
                 ),
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             )
@@ -373,7 +381,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             target["masks"] = datapoints.Mask(
                 torch.stack(
                     [
-                        segmentation_to_mask(segmentation, spatial_size=spatial_size)
+                        segmentation_to_mask(segmentation, canvas_size=canvas_size)
                         for segmentation in batched_target["segmentation"]
                     ]
                 ),
@@ -448,7 +456,7 @@ def voc_detection_wrapper_factory(dataset, target_keys):
                     for bndbox in batched_instances["bndbox"]
                 ],
                 format=datapoints.BoundingBoxFormat.XYXY,
-                spatial_size=(image.height, image.width),
+                canvas_size=(image.height, image.width),
             )
 
         if "labels" in target_keys:
@@ -485,7 +493,7 @@ def celeba_wrapper_factory(dataset, target_keys):
                     datapoints.BoundingBoxes(
                         item,
                         format=datapoints.BoundingBoxFormat.XYWH,
-                        spatial_size=(image.height, image.width),
+                        canvas_size=(image.height, image.width),
                     ),
                     new_format=datapoints.BoundingBoxFormat.XYXY,
                 ),
@@ -535,7 +543,7 @@ def kitti_wrapper_factory(dataset, target_keys):
             target["boxes"] = datapoints.BoundingBoxes(
                 batched_target["bbox"],
                 format=datapoints.BoundingBoxFormat.XYXY,
-                spatial_size=(image.height, image.width),
+                canvas_size=(image.height, image.width),
             )
 
         if "labels" in target_keys:
@@ -630,7 +638,7 @@ def widerface_wrapper(dataset, target_keys):
         if "bbox" in target_keys:
             target["bbox"] = F.convert_format_bounding_boxes(
                 datapoints.BoundingBoxes(
-                    target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
+                    target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, canvas_size=(image.height, image.width)
                 ),
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             )

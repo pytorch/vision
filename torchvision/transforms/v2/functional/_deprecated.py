@@ -19,6 +19,6 @@ def to_tensor(inpt: Any) -> torch.Tensor:
 def get_image_size(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
     warnings.warn(
         "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
-        "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."
+        "Instead, please use `get_size(...)` which returns `[h, w]` instead of `[w, h]`."
     )
     return _F.get_image_size(inpt)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Union
 
 import PIL.Image
 import torch
@@ -55,14 +55,6 @@ class Image(Datapoint):
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()
-
-    @property
-    def spatial_size(self) -> Tuple[int, int]:
-        return tuple(self.shape[-2:])  # type: ignore[return-value]
-
-    @property
-    def num_channels(self) -> int:
-        return self.shape[-3]
 
     def horizontal_flip(self) -> Image:
         output = self._F.horizontal_flip_image_tensor(self.as_subclass(torch.Tensor))

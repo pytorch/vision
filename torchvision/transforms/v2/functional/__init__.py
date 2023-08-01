@@ -15,12 +15,12 @@ from ._meta import (
     get_num_channels_image_pil,
     get_num_channels_video,
     get_num_channels,
-    get_spatial_size_bounding_boxes,
-    get_spatial_size_image_tensor,
-    get_spatial_size_image_pil,
-    get_spatial_size_mask,
-    get_spatial_size_video,
-    get_spatial_size,
+    get_size_bounding_boxes,
+    get_size_image_tensor,
+    get_size_image_pil,
+    get_size_mask,
+    get_size_video,
+    get_size,
 )  # usort: skip
 
 from ._augment import erase, erase_image_pil, erase_image_tensor, erase_video

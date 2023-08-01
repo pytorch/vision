@@ -164,7 +164,7 @@ class TestSimpleCopyPaste:
             labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
             "boxes": BoundingBoxes(
-                torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", spatial_size=(32, 32)
+                torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", canvas_size=(32, 32)
             ),
             "masks": Mask(masks),
             "labels": label_type(labels),
@@ -179,7 +179,7 @@ class TestSimpleCopyPaste:
             paste_labels = torch.nn.functional.one_hot(paste_labels, num_classes=5)
         paste_target = {
             "boxes": BoundingBoxes(
-                torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", spatial_size=(32, 32)
+                torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", canvas_size=(32, 32)
             ),
             "masks": Mask(paste_masks),
             "labels": label_type(paste_labels),
@@ -210,13 +210,13 @@ class TestFixedSizeCrop:
     def test__get_params(self, mocker):
         crop_size = (7, 7)
         batch_shape = (10,)
-        spatial_size = (11, 5)
+        canvas_size = (11, 5)
 
         transform = transforms.FixedSizeCrop(size=crop_size)
 
         flat_inputs = [
-            make_image(size=spatial_size, color_space="RGB"),
-            make_bounding_box(format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=batch_shape),
+            make_image(size=canvas_size, color_space="RGB"),
+            make_bounding_box(format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=batch_shape),
         ]
         params = transform._get_params(flat_inputs)
 
@@ -295,7 +295,7 @@ class TestFixedSizeCrop:
 
     def test__transform_culling(self, mocker):
         batch_size = 10
-        spatial_size = (10, 10)
+        canvas_size = (10, 10)
 
         is_valid = torch.randint(0, 2, (batch_size,), dtype=torch.bool)
         mocker.patch(
@@ -304,17 +304,17 @@ class TestFixedSizeCrop:
                 needs_crop=True,
                 top=0,
                 left=0,
-                height=spatial_size[0],
-                width=spatial_size[1],
+                height=canvas_size[0],
+                width=canvas_size[1],
                 is_valid=is_valid,
                 needs_pad=False,
             ),
         )
 
         bounding_boxes = make_bounding_box(
-            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(batch_size,)
+            format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(batch_size,)
         )
-        masks = make_detection_mask(size=spatial_size, batch_dims=(batch_size,))
+        masks = make_detection_mask(size=canvas_size, batch_dims=(batch_size,))
         labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
@@ -334,7 +334,7 @@ class TestFixedSizeCrop:
 
     def test__transform_bounding_boxes_clamping(self, mocker):
         batch_size = 3
-        spatial_size = (10, 10)
+        canvas_size = (10, 10)
 
         mocker.patch(
             "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
@@ -342,15 +342,15 @@ class TestFixedSizeCrop:
                 needs_crop=True,
                 top=0,
                 left=0,
-                height=spatial_size[0],
-                width=spatial_size[1],
+                height=canvas_size[0],
+                width=canvas_size[1],
                 is_valid=torch.full((batch_size,), fill_value=True),
                 needs_pad=False,
             ),
         )
 
         bounding_boxes = make_bounding_box(
-            format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(batch_size,)
+            format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(batch_size,)
         )
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_boxes")
 
@@ -496,7 +496,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
@@ -505,7 +505,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         tensor_image = torch.Tensor(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
@@ -514,7 +514,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         datapoint_image = make_image(size=size, color_space="RGB")
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }

@@ -30,7 +30,7 @@ class ConvertBoundingBoxFormat(Transform):
 class ClampBoundingBoxes(Transform):
     """[BETA] Clamp bounding boxes to their corresponding image dimensions.
 
-    The clamping is done according to the bounding boxes' ``spatial_size`` meta-data.
+    The clamping is done according to the bounding boxes' ``canvas_size`` meta-data.
 
     .. v2betastatus:: ClampBoundingBoxes transform
 
