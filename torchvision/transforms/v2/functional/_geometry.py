@@ -25,7 +25,7 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import clamp_bounding_boxes, convert_format_bounding_boxes, get_size_image_pil
 
-from ._utils import _get_kernel, _register_kernel_internal, is_simple_tensor
+from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, is_simple_tensor
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -1968,6 +1968,30 @@ def resized_crop(
         )
 
 
+ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
+
+
+@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, future_warning=True)
+def five_crop(
+    inpt: ImageOrVideoTypeJIT, size: List[int]
+) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(five_crop)
+
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return five_crop_image_tensor(inpt, size)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        kernel = _get_kernel(five_crop, type(inpt))
+        return kernel(inpt, size)
+    elif isinstance(inpt, PIL.Image.Image):
+        return five_crop_image_pil(inpt, size)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
+
+
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
         s = int(size)
@@ -1982,6 +2006,7 @@ def _parse_five_crop_size(size: List[int]) -> List[int]:
     return size
 
 
+@_register_kernel_internal(five_crop, datapoints.Image)
 def five_crop_image_tensor(
     image: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -2019,38 +2044,46 @@ def five_crop_image_pil(
     return tl, tr, bl, br, center
 
 
+@_register_kernel_internal(five_crop, datapoints.Video)
 def five_crop_video(
     video: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     return five_crop_image_tensor(video, size)
 
 
-ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
-
-
-def five_crop(
-    inpt: ImageOrVideoTypeJIT, size: List[int]
-) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
+@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, future_warning=True)
+def ten_crop(
+    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], size: List[int], vertical_flip: bool = False
+) -> Tuple[
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+]:
     if not torch.jit.is_scripting():
-        _log_api_usage_once(five_crop)
+        _log_api_usage_once(ten_crop)
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return five_crop_image_tensor(inpt, size)
-    elif isinstance(inpt, datapoints.Image):
-        output = five_crop_image_tensor(inpt.as_subclass(torch.Tensor), size)
-        return tuple(datapoints.Image.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
-    elif isinstance(inpt, datapoints.Video):
-        output = five_crop_video(inpt.as_subclass(torch.Tensor), size)
-        return tuple(datapoints.Video.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
+        return ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        kernel = _get_kernel(ten_crop, type(inpt))
+        return kernel(inpt, size, vertical_flip=vertical_flip)
     elif isinstance(inpt, PIL.Image.Image):
-        return five_crop_image_pil(inpt, size)
+        return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
             f"but got {type(inpt)} instead."
         )
 
 
+@_register_kernel_internal(ten_crop, datapoints.Image)
 def ten_crop_image_tensor(
     image: torch.Tensor, size: List[int], vertical_flip: bool = False
 ) -> Tuple[
@@ -2104,6 +2137,7 @@ def ten_crop_image_pil(
     return non_flipped + flipped
 
 
+@_register_kernel_internal(ten_crop, datapoints.Video)
 def ten_crop_video(
     video: torch.Tensor, size: List[int], vertical_flip: bool = False
 ) -> Tuple[
@@ -2119,37 +2153,3 @@ def ten_crop_video(
     torch.Tensor,
 ]:
     return ten_crop_image_tensor(video, size, vertical_flip=vertical_flip)
-
-
-def ten_crop(
-    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], size: List[int], vertical_flip: bool = False
-) -> Tuple[
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-]:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(ten_crop)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
-    elif isinstance(inpt, datapoints.Image):
-        output = ten_crop_image_tensor(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
-        return tuple(datapoints.Image.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
-    elif isinstance(inpt, datapoints.Video):
-        output = ten_crop_video(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
-        return tuple(datapoints.Video.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
-    elif isinstance(inpt, PIL.Image.Image):
-        return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )

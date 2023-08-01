@@ -354,13 +354,6 @@ class FiveCrop(Transform):
 
     _v1_transform_cls = _transforms.FiveCrop
 
-    _transformed_types = (
-        datapoints.Image,
-        PIL.Image.Image,
-        is_simple_tensor,
-        datapoints.Video,
-    )
-
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -400,13 +393,6 @@ class TenCrop(Transform):
     """
 
     _v1_transform_cls = _transforms.TenCrop
-
-    _transformed_types = (
-        datapoints.Image,
-        PIL.Image.Image,
-        is_simple_tensor,
-        datapoints.Video,
-    )
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()

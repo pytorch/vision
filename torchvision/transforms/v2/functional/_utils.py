@@ -1,5 +1,6 @@
 import functools
 import inspect
+import warnings
 from typing import Any
 
 import torch
@@ -76,11 +77,13 @@ def register_kernel(dispatcher, datapoint_cls):
     return _register_kernel_internal(dispatcher, datapoint_cls, wrap_kernel=False)
 
 
-def _noop(inpt, *args, **kwargs):
+def _noop(inpt, *args, __future_warning__=None, **kwargs):
+    if __future_warning__:
+        warnings.warn(__future_warning__, FutureWarning, stacklevel=2)
     return inpt
 
 
-def _register_explicit_noop(*datapoints_classes):
+def _register_explicit_noop(*datapoints_classes, future_warning=False):
     """
     Although this looks redundant with the no-op behavior of _get_kernel, this explicit registration prevents users
     from registering kernels for builtin datapoints on builtin dispatchers that rely on the no-op behavior.
@@ -97,7 +100,13 @@ def _register_explicit_noop(*datapoints_classes):
 
     def decorator(dispatcher):
         for cls in datapoints_classes:
-            register_kernel(dispatcher, cls)(_noop)
+            msg = (
+                f"F.{dispatcher.__name__} is currently passing through inputs of type datapoints.{cls.__name__}. "
+                f"This will likely change in the future."
+            )
+            register_kernel(dispatcher, cls)(
+                functools.partial(_noop, __future_warning__=msg if future_warning else None)
+            )
         return dispatcher
 
     return decorator

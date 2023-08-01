@@ -56,8 +56,6 @@ class RandomErasing(_RandomApplyTransform):
             value="random" if self.value is None else self.value,
         )
 
-    _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
-
     def __init__(
         self,
         p: float = 0.5,
