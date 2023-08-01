@@ -638,6 +638,7 @@ def make_bounding_box(
     dtype=None,
     device="cpu",
 ):
+    batch_dims = ()  # This is nasty but this whole thing will be removed soon.
     def sample_position(values, max_value):
         # We cannot use torch.randint directly here, because it only allows integer scalars as values for low and high.
         # However, if we have batch_dims, we need tensors as limits.
