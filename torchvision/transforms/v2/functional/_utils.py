@@ -112,6 +112,20 @@ def _register_explicit_noop(*datapoints_classes, future_warning=False):
     return decorator
 
 
+# TODO: we only need this, since our default behavior in case no kernel is found is passthrough. When we change that
+# to error later, this decorator can be removed, since the error will be raised by _get_kernel
+def _register_unsupported_type(*datapoints_classes):
+    def kernel(inpt, *args, __dispatcher_name__, **kwargs):
+        raise TypeError(f"F.{__dispatcher_name__} does not support inputs of type {type(inpt)}.")
+
+    def decorator(dispatcher):
+        for cls in datapoints_classes:
+            register_kernel(dispatcher, cls)(functools.partial(kernel, __dispatcher_name__=dispatcher.__name__))
+        return dispatcher
+
+    return decorator
+
+
 def _get_kernel(dispatcher, datapoint_cls):
     registry = _KERNEL_REGISTRY.get(dispatcher)
     if not registry:

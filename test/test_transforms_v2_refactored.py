@@ -26,6 +26,7 @@ from common_utils import (
     make_image_tensor,
     make_segmentation_mask,
     make_video,
+    make_video_tensor,
     needs_cuda,
     set_rng_seed,
 )
@@ -2119,3 +2120,92 @@ def test_labels_getter_default_heuristic(key, sample_type):
         # it takes precedence over other keys which would otherwise be a match
         d = {key: "something_else", "labels": labels}
         assert transforms._utils._find_labels_default_heuristic(d) is labels
+
+
+class TestShapeGetters:
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.get_dimensions_image_tensor, make_image_tensor),
+            (F.get_dimensions_image_pil, make_image_pil),
+            (F.get_dimensions_image_tensor, make_image),
+            (F.get_dimensions_video, make_video),
+        ],
+    )
+    def test_get_dimensions(self, kernel, make_input):
+        size = (10, 10)
+        color_space, num_channels = "RGB", 3
+
+        input = make_input(size, color_space=color_space)
+
+        assert kernel(input) == F.get_dimensions(input) == [num_channels, *size]
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.get_num_channels_image_tensor, make_image_tensor),
+            (F.get_num_channels_image_pil, make_image_pil),
+            (F.get_num_channels_image_tensor, make_image),
+            (F.get_num_channels_video, make_video),
+        ],
+    )
+    def test_get_num_channels(self, kernel, make_input):
+        color_space, num_channels = "RGB", 3
+
+        input = make_input(color_space=color_space)
+
+        assert kernel(input) == F.get_num_channels(input) == num_channels
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.get_size_image_tensor, make_image_tensor),
+            (F.get_size_image_pil, make_image_pil),
+            (F.get_size_image_tensor, make_image),
+            (F.get_size_bounding_boxes, make_bounding_box),
+            (F.get_size_mask, make_detection_mask),
+            (F.get_size_mask, make_segmentation_mask),
+            (F.get_size_video, make_video),
+        ],
+    )
+    def test_get_size(self, kernel, make_input):
+        size = (10, 10)
+
+        input = make_input(size)
+
+        assert kernel(input) == F.get_size(input) == list(size)
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.get_num_frames_video, make_video_tensor),
+            (F.get_num_frames_video, make_video),
+        ],
+    )
+    def test_get_num_frames(self, kernel, make_input):
+        num_frames = 4
+
+        input = make_input(num_frames=num_frames)
+
+        assert kernel(input) == F.get_num_frames(input) == num_frames
+
+    @pytest.mark.parametrize(
+        ("dispatcher", "make_input"),
+        [
+            (F.get_dimensions, make_bounding_box),
+            (F.get_dimensions, make_detection_mask),
+            (F.get_dimensions, make_segmentation_mask),
+            (F.get_num_channels, make_bounding_box),
+            (F.get_num_channels, make_detection_mask),
+            (F.get_num_channels, make_segmentation_mask),
+            (F.get_num_frames, make_image),
+            (F.get_num_frames, make_bounding_box),
+            (F.get_num_frames, make_detection_mask),
+            (F.get_num_frames, make_segmentation_mask),
+        ],
+    )
+    def test_unsupported_types(self, dispatcher, make_input):
+        input = make_input()
+
+        with pytest.raises(TypeError, match=re.escape(str(type(input)))):
+            dispatcher(input)

@@ -7,6 +7,7 @@ from ._meta import (
     convert_format_bounding_boxes,
     get_dimensions_image_tensor,
     get_dimensions_image_pil,
+    get_dimensions_video,
     get_dimensions,
     get_num_frames_video,
     get_num_frames,

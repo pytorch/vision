@@ -8,9 +8,29 @@ from torchvision.transforms import _functional_pil as _FP
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import is_simple_tensor
+from ._utils import _get_kernel, _register_kernel_internal, _register_unsupported_type, is_simple_tensor
 
 
+@_register_unsupported_type(datapoints.BoundingBoxes, datapoints.Mask)
+def get_dimensions(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(get_dimensions)
+
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return get_dimensions_image_tensor(inpt)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        kernel = _get_kernel(get_dimensions, type(inpt))
+        return kernel(inpt)
+    elif isinstance(inpt, PIL.Image.Image):
+        return get_dimensions_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
+
+
+@_register_kernel_internal(get_dimensions, datapoints.Image, wrap_kernel=False)
 def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
     chw = list(image.shape[-3:])
     ndims = len(chw)
@@ -26,31 +46,31 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
 get_dimensions_image_pil = _FP.get_dimensions
 
 
+@_register_kernel_internal(get_dimensions, datapoints.Video, wrap_kernel=False)
 def get_dimensions_video(video: torch.Tensor) -> List[int]:
     return get_dimensions_image_tensor(video)
 
 
-def get_dimensions(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
+@_register_unsupported_type(datapoints.BoundingBoxes, datapoints.Mask)
+def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> int:
     if not torch.jit.is_scripting():
-        _log_api_usage_once(get_dimensions)
+        _log_api_usage_once(get_num_channels)
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return get_dimensions_image_tensor(inpt)
-
-    for typ, get_size_fn in {
-        datapoints.Image: get_dimensions_image_tensor,
-        datapoints.Video: get_dimensions_video,
-        PIL.Image.Image: get_dimensions_image_pil,
-    }.items():
-        if isinstance(inpt, typ):
-            return get_size_fn(inpt)
-
-    raise TypeError(
-        f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
-        f"but got {type(inpt)} instead."
-    )
+        return get_num_channels_image_tensor(inpt)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        kernel = _get_kernel(get_num_channels, type(inpt))
+        return kernel(inpt)
+    elif isinstance(inpt, PIL.Image.Image):
+        return get_num_channels_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
+@_register_kernel_internal(get_num_channels, datapoints.Image, wrap_kernel=False)
 def get_num_channels_image_tensor(image: torch.Tensor) -> int:
     chw = image.shape[-3:]
     ndims = len(chw)
@@ -65,29 +85,9 @@ def get_num_channels_image_tensor(image: torch.Tensor) -> int:
 get_num_channels_image_pil = _FP.get_image_num_channels
 
 
+@_register_kernel_internal(get_num_channels, datapoints.Video, wrap_kernel=False)
 def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image_tensor(video)
-
-
-def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> int:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(get_num_channels)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return get_num_channels_image_tensor(inpt)
-
-    for typ, get_size_fn in {
-        datapoints.Image: get_num_channels_image_tensor,
-        datapoints.Video: get_num_channels_video,
-        PIL.Image.Image: get_num_channels_image_pil,
-    }.items():
-        if isinstance(inpt, typ):
-            return get_size_fn(inpt)
-
-    raise TypeError(
-        f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
-        f"but got {type(inpt)} instead."
-    )
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -95,6 +95,25 @@ def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoType
 get_image_num_channels = get_num_channels
 
 
+def get_size(inpt: datapoints._InputTypeJIT) -> List[int]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(get_size)
+
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return get_size_image_tensor(inpt)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        kernel = _get_kernel(get_size, type(inpt))
+        return kernel(inpt)
+    elif isinstance(inpt, PIL.Image.Image):
+        return get_size_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
+
+
+@_register_kernel_internal(get_size, datapoints.Image, wrap_kernel=False)
 def get_size_image_tensor(image: torch.Tensor) -> List[int]:
     hw = list(image.shape[-2:])
     ndims = len(hw)
@@ -110,59 +129,41 @@ def get_size_image_pil(image: PIL.Image.Image) -> List[int]:
     return [height, width]
 
 
+@_register_kernel_internal(get_size, datapoints.Video, wrap_kernel=False)
 def get_size_video(video: torch.Tensor) -> List[int]:
     return get_size_image_tensor(video)
 
 
+@_register_kernel_internal(get_size, datapoints.Mask, wrap_kernel=False)
 def get_size_mask(mask: torch.Tensor) -> List[int]:
     return get_size_image_tensor(mask)
 
 
-@torch.jit.unused
+@_register_kernel_internal(get_size, datapoints.BoundingBoxes, wrap_kernel=False)
 def get_size_bounding_boxes(bounding_box: datapoints.BoundingBoxes) -> List[int]:
     return list(bounding_box.canvas_size)
 
 
-def get_size(inpt: datapoints._InputTypeJIT) -> List[int]:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(get_size)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return get_size_image_tensor(inpt)
-
-    # TODO: This is just the poor mans version of a dispatcher. This will be properly addressed with
-    # https://github.com/pytorch/vision/pull/7747 when we can register the kernels above without the need to have
-    # a method on the datapoint class
-    for typ, get_size_fn in {
-        datapoints.Image: get_size_image_tensor,
-        datapoints.BoundingBoxes: get_size_bounding_boxes,
-        datapoints.Mask: get_size_mask,
-        datapoints.Video: get_size_video,
-        PIL.Image.Image: get_size_image_pil,
-    }.items():
-        if isinstance(inpt, typ):
-            return get_size_fn(inpt)
-
-    raise TypeError(
-        f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-        f"but got {type(inpt)} instead."
-    )
-
-
-def get_num_frames_video(video: torch.Tensor) -> int:
-    return video.shape[-4]
-
-
+@_register_unsupported_type(datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask)
 def get_num_frames(inpt: datapoints._VideoTypeJIT) -> int:
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_num_frames)
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_num_frames_video(inpt)
-    elif isinstance(inpt, datapoints.Video):
-        return get_num_frames_video(inpt)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        kernel = _get_kernel(get_num_frames, type(inpt))
+        return kernel(inpt)
     else:
-        raise TypeError(f"Input can either be a plain tensor or a `Video` datapoint, but got {type(inpt)} instead.")
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
+
+
+@_register_kernel_internal(get_num_frames, datapoints.Video, wrap_kernel=False)
+def get_num_frames_video(video: torch.Tensor) -> int:
+    return video.shape[-4]
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
