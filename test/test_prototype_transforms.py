@@ -60,8 +60,8 @@ def parametrize(transforms_with_inputs):
             ],
         )
         for transform in [
-            transforms.RandomMixup(alpha=1.0),
-            transforms.RandomCutmix(alpha=1.0),
+            transforms.RandomMixUp(alpha=1.0),
+            transforms.RandomCutMix(alpha=1.0),
         ]
     ]
 )

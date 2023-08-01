@@ -103,7 +103,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
     This heuristic covers three cases:
 
     1. The input is tuple or list whose second item is a labels tensor. This happens for already batched
-       classification inputs for Mixup and Cutmix (typically after the Dataloder).
+       classification inputs for MixUp and CutMix (typically after the Dataloder).
     2. The input is a tuple or list whose second item is a dictionary that contains the labels tensor
        under a label-like (see below) key. This happens for the inputs of detection models.
     3. The input is a dictionary that is structured as the one from 2.
@@ -117,7 +117,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
     if isinstance(inputs, (tuple, list)):
         inputs = inputs[1]
 
-    # Mixup, Cutmix
+    # MixUp, CutMix
     if isinstance(inputs, torch.Tensor):
         return inputs
 

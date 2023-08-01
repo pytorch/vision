@@ -261,10 +261,10 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     AugMix
     v2.AugMix
 
-Cutmix - Mixup
+CutMix - MixUp
 --------------
 
-Cutmix and Mixup are special transforms that
+CutMix and MixUp are special transforms that
 are meant to be used on batches rather than on individual images, because they
 are combining pairs of images together. These can be used after the dataloader,
 or part of a collation function. See
@@ -274,8 +274,8 @@ or part of a collation function. See
     :toctree: generated/
     :template: class.rst
 
-    v2.Cutmix
-    v2.Mixup
+    v2.CutMix
+    v2.MixUp
 
 .. _functional_transforms:
 
