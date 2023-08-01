@@ -14,7 +14,7 @@ from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_size
 
 
-class _BaseMixupCutmix(_RandomApplyTransform):
+class _BaseMixUpCutMix(_RandomApplyTransform):
     def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.alpha = alpha
@@ -38,7 +38,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         return proto_datapoints.OneHotLabel.wrap_like(inpt, output)
 
 
-class RandomMixup(_BaseMixupCutmix):
+class RandomMixUp(_BaseMixUpCutMix):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))  # type: ignore[arg-type]
 
@@ -60,7 +60,7 @@ class RandomMixup(_BaseMixupCutmix):
             return inpt
 
 
-class RandomCutmix(_BaseMixupCutmix):
+class RandomCutMix(_BaseMixUpCutMix):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 

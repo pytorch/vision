@@ -6,15 +6,15 @@ import torch
 from torchvision import datapoints
 from torchvision.prototype.datapoints import Label, OneHotLabel
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2._utils import _setup_fill_arg, _setup_size
-from torchvision.transforms.v2.utils import get_bounding_boxes, has_any, is_simple_tensor, query_size
+from torchvision.transforms.v2._utils import _get_fill, _setup_fill_arg, _setup_size
+from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_size
 
 
 class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
@@ -119,7 +119,7 @@ class FixedSizeCrop(Transform):
                 )
 
         if params["needs_pad"]:
-            fill = self._fill[type(inpt)]
+            fill = _get_fill(self._fill, type(inpt))
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt

@@ -4,7 +4,6 @@ import importlib.util
 import inspect
 import random
 import re
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +29,7 @@ from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
+from torchvision.transforms.v2._utils import _get_fill
 from torchvision.transforms.v2.functional import to_image_pil
 from torchvision.transforms.v2.utils import query_size
 
@@ -1181,7 +1181,7 @@ class PadIfSmaller(v2_transforms.Transform):
         if not params["needs_padding"]:
             return inpt
 
-        fill = self.fill[type(inpt)]
+        fill = _get_fill(self.fill, type(inpt))
         return prototype_F.pad(inpt, padding=params["padding"], fill=fill)
 
 
@@ -1243,7 +1243,7 @@ class TestRefSegTransforms:
                 seg_transforms.RandomCrop(size=480),
                 v2_transforms.Compose(
                     [
-                        PadIfSmaller(size=480, fill=defaultdict(lambda: 0, {datapoints.Mask: 255})),
+                        PadIfSmaller(size=480, fill={datapoints.Mask: 255, "others": 0}),
                         v2_transforms.RandomCrop(size=480),
                     ]
                 ),

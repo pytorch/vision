@@ -140,7 +140,7 @@ class RandomErasing(_RandomApplyTransform):
         return inpt
 
 
-class _BaseMixupCutmix(Transform):
+class _BaseMixUpCutMix(Transform):
     def __init__(self, *, alpha: float = 1.0, num_classes: int, labels_getter="default") -> None:
         super().__init__()
         self.alpha = float(alpha)
@@ -203,10 +203,10 @@ class _BaseMixupCutmix(Transform):
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
 
 
-class Mixup(_BaseMixupCutmix):
+class MixUp(_BaseMixUpCutMix):
     """[BETA] Apply MixUp to the provided batch of images and labels.
 
-    .. v2betastatus:: Mixup transform
+    .. v2betastatus:: MixUp transform
 
     Paper: `mixup: Beyond Empirical Risk Minimization <https://arxiv.org/abs/1710.09412>`_.
 
@@ -227,7 +227,7 @@ class Mixup(_BaseMixupCutmix):
         num_classes (int): number of classes in the batch. Used for one-hot-encoding.
         labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
             By default, this will pick the second parameter a the labels if it's a tensor. This covers the most
-            common scenario where this transform is called as ``Mixup()(imgs_batch, labels_batch)``.
+            common scenario where this transform is called as ``MixUp()(imgs_batch, labels_batch)``.
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
@@ -252,10 +252,10 @@ class Mixup(_BaseMixupCutmix):
             return inpt
 
 
-class Cutmix(_BaseMixupCutmix):
+class CutMix(_BaseMixUpCutMix):
     """[BETA] Apply CutMix to the provided batch of images and labels.
 
-    .. v2betastatus:: Cutmix transform
+    .. v2betastatus:: CutMix transform
 
     Paper: `CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features
     <https://arxiv.org/abs/1905.04899>`_.
@@ -277,7 +277,7 @@ class Cutmix(_BaseMixupCutmix):
         num_classes (int): number of classes in the batch. Used for one-hot-encoding.
         labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
             By default, this will pick the second parameter a the labels if it's a tensor. This covers the most
-            common scenario where this transform is called as ``Cutmix()(imgs_batch, labels_batch)``.
+            common scenario where this transform is called as ``CutMix()(imgs_batch, labels_batch)``.
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
