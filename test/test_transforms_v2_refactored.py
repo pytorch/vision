@@ -1914,7 +1914,7 @@ class TestCutMixMixUp:
         def __len__(self):
             return self.size
 
-    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_supported_input_structure(self, T):
 
         batch_size = 32
@@ -1964,7 +1964,7 @@ class TestCutMixMixUp:
             check_output(img, target)
 
     @needs_cuda
-    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_cpu_vs_gpu(self, T):
         num_classes = 10
         batch_size = 3
@@ -1976,7 +1976,7 @@ class TestCutMixMixUp:
 
         _check_kernel_cuda_vs_cpu(cutmix_mixup, imgs, labels, rtol=None, atol=None)
 
-    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_error(self, T):
 
         num_classes = 10

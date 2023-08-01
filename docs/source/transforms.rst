@@ -274,8 +274,8 @@ are combining pairs of images together. These can be used after the dataloader
     :toctree: generated/
     :template: class.rst
 
-    v2.Cutmix
-    v2.Mixup
+    v2.CutMix
+    v2.MixUp
 
 .. _functional_transforms:
 
