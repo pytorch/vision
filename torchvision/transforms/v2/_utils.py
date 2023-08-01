@@ -27,7 +27,7 @@ def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size:
     return arg
 
 
-def _check_fill_arg(fill: Union[_FillType, Dict[Type, _FillType]]) -> None:
+def _check_fill_arg(fill: Union[_FillType, Dict[Union[Type, str], _FillType]]) -> None:
     if isinstance(fill, dict):
         for value in fill.values():
             _check_fill_arg(value)
@@ -49,7 +49,7 @@ def _convert_fill_arg(fill: datapoints._FillType) -> datapoints._FillTypeJIT:
     return fill  # type: ignore[return-value]
 
 
-def _setup_fill_arg(fill: Union[_FillType, Dict[Type, _FillType]]) -> Dict[Type, _FillTypeJIT]:
+def _setup_fill_arg(fill: Union[_FillType, Dict[Union[Type, str], _FillType]]) -> Dict[Union[Type, str], _FillTypeJIT]:
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):

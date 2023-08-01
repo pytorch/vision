@@ -29,8 +29,8 @@ from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
-from torchvision.transforms.v2.functional import to_image_pil
 from torchvision.transforms.v2._utils import _get_fill
+from torchvision.transforms.v2.functional import to_image_pil
 from torchvision.transforms.v2.utils import query_size
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
