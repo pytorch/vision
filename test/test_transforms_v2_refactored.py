@@ -1,4 +1,5 @@
 import contextlib
+import decimal
 import inspect
 import math
 import re
@@ -16,6 +17,7 @@ from common_utils import (
     assert_no_warnings,
     cache,
     cpu_and_cuda,
+    freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_box,
     make_detection_mask,
@@ -24,9 +26,14 @@ from common_utils import (
     make_image_tensor,
     make_segmentation_mask,
     make_video,
+    needs_cuda,
     set_rng_seed,
 )
+
+from torch import nn
 from torch.testing import assert_close
+from torch.utils._pytree import tree_map
+from torch.utils.data import DataLoader, default_collate
 from torchvision import datapoints
 
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
@@ -57,18 +64,21 @@ def _check_kernel_cuda_vs_cpu(kernel, input, *args, rtol, atol, **kwargs):
     input_cuda = input.as_subclass(torch.Tensor)
     input_cpu = input_cuda.to("cpu")
 
-    actual = kernel(input_cuda, *args, **kwargs)
-    expected = kernel(input_cpu, *args, **kwargs)
+    with freeze_rng_state():
+        actual = kernel(input_cuda, *args, **kwargs)
+    with freeze_rng_state():
+        expected = kernel(input_cpu, *args, **kwargs)
 
     assert_close(actual, expected, check_device=False, rtol=rtol, atol=atol)
 
 
 @cache
-def _script(fn):
+def _script(obj):
     try:
-        return torch.jit.script(fn)
+        return torch.jit.script(obj)
     except Exception as error:
-        raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
+        name = getattr(obj, "__name__", obj.__class__.__name__)
+        raise AssertionError(f"Trying to `torch.jit.script` '{name}' raised the error above.") from error
 
 
 def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
@@ -125,6 +135,7 @@ def check_kernel(
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
     check_batched_vs_unbatched=True,
+    expect_same_dtype=True,
     **kwargs,
 ):
     initial_input_version = input._version
@@ -137,7 +148,8 @@ def check_kernel(
     # check that no inplace operation happened
     assert input._version == initial_input_version
 
-    assert output.dtype == input.dtype
+    if expect_same_dtype:
+        assert output.dtype == input.dtype
     assert output.device == input.device
 
     if check_cuda_vs_cpu:
@@ -184,7 +196,7 @@ def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
 
     assert isinstance(output, type(input))
 
-    if isinstance(input, datapoints.BoundingBox):
+    if isinstance(input, datapoints.BoundingBoxes):
         assert output.format == input.format
 
 
@@ -274,7 +286,7 @@ def check_dispatcher_signatures_match(dispatcher, *, kernel, input_type):
 def _check_transform_v1_compatibility(transform, input):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
     ``get_params`` method, is scriptable, and the scripted version can be called without error."""
-    if not hasattr(transform, "_v1_transform_cls"):
+    if transform._v1_transform_cls is None:
         return
 
     if type(input) is not torch.Tensor:
@@ -294,7 +306,7 @@ def check_transform(transform_cls, input, *args, **kwargs):
     output = transform(input)
     assert isinstance(output, type(input))
 
-    if isinstance(input, datapoints.BoundingBox):
+    if isinstance(input, datapoints.BoundingBoxes):
         assert output.format == input.format
 
     _check_transform_v1_compatibility(transform, input)
@@ -380,13 +392,13 @@ def assert_warns_antialias_default_value():
         yield
 
 
-def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, affine_matrix):
+def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_size, affine_matrix):
     def transform(bbox):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
         if not torch.is_floating_point(bbox):
             bbox = bbox.float()
-        bbox_xyxy = F.convert_format_bounding_box(
+        bbox_xyxy = F.convert_format_bounding_boxes(
             bbox.as_subclass(torch.Tensor),
             old_format=format,
             new_format=datapoints.BoundingBoxFormat.XYXY,
@@ -410,15 +422,15 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
             ],
             dtype=bbox_xyxy.dtype,
         )
-        out_bbox = F.convert_format_bounding_box(
+        out_bbox = F.convert_format_bounding_boxes(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-        out_bbox = F.clamp_bounding_box(out_bbox, format=format, spatial_size=spatial_size)
+        out_bbox = F.clamp_bounding_boxes(out_bbox, format=format, canvas_size=canvas_size)
         out_bbox = out_bbox.to(dtype=in_dtype)
         return out_bbox
 
-    return torch.stack([transform(b) for b in bounding_box.reshape(-1, 4).unbind()]).reshape(bounding_box.shape)
+    return torch.stack([transform(b) for b in bounding_boxes.reshape(-1, 4).unbind()]).reshape(bounding_boxes.shape)
 
 
 class TestResize:
@@ -496,20 +508,20 @@ class TestResize:
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, format, size, use_max_size, dtype, device):
+    def test_kernel_bounding_boxes(self, format, size, use_max_size, dtype, device):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_box = make_bounding_box(
+        bounding_boxes = make_bounding_box(
             format=format,
-            spatial_size=self.INPUT_SIZE,
+            canvas_size=self.INPUT_SIZE,
             dtype=dtype,
             device=device,
         )
         check_kernel(
-            F.resize_bounding_box,
-            bounding_box,
-            spatial_size=bounding_box.spatial_size,
+            F.resize_bounding_boxes,
+            bounding_boxes,
+            canvas_size=bounding_boxes.canvas_size,
             size=size,
             **max_size_kwarg,
             check_scripted_vs_eager=not isinstance(size, int),
@@ -529,7 +541,7 @@ class TestResize:
             (F.resize_image_tensor, make_image_tensor),
             (F.resize_image_pil, make_image_pil),
             (F.resize_image_tensor, make_image),
-            (F.resize_bounding_box, make_bounding_box),
+            (F.resize_bounding_boxes, make_bounding_box),
             (F.resize_mask, make_segmentation_mask),
             (F.resize_video, make_video),
         ],
@@ -550,7 +562,7 @@ class TestResize:
             (F.resize_image_tensor, torch.Tensor),
             (F.resize_image_pil, PIL.Image.Image),
             (F.resize_image_tensor, datapoints.Image),
-            (F.resize_bounding_box, datapoints.BoundingBox),
+            (F.resize_bounding_boxes, datapoints.BoundingBoxes),
             (F.resize_mask, datapoints.Mask),
             (F.resize_video, datapoints.Video),
         ],
@@ -576,8 +588,8 @@ class TestResize:
         check_transform(transforms.Resize, make_input(self.INPUT_SIZE, device=device), size=size, antialias=True)
 
     def _check_output_size(self, input, output, *, size, max_size):
-        assert tuple(F.get_spatial_size(output)) == self._compute_output_size(
-            input_size=F.get_spatial_size(input), size=size, max_size=max_size
+        assert tuple(F.get_size(output)) == self._compute_output_size(
+            input_size=F.get_size(input), size=size, max_size=max_size
         )
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
@@ -600,45 +612,45 @@ class TestResize:
         self._check_output_size(image, actual, size=size, **max_size_kwarg)
         torch.testing.assert_close(actual, expected, atol=1, rtol=0)
 
-    def _reference_resize_bounding_box(self, bounding_box, *, size, max_size=None):
-        old_height, old_width = bounding_box.spatial_size
+    def _reference_resize_bounding_boxes(self, bounding_boxes, *, size, max_size=None):
+        old_height, old_width = bounding_boxes.canvas_size
         new_height, new_width = self._compute_output_size(
-            input_size=bounding_box.spatial_size, size=size, max_size=max_size
+            input_size=bounding_boxes.canvas_size, size=size, max_size=max_size
         )
 
         if (old_height, old_width) == (new_height, new_width):
-            return bounding_box
+            return bounding_boxes
 
         affine_matrix = np.array(
             [
                 [new_width / old_width, 0, 0],
                 [0, new_height / old_height, 0],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=(new_height, new_width),
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=(new_height, new_width),
             affine_matrix=affine_matrix,
         )
-        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes, spatial_size=(new_height, new_width))
+        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes, canvas_size=(new_height, new_width))
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
-    def test_bounding_box_correctness(self, format, size, use_max_size, fn):
+    def test_bounding_boxes_correctness(self, format, size, use_max_size, fn):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_box = make_bounding_box(format=format, spatial_size=self.INPUT_SIZE)
+        bounding_boxes = make_bounding_box(format=format, canvas_size=self.INPUT_SIZE)
 
-        actual = fn(bounding_box, size=size, **max_size_kwarg)
-        expected = self._reference_resize_bounding_box(bounding_box, size=size, **max_size_kwarg)
+        actual = fn(bounding_boxes, size=size, **max_size_kwarg)
+        expected = self._reference_resize_bounding_boxes(bounding_boxes, size=size, **max_size_kwarg)
 
-        self._check_output_size(bounding_box, actual, size=size, **max_size_kwarg)
+        self._check_output_size(bounding_boxes, actual, size=size, **max_size_kwarg)
         torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("interpolation", set(transforms.InterpolationMode) - set(INTERPOLATION_MODES))
@@ -750,7 +762,7 @@ class TestResize:
     def test_noop(self, size, make_input):
         input = make_input(self.INPUT_SIZE)
 
-        output = F.resize(input, size=F.get_spatial_size(input), antialias=True)
+        output = F.resize(input, size=F.get_size(input), antialias=True)
 
         # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
         # is a good reason to break this, feel free to downgrade to an equality check.
@@ -780,11 +792,11 @@ class TestResize:
 
         input = make_input(self.INPUT_SIZE)
 
-        size = min(F.get_spatial_size(input))
+        size = min(F.get_size(input))
         max_size = size + 1
         output = F.resize(input, size=size, max_size=max_size, antialias=True)
 
-        assert max(F.get_spatial_size(output)) == max_size
+        assert max(F.get_size(output)) == max_size
 
 
 class TestHorizontalFlip:
@@ -796,13 +808,13 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, format, dtype, device):
-        bounding_box = make_bounding_box(format=format, dtype=dtype, device=device)
+    def test_kernel_bounding_boxes(self, format, dtype, device):
+        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
         check_kernel(
-            F.horizontal_flip_bounding_box,
-            bounding_box,
+            F.horizontal_flip_bounding_boxes,
+            bounding_boxes,
             format=format,
-            spatial_size=bounding_box.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
@@ -818,7 +830,7 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image_tensor, make_image_tensor),
             (F.horizontal_flip_image_pil, make_image_pil),
             (F.horizontal_flip_image_tensor, make_image),
-            (F.horizontal_flip_bounding_box, make_bounding_box),
+            (F.horizontal_flip_bounding_boxes, make_bounding_box),
             (F.horizontal_flip_mask, make_segmentation_mask),
             (F.horizontal_flip_video, make_video),
         ],
@@ -832,7 +844,7 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image_tensor, torch.Tensor),
             (F.horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image_tensor, datapoints.Image),
-            (F.horizontal_flip_bounding_box, datapoints.BoundingBox),
+            (F.horizontal_flip_bounding_boxes, datapoints.BoundingBoxes),
             (F.horizontal_flip_mask, datapoints.Mask),
             (F.horizontal_flip_video, datapoints.Video),
         ],
@@ -859,33 +871,33 @@ class TestHorizontalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_horizontal_flip_bounding_box(self, bounding_box):
+    def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes):
         affine_matrix = np.array(
             [
-                [-1, 0, bounding_box.spatial_size[1]],
+                [-1, 0, bounding_boxes.canvas_size[1]],
                 [0, 1, 0],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
-        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
+        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
-    def test_bounding_box_correctness(self, format, fn):
-        bounding_box = make_bounding_box(format=format)
+    def test_bounding_boxes_correctness(self, format, fn):
+        bounding_boxes = make_bounding_box(format=format)
 
-        actual = fn(bounding_box)
-        expected = self._reference_horizontal_flip_bounding_box(bounding_box)
+        actual = fn(bounding_boxes)
+        expected = self._reference_horizontal_flip_bounding_boxes(bounding_boxes)
 
         torch.testing.assert_close(actual, expected)
 
@@ -977,13 +989,13 @@ class TestAffine:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, param, value, format, dtype, device):
-        bounding_box = make_bounding_box(format=format, dtype=dtype, device=device)
+    def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
+        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
         self._check_kernel(
-            F.affine_bounding_box,
-            bounding_box,
+            F.affine_bounding_boxes,
+            bounding_boxes,
             format=format,
-            spatial_size=bounding_box.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             **{param: value},
             check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
         )
@@ -1001,7 +1013,7 @@ class TestAffine:
             (F.affine_image_tensor, make_image_tensor),
             (F.affine_image_pil, make_image_pil),
             (F.affine_image_tensor, make_image),
-            (F.affine_bounding_box, make_bounding_box),
+            (F.affine_bounding_boxes, make_bounding_box),
             (F.affine_mask, make_segmentation_mask),
             (F.affine_video, make_video),
         ],
@@ -1015,7 +1027,7 @@ class TestAffine:
             (F.affine_image_tensor, torch.Tensor),
             (F.affine_image_pil, PIL.Image.Image),
             (F.affine_image_tensor, datapoints.Image),
-            (F.affine_bounding_box, datapoints.BoundingBox),
+            (F.affine_bounding_boxes, datapoints.BoundingBoxes),
             (F.affine_mask, datapoints.Mask),
             (F.affine_video, datapoints.Video),
         ],
@@ -1119,19 +1131,19 @@ class TestAffine:
         true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
         return true_matrix
 
-    def _reference_affine_bounding_box(self, bounding_box, *, angle, translate, scale, shear, center):
+    def _reference_affine_bounding_boxes(self, bounding_boxes, *, angle, translate, scale, shear, center):
         if center is None:
-            center = [s * 0.5 for s in bounding_box.spatial_size[::-1]]
+            center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
 
         affine_matrix = self._compute_affine_matrix(
             angle=angle, translate=translate, scale=scale, shear=shear, center=center
         )
         affine_matrix = affine_matrix[:2, :]
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
@@ -1143,19 +1155,19 @@ class TestAffine:
     @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
     @pytest.mark.parametrize("shear", _CORRECTNESS_AFFINE_KWARGS["shear"])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    def test_functional_bounding_box_correctness(self, format, angle, translate, scale, shear, center):
-        bounding_box = make_bounding_box(format=format)
+    def test_functional_bounding_boxes_correctness(self, format, angle, translate, scale, shear, center):
+        bounding_boxes = make_bounding_box(format=format)
 
         actual = F.affine(
-            bounding_box,
+            bounding_boxes,
             angle=angle,
             translate=translate,
             scale=scale,
             shear=shear,
             center=center,
         )
-        expected = self._reference_affine_bounding_box(
-            bounding_box,
+        expected = self._reference_affine_bounding_boxes(
+            bounding_boxes,
             angle=angle,
             translate=translate,
             scale=scale,
@@ -1168,18 +1180,18 @@ class TestAffine:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_bounding_box_correctness(self, format, center, seed):
-        bounding_box = make_bounding_box(format=format)
+    def test_transform_bounding_boxes_correctness(self, format, center, seed):
+        bounding_boxes = make_bounding_box(format=format)
 
         transform = transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, center=center)
 
         torch.manual_seed(seed)
-        params = transform._get_params([bounding_box])
+        params = transform._get_params([bounding_boxes])
 
         torch.manual_seed(seed)
-        actual = transform(bounding_box)
+        actual = transform(bounding_boxes)
 
-        expected = self._reference_affine_bounding_box(bounding_box, **params, center=center)
+        expected = self._reference_affine_bounding_boxes(bounding_boxes, **params, center=center)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1190,7 +1202,7 @@ class TestAffine:
     @pytest.mark.parametrize("seed", list(range(10)))
     def test_transform_get_params_bounds(self, degrees, translate, scale, shear, seed):
         image = make_image()
-        height, width = F.get_spatial_size(image)
+        height, width = F.get_size(image)
 
         transform = transforms.RandomAffine(degrees=degrees, translate=translate, scale=scale, shear=shear)
 
@@ -1275,13 +1287,13 @@ class TestVerticalFlip:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, format, dtype, device):
-        bounding_box = make_bounding_box(format=format, dtype=dtype, device=device)
+    def test_kernel_bounding_boxes(self, format, dtype, device):
+        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
         check_kernel(
-            F.vertical_flip_bounding_box,
-            bounding_box,
+            F.vertical_flip_bounding_boxes,
+            bounding_boxes,
             format=format,
-            spatial_size=bounding_box.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
@@ -1297,7 +1309,7 @@ class TestVerticalFlip:
             (F.vertical_flip_image_tensor, make_image_tensor),
             (F.vertical_flip_image_pil, make_image_pil),
             (F.vertical_flip_image_tensor, make_image),
-            (F.vertical_flip_bounding_box, make_bounding_box),
+            (F.vertical_flip_bounding_boxes, make_bounding_box),
             (F.vertical_flip_mask, make_segmentation_mask),
             (F.vertical_flip_video, make_video),
         ],
@@ -1311,7 +1323,7 @@ class TestVerticalFlip:
             (F.vertical_flip_image_tensor, torch.Tensor),
             (F.vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image_tensor, datapoints.Image),
-            (F.vertical_flip_bounding_box, datapoints.BoundingBox),
+            (F.vertical_flip_bounding_boxes, datapoints.BoundingBoxes),
             (F.vertical_flip_mask, datapoints.Mask),
             (F.vertical_flip_video, datapoints.Video),
         ],
@@ -1336,31 +1348,31 @@ class TestVerticalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_vertical_flip_bounding_box(self, bounding_box):
+    def _reference_vertical_flip_bounding_boxes(self, bounding_boxes):
         affine_matrix = np.array(
             [
                 [1, 0, 0],
-                [0, -1, bounding_box.spatial_size[0]],
+                [0, -1, bounding_boxes.canvas_size[0]],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
-        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
+        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
-    def test_bounding_box_correctness(self, format, fn):
-        bounding_box = make_bounding_box(format=format)
+    def test_bounding_boxes_correctness(self, format, fn):
+        bounding_boxes = make_bounding_box(format=format)
 
-        actual = fn(bounding_box)
-        expected = self._reference_vertical_flip_bounding_box(bounding_box)
+        actual = fn(bounding_boxes)
+        expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1426,18 +1438,18 @@ class TestRotate:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, param, value, format, dtype, device):
+    def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
         kwargs = {param: value}
         if param != "angle":
             kwargs["angle"] = self._MINIMAL_AFFINE_KWARGS["angle"]
 
-        bounding_box = make_bounding_box(format=format, dtype=dtype, device=device)
+        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
 
         check_kernel(
-            F.rotate_bounding_box,
-            bounding_box,
+            F.rotate_bounding_boxes,
+            bounding_boxes,
             format=format,
-            spatial_size=bounding_box.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             **kwargs,
         )
 
@@ -1454,7 +1466,7 @@ class TestRotate:
             (F.rotate_image_tensor, make_image_tensor),
             (F.rotate_image_pil, make_image_pil),
             (F.rotate_image_tensor, make_image),
-            (F.rotate_bounding_box, make_bounding_box),
+            (F.rotate_bounding_boxes, make_bounding_box),
             (F.rotate_mask, make_segmentation_mask),
             (F.rotate_video, make_video),
         ],
@@ -1468,7 +1480,7 @@ class TestRotate:
             (F.rotate_image_tensor, torch.Tensor),
             (F.rotate_image_pil, PIL.Image.Image),
             (F.rotate_image_tensor, datapoints.Image),
-            (F.rotate_bounding_box, datapoints.BoundingBox),
+            (F.rotate_bounding_boxes, datapoints.BoundingBoxes),
             (F.rotate_mask, datapoints.Mask),
             (F.rotate_video, datapoints.Video),
         ],
@@ -1537,13 +1549,13 @@ class TestRotate:
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
 
-    def _reference_rotate_bounding_box(self, bounding_box, *, angle, expand, center):
+    def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center):
         # FIXME
         if expand:
             raise ValueError("This reference currently does not support expand=True")
 
         if center is None:
-            center = [s * 0.5 for s in bounding_box.spatial_size[::-1]]
+            center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
 
         a = np.cos(angle * np.pi / 180.0)
         b = np.sin(angle * np.pi / 180.0)
@@ -1554,13 +1566,13 @@ class TestRotate:
                 [a, b, cx - cx * a - b * cy],
                 [-b, a, cy + cx * b - a * cy],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
@@ -1571,11 +1583,11 @@ class TestRotate:
     # TODO: add support for expand=True in the reference
     @pytest.mark.parametrize("expand", [False])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    def test_functional_bounding_box_correctness(self, format, angle, expand, center):
-        bounding_box = make_bounding_box(format=format)
+    def test_functional_bounding_boxes_correctness(self, format, angle, expand, center):
+        bounding_boxes = make_bounding_box(format=format)
 
-        actual = F.rotate(bounding_box, angle=angle, expand=expand, center=center)
-        expected = self._reference_rotate_bounding_box(bounding_box, angle=angle, expand=expand, center=center)
+        actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
+        expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1584,18 +1596,18 @@ class TestRotate:
     @pytest.mark.parametrize("expand", [False])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_bounding_box_correctness(self, format, expand, center, seed):
-        bounding_box = make_bounding_box(format=format)
+    def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
+        bounding_boxes = make_bounding_box(format=format)
 
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
         torch.manual_seed(seed)
-        params = transform._get_params([bounding_box])
+        params = transform._get_params([bounding_boxes])
 
         torch.manual_seed(seed)
-        actual = transform(bounding_box)
+        actual = transform(bounding_boxes)
 
-        expected = self._reference_rotate_bounding_box(bounding_box, **params, expand=expand, center=center)
+        expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1634,3 +1646,393 @@ class TestRotate:
     def test_transform_unknown_fill_error(self):
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
+
+
+class TestCompose:
+    class BuiltinTransform(transforms.Transform):
+        def _transform(self, inpt, params):
+            return inpt
+
+    class PackedInputTransform(nn.Module):
+        def forward(self, sample):
+            assert len(sample) == 2
+            return sample
+
+    class UnpackedInputTransform(nn.Module):
+        def forward(self, image, label):
+            return image, label
+
+    @pytest.mark.parametrize(
+        "transform_clss",
+        [
+            [BuiltinTransform],
+            [PackedInputTransform],
+            [UnpackedInputTransform],
+            [BuiltinTransform, BuiltinTransform],
+            [PackedInputTransform, PackedInputTransform],
+            [UnpackedInputTransform, UnpackedInputTransform],
+            [BuiltinTransform, PackedInputTransform, BuiltinTransform],
+            [BuiltinTransform, UnpackedInputTransform, BuiltinTransform],
+            [PackedInputTransform, BuiltinTransform, PackedInputTransform],
+            [UnpackedInputTransform, BuiltinTransform, UnpackedInputTransform],
+        ],
+    )
+    @pytest.mark.parametrize("unpack", [True, False])
+    def test_packed_unpacked(self, transform_clss, unpack):
+        needs_packed_inputs = any(issubclass(cls, self.PackedInputTransform) for cls in transform_clss)
+        needs_unpacked_inputs = any(issubclass(cls, self.UnpackedInputTransform) for cls in transform_clss)
+        assert not (needs_packed_inputs and needs_unpacked_inputs)
+
+        transform = transforms.Compose([cls() for cls in transform_clss])
+
+        image = make_image()
+        label = 3
+        packed_input = (image, label)
+
+        def call_transform():
+            if unpack:
+                return transform(*packed_input)
+            else:
+                return transform(packed_input)
+
+        if needs_unpacked_inputs and not unpack:
+            with pytest.raises(TypeError, match="missing 1 required positional argument"):
+                call_transform()
+        elif needs_packed_inputs and unpack:
+            with pytest.raises(TypeError, match="takes 2 positional arguments but 3 were given"):
+                call_transform()
+        else:
+            output = call_transform()
+
+            assert isinstance(output, tuple) and len(output) == 2
+            assert output[0] is image
+            assert output[1] is label
+
+
+class TestToDtype:
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.to_dtype_image_tensor, make_image_tensor),
+            (F.to_dtype_image_tensor, make_image),
+            (F.to_dtype_video, make_video),
+        ],
+    )
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("scale", (True, False))
+    def test_kernel(self, kernel, make_input, input_dtype, output_dtype, device, scale):
+        check_kernel(
+            kernel,
+            make_input(dtype=input_dtype, device=device),
+            expect_same_dtype=input_dtype is output_dtype,
+            dtype=output_dtype,
+            scale=scale,
+        )
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.to_dtype_image_tensor, make_image_tensor),
+            (F.to_dtype_image_tensor, make_image),
+            (F.to_dtype_video, make_video),
+        ],
+    )
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("scale", (True, False))
+    def test_dispatcher(self, kernel, make_input, input_dtype, output_dtype, device, scale):
+        check_dispatcher(
+            F.to_dtype,
+            kernel,
+            make_input(dtype=input_dtype, device=device),
+            # TODO: we could leave check_dispatch to True but it currently fails
+            # in _check_dispatcher_dispatch because there is no to_dtype() method on the datapoints.
+            # We should be able to put this back if we change the dispatch
+            # mechanism e.g. via https://github.com/pytorch/vision/pull/7733
+            check_dispatch=False,
+            dtype=output_dtype,
+            scale=scale,
+        )
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_bounding_box, make_segmentation_mask, make_video],
+    )
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("scale", (True, False))
+    @pytest.mark.parametrize("as_dict", (True, False))
+    def test_transform(self, make_input, input_dtype, output_dtype, device, scale, as_dict):
+        input = make_input(dtype=input_dtype, device=device)
+        if as_dict:
+            output_dtype = {type(input): output_dtype}
+        check_transform(transforms.ToDtype, input, dtype=output_dtype, scale=scale)
+
+    def reference_convert_dtype_image_tensor(self, image, dtype=torch.float, scale=False):
+        input_dtype = image.dtype
+        output_dtype = dtype
+
+        if not scale:
+            return image.to(dtype)
+
+        if output_dtype == input_dtype:
+            return image
+
+        def fn(value):
+            if input_dtype.is_floating_point:
+                if output_dtype.is_floating_point:
+                    return value
+                else:
+                    return round(decimal.Decimal(value) * torch.iinfo(output_dtype).max)
+            else:
+                input_max_value = torch.iinfo(input_dtype).max
+
+                if output_dtype.is_floating_point:
+                    return float(decimal.Decimal(value) / input_max_value)
+                else:
+                    output_max_value = torch.iinfo(output_dtype).max
+
+                    if input_max_value > output_max_value:
+                        factor = (input_max_value + 1) // (output_max_value + 1)
+                        return value / factor
+                    else:
+                        factor = (output_max_value + 1) // (input_max_value + 1)
+                        return value * factor
+
+        return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype, device=image.device)
+
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("scale", (True, False))
+    def test_image_correctness(self, input_dtype, output_dtype, device, scale):
+        if input_dtype.is_floating_point and output_dtype == torch.int64:
+            pytest.xfail("float to int64 conversion is not supported")
+
+        input = make_image(dtype=input_dtype, device=device)
+
+        out = F.to_dtype(input, dtype=output_dtype, scale=scale)
+        expected = self.reference_convert_dtype_image_tensor(input, dtype=output_dtype, scale=scale)
+
+        if input_dtype.is_floating_point and not output_dtype.is_floating_point and scale:
+            torch.testing.assert_close(out, expected, atol=1, rtol=0)
+        else:
+            torch.testing.assert_close(out, expected)
+
+    def was_scaled(self, inpt):
+        # this assumes the target dtype is float
+        return inpt.max() <= 1
+
+    def make_inpt_with_bbox_and_mask(self, make_input):
+        H, W = 10, 10
+        inpt_dtype = torch.uint8
+        bbox_dtype = torch.float32
+        mask_dtype = torch.bool
+        sample = {
+            "inpt": make_input(size=(H, W), dtype=inpt_dtype),
+            "bbox": make_bounding_box(canvas_size=(H, W), dtype=bbox_dtype),
+            "mask": make_detection_mask(size=(H, W), dtype=mask_dtype),
+        }
+
+        return sample, inpt_dtype, bbox_dtype, mask_dtype
+
+    @pytest.mark.parametrize("make_input", (make_image_tensor, make_image, make_video))
+    @pytest.mark.parametrize("scale", (True, False))
+    def test_dtype_not_a_dict(self, make_input, scale):
+        # assert only inpt gets transformed when dtype isn't a dict
+
+        sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
+        out = transforms.ToDtype(dtype=torch.float32, scale=scale)(sample)
+
+        assert out["inpt"].dtype != inpt_dtype
+        assert out["inpt"].dtype == torch.float32
+        if scale:
+            assert self.was_scaled(out["inpt"])
+        else:
+            assert not self.was_scaled(out["inpt"])
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype == mask_dtype
+
+    @pytest.mark.parametrize("make_input", (make_image_tensor, make_image, make_video))
+    def test_others_catch_all_and_none(self, make_input):
+        # make sure "others" works as a catch-all and that None means no conversion
+
+        sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
+        out = transforms.ToDtype(dtype={datapoints.Mask: torch.int64, "others": None})(sample)
+        assert out["inpt"].dtype == inpt_dtype
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype != mask_dtype
+        assert out["mask"].dtype == torch.int64
+
+    @pytest.mark.parametrize("make_input", (make_image_tensor, make_image, make_video))
+    def test_typical_use_case(self, make_input):
+        # Typical use-case: want to convert dtype and scale for inpt and just dtype for masks.
+        # This just makes sure we now have a decent API for this
+
+        sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
+        out = transforms.ToDtype(
+            dtype={type(sample["inpt"]): torch.float32, datapoints.Mask: torch.int64, "others": None}, scale=True
+        )(sample)
+        assert out["inpt"].dtype != inpt_dtype
+        assert out["inpt"].dtype == torch.float32
+        assert self.was_scaled(out["inpt"])
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype != mask_dtype
+        assert out["mask"].dtype == torch.int64
+
+    @pytest.mark.parametrize("make_input", (make_image_tensor, make_image, make_video))
+    def test_errors_warnings(self, make_input):
+        sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
+
+        with pytest.raises(ValueError, match="No dtype was specified for"):
+            out = transforms.ToDtype(dtype={datapoints.Mask: torch.float32})(sample)
+        with pytest.warns(UserWarning, match=re.escape("plain `torch.Tensor` will *not* be transformed")):
+            transforms.ToDtype(dtype={torch.Tensor: torch.float32, datapoints.Image: torch.float32})
+        with pytest.warns(UserWarning, match="no scaling will be done"):
+            out = transforms.ToDtype(dtype={"others": None}, scale=True)(sample)
+        assert out["inpt"].dtype == inpt_dtype
+        assert out["bbox"].dtype == bbox_dtype
+        assert out["mask"].dtype == mask_dtype
+
+
+class TestCutMixMixUp:
+    class DummyDataset:
+        def __init__(self, size, num_classes):
+            self.size = size
+            self.num_classes = num_classes
+            assert size < num_classes
+
+        def __getitem__(self, idx):
+            img = torch.rand(3, 100, 100)
+            label = idx  # This ensures all labels in a batch are unique and makes testing easier
+            return img, label
+
+        def __len__(self):
+            return self.size
+
+    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    def test_supported_input_structure(self, T):
+
+        batch_size = 32
+        num_classes = 100
+
+        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
+
+        cutmix_mixup = T(num_classes=num_classes)
+
+        dl = DataLoader(dataset, batch_size=batch_size)
+
+        # Input sanity checks
+        img, target = next(iter(dl))
+        input_img_size = img.shape[-3:]
+        assert isinstance(img, torch.Tensor) and isinstance(target, torch.Tensor)
+        assert target.shape == (batch_size,)
+
+        def check_output(img, target):
+            assert img.shape == (batch_size, *input_img_size)
+            assert target.shape == (batch_size, num_classes)
+            torch.testing.assert_close(target.sum(axis=-1), torch.ones(batch_size))
+            num_non_zero_labels = (target != 0).sum(axis=-1)
+            assert (num_non_zero_labels == 2).all()
+
+        # After Dataloader, as unpacked input
+        img, target = next(iter(dl))
+        assert target.shape == (batch_size,)
+        img, target = cutmix_mixup(img, target)
+        check_output(img, target)
+
+        # After Dataloader, as packed input
+        packed_from_dl = next(iter(dl))
+        assert isinstance(packed_from_dl, list)
+        img, target = cutmix_mixup(packed_from_dl)
+        check_output(img, target)
+
+        # As collation function. We expect default_collate to be used by users.
+        def collate_fn_1(batch):
+            return cutmix_mixup(default_collate(batch))
+
+        def collate_fn_2(batch):
+            return cutmix_mixup(*default_collate(batch))
+
+        for collate_fn in (collate_fn_1, collate_fn_2):
+            dl = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn)
+            img, target = next(iter(dl))
+            check_output(img, target)
+
+    @needs_cuda
+    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    def test_cpu_vs_gpu(self, T):
+        num_classes = 10
+        batch_size = 3
+        H, W = 12, 12
+
+        imgs = torch.rand(batch_size, 3, H, W)
+        labels = torch.randint(0, num_classes, (batch_size,))
+        cutmix_mixup = T(alpha=0.5, num_classes=num_classes)
+
+        _check_kernel_cuda_vs_cpu(cutmix_mixup, imgs, labels, rtol=None, atol=None)
+
+    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    def test_error(self, T):
+
+        num_classes = 10
+        batch_size = 9
+
+        imgs = torch.rand(batch_size, 3, 12, 12)
+        cutmix_mixup = T(alpha=0.5, num_classes=num_classes)
+
+        for input_with_bad_type in (
+            F.to_pil_image(imgs[0]),
+            datapoints.Mask(torch.rand(12, 12)),
+            datapoints.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
+        ):
+            with pytest.raises(ValueError, match="does not support PIL images, "):
+                cutmix_mixup(input_with_bad_type)
+
+        with pytest.raises(ValueError, match="Could not infer where the labels are"):
+            cutmix_mixup({"img": imgs, "Nothing_else": 3})
+
+        with pytest.raises(ValueError, match="labels tensor should be of shape"):
+            # Note: the error message isn't ideal, but that's because the label heuristic found the img as the label
+            # It's OK, it's an edge-case. The important thing is that this fails loudly instead of passing silently
+            cutmix_mixup(imgs)
+
+        with pytest.raises(ValueError, match="When using the default labels_getter"):
+            cutmix_mixup(imgs, "not_a_tensor")
+
+        with pytest.raises(ValueError, match="labels tensor should be of shape"):
+            cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3)))
+
+        with pytest.raises(ValueError, match="Expected a batched input with 4 dims"):
+            cutmix_mixup(imgs[None, None], torch.randint(0, num_classes, size=(batch_size,)))
+
+        with pytest.raises(ValueError, match="does not match the batch size of the labels"):
+            cutmix_mixup(imgs, torch.randint(0, num_classes, size=(batch_size + 1,)))
+
+        with pytest.raises(ValueError, match="labels tensor should be of shape"):
+            # The purpose of this check is more about documenting the current
+            # behaviour of what happens on a Compose(), rather than actually
+            # asserting the expected behaviour. We may support Compose() in the
+            # future, e.g. for 2 consecutive CutMix?
+            labels = torch.randint(0, num_classes, size=(batch_size,))
+            transforms.Compose([cutmix_mixup, cutmix_mixup])(imgs, labels)
+
+
+@pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
+@pytest.mark.parametrize("sample_type", (tuple, list, dict))
+def test_labels_getter_default_heuristic(key, sample_type):
+    labels = torch.arange(10)
+    sample = {key: labels, "another_key": "whatever"}
+    if sample_type is not dict:
+        sample = sample_type((None, sample, "whatever_again"))
+    assert transforms._utils._find_labels_default_heuristic(sample) is labels
+
+    if key.lower() != "labels":
+        # If "labels" is in the dict (case-insensitive),
+        # it takes precedence over other keys which would otherwise be a match
+        d = {key: "something_else", "labels": labels}
+        assert transforms._utils._find_labels_default_heuristic(d) is labels

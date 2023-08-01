@@ -8,12 +8,12 @@ import torch
 import torch.utils.data
 import torchvision
 import torchvision.transforms
-import transforms
 import utils
 from sampler import RASampler
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
+from transforms import get_mixup_cutmix
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
@@ -218,18 +218,17 @@ def main(args):
     val_dir = os.path.join(args.data_path, "val")
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
 
-    collate_fn = None
     num_classes = len(dataset.classes)
-    mixup_transforms = []
-    if args.mixup_alpha > 0.0:
-        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
-    if args.cutmix_alpha > 0.0:
-        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
-    if mixup_transforms:
-        mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
+    mixup_cutmix = get_mixup_cutmix(
+        mixup_alpha=args.mixup_alpha, cutmix_alpha=args.cutmix_alpha, num_categories=num_classes, use_v2=args.use_v2
+    )
+    if mixup_cutmix is not None:
 
         def collate_fn(batch):
-            return mixupcutmix(*default_collate(batch))
+            return mixup_cutmix(*default_collate(batch))
+
+    else:
+        collate_fn = default_collate
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
