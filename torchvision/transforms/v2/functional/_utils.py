@@ -20,8 +20,11 @@ def _kernel_wrapper_internal(dispatcher, kernel):
 
     needs_args_kwargs_handling = kernel_params != dispatcher_params
 
-    # this avoids converting list -> set at runtime below
     kernel_params = set(kernel_params)
+    explicit_metadata = {
+        input_type: available_metadata & kernel_params
+        for input_type, available_metadata in [(datapoints.BoundingBoxes, {"format", "canvas_size"})]
+    }
 
     @functools.wraps(kernel)
     def wrapper(inpt, *args, **kwargs):
@@ -39,7 +42,7 @@ def _kernel_wrapper_internal(dispatcher, kernel):
 
             # add parameters that are passed implicitly to the dispatcher as metadata,
             # but have to be explicit for the kernel
-            for kwarg in input_type.__annotations__.keys() & kernel_params:
+            for kwarg in explicit_metadata.get(input_type, set()):
                 kwargs[kwarg] = getattr(inpt, kwarg)
 
         output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
