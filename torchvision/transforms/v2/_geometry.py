@@ -17,12 +17,13 @@ from ._utils import (
     _check_padding_arg,
     _check_padding_mode_arg,
     _check_sequence_input,
+    _get_fill,
     _setup_angle,
     _setup_fill_arg,
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_spatial_size
+from .utils import has_all, has_any, is_simple_tensor, query_bounding_boxes, query_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -31,7 +32,7 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     .. v2betastatus:: RandomHorizontalFlip transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -51,7 +52,7 @@ class RandomVerticalFlip(_RandomApplyTransform):
     .. v2betastatus:: RandomVerticalFlip transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -71,7 +72,7 @@ class Resize(Transform):
     .. v2betastatus:: Resize transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -165,7 +166,7 @@ class CenterCrop(Transform):
     .. v2betastatus:: CenterCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -193,7 +194,7 @@ class RandomResizedCrop(Transform):
     .. v2betastatus:: RandomResizedCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -267,7 +268,7 @@ class RandomResizedCrop(Transform):
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
         area = height * width
 
         log_ratio = self._log_ratio
@@ -371,8 +372,8 @@ class FiveCrop(Transform):
         return F.five_crop(inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, datapoints.BoundingBox, datapoints.Mask):
-            raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
+        if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
+            raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
 
 class TenCrop(Transform):
@@ -414,8 +415,8 @@ class TenCrop(Transform):
         self.vertical_flip = vertical_flip
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, datapoints.BoundingBox, datapoints.Mask):
-            raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
+        if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
+            raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
     def _transform(
         self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
@@ -440,7 +441,7 @@ class Pad(Transform):
     .. v2betastatus:: Pad transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -487,7 +488,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -504,7 +505,7 @@ class Pad(Transform):
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
@@ -525,7 +526,7 @@ class RandomZoomOut(_RandomApplyTransform):
         output_height = input_height * r
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -542,7 +543,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def __init__(
         self,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -558,7 +559,7 @@ class RandomZoomOut(_RandomApplyTransform):
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_h, orig_w = query_spatial_size(flat_inputs)
+        orig_h, orig_w = query_size(flat_inputs)
 
         r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
         canvas_width = int(orig_w * r)
@@ -574,7 +575,7 @@ class RandomZoomOut(_RandomApplyTransform):
         return dict(padding=padding)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -584,7 +585,7 @@ class RandomRotation(Transform):
     .. v2betastatus:: RandomRotation transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -620,7 +621,7 @@ class RandomRotation(Transform):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
@@ -640,7 +641,7 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.rotate(
             inpt,
             **params,
@@ -657,7 +658,7 @@ class RandomAffine(Transform):
     .. v2betastatus:: RandomAffine transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -702,7 +703,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -735,7 +736,7 @@ class RandomAffine(Transform):
         self.center = center
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
 
         angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
         if self.translate is not None:
@@ -762,7 +763,7 @@ class RandomAffine(Transform):
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.affine(
             inpt,
             **params,
@@ -778,7 +779,7 @@ class RandomCrop(Transform):
     .. v2betastatus:: RandomCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -840,7 +841,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -859,7 +860,7 @@ class RandomCrop(Transform):
         self.padding_mode = padding_mode
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        padded_height, padded_width = query_spatial_size(flat_inputs)
+        padded_height, padded_width = query_size(flat_inputs)
 
         if self.padding is not None:
             pad_left, pad_right, pad_top, pad_bottom = self.padding
@@ -918,7 +919,7 @@ class RandomCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
-            fill = self._fill[type(inpt)]
+            fill = _get_fill(self._fill, type(inpt))
             inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         if params["needs_crop"]:
@@ -933,7 +934,7 @@ class RandomPerspective(_RandomApplyTransform):
     .. v2betastatus:: RandomPerspective transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -959,7 +960,7 @@ class RandomPerspective(_RandomApplyTransform):
         distortion_scale: float = 0.5,
         p: float = 0.5,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
     ) -> None:
         super().__init__(p=p)
 
@@ -972,7 +973,7 @@ class RandomPerspective(_RandomApplyTransform):
         self._fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
 
         distortion_scale = self.distortion_scale
 
@@ -1002,7 +1003,7 @@ class RandomPerspective(_RandomApplyTransform):
         return dict(coefficients=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.perspective(
             inpt,
             None,
@@ -1019,7 +1020,7 @@ class ElasticTransform(Transform):
     .. v2betastatus:: RandomPerspective transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1061,7 +1062,7 @@ class ElasticTransform(Transform):
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
     ) -> None:
         super().__init__()
         self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
@@ -1072,7 +1073,7 @@ class ElasticTransform(Transform):
         self._fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        size = list(query_spatial_size(flat_inputs))
+        size = list(query_size(flat_inputs))
 
         dx = torch.rand([1, 1] + size) * 2 - 1
         if self.sigma[0] > 0.0:
@@ -1095,7 +1096,7 @@ class ElasticTransform(Transform):
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.elastic(
             inpt,
             **params,
@@ -1110,15 +1111,15 @@ class RandomIoUCrop(Transform):
 
     .. v2betastatus:: RandomIoUCrop transform
 
-    This transformation requires an image or video data and ``datapoints.BoundingBox`` in the input.
+    This transformation requires an image or video data and ``datapoints.BoundingBoxes`` in the input.
 
     .. warning::
         In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`
-        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBox`, either immediately
+        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately
         after or later in the transforms pipeline.
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1155,7 +1156,7 @@ class RandomIoUCrop(Transform):
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
-            has_all(flat_inputs, datapoints.BoundingBox)
+            has_all(flat_inputs, datapoints.BoundingBoxes)
             and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
         ):
             raise TypeError(
@@ -1164,8 +1165,8 @@ class RandomIoUCrop(Transform):
             )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_h, orig_w = query_spatial_size(flat_inputs)
-        bboxes = query_bounding_box(flat_inputs)
+        orig_h, orig_w = query_size(flat_inputs)
+        bboxes = query_bounding_boxes(flat_inputs)
 
         while True:
             # sample an option
@@ -1193,7 +1194,7 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_box(
+                xyxy_bboxes = F.convert_format_bounding_boxes(
                     bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
                 )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
@@ -1220,9 +1221,9 @@ class RandomIoUCrop(Transform):
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
-        if isinstance(output, datapoints.BoundingBox):
+        if isinstance(output, datapoints.BoundingBoxes):
             # We "mark" the invalid boxes as degenreate, and they can be
-            # removed by a later call to SanitizeBoundingBox()
+            # removed by a later call to SanitizeBoundingBoxes()
             output[~params["is_within_crop_area"]] = 0
 
         return output
@@ -1235,7 +1236,7 @@ class ScaleJitter(Transform):
     .. v2betastatus:: ScaleJitter transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1282,7 +1283,7 @@ class ScaleJitter(Transform):
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_height, orig_width = query_spatial_size(flat_inputs)
+        orig_height, orig_width = query_size(flat_inputs)
 
         scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
         r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
@@ -1301,7 +1302,7 @@ class RandomShortestSize(Transform):
     .. v2betastatus:: RandomShortestSize transform
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1347,7 +1348,7 @@ class RandomShortestSize(Transform):
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_height, orig_width = query_spatial_size(flat_inputs)
+        orig_height, orig_width = query_size(flat_inputs)
 
         min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
         r = min_size / min(orig_height, orig_width)
@@ -1380,7 +1381,7 @@ class RandomResize(Transform):
         output_height = size
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 

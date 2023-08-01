@@ -196,7 +196,7 @@ def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
 
     assert isinstance(output, type(input))
 
-    if isinstance(input, datapoints.BoundingBox):
+    if isinstance(input, datapoints.BoundingBoxes):
         assert output.format == input.format
 
 
@@ -306,7 +306,7 @@ def check_transform(transform_cls, input, *args, **kwargs):
     output = transform(input)
     assert isinstance(output, type(input))
 
-    if isinstance(input, datapoints.BoundingBox):
+    if isinstance(input, datapoints.BoundingBoxes):
         assert output.format == input.format
 
     _check_transform_v1_compatibility(transform, input)
@@ -392,13 +392,13 @@ def assert_warns_antialias_default_value():
         yield
 
 
-def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, affine_matrix):
+def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_size, affine_matrix):
     def transform(bbox):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
         if not torch.is_floating_point(bbox):
             bbox = bbox.float()
-        bbox_xyxy = F.convert_format_bounding_box(
+        bbox_xyxy = F.convert_format_bounding_boxes(
             bbox.as_subclass(torch.Tensor),
             old_format=format,
             new_format=datapoints.BoundingBoxFormat.XYXY,
@@ -422,15 +422,15 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
             ],
             dtype=bbox_xyxy.dtype,
         )
-        out_bbox = F.convert_format_bounding_box(
+        out_bbox = F.convert_format_bounding_boxes(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-        out_bbox = F.clamp_bounding_box(out_bbox, format=format, spatial_size=spatial_size)
+        out_bbox = F.clamp_bounding_boxes(out_bbox, format=format, canvas_size=canvas_size)
         out_bbox = out_bbox.to(dtype=in_dtype)
         return out_bbox
 
-    return torch.stack([transform(b) for b in bounding_box.reshape(-1, 4).unbind()]).reshape(bounding_box.shape)
+    return torch.stack([transform(b) for b in bounding_boxes.reshape(-1, 4).unbind()]).reshape(bounding_boxes.shape)
 
 
 class TestResize:
@@ -508,20 +508,20 @@ class TestResize:
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, format, size, use_max_size, dtype, device):
+    def test_kernel_bounding_boxes(self, format, size, use_max_size, dtype, device):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_box = make_bounding_box(
+        bounding_boxes = make_bounding_box(
             format=format,
-            spatial_size=self.INPUT_SIZE,
+            canvas_size=self.INPUT_SIZE,
             dtype=dtype,
             device=device,
         )
         check_kernel(
-            F.resize_bounding_box,
-            bounding_box,
-            spatial_size=bounding_box.spatial_size,
+            F.resize_bounding_boxes,
+            bounding_boxes,
+            canvas_size=bounding_boxes.canvas_size,
             size=size,
             **max_size_kwarg,
             check_scripted_vs_eager=not isinstance(size, int),
@@ -541,7 +541,7 @@ class TestResize:
             (F.resize_image_tensor, make_image_tensor),
             (F.resize_image_pil, make_image_pil),
             (F.resize_image_tensor, make_image),
-            (F.resize_bounding_box, make_bounding_box),
+            (F.resize_bounding_boxes, make_bounding_box),
             (F.resize_mask, make_segmentation_mask),
             (F.resize_video, make_video),
         ],
@@ -562,7 +562,7 @@ class TestResize:
             (F.resize_image_tensor, torch.Tensor),
             (F.resize_image_pil, PIL.Image.Image),
             (F.resize_image_tensor, datapoints.Image),
-            (F.resize_bounding_box, datapoints.BoundingBox),
+            (F.resize_bounding_boxes, datapoints.BoundingBoxes),
             (F.resize_mask, datapoints.Mask),
             (F.resize_video, datapoints.Video),
         ],
@@ -588,8 +588,8 @@ class TestResize:
         check_transform(transforms.Resize, make_input(self.INPUT_SIZE, device=device), size=size, antialias=True)
 
     def _check_output_size(self, input, output, *, size, max_size):
-        assert tuple(F.get_spatial_size(output)) == self._compute_output_size(
-            input_size=F.get_spatial_size(input), size=size, max_size=max_size
+        assert tuple(F.get_size(output)) == self._compute_output_size(
+            input_size=F.get_size(input), size=size, max_size=max_size
         )
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
@@ -612,45 +612,45 @@ class TestResize:
         self._check_output_size(image, actual, size=size, **max_size_kwarg)
         torch.testing.assert_close(actual, expected, atol=1, rtol=0)
 
-    def _reference_resize_bounding_box(self, bounding_box, *, size, max_size=None):
-        old_height, old_width = bounding_box.spatial_size
+    def _reference_resize_bounding_boxes(self, bounding_boxes, *, size, max_size=None):
+        old_height, old_width = bounding_boxes.canvas_size
         new_height, new_width = self._compute_output_size(
-            input_size=bounding_box.spatial_size, size=size, max_size=max_size
+            input_size=bounding_boxes.canvas_size, size=size, max_size=max_size
         )
 
         if (old_height, old_width) == (new_height, new_width):
-            return bounding_box
+            return bounding_boxes
 
         affine_matrix = np.array(
             [
                 [new_width / old_width, 0, 0],
                 [0, new_height / old_height, 0],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=(new_height, new_width),
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=(new_height, new_width),
             affine_matrix=affine_matrix,
         )
-        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes, spatial_size=(new_height, new_width))
+        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes, canvas_size=(new_height, new_width))
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
-    def test_bounding_box_correctness(self, format, size, use_max_size, fn):
+    def test_bounding_boxes_correctness(self, format, size, use_max_size, fn):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_box = make_bounding_box(format=format, spatial_size=self.INPUT_SIZE)
+        bounding_boxes = make_bounding_box(format=format, canvas_size=self.INPUT_SIZE)
 
-        actual = fn(bounding_box, size=size, **max_size_kwarg)
-        expected = self._reference_resize_bounding_box(bounding_box, size=size, **max_size_kwarg)
+        actual = fn(bounding_boxes, size=size, **max_size_kwarg)
+        expected = self._reference_resize_bounding_boxes(bounding_boxes, size=size, **max_size_kwarg)
 
-        self._check_output_size(bounding_box, actual, size=size, **max_size_kwarg)
+        self._check_output_size(bounding_boxes, actual, size=size, **max_size_kwarg)
         torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("interpolation", set(transforms.InterpolationMode) - set(INTERPOLATION_MODES))
@@ -762,7 +762,7 @@ class TestResize:
     def test_noop(self, size, make_input):
         input = make_input(self.INPUT_SIZE)
 
-        output = F.resize(input, size=F.get_spatial_size(input), antialias=True)
+        output = F.resize(input, size=F.get_size(input), antialias=True)
 
         # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
         # is a good reason to break this, feel free to downgrade to an equality check.
@@ -792,11 +792,11 @@ class TestResize:
 
         input = make_input(self.INPUT_SIZE)
 
-        size = min(F.get_spatial_size(input))
+        size = min(F.get_size(input))
         max_size = size + 1
         output = F.resize(input, size=size, max_size=max_size, antialias=True)
 
-        assert max(F.get_spatial_size(output)) == max_size
+        assert max(F.get_size(output)) == max_size
 
 
 class TestHorizontalFlip:
@@ -808,13 +808,13 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, format, dtype, device):
-        bounding_box = make_bounding_box(format=format, dtype=dtype, device=device)
+    def test_kernel_bounding_boxes(self, format, dtype, device):
+        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
         check_kernel(
-            F.horizontal_flip_bounding_box,
-            bounding_box,
+            F.horizontal_flip_bounding_boxes,
+            bounding_boxes,
             format=format,
-            spatial_size=bounding_box.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
@@ -830,7 +830,7 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image_tensor, make_image_tensor),
             (F.horizontal_flip_image_pil, make_image_pil),
             (F.horizontal_flip_image_tensor, make_image),
-            (F.horizontal_flip_bounding_box, make_bounding_box),
+            (F.horizontal_flip_bounding_boxes, make_bounding_box),
             (F.horizontal_flip_mask, make_segmentation_mask),
             (F.horizontal_flip_video, make_video),
         ],
@@ -844,7 +844,7 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image_tensor, torch.Tensor),
             (F.horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image_tensor, datapoints.Image),
-            (F.horizontal_flip_bounding_box, datapoints.BoundingBox),
+            (F.horizontal_flip_bounding_boxes, datapoints.BoundingBoxes),
             (F.horizontal_flip_mask, datapoints.Mask),
             (F.horizontal_flip_video, datapoints.Video),
         ],
@@ -871,33 +871,33 @@ class TestHorizontalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_horizontal_flip_bounding_box(self, bounding_box):
+    def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes):
         affine_matrix = np.array(
             [
-                [-1, 0, bounding_box.spatial_size[1]],
+                [-1, 0, bounding_boxes.canvas_size[1]],
                 [0, 1, 0],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
-        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
+        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
-    def test_bounding_box_correctness(self, format, fn):
-        bounding_box = make_bounding_box(format=format)
+    def test_bounding_boxes_correctness(self, format, fn):
+        bounding_boxes = make_bounding_box(format=format)
 
-        actual = fn(bounding_box)
-        expected = self._reference_horizontal_flip_bounding_box(bounding_box)
+        actual = fn(bounding_boxes)
+        expected = self._reference_horizontal_flip_bounding_boxes(bounding_boxes)
 
         torch.testing.assert_close(actual, expected)
 
@@ -989,13 +989,13 @@ class TestAffine:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, param, value, format, dtype, device):
-        bounding_box = make_bounding_box(format=format, dtype=dtype, device=device)
+    def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
+        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
         self._check_kernel(
-            F.affine_bounding_box,
-            bounding_box,
+            F.affine_bounding_boxes,
+            bounding_boxes,
             format=format,
-            spatial_size=bounding_box.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             **{param: value},
             check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
         )
@@ -1013,7 +1013,7 @@ class TestAffine:
             (F.affine_image_tensor, make_image_tensor),
             (F.affine_image_pil, make_image_pil),
             (F.affine_image_tensor, make_image),
-            (F.affine_bounding_box, make_bounding_box),
+            (F.affine_bounding_boxes, make_bounding_box),
             (F.affine_mask, make_segmentation_mask),
             (F.affine_video, make_video),
         ],
@@ -1027,7 +1027,7 @@ class TestAffine:
             (F.affine_image_tensor, torch.Tensor),
             (F.affine_image_pil, PIL.Image.Image),
             (F.affine_image_tensor, datapoints.Image),
-            (F.affine_bounding_box, datapoints.BoundingBox),
+            (F.affine_bounding_boxes, datapoints.BoundingBoxes),
             (F.affine_mask, datapoints.Mask),
             (F.affine_video, datapoints.Video),
         ],
@@ -1131,19 +1131,19 @@ class TestAffine:
         true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
         return true_matrix
 
-    def _reference_affine_bounding_box(self, bounding_box, *, angle, translate, scale, shear, center):
+    def _reference_affine_bounding_boxes(self, bounding_boxes, *, angle, translate, scale, shear, center):
         if center is None:
-            center = [s * 0.5 for s in bounding_box.spatial_size[::-1]]
+            center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
 
         affine_matrix = self._compute_affine_matrix(
             angle=angle, translate=translate, scale=scale, shear=shear, center=center
         )
         affine_matrix = affine_matrix[:2, :]
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
@@ -1155,19 +1155,19 @@ class TestAffine:
     @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
     @pytest.mark.parametrize("shear", _CORRECTNESS_AFFINE_KWARGS["shear"])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    def test_functional_bounding_box_correctness(self, format, angle, translate, scale, shear, center):
-        bounding_box = make_bounding_box(format=format)
+    def test_functional_bounding_boxes_correctness(self, format, angle, translate, scale, shear, center):
+        bounding_boxes = make_bounding_box(format=format)
 
         actual = F.affine(
-            bounding_box,
+            bounding_boxes,
             angle=angle,
             translate=translate,
             scale=scale,
             shear=shear,
             center=center,
         )
-        expected = self._reference_affine_bounding_box(
-            bounding_box,
+        expected = self._reference_affine_bounding_boxes(
+            bounding_boxes,
             angle=angle,
             translate=translate,
             scale=scale,
@@ -1180,18 +1180,18 @@ class TestAffine:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_bounding_box_correctness(self, format, center, seed):
-        bounding_box = make_bounding_box(format=format)
+    def test_transform_bounding_boxes_correctness(self, format, center, seed):
+        bounding_boxes = make_bounding_box(format=format)
 
         transform = transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, center=center)
 
         torch.manual_seed(seed)
-        params = transform._get_params([bounding_box])
+        params = transform._get_params([bounding_boxes])
 
         torch.manual_seed(seed)
-        actual = transform(bounding_box)
+        actual = transform(bounding_boxes)
 
-        expected = self._reference_affine_bounding_box(bounding_box, **params, center=center)
+        expected = self._reference_affine_bounding_boxes(bounding_boxes, **params, center=center)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1202,7 +1202,7 @@ class TestAffine:
     @pytest.mark.parametrize("seed", list(range(10)))
     def test_transform_get_params_bounds(self, degrees, translate, scale, shear, seed):
         image = make_image()
-        height, width = F.get_spatial_size(image)
+        height, width = F.get_size(image)
 
         transform = transforms.RandomAffine(degrees=degrees, translate=translate, scale=scale, shear=shear)
 
@@ -1287,13 +1287,13 @@ class TestVerticalFlip:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, format, dtype, device):
-        bounding_box = make_bounding_box(format=format, dtype=dtype, device=device)
+    def test_kernel_bounding_boxes(self, format, dtype, device):
+        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
         check_kernel(
-            F.vertical_flip_bounding_box,
-            bounding_box,
+            F.vertical_flip_bounding_boxes,
+            bounding_boxes,
             format=format,
-            spatial_size=bounding_box.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
@@ -1309,7 +1309,7 @@ class TestVerticalFlip:
             (F.vertical_flip_image_tensor, make_image_tensor),
             (F.vertical_flip_image_pil, make_image_pil),
             (F.vertical_flip_image_tensor, make_image),
-            (F.vertical_flip_bounding_box, make_bounding_box),
+            (F.vertical_flip_bounding_boxes, make_bounding_box),
             (F.vertical_flip_mask, make_segmentation_mask),
             (F.vertical_flip_video, make_video),
         ],
@@ -1323,7 +1323,7 @@ class TestVerticalFlip:
             (F.vertical_flip_image_tensor, torch.Tensor),
             (F.vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image_tensor, datapoints.Image),
-            (F.vertical_flip_bounding_box, datapoints.BoundingBox),
+            (F.vertical_flip_bounding_boxes, datapoints.BoundingBoxes),
             (F.vertical_flip_mask, datapoints.Mask),
             (F.vertical_flip_video, datapoints.Video),
         ],
@@ -1348,31 +1348,31 @@ class TestVerticalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_vertical_flip_bounding_box(self, bounding_box):
+    def _reference_vertical_flip_bounding_boxes(self, bounding_boxes):
         affine_matrix = np.array(
             [
                 [1, 0, 0],
-                [0, -1, bounding_box.spatial_size[0]],
+                [0, -1, bounding_boxes.canvas_size[0]],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
-        return datapoints.BoundingBox.wrap_like(bounding_box, expected_bboxes)
+        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
-    def test_bounding_box_correctness(self, format, fn):
-        bounding_box = make_bounding_box(format=format)
+    def test_bounding_boxes_correctness(self, format, fn):
+        bounding_boxes = make_bounding_box(format=format)
 
-        actual = fn(bounding_box)
-        expected = self._reference_vertical_flip_bounding_box(bounding_box)
+        actual = fn(bounding_boxes)
+        expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1438,18 +1438,18 @@ class TestRotate:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, param, value, format, dtype, device):
+    def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
         kwargs = {param: value}
         if param != "angle":
             kwargs["angle"] = self._MINIMAL_AFFINE_KWARGS["angle"]
 
-        bounding_box = make_bounding_box(format=format, dtype=dtype, device=device)
+        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
 
         check_kernel(
-            F.rotate_bounding_box,
-            bounding_box,
+            F.rotate_bounding_boxes,
+            bounding_boxes,
             format=format,
-            spatial_size=bounding_box.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             **kwargs,
         )
 
@@ -1466,7 +1466,7 @@ class TestRotate:
             (F.rotate_image_tensor, make_image_tensor),
             (F.rotate_image_pil, make_image_pil),
             (F.rotate_image_tensor, make_image),
-            (F.rotate_bounding_box, make_bounding_box),
+            (F.rotate_bounding_boxes, make_bounding_box),
             (F.rotate_mask, make_segmentation_mask),
             (F.rotate_video, make_video),
         ],
@@ -1480,7 +1480,7 @@ class TestRotate:
             (F.rotate_image_tensor, torch.Tensor),
             (F.rotate_image_pil, PIL.Image.Image),
             (F.rotate_image_tensor, datapoints.Image),
-            (F.rotate_bounding_box, datapoints.BoundingBox),
+            (F.rotate_bounding_boxes, datapoints.BoundingBoxes),
             (F.rotate_mask, datapoints.Mask),
             (F.rotate_video, datapoints.Video),
         ],
@@ -1549,13 +1549,13 @@ class TestRotate:
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
 
-    def _reference_rotate_bounding_box(self, bounding_box, *, angle, expand, center):
+    def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center):
         # FIXME
         if expand:
             raise ValueError("This reference currently does not support expand=True")
 
         if center is None:
-            center = [s * 0.5 for s in bounding_box.spatial_size[::-1]]
+            center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
 
         a = np.cos(angle * np.pi / 180.0)
         b = np.sin(angle * np.pi / 180.0)
@@ -1566,13 +1566,13 @@ class TestRotate:
                 [a, b, cx - cx * a - b * cy],
                 [-b, a, cy + cx * b - a * cy],
             ],
-            dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_box_helper(
-            bounding_box,
-            format=bounding_box.format,
-            spatial_size=bounding_box.spatial_size,
+        expected_bboxes = reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
@@ -1583,11 +1583,11 @@ class TestRotate:
     # TODO: add support for expand=True in the reference
     @pytest.mark.parametrize("expand", [False])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    def test_functional_bounding_box_correctness(self, format, angle, expand, center):
-        bounding_box = make_bounding_box(format=format)
+    def test_functional_bounding_boxes_correctness(self, format, angle, expand, center):
+        bounding_boxes = make_bounding_box(format=format)
 
-        actual = F.rotate(bounding_box, angle=angle, expand=expand, center=center)
-        expected = self._reference_rotate_bounding_box(bounding_box, angle=angle, expand=expand, center=center)
+        actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
+        expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1596,18 +1596,18 @@ class TestRotate:
     @pytest.mark.parametrize("expand", [False])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_bounding_box_correctness(self, format, expand, center, seed):
-        bounding_box = make_bounding_box(format=format)
+    def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
+        bounding_boxes = make_bounding_box(format=format)
 
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
         torch.manual_seed(seed)
-        params = transform._get_params([bounding_box])
+        params = transform._get_params([bounding_boxes])
 
         torch.manual_seed(seed)
-        actual = transform(bounding_box)
+        actual = transform(bounding_boxes)
 
-        expected = self._reference_rotate_bounding_box(bounding_box, **params, expand=expand, center=center)
+        expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1834,7 +1834,7 @@ class TestToDtype:
         mask_dtype = torch.bool
         sample = {
             "inpt": make_input(size=(H, W), dtype=inpt_dtype),
-            "bbox": make_bounding_box(size=(H, W), dtype=bbox_dtype),
+            "bbox": make_bounding_box(canvas_size=(H, W), dtype=bbox_dtype),
             "mask": make_detection_mask(size=(H, W), dtype=mask_dtype),
         }
 
@@ -1914,7 +1914,7 @@ class TestCutMixMixUp:
         def __len__(self):
             return self.size
 
-    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_supported_input_structure(self, T):
 
         batch_size = 32
@@ -1922,7 +1922,7 @@ class TestCutMixMixUp:
 
         dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
 
-        cutmix_mixup = T(alpha=0.5, num_classes=num_classes)
+        cutmix_mixup = T(num_classes=num_classes)
 
         dl = DataLoader(dataset, batch_size=batch_size)
 
@@ -1964,7 +1964,7 @@ class TestCutMixMixUp:
             check_output(img, target)
 
     @needs_cuda
-    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_cpu_vs_gpu(self, T):
         num_classes = 10
         batch_size = 3
@@ -1976,7 +1976,7 @@ class TestCutMixMixUp:
 
         _check_kernel_cuda_vs_cpu(cutmix_mixup, imgs, labels, rtol=None, atol=None)
 
-    @pytest.mark.parametrize("T", [transforms.Cutmix, transforms.Mixup])
+    @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_error(self, T):
 
         num_classes = 10
@@ -1988,7 +1988,7 @@ class TestCutMixMixUp:
         for input_with_bad_type in (
             F.to_pil_image(imgs[0]),
             datapoints.Mask(torch.rand(12, 12)),
-            datapoints.BoundingBox(torch.rand(2, 4), format="XYXY", spatial_size=12),
+            datapoints.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
         ):
             with pytest.raises(ValueError, match="does not support PIL images, "):
                 cutmix_mixup(input_with_bad_type)

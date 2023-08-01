@@ -24,13 +24,13 @@ class BoundingBoxFormat(Enum):
     CXCYWH = "CXCYWH"
 
 
-class BoundingBox(Datapoint):
+class BoundingBoxes(Datapoint):
     """[BETA] :class:`torch.Tensor` subclass for bounding boxes.
 
     Args:
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format (BoundingBoxFormat, str): Format of the bounding box.
-        spatial_size (two-tuple of ints): Height and width of the corresponding image or video.
+        canvas_size (two-tuple of ints): Height and width of the corresponding image or video.
         dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
         device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
@@ -40,49 +40,49 @@ class BoundingBox(Datapoint):
     """
 
     format: BoundingBoxFormat
-    spatial_size: Tuple[int, int]
+    canvas_size: Tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat, spatial_size: Tuple[int, int]) -> BoundingBox:
-        bounding_box = tensor.as_subclass(cls)
-        bounding_box.format = format
-        bounding_box.spatial_size = spatial_size
-        return bounding_box
+    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat, canvas_size: Tuple[int, int]) -> BoundingBoxes:
+        bounding_boxes = tensor.as_subclass(cls)
+        bounding_boxes.format = format
+        bounding_boxes.canvas_size = canvas_size
+        return bounding_boxes
 
     def __new__(
         cls,
         data: Any,
         *,
         format: Union[BoundingBoxFormat, str],
-        spatial_size: Tuple[int, int],
+        canvas_size: Tuple[int, int],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
-    ) -> BoundingBox:
+    ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
         if isinstance(format, str):
             format = BoundingBoxFormat[format.upper()]
 
-        return cls._wrap(tensor, format=format, spatial_size=spatial_size)
+        return cls._wrap(tensor, format=format, canvas_size=canvas_size)
 
     @classmethod
     def wrap_like(
         cls,
-        other: BoundingBox,
+        other: BoundingBoxes,
         tensor: torch.Tensor,
         *,
         format: Optional[BoundingBoxFormat] = None,
-        spatial_size: Optional[Tuple[int, int]] = None,
-    ) -> BoundingBox:
-        """Wrap a :class:`torch.Tensor` as :class:`BoundingBox` from a reference.
+        canvas_size: Optional[Tuple[int, int]] = None,
+    ) -> BoundingBoxes:
+        """Wrap a :class:`torch.Tensor` as :class:`BoundingBoxes` from a reference.
 
         Args:
-            other (BoundingBox): Reference bounding box.
-            tensor (Tensor): Tensor to be wrapped as :class:`BoundingBox`
+            other (BoundingBoxes): Reference bounding box.
+            tensor (Tensor): Tensor to be wrapped as :class:`BoundingBoxes`
             format (BoundingBoxFormat, str, optional): Format of the bounding box.  If omitted, it is taken from the
                 reference.
-            spatial_size (two-tuple of ints, optional): Height and width of the corresponding image or video. If
+            canvas_size (two-tuple of ints, optional): Height and width of the corresponding image or video. If
                 omitted, it is taken from the reference.
 
         """
@@ -92,23 +92,23 @@ class BoundingBox(Datapoint):
         return cls._wrap(
             tensor,
             format=format if format is not None else other.format,
-            spatial_size=spatial_size if spatial_size is not None else other.spatial_size,
+            canvas_size=canvas_size if canvas_size is not None else other.canvas_size,
         )
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
-        return self._make_repr(format=self.format, spatial_size=self.spatial_size)
+        return self._make_repr(format=self.format, canvas_size=self.canvas_size)
 
-    def horizontal_flip(self) -> BoundingBox:
-        output = self._F.horizontal_flip_bounding_box(
-            self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
+    def horizontal_flip(self) -> BoundingBoxes:
+        output = self._F.horizontal_flip_bounding_boxes(
+            self.as_subclass(torch.Tensor), format=self.format, canvas_size=self.canvas_size
         )
-        return BoundingBox.wrap_like(self, output)
+        return BoundingBoxes.wrap_like(self, output)
 
-    def vertical_flip(self) -> BoundingBox:
-        output = self._F.vertical_flip_bounding_box(
-            self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
+    def vertical_flip(self) -> BoundingBoxes:
+        output = self._F.vertical_flip_bounding_boxes(
+            self.as_subclass(torch.Tensor), format=self.format, canvas_size=self.canvas_size
         )
-        return BoundingBox.wrap_like(self, output)
+        return BoundingBoxes.wrap_like(self, output)
 
     def resize(  # type: ignore[override]
         self,
@@ -116,26 +116,26 @@ class BoundingBox(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: Optional[Union[str, bool]] = "warn",
-    ) -> BoundingBox:
-        output, spatial_size = self._F.resize_bounding_box(
+    ) -> BoundingBoxes:
+        output, canvas_size = self._F.resize_bounding_boxes(
             self.as_subclass(torch.Tensor),
-            spatial_size=self.spatial_size,
+            canvas_size=self.canvas_size,
             size=size,
             max_size=max_size,
         )
-        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
+        return BoundingBoxes.wrap_like(self, output, canvas_size=canvas_size)
 
-    def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
-        output, spatial_size = self._F.crop_bounding_box(
+    def crop(self, top: int, left: int, height: int, width: int) -> BoundingBoxes:
+        output, canvas_size = self._F.crop_bounding_boxes(
             self.as_subclass(torch.Tensor), self.format, top=top, left=left, height=height, width=width
         )
-        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
+        return BoundingBoxes.wrap_like(self, output, canvas_size=canvas_size)
 
-    def center_crop(self, output_size: List[int]) -> BoundingBox:
-        output, spatial_size = self._F.center_crop_bounding_box(
-            self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size, output_size=output_size
+    def center_crop(self, output_size: List[int]) -> BoundingBoxes:
+        output, canvas_size = self._F.center_crop_bounding_boxes(
+            self.as_subclass(torch.Tensor), format=self.format, canvas_size=self.canvas_size, output_size=output_size
         )
-        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
+        return BoundingBoxes.wrap_like(self, output, canvas_size=canvas_size)
 
     def resized_crop(
         self,
@@ -146,26 +146,26 @@ class BoundingBox(Datapoint):
         size: List[int],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
-    ) -> BoundingBox:
-        output, spatial_size = self._F.resized_crop_bounding_box(
+    ) -> BoundingBoxes:
+        output, canvas_size = self._F.resized_crop_bounding_boxes(
             self.as_subclass(torch.Tensor), self.format, top, left, height, width, size=size
         )
-        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
+        return BoundingBoxes.wrap_like(self, output, canvas_size=canvas_size)
 
     def pad(
         self,
         padding: Union[int, Sequence[int]],
         fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
-    ) -> BoundingBox:
-        output, spatial_size = self._F.pad_bounding_box(
+    ) -> BoundingBoxes:
+        output, canvas_size = self._F.pad_bounding_boxes(
             self.as_subclass(torch.Tensor),
             format=self.format,
-            spatial_size=self.spatial_size,
+            canvas_size=self.canvas_size,
             padding=padding,
             padding_mode=padding_mode,
         )
-        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
+        return BoundingBoxes.wrap_like(self, output, canvas_size=canvas_size)
 
     def rotate(
         self,
@@ -174,16 +174,16 @@ class BoundingBox(Datapoint):
         expand: bool = False,
         center: Optional[List[float]] = None,
         fill: _FillTypeJIT = None,
-    ) -> BoundingBox:
-        output, spatial_size = self._F.rotate_bounding_box(
+    ) -> BoundingBoxes:
+        output, canvas_size = self._F.rotate_bounding_boxes(
             self.as_subclass(torch.Tensor),
             format=self.format,
-            spatial_size=self.spatial_size,
+            canvas_size=self.canvas_size,
             angle=angle,
             expand=expand,
             center=center,
         )
-        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
+        return BoundingBoxes.wrap_like(self, output, canvas_size=canvas_size)
 
     def affine(
         self,
@@ -194,18 +194,18 @@ class BoundingBox(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
-    ) -> BoundingBox:
-        output = self._F.affine_bounding_box(
+    ) -> BoundingBoxes:
+        output = self._F.affine_bounding_boxes(
             self.as_subclass(torch.Tensor),
             self.format,
-            self.spatial_size,
+            self.canvas_size,
             angle,
             translate=translate,
             scale=scale,
             shear=shear,
             center=center,
         )
-        return BoundingBox.wrap_like(self, output)
+        return BoundingBoxes.wrap_like(self, output)
 
     def perspective(
         self,
@@ -214,24 +214,24 @@ class BoundingBox(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
-    ) -> BoundingBox:
-        output = self._F.perspective_bounding_box(
+    ) -> BoundingBoxes:
+        output = self._F.perspective_bounding_boxes(
             self.as_subclass(torch.Tensor),
             format=self.format,
-            spatial_size=self.spatial_size,
+            canvas_size=self.canvas_size,
             startpoints=startpoints,
             endpoints=endpoints,
             coefficients=coefficients,
         )
-        return BoundingBox.wrap_like(self, output)
+        return BoundingBoxes.wrap_like(self, output)
 
     def elastic(
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: _FillTypeJIT = None,
-    ) -> BoundingBox:
-        output = self._F.elastic_bounding_box(
-            self.as_subclass(torch.Tensor), self.format, self.spatial_size, displacement=displacement
+    ) -> BoundingBoxes:
+        output = self._F.elastic_bounding_boxes(
+            self.as_subclass(torch.Tensor), self.format, self.canvas_size, displacement=displacement
         )
-        return BoundingBox.wrap_like(self, output)
+        return BoundingBoxes.wrap_like(self, output)
