@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Union
 
 import torch
 from torchvision.transforms.functional import InterpolationMode
@@ -45,18 +45,6 @@ class Video(Datapoint):
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()
-
-    @property
-    def spatial_size(self) -> Tuple[int, int]:
-        return tuple(self.shape[-2:])  # type: ignore[return-value]
-
-    @property
-    def num_channels(self) -> int:
-        return self.shape[-3]
-
-    @property
-    def num_frames(self) -> int:
-        return self.shape[-4]
 
     def horizontal_flip(self) -> Video:
         output = self._F.horizontal_flip_video(self.as_subclass(torch.Tensor))

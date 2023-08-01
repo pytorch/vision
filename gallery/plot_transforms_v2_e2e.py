@@ -10,7 +10,6 @@ well as the new ``torchvision.transforms.v2`` v2 API.
 """
 
 import pathlib
-from collections import defaultdict
 
 import PIL.Image
 
@@ -29,7 +28,7 @@ def show(sample):
     image, target = sample
     if isinstance(image, PIL.Image.Image):
         image = F.to_image_tensor(image)
-    image = F.convert_dtype(image, torch.uint8)
+    image = F.to_dtype(image, torch.uint8, scale=True)
     annotated_image = draw_bounding_boxes(image, target["boxes"], colors="yellow", width=3)
 
     fig, ax = plt.subplots()
@@ -99,20 +98,18 @@ show(sample)
 transform = transforms.Compose(
     [
         transforms.RandomPhotometricDistort(),
-        transforms.RandomZoomOut(
-            fill=defaultdict(lambda: 0, {PIL.Image.Image: (123, 117, 104)})
-        ),
+        transforms.RandomZoomOut(fill={PIL.Image.Image: (123, 117, 104), "others": 0}),
         transforms.RandomIoUCrop(),
         transforms.RandomHorizontalFlip(),
         transforms.ToImageTensor(),
         transforms.ConvertImageDtype(torch.float32),
-        transforms.SanitizeBoundingBox(),
+        transforms.SanitizeBoundingBoxes(),
     ]
 )
 
 ########################################################################################################################
 # .. note::
-#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBox` transform is a no-op in this example, but it
+#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
 #    should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
 #    the corresponding labels and optionally masks. It is particularly critical to add it if
 #    :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
