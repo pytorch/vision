@@ -66,6 +66,9 @@ def pytest_collection_modifyitems(items):
                 # TODO: something more robust would be to do that only in a sandcastle instance,
                 # so that we can still see the test being skipped when testing locally from a devvm
                 continue
+            if needs_mps and not torch.backends.mps.is_available():
+                # Same as above, but for MPS
+                continue
         elif IN_OSS_CI:
             # Here we're not in fbcode, so we can safely collect and skip tests.
             if not needs_cuda and torch.cuda.is_available():
