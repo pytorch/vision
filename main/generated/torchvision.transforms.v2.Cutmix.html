@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+8d4e879) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+312c3d3) &#x25BC</a>
     </div>
     
 
@@ -351,14 +351,23 @@
 <h1>Cutmix<a class="headerlink" href="#cutmix" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchvision.transforms.v2.Cutmix">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.transforms.v2.</span></span><span class="sig-name descname"><span class="pre">Cutmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_getter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/transforms/v2/_augment.html#Cutmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.v2.Cutmix" title="Permalink to this definition">¶</a></dt>
-<dd><p>[BETA] Apply Cutmix to the provided batch of images and labels.</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.transforms.v2.</span></span><span class="sig-name descname"><span class="pre">Cutmix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_getter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/transforms/v2/_augment.html#Cutmix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.v2.Cutmix" title="Permalink to this definition">¶</a></dt>
+<dd><p>[BETA] Apply CutMix to the provided batch of images and labels.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The Cutmix transform is in Beta stage, and while we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes.</p>
 </div>
 <p>Paper: <a class="reference external" href="https://arxiv.org/abs/1905.04899">CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features</a>.</p>
-<p>See <a class="reference internal" href="../auto_examples/plot_cutmix_mixup.html#sphx-glr-auto-examples-plot-cutmix-mixup-py"><span class="std std-ref">How to use Cutmix and Mixup</span></a> for detailed usage examples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This transform is meant to be used on <strong>batches</strong> of samples, not
+individual images. See
+<a class="reference internal" href="../auto_examples/plot_cutmix_mixup.html#sphx-glr-auto-examples-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a> for detailed usage
+examples.
+The sample pairing is deterministic and done by matching consecutive
+samples in the batch, so the batch needs to be shuffled (this is an
+implementation detail, not a guaranteed convention.)</p>
+</div>
 <p>In the input, the labels are expected to be a tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code>. They will be transformed
 into a tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_classes)</span></code>.</p>
 <dl class="field-list simple">
@@ -373,7 +382,11 @@ It can also be a callable that takes the same input as the transform, and return
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">Cutmix</span></code>:</p>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="Cutmix and Mixup are popular augmentation strategies that can improve classification accuracy."><img alt="" src="../_images/sphx_glr_plot_cutmix_mixup_thumb.png" />
+<p><a class="reference internal" href="../auto_examples/plot_cutmix_mixup.html#sphx-glr-auto-examples-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a></p>
+  <div class="sphx-glr-thumbnail-title">How to use CutMix and MixUp</div>
+</div></div></dd></dl>
 
 </section>
 
