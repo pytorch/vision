@@ -25,7 +25,13 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import clamp_bounding_boxes, convert_format_bounding_boxes, get_size_image_pil
 
-from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, is_simple_tensor
+from ._utils import (
+    _get_kernel,
+    _register_explicit_noop,
+    _register_five_ten_crop_kernel,
+    _register_kernel_internal,
+    is_simple_tensor,
+)
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -2006,7 +2012,7 @@ def _parse_five_crop_size(size: List[int]) -> List[int]:
     return size
 
 
-@_register_kernel_internal(five_crop, datapoints.Image)
+@_register_five_ten_crop_kernel(five_crop, datapoints.Image)
 def five_crop_image_tensor(
     image: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -2044,7 +2050,7 @@ def five_crop_image_pil(
     return tl, tr, bl, br, center
 
 
-@_register_kernel_internal(five_crop, datapoints.Video)
+@_register_five_ten_crop_kernel(five_crop, datapoints.Video)
 def five_crop_video(
     video: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -2083,7 +2089,7 @@ def ten_crop(
         )
 
 
-@_register_kernel_internal(ten_crop, datapoints.Image)
+@_register_five_ten_crop_kernel(ten_crop, datapoints.Image)
 def ten_crop_image_tensor(
     image: torch.Tensor, size: List[int], vertical_flip: bool = False
 ) -> Tuple[
@@ -2137,7 +2143,7 @@ def ten_crop_image_pil(
     return non_flipped + flipped
 
 
-@_register_kernel_internal(ten_crop, datapoints.Video)
+@_register_five_ten_crop_kernel(ten_crop, datapoints.Video)
 def ten_crop_video(
     video: torch.Tensor, size: List[int], vertical_flip: bool = False
 ) -> Tuple[

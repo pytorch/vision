@@ -139,3 +139,29 @@ def _get_kernel(dispatcher, datapoint_cls):
             return kernel
 
     return _noop
+
+
+# This basically replicates _register_kernel_internal, but with a specialized wrapper for five_crop / ten_crop
+# We could get rid of this by letting _register_kernel_internal take arbitrary dispatchers rather than wrap_kernel: bool
+# TODO: decide if we want that
+def _register_five_ten_crop_kernel(dispatcher, datapoint_cls):
+    registry = _KERNEL_REGISTRY.setdefault(dispatcher, {})
+    if datapoint_cls in registry:
+        raise TypeError(
+            f"Dispatcher '{dispatcher.__name__}' already has a kernel registered for type '{datapoint_cls.__name__}'."
+        )
+
+    def wrap(kernel):
+        @functools.wraps(kernel)
+        def wrapper(inpt, *args, **kwargs):
+            output = kernel(inpt, *args, **kwargs)
+            container_type = type(output)
+            return container_type(type(inpt).wrap_like(inpt, o) for o in output)
+
+        return wrapper
+
+    def decorator(kernel):
+        registry[datapoint_cls] = wrap(kernel)
+        return kernel
+
+    return decorator
