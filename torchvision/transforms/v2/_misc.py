@@ -1,7 +1,5 @@
-import collections
 import warnings
-from contextlib import suppress
-from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Sequence, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -11,8 +9,8 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _setup_float_or_seq, _setup_size
-from .utils import has_any, is_simple_tensor, query_bounding_box
+from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
+from .utils import has_any, is_simple_tensor, query_bounding_boxes
 
 
 # TODO: do we want/need to expose this?
@@ -297,16 +295,53 @@ class ToDtype(Transform):
         return F.to_dtype(inpt, dtype=dtype, scale=self.scale)
 
 
-class SanitizeBoundingBox(Transform):
+class ConvertImageDtype(Transform):
+    """[BETA] Convert input image to the given ``dtype`` and scale the values accordingly.
+
+    .. v2betastatus:: ConvertImageDtype transform
+
+    .. warning::
+        Consider using ``ToDtype(dtype, scale=True)`` instead. See :class:`~torchvision.transforms.v2.ToDtype`.
+
+    This function does not support PIL Image.
+
+    Args:
+        dtype (torch.dtype): Desired data type of the output
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+
+    _v1_transform_cls = _transforms.ConvertImageDtype
+
+    _transformed_types = (is_simple_tensor, datapoints.Image)
+
+    def __init__(self, dtype: torch.dtype = torch.float32) -> None:
+        super().__init__()
+        self.dtype = dtype
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.to_dtype(inpt, dtype=self.dtype, scale=True)
+
+
+class SanitizeBoundingBoxes(Transform):
     """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
-    .. v2betastatus:: SanitizeBoundingBox transform
+    .. v2betastatus:: SanitizeBoundingBoxes transform
 
     This transform removes bounding boxes and their associated labels/masks that:
 
     - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
-      call :class:`~torchvision.transforms.v2.ClampBoundingBox` first to avoid undesired removals.
+      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
@@ -318,12 +353,11 @@ class SanitizeBoundingBox(Transform):
     Args:
         min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
         labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.
-            It can be a str in which case the input is expected to be a dict, and ``labels_getter`` then specifies
-            the key whose value corresponds to the labels. It can also be a callable that takes the same input
-            as the transform, and returns the labels.
-            By default, this will try to find a "labels" key in the input, if
+            By default, this will try to find a "labels" key in the input (case-insensitive), if
             the input is a dict or it is a tuple whose second element is a dict.
             This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
+            It can also be a callable that takes the same input
+            as the transform, and returns the labels.
     """
 
     def __init__(
@@ -338,72 +372,22 @@ class SanitizeBoundingBox(Transform):
         self.min_size = min_size
 
         self.labels_getter = labels_getter
-        self._labels_getter: Optional[Callable[[Any], Optional[torch.Tensor]]]
-        if labels_getter == "default":
-            self._labels_getter = self._find_labels_default_heuristic
-        elif callable(labels_getter):
-            self._labels_getter = labels_getter
-        elif isinstance(labels_getter, str):
-            self._labels_getter = lambda inputs: SanitizeBoundingBox._get_dict_or_second_tuple_entry(inputs)[
-                labels_getter  # type: ignore[index]
-            ]
-        elif labels_getter is None:
-            self._labels_getter = None
-        else:
-            raise ValueError(
-                "labels_getter should either be a str, callable, or 'default'. "
-                f"Got {labels_getter} of type {type(labels_getter)}."
-            )
-
-    @staticmethod
-    def _get_dict_or_second_tuple_entry(inputs: Any) -> Mapping[str, Any]:
-        # datasets outputs may be plain dicts like {"img": ..., "labels": ..., "bbox": ...}
-        # or tuples like (img, {"labels":..., "bbox": ...})
-        # This hacky helper accounts for both structures.
-        if isinstance(inputs, tuple):
-            inputs = inputs[1]
-
-        if not isinstance(inputs, collections.abc.Mapping):
-            raise ValueError(
-                f"If labels_getter is a str or 'default', "
-                f"then the input to forward() must be a dict or a tuple whose second element is a dict."
-                f" Got {type(inputs)} instead."
-            )
-        return inputs
-
-    @staticmethod
-    def _find_labels_default_heuristic(inputs: Dict[str, Any]) -> Optional[torch.Tensor]:
-        # Tries to find a "labels" key, otherwise tries for the first key that contains "label" - case insensitive
-        # Returns None if nothing is found
-        inputs = SanitizeBoundingBox._get_dict_or_second_tuple_entry(inputs)
-        candidate_key = None
-        with suppress(StopIteration):
-            candidate_key = next(key for key in inputs.keys() if key.lower() == "labels")
-        if candidate_key is None:
-            with suppress(StopIteration):
-                candidate_key = next(key for key in inputs.keys() if "label" in key.lower())
-        if candidate_key is None:
-            raise ValueError(
-                "Could not infer where the labels are in the sample. Try passing a callable as the labels_getter parameter?"
-                "If there are no samples and it is by design, pass labels_getter=None."
-            )
-        return inputs[candidate_key]
+        self._labels_getter = _parse_labels_getter(labels_getter)
 
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
 
-        if self._labels_getter is None:
-            labels = None
-        else:
-            labels = self._labels_getter(inputs)
-            if labels is not None and not isinstance(labels, torch.Tensor):
-                raise ValueError(f"The labels in the input to forward() must be a tensor, got {type(labels)} instead.")
+        labels = self._labels_getter(inputs)
+        if labels is not None and not isinstance(labels, torch.Tensor):
+            raise ValueError(
+                f"The labels in the input to forward() must be a tensor or None, got {type(labels)} instead."
+            )
 
         flat_inputs, spec = tree_flatten(inputs)
-        # TODO: this enforces one single BoundingBox entry.
+        # TODO: this enforces one single BoundingBoxes entry.
         # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
         # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
-        boxes = query_bounding_box(flat_inputs)
+        boxes = query_bounding_boxes(flat_inputs)
 
         if boxes.ndim != 2:
             raise ValueError(f"boxes must be of shape (num_boxes, 4), got {boxes.shape}")
@@ -414,8 +398,8 @@ class SanitizeBoundingBox(Transform):
             )
 
         boxes = cast(
-            datapoints.BoundingBox,
-            F.convert_format_bounding_box(
+            datapoints.BoundingBoxes,
+            F.convert_format_bounding_boxes(
                 boxes,
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             ),
@@ -424,14 +408,14 @@ class SanitizeBoundingBox(Transform):
         valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
-        image_h, image_w = boxes.spatial_size
+        image_h, image_w = boxes.canvas_size
         valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
         valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
         params = dict(valid=valid, labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
-            # _transform() will only care about BoundingBoxes and the labels
+            # _transform() will only care about BoundingBoxeses and the labels
             self._transform(inpt, params)
             for inpt in flat_inputs
         ]
@@ -440,9 +424,9 @@ class SanitizeBoundingBox(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_box_or_mask = isinstance(inpt, (datapoints.BoundingBox, datapoints.Mask))
+        is_bounding_boxes_or_mask = isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask))
 
-        if not (is_label or is_bounding_box_or_mask):
+        if not (is_label or is_bounding_boxes_or_mask):
             return inpt
 
         output = inpt[params["valid"]]

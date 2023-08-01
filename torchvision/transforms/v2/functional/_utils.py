@@ -44,9 +44,9 @@ def _kernel_wrapper_internal(dispatcher, kernel):
 
         output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
 
-        if isinstance(inpt, datapoints.BoundingBox) and isinstance(output, tuple):
-            output, spatial_size = output
-            metadata = dict(spatial_size=spatial_size)
+        if isinstance(inpt, datapoints.BoundingBoxes) and isinstance(output, tuple):
+            output, canvas_size = output
+            metadata = dict(canvas_size=canvas_size)
         else:
             metadata = dict()
 

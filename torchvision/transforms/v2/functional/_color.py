@@ -9,7 +9,7 @@ from torchvision.transforms._functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import _num_value_bits, to_dtype_image_tensor
+from ._misc import _num_value_bits, to_dtype_image_tensor
 from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, is_simple_tensor
 
 
@@ -69,7 +69,7 @@ def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Te
     return output if fp else output.to(image1.dtype)
 
 
-@_register_explicit_noop(datapoints.BoundingBox, datapoints.Mask)
+@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(adjust_brightness)
