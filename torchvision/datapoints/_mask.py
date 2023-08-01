@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Union
 
 import PIL.Image
 import torch
@@ -50,10 +50,6 @@ class Mask(Datapoint):
         tensor: torch.Tensor,
     ) -> Mask:
         return cls._wrap(tensor)
-
-    @property
-    def spatial_size(self) -> Tuple[int, int]:
-        return tuple(self.shape[-2:])  # type: ignore[return-value]
 
     def horizontal_flip(self) -> Mask:
         output = self._F.horizontal_flip_mask(self.as_subclass(torch.Tensor))

@@ -12,7 +12,7 @@ from torchvision.transforms.v2 import functional as F
 
 from ._transform import _RandomApplyTransform, Transform
 from ._utils import _parse_labels_getter
-from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
+from .utils import has_any, is_simple_tensor, query_chw, query_size
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -284,7 +284,7 @@ class Cutmix(_BaseMixupCutmix):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
-        H, W = query_spatial_size(flat_inputs)
+        H, W = query_size(flat_inputs)
 
         r_x = torch.randint(W, size=(1,))
         r_y = torch.randint(H, size=(1,))

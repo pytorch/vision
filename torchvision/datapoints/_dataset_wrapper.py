@@ -341,13 +341,13 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         default={"image_id", "boxes", "labels"},
     )
 
-    def segmentation_to_mask(segmentation, *, spatial_size):
+    def segmentation_to_mask(segmentation, *, canvas_size):
         from pycocotools import mask
 
         segmentation = (
-            mask.frPyObjects(segmentation, *spatial_size)
+            mask.frPyObjects(segmentation, *canvas_size)
             if isinstance(segmentation, dict)
-            else mask.merge(mask.frPyObjects(segmentation, *spatial_size))
+            else mask.merge(mask.frPyObjects(segmentation, *canvas_size))
         )
         return torch.from_numpy(mask.decode(segmentation))
 
@@ -359,7 +359,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         if not target:
             return image, dict(image_id=image_id)
 
-        spatial_size = tuple(F.get_spatial_size(image))
+        canvas_size = tuple(F.get_size(image))
 
         batched_target = list_of_dicts_to_dict_of_lists(target)
         target = {}
@@ -372,7 +372,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
                 datapoints.BoundingBoxes(
                     batched_target["bbox"],
                     format=datapoints.BoundingBoxFormat.XYWH,
-                    spatial_size=spatial_size,
+                    canvas_size=canvas_size,
                 ),
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             )
@@ -381,7 +381,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             target["masks"] = datapoints.Mask(
                 torch.stack(
                     [
-                        segmentation_to_mask(segmentation, spatial_size=spatial_size)
+                        segmentation_to_mask(segmentation, canvas_size=canvas_size)
                         for segmentation in batched_target["segmentation"]
                     ]
                 ),
@@ -456,7 +456,7 @@ def voc_detection_wrapper_factory(dataset, target_keys):
                     for bndbox in batched_instances["bndbox"]
                 ],
                 format=datapoints.BoundingBoxFormat.XYXY,
-                spatial_size=(image.height, image.width),
+                canvas_size=(image.height, image.width),
             )
 
         if "labels" in target_keys:
@@ -493,7 +493,7 @@ def celeba_wrapper_factory(dataset, target_keys):
                     datapoints.BoundingBoxes(
                         item,
                         format=datapoints.BoundingBoxFormat.XYWH,
-                        spatial_size=(image.height, image.width),
+                        canvas_size=(image.height, image.width),
                     ),
                     new_format=datapoints.BoundingBoxFormat.XYXY,
                 ),
@@ -543,7 +543,7 @@ def kitti_wrapper_factory(dataset, target_keys):
             target["boxes"] = datapoints.BoundingBoxes(
                 batched_target["bbox"],
                 format=datapoints.BoundingBoxFormat.XYXY,
-                spatial_size=(image.height, image.width),
+                canvas_size=(image.height, image.width),
             )
 
         if "labels" in target_keys:
@@ -638,7 +638,7 @@ def widerface_wrapper(dataset, target_keys):
         if "bbox" in target_keys:
             target["bbox"] = F.convert_format_bounding_boxes(
                 datapoints.BoundingBoxes(
-                    target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
+                    target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, canvas_size=(image.height, image.width)
                 ),
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             )
