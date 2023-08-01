@@ -392,7 +392,7 @@ def assert_warns_antialias_default_value():
         yield
 
 
-def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, spatial_size, affine_matrix):
+def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_size, affine_matrix):
     def transform(bbox):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
@@ -426,7 +426,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, spatial_si
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-        out_bbox = F.clamp_bounding_boxes(out_bbox, format=format, spatial_size=spatial_size)
+        out_bbox = F.clamp_bounding_boxes(out_bbox, format=format, canvas_size=canvas_size)
         out_bbox = out_bbox.to(dtype=in_dtype)
         return out_bbox
 
@@ -514,14 +514,14 @@ class TestResize:
 
         bounding_boxes = make_bounding_box(
             format=format,
-            spatial_size=self.INPUT_SIZE,
+            canvas_size=self.INPUT_SIZE,
             dtype=dtype,
             device=device,
         )
         check_kernel(
             F.resize_bounding_boxes,
             bounding_boxes,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             size=size,
             **max_size_kwarg,
             check_scripted_vs_eager=not isinstance(size, int),
@@ -588,8 +588,8 @@ class TestResize:
         check_transform(transforms.Resize, make_input(self.INPUT_SIZE, device=device), size=size, antialias=True)
 
     def _check_output_size(self, input, output, *, size, max_size):
-        assert tuple(F.get_spatial_size(output)) == self._compute_output_size(
-            input_size=F.get_spatial_size(input), size=size, max_size=max_size
+        assert tuple(F.get_size(output)) == self._compute_output_size(
+            input_size=F.get_size(input), size=size, max_size=max_size
         )
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
@@ -613,9 +613,9 @@ class TestResize:
         torch.testing.assert_close(actual, expected, atol=1, rtol=0)
 
     def _reference_resize_bounding_boxes(self, bounding_boxes, *, size, max_size=None):
-        old_height, old_width = bounding_boxes.spatial_size
+        old_height, old_width = bounding_boxes.canvas_size
         new_height, new_width = self._compute_output_size(
-            input_size=bounding_boxes.spatial_size, size=size, max_size=max_size
+            input_size=bounding_boxes.canvas_size, size=size, max_size=max_size
         )
 
         if (old_height, old_width) == (new_height, new_width):
@@ -632,10 +632,10 @@ class TestResize:
         expected_bboxes = reference_affine_bounding_boxes_helper(
             bounding_boxes,
             format=bounding_boxes.format,
-            spatial_size=(new_height, new_width),
+            canvas_size=(new_height, new_width),
             affine_matrix=affine_matrix,
         )
-        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes, spatial_size=(new_height, new_width))
+        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes, canvas_size=(new_height, new_width))
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
@@ -645,7 +645,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_boxes = make_bounding_box(format=format, spatial_size=self.INPUT_SIZE)
+        bounding_boxes = make_bounding_box(format=format, canvas_size=self.INPUT_SIZE)
 
         actual = fn(bounding_boxes, size=size, **max_size_kwarg)
         expected = self._reference_resize_bounding_boxes(bounding_boxes, size=size, **max_size_kwarg)
@@ -762,7 +762,7 @@ class TestResize:
     def test_noop(self, size, make_input):
         input = make_input(self.INPUT_SIZE)
 
-        output = F.resize(input, size=F.get_spatial_size(input), antialias=True)
+        output = F.resize(input, size=F.get_size(input), antialias=True)
 
         # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
         # is a good reason to break this, feel free to downgrade to an equality check.
@@ -792,11 +792,11 @@ class TestResize:
 
         input = make_input(self.INPUT_SIZE)
 
-        size = min(F.get_spatial_size(input))
+        size = min(F.get_size(input))
         max_size = size + 1
         output = F.resize(input, size=size, max_size=max_size, antialias=True)
 
-        assert max(F.get_spatial_size(output)) == max_size
+        assert max(F.get_size(output)) == max_size
 
 
 class TestHorizontalFlip:
@@ -814,7 +814,7 @@ class TestHorizontalFlip:
             F.horizontal_flip_bounding_boxes,
             bounding_boxes,
             format=format,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
@@ -874,7 +874,7 @@ class TestHorizontalFlip:
     def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes):
         affine_matrix = np.array(
             [
-                [-1, 0, bounding_boxes.spatial_size[1]],
+                [-1, 0, bounding_boxes.canvas_size[1]],
                 [0, 1, 0],
             ],
             dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
@@ -883,7 +883,7 @@ class TestHorizontalFlip:
         expected_bboxes = reference_affine_bounding_boxes_helper(
             bounding_boxes,
             format=bounding_boxes.format,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
@@ -995,7 +995,7 @@ class TestAffine:
             F.affine_bounding_boxes,
             bounding_boxes,
             format=format,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             **{param: value},
             check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
         )
@@ -1133,7 +1133,7 @@ class TestAffine:
 
     def _reference_affine_bounding_boxes(self, bounding_boxes, *, angle, translate, scale, shear, center):
         if center is None:
-            center = [s * 0.5 for s in bounding_boxes.spatial_size[::-1]]
+            center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
 
         affine_matrix = self._compute_affine_matrix(
             angle=angle, translate=translate, scale=scale, shear=shear, center=center
@@ -1143,7 +1143,7 @@ class TestAffine:
         expected_bboxes = reference_affine_bounding_boxes_helper(
             bounding_boxes,
             format=bounding_boxes.format,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
@@ -1202,7 +1202,7 @@ class TestAffine:
     @pytest.mark.parametrize("seed", list(range(10)))
     def test_transform_get_params_bounds(self, degrees, translate, scale, shear, seed):
         image = make_image()
-        height, width = F.get_spatial_size(image)
+        height, width = F.get_size(image)
 
         transform = transforms.RandomAffine(degrees=degrees, translate=translate, scale=scale, shear=shear)
 
@@ -1293,7 +1293,7 @@ class TestVerticalFlip:
             F.vertical_flip_bounding_boxes,
             bounding_boxes,
             format=format,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
@@ -1352,7 +1352,7 @@ class TestVerticalFlip:
         affine_matrix = np.array(
             [
                 [1, 0, 0],
-                [0, -1, bounding_boxes.spatial_size[0]],
+                [0, -1, bounding_boxes.canvas_size[0]],
             ],
             dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
@@ -1360,7 +1360,7 @@ class TestVerticalFlip:
         expected_bboxes = reference_affine_bounding_boxes_helper(
             bounding_boxes,
             format=bounding_boxes.format,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
@@ -1449,7 +1449,7 @@ class TestRotate:
             F.rotate_bounding_boxes,
             bounding_boxes,
             format=format,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             **kwargs,
         )
 
@@ -1555,7 +1555,7 @@ class TestRotate:
             raise ValueError("This reference currently does not support expand=True")
 
         if center is None:
-            center = [s * 0.5 for s in bounding_boxes.spatial_size[::-1]]
+            center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
 
         a = np.cos(angle * np.pi / 180.0)
         b = np.sin(angle * np.pi / 180.0)
@@ -1572,7 +1572,7 @@ class TestRotate:
         expected_bboxes = reference_affine_bounding_boxes_helper(
             bounding_boxes,
             format=bounding_boxes.format,
-            spatial_size=bounding_boxes.spatial_size,
+            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
         )
 
@@ -1834,7 +1834,7 @@ class TestToDtype:
         mask_dtype = torch.bool
         sample = {
             "inpt": make_input(size=(H, W), dtype=inpt_dtype),
-            "bbox": make_bounding_box(size=(H, W), dtype=bbox_dtype),
+            "bbox": make_bounding_box(canvas_size=(H, W), dtype=bbox_dtype),
             "mask": make_detection_mask(size=(H, W), dtype=mask_dtype),
         }
 
@@ -1922,7 +1922,7 @@ class TestCutMixMixUp:
 
         dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
 
-        cutmix_mixup = T(alpha=0.5, num_classes=num_classes)
+        cutmix_mixup = T(num_classes=num_classes)
 
         dl = DataLoader(dataset, batch_size=batch_size)
 
@@ -1988,7 +1988,7 @@ class TestCutMixMixUp:
         for input_with_bad_type in (
             F.to_pil_image(imgs[0]),
             datapoints.Mask(torch.rand(12, 12)),
-            datapoints.BoundingBoxes(torch.rand(2, 4), format="XYXY", spatial_size=12),
+            datapoints.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
         ):
             with pytest.raises(ValueError, match="does not support PIL images, "):
                 cutmix_mixup(input_with_bad_type)

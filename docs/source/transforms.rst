@@ -261,13 +261,13 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     AugMix
     v2.AugMix
 
-Cutmix - Mixup
+CutMix - MixUp
 --------------
 
-Cutmix and Mixup are special transforms that
+CutMix and MixUp are special transforms that
 are meant to be used on batches rather than on individual images, because they
-are combining pairs of images together. These can be used after the dataloader,
-or part of a collation function. See
+are combining pairs of images together. These can be used after the dataloader
+(once the samples are batched), or part of a collation function. See
 :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
 
 .. autosummary::
