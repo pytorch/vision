@@ -112,7 +112,7 @@ print(bboxes)
 # Using the ``wrap_like()`` class method
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# You can also use the ``wrap_like()`` class method to wrap a tensor-like object
+# You can also use the ``wrap_like()`` class method to wrap a tensor object
 # into a datapoint. This is useful when you already have an object of the
 # desired type, which typically happens when writing transforms: you just want
 # to wrap the output like the input. This API is inspired by utils like
