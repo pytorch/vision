@@ -291,8 +291,8 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
     return to_dtype_image_tensor(video, dtype, scale=scale)
 
 
-@_register_kernel_internal(to_dtype, datapoints.BoundingBoxes, wrap_kernel=False)
-@_register_kernel_internal(to_dtype, datapoints.Mask, wrap_kernel=False)
+@_register_kernel_internal(to_dtype, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(to_dtype, datapoints.Mask, datapoint_wrapper=False)
 def _to_dtype_tensor_dispatch(
     inpt: datapoints._InputTypeJIT, dtype: torch.dtype, scale: bool = False
 ) -> datapoints._InputTypeJIT:

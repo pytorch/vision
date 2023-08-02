@@ -30,7 +30,7 @@ def get_dimensions(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJI
         )
 
 
-@_register_kernel_internal(get_dimensions, datapoints.Image, wrap_kernel=False)
+@_register_kernel_internal(get_dimensions, datapoints.Image, datapoint_wrapper=False)
 def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
     chw = list(image.shape[-3:])
     ndims = len(chw)
@@ -46,7 +46,7 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-@_register_kernel_internal(get_dimensions, datapoints.Video, wrap_kernel=False)
+@_register_kernel_internal(get_dimensions, datapoints.Video, datapoint_wrapper=False)
 def get_dimensions_video(video: torch.Tensor) -> List[int]:
     return get_dimensions_image_tensor(video)
 
@@ -70,7 +70,7 @@ def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoType
         )
 
 
-@_register_kernel_internal(get_num_channels, datapoints.Image, wrap_kernel=False)
+@_register_kernel_internal(get_num_channels, datapoints.Image, datapoint_wrapper=False)
 def get_num_channels_image_tensor(image: torch.Tensor) -> int:
     chw = image.shape[-3:]
     ndims = len(chw)
@@ -85,7 +85,7 @@ def get_num_channels_image_tensor(image: torch.Tensor) -> int:
 get_num_channels_image_pil = _FP.get_image_num_channels
 
 
-@_register_kernel_internal(get_num_channels, datapoints.Video, wrap_kernel=False)
+@_register_kernel_internal(get_num_channels, datapoints.Video, datapoint_wrapper=False)
 def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image_tensor(video)
 
@@ -113,7 +113,7 @@ def get_size(inpt: datapoints._InputTypeJIT) -> List[int]:
         )
 
 
-@_register_kernel_internal(get_size, datapoints.Image, wrap_kernel=False)
+@_register_kernel_internal(get_size, datapoints.Image, datapoint_wrapper=False)
 def get_size_image_tensor(image: torch.Tensor) -> List[int]:
     hw = list(image.shape[-2:])
     ndims = len(hw)
@@ -129,17 +129,17 @@ def get_size_image_pil(image: PIL.Image.Image) -> List[int]:
     return [height, width]
 
 
-@_register_kernel_internal(get_size, datapoints.Video, wrap_kernel=False)
+@_register_kernel_internal(get_size, datapoints.Video, datapoint_wrapper=False)
 def get_size_video(video: torch.Tensor) -> List[int]:
     return get_size_image_tensor(video)
 
 
-@_register_kernel_internal(get_size, datapoints.Mask, wrap_kernel=False)
+@_register_kernel_internal(get_size, datapoints.Mask, datapoint_wrapper=False)
 def get_size_mask(mask: torch.Tensor) -> List[int]:
     return get_size_image_tensor(mask)
 
 
-@_register_kernel_internal(get_size, datapoints.BoundingBoxes, wrap_kernel=False)
+@_register_kernel_internal(get_size, datapoints.BoundingBoxes, datapoint_wrapper=False)
 def get_size_bounding_boxes(bounding_box: datapoints.BoundingBoxes) -> List[int]:
     return list(bounding_box.canvas_size)
 
@@ -161,7 +161,7 @@ def get_num_frames(inpt: datapoints._VideoTypeJIT) -> int:
         )
 
 
-@_register_kernel_internal(get_num_frames, datapoints.Video, wrap_kernel=False)
+@_register_kernel_internal(get_num_frames, datapoints.Video, datapoint_wrapper=False)
 def get_num_frames_video(video: torch.Tensor) -> int:
     return video.shape[-4]
 

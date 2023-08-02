@@ -10,7 +10,7 @@ from torchvision.utils import _log_api_usage_once
 from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, is_simple_tensor
 
 
-@_register_explicit_noop(datapoints.Mask, datapoints.BoundingBoxes, future_warning=True)
+@_register_explicit_noop(datapoints.Mask, datapoints.BoundingBoxes, warn_passthrough=True)
 def erase(
     inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT],
     i: int,

@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
@@ -291,7 +291,6 @@ def resize_image_pil(
     return image.resize((new_width, new_height), resample=pil_modes_mapping[interpolation])
 
 
-@_register_kernel_internal(resize, datapoints.Mask)
 def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -307,7 +306,14 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
     return output
 
 
-@_register_kernel_internal(resize, datapoints.BoundingBoxes)
+@_register_kernel_internal(resize, datapoints.Mask, datapoint_wrapper=False)
+def _resize_mask_dispatch(
+    inpt: datapoints.Mask, size: List[int], max_size: Optional[int] = None, **kwargs: Any
+) -> datapoints.Mask:
+    output = resize_mask(inpt.as_subclass(torch.Tensor), size, max_size=max_size)
+    return datapoints.Mask.wrap_like(inpt, output)
+
+
 def resize_bounding_boxes(
     bounding_boxes: torch.Tensor, canvas_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
@@ -324,6 +330,16 @@ def resize_bounding_boxes(
         bounding_boxes.mul(ratios).to(bounding_boxes.dtype),
         (new_height, new_width),
     )
+
+
+@_register_kernel_internal(resize, datapoints.BoundingBoxes, datapoint_wrapper=False)
+def _resize_bounding_boxes_dispatch(
+    inpt: datapoints.BoundingBoxes, size: List[int], max_size: Optional[int] = None, **kwargs: Any
+) -> datapoints.BoundingBoxes:
+    output, canvas_size = resize_bounding_boxes(
+        inpt.as_subclass(torch.Tensor), inpt.canvas_size, size, max_size=max_size
+    )
+    return datapoints.BoundingBoxes.wrap_like(inpt, output, canvas_size=canvas_size)
 
 
 @_register_kernel_internal(resize, datapoints.Video)
@@ -1977,7 +1993,7 @@ def resized_crop(
 ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, future_warning=True)
+@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, warn_passthrough=True)
 def five_crop(
     inpt: ImageOrVideoTypeJIT, size: List[int]
 ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
@@ -2057,7 +2073,7 @@ def five_crop_video(
     return five_crop_image_tensor(video, size)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, future_warning=True)
+@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, warn_passthrough=True)
 def ten_crop(
     inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], size: List[int], vertical_flip: bool = False
 ) -> Tuple[

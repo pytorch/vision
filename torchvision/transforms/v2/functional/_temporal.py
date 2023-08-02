@@ -9,7 +9,7 @@ from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_inter
 
 
 @_register_explicit_noop(
-    PIL.Image.Image, datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask, future_warning=True
+    PIL.Image.Image, datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask, warn_passthrough=True
 )
 def uniform_temporal_subsample(inpt: datapoints._VideoTypeJIT, num_samples: int) -> datapoints._VideoTypeJIT:
     if not torch.jit.is_scripting():
