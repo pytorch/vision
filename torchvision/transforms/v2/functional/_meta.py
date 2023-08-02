@@ -144,7 +144,7 @@ def get_size_bounding_boxes(bounding_box: datapoints.BoundingBoxes) -> List[int]
     return list(bounding_box.canvas_size)
 
 
-@_register_unsupported_type(datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask)
+@_register_unsupported_type(PIL.Image.Image, datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask)
 def get_num_frames(inpt: datapoints._VideoTypeJIT) -> int:
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_num_frames)

@@ -2198,6 +2198,7 @@ class TestShapeGetters:
             (F.get_num_channels, make_bounding_box),
             (F.get_num_channels, make_detection_mask),
             (F.get_num_channels, make_segmentation_mask),
+            (F.get_num_frames, make_image_pil),
             (F.get_num_frames, make_image),
             (F.get_num_frames, make_bounding_box),
             (F.get_num_frames, make_detection_mask),

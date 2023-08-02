@@ -1,3 +1,4 @@
+import PIL.Image
 import torch
 
 from torchvision import datapoints
@@ -7,7 +8,9 @@ from torchvision.utils import _log_api_usage_once
 from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, is_simple_tensor
 
 
-@_register_explicit_noop(datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask, future_warning=True)
+@_register_explicit_noop(
+    PIL.Image.Image, datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask, future_warning=True
+)
 def uniform_temporal_subsample(inpt: datapoints._VideoTypeJIT, num_samples: int) -> datapoints._VideoTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(uniform_temporal_subsample)
@@ -19,8 +22,7 @@ def uniform_temporal_subsample(inpt: datapoints._VideoTypeJIT, num_samples: int)
         return kernel(inpt, num_samples)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
+            f"Input can either be a plain tensor, any TorchVision datapoint, " f"but got {type(inpt)} instead."
         )
 
 
