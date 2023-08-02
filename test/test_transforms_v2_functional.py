@@ -898,7 +898,7 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
     pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
     inv_pcoeffs = _get_perspective_coeffs(endpoints, startpoints)
 
-    for bboxes in make_bounding_boxes(canvas_size=canvas_size, extra_dims=((4,),)):
+    for bboxes in make_bounding_boxes(spatial_size=canvas_size, extra_dims=((4,),)):
         bboxes = bboxes.to(device)
 
         output_bboxes = F.perspective_bounding_boxes(
