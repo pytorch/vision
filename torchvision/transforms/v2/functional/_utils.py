@@ -10,6 +10,7 @@ def is_simple_tensor(inpt: Any) -> bool:
     return isinstance(inpt, torch.Tensor) and not isinstance(inpt, datapoints.Datapoint)
 
 
+# {dispatcher: {input_type: type_specific_kernel}}
 _KERNEL_REGISTRY: Dict[Callable, Dict[Type, Callable]] = {}
 
 
