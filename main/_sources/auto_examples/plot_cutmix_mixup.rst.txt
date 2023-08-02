@@ -22,8 +22,8 @@
 How to use CutMix and MixUp
 ===========================
 
-:class:`~torchvision.transforms.v2.Cutmix` and
-:class:`~torchvision.transforms.v2.Mixup` are popular augmentation strategies
+:class:`~torchvision.transforms.v2.CutMix` and
+:class:`~torchvision.transforms.v2.MixUp` are popular augmentation strategies
 that can improve classification accuracy.
 
 These transforms are slightly different from the rest of the Torchvision
@@ -148,8 +148,8 @@ and this is exactly what these transforms expect as input:
 
     dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
 
-    cutmix = v2.Cutmix(num_classes=NUM_CLASSES)
-    mixup = v2.Mixup(num_classes=NUM_CLASSES)
+    cutmix = v2.CutMix(num_classes=NUM_CLASSES)
+    mixup = v2.MixUp(num_classes=NUM_CLASSES)
     cutmix_or_mixup = v2.RandomChoice([cutmix, mixup])
 
     for images, labels in dataloader:
@@ -255,7 +255,7 @@ by passing a callable to the ``labels_getter`` parameter. For example:
         return batch["target"]["classes"]
 
 
-    out = v2.Cutmix(num_classes=NUM_CLASSES, labels_getter=labels_getter)(batch)
+    out = v2.CutMix(num_classes=NUM_CLASSES, labels_getter=labels_getter)(batch)
     print(f"{out['imgs'].shape = }, {out['target']['classes'].shape = }")
 
 
@@ -273,7 +273,7 @@ by passing a callable to the ``labels_getter`` parameter. For example:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.125 seconds)
+   **Total running time of the script:** ( 0 minutes  0.114 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_cutmix_mixup.py:

@@ -30,7 +30,7 @@ def show(imgs):
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
 
-####################################
+# %%
 # Visualizing a grid of images
 # ----------------------------
 # The :func:`~torchvision.utils.make_grid` function can be used to create a
@@ -48,7 +48,7 @@ dog_list = [dog1_int, dog2_int]
 grid = make_grid(dog_list)
 show(grid)
 
-####################################
+# %%
 # Visualizing bounding boxes
 # --------------------------
 # We can use :func:`~torchvision.utils.draw_bounding_boxes` to draw boxes on an
@@ -64,7 +64,7 @@ result = draw_bounding_boxes(dog1_int, boxes, colors=colors, width=5)
 show(result)
 
 
-#####################################
+# %%
 # Naturally, we can also plot bounding boxes produced by torchvision detection
 # models.  Here is a demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
@@ -85,7 +85,7 @@ model = model.eval()
 outputs = model(images)
 print(outputs)
 
-#####################################
+# %%
 # Let's plot the boxes detected by our model. We will only plot the boxes with a
 # score greater than a given threshold.
 
@@ -96,7 +96,7 @@ dogs_with_boxes = [
 ]
 show(dogs_with_boxes)
 
-#####################################
+# %%
 # Visualizing segmentation masks
 # ------------------------------
 # The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
@@ -125,7 +125,7 @@ batch = torch.stack([transforms(d) for d in dog_list])
 output = model(batch)['out']
 print(output.shape, output.min().item(), output.max().item())
 
-#####################################
+# %%
 # As we can see above, the output of the segmentation model is a tensor of shape
 # ``(batch_size, num_classes, H, W)``. Each value is a non-normalized score, and
 # we can normalize them into ``[0, 1]`` by using a softmax. After the softmax,
@@ -147,7 +147,7 @@ dog_and_boat_masks = [
 
 show(dog_and_boat_masks)
 
-#####################################
+# %%
 # As expected, the model is confident about the dog class, but not so much for
 # the boat class.
 #
@@ -162,7 +162,7 @@ print(f"shape = {boolean_dog_masks.shape}, dtype = {boolean_dog_masks.dtype}")
 show([m.float() for m in boolean_dog_masks])
 
 
-#####################################
+# %%
 # The line above where we define ``boolean_dog_masks`` is a bit cryptic, but you
 # can read it as the following query: "For which pixels is 'dog' the most likely
 # class?"
@@ -184,7 +184,7 @@ dogs_with_masks = [
 ]
 show(dogs_with_masks)
 
-#####################################
+# %%
 # We can plot more than one mask per image! Remember that the model returned as
 # many masks as there are classes. Let's ask the same query as above, but this
 # time for *all* classes, not just the dog class: "For each pixel and each class
@@ -204,7 +204,7 @@ print(f"dog1_all_classes_masks = {dog1_all_classes_masks.shape}, dtype = {dog1_a
 dog_with_all_masks = draw_segmentation_masks(dog1_int, masks=dog1_all_classes_masks, alpha=.6)
 show(dog_with_all_masks)
 
-#####################################
+# %%
 # We can see in the image above that only 2 masks were drawn: the mask for the
 # background and the mask for the dog. This is because the model thinks that
 # only these 2 classes are the most likely ones across all the pixels. If the
@@ -231,7 +231,7 @@ dogs_with_masks = [
 show(dogs_with_masks)
 
 
-#####################################
+# %%
 # .. _instance_seg_output:
 #
 # Instance segmentation models
@@ -265,7 +265,7 @@ model = model.eval()
 output = model(images)
 print(output)
 
-#####################################
+# %%
 # Let's break this down. For each image in the batch, the model outputs some
 # detections (or instances). The number of detections varies for each input
 # image. Each instance is described by its bounding box, its label, its score
@@ -288,7 +288,7 @@ dog1_masks = dog1_output['masks']
 print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
       f"min = {dog1_masks.min()}, max = {dog1_masks.max()}")
 
-#####################################
+# %%
 # Here the masks correspond to probabilities indicating, for each pixel, how
 # likely it is to belong to the predicted label of that instance. Those
 # predicted labels correspond to the 'labels' element in the same output dict.
@@ -297,7 +297,7 @@ print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
 print("For the first dog, the following instances were detected:")
 print([weights.meta["categories"][label] for label in dog1_output['labels']])
 
-#####################################
+# %%
 # Interestingly, the model detects two persons in the image. Let's go ahead and
 # plot those masks. Since :func:`~torchvision.utils.draw_segmentation_masks`
 # expects boolean masks, we need to convert those probabilities into boolean
@@ -315,14 +315,14 @@ dog1_bool_masks = dog1_bool_masks.squeeze(1)
 
 show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.9))
 
-#####################################
+# %%
 # The model seems to have properly detected the dog, but it also confused trees
 # with people. Looking more closely at the scores will help us plot more
 # relevant masks:
 
 print(dog1_output['scores'])
 
-#####################################
+# %%
 # Clearly the model is more confident about the dog detection than it is about
 # the people detections. That's good news. When plotting the masks, we can ask
 # for only those that have a good score. Let's use a score threshold of .75
@@ -341,12 +341,12 @@ dogs_with_masks = [
 ]
 show(dogs_with_masks)
 
-#####################################
+# %%
 # The two 'people' masks in the first image where not selected because they have
 # a lower score than the score threshold. Similarly, in the second image, the
 # instance with class 15 (which corresponds to 'bench') was not selected.
 
-#####################################
+# %%
 # .. _keypoint_output:
 #
 # Visualizing keypoints
@@ -373,7 +373,7 @@ model = model.eval()
 outputs = model([person_float])
 print(outputs)
 
-#####################################
+# %%
 # As we see the output contains a list of dictionaries.
 # The output list is of length batch_size.
 # We currently have just a single image so length of list is 1.
@@ -388,7 +388,7 @@ scores = outputs[0]['scores']
 print(kpts)
 print(scores)
 
-#####################################
+# %%
 # The KeypointRCNN model detects there are two instances in the image.
 # If you plot the boxes by using :func:`~draw_bounding_boxes`
 # you would recognize they are the person and the surfboard.
@@ -402,7 +402,7 @@ keypoints = kpts[idx]
 
 print(keypoints)
 
-#####################################
+# %%
 # Great, now we have the keypoints corresponding to the person.
 # Each keypoint is represented by x, y coordinates and the visibility.
 # We can now use the :func:`~torchvision.utils.draw_keypoints` function to draw keypoints.
@@ -413,7 +413,7 @@ from torchvision.utils import draw_keypoints
 res = draw_keypoints(person_int, keypoints, colors="blue", radius=3)
 show(res)
 
-#####################################
+# %%
 # As we see the keypoints appear as colored circles over the image.
 # The coco keypoints for a person are ordered and represent the following list.\
 
@@ -424,7 +424,7 @@ coco_keypoints = [
     "left_knee", "right_knee", "left_ankle", "right_ankle",
 ]
 
-#####################################
+# %%
 # What if we are interested in joining the keypoints?
 # This is especially useful in creating pose detection or action recognition.
 # We can join the keypoints easily using the `connectivity` parameter.
@@ -450,7 +450,7 @@ connect_skeleton = [
     (7, 9), (8, 10), (5, 11), (6, 12), (11, 13), (12, 14), (13, 15), (14, 16)
 ]
 
-#####################################
+# %%
 # We pass the above list to the connectivity parameter to connect the keypoints.
 #
 

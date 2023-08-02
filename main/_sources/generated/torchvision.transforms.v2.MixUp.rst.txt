@@ -3,8 +3,8 @@
 .. currentmodule:: torchvision.transforms.v2
 
 
-Cutmix
-======
+MixUp
+=====
 
-.. autoclass:: Cutmix
+.. autoclass:: MixUp
     :members:

@@ -65,7 +65,7 @@ Below is a gallery of examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Cutmix and Mixup are popular augmentation strategies that can improve classification accuracy.">
+    <div class="sphx-glr-thumbcontainer" tooltip="CutMix and MixUp are popular augmentation strategies that can improve classification accuracy.">
 
 .. only:: html
 
