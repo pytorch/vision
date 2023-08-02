@@ -304,7 +304,7 @@ def get_extensions():
     if use_jpeg:
         print("Building torchvision with JPEG image support")
         print(f"  libjpeg include path: {jpeg_include}")
-        print(f"  libpjpeg lib path: {jpeg_lib}")
+        print(f"  libjpeg lib path: {jpeg_lib}")
         image_link_flags.append("jpeg")
         if jpeg_conda:
             image_library += [jpeg_lib]
