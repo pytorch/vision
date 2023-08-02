@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 import torch
 
 
@@ -48,7 +46,7 @@ class SegmentationPresetTrain:
         if use_v2:
             # We need a custom pad transform here, since the padding we want to perform here is fundamentally
             # different from the padding in `RandomCrop` if `pad_if_needed=True`.
-            transforms += [v2_extras.PadIfSmaller(crop_size, fill=defaultdict(lambda: 0, {datapoints.Mask: 255}))]
+            transforms += [v2_extras.PadIfSmaller(crop_size, fill={datapoints.Mask: 255, "others": 0})]
 
         transforms += [T.RandomCrop(crop_size)]
 
