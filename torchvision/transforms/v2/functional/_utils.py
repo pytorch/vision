@@ -77,9 +77,9 @@ def register_kernel(dispatcher, datapoint_cls):
     return _register_kernel_internal(dispatcher, datapoint_cls, wrap_kernel=False)
 
 
-def _noop(inpt, *args, __future_warning__=None, **kwargs):
-    if __future_warning__:
-        warnings.warn(__future_warning__, FutureWarning, stacklevel=2)
+def _noop(inpt, *args, __msg__=None, **kwargs):
+    if __msg__:
+        warnings.warn(__msg__, UserWarning, stacklevel=2)
     return inpt
 
 
@@ -104,9 +104,7 @@ def _register_explicit_noop(*datapoints_classes, future_warning=False):
                 f"F.{dispatcher.__name__} is currently passing through inputs of type datapoints.{cls.__name__}. "
                 f"This will likely change in the future."
             )
-            register_kernel(dispatcher, cls)(
-                functools.partial(_noop, __future_warning__=msg if future_warning else None)
-            )
+            register_kernel(dispatcher, cls)(functools.partial(_noop, __msg__=msg if future_warning else None))
         return dispatcher
 
     return decorator
