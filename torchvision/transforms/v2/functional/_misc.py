@@ -37,7 +37,7 @@ def normalize(
         return kernel(inpt, mean=mean, std=std, inplace=inplace)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, " f"but got {type(inpt)} instead."
+            f"Input can either be a plain tensor or any TorchVision datapoint, but got {type(inpt)} instead."
         )
 
 
@@ -209,7 +209,7 @@ def to_dtype(
         return kernel(inpt, dtype, scale=scale)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, " f"but got {type(inpt)} instead."
+            f"Input can either be a plain tensor or any TorchVision datapoint, but got {type(inpt)} instead."
         )
 
 

@@ -358,9 +358,7 @@ class FiveCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(
-        self, inpt: ImageOrVideoTypeJIT, params: Dict[str, Any]
-    ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.five_crop(inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
@@ -403,20 +401,7 @@ class TenCrop(Transform):
         if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
-    def _transform(
-        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
-    ) -> Tuple[
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-    ]:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
 

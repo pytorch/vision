@@ -1990,13 +1990,16 @@ def resized_crop(
         )
 
 
-ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
-
-
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, warn_passthrough=True)
 def five_crop(
-    inpt: ImageOrVideoTypeJIT, size: List[int]
-) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
+    inpt: datapoints._InputTypeJIT, size: List[int]
+) -> Tuple[
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+]:
     if not torch.jit.is_scripting():
         _log_api_usage_once(five_crop)
 
@@ -2077,16 +2080,16 @@ def five_crop_video(
 def ten_crop(
     inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], size: List[int], vertical_flip: bool = False
 ) -> Tuple[
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
-    ImageOrVideoTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
+    datapoints._InputTypeJIT,
 ]:
     if not torch.jit.is_scripting():
         _log_api_usage_once(ten_crop)
