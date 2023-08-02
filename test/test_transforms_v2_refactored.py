@@ -173,58 +173,31 @@ def _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs):
         dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
 
-def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
-    """Checks if the dispatcher correctly dispatches the input to the corresponding kernel and that the input type is
-    preserved in doing so. For bounding boxes also checks that the format is preserved.
-    """
-    input_type = type(input)
-
-    if isinstance(input, datapoints.Datapoint):
-        wrapped_kernel = _KERNEL_REGISTRY[dispatcher][input_type]
-
-        # In case the wrapper was decorated with @functools.wraps, we can make the check more strict and test if the
-        # proper kernel was wrapped
-        if hasattr(wrapped_kernel, "__wrapped__"):
-            assert wrapped_kernel.__wrapped__ is kernel
-
-        spy = mock.MagicMock(wraps=wrapped_kernel, name=wrapped_kernel.__name__)
-        with mock.patch.dict(_KERNEL_REGISTRY[dispatcher], values={input_type: spy}):
-            output = dispatcher(input, *args, **kwargs)
-
-        spy.assert_called_once()
-    else:
-        with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
-            output = dispatcher(input, *args, **kwargs)
-
-            spy.assert_called_once()
-
-    assert isinstance(output, input_type)
-
-    if isinstance(input, datapoints.BoundingBoxes):
-        assert output.format == input.format
-
-
 def check_dispatcher(
     dispatcher,
+    # TODO: remove this parameter
     kernel,
     input,
     *args,
     check_scripted_smoke=True,
-    check_dispatch=True,
     **kwargs,
 ):
     unknown_input = object()
+    with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
+        dispatcher(unknown_input, *args, **kwargs)
+
     with mock.patch("torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once) as spy:
-        with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
-            dispatcher(unknown_input, *args, **kwargs)
+        output = dispatcher(input, *args, **kwargs)
 
         spy.assert_any_call(f"{dispatcher.__module__}.{dispatcher.__name__}")
 
+    assert isinstance(output, type(input))
+
+    if isinstance(input, datapoints.BoundingBoxes):
+        assert output.format == input.format
+
     if check_scripted_smoke:
         _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs)
-
-    if check_dispatch:
-        _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs)
 
 
 def check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
@@ -412,18 +385,20 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
 
 
 @pytest.mark.parametrize(
-    ("dispatcher", "registered_datapoint_clss"),
+    ("dispatcher", "registered_input_types"),
     [(dispatcher, set(registry.keys())) for dispatcher, registry in _KERNEL_REGISTRY.items()],
 )
-def test_exhaustive_kernel_registration(dispatcher, registered_datapoint_clss):
+def test_exhaustive_kernel_registration(dispatcher, registered_input_types):
     missing = {
+        torch.Tensor,
+        PIL.Image.Image,
         datapoints.Image,
         datapoints.BoundingBoxes,
         datapoints.Mask,
         datapoints.Video,
-    } - registered_datapoint_clss
+    } - registered_input_types
     if missing:
-        names = sorted(f"datapoints.{cls.__name__}" for cls in missing)
+        names = sorted(str(t) for t in missing)
         raise AssertionError(
             "\n".join(
                 [
@@ -1753,11 +1728,6 @@ class TestToDtype:
             F.to_dtype,
             kernel,
             make_input(dtype=input_dtype, device=device),
-            # TODO: we could leave check_dispatch to True but it currently fails
-            # in _check_dispatcher_dispatch because there is no to_dtype() method on the datapoints.
-            # We should be able to put this back if we change the dispatch
-            # mechanism e.g. via https://github.com/pytorch/vision/pull/7733
-            check_dispatch=False,
             dtype=output_dtype,
             scale=scale,
         )

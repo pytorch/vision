@@ -10,29 +10,20 @@ from torchvision.transforms._functional_tensor import _max_value
 from torchvision.utils import _log_api_usage_once
 
 from ._misc import _num_value_bits, to_dtype_image_tensor
-from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, is_simple_tensor
+from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal
 
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, datapoints.Video)
 def rgb_to_grayscale(
     inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], num_output_channels: int = 1
 ) -> Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(rgb_to_grayscale)
-    if num_output_channels not in (1, 3):
-        raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return rgb_to_grayscale_image_tensor(inpt, num_output_channels=num_output_channels)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(rgb_to_grayscale, type(inpt))
-        return kernel(inpt, num_output_channels=num_output_channels)
-    elif isinstance(inpt, PIL.Image.Image):
-        return rgb_to_grayscale_image_pil(inpt, num_output_channels=num_output_channels)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(rgb_to_grayscale)
+
+    kernel = _get_kernel(rgb_to_grayscale, type(inpt))
+    return kernel(inpt, num_output_channels=num_output_channels)
 
 
 # `to_grayscale` actually predates `rgb_to_grayscale` in v1, but only handles PIL images. Since `rgb_to_grayscale` is a
@@ -56,12 +47,19 @@ def _rgb_to_grayscale_image_tensor(
     return l_img
 
 
+@_register_kernel_internal(rgb_to_grayscale, torch.Tensor)
 @_register_kernel_internal(rgb_to_grayscale, datapoints.Image)
 def rgb_to_grayscale_image_tensor(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
+    if num_output_channels not in (1, 3):
+        raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
     return _rgb_to_grayscale_image_tensor(image, num_output_channels=num_output_channels, preserve_dtype=True)
 
 
-rgb_to_grayscale_image_pil = _FP.to_grayscale
+@_register_kernel_internal(rgb_to_grayscale, PIL.Image.Image)
+def rgb_to_grayscale_image_pil(image: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
+    if num_output_channels not in (1, 3):
+        raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
+    return _FP.to_grayscale(image, num_output_channels=num_output_channels)
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
@@ -74,23 +72,16 @@ def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Te
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(adjust_brightness)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(adjust_brightness, type(inpt))
-        return kernel(inpt, brightness_factor=brightness_factor)
-    elif isinstance(inpt, PIL.Image.Image):
-        return adjust_brightness_image_pil(inpt, brightness_factor=brightness_factor)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(adjust_brightness)
+
+    kernel = _get_kernel(adjust_brightness, type(inpt))
+    return kernel(inpt, brightness_factor=brightness_factor)
 
 
+@_register_kernel_internal(adjust_brightness, torch.Tensor)
 @_register_kernel_internal(adjust_brightness, datapoints.Image)
 def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     if brightness_factor < 0:
@@ -106,6 +97,7 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
     return output if fp else output.to(image.dtype)
 
 
+@_register_kernel_internal(adjust_brightness, PIL.Image.Image)
 def adjust_brightness_image_pil(image: PIL.Image.Image, brightness_factor: float) -> PIL.Image.Image:
     return _FP.adjust_brightness(image, brightness_factor=brightness_factor)
 
@@ -117,23 +109,16 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def adjust_saturation(inpt: datapoints._InputTypeJIT, saturation_factor: float) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(adjust_saturation)
-
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Datapoint)):
+    if torch.jit.is_scripting():
         return adjust_saturation_image_tensor(inpt, saturation_factor=saturation_factor)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(adjust_saturation, type(inpt))
-        return kernel(inpt, saturation_factor=saturation_factor)
-    elif isinstance(inpt, PIL.Image.Image):
-        return adjust_saturation_image_pil(inpt, saturation_factor=saturation_factor)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(adjust_saturation)
+
+    kernel = _get_kernel(adjust_saturation, type(inpt))
+    return kernel(inpt, saturation_factor=saturation_factor)
 
 
+@_register_kernel_internal(adjust_saturation, torch.Tensor)
 @_register_kernel_internal(adjust_saturation, datapoints.Image)
 def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     if saturation_factor < 0:
@@ -154,6 +139,7 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
 
 
 adjust_saturation_image_pil = _FP.adjust_saturation
+_register_kernel_internal(adjust_saturation, PIL.Image.Image)(adjust_saturation_image_pil)
 
 
 @_register_kernel_internal(adjust_saturation, datapoints.Video)
@@ -163,23 +149,16 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def adjust_contrast(inpt: datapoints._InputTypeJIT, contrast_factor: float) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(adjust_contrast)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return adjust_contrast_image_tensor(inpt, contrast_factor=contrast_factor)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(adjust_contrast, type(inpt))
-        return kernel(inpt, contrast_factor=contrast_factor)
-    elif isinstance(inpt, PIL.Image.Image):
-        return adjust_contrast_image_pil(inpt, contrast_factor=contrast_factor)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(adjust_contrast)
+
+    kernel = _get_kernel(adjust_contrast, type(inpt))
+    return kernel(inpt, contrast_factor=contrast_factor)
 
 
+@_register_kernel_internal(adjust_contrast, torch.Tensor)
 @_register_kernel_internal(adjust_contrast, datapoints.Image)
 def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     if contrast_factor < 0:
@@ -200,6 +179,7 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
 
 
 adjust_contrast_image_pil = _FP.adjust_contrast
+_register_kernel_internal(adjust_contrast, PIL.Image.Image)(adjust_contrast_image_pil)
 
 
 @_register_kernel_internal(adjust_contrast, datapoints.Video)
@@ -209,23 +189,16 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def adjust_sharpness(inpt: datapoints._InputTypeJIT, sharpness_factor: float) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(adjust_sharpness)
-
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Datapoint)):
+    if torch.jit.is_scripting():
         return adjust_sharpness_image_tensor(inpt, sharpness_factor=sharpness_factor)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(adjust_sharpness, type(inpt))
-        return kernel(inpt, sharpness_factor=sharpness_factor)
-    elif isinstance(inpt, PIL.Image.Image):
-        return adjust_sharpness_image_pil(inpt, sharpness_factor=sharpness_factor)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(adjust_sharpness)
+
+    kernel = _get_kernel(adjust_sharpness, type(inpt))
+    return kernel(inpt, sharpness_factor=sharpness_factor)
 
 
+@_register_kernel_internal(adjust_sharpness, torch.Tensor)
 @_register_kernel_internal(adjust_sharpness, datapoints.Image)
 def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
     num_channels, height, width = image.shape[-3:]
@@ -280,6 +253,7 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
 
 
 adjust_sharpness_image_pil = _FP.adjust_sharpness
+_register_kernel_internal(adjust_sharpness, PIL.Image.Image)(adjust_sharpness_image_pil)
 
 
 @_register_kernel_internal(adjust_sharpness, datapoints.Video)
@@ -289,21 +263,13 @@ def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torc
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def adjust_hue(inpt: datapoints._InputTypeJIT, hue_factor: float) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(adjust_hue)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return adjust_hue_image_tensor(inpt, hue_factor=hue_factor)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(adjust_hue, type(inpt))
-        return kernel(inpt, hue_factor=hue_factor)
-    elif isinstance(inpt, PIL.Image.Image):
-        return adjust_hue_image_pil(inpt, hue_factor=hue_factor)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(adjust_hue)
+
+    kernel = _get_kernel(adjust_hue, type(inpt))
+    return kernel(inpt, hue_factor=hue_factor)
 
 
 def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
@@ -370,6 +336,7 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     return (a4.mul_(mask.unsqueeze(dim=-4))).sum(dim=-3)
 
 
+@_register_kernel_internal(adjust_hue, torch.Tensor)
 @_register_kernel_internal(adjust_hue, datapoints.Image)
 def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
@@ -399,6 +366,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
 
 
 adjust_hue_image_pil = _FP.adjust_hue
+_register_kernel_internal(adjust_hue, PIL.Image.Image)(adjust_hue_image_pil)
 
 
 @_register_kernel_internal(adjust_hue, datapoints.Video)
@@ -408,23 +376,16 @@ def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def adjust_gamma(inpt: datapoints._InputTypeJIT, gamma: float, gain: float = 1) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(adjust_gamma)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return adjust_gamma_image_tensor(inpt, gamma=gamma, gain=gain)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(adjust_gamma, type(inpt))
-        return kernel(inpt, gamma=gamma, gain=gain)
-    elif isinstance(inpt, PIL.Image.Image):
-        return adjust_gamma_image_pil(inpt, gamma=gamma, gain=gain)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(adjust_gamma)
+
+    kernel = _get_kernel(adjust_gamma, type(inpt))
+    return kernel(inpt, gamma=gamma, gain=gain)
 
 
+@_register_kernel_internal(adjust_gamma, torch.Tensor)
 @_register_kernel_internal(adjust_gamma, datapoints.Image)
 def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1.0) -> torch.Tensor:
     if gamma < 0:
@@ -446,6 +407,7 @@ def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1
 
 
 adjust_gamma_image_pil = _FP.adjust_gamma
+_register_kernel_internal(adjust_gamma, PIL.Image.Image)(adjust_gamma_image_pil)
 
 
 @_register_kernel_internal(adjust_gamma, datapoints.Video)
@@ -455,23 +417,16 @@ def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> to
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def posterize(inpt: datapoints._InputTypeJIT, bits: int) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(posterize)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return posterize_image_tensor(inpt, bits=bits)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(posterize, type(inpt))
-        return kernel(inpt, bits=bits)
-    elif isinstance(inpt, PIL.Image.Image):
-        return posterize_image_pil(inpt, bits=bits)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(posterize)
+
+    kernel = _get_kernel(posterize, type(inpt))
+    return kernel(inpt, bits=bits)
 
 
+@_register_kernel_internal(posterize, torch.Tensor)
 @_register_kernel_internal(posterize, datapoints.Image)
 def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
     if image.is_floating_point():
@@ -487,6 +442,7 @@ def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
 
 
 posterize_image_pil = _FP.posterize
+_register_kernel_internal(posterize, PIL.Image.Image)(posterize_image_pil)
 
 
 @_register_kernel_internal(posterize, datapoints.Video)
@@ -496,23 +452,16 @@ def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def solarize(inpt: datapoints._InputTypeJIT, threshold: float) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(solarize)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return solarize_image_tensor(inpt, threshold=threshold)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(solarize, type(inpt))
-        return kernel(inpt, threshold=threshold)
-    elif isinstance(inpt, PIL.Image.Image):
-        return solarize_image_pil(inpt, threshold=threshold)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(solarize)
+
+    kernel = _get_kernel(solarize, type(inpt))
+    return kernel(inpt, threshold=threshold)
 
 
+@_register_kernel_internal(solarize, torch.Tensor)
 @_register_kernel_internal(solarize, datapoints.Image)
 def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor:
     if threshold > _max_value(image.dtype):
@@ -522,6 +471,7 @@ def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor
 
 
 solarize_image_pil = _FP.solarize
+_register_kernel_internal(solarize, PIL.Image.Image)(solarize_image_pil)
 
 
 @_register_kernel_internal(solarize, datapoints.Video)
@@ -531,25 +481,16 @@ def solarize_video(video: torch.Tensor, threshold: float) -> torch.Tensor:
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def autocontrast(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(autocontrast)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return autocontrast_image_tensor(inpt)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(autocontrast, type(inpt))
-        return kernel(
-            inpt,
-        )
-    elif isinstance(inpt, PIL.Image.Image):
-        return autocontrast_image_pil(inpt)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(autocontrast)
+
+    kernel = _get_kernel(autocontrast, type(inpt))
+    return kernel(inpt)
 
 
+@_register_kernel_internal(autocontrast, torch.Tensor)
 @_register_kernel_internal(autocontrast, datapoints.Image)
 def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
     c = image.shape[-3]
@@ -581,6 +522,7 @@ def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
 
 
 autocontrast_image_pil = _FP.autocontrast
+_register_kernel_internal(autocontrast, PIL.Image.Image)(autocontrast_image_pil)
 
 
 @_register_kernel_internal(autocontrast, datapoints.Video)
@@ -590,25 +532,16 @@ def autocontrast_video(video: torch.Tensor) -> torch.Tensor:
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def equalize(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(equalize)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return equalize_image_tensor(inpt)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(equalize, type(inpt))
-        return kernel(
-            inpt,
-        )
-    elif isinstance(inpt, PIL.Image.Image):
-        return equalize_image_pil(inpt)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(equalize)
+
+    kernel = _get_kernel(equalize, type(inpt))
+    return kernel(inpt)
 
 
+@_register_kernel_internal(equalize, torch.Tensor)
 @_register_kernel_internal(equalize, datapoints.Image)
 def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.numel() == 0:
@@ -680,6 +613,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
 
 
 equalize_image_pil = _FP.equalize
+_register_kernel_internal(equalize, PIL.Image.Image)(equalize_image_pil)
 
 
 @_register_kernel_internal(equalize, datapoints.Video)
@@ -689,25 +623,16 @@ def equalize_video(video: torch.Tensor) -> torch.Tensor:
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def invert(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(invert)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return invert_image_tensor(inpt)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(invert, type(inpt))
-        return kernel(
-            inpt,
-        )
-    elif isinstance(inpt, PIL.Image.Image):
-        return invert_image_pil(inpt)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(invert)
+
+    kernel = _get_kernel(invert, type(inpt))
+    return kernel(inpt)
 
 
+@_register_kernel_internal(invert, torch.Tensor)
 @_register_kernel_internal(invert, datapoints.Image)
 def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.is_floating_point():
@@ -720,6 +645,7 @@ def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
 
 
 invert_image_pil = _FP.invert
+_register_kernel_internal(invert, PIL.Image.Image)(invert_image_pil)
 
 
 @_register_kernel_internal(invert, datapoints.Video)

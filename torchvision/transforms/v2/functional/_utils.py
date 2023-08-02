@@ -2,6 +2,8 @@ import functools
 import warnings
 from typing import Any, Callable, Dict, Type
 
+import PIL.Image
+
 import torch
 from torchvision import datapoints
 
@@ -23,15 +25,17 @@ def _kernel_datapoint_wrapper(kernel):
     return wrapper
 
 
-def _register_kernel_internal(dispatcher, datapoint_cls, *, datapoint_wrapper=True):
+def _register_kernel_internal(dispatcher, input_type, *, datapoint_wrapper=True):
     registry = _KERNEL_REGISTRY.setdefault(dispatcher, {})
-    if datapoint_cls in registry:
-        raise TypeError(
-            f"Dispatcher '{dispatcher.__name__}' already has a kernel registered for type '{datapoint_cls.__name__}'."
-        )
+    if input_type in registry:
+        raise TypeError(f"Dispatcher '{dispatcher}' already has a kernel registered for type '{input_type}'.")
 
     def decorator(kernel):
-        registry[datapoint_cls] = _kernel_datapoint_wrapper(kernel) if datapoint_wrapper else kernel
+        registry[input_type] = (
+            _kernel_datapoint_wrapper(kernel)
+            if issubclass(input_type, datapoints.Datapoint) and datapoint_wrapper
+            else kernel
+        )
         return kernel
 
     return decorator
@@ -41,16 +45,22 @@ def register_kernel(dispatcher, datapoint_cls):
     return _register_kernel_internal(dispatcher, datapoint_cls, datapoint_wrapper=False)
 
 
-def _get_kernel(dispatcher, datapoint_cls):
+def _get_kernel(dispatcher, input_type):
+    if not issubclass(input_type, (torch.Tensor, PIL.Image.Image)):
+        raise TypeError(
+            f"Dispatcher '{dispatcher}' supports plain tensors, any TorchVision datapoint, or a PIL images, "
+            f"but got {input_type} instead."
+        )
+
     registry = _KERNEL_REGISTRY.get(dispatcher)
     if not registry:
         raise ValueError(f"No kernel registered for dispatcher '{dispatcher.__name__}'.")
 
-    if datapoint_cls in registry:
-        return registry[datapoint_cls]
+    if input_type in registry:
+        return registry[input_type]
 
-    for registered_cls, kernel in registry.items():
-        if issubclass(datapoint_cls, registered_cls):
+    for registered_type, kernel in registry.items():
+        if issubclass(input_type, registered_type):
             return kernel
 
     return _noop
@@ -99,13 +109,13 @@ def _noop(inpt, *args, __msg__=None, **kwargs):
 
 # TODO: we only need this, since our default behavior in case no kernel is found is passthrough. When we change that
 # to error later, this decorator can be removed, since the error will be raised by _get_kernel
-def _register_unsupported_type(*datapoints_classes):
+def _register_unsupported_type(*input_types):
     def kernel(inpt, *args, __dispatcher_name__, **kwargs):
         raise TypeError(f"F.{__dispatcher_name__} does not support inputs of type {type(inpt)}.")
 
     def decorator(dispatcher):
-        for cls in datapoints_classes:
-            register_kernel(dispatcher, cls)(functools.partial(kernel, __dispatcher_name__=dispatcher.__name__))
+        for input_type in input_types:
+            register_kernel(dispatcher, input_type)(functools.partial(kernel, __dispatcher_name__=dispatcher.__name__))
         return dispatcher
 
     return decorator
@@ -113,13 +123,10 @@ def _register_unsupported_type(*datapoints_classes):
 
 # This basically replicates _register_kernel_internal, but with a specialized wrapper for five_crop / ten_crop
 # We could get rid of this by letting _register_kernel_internal take arbitrary dispatchers rather than wrap_kernel: bool
-# TODO: decide if we want that
-def _register_five_ten_crop_kernel(dispatcher, datapoint_cls):
+def _register_five_ten_crop_kernel(dispatcher, input_type):
     registry = _KERNEL_REGISTRY.setdefault(dispatcher, {})
-    if datapoint_cls in registry:
-        raise TypeError(
-            f"Dispatcher '{dispatcher.__name__}' already has a kernel registered for type '{datapoint_cls.__name__}'."
-        )
+    if input_type in registry:
+        raise TypeError(f"Dispatcher '{dispatcher}' already has a kernel registered for type '{input_type}'.")
 
     def wrap(kernel):
         @functools.wraps(kernel)
@@ -131,7 +138,7 @@ def _register_five_ten_crop_kernel(dispatcher, datapoint_cls):
         return wrapper
 
     def decorator(kernel):
-        registry[datapoint_cls] = wrap(kernel)
+        registry[input_type] = wrap(kernel) if issubclass(input_type, datapoints.Datapoint) else kernel
         return kernel
 
     return decorator
