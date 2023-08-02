@@ -2,11 +2,11 @@ import inspect
 import math
 import os
 import re
+from unittest import mock
 
 import numpy as np
 import PIL.Image
 import pytest
-
 import torch
 
 from common_utils import (
@@ -25,6 +25,7 @@ from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
 from torchvision.transforms.v2.functional._meta import clamp_bounding_boxes, convert_format_bounding_boxes
+from torchvision.transforms.v2.functional._utils import _KERNEL_REGISTRY
 from torchvision.transforms.v2.utils import is_simple_tensor
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
@@ -414,6 +415,28 @@ class TestDispatchers:
         output = info.dispatcher(image_pil, *other_args, **kwargs)
 
         assert isinstance(output, PIL.Image.Image)
+
+    @make_info_args_kwargs_parametrization(
+        DISPATCHER_INFOS,
+        args_kwargs_fn=lambda info: info.sample_inputs(),
+    )
+    def test_dispatch_datapoint(self, info, args_kwargs, spy_on):
+        (datapoint, *other_args), kwargs = args_kwargs.load()
+
+        input_type = type(datapoint)
+
+        wrapped_kernel = _KERNEL_REGISTRY[info.dispatcher][input_type]
+
+        # In case the wrapper was decorated with @functools.wraps, we can make the check more strict and test if the
+        # proper kernel was wrapped
+        if hasattr(wrapped_kernel, "__wrapped__"):
+            assert wrapped_kernel.__wrapped__ is info.kernels[input_type]
+
+        spy = mock.MagicMock(wraps=wrapped_kernel, name=wrapped_kernel.__name__)
+        with mock.patch.dict(_KERNEL_REGISTRY[info.dispatcher], values={input_type: spy}):
+            info.dispatcher(datapoint, *other_args, **kwargs)
+
+        spy.assert_called_once()
 
     @make_info_args_kwargs_parametrization(
         DISPATCHER_INFOS,
