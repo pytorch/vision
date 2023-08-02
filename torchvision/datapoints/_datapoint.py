@@ -14,6 +14,12 @@ _FillTypeJIT = Optional[List[float]]
 
 
 class Datapoint(torch.Tensor):
+    """[Beta] Base class for all datapoints.
+
+    You probably don't want to use this class unless you're defining your own
+    custom Datapoints. See
+    :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for details.
+    """
     @staticmethod
     def _to_tensor(
         data: Any,
