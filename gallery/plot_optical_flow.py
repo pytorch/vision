@@ -42,7 +42,7 @@ def plot(imgs, **imshow_kwargs):
 
     plt.tight_layout()
 
-###################################
+# %%
 # Reading Videos Using Torchvision
 # --------------------------------
 # We will first read a video using :func:`~torchvision.io.read_video`.
@@ -62,7 +62,7 @@ video_url = "https://download.pytorch.org/tutorial/pexelscom_pavel_danilyuk_bask
 video_path = Path(tempfile.mkdtemp()) / "basketball.mp4"
 _ = urlretrieve(video_url, video_path)
 
-#########################
+# %%
 # :func:`~torchvision.io.read_video` returns the video frames, audio frames and
 # the metadata associated with the video. In our case, we only need the video
 # frames.
@@ -79,7 +79,7 @@ img2_batch = torch.stack([frames[101], frames[151]])
 
 plot(img1_batch)
 
-#########################
+# %%
 # The RAFT model accepts RGB images. We first get the frames from
 # :func:`~torchvision.io.read_video` and resize them to ensure their dimensions
 # are divisible by 8. Note that we explicitly use ``antialias=False``, because
@@ -104,7 +104,7 @@ img1_batch, img2_batch = preprocess(img1_batch, img2_batch)
 print(f"shape = {img1_batch.shape}, dtype = {img1_batch.dtype}")
 
 
-####################################
+# %%
 # Estimating Optical flow using RAFT
 # ----------------------------------
 # We will use our RAFT implementation from
@@ -125,7 +125,7 @@ list_of_flows = model(img1_batch.to(device), img2_batch.to(device))
 print(f"type = {type(list_of_flows)}")
 print(f"length = {len(list_of_flows)} = number of iterations of the model")
 
-####################################
+# %%
 # The RAFT model outputs lists of predicted flows where each entry is a
 # (N, 2, H, W) batch of predicted flows that corresponds to a given "iteration"
 # in the model. For more details on the iterative nature of the model, please
@@ -144,7 +144,7 @@ print(f"shape = {predicted_flows.shape} = (N, 2, H, W)")
 print(f"min = {predicted_flows.min()}, max = {predicted_flows.max()}")
 
 
-####################################
+# %%
 # Visualizing predicted flows
 # ---------------------------
 # Torchvision provides the :func:`~torchvision.utils.flow_to_image` utlity to
@@ -166,7 +166,7 @@ img1_batch = [(img1 + 1) / 2 for img1 in img1_batch]
 grid = [[img1, flow_img] for (img1, flow_img) in zip(img1_batch, flow_imgs)]
 plot(grid)
 
-####################################
+# %%
 # Bonus: Creating GIFs of predicted flows
 # ---------------------------------------
 # In the example above we have only shown the predicted flows of 2 pairs of
@@ -187,7 +187,7 @@ plot(grid)
 #     output_folder = "/tmp/"  # Update this to the folder of your choice
 #     write_jpeg(flow_img, output_folder + f"predicted_flow_{i}.jpg")
 
-####################################
+# %%
 # Once the .jpg flow images are saved, you can convert them into a video or a
 # GIF using ffmpeg with e.g.:
 #
