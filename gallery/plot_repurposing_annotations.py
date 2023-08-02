@@ -36,7 +36,7 @@ def show(imgs):
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
 
-####################################
+# %%
 # Masks
 # -----
 # In tasks like instance and panoptic segmentation, masks are commonly defined, and are defined by this package,
@@ -53,7 +53,7 @@ def show(imgs):
 # A nice property of masks is that they can be easily repurposed to be used in methods to solve a variety of object
 # localization tasks.
 
-####################################
+# %%
 # Converting Masks to Bounding Boxes
 # -----------------------------------------------
 # For example, the :func:`~torchvision.ops.masks_to_boxes` operation can be used to
@@ -70,7 +70,7 @@ img = read_image(img_path)
 mask = read_image(mask_path)
 
 
-#########################
+# %%
 # Here the masks are represented as a PNG Image, with floating point values.
 # Each pixel is encoded as different colors, with 0 being background.
 # Notice that the spatial dimensions of image and mask match.
@@ -79,7 +79,7 @@ print(mask.size())
 print(img.size())
 print(mask)
 
-############################
+# %%
 
 # We get the unique colors, as these would be the object ids.
 obj_ids = torch.unique(mask)
@@ -91,7 +91,7 @@ obj_ids = obj_ids[1:]
 # Note that this snippet would work as well if the masks were float values instead of ints.
 masks = mask == obj_ids[:, None, None]
 
-########################
+# %%
 # Now the masks are a boolean tensor.
 # The first dimension in this case 3 and denotes the number of instances: there are 3 people in the image.
 # The other two dimensions are height and width, which are equal to the dimensions of the image.
@@ -101,7 +101,7 @@ masks = mask == obj_ids[:, None, None]
 print(masks.size())
 print(masks)
 
-####################################
+# %%
 # Let us visualize an image and plot its corresponding segmentation masks.
 # We will use the :func:`~torchvision.utils.draw_segmentation_masks` to draw the segmentation masks.
 
@@ -113,7 +113,7 @@ for mask in masks:
 
 show(drawn_masks)
 
-####################################
+# %%
 # To convert the boolean masks into bounding boxes.
 # We will use the :func:`~torchvision.ops.masks_to_boxes` from the torchvision.ops module
 # It returns the boxes in ``(xmin, ymin, xmax, ymax)`` format.
@@ -124,7 +124,7 @@ boxes = masks_to_boxes(masks)
 print(boxes.size())
 print(boxes)
 
-####################################
+# %%
 # As the shape denotes, there are 3 boxes and in ``(xmin, ymin, xmax, ymax)`` format.
 # These can be visualized very easily with :func:`~torchvision.utils.draw_bounding_boxes` utility
 # provided in :ref:`torchvision.utils <utils>`.
@@ -134,7 +134,7 @@ from torchvision.utils import draw_bounding_boxes
 drawn_boxes = draw_bounding_boxes(img, boxes, colors="red")
 show(drawn_boxes)
 
-###################################
+# %%
 # These boxes can now directly be used by detection models in torchvision.
 # Here is demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
@@ -153,7 +153,7 @@ target["labels"] = labels = torch.ones((masks.size(0),), dtype=torch.int64)
 detection_outputs = model(img.unsqueeze(0), [target])
 
 
-####################################
+# %%
 # Converting Segmentation Dataset to Detection Dataset
 # ----------------------------------------------------
 #

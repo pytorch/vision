@@ -34,6 +34,7 @@ IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
+MPS_NOT_AVAILABLE_MSG = "MPS device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
 
 
@@ -130,10 +131,20 @@ def cpu_and_cuda():
     return ("cpu", pytest.param("cuda", marks=pytest.mark.needs_cuda))
 
 
+def cpu_and_cuda_and_mps():
+    return cpu_and_cuda() + (pytest.param("mps", marks=pytest.mark.needs_mps),)
+
+
 def needs_cuda(test_func):
     import pytest  # noqa
 
     return pytest.mark.needs_cuda(test_func)
+
+
+def needs_mps(test_func):
+    import pytest  # noqa
+
+    return pytest.mark.needs_mps(test_func)
 
 
 def _create_data(height=3, width=3, channels=3, device="cpu"):
@@ -816,6 +827,10 @@ class VideoLoader(ImageLoader):
 
 def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
     return datapoints.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
+
+
+def make_video_tensor(*args, **kwargs):
+    return make_video(*args, **kwargs).as_subclass(torch.Tensor)
 
 
 def make_video_loader(
