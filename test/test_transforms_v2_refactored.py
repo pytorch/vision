@@ -2181,3 +2181,36 @@ class TestShapeGetters:
 
         with pytest.raises(TypeError, match=re.escape(str(type(input)))):
             dispatcher(input)
+
+
+class TestRegisterKernel:
+    @pytest.mark.parametrize("dispatcher", (F.resize, "resize"))
+    def test_register_kernel(self, dispatcher):
+        class CustomDatapoint(datapoints.Datapoint):
+            pass
+
+        kernel_was_called = False
+
+        @F.register_kernel(dispatcher, CustomDatapoint)
+        def new_resize(dp, *args, **kwargs):
+            nonlocal kernel_was_called
+            kernel_was_called = True
+            return dp
+
+        t = transforms.Resize(size=(224, 224), antialias=True)
+
+        my_dp = CustomDatapoint(torch.rand(3, 10, 10))
+        out = t(my_dp)
+        assert out is my_dp
+        assert kernel_was_called
+
+        # Sanity check to make sure we didn't override the kernel of other types
+        t(torch.rand(3, 10, 10)).shape == (3, 224, 224)
+        t(datapoints.Image(torch.rand(3, 10, 10))).shape == (3, 224, 224)
+
+    def test_bad_disaptcher_name(self):
+        class CustomDatapoint(datapoints.Datapoint):
+            pass
+
+        with pytest.raises(ValueError, match="Could not find dispatcher with name"):
+            F.register_kernel("bad_name", CustomDatapoint)
