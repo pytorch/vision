@@ -3,13 +3,22 @@
 Datapoints FAQ
 ==============
 
-The :mod:`torchvision.datapoints` namespace was introduced together with ``torchvision.transforms.v2``. This example
-showcases what these datapoints are and how they behave. This is a fairly low-level topic that most users will not need
-to worry about: you do not need to understand the internals of datapoints to efficiently rely on
-``torchvision.transforms.v2``. It may however be useful for advanced users trying to implement their own datasets,
-transforms, or work directly with the datapoints.
+Datapoints are Tensor subclasses introduced together with
+``torchvision.transforms.v2``. This example showcases what these datapoints are
+and how they behave.
+
+.. warning::
+
+    **Intended Audience** Unless you're writing your own transforms or your own datapoints, you
+    probably do not need to read this guide. This is a fairly low-level topic
+    that most users will not need to worry about: you do not need to understand
+    the internals of datapoints to efficiently rely on
+    ``torchvision.transforms.v2``. It may however be useful for advanced users
+    trying to implement their own datasets, transforms, or work directly with
+    the datapoints.
 """
 
+# %%
 import PIL.Image
 
 import torch
@@ -35,10 +44,19 @@ image = datapoints.Image(tensor)
 assert isinstance(image, torch.Tensor)
 assert image.data_ptr() == tensor.data_ptr()
 
-
 # %%
 # Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate function
 # for the input data.
+#
+# What can I do with a datapoint?
+# -------------------------------
+#
+# Datapoints look and feel just like regular tensors - they **are** tensors.
+# Everything that is supported on a plain :class:`torch.Tensor` like `.sum()` or
+# any torch.*` operator will also works on datapoints. See
+# :ref:`datapoint_unwrapping_behaviour` for more details.
+
+# %%
 #
 # What datapoints are supported?
 # ------------------------------
@@ -79,10 +97,10 @@ print(image.shape, image.dtype)
 # :class:`~torchvision.datapoints.BoundingBoxes` stores the coordinate format as well as the spatial size of the
 # corresponding image alongside the actual values:
 
-bounding_box = datapoints.BoundingBoxes(
-    [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=image.shape[-2:]
+bboxes = datapoints.BoundingBoxes(
+    [[17, 16, 344, 495], [0, 10, 0, 10]], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=image.shape[-2:]
 )
-print(bounding_box)
+print(bboxes)
 
 
 # %%
@@ -105,8 +123,8 @@ class PennFudanDataset(torch.utils.data.Dataset):
     def __getitem__(self, item):
         ...
 
-        target["boxes"] = datapoints.BoundingBoxes(
-            boxes,
+        target["bboxes"] = datapoints.BoundingBoxes(
+            bboxes,
             format=datapoints.BoundingBoxFormat.XYXY,
             canvas_size=F.get_size(img),
         )
@@ -147,7 +165,7 @@ def get_transform(train):
 # %%
 # .. note::
 #
-#    If both :class:`~torchvision.datapoints.BoundingBoxes`'es and :class:`~torchvision.datapoints.Mask`'s are included in
+#    If both :class:`~torchvision.datapoints.BoundingBoxes` and :class:`~torchvision.datapoints.Mask`'s are included in
 #    the sample, ``torchvision.transforms.v2`` will transform them both. Meaning, if you don't need both, dropping or
 #    at least not wrapping the obsolete parts, can lead to a significant performance boost.
 #
@@ -156,41 +174,63 @@ def get_transform(train):
 #    even better to not load the masks at all, but this is not possible in this example, since the bounding boxes are
 #    generated from the masks.
 #
-# How do the datapoints behave inside a computation?
-# --------------------------------------------------
+# .. _datapoint_unwrapping_behaviour:
 #
-# Datapoints look and feel just like regular tensors. Everything that is supported on a plain :class:`torch.Tensor`
-# also works on datapoints.
-# Since for most operations involving datapoints, it cannot be safely inferred whether the result should retain the
-# datapoint type, we choose to return a plain tensor instead of a datapoint (this might change, see note below):
+# I had a Datapoint but now I have a Tensor. Help!
+# ------------------------------------------------
+#
+# For a lot of operations involving datapoints, we cannot safely infer whether
+# the result should retain the datapoint type, so we choose to return a plain
+# tensor instead of a datapoint (this might change, see note below):
 
 
-assert isinstance(image, datapoints.Image)
+assert isinstance(bboxes, datapoints.BoundingBoxes)
 
-new_image = image + 0
+# Shift bboxes by 3 pixels in both H and W
+new_bboxes = bboxes + 3
 
-assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
+assert isinstance(new_bboxes, torch.Tensor) and not isinstance(new_bboxes, datapoints.BoundingBoxes)
 
 # %%
+# If you're writing your own custom transforms or code involving datapoints, you
+# can re-wrap the output into a datapoint by just calling their constructor, or
+# by using the ``.wrap_like()`` class method:
+
+new_bboxes = bboxes + 3
+new_bboxes = datapoints.BoundingBoxes.wrap_like(bboxes, new_bboxes)
+assert isinstance(new_bboxes, datapoints.BoundingBoxes)
+
+# %%
+# .. note::
+#
+#    You never need to re-wrap manually if you're using the built-in transforms
+#    or their functional equivalents, because this logic is taken care of for
+#    you.
+#
 # .. note::
 #
 #    This "unwrapping" behaviour is something we're actively seeking feedback on. If you find this surprising or if you
 #    have any suggestions on how to better support your use-cases, please reach out to us via this issue:
 #    https://github.com/pytorch/vision/issues/7319
 #
-# There are two exceptions to this rule:
+# There are two exceptions to this "unwrapping" rule:
 #
 # 1. The operations :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`, and :meth:`~torch.Tensor.requires_grad_`
 #    retain the datapoint type.
-# 2. Inplace operations on datapoints cannot change the type of the datapoint they are called on. However, if you use
-#    the flow style, the returned value will be unwrapped:
+# 2. Inplace operations on datapoints like ``.add_()`` preserve they type. However,
+#    the **returned** value of inplace operations will be unwrapped into a pure
+#    tensor:
 
 image = datapoints.Image([[[0, 1], [1, 0]]])
 
 new_image = image.add_(1).mul_(2)
 
-assert isinstance(image, torch.Tensor)
+# image got transformed in-place and is still an Image datapoint, but new_image
+# is a Tensor. They share the same underlying data and they're equal, just
+# different classes.
+assert isinstance(image, datapoints.Image)
 print(image)
 
 assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
 assert (new_image == image).all()
+assert new_image.data_ptr() == image.data_ptr()
