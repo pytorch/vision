@@ -52,9 +52,9 @@ assert image.data_ptr() == tensor.data_ptr()
 # -------------------------------
 #
 # Datapoints look and feel just like regular tensors - they **are** tensors.
-# Everything that is supported on a plain :class:`torch.Tensor` like `.sum()` or
-# any torch.*` operator will also works on datapoints. See
-# :ref:`datapoint_unwrapping_behaviour` for more details.
+# Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()`` or
+# any ``torch.*`` operator will also works on datapoints. See
+# :ref:`datapoint_unwrapping_behaviour` for a few gotchas.
 
 # %%
 #
@@ -68,8 +68,13 @@ assert image.data_ptr() == tensor.data_ptr()
 # * :class:`~torchvision.datapoints.BoundingBoxes`
 # * :class:`~torchvision.datapoints.Mask`
 #
+# .. _datapoint_creation:
+#
 # How do I construct a datapoint?
 # -------------------------------
+#
+# Using the constructor
+# ^^^^^^^^^^^^^^^^^^^^^
 #
 # Each datapoint class takes any tensor-like data that can be turned into a :class:`~torch.Tensor`
 
@@ -86,26 +91,49 @@ print(float_image)
 
 
 # %%
-# In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` also take a
+# In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` can also take a
 # :class:`PIL.Image.Image` directly:
 
 image = datapoints.Image(PIL.Image.open("assets/astronaut.jpg"))
 print(image.shape, image.dtype)
 
 # %%
-# In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
-# :class:`~torchvision.datapoints.BoundingBoxes` stores the coordinate format as well as the spatial size of the
-# corresponding image alongside the actual values:
+# Some datapoints require additional metadata to be passed in ordered to be constructed. For example,
+# :class:`~torchvision.datapoints.BoundingBoxes` requires the coordinate format as well as the size of the
+# corresponding image (``canvas_size``) alongside the actual values. These
+# metadata are required to properly transform the bounding boxes.
 
 bboxes = datapoints.BoundingBoxes(
     [[17, 16, 344, 495], [0, 10, 0, 10]], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=image.shape[-2:]
 )
 print(bboxes)
 
+# %%
+# Using the ``wrap_like()`` class method
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#
+# You can also use the ``wrap_like()`` class method to wrap a tensor-like object
+# into a datapoint. This is useful when you already have an object of the
+# desired type, which typically happens when writing transforms: you just want
+# to wrap the output like the input. This API is inspired by utils like
+# :func:`torch.zeros_like`:
+
+new_bboxes = torch.tensor([0, 20, 30, 40])
+new_bboxes = datapoints.BoundingBoxes.wrap_like(bboxes, new_bboxes)
+assert isinstance(new_bboxes, datapoints.BoundingBoxes)
+assert new_bboxes.canvas_size == bboxes.canvas_size
+
 
 # %%
+# The metadata of ``new_bboxes`` is the same as ``bboxes``, but you could pass
+# it as a parameter to override it. Check the
+# :meth:`~torchvision.datapoints.BoundingBoxes.wrap_like` documentation for
+# more details.
+#
 # Do I have to wrap the output of the datasets myself?
 # ----------------------------------------------------
+#
+# TODO: Move this in another guide - this is user-facing, not dev-facing.
 #
 # Only if you are using custom datasets. For the built-in ones, you can use
 # :func:`torchvision.datasets.wrap_dataset_for_transforms_v2`. Note that the function also supports subclasses of the
@@ -201,6 +229,8 @@ new_bboxes = datapoints.BoundingBoxes.wrap_like(bboxes, new_bboxes)
 assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 
 # %%
+# See more details above in :ref:`datapoint_creation`.
+#
 # .. note::
 #
 #    You never need to re-wrap manually if you're using the built-in transforms
