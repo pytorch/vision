@@ -136,7 +136,7 @@ class Transform(nn.Module):
         return self._v1_transform_cls(**self._extract_params_for_v1_transform())
 
 
-class _RandomApplyTransform(Transform):
+class RandomApplyTransform(Transform):
     def __init__(self, p: float = 0.5) -> None:
         if not (0.0 <= p <= 1.0):
             raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")

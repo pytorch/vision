@@ -4,9 +4,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import PIL.Image
 import torch
 from torchvision import datapoints, transforms as _transforms
-from torchvision.transforms.v2 import functional as F, Transform
+from torchvision.transforms.v2 import functional as F, Transform, RandomApplyTransform
 
-from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
 
 
@@ -39,7 +38,7 @@ class Grayscale(Transform):
         return F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
 
 
-class RandomGrayscale(_RandomApplyTransform):
+class RandomGrayscale(RandomApplyTransform):
     """[BETA] Randomly convert image or videos to grayscale with a probability of p (default 0.1).
 
     .. v2betastatus:: RandomGrayscale transform
@@ -274,7 +273,7 @@ class RandomPhotometricDistort(Transform):
         return inpt
 
 
-class RandomEqualize(_RandomApplyTransform):
+class RandomEqualize(RandomApplyTransform):
     """[BETA] Equalize the histogram of the given image or video with a given probability.
 
     .. v2betastatus:: RandomEqualize transform
@@ -293,7 +292,7 @@ class RandomEqualize(_RandomApplyTransform):
         return F.equalize(inpt)
 
 
-class RandomInvert(_RandomApplyTransform):
+class RandomInvert(RandomApplyTransform):
     """[BETA] Inverts the colors of the given image or video with a given probability.
 
     .. v2betastatus:: RandomInvert transform
@@ -312,7 +311,7 @@ class RandomInvert(_RandomApplyTransform):
         return F.invert(inpt)
 
 
-class RandomPosterize(_RandomApplyTransform):
+class RandomPosterize(RandomApplyTransform):
     """[BETA] Posterize the image or video with a given probability by reducing the
     number of bits for each color channel.
 
@@ -337,7 +336,7 @@ class RandomPosterize(_RandomApplyTransform):
         return F.posterize(inpt, bits=self.bits)
 
 
-class RandomSolarize(_RandomApplyTransform):
+class RandomSolarize(RandomApplyTransform):
     """[BETA] Solarize the image or video with a given probability by inverting all pixel
     values above a threshold.
 
@@ -362,7 +361,7 @@ class RandomSolarize(_RandomApplyTransform):
         return F.solarize(inpt, threshold=self.threshold)
 
 
-class RandomAutocontrast(_RandomApplyTransform):
+class RandomAutocontrast(RandomApplyTransform):
     """[BETA] Autocontrast the pixels of the given image or video with a given probability.
 
     .. v2betastatus:: RandomAutocontrast transform
@@ -381,7 +380,7 @@ class RandomAutocontrast(_RandomApplyTransform):
         return F.autocontrast(inpt)
 
 
-class RandomAdjustSharpness(_RandomApplyTransform):
+class RandomAdjustSharpness(RandomApplyTransform):
     """[BETA] Adjust the sharpness of the image or video with a given probability.
 
     .. v2betastatus:: RandomAdjustSharpness transform

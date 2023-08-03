@@ -9,10 +9,10 @@ import torch
 from torchvision import datapoints, transforms as _transforms
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
-from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform, RandomApplyTransform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
-from ._transform import _RandomApplyTransform
+#from ._transform import RandomApplyTransform
 from ._utils import (
     _check_padding_arg,
     _check_padding_mode_arg,
@@ -26,7 +26,7 @@ from ._utils import (
 from .utils import has_all, has_any, is_simple_tensor, query_bounding_boxes, query_size
 
 
-class RandomHorizontalFlip(_RandomApplyTransform):
+class RandomHorizontalFlip(RandomApplyTransform):
     """[BETA] Horizontally flip the input with a given probability.
 
     .. v2betastatus:: RandomHorizontalFlip transform
@@ -46,7 +46,7 @@ class RandomHorizontalFlip(_RandomApplyTransform):
         return F.horizontal_flip(inpt)
 
 
-class RandomVerticalFlip(_RandomApplyTransform):
+class RandomVerticalFlip(RandomApplyTransform):
     """[BETA] Vertically flip the input with a given probability.
 
     .. v2betastatus:: RandomVerticalFlip transform
@@ -480,7 +480,7 @@ class Pad(Transform):
         return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
-class RandomZoomOut(_RandomApplyTransform):
+class RandomZoomOut(RandomApplyTransform):
     """[BETA] "Zoom out" transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
@@ -899,7 +899,7 @@ class RandomCrop(Transform):
         return inpt
 
 
-class RandomPerspective(_RandomApplyTransform):
+class RandomPerspective(RandomApplyTransform):
     """[BETA] Perform a random perspective transformation of the input with a given probability.
 
     .. v2betastatus:: RandomPerspective transform

@@ -2,7 +2,7 @@ from torchvision.transforms import AutoAugmentPolicy, InterpolationMode  # usort
 
 from . import functional, utils  # usort: skip
 
-from ._transform import Transform  # usort: skip
+from ._transform import Transform, RandomApplyTransform  # usort: skip
 
 from ._augment import CutMix, MixUp, RandomErasing
 from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
@@ -56,6 +56,7 @@ from ._type_conversion import PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 from ._deprecated import ToTensor  # usort: skip
 
 from torchvision import _BETA_TRANSFORMS_WARNING, _WARN_ABOUT_BETA_TRANSFORMS
+
 
 if _WARN_ABOUT_BETA_TRANSFORMS:
     import warnings

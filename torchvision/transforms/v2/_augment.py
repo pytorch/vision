@@ -8,14 +8,13 @@ import torch
 from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints, transforms as _transforms
-from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2 import RandomApplyTransform, Transform, functional as F
 
-from ._transform import _RandomApplyTransform, Transform
 from ._utils import _parse_labels_getter
 from .utils import has_any, is_simple_tensor, query_chw, query_size
 
 
-class RandomErasing(_RandomApplyTransform):
+class RandomErasing(RandomApplyTransform):
     """[BETA] Randomly select a rectangle region in the input image or video and erase its pixels.
 
     .. v2betastatus:: RandomErasing transform
