@@ -2127,7 +2127,7 @@ def resized_crop_image_pil_dispatch(
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> PIL.Image.Image:
     if antialias is False:
-        pass
+        warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
     return resized_crop_image_pil(
         image,
         top=top,
