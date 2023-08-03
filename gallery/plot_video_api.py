@@ -7,14 +7,14 @@ This example illustrates some of the APIs that torchvision offers for
 videos, together with the examples on how to build datasets and more.
 """
 
-####################################
+# %%
 # 1. Introduction: building a new video object and examining the properties
 # -------------------------------------------------------------------------
 # First we select a video to test the object out. For the sake of argument
 # we're using one from kinetics400 dataset.
 # To create it, we need to define the path and the stream we want to use.
 
-######################################
+# %%
 # Chosen video statistics:
 #
 # - WUzgd7C1pWA.mp4
@@ -42,7 +42,7 @@ download_url(
 )
 video_path = "./WUzgd7C1pWA.mp4"
 
-######################################
+# %%
 # Streams are defined in a similar fashion as torch devices. We encode them as strings in a form
 # of ``stream_type:stream_id`` where ``stream_type`` is a string and ``stream_id`` a long int.
 # The constructor accepts passing a ``stream_type`` only, in which case the stream is auto-discovered.
@@ -52,7 +52,7 @@ stream = "video"
 video = torchvision.io.VideoReader(video_path, stream)
 video.get_metadata()
 
-######################################
+# %%
 # Here we can see that video has two streams - a video and an audio stream.
 # Currently available stream types include ['video', 'audio'].
 # Each descriptor consists of two parts: stream type (e.g. 'video') and a unique stream id
@@ -61,7 +61,7 @@ video.get_metadata()
 # users can access the one they want.
 # If only stream type is passed, the decoder auto-detects first stream of that type and returns it.
 
-######################################
+# %%
 # Let's read all the frames from the video stream. By default, the return value of
 # ``next(video_reader)`` is a dict containing the following fields.
 #
@@ -85,7 +85,7 @@ approx_nf = metadata['audio']['duration'][0] * metadata['audio']['framerate'][0]
 print("Approx total number of datapoints we can expect: ", approx_nf)
 print("Read data size: ", frames[0].size(0) * len(frames))
 
-######################################
+# %%
 # But what if we only want to read certain time segment of the video?
 # That can be done easily using the combination of our ``seek`` function, and the fact that each call
 # to next returns the presentation timestamp of the returned frame in seconds.
@@ -107,7 +107,7 @@ for frame, pts in itertools.islice(video.seek(2), 10):
 
 print("Total number of frames: ", len(frames))
 
-######################################
+# %%
 # Or if we wanted to read from 2nd to 5th second,
 # We seek into a second second of the video,
 # then we utilize the itertools takewhile to get the
@@ -125,7 +125,7 @@ approx_nf = (5 - 2) * video.get_metadata()['video']['fps'][0]
 print("We can expect approx: ", approx_nf)
 print("Tensor size: ", frames[0].size())
 
-####################################
+# %%
 # 2. Building a sample read_video function
 # ----------------------------------------------------------------------------------------
 # We can utilize the methods above to build the read video function that follows
@@ -170,21 +170,21 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
 vf, af, info, meta = example_read_video(video)
 print(vf.size(), af.size())
 
-####################################
+# %%
 # 3. Building an example randomly sampled dataset (can be applied to training dataset of kinetics400)
 # -------------------------------------------------------------------------------------------------------
 # Cool, so now we can use the same principle to make the sample dataset.
 # We suggest trying out iterable dataset for this purpose.
 # Here, we are going to build an example dataset that reads randomly selected 10 frames of video.
 
-####################################
+# %%
 # Make sample dataset
 import os
 os.makedirs("./dataset", exist_ok=True)
 os.makedirs("./dataset/1", exist_ok=True)
 os.makedirs("./dataset/2", exist_ok=True)
 
-####################################
+# %%
 # Download the videos
 from torchvision.datasets.utils import download_url
 download_url(
@@ -212,7 +212,7 @@ download_url(
     "v_SoccerJuggling_g24_c01.avi"
 )
 
-####################################
+# %%
 # Housekeeping and utilities
 import os
 import random
@@ -232,7 +232,7 @@ def get_samples(root, extensions=(".mp4", ".avi")):
     _, class_to_idx = _find_classes(root)
     return make_dataset(root, class_to_idx, extensions=extensions)
 
-####################################
+# %%
 # We are going to define the dataset and some basic arguments.
 # We assume the structure of the FolderDataset, and add the following parameters:
 #
@@ -287,7 +287,7 @@ class RandomDataset(torch.utils.data.IterableDataset):
                 'end': current_pts}
             yield output
 
-####################################
+# %%
 # Given a path of videos in a folder structure, i.e:
 #
 # - dataset
@@ -309,7 +309,7 @@ frame_transform = t.Compose(transforms)
 
 dataset = RandomDataset("./dataset", epoch_size=None, frame_transform=frame_transform)
 
-####################################
+# %%
 from torch.utils.data import DataLoader
 loader = DataLoader(dataset, batch_size=12)
 data = {"video": [], 'start': [], 'end': [], 'tensorsize': []}
@@ -321,7 +321,7 @@ for batch in loader:
         data['tensorsize'].append(batch['video'][i].size())
 print(data)
 
-####################################
+# %%
 # 4. Data Visualization
 # ----------------------------------
 # Example of visualized video
@@ -334,7 +334,7 @@ for i in range(16):
     plt.imshow(batch["video"][0, i, ...].permute(1, 2, 0))
     plt.axis("off")
 
-####################################
+# %%
 # Cleanup the video and dataset:
 import os
 import shutil

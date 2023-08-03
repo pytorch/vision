@@ -567,7 +567,7 @@ class DatasetTestCase(unittest.TestCase):
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
-        from torchvision.datapoints._datapoint import Datapoint
+        from torchvision import datapoints
         from torchvision.datasets import wrap_dataset_for_transforms_v2
 
         try:
@@ -588,7 +588,9 @@ class DatasetTestCase(unittest.TestCase):
                     assert len(wrapped_dataset) == info["num_examples"]
 
                     wrapped_sample = wrapped_dataset[0]
-                    assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
+                    assert tree_any(
+                        lambda item: isinstance(item, (datapoints.Datapoint, PIL.Image.Image)), wrapped_sample
+                    )
         except TypeError as error:
             msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
             if str(error).startswith(msg):

@@ -45,7 +45,7 @@ def show(imgs):
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
 
-####################################
+# %%
 # The :func:`~torchvision.io.read_image` function allows to read an image and
 # directly load it as a tensor
 
@@ -53,7 +53,7 @@ dog1 = read_image(str(Path('assets') / 'dog1.jpg'))
 dog2 = read_image(str(Path('assets') / 'dog2.jpg'))
 show([dog1, dog2])
 
-####################################
+# %%
 # Transforming images on GPU
 # --------------------------
 # Most transforms natively support tensors on top of PIL images (to visualize
@@ -76,7 +76,7 @@ transformed_dog1 = transforms(dog1)
 transformed_dog2 = transforms(dog2)
 show([transformed_dog1, transformed_dog2])
 
-####################################
+# %%
 # Scriptable transforms for easier deployment via torchscript
 # -----------------------------------------------------------
 # We now show how to combine image transformations and a model forward pass,
@@ -103,7 +103,7 @@ class Predictor(nn.Module):
             return y_pred.argmax(dim=1)
 
 
-####################################
+# %%
 # Now, let's define scripted and non-scripted instances of ``Predictor`` and
 # apply it on multiple tensor images of the same size
 
@@ -115,7 +115,7 @@ batch = torch.stack([dog1, dog2]).to(device)
 res = predictor(batch)
 res_scripted = scripted_predictor(batch)
 
-####################################
+# %%
 # We can verify that the prediction of the scripted and non-scripted models are
 # the same:
 
@@ -128,7 +128,7 @@ for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):
     assert pred == pred_scripted
     print(f"Prediction for Dog {i + 1}: {labels[str(pred.item())]}")
 
-####################################
+# %%
 # Since the model is scripted, it can be easily dumped on disk and re-used
 
 import tempfile
