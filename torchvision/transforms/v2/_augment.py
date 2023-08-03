@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import PIL.Image
 import torch
@@ -55,8 +55,6 @@ class RandomErasing(_RandomApplyTransform):
             super()._extract_params_for_v1_transform(),
             value="random" if self.value is None else self.value,
         )
-
-    _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
 
     def __init__(
         self,
@@ -131,9 +129,7 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(
-        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 

@@ -48,7 +48,7 @@ except ImportError:
     DEVNULL = open(os.devnull, "wb")
 
 
-DEFAULT_EXTENSIONS = "c,h,C,H,cpp,hpp,cc,hh,c++,h++,cxx,hxx,cu"
+DEFAULT_EXTENSIONS = "c,h,C,H,cpp,hpp,cc,hh,c++,h++,cxx,hxx,cu,mm"
 
 
 class ExitStatus:

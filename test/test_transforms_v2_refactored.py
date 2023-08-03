@@ -3,7 +3,6 @@ import decimal
 import inspect
 import math
 import re
-from typing import get_type_hints
 from unittest import mock
 
 import numpy as np
@@ -26,6 +25,7 @@ from common_utils import (
     make_image_tensor,
     make_segmentation_mask,
     make_video,
+    make_video_tensor,
     needs_cuda,
     set_rng_seed,
 )
@@ -39,6 +39,7 @@ from torchvision import datapoints
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2.functional._utils import _KERNEL_REGISTRY
 
 
 @pytest.fixture(autouse=True)
@@ -176,16 +177,19 @@ def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
     """Checks if the dispatcher correctly dispatches the input to the corresponding kernel and that the input type is
     preserved in doing so. For bounding boxes also checks that the format is preserved.
     """
-    if isinstance(input, datapoints._datapoint.Datapoint):
-        # Due to our complex dispatch architecture for datapoints, we cannot spy on the kernel directly,
-        # but rather have to patch the `Datapoint.__F` attribute to contain the spied on kernel.
-        spy = mock.MagicMock(wraps=kernel, name=kernel.__name__)
-        with mock.patch.object(F, kernel.__name__, spy):
-            # Due to Python's name mangling, the `Datapoint.__F` attribute is only accessible from inside the class.
-            # Since that is not the case here, we need to prefix f"_{cls.__name__}"
-            # See https://docs.python.org/3/tutorial/classes.html#private-variables for details
-            with mock.patch.object(datapoints._datapoint.Datapoint, "_Datapoint__F", new=F):
-                output = dispatcher(input, *args, **kwargs)
+    input_type = type(input)
+
+    if isinstance(input, datapoints.Datapoint):
+        wrapped_kernel = _KERNEL_REGISTRY[dispatcher][input_type]
+
+        # In case the wrapper was decorated with @functools.wraps, we can make the check more strict and test if the
+        # proper kernel was wrapped
+        if hasattr(wrapped_kernel, "__wrapped__"):
+            assert wrapped_kernel.__wrapped__ is kernel
+
+        spy = mock.MagicMock(wraps=wrapped_kernel, name=wrapped_kernel.__name__)
+        with mock.patch.dict(_KERNEL_REGISTRY[dispatcher], values={input_type: spy}):
+            output = dispatcher(input, *args, **kwargs)
 
         spy.assert_called_once()
     else:
@@ -194,7 +198,7 @@ def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
 
             spy.assert_called_once()
 
-    assert isinstance(output, type(input))
+    assert isinstance(output, input_type)
 
     if isinstance(input, datapoints.BoundingBoxes):
         assert output.format == input.format
@@ -209,14 +213,12 @@ def check_dispatcher(
     check_dispatch=True,
     **kwargs,
 ):
+    unknown_input = object()
     with mock.patch("torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once) as spy:
-        dispatcher(input, *args, **kwargs)
+        with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
+            dispatcher(unknown_input, *args, **kwargs)
 
         spy.assert_any_call(f"{dispatcher.__module__}.{dispatcher.__name__}")
-
-    unknown_input = object()
-    with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
-        dispatcher(unknown_input, *args, **kwargs)
 
     if check_scripted_smoke:
         _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs)
@@ -225,18 +227,18 @@ def check_dispatcher(
         _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs)
 
 
-def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
+def check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
     """Checks if the signature of the dispatcher matches the kernel signature."""
-    dispatcher_signature = inspect.signature(dispatcher)
-    dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
+    dispatcher_params = list(inspect.signature(dispatcher).parameters.values())[1:]
+    kernel_params = list(inspect.signature(kernel).parameters.values())[1:]
 
-    kernel_signature = inspect.signature(kernel)
-    kernel_params = list(kernel_signature.parameters.values())[1:]
-
-    if issubclass(input_type, datapoints._datapoint.Datapoint):
+    if issubclass(input_type, datapoints.Datapoint):
         # We filter out metadata that is implicitly passed to the dispatcher through the input datapoint, but has to be
         # explicitly passed to the kernel.
-        kernel_params = [param for param in kernel_params if param.name not in input_type.__annotations__.keys()]
+        explicit_metadata = {
+            datapoints.BoundingBoxes: {"format", "canvas_size"},
+        }
+        kernel_params = [param for param in kernel_params if param.name not in explicit_metadata.get(input_type, set())]
 
     dispatcher_params = iter(dispatcher_params)
     for dispatcher_param, kernel_param in zip(dispatcher_params, kernel_params):
@@ -257,30 +259,6 @@ def _check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
             dispatcher_param._annotation = kernel_param._annotation = inspect.Parameter.empty
 
         assert dispatcher_param == kernel_param
-
-
-def _check_dispatcher_datapoint_signature_match(dispatcher):
-    """Checks if the signature of the dispatcher matches the corresponding method signature on the Datapoint class."""
-    dispatcher_signature = inspect.signature(dispatcher)
-    dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
-
-    datapoint_method = getattr(datapoints._datapoint.Datapoint, dispatcher.__name__)
-    datapoint_signature = inspect.signature(datapoint_method)
-    datapoint_params = list(datapoint_signature.parameters.values())[1:]
-
-    # Some annotations in the `datapoints._datapoint` module
-    # are stored as strings. The block below makes them concrete again (non-strings), so they can be compared to the
-    # natively concrete dispatcher annotations.
-    datapoint_annotations = get_type_hints(datapoint_method)
-    for param in datapoint_params:
-        param._annotation = datapoint_annotations[param.name]
-
-    assert dispatcher_params == datapoint_params
-
-
-def check_dispatcher_signatures_match(dispatcher, *, kernel, input_type):
-    _check_dispatcher_kernel_signature_match(dispatcher, kernel=kernel, input_type=input_type)
-    _check_dispatcher_datapoint_signature_match(dispatcher)
 
 
 def _check_transform_v1_compatibility(transform, input):
@@ -433,6 +411,33 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
     return torch.stack([transform(b) for b in bounding_boxes.reshape(-1, 4).unbind()]).reshape(bounding_boxes.shape)
 
 
+@pytest.mark.parametrize(
+    ("dispatcher", "registered_datapoint_clss"),
+    [(dispatcher, set(registry.keys())) for dispatcher, registry in _KERNEL_REGISTRY.items()],
+)
+def test_exhaustive_kernel_registration(dispatcher, registered_datapoint_clss):
+    missing = {
+        datapoints.Image,
+        datapoints.BoundingBoxes,
+        datapoints.Mask,
+        datapoints.Video,
+    } - registered_datapoint_clss
+    if missing:
+        names = sorted(f"datapoints.{cls.__name__}" for cls in missing)
+        raise AssertionError(
+            "\n".join(
+                [
+                    f"The dispatcher '{dispatcher.__name__}' has no kernel registered for",
+                    "",
+                    *[f"- {name}" for name in names],
+                    "",
+                    f"If available, register the kernels with @_register_kernel_internal({dispatcher.__name__}, ...).",
+                    f"If not, register explicit no-ops with @_register_explicit_noop({', '.join(names)})",
+                ]
+            )
+        )
+
+
 class TestResize:
     INPUT_SIZE = (17, 11)
     OUTPUT_SIZES = [17, [17], (17,), [12, 13], (12, 13)]
@@ -568,7 +573,7 @@ class TestResize:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.resize, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.resize, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -766,7 +771,7 @@ class TestResize:
 
         # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
         # is a good reason to break this, feel free to downgrade to an equality check.
-        if isinstance(input, datapoints._datapoint.Datapoint):
+        if isinstance(input, datapoints.Datapoint):
             # We can't test identity directly, since that checks for the identity of the Python object. Since all
             # datapoints unwrap before a kernel and wrap again afterwards, the Python object changes. Thus, we check
             # that the underlying storage is the same
@@ -850,7 +855,7 @@ class TestHorizontalFlip:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.horizontal_flip, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.horizontal_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1033,7 +1038,7 @@ class TestAffine:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.affine, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.affine, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1329,7 +1334,7 @@ class TestVerticalFlip:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.vertical_flip, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.vertical_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1486,7 +1491,7 @@ class TestRotate:
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_signatures_match(F.rotate, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.rotate, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1899,6 +1904,56 @@ class TestToDtype:
         assert out["mask"].dtype == mask_dtype
 
 
+class TestAdjustBrightness:
+    _CORRECTNESS_BRIGHTNESS_FACTORS = [0.5, 0.0, 1.0, 5.0]
+    _DEFAULT_BRIGHTNESS_FACTOR = _CORRECTNESS_BRIGHTNESS_FACTORS[0]
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.adjust_brightness_image_tensor, make_image),
+            (F.adjust_brightness_video, make_video),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel(self, kernel, make_input, dtype, device):
+        check_kernel(kernel, make_input(dtype=dtype, device=device), brightness_factor=self._DEFAULT_BRIGHTNESS_FACTOR)
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.adjust_brightness_image_tensor, make_image_tensor),
+            (F.adjust_brightness_image_pil, make_image_pil),
+            (F.adjust_brightness_image_tensor, make_image),
+            (F.adjust_brightness_video, make_video),
+        ],
+    )
+    def test_dispatcher(self, kernel, make_input):
+        check_dispatcher(F.adjust_brightness, kernel, make_input(), brightness_factor=self._DEFAULT_BRIGHTNESS_FACTOR)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_brightness_image_tensor, torch.Tensor),
+            (F.adjust_brightness_image_pil, PIL.Image.Image),
+            (F.adjust_brightness_image_tensor, datapoints.Image),
+            (F.adjust_brightness_video, datapoints.Video),
+        ],
+    )
+    def test_dispatcher_signature(self, kernel, input_type):
+        check_dispatcher_kernel_signature_match(F.adjust_brightness, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("brightness_factor", _CORRECTNESS_BRIGHTNESS_FACTORS)
+    def test_image_correctness(self, brightness_factor):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.adjust_brightness(image, brightness_factor=brightness_factor)
+        expected = F.to_image_tensor(F.adjust_brightness(F.to_image_pil(image), brightness_factor=brightness_factor))
+
+        torch.testing.assert_close(actual, expected)
+
+
 class TestCutMixMixUp:
     class DummyDataset:
         def __init__(self, size, num_classes):
@@ -2036,3 +2091,93 @@ def test_labels_getter_default_heuristic(key, sample_type):
         # it takes precedence over other keys which would otherwise be a match
         d = {key: "something_else", "labels": labels}
         assert transforms._utils._find_labels_default_heuristic(d) is labels
+
+
+class TestShapeGetters:
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.get_dimensions_image_tensor, make_image_tensor),
+            (F.get_dimensions_image_pil, make_image_pil),
+            (F.get_dimensions_image_tensor, make_image),
+            (F.get_dimensions_video, make_video),
+        ],
+    )
+    def test_get_dimensions(self, kernel, make_input):
+        size = (10, 10)
+        color_space, num_channels = "RGB", 3
+
+        input = make_input(size, color_space=color_space)
+
+        assert kernel(input) == F.get_dimensions(input) == [num_channels, *size]
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.get_num_channels_image_tensor, make_image_tensor),
+            (F.get_num_channels_image_pil, make_image_pil),
+            (F.get_num_channels_image_tensor, make_image),
+            (F.get_num_channels_video, make_video),
+        ],
+    )
+    def test_get_num_channels(self, kernel, make_input):
+        color_space, num_channels = "RGB", 3
+
+        input = make_input(color_space=color_space)
+
+        assert kernel(input) == F.get_num_channels(input) == num_channels
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.get_size_image_tensor, make_image_tensor),
+            (F.get_size_image_pil, make_image_pil),
+            (F.get_size_image_tensor, make_image),
+            (F.get_size_bounding_boxes, make_bounding_box),
+            (F.get_size_mask, make_detection_mask),
+            (F.get_size_mask, make_segmentation_mask),
+            (F.get_size_video, make_video),
+        ],
+    )
+    def test_get_size(self, kernel, make_input):
+        size = (10, 10)
+
+        input = make_input(size)
+
+        assert kernel(input) == F.get_size(input) == list(size)
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.get_num_frames_video, make_video_tensor),
+            (F.get_num_frames_video, make_video),
+        ],
+    )
+    def test_get_num_frames(self, kernel, make_input):
+        num_frames = 4
+
+        input = make_input(num_frames=num_frames)
+
+        assert kernel(input) == F.get_num_frames(input) == num_frames
+
+    @pytest.mark.parametrize(
+        ("dispatcher", "make_input"),
+        [
+            (F.get_dimensions, make_bounding_box),
+            (F.get_dimensions, make_detection_mask),
+            (F.get_dimensions, make_segmentation_mask),
+            (F.get_num_channels, make_bounding_box),
+            (F.get_num_channels, make_detection_mask),
+            (F.get_num_channels, make_segmentation_mask),
+            (F.get_num_frames, make_image_pil),
+            (F.get_num_frames, make_image),
+            (F.get_num_frames, make_bounding_box),
+            (F.get_num_frames, make_detection_mask),
+            (F.get_num_frames, make_segmentation_mask),
+        ],
+    )
+    def test_unsupported_types(self, dispatcher, make_input):
+        input = make_input()
+
+        with pytest.raises(TypeError, match=re.escape(str(type(input)))):
+            dispatcher(input)
