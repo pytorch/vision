@@ -39,8 +39,8 @@ PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 
 def test_turbo():
     print()
-    print(f"{torch.ops.image.jpeg_version() = }")
-    assert torch.ops.image.is_turbo()
+    print(f"{torch.ops.image._jpeg_version() = }")
+    assert torch.ops.image._is_compiled_against_turbo()
 
 
 def _get_safe_image_name(name):

@@ -20,10 +20,10 @@ namespace vision {
 namespace image {
 
 #ifdef JPEG_FOUND
-  #include <jpeglib.h>
+#include <jpeglib.h>
 #endif
 
-int64_t jpeg_version() {
+int64_t _jpeg_version() {
 #ifdef JPEG_FOUND
   return JPEG_LIB_VERSION;
 #else
@@ -31,26 +31,26 @@ int64_t jpeg_version() {
 #endif
 }
 
-int64_t is_turbo() {
+bool _is_compiled_against_turbo() {
 #ifdef LIBJPEG_TURBO_VERSION
-  return 1;
+  return true;
 #else
-  return 0;
+  return false;
 #endif
 }
 
-static auto registry = torch::RegisterOperators()
-                           .op("image::decode_png", &decode_png)
-                           .op("image::encode_png", &encode_png)
-                           .op("image::decode_jpeg", &decode_jpeg)
-                           .op("image::encode_jpeg", &encode_jpeg)
-                           .op("image::read_file", &read_file)
-                           .op("image::write_file", &write_file)
-                           .op("image::decode_image", &decode_image)
-                           .op("image::decode_jpeg_cuda", &decode_jpeg_cuda)
-                           .op("image::jpeg_version", &jpeg_version)
-                           .op("image::is_turbo", &is_turbo);
+static auto registry =
+    torch::RegisterOperators()
+        .op("image::decode_png", &decode_png)
+        .op("image::encode_png", &encode_png)
+        .op("image::decode_jpeg", &decode_jpeg)
+        .op("image::encode_jpeg", &encode_jpeg)
+        .op("image::read_file", &read_file)
+        .op("image::write_file", &write_file)
+        .op("image::decode_image", &decode_image)
+        .op("image::decode_jpeg_cuda", &decode_jpeg_cuda)
+        .op("image::_jpeg_version", &_jpeg_version)
+        .op("image::_is_compiled_against_turbo", &_is_compiled_against_turbo);
 
 } // namespace image
 } // namespace vision
-
