@@ -8,7 +8,7 @@ import torch
 from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints, transforms as _transforms
-from torchvision.transforms.v2 import RandomApplyTransform, Transform, functional as F
+from torchvision.transforms.v2 import functional as F, RandomApplyTransform, Transform
 
 from ._utils import _parse_labels_getter
 from .utils import has_any, is_simple_tensor, query_chw, query_size

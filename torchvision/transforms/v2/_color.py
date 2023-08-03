@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import PIL.Image
 import torch
 from torchvision import datapoints, transforms as _transforms
-from torchvision.transforms.v2 import functional as F, Transform, RandomApplyTransform
+from torchvision.transforms.v2 import functional as F, RandomApplyTransform, Transform
 
 from .utils import is_simple_tensor, query_chw
 

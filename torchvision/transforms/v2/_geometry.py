@@ -9,10 +9,9 @@ import torch
 from torchvision import datapoints, transforms as _transforms
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
-from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform, RandomApplyTransform
+from torchvision.transforms.v2 import functional as F, InterpolationMode, RandomApplyTransform, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
-#from ._transform import RandomApplyTransform
 from ._utils import (
     _check_padding_arg,
     _check_padding_mode_arg,
