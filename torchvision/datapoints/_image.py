@@ -22,11 +22,6 @@ class Image(Datapoint):
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 
-    @classmethod
-    def _wrap(cls, tensor: torch.Tensor) -> Image:
-        image = tensor.as_subclass(cls)
-        return image
-
     def __new__(
         cls,
         data: Any,
@@ -46,10 +41,6 @@ class Image(Datapoint):
         elif tensor.ndim == 2:
             tensor = tensor.unsqueeze(0)
 
-        return cls._wrap(tensor)
-
-    @classmethod
-    def wrap_like(cls, other: Image, tensor: torch.Tensor) -> Image:
         return cls._wrap(tensor)
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]

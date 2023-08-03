@@ -54,6 +54,7 @@ class MyCustomTransform(torch.nn.Module):
         # Do some transformations. Here, we're just passing though the input
         return img, bboxes, label
 
+
 transforms = v2.Compose([
     MyCustomTransform(),
     v2.RandomResizedCrop((224, 224), antialias=True),
