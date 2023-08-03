@@ -69,14 +69,15 @@ class DispatcherInfo(InfoBase):
             import itertools
 
             for args_kwargs in sample_inputs:
-                for name in itertools.chain(
-                    datapoint_type.__annotations__.keys(),
-                    # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
-                    #  per-dispatcher level. However, so far there is no option for that.
-                    (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
-                ):
-                    if name in args_kwargs.kwargs:
-                        del args_kwargs.kwargs[name]
+                if hasattr(datapoint_type, "__annotations__"):
+                    for name in itertools.chain(
+                        datapoint_type.__annotations__.keys(),
+                        # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
+                        #  per-dispatcher level. However, so far there is no option for that.
+                        (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
+                    ):
+                        if name in args_kwargs.kwargs:
+                            del args_kwargs.kwargs[name]
 
                 yield args_kwargs
 
@@ -288,14 +289,6 @@ DISPATCHER_INFOS = [
         test_marks=[
             skip_dispatch_datapoint,
         ],
-    ),
-    DispatcherInfo(
-        F.adjust_brightness,
-        kernels={
-            datapoints.Image: F.adjust_brightness_image_tensor,
-            datapoints.Video: F.adjust_brightness_video,
-        },
-        pil_kernel_info=PILKernelInfo(F.adjust_brightness_image_pil, kernel_name="adjust_brightness_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_contrast,

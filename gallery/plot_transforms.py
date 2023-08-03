@@ -50,7 +50,7 @@ def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
     plt.tight_layout()
 
 
-####################################
+# %%
 # Geometric Transforms
 # --------------------
 # Geometric image transformation refers to the process of altering the geometric properties of an image,
@@ -65,7 +65,7 @@ def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
 padded_imgs = [T.Pad(padding=padding)(orig_img) for padding in (3, 10, 30, 50)]
 plot(padded_imgs)
 
-####################################
+# %%
 # Resize
 # ~~~~~~
 # The :class:`~torchvision.transforms.Resize` transform
@@ -74,7 +74,7 @@ plot(padded_imgs)
 resized_imgs = [T.Resize(size=size)(orig_img) for size in (30, 50, 100, orig_img.size)]
 plot(resized_imgs)
 
-####################################
+# %%
 # CenterCrop
 # ~~~~~~~~~~
 # The :class:`~torchvision.transforms.CenterCrop` transform
@@ -83,7 +83,7 @@ plot(resized_imgs)
 center_crops = [T.CenterCrop(size=size)(orig_img) for size in (30, 50, 100, orig_img.size)]
 plot(center_crops)
 
-####################################
+# %%
 # FiveCrop
 # ~~~~~~~~
 # The :class:`~torchvision.transforms.FiveCrop` transform
@@ -92,7 +92,7 @@ plot(center_crops)
 (top_left, top_right, bottom_left, bottom_right, center) = T.FiveCrop(size=(100, 100))(orig_img)
 plot([top_left, top_right, bottom_left, bottom_right, center])
 
-####################################
+# %%
 # RandomPerspective
 # ~~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomPerspective` transform
@@ -102,7 +102,7 @@ perspective_transformer = T.RandomPerspective(distortion_scale=0.6, p=1.0)
 perspective_imgs = [perspective_transformer(orig_img) for _ in range(4)]
 plot(perspective_imgs)
 
-####################################
+# %%
 # RandomRotation
 # ~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomRotation` transform
@@ -112,7 +112,7 @@ rotater = T.RandomRotation(degrees=(0, 180))
 rotated_imgs = [rotater(orig_img) for _ in range(4)]
 plot(rotated_imgs)
 
-####################################
+# %%
 # RandomAffine
 # ~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomAffine` transform
@@ -122,7 +122,7 @@ affine_transfomer = T.RandomAffine(degrees=(30, 70), translate=(0.1, 0.3), scale
 affine_imgs = [affine_transfomer(orig_img) for _ in range(4)]
 plot(affine_imgs)
 
-####################################
+# %%
 # ElasticTransform
 # ~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.ElasticTransform` transform
@@ -133,7 +133,7 @@ elastic_transformer = T.ElasticTransform(alpha=250.0)
 transformed_imgs = [elastic_transformer(orig_img) for _ in range(2)]
 plot(transformed_imgs)
 
-####################################
+# %%
 # RandomCrop
 # ~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomCrop` transform
@@ -143,7 +143,7 @@ cropper = T.RandomCrop(size=(128, 128))
 crops = [cropper(orig_img) for _ in range(4)]
 plot(crops)
 
-####################################
+# %%
 # RandomResizedCrop
 # ~~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomResizedCrop` transform
@@ -154,7 +154,7 @@ resize_cropper = T.RandomResizedCrop(size=(32, 32))
 resized_crops = [resize_cropper(orig_img) for _ in range(4)]
 plot(resized_crops)
 
-####################################
+# %%
 # Photometric Transforms
 # ----------------------
 # Photometric image transformation refers to the process of modifying the photometric properties of an image,
@@ -174,7 +174,7 @@ plot(resized_crops)
 gray_img = T.Grayscale()(orig_img)
 plot([gray_img], cmap='gray')
 
-####################################
+# %%
 # ColorJitter
 # ~~~~~~~~~~~
 # The :class:`~torchvision.transforms.ColorJitter` transform
@@ -183,7 +183,7 @@ jitter = T.ColorJitter(brightness=.5, hue=.3)
 jitted_imgs = [jitter(orig_img) for _ in range(4)]
 plot(jitted_imgs)
 
-####################################
+# %%
 # GaussianBlur
 # ~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.GaussianBlur` transform
@@ -193,7 +193,7 @@ blurrer = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5))
 blurred_imgs = [blurrer(orig_img) for _ in range(4)]
 plot(blurred_imgs)
 
-####################################
+# %%
 # RandomInvert
 # ~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomInvert` transform
@@ -203,7 +203,7 @@ inverter = T.RandomInvert()
 invertered_imgs = [inverter(orig_img) for _ in range(4)]
 plot(invertered_imgs)
 
-####################################
+# %%
 # RandomPosterize
 # ~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomPosterize` transform
@@ -214,7 +214,7 @@ posterizer = T.RandomPosterize(bits=2)
 posterized_imgs = [posterizer(orig_img) for _ in range(4)]
 plot(posterized_imgs)
 
-####################################
+# %%
 # RandomSolarize
 # ~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomSolarize` transform
@@ -225,7 +225,7 @@ solarizer = T.RandomSolarize(threshold=192.0)
 solarized_imgs = [solarizer(orig_img) for _ in range(4)]
 plot(solarized_imgs)
 
-####################################
+# %%
 # RandomAdjustSharpness
 # ~~~~~~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomAdjustSharpness` transform
@@ -235,7 +235,7 @@ sharpness_adjuster = T.RandomAdjustSharpness(sharpness_factor=2)
 sharpened_imgs = [sharpness_adjuster(orig_img) for _ in range(4)]
 plot(sharpened_imgs)
 
-####################################
+# %%
 # RandomAutocontrast
 # ~~~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomAutocontrast` transform
@@ -245,7 +245,7 @@ autocontraster = T.RandomAutocontrast()
 autocontrasted_imgs = [autocontraster(orig_img) for _ in range(4)]
 plot(autocontrasted_imgs)
 
-####################################
+# %%
 # RandomEqualize
 # ~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomEqualize` transform
@@ -255,7 +255,7 @@ equalizer = T.RandomEqualize()
 equalized_imgs = [equalizer(orig_img) for _ in range(4)]
 plot(equalized_imgs)
 
-####################################
+# %%
 # Augmentation Transforms
 # -----------------------
 # The following transforms are combinations of multiple transforms,
@@ -275,7 +275,7 @@ imgs = [
 row_title = [str(policy).split('.')[-1] for policy in policies]
 plot(imgs, row_title=row_title)
 
-####################################
+# %%
 # RandAugment
 # ~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandAugment` is an alternate version of AutoAugment.
@@ -283,7 +283,7 @@ augmenter = T.RandAugment()
 imgs = [augmenter(orig_img) for _ in range(4)]
 plot(imgs)
 
-####################################
+# %%
 # TrivialAugmentWide
 # ~~~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.TrivialAugmentWide` is an alternate implementation of AutoAugment.
@@ -293,7 +293,7 @@ augmenter = T.TrivialAugmentWide()
 imgs = [augmenter(orig_img) for _ in range(4)]
 plot(imgs)
 
-####################################
+# %%
 # AugMix
 # ~~~~~~
 # The :class:`~torchvision.transforms.AugMix` transform interpolates between augmented versions of an image.
@@ -301,7 +301,7 @@ augmenter = T.AugMix()
 imgs = [augmenter(orig_img) for _ in range(4)]
 plot(imgs)
 
-####################################
+# %%
 # Randomly-applied Transforms
 # ---------------------------
 #
@@ -318,7 +318,7 @@ hflipper = T.RandomHorizontalFlip(p=0.5)
 transformed_imgs = [hflipper(orig_img) for _ in range(4)]
 plot(transformed_imgs)
 
-####################################
+# %%
 # RandomVerticalFlip
 # ~~~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomVerticalFlip` transform
@@ -328,7 +328,7 @@ vflipper = T.RandomVerticalFlip(p=0.5)
 transformed_imgs = [vflipper(orig_img) for _ in range(4)]
 plot(transformed_imgs)
 
-####################################
+# %%
 # RandomApply
 # ~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomApply` transform
