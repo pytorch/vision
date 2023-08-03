@@ -37,7 +37,18 @@ def _register_kernel_internal(dispatcher, datapoint_cls, *, datapoint_wrapper=Tr
     return decorator
 
 
+def _name_to_dispatcher(name):
+    import torchvision.transforms.v2.functional  # noqa
+
+    try:
+        return getattr(torchvision.transforms.v2.functional, name)
+    except AttributeError:
+        raise ValueError(f"Could not find dispatcher with name '{name}'.") from None
+
+
 def register_kernel(dispatcher, datapoint_cls):
+    if isinstance(dispatcher, str):
+        dispatcher = _name_to_dispatcher(name=dispatcher)
     return _register_kernel_internal(dispatcher, datapoint_cls, datapoint_wrapper=False)
 
 
