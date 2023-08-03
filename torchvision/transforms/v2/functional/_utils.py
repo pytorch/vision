@@ -26,7 +26,7 @@ def _kernel_datapoint_wrapper(kernel):
 def _register_kernel_internal(dispatcher, input_type, *, datapoint_wrapper=True):
     registry = _KERNEL_REGISTRY.setdefault(dispatcher, {})
     if input_type in registry:
-        raise TypeError(f"Dispatcher {dispatcher} already has a kernel registered for type {input_type}.")
+        raise ValueError(f"Dispatcher {dispatcher} already has a kernel registered for type {input_type}.")
 
     def decorator(kernel):
         registry[input_type] = (
@@ -39,24 +39,39 @@ def _register_kernel_internal(dispatcher, input_type, *, datapoint_wrapper=True)
     return decorator
 
 
+def _name_to_dispatcher(name):
+    import torchvision.transforms.v2.functional  # noqa
+
+    try:
+        return getattr(torchvision.transforms.v2.functional, name)
+    except AttributeError:
+        raise ValueError(
+            f"Could not find dispatcher with name '{name}' in torchvision.transforms.v2.functional."
+        ) from None
+
+
 def register_kernel(dispatcher, datapoint_cls):
-    if not (
+    if isinstance(dispatcher, str):
+        dispatcher = _name_to_dispatcher(name=dispatcher)
+    elif not (
         callable(dispatcher)
         and getattr(dispatcher, "__module__", "").startswith("torchvision.transforms.v2.functional")
     ):
-        raise TypeError(
+        raise ValueError(
             f"Kernels can only be registered on dispatchers from the torchvision.transforms.v2.functional namespace, "
             f"but got {dispatcher}."
         )
-    elif not (
+
+    if not (
         isinstance(datapoint_cls, type)
         and issubclass(datapoint_cls, datapoints.Datapoint)
         and datapoint_cls is not datapoints.Datapoint
     ):
-        raise TypeError(
+        raise ValueError(
             f"Kernels can only be registered for subclasses of torchvision.datapoints.Datapoint, "
             f"but got {datapoint_cls}."
         )
+
     return _register_kernel_internal(dispatcher, datapoint_cls, datapoint_wrapper=False)
 
 

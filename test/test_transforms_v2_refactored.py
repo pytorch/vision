@@ -2159,6 +2159,51 @@ class TestShapeGetters:
             dispatcher(input)
 
 
+class TestRegisterKernel:
+    @pytest.mark.parametrize("dispatcher", (F.resize, "resize"))
+    def test_register_kernel(self, mocker, dispatcher):
+        mocker.patch.dict(_KERNEL_REGISTRY, values={F.resize: _KERNEL_REGISTRY[F.resize]}, clear=True)
+
+        class CustomDatapoint(datapoints.Datapoint):
+            pass
+
+        kernel_was_called = False
+
+        @F.register_kernel(dispatcher, CustomDatapoint)
+        def new_resize(dp, *args, **kwargs):
+            nonlocal kernel_was_called
+            kernel_was_called = True
+            return dp
+
+        t = transforms.Resize(size=(224, 224), antialias=True)
+
+        my_dp = CustomDatapoint(torch.rand(3, 10, 10))
+        out = t(my_dp)
+        assert out is my_dp
+        assert kernel_was_called
+
+        # Sanity check to make sure we didn't override the kernel of other types
+        t(torch.rand(3, 10, 10)).shape == (3, 224, 224)
+        t(datapoints.Image(torch.rand(3, 10, 10))).shape == (3, 224, 224)
+
+    def test_errors(self, mocker):
+        mocker.patch.dict(_KERNEL_REGISTRY, clear=True)
+
+        with pytest.raises(ValueError, match="Could not find dispatcher with name"):
+            F.register_kernel("bad_name", datapoints.Image)
+
+        with pytest.raises(ValueError, match="Kernels can only be registered on dispatchers"):
+            register_kernel(datapoints.Image, F.resize)
+
+        with pytest.raises(ValueError, match="Kernels can only be registered for subclasses"):
+            register_kernel(F.resize, object)
+
+        register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
+
+        with pytest.raises(ValueError, match="already has a kernel registered for type"):
+            register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
+
+
 class TestGetKernel:
     def make_and_register_kernel(self, dispatcher, input_type):
         return _register_kernel_internal(dispatcher, input_type, datapoint_wrapper=False)(object())
@@ -2234,19 +2279,3 @@ class TestGetKernel:
         kernel = self.make_and_register_kernel(dispatcher, MyDatapoint)
 
         assert _get_kernel(dispatcher, MyDatapoint) is kernel
-
-
-class TestRegisterKernel:
-    def test_errors(self, mocker):
-        mocker.patch.dict(_KERNEL_REGISTRY, clear=True)
-
-        with pytest.raises(TypeError, match="Kernels can only be registered on dispatchers"):
-            register_kernel(datapoints.Image, F.resize)
-
-        with pytest.raises(TypeError, match="Kernels can only be registered for subclasses"):
-            register_kernel(F.resize, object)
-
-        register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
-
-        with pytest.raises(TypeError, match="already has a kernel registered for type"):
-            register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
