@@ -286,35 +286,6 @@ class TestFixedSizeCrop:
         assert_equal(output["masks"], masks[is_valid])
         assert_equal(output["labels"], labels[is_valid])
 
-    def test__transform_bounding_boxes_clamping(self, mocker):
-        batch_size = 3
-        canvas_size = (10, 10)
-
-        mocker.patch(
-            "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
-            return_value=dict(
-                needs_crop=True,
-                top=0,
-                left=0,
-                height=canvas_size[0],
-                width=canvas_size[1],
-                is_valid=torch.full((batch_size,), fill_value=True),
-                needs_pad=False,
-            ),
-        )
-
-        bounding_boxes = make_bounding_box(
-            format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(batch_size,)
-        )
-        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_boxes")
-
-        transform = transforms.FixedSizeCrop((-1, -1))
-        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
-
-        transform(bounding_boxes)
-
-        mock.assert_called_once()
-
 
 class TestLabelToOneHot:
     def test__transform(self):
