@@ -41,13 +41,9 @@ def _name_to_dispatcher(name):
     import torchvision.transforms.v2.functional  # noqa
 
     try:
-        return next(
-            obj
-            for obj in torchvision.transforms.v2.functional.__dict__.values()
-            if getattr(obj, "__name__", "") == name
-        )
-    except StopIteration:
-        raise ValueError(f"Could not find dispatcher with name '{name}'.")
+        return getattr(torchvision.transforms.v2.functional, name)
+    except AttributeError:
+        raise ValueError(f"Could not find dispatcher with name '{name}'.") from None
 
 
 def register_kernel(dispatcher, datapoint_cls):
