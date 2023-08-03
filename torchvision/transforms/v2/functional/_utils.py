@@ -2,8 +2,6 @@ import functools
 import warnings
 from typing import Any, Callable, Dict, Type
 
-import PIL.Image
-
 import torch
 from torchvision import datapoints
 
@@ -28,7 +26,7 @@ def _kernel_datapoint_wrapper(kernel):
 def _register_kernel_internal(dispatcher, input_type, *, datapoint_wrapper=True):
     registry = _KERNEL_REGISTRY.setdefault(dispatcher, {})
     if input_type in registry:
-        raise TypeError(f"Dispatcher '{dispatcher}' already has a kernel registered for type '{input_type}'.")
+        raise TypeError(f"Dispatcher {dispatcher} already has a kernel registered for type {input_type}.")
 
     def decorator(kernel):
         registry[input_type] = (
@@ -42,28 +40,52 @@ def _register_kernel_internal(dispatcher, input_type, *, datapoint_wrapper=True)
 
 
 def register_kernel(dispatcher, datapoint_cls):
+    if not (
+        callable(dispatcher)
+        and getattr(dispatcher, "__module__", "").startswith("torchvision.transforms.v2.functional")
+    ):
+        raise ValueError(
+            f"Kernels can only be registered on dispatchers from the torchvision.transforms.v2.functional namespace, "
+            f"but got {dispatcher}."
+        )
+    elif not (
+        isinstance(datapoint_cls, type)
+        and issubclass(datapoint_cls, datapoints.Datapoint)
+        and datapoint_cls is not datapoints.Datapoint
+    ):
+        raise ValueError(
+            f"Kernels can only be registered for subclasses of torchvision.datapoints.Datapoint, "
+            f"but got {datapoint_cls}."
+        )
     return _register_kernel_internal(dispatcher, datapoint_cls, datapoint_wrapper=False)
 
 
 def _get_kernel(dispatcher, input_type):
-    if not issubclass(input_type, (torch.Tensor, PIL.Image.Image)):
-        raise TypeError(
-            f"Dispatcher '{dispatcher}' supports plain tensors, any TorchVision datapoint, or a PIL images, "
-            f"but got {input_type} instead."
-        )
-
     registry = _KERNEL_REGISTRY.get(dispatcher)
     if not registry:
-        raise ValueError(f"No kernel registered for dispatcher '{dispatcher.__name__}'.")
+        raise ValueError(f"No kernel registered for dispatcher {dispatcher.__name__}.")
 
+    # in case we have an exact type match, we take a shortcut
     if input_type in registry:
         return registry[input_type]
 
-    for registered_type, kernel in registry.items():
-        if issubclass(input_type, registered_type):
-            return kernel
+    # in case of datapoints, we check if we have a kernel for a superclass registered
+    if issubclass(input_type, datapoints.Datapoint):
+        for cls in input_type.__mro__:
+            if cls is datapoints.Datapoint:
+                break
+            elif cls in registry:
+                return registry[cls]
 
-    return _noop
+        # Note that in the future we are not going to return a noop here, but rather raise the
+        # error below
+        return _noop
+
+    raise TypeError(
+        f"Dispatcher {dispatcher} supports inputs of type torch.Tensor, PIL.Image.Image, "
+        f"and subclasses of torchvision.datapoints.Datapoint, "
+        f"but got {input_type} instead."
+    )
 
 
 # Everything below this block is stuff that we need right now, since it looks like we need to release in an intermediate
@@ -95,7 +117,9 @@ def _register_explicit_noop(*datapoints_classes, warn_passthrough=False):
                 f"F.{dispatcher.__name__} is currently passing through inputs of type datapoints.{cls.__name__}. "
                 f"This will likely change in the future."
             )
-            register_kernel(dispatcher, cls)(functools.partial(_noop, __msg__=msg if warn_passthrough else None))
+            _register_kernel_internal(dispatcher, cls, datapoint_wrapper=False)(
+                functools.partial(_noop, __msg__=msg if warn_passthrough else None)
+            )
         return dispatcher
 
     return decorator
@@ -115,7 +139,9 @@ def _register_unsupported_type(*input_types):
 
     def decorator(dispatcher):
         for input_type in input_types:
-            register_kernel(dispatcher, input_type)(functools.partial(kernel, __dispatcher_name__=dispatcher.__name__))
+            _register_kernel_internal(dispatcher, input_type, datapoint_wrapper=False)(
+                functools.partial(kernel, __dispatcher_name__=dispatcher.__name__)
+            )
         return dispatcher
 
     return decorator

@@ -39,7 +39,7 @@ from torchvision import datapoints
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.functional._utils import _KERNEL_REGISTRY
+from torchvision.transforms.v2.functional._utils import _get_kernel, _KERNEL_REGISTRY, _noop, _register_kernel_internal
 
 
 @pytest.fixture(autouse=True)
@@ -2151,3 +2151,80 @@ class TestShapeGetters:
 
         with pytest.raises(TypeError, match=re.escape(str(type(input)))):
             dispatcher(input)
+
+
+class TestGetKernel:
+    def make_and_register_kernel(self, dispatcher, input_type):
+        return _register_kernel_internal(dispatcher, input_type, datapoint_wrapper=False)(object())
+
+    @pytest.fixture
+    def dispatcher_and_kernels(self, mocker):
+        mocker.patch.dict(_KERNEL_REGISTRY, clear=True)
+
+        dispatcher = object()
+
+        kernels = {
+            cls: self.make_and_register_kernel(dispatcher, cls)
+            for cls in [
+                torch.Tensor,
+                PIL.Image.Image,
+                datapoints.Image,
+                datapoints.BoundingBoxes,
+                datapoints.Mask,
+                datapoints.Video,
+            ]
+        }
+
+        yield dispatcher, kernels
+
+    def test_unsupported_types(self, dispatcher_and_kernels):
+        dispatcher, _ = dispatcher_and_kernels
+
+        class MyTensor(torch.Tensor):
+            pass
+
+        class MyPILImage(PIL.Image.Image):
+            pass
+
+        for input_type in [str, int, object, MyTensor, MyPILImage]:
+            with pytest.raises(TypeError, match=re.escape(str(input_type))):
+                _get_kernel(dispatcher, input_type)
+
+    def test_exact_match(self, dispatcher_and_kernels):
+        dispatcher, kernels = dispatcher_and_kernels
+
+        for input_type, kernel in kernels.items():
+            assert _get_kernel(dispatcher, input_type) is kernel
+
+    def test_builtin_datapoint_subclass(self, dispatcher_and_kernels):
+        dispatcher, kernels = dispatcher_and_kernels
+
+        class MyImage(datapoints.Image):
+            pass
+
+        class MyBoundingBoxes(datapoints.BoundingBoxes):
+            pass
+
+        class MyMask(datapoints.Mask):
+            pass
+
+        class MyVideo(datapoints.Video):
+            pass
+
+        assert _get_kernel(dispatcher, MyImage) is kernels[datapoints.Image]
+        assert _get_kernel(dispatcher, MyBoundingBoxes) is kernels[datapoints.BoundingBoxes]
+        assert _get_kernel(dispatcher, MyMask) is kernels[datapoints.Mask]
+        assert _get_kernel(dispatcher, MyVideo) is kernels[datapoints.Video]
+
+    def test_datapoint_subclass(self, dispatcher_and_kernels):
+        dispatcher, _ = dispatcher_and_kernels
+
+        class MyDatapoint(datapoints.Datapoint):
+            pass
+
+        # Note that this will be an error in the future
+        assert _get_kernel(dispatcher, MyDatapoint) is _noop
+
+        kernel = self.make_and_register_kernel(dispatcher, MyDatapoint)
+
+        assert _get_kernel(dispatcher, MyDatapoint) is kernel
