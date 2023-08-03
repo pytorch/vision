@@ -34,8 +34,7 @@ class Datapoint(torch.Tensor):
 
     @classmethod
     def _wrap(cls: Type[D], tensor: torch.Tensor) -> D:
-        image = tensor.as_subclass(cls)
-        return image
+        return tensor.as_subclass(cls)
 
     @classmethod
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
