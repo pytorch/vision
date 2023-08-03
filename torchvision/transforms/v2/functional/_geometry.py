@@ -1255,8 +1255,7 @@ def _pad_with_vector_fill(
     return output
 
 
-pad_image_pil = _FP.pad
-_register_kernel_internal(pad, PIL.Image.Image)(pad_image_pil)
+pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
 
 
 @_register_kernel_internal(pad, datapoints.Mask)

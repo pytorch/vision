@@ -138,8 +138,7 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
     return _blend(image, grayscale_image, saturation_factor)
 
 
-adjust_saturation_image_pil = _FP.adjust_saturation
-_register_kernel_internal(adjust_saturation, PIL.Image.Image)(adjust_saturation_image_pil)
+adjust_saturation_image_pil = _register_kernel_internal(adjust_saturation, PIL.Image.Image)(_FP.adjust_saturation)
 
 
 @_register_kernel_internal(adjust_saturation, datapoints.Video)
@@ -178,8 +177,7 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
     return _blend(image, mean, contrast_factor)
 
 
-adjust_contrast_image_pil = _FP.adjust_contrast
-_register_kernel_internal(adjust_contrast, PIL.Image.Image)(adjust_contrast_image_pil)
+adjust_contrast_image_pil = _register_kernel_internal(adjust_contrast, PIL.Image.Image)(_FP.adjust_contrast)
 
 
 @_register_kernel_internal(adjust_contrast, datapoints.Video)
@@ -252,8 +250,7 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     return output
 
 
-adjust_sharpness_image_pil = _FP.adjust_sharpness
-_register_kernel_internal(adjust_sharpness, PIL.Image.Image)(adjust_sharpness_image_pil)
+adjust_sharpness_image_pil = _register_kernel_internal(adjust_sharpness, PIL.Image.Image)(_FP.adjust_sharpness)
 
 
 @_register_kernel_internal(adjust_sharpness, datapoints.Video)
@@ -365,8 +362,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     return to_dtype_image_tensor(image_hue_adj, orig_dtype, scale=True)
 
 
-adjust_hue_image_pil = _FP.adjust_hue
-_register_kernel_internal(adjust_hue, PIL.Image.Image)(adjust_hue_image_pil)
+adjust_hue_image_pil = _register_kernel_internal(adjust_hue, PIL.Image.Image)(_FP.adjust_hue)
 
 
 @_register_kernel_internal(adjust_hue, datapoints.Video)
@@ -406,8 +402,7 @@ def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1
     return to_dtype_image_tensor(output, image.dtype, scale=True)
 
 
-adjust_gamma_image_pil = _FP.adjust_gamma
-_register_kernel_internal(adjust_gamma, PIL.Image.Image)(adjust_gamma_image_pil)
+adjust_gamma_image_pil = _register_kernel_internal(adjust_gamma, PIL.Image.Image)(_FP.adjust_gamma)
 
 
 @_register_kernel_internal(adjust_gamma, datapoints.Video)
@@ -441,8 +436,7 @@ def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
         return image & mask
 
 
-posterize_image_pil = _FP.posterize
-_register_kernel_internal(posterize, PIL.Image.Image)(posterize_image_pil)
+posterize_image_pil = _register_kernel_internal(posterize, PIL.Image.Image)(_FP.posterize)
 
 
 @_register_kernel_internal(posterize, datapoints.Video)
@@ -470,8 +464,7 @@ def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor
     return torch.where(image >= threshold, invert_image_tensor(image), image)
 
 
-solarize_image_pil = _FP.solarize
-_register_kernel_internal(solarize, PIL.Image.Image)(solarize_image_pil)
+solarize_image_pil = _register_kernel_internal(solarize, PIL.Image.Image)(_FP.solarize)
 
 
 @_register_kernel_internal(solarize, datapoints.Video)
@@ -521,8 +514,7 @@ def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return diff.div_(inv_scale).clamp_(0, bound).to(image.dtype)
 
 
-autocontrast_image_pil = _FP.autocontrast
-_register_kernel_internal(autocontrast, PIL.Image.Image)(autocontrast_image_pil)
+autocontrast_image_pil = _register_kernel_internal(autocontrast, PIL.Image.Image)(_FP.autocontrast)
 
 
 @_register_kernel_internal(autocontrast, datapoints.Video)
@@ -612,8 +604,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return to_dtype_image_tensor(output, output_dtype, scale=True)
 
 
-equalize_image_pil = _FP.equalize
-_register_kernel_internal(equalize, PIL.Image.Image)(equalize_image_pil)
+equalize_image_pil = _register_kernel_internal(equalize, PIL.Image.Image)(_FP.equalize)
 
 
 @_register_kernel_internal(equalize, datapoints.Video)
@@ -644,8 +635,7 @@ def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
         return image.bitwise_xor((1 << _num_value_bits(image.dtype)) - 1)
 
 
-invert_image_pil = _FP.invert
-_register_kernel_internal(invert, PIL.Image.Image)(invert_image_pil)
+invert_image_pil = _register_kernel_internal(invert, PIL.Image.Image)(_FP.invert)
 
 
 @_register_kernel_internal(invert, datapoints.Video)
