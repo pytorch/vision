@@ -39,7 +39,13 @@ from torchvision import datapoints
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.functional._utils import _get_kernel, _KERNEL_REGISTRY, _noop, _register_kernel_internal
+from torchvision.transforms.v2.functional._utils import (
+    _get_kernel,
+    _KERNEL_REGISTRY,
+    _noop,
+    _register_kernel_internal,
+    register_kernel,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -2228,3 +2234,19 @@ class TestGetKernel:
         kernel = self.make_and_register_kernel(dispatcher, MyDatapoint)
 
         assert _get_kernel(dispatcher, MyDatapoint) is kernel
+
+
+class TestRegisterKernel:
+    def test_errors(self, mocker):
+        mocker.patch.dict(_KERNEL_REGISTRY, clear=True)
+
+        with pytest.raises(TypeError, match="Kernels can only be registered on dispatchers"):
+            register_kernel(datapoints.Image, F.resize)
+
+        with pytest.raises(TypeError, match="Kernels can only be registered for subclasses"):
+            register_kernel(F.resize, object)
+
+        register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
+
+        with pytest.raises(TypeError, match="already has a kernel registered for type"):
+            register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)

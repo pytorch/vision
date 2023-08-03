@@ -44,7 +44,7 @@ def register_kernel(dispatcher, datapoint_cls):
         callable(dispatcher)
         and getattr(dispatcher, "__module__", "").startswith("torchvision.transforms.v2.functional")
     ):
-        raise ValueError(
+        raise TypeError(
             f"Kernels can only be registered on dispatchers from the torchvision.transforms.v2.functional namespace, "
             f"but got {dispatcher}."
         )
@@ -53,7 +53,7 @@ def register_kernel(dispatcher, datapoint_cls):
         and issubclass(datapoint_cls, datapoints.Datapoint)
         and datapoint_cls is not datapoints.Datapoint
     ):
-        raise ValueError(
+        raise TypeError(
             f"Kernels can only be registered for subclasses of torchvision.datapoints.Datapoint, "
             f"but got {datapoint_cls}."
         )
