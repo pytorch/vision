@@ -3,7 +3,6 @@ import pathlib
 import random
 import textwrap
 import warnings
-from collections import defaultdict
 
 import numpy as np
 
@@ -1345,12 +1344,12 @@ def test_antialias_warning():
         transforms.RandomResize(10, 20)(tensor_img)
 
     with pytest.warns(UserWarning, match=match):
-        datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20))
+        F.resized_crop(datapoints.Image(tensor_img), 0, 0, 10, 10, (20, 20))
 
     with pytest.warns(UserWarning, match=match):
-        datapoints.Video(tensor_video).resize((20, 20))
+        F.resize(datapoints.Video(tensor_video), (20, 20))
     with pytest.warns(UserWarning, match=match):
-        datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20))
+        F.resized_crop(datapoints.Video(tensor_video), 0, 0, 10, 10, (20, 20))
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -1364,8 +1363,8 @@ def test_antialias_warning():
         transforms.RandomShortestSize((20, 20), antialias=True)(tensor_img)
         transforms.RandomResize(10, 20, antialias=True)(tensor_img)
 
-        datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
-        datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
+        F.resized_crop(datapoints.Image(tensor_img), 0, 0, 10, 10, (20, 20), antialias=True)
+        F.resized_crop(datapoints.Video(tensor_video), 0, 0, 10, 10, (20, 20), antialias=True)
 
 
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
@@ -1475,7 +1474,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     elif data_augmentation == "ssd":
         t = [
             transforms.RandomPhotometricDistort(p=1),
-            transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0}), p=1),
+            transforms.RandomZoomOut(fill={"others": (123.0, 117.0, 104.0), datapoints.Mask: 0}, p=1),
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(p=1),
             to_tensor,

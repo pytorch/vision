@@ -10,7 +10,6 @@ well as the new ``torchvision.transforms.v2`` v2 API.
 """
 
 import pathlib
-from collections import defaultdict
 
 import PIL.Image
 
@@ -48,7 +47,7 @@ from torchvision import models, datasets
 import torchvision.transforms.v2 as transforms
 
 
-########################################################################################################################
+# %%
 # We start off by loading the :class:`~torchvision.datasets.CocoDetection` dataset to have a look at what it currently
 # returns, and we'll see how to convert it to a format that is compatible with our new transforms.
 
@@ -68,7 +67,7 @@ print(type(image))
 print(type(target), type(target[0]), list(target[0].keys()))
 
 
-########################################################################################################################
+# %%
 # The dataset returns a two-tuple with the first item being a :class:`PIL.Image.Image` and second one a list of
 # dictionaries, which each containing the annotations for a single object instance. As is, this format is not compatible
 # with the ``torchvision.transforms.v2``, nor with the models. To overcome that, we provide the
@@ -86,22 +85,20 @@ print(type(image))
 print(type(target), list(target.keys()))
 print(type(target["boxes"]), type(target["labels"]))
 
-########################################################################################################################
+# %%
 # As baseline, let's have a look at a sample without transformations:
 
 show(sample)
 
 
-########################################################################################################################
+# %%
 # With the dataset properly set up, we can now define the augmentation pipeline. This is done the same way it is done in
 # ``torchvision.transforms`` v1, but now handles bounding boxes and masks without any extra configuration.
 
 transform = transforms.Compose(
     [
         transforms.RandomPhotometricDistort(),
-        transforms.RandomZoomOut(
-            fill=defaultdict(lambda: 0, {PIL.Image.Image: (123, 117, 104)})
-        ),
+        transforms.RandomZoomOut(fill={PIL.Image.Image: (123, 117, 104), "others": 0}),
         transforms.RandomIoUCrop(),
         transforms.RandomHorizontalFlip(),
         transforms.ToImageTensor(),
@@ -110,7 +107,7 @@ transform = transforms.Compose(
     ]
 )
 
-########################################################################################################################
+# %%
 # .. note::
 #    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
 #    should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
@@ -129,7 +126,7 @@ sample = dataset[0]
 show(sample)
 
 
-########################################################################################################################
+# %%
 # We can see that the color of the image was distorted, we zoomed out on it (off center) and flipped it horizontally.
 # In all of this, the bounding box was transformed accordingly. And without any further ado, we can start training.
 

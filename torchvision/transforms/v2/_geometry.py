@@ -17,6 +17,7 @@ from ._utils import (
     _check_padding_arg,
     _check_padding_mode_arg,
     _check_sequence_input,
+    _get_fill,
     _setup_angle,
     _setup_fill_arg,
     _setup_float_or_seq,
@@ -354,20 +355,11 @@ class FiveCrop(Transform):
 
     _v1_transform_cls = _transforms.FiveCrop
 
-    _transformed_types = (
-        datapoints.Image,
-        PIL.Image.Image,
-        is_simple_tensor,
-        datapoints.Video,
-    )
-
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(
-        self, inpt: ImageOrVideoTypeJIT, params: Dict[str, Any]
-    ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.five_crop(inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
@@ -401,13 +393,6 @@ class TenCrop(Transform):
 
     _v1_transform_cls = _transforms.TenCrop
 
-    _transformed_types = (
-        datapoints.Image,
-        PIL.Image.Image,
-        is_simple_tensor,
-        datapoints.Video,
-    )
-
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -417,20 +402,7 @@ class TenCrop(Transform):
         if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
-    def _transform(
-        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
-    ) -> Tuple[
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-    ]:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
 
@@ -487,7 +459,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -504,7 +476,7 @@ class Pad(Transform):
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
@@ -542,7 +514,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def __init__(
         self,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -574,7 +546,7 @@ class RandomZoomOut(_RandomApplyTransform):
         return dict(padding=padding)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -620,7 +592,7 @@ class RandomRotation(Transform):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
@@ -640,7 +612,7 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.rotate(
             inpt,
             **params,
@@ -702,7 +674,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -762,7 +734,7 @@ class RandomAffine(Transform):
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.affine(
             inpt,
             **params,
@@ -840,7 +812,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -918,7 +890,7 @@ class RandomCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
-            fill = self._fill[type(inpt)]
+            fill = _get_fill(self._fill, type(inpt))
             inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         if params["needs_crop"]:
@@ -959,7 +931,7 @@ class RandomPerspective(_RandomApplyTransform):
         distortion_scale: float = 0.5,
         p: float = 0.5,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
     ) -> None:
         super().__init__(p=p)
 
@@ -1002,7 +974,7 @@ class RandomPerspective(_RandomApplyTransform):
         return dict(coefficients=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.perspective(
             inpt,
             None,
@@ -1061,7 +1033,7 @@ class ElasticTransform(Transform):
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
     ) -> None:
         super().__init__()
         self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
@@ -1095,7 +1067,7 @@ class ElasticTransform(Transform):
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
+        fill = _get_fill(self._fill, type(inpt))
         return F.elastic(
             inpt,
             **params,

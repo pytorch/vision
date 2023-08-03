@@ -12,13 +12,10 @@ from common_utils import (
     make_bounding_box,
     make_detection_mask,
     make_image,
-    make_images,
-    make_segmentation_mask,
     make_video,
-    make_videos,
 )
 
-from prototype_common_utils import make_label, make_one_hot_labels
+from prototype_common_utils import make_label
 
 from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
@@ -42,49 +39,6 @@ def parametrize(transforms_with_inputs):
             for idx, input in enumerate(inputs)
         ],
     )
-
-
-@parametrize(
-    [
-        (
-            transform,
-            [
-                dict(inpt=inpt, one_hot_label=one_hot_label)
-                for inpt, one_hot_label in itertools.product(
-                    itertools.chain(
-                        make_images(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
-                        make_videos(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
-                    ),
-                    make_one_hot_labels(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
-                )
-            ],
-        )
-        for transform in [
-            transforms.RandomMixup(alpha=1.0),
-            transforms.RandomCutmix(alpha=1.0),
-        ]
-    ]
-)
-def test_mixup_cutmix(transform, input):
-    transform(input)
-
-    input_copy = dict(input)
-    input_copy["path"] = "/path/to/somewhere"
-    input_copy["num"] = 1234
-    transform(input_copy)
-
-    # Check if we raise an error if sample contains bbox or mask or label
-    err_msg = "does not support PIL images, bounding boxes, masks and plain labels"
-    input_copy = dict(input)
-    for unsup_data in [
-        make_label(),
-        make_bounding_box(format="XYXY"),
-        make_detection_mask(),
-        make_segmentation_mask(),
-    ]:
-        input_copy["unsupported"] = unsup_data
-        with pytest.raises(TypeError, match=err_msg):
-            transform(input_copy)
 
 
 class TestSimpleCopyPaste:
