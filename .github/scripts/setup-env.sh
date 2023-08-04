@@ -43,7 +43,7 @@ conda create \
   libpng \
   'ffmpeg<4.3'
 conda activate ci
-conda install libjpeg-turbo -c pytorch -y
+conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools
 
 # See https://github.com/pytorch/vision/issues/6790
