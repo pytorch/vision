@@ -88,6 +88,9 @@ def _get_kernel(dispatcher, input_type):
     if issubclass(input_type, datapoints.Datapoint):
         for cls in input_type.__mro__:
             if cls is datapoints.Datapoint:
+                # we don't want user-defined datapoints to dispatch to the pure Tensor kernels,
+                # so we expliclty stop the mro traversal before hitting Tensor. We can even stop at Datapoint
+                # since we don't allow kernels to be registered for Datapoints anyway.
                 break
             elif cls in registry:
                 return registry[cls]
