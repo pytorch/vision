@@ -96,8 +96,7 @@ def _get_kernel(dispatcher, input_type):
             elif cls in registry:
                 return registry[cls]
 
-        # Note that in the future we are not going to return a noop here, but rather raise the
-        # error below
+        # Note that in the future we are not going to return a noop here, but rather raise the error below
         return _noop
 
     raise TypeError(
