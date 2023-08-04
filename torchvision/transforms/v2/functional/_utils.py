@@ -80,17 +80,18 @@ def _get_kernel(dispatcher, input_type):
     if not registry:
         raise ValueError(f"No kernel registered for dispatcher {dispatcher.__name__}.")
 
-    # in case we have an exact type match, we take a shortcut
+    # In case we have an exact type match, we take a shortcut.
     if input_type in registry:
         return registry[input_type]
 
-    # in case of datapoints, we check if we have a kernel for a superclass registered
+    # In case of datapoints, we check if we have a kernel for a superclass registered
     if issubclass(input_type, datapoints.Datapoint):
+        # Since we have already checked for an exact match above, we can start the traversal at the superclass.
         for cls in input_type.__mro__[1:]:
             if cls is datapoints.Datapoint:
-                # we don't want user-defined datapoints to dispatch to the pure Tensor kernels,
-                # so we expliclty stop the mro traversal before hitting Tensor. We can even stop at Datapoint
-                # since we don't allow kernels to be registered for Datapoints anyway.
+                # We don't want user-defined datapoints to dispatch to the pure Tensor kernels, so we explicit stop the
+                # MRO traversal before hitting torch.Tensor. We can even stop at datapoints.Datapoint, since we don't
+                # allow kernels to be registered for datapoints.Datapoint anyway.
                 break
             elif cls in registry:
                 return registry[cls]
