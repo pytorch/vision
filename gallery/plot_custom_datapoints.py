@@ -5,7 +5,7 @@ How to write your own Datapoint class
 
 This guide is intended for downstream library maintainers. We explain how to
 write your own datapoint class, and how to make it compatible with the built-in
-Torchvision V2 transforms. Before continuing, make sure you have read
+Torchvision v2 transforms. Before continuing, make sure you have read
 :ref:`sphx_glr_auto_examples_plot_datapoints.py`.
 """
 
@@ -25,7 +25,8 @@ from torchvision.transforms import v2
 # :class:`~torchvision.datapoints.Datapoint` class. It will be enough to cover
 # what you need to know to implement your more elaborate uses-cases. If you need
 # to create a class that carries meta-data, take a look at how the
-# :class:`~torchvision.datapoints.BoundingBoxes` class is implemented.
+# :class:`~torchvision.datapoints.BoundingBoxes` class is `implemented
+# <https://github.com/pytorch/vision/blob/main/torchvision/datapoints/_bounding_box.py>`_.
 
 
 class MyDatapoint(datapoints.Datapoint):
@@ -121,3 +122,4 @@ def hflip_my_datapoint(my_dp):  # noqa
 # For this reason, we recommend to always define your kernels with
 # ``*args, **kwargs`` in their signature, as done above. This way, your kernel
 # will be able to accept any new parameter that we may add in the future.
+# (Technically, adding `**kwargs` only should be enough).

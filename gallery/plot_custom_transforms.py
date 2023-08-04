@@ -1,7 +1,7 @@
 """
-================================
-How to write your own transforms
-================================
+===================================
+How to write your own v2 transforms
+===================================
 
 This guide explains how to write transforms that are compatible with the
 torchvision transforms V2 API.
@@ -76,7 +76,7 @@ out_img, out_bboxes, out_label = transforms(img, bboxes, label)
 print(f"Output image shape: {out_img.shape}\nout_bboxes = {out_bboxes}\n{out_label = }")
 # %%
 # .. note::
-#     As you're maniupulate datapoint classes in your code, make sure to
+#     While working with datapoint classes in your code, make sure to
 #     familiarize yourself with this section:
 #     :ref:`datapoint_unwrapping_behaviour`
 #
@@ -114,7 +114,7 @@ print(f"The transformed bboxes are:\n{structured_output['annotations'][0]}")
 # <https://github.com/pytorch/pytorch/blob/main/torch/utils/_pytree.py>`_, and
 # then transform only the entries that can be transformed (the decision is made
 # based on the **class** of the entries, as all datapoints are
-# tensor-subclasses) + some custom logic that is out of score here - check the
+# tensor-subclasses) plus some custom logic that is out of score here - check the
 # code for details. The (potentially transformed) entries are then repacked and
 # returned, in the same structure as the input.
 #

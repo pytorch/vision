@@ -104,7 +104,9 @@ print(image.shape, image.dtype)
 # metadata are required to properly transform the bounding boxes.
 
 bboxes = datapoints.BoundingBoxes(
-    [[17, 16, 344, 495], [0, 10, 0, 10]], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=image.shape[-2:]
+    [[17, 16, 344, 495], [0, 10, 0, 10]],
+    format=datapoints.BoundingBoxFormat.XYXY,
+    canvas_size=image.shape[-2:]
 )
 print(bboxes)
 
@@ -234,7 +236,7 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 # .. note::
 #
 #    You never need to re-wrap manually if you're using the built-in transforms
-#    or their functional equivalents, because this logic is taken care of for
+#    or their functional equivalents: this is automatically taken care of for
 #    you.
 #
 # .. note::
@@ -243,10 +245,11 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 #    have any suggestions on how to better support your use-cases, please reach out to us via this issue:
 #    https://github.com/pytorch/vision/issues/7319
 #
-# There are two exceptions to this "unwrapping" rule:
+# There are a few exceptions to this "unwrapping" rule:
 #
-# 1. The operations :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`, and :meth:`~torch.Tensor.requires_grad_`
-#    retain the datapoint type.
+# 1. Operations like :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
+#    :meth:`torch.Tensor.detach` and :meth:`~torch.Tensor.requires_grad_` retain
+#    the datapoint type.
 # 2. Inplace operations on datapoints like ``.add_()`` preserve they type. However,
 #    the **returned** value of inplace operations will be unwrapped into a pure
 #    tensor:
