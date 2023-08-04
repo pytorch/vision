@@ -2155,9 +2155,7 @@ class TestShapeGetters:
 
 class TestRegisterKernel:
     @pytest.mark.parametrize("dispatcher", (F.resize, "resize"))
-    def test_register_kernel(self, mocker, dispatcher):
-        mocker.patch.dict(_KERNEL_REGISTRY, values={F.resize: _KERNEL_REGISTRY[F.resize]}, clear=True)
-
+    def test_register_kernel(self, dispatcher):
         class CustomDatapoint(datapoints.Datapoint):
             pass
 
@@ -2180,9 +2178,7 @@ class TestRegisterKernel:
         t(torch.rand(3, 10, 10)).shape == (3, 224, 224)
         t(datapoints.Image(torch.rand(3, 10, 10))).shape == (3, 224, 224)
 
-    def test_errors(self, mocker):
-        mocker.patch.dict(_KERNEL_REGISTRY, clear=True)
-
+    def test_errors(self):
         with pytest.raises(ValueError, match="Could not find dispatcher with name"):
             F.register_kernel("bad_name", datapoints.Image)
 
@@ -2192,39 +2188,23 @@ class TestRegisterKernel:
         with pytest.raises(ValueError, match="Kernels can only be registered for subclasses"):
             F.register_kernel(F.resize, object)
 
-        F.register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
-
         with pytest.raises(ValueError, match="already has a kernel registered for type"):
             F.register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
 
 
 class TestGetKernel:
-    def make_and_register_kernel(self, dispatcher, input_type):
-        return _register_kernel_internal(dispatcher, input_type, datapoint_wrapper=False)(object())
+    # We are using F.resize as dispatcher and the kernels below as proxy. Any other dispatcher / kernels combination
+    # would also be fine
+    KERNELS = {
+        torch.Tensor: F.resize_image_tensor,
+        PIL.Image.Image: F.resize_image_pil,
+        datapoints.Image: F.resize_image_tensor,
+        datapoints.BoundingBoxes: F.resize_bounding_boxes,
+        datapoints.Mask: F.resize_mask,
+        datapoints.Video: F.resize_video,
+    }
 
-    @pytest.fixture
-    def dispatcher_and_kernels(self, mocker):
-        mocker.patch.dict(_KERNEL_REGISTRY, clear=True)
-
-        dispatcher = object()
-
-        kernels = {
-            cls: self.make_and_register_kernel(dispatcher, cls)
-            for cls in [
-                torch.Tensor,
-                PIL.Image.Image,
-                datapoints.Image,
-                datapoints.BoundingBoxes,
-                datapoints.Mask,
-                datapoints.Video,
-            ]
-        }
-
-        yield dispatcher, kernels
-
-    def test_unsupported_types(self, dispatcher_and_kernels):
-        dispatcher, _ = dispatcher_and_kernels
-
+    def test_unsupported_types(self):
         class MyTensor(torch.Tensor):
             pass
 
@@ -2232,17 +2212,34 @@ class TestGetKernel:
             pass
 
         for input_type in [str, int, object, MyTensor, MyPILImage]:
-            with pytest.raises(TypeError, match=re.escape(str(input_type))):
-                _get_kernel(dispatcher, input_type)
+            with pytest.raises(
+                TypeError,
+                match=(
+                    "supports inputs of type torch.Tensor, PIL.Image.Image, "
+                    "and subclasses of torchvision.datapoints.Datapoint"
+                ),
+            ):
+                _get_kernel(F.resize, input_type)
 
-    def test_exact_match(self, dispatcher_and_kernels):
-        dispatcher, kernels = dispatcher_and_kernels
+    def test_exact_match(self):
+        # We cannot use F.resize together with self.KERNELS mapping here directly here, since this is only the
+        # ideal wrapping. Practically, we have an intermediate wrapper layer. Thus, we create a new resize dispatcher
+        # here, register the kernels without wrapper, and check the exact matching afterwards.
+        def resize_with_pure_kernels():
+            pass
 
-        for input_type, kernel in kernels.items():
-            assert _get_kernel(dispatcher, input_type) is kernel
+        for input_type, kernel in self.KERNELS.items():
+            _register_kernel_internal(resize_with_pure_kernels, input_type, datapoint_wrapper=False)(kernel)
 
-    def test_builtin_datapoint_subclass(self, dispatcher_and_kernels):
-        dispatcher, kernels = dispatcher_and_kernels
+            assert _get_kernel(resize_with_pure_kernels, input_type) is kernel
+
+    def test_builtin_datapoint_subclass(self):
+        # We cannot use F.resize together with self.KERNELS mapping here directly here, since this is only the
+        # ideal wrapping. Practically, we have an intermediate wrapper layer. Thus, we create a new resize dispatcher
+        # here, register the kernels without wrapper, and check if subclasses of our builtin datapoints get dispatched
+        # to the kernel of the corresponding superclass
+        def resize_with_pure_kernels():
+            pass
 
         class MyImage(datapoints.Image):
             pass
@@ -2256,20 +2253,30 @@ class TestGetKernel:
         class MyVideo(datapoints.Video):
             pass
 
-        assert _get_kernel(dispatcher, MyImage) is kernels[datapoints.Image]
-        assert _get_kernel(dispatcher, MyBoundingBoxes) is kernels[datapoints.BoundingBoxes]
-        assert _get_kernel(dispatcher, MyMask) is kernels[datapoints.Mask]
-        assert _get_kernel(dispatcher, MyVideo) is kernels[datapoints.Video]
+        for custom_datapoint_subclass in [
+            MyImage,
+            MyBoundingBoxes,
+            MyMask,
+            MyVideo,
+        ]:
+            builtin_datapoint_class = custom_datapoint_subclass.__mro__[1]
+            builtin_datapoint_kernel = self.KERNELS[builtin_datapoint_class]
+            _register_kernel_internal(resize_with_pure_kernels, builtin_datapoint_class, datapoint_wrapper=False)(
+                builtin_datapoint_kernel
+            )
 
-    def test_datapoint_subclass(self, dispatcher_and_kernels):
-        dispatcher, _ = dispatcher_and_kernels
+            assert _get_kernel(resize_with_pure_kernels, custom_datapoint_subclass) is builtin_datapoint_kernel
 
+    def test_datapoint_subclass(self):
         class MyDatapoint(datapoints.Datapoint):
             pass
 
         # Note that this will be an error in the future
-        assert _get_kernel(dispatcher, MyDatapoint) is _noop
+        assert _get_kernel(F.resize, MyDatapoint) is _noop
 
-        kernel = self.make_and_register_kernel(dispatcher, MyDatapoint)
+        def resize_my_datapoint():
+            pass
 
-        assert _get_kernel(dispatcher, MyDatapoint) is kernel
+        _register_kernel_internal(F.resize, MyDatapoint, datapoint_wrapper=False)(resize_my_datapoint)
+
+        assert _get_kernel(F.resize, MyDatapoint) is resize_my_datapoint

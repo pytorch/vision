@@ -86,7 +86,7 @@ def _get_kernel(dispatcher, input_type):
 
     # in case of datapoints, we check if we have a kernel for a superclass registered
     if issubclass(input_type, datapoints.Datapoint):
-        for cls in input_type.__mro__:
+        for cls in input_type.__mro__[1:]:
             if cls is datapoints.Datapoint:
                 break
             elif cls in registry:
