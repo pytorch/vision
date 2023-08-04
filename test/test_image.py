@@ -37,12 +37,6 @@ IS_WINDOWS = sys.platform in ("win32", "cygwin")
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 
 
-def test_turbo():
-    print()
-    print(f"{torch.ops.image._jpeg_version() = }")
-    assert torch.ops.image._is_compiled_against_turbo()
-
-
 def _get_safe_image_name(name):
     # Used when we need to change the pytest "id" for an "image path" parameter.
     # If we don't, the test id (i.e. its name) will contain the whole path to the image, which is machine-specific,

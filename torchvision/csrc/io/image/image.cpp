@@ -19,26 +19,6 @@ PyMODINIT_FUNC PyInit_image(void) {
 namespace vision {
 namespace image {
 
-#ifdef JPEG_FOUND
-#include <jpeglib.h>
-#endif
-
-int64_t _jpeg_version() {
-#ifdef JPEG_FOUND
-  return JPEG_LIB_VERSION;
-#else
-  return -1;
-#endif
-}
-
-bool _is_compiled_against_turbo() {
-#ifdef LIBJPEG_TURBO_VERSION
-  return true;
-#else
-  return false;
-#endif
-}
-
 static auto registry =
     torch::RegisterOperators()
         .op("image::decode_png", &decode_png)
