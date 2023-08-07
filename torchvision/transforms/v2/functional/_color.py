@@ -647,7 +647,7 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
 
 def permute_channels(inpt: datapoints._InputTypeJIT, permutation: List[int]) -> datapoints._InputTypeJIT:
     if torch.jit.is_scripting():
-        return invert_image_tensor(inpt, permutation=permutation)
+        return permute_channels_image_tensor(inpt, permutation=permutation)
 
     _log_api_usage_once(permute_channels)
 
