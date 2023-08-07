@@ -39,7 +39,7 @@ from torchvision import datapoints
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.functional._utils import _KERNEL_REGISTRY
+from torchvision.transforms.v2.functional._utils import _get_kernel, _KERNEL_REGISTRY, _noop, _register_kernel_internal
 
 
 @pytest.fixture(autouse=True)
@@ -173,58 +173,31 @@ def _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs):
         dispatcher_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
 
-def _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs):
-    """Checks if the dispatcher correctly dispatches the input to the corresponding kernel and that the input type is
-    preserved in doing so. For bounding boxes also checks that the format is preserved.
-    """
-    input_type = type(input)
-
-    if isinstance(input, datapoints.Datapoint):
-        wrapped_kernel = _KERNEL_REGISTRY[dispatcher][input_type]
-
-        # In case the wrapper was decorated with @functools.wraps, we can make the check more strict and test if the
-        # proper kernel was wrapped
-        if hasattr(wrapped_kernel, "__wrapped__"):
-            assert wrapped_kernel.__wrapped__ is kernel
-
-        spy = mock.MagicMock(wraps=wrapped_kernel, name=wrapped_kernel.__name__)
-        with mock.patch.dict(_KERNEL_REGISTRY[dispatcher], values={input_type: spy}):
-            output = dispatcher(input, *args, **kwargs)
-
-        spy.assert_called_once()
-    else:
-        with mock.patch(f"{dispatcher.__module__}.{kernel.__name__}", wraps=kernel) as spy:
-            output = dispatcher(input, *args, **kwargs)
-
-            spy.assert_called_once()
-
-    assert isinstance(output, input_type)
-
-    if isinstance(input, datapoints.BoundingBoxes):
-        assert output.format == input.format
-
-
 def check_dispatcher(
     dispatcher,
+    # TODO: remove this parameter
     kernel,
     input,
     *args,
     check_scripted_smoke=True,
-    check_dispatch=True,
     **kwargs,
 ):
     unknown_input = object()
+    with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
+        dispatcher(unknown_input, *args, **kwargs)
+
     with mock.patch("torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once) as spy:
-        with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
-            dispatcher(unknown_input, *args, **kwargs)
+        output = dispatcher(input, *args, **kwargs)
 
         spy.assert_any_call(f"{dispatcher.__module__}.{dispatcher.__name__}")
 
+    assert isinstance(output, type(input))
+
+    if isinstance(input, datapoints.BoundingBoxes):
+        assert output.format == input.format
+
     if check_scripted_smoke:
         _check_dispatcher_scripted_smoke(dispatcher, input, *args, **kwargs)
-
-    if check_dispatch:
-        _check_dispatcher_dispatch(dispatcher, kernel, input, *args, **kwargs)
 
 
 def check_dispatcher_kernel_signature_match(dispatcher, *, kernel, input_type):
@@ -412,18 +385,20 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
 
 
 @pytest.mark.parametrize(
-    ("dispatcher", "registered_datapoint_clss"),
+    ("dispatcher", "registered_input_types"),
     [(dispatcher, set(registry.keys())) for dispatcher, registry in _KERNEL_REGISTRY.items()],
 )
-def test_exhaustive_kernel_registration(dispatcher, registered_datapoint_clss):
+def test_exhaustive_kernel_registration(dispatcher, registered_input_types):
     missing = {
+        torch.Tensor,
+        PIL.Image.Image,
         datapoints.Image,
         datapoints.BoundingBoxes,
         datapoints.Mask,
         datapoints.Video,
-    } - registered_datapoint_clss
+    } - registered_input_types
     if missing:
-        names = sorted(f"datapoints.{cls.__name__}" for cls in missing)
+        names = sorted(str(t) for t in missing)
         raise AssertionError(
             "\n".join(
                 [
@@ -1753,11 +1728,6 @@ class TestToDtype:
             F.to_dtype,
             kernel,
             make_input(dtype=input_dtype, device=device),
-            # TODO: we could leave check_dispatch to True but it currently fails
-            # in _check_dispatcher_dispatch because there is no to_dtype() method on the datapoints.
-            # We should be able to put this back if we change the dispatch
-            # mechanism e.g. via https://github.com/pytorch/vision/pull/7733
-            check_dispatch=False,
             dtype=output_dtype,
             scale=scale,
         )
@@ -2208,9 +2178,105 @@ class TestRegisterKernel:
         t(torch.rand(3, 10, 10)).shape == (3, 224, 224)
         t(datapoints.Image(torch.rand(3, 10, 10))).shape == (3, 224, 224)
 
-    def test_bad_disaptcher_name(self):
-        class CustomDatapoint(datapoints.Datapoint):
+    def test_errors(self):
+        with pytest.raises(ValueError, match="Could not find dispatcher with name"):
+            F.register_kernel("bad_name", datapoints.Image)
+
+        with pytest.raises(ValueError, match="Kernels can only be registered on dispatchers"):
+            F.register_kernel(datapoints.Image, F.resize)
+
+        with pytest.raises(ValueError, match="Kernels can only be registered for subclasses"):
+            F.register_kernel(F.resize, object)
+
+        with pytest.raises(ValueError, match="already has a kernel registered for type"):
+            F.register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
+
+
+class TestGetKernel:
+    # We are using F.resize as dispatcher and the kernels below as proxy. Any other dispatcher / kernels combination
+    # would also be fine
+    KERNELS = {
+        torch.Tensor: F.resize_image_tensor,
+        PIL.Image.Image: F.resize_image_pil,
+        datapoints.Image: F.resize_image_tensor,
+        datapoints.BoundingBoxes: F.resize_bounding_boxes,
+        datapoints.Mask: F.resize_mask,
+        datapoints.Video: F.resize_video,
+    }
+
+    def test_unsupported_types(self):
+        class MyTensor(torch.Tensor):
             pass
 
-        with pytest.raises(ValueError, match="Could not find dispatcher with name"):
-            F.register_kernel("bad_name", CustomDatapoint)
+        class MyPILImage(PIL.Image.Image):
+            pass
+
+        for input_type in [str, int, object, MyTensor, MyPILImage]:
+            with pytest.raises(
+                TypeError,
+                match=(
+                    "supports inputs of type torch.Tensor, PIL.Image.Image, "
+                    "and subclasses of torchvision.datapoints.Datapoint"
+                ),
+            ):
+                _get_kernel(F.resize, input_type)
+
+    def test_exact_match(self):
+        # We cannot use F.resize together with self.KERNELS mapping here directly here, since this is only the
+        # ideal wrapping. Practically, we have an intermediate wrapper layer. Thus, we create a new resize dispatcher
+        # here, register the kernels without wrapper, and check the exact matching afterwards.
+        def resize_with_pure_kernels():
+            pass
+
+        for input_type, kernel in self.KERNELS.items():
+            _register_kernel_internal(resize_with_pure_kernels, input_type, datapoint_wrapper=False)(kernel)
+
+            assert _get_kernel(resize_with_pure_kernels, input_type) is kernel
+
+    def test_builtin_datapoint_subclass(self):
+        # We cannot use F.resize together with self.KERNELS mapping here directly here, since this is only the
+        # ideal wrapping. Practically, we have an intermediate wrapper layer. Thus, we create a new resize dispatcher
+        # here, register the kernels without wrapper, and check if subclasses of our builtin datapoints get dispatched
+        # to the kernel of the corresponding superclass
+        def resize_with_pure_kernels():
+            pass
+
+        class MyImage(datapoints.Image):
+            pass
+
+        class MyBoundingBoxes(datapoints.BoundingBoxes):
+            pass
+
+        class MyMask(datapoints.Mask):
+            pass
+
+        class MyVideo(datapoints.Video):
+            pass
+
+        for custom_datapoint_subclass in [
+            MyImage,
+            MyBoundingBoxes,
+            MyMask,
+            MyVideo,
+        ]:
+            builtin_datapoint_class = custom_datapoint_subclass.__mro__[1]
+            builtin_datapoint_kernel = self.KERNELS[builtin_datapoint_class]
+            _register_kernel_internal(resize_with_pure_kernels, builtin_datapoint_class, datapoint_wrapper=False)(
+                builtin_datapoint_kernel
+            )
+
+            assert _get_kernel(resize_with_pure_kernels, custom_datapoint_subclass) is builtin_datapoint_kernel
+
+    def test_datapoint_subclass(self):
+        class MyDatapoint(datapoints.Datapoint):
+            pass
+
+        # Note that this will be an error in the future
+        assert _get_kernel(F.resize, MyDatapoint) is _noop
+
+        def resize_my_datapoint():
+            pass
+
+        _register_kernel_internal(F.resize, MyDatapoint, datapoint_wrapper=False)(resize_my_datapoint)
+
+        assert _get_kernel(F.resize, MyDatapoint) is resize_my_datapoint
