@@ -649,9 +649,6 @@ def make_bounding_box(
     dtype=None,
     device="cpu",
 ):
-    if len(batch_dims) > 1:  # This is nasty but this whole thing will be removed soon.
-        batch_dims = batch_dims[:-1]
-
     def sample_position(values, max_value):
         # We cannot use torch.randint directly here, because it only allows integer scalars as values for low and high.
         # However, if we have batch_dims, we need tensors as limits.
@@ -705,12 +702,12 @@ def make_bounding_box_loader(*, extra_dims=(), format, canvas_size=DEFAULT_PORTR
             format=format, canvas_size=canvas_size, batch_dims=batch_dims, dtype=dtype, device=device
         )
 
-    return BoundingBoxesLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=canvas_size)
+    return BoundingBoxesLoader(fn, shape=(*extra_dims[-1:], 4), dtype=dtype, format=format, spatial_size=canvas_size)
 
 
 def make_bounding_box_loaders(
     *,
-    extra_dims=DEFAULT_EXTRA_DIMS,
+    extra_dims=tuple(d for d in DEFAULT_EXTRA_DIMS if len(d) < 2),
     formats=tuple(datapoints.BoundingBoxFormat),
     canvas_size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     dtypes=(torch.float32, torch.float64, torch.int64),

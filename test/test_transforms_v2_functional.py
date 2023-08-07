@@ -763,21 +763,20 @@ def _parse_padding(padding):
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("padding", [[1], [1, 1], [1, 1, 2, 2]])
 def test_correctness_pad_bounding_boxes(device, padding):
-    def _compute_expected_bbox(bbox, padding_):
+    def _compute_expected_bbox(bbox, format, padding_):
         pad_left, pad_up, _, _ = _parse_padding(padding_)
 
         dtype = bbox.dtype
-        format = bbox.format
         bbox = (
             bbox.clone()
             if format == datapoints.BoundingBoxFormat.XYXY
-            else convert_format_bounding_boxes(bbox, new_format=datapoints.BoundingBoxFormat.XYXY)
+            else convert_format_bounding_boxes(bbox, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
         )
 
         bbox[0::2] += pad_left
         bbox[1::2] += pad_up
 
-        bbox = convert_format_bounding_boxes(bbox, new_format=format)
+        bbox = convert_format_bounding_boxes(bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format)
         if bbox.dtype != dtype:
             # Temporary cast to original dtype
             # e.g. float32 -> int
@@ -789,7 +788,7 @@ def test_correctness_pad_bounding_boxes(device, padding):
         height, width = bbox.canvas_size
         return height + pad_up + pad_down, width + pad_left + pad_right
 
-    for bboxes in make_bounding_boxes():
+    for bboxes in make_bounding_boxes(extra_dims=((4,),)):
         bboxes = bboxes.to(device)
         bboxes_format = bboxes.format
         bboxes_canvas_size = bboxes.canvas_size
@@ -800,18 +799,10 @@ def test_correctness_pad_bounding_boxes(device, padding):
 
         torch.testing.assert_close(output_canvas_size, _compute_expected_canvas_size(bboxes, padding))
 
-        if bboxes.ndim < 2 or bboxes.shape[0] == 0:
-            bboxes = [bboxes]
+        expected_bboxes = torch.stack(
+            [_compute_expected_bbox(b, bboxes_format, padding) for b in bboxes.reshape(-1, 4).unbind()]
+        ).reshape(bboxes.shape)
 
-        expected_bboxes = []
-        for bbox in bboxes:
-            bbox = datapoints.BoundingBoxes(bbox, format=bboxes_format, canvas_size=bboxes_canvas_size)
-            expected_bboxes.append(_compute_expected_bbox(bbox, padding))
-
-        if len(expected_bboxes) > 1:
-            expected_bboxes = torch.stack(expected_bboxes)
-        else:
-            expected_bboxes = expected_bboxes[0]
         torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
 
 
@@ -836,7 +827,7 @@ def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     ],
 )
 def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
-    def _compute_expected_bbox(bbox, pcoeffs_):
+    def _compute_expected_bbox(bbox, format_, canvas_size_, pcoeffs_):
         m1 = np.array(
             [
                 [pcoeffs_[0], pcoeffs_[1], pcoeffs_[2]],
@@ -850,7 +841,9 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
             ]
         )
 
-        bbox_xyxy = convert_format_bounding_boxes(bbox, new_format=datapoints.BoundingBoxFormat.XYXY)
+        bbox_xyxy = convert_format_bounding_boxes(
+            bbox, old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY
+        )
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -870,14 +863,11 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
                 np.max(transformed_points[:, 1]),
             ]
         )
-        out_bbox = datapoints.BoundingBoxes(
-            out_bbox,
-            format=datapoints.BoundingBoxFormat.XYXY,
-            canvas_size=bbox.canvas_size,
-            dtype=bbox.dtype,
-            device=bbox.device,
+        out_bbox = torch.from_numpy(out_bbox)
+        out_bbox = convert_format_bounding_boxes(
+            out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_
         )
-        return clamp_bounding_boxes(convert_format_bounding_boxes(out_bbox, new_format=bbox.format))
+        return clamp_bounding_boxes(out_bbox, format=format_, canvas_size=canvas_size_).to(bbox)
 
     canvas_size = (32, 38)
 
@@ -896,17 +886,13 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
             coefficients=pcoeffs,
         )
 
-        if bboxes.ndim < 2:
-            bboxes = [bboxes]
+        expected_bboxes = torch.stack(
+            [
+                _compute_expected_bbox(b, bboxes.format, bboxes.canvas_size, inv_pcoeffs)
+                for b in bboxes.reshape(-1, 4).unbind()
+            ]
+        ).reshape(bboxes.shape)
 
-        expected_bboxes = []
-        for bbox in bboxes:
-            bbox = datapoints.BoundingBoxes(bbox, format=bboxes.format, canvas_size=bboxes.canvas_size)
-            expected_bboxes.append(_compute_expected_bbox(bbox, inv_pcoeffs))
-        if len(expected_bboxes) > 1:
-            expected_bboxes = torch.stack(expected_bboxes)
-        else:
-            expected_bboxes = expected_bboxes[0]
         torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=0, atol=1)
 
 
@@ -916,9 +902,7 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
     [(18, 18), [18, 15], (16, 19), [12], [46, 48]],
 )
 def test_correctness_center_crop_bounding_boxes(device, output_size):
-    def _compute_expected_bbox(bbox, output_size_):
-        format_ = bbox.format
-        canvas_size_ = bbox.canvas_size
+    def _compute_expected_bbox(bbox, format_, canvas_size_, output_size_):
         dtype = bbox.dtype
         bbox = convert_format_bounding_boxes(bbox.float(), format_, datapoints.BoundingBoxFormat.XYWH)
 
@@ -947,18 +931,12 @@ def test_correctness_center_crop_bounding_boxes(device, output_size):
             bboxes, bboxes_format, bboxes_canvas_size, output_size
         )
 
-        if bboxes.ndim < 2:
-            bboxes = [bboxes]
-
-        expected_bboxes = []
-        for bbox in bboxes:
-            bbox = datapoints.BoundingBoxes(bbox, format=bboxes_format, canvas_size=bboxes_canvas_size)
-            expected_bboxes.append(_compute_expected_bbox(bbox, output_size))
-
-        if len(expected_bboxes) > 1:
-            expected_bboxes = torch.stack(expected_bboxes)
-        else:
-            expected_bboxes = expected_bboxes[0]
+        expected_bboxes = torch.stack(
+            [
+                _compute_expected_bbox(b, bboxes_format, bboxes_canvas_size, output_size)
+                for b in bboxes.reshape(-1, 4).unbind()
+            ]
+        ).reshape(bboxes.shape)
 
         torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
         torch.testing.assert_close(output_canvas_size, output_size)
