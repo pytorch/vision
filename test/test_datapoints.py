@@ -113,6 +113,26 @@ def test_detach_wrapping():
     assert type(image_detached) is datapoints.Image
 
 
+def test_no_wrapping_exceptions_with_metadata():
+    # Sanity checks for the ops in _NO_WRAPPING_EXCEPTIONS and datapoints with metadata
+    format, canvas_size = "XYXY", (32, 32)
+    bbox = datapoints.BoundingBoxes([[0, 0, 5, 5], [2, 2, 7, 7]], format=format, canvas_size=canvas_size)
+
+    bbox = bbox.clone()
+    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+
+    bbox = bbox.to(torch.float64)
+    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+
+    bbox = bbox.detach()
+    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+
+    assert not bbox.requires_grad
+    bbox.requires_grad_(True)
+    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+    assert bbox.requires_grad
+
+
 def test_other_op_no_wrapping():
     image = datapoints.Image(torch.rand(3, 16, 16))
 
