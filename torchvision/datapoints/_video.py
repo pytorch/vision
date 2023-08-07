@@ -31,7 +31,7 @@ class Video(Datapoint):
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if data.ndim < 4:
             raise ValueError
-        return cls._wrap(tensor)
+        return tensor.as_subclass(cls)
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()

@@ -15,7 +15,7 @@ class _LabelBase(Datapoint):
     categories: Optional[Sequence[str]]
 
     @classmethod
-    def _wrap(cls: Type[L], tensor: torch.Tensor, *, categories: Optional[Sequence[str]]) -> L:  # type: ignore[override]
+    def _wrap(cls: Type[L], tensor: torch.Tensor, *, categories: Optional[Sequence[str]]) -> L:
         label_base = tensor.as_subclass(cls)
         label_base.categories = categories
         return label_base

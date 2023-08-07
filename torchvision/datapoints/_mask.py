@@ -36,4 +36,4 @@ class Mask(Datapoint):
             data = F.pil_to_tensor(data)
 
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return cls._wrap(tensor)
+        return tensor.as_subclass(cls)
