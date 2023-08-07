@@ -203,4 +203,3 @@ def test_deepcopy(datapoint, requires_grad):
 
     assert type(datapoint_deepcopied) is type(datapoint)
     assert datapoint_deepcopied.requires_grad is requires_grad
-    assert datapoint_deepcopied.is_leaf

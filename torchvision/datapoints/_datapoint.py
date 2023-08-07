@@ -36,16 +36,9 @@ class Datapoint(torch.Tensor):
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
         return tensor.as_subclass(cls)
 
-    _NO_WRAPPING_EXCEPTIONS = {
-        # The ops in this dict are those that should *preserve* the Datapoint
-        # type, i.e. they are exceptions to the "no wrapping" rule.
-        torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
-        torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
-        torch.Tensor.detach: lambda cls, input, output: cls.wrap_like(input, output),
-        # We don't need to wrap the output of `Tensor.requires_grad_`, since it is an inplace operation and thus
-        # retains the type automatically
-        torch.Tensor.requires_grad_: lambda cls, input, output: output,
-    }
+    # The ops in this set are those that should *preserve* the Datapoint type,
+    # i.e. they are exceptions to the "no wrapping" rule.
+    _NO_WRAPPING_EXCEPTIONS = {torch.Tensor.clone, torch.Tensor.to, torch.Tensor.detach, torch.Tensor.requires_grad_}
 
     @classmethod
     def __torch_function__(
@@ -81,15 +74,14 @@ class Datapoint(torch.Tensor):
         with DisableTorchFunctionSubclass():
             output = func(*args, **kwargs or dict())
 
-        wrapper = cls._NO_WRAPPING_EXCEPTIONS.get(func)
-        if wrapper and isinstance(args[0], cls):
-            # Apart from `func` needing to be an exception, we also require the primary operand, i.e. `args[0]`, to be
+        if func in cls._NO_WRAPPING_EXCEPTIONS and isinstance(args[0], cls):
+            # We also require the primary operand, i.e. `args[0]`, to be
             # an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will
             # invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,
             # `torch.Tensor(...).to(datapoints.Image(...))` will invoke `datapoints.Image.__torch_function__` with
             # `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would
             # be wrapped into a `datapoints.Image`.
-            return wrapper(cls, args[0], output)
+            return cls.wrap_like(args[0], output)
 
         if isinstance(output, cls):
             # DisableTorchFunctionSubclass is ignored by inplace ops like `.add_(...)`,
