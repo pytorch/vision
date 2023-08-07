@@ -140,7 +140,7 @@ html_theme_options = {
     "logo_only": True,
     "pytorch_project": "docs",
     "navigation_with_keys": True,
-    "analytics_id": "UA-117752657-2",
+    "analytics_id": "GTM-T8XT4PS",
 }
 
 html_logo = "_static/img/pytorch-logo-dark.svg"
@@ -320,7 +320,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
       used within the autoclass directive.
     """
 
-    if obj.__name__.endswith(("_Weights", "_QuantizedWeights")):
+    if getattr(obj, ".__name__", "").endswith(("_Weights", "_QuantizedWeights")):
 
         if len(obj) == 0:
             lines[:] = ["There are no available pre-trained weights."]

@@ -57,7 +57,7 @@ def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
     else:
         md5 = hashlib.md5()
     with open(fpath, "rb") as f:
-        for chunk in iter(lambda: f.read(chunk_size), b""):
+        while chunk := f.read(chunk_size):
             md5.update(chunk)
     return md5.hexdigest()
 

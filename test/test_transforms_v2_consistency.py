@@ -4,7 +4,6 @@ import importlib.util
 import inspect
 import random
 import re
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -22,6 +21,7 @@ from common_utils import (
     make_image,
     make_images,
     make_segmentation_mask,
+    set_rng_seed,
 )
 from torch import nn
 from torchvision import datapoints, transforms as legacy_transforms
@@ -29,10 +29,17 @@ from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
+from torchvision.transforms.v2._utils import _get_fill
 from torchvision.transforms.v2.functional import to_image_pil
-from torchvision.transforms.v2.utils import query_spatial_size
+from torchvision.transforms.v2.utils import query_size
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
+
+
+@pytest.fixture(autouse=True)
+def fix_rng_seed():
+    set_rng_seed(0)
+    yield
 
 
 class NotScriptableArgsKwargs(ArgsKwargs):
@@ -87,10 +94,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs([32]),
             ArgsKwargs((32, 29)),
             ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC),
             ArgsKwargs((30, 27), interpolation=PIL.Image.NEAREST),
             ArgsKwargs((35, 29), interpolation=PIL.Image.BILINEAR),
-            ArgsKwargs((34, 25), interpolation=PIL.Image.BICUBIC),
             NotScriptableArgsKwargs(31, max_size=32),
             ArgsKwargs([31], max_size=32),
             NotScriptableArgsKwargs(30, max_size=100),
@@ -100,6 +105,15 @@ CONSISTENCY_CONFIGS = [
         ],
         # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         closeness_kwargs=dict(rtol=0, atol=1),
+    ),
+    ConsistencyConfig(
+        v2_transforms.Resize,
+        legacy_transforms.Resize,
+        [
+            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC, antialias=True),
+            ArgsKwargs((34, 25), interpolation=PIL.Image.BICUBIC, antialias=True),
+        ],
+        closeness_kwargs=dict(rtol=0, atol=21),
     ),
     ConsistencyConfig(
         v2_transforms.CenterCrop,
@@ -177,7 +191,7 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.ConvertDtype,
+        v2_transforms.ConvertImageDtype,
         legacy_transforms.ConvertImageDtype,
         [
             ArgsKwargs(torch.float16),
@@ -309,14 +323,21 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(17, scale=(0.3, 0.7)),
             ArgsKwargs(25, ratio=(0.5, 1.5)),
             ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC),
             ArgsKwargs((31, 28), interpolation=PIL.Image.NEAREST),
-            ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC),
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
         # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         closeness_kwargs=dict(rtol=0, atol=1),
+    ),
+    ConsistencyConfig(
+        v2_transforms.RandomResizedCrop,
+        legacy_transforms.RandomResizedCrop,
+        [
+            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC, antialias=True),
+            ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC, antialias=True),
+        ],
+        closeness_kwargs=dict(rtol=0, atol=21),
     ),
     ConsistencyConfig(
         v2_transforms.RandomErasing,
@@ -1069,7 +1090,7 @@ class TestRefDetTransforms:
 
         pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1077,9 +1098,9 @@ class TestRefDetTransforms:
 
         yield (pil_image, target)
 
-        tensor_image = torch.Tensor(make_image(size=size, color_space="RGB"))
+        tensor_image = torch.Tensor(make_image(size=size, color_space="RGB", dtype=torch.float32))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1087,9 +1108,9 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        datapoint_image = make_image(size=size, color_space="RGB")
+        datapoint_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1106,13 +1127,13 @@ class TestRefDetTransforms:
                 v2_transforms.Compose(
                     [
                         v2_transforms.RandomIoUCrop(),
-                        v2_transforms.SanitizeBoundingBox(labels_getter=lambda sample: sample[1]["labels"]),
+                        v2_transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
                     ]
                 ),
                 {"with_mask": False},
             ),
             (det_transforms.RandomZoomOut(), v2_transforms.RandomZoomOut(), {"with_mask": False}),
-            (det_transforms.ScaleJitter((1024, 1024)), v2_transforms.ScaleJitter((1024, 1024)), {}),
+            (det_transforms.ScaleJitter((1024, 1024)), v2_transforms.ScaleJitter((1024, 1024), antialias=True), {}),
             (
                 det_transforms.RandomShortestSize(
                     min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
@@ -1151,7 +1172,7 @@ class PadIfSmaller(v2_transforms.Transform):
         self.fill = v2_transforms._geometry._setup_fill_arg(fill)
 
     def _get_params(self, sample):
-        height, width = query_spatial_size(sample)
+        height, width = query_size(sample)
         padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
         needs_padding = any(padding)
         return dict(padding=padding, needs_padding=needs_padding)
@@ -1160,7 +1181,7 @@ class PadIfSmaller(v2_transforms.Transform):
         if not params["needs_padding"]:
             return inpt
 
-        fill = self.fill[type(inpt)]
+        fill = _get_fill(self.fill, type(inpt))
         return prototype_F.pad(inpt, padding=params["padding"], fill=fill)
 
 
@@ -1222,7 +1243,7 @@ class TestRefSegTransforms:
                 seg_transforms.RandomCrop(size=480),
                 v2_transforms.Compose(
                     [
-                        PadIfSmaller(size=480, fill=defaultdict(lambda: 0, {datapoints.Mask: 255})),
+                        PadIfSmaller(size=480, fill={datapoints.Mask: 255, "others": 0}),
                         v2_transforms.RandomCrop(size=480),
                     ]
                 ),

@@ -177,7 +177,7 @@ class ColorJitter(Transform):
         return output
 
 
-class PermuteChannels(Transform):
+class RandomPermuteChannels(Transform):
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,

@@ -5,13 +5,25 @@ import torch
 from torchvision import datapoints
 from torchvision.datapoints import BoundingBoxFormat
 from torchvision.transforms import _functional_pil as _FP
-from torchvision.transforms._functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import is_simple_tensor
+from ._utils import _get_kernel, _register_kernel_internal, _register_unsupported_type, is_simple_tensor
 
 
+@_register_unsupported_type(datapoints.BoundingBoxes, datapoints.Mask)
+def get_dimensions(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
+    if torch.jit.is_scripting():
+        return get_dimensions_image_tensor(inpt)
+
+    _log_api_usage_once(get_dimensions)
+
+    kernel = _get_kernel(get_dimensions, type(inpt))
+    return kernel(inpt)
+
+
+@_register_kernel_internal(get_dimensions, torch.Tensor)
+@_register_kernel_internal(get_dimensions, datapoints.Image, datapoint_wrapper=False)
 def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
     chw = list(image.shape[-3:])
     ndims = len(chw)
@@ -24,28 +36,27 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
         raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
-get_dimensions_image_pil = _FP.get_dimensions
+get_dimensions_image_pil = _register_kernel_internal(get_dimensions, PIL.Image.Image)(_FP.get_dimensions)
 
 
-def get_dimensions(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(get_dimensions)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return get_dimensions_image_tensor(inpt)
-    elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
-        channels = inpt.num_channels
-        height, width = inpt.spatial_size
-        return [channels, height, width]
-    elif isinstance(inpt, PIL.Image.Image):
-        return get_dimensions_image_pil(inpt)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+@_register_kernel_internal(get_dimensions, datapoints.Video, datapoint_wrapper=False)
+def get_dimensions_video(video: torch.Tensor) -> List[int]:
+    return get_dimensions_image_tensor(video)
 
 
+@_register_unsupported_type(datapoints.BoundingBoxes, datapoints.Mask)
+def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> int:
+    if torch.jit.is_scripting():
+        return get_num_channels_image_tensor(inpt)
+
+    _log_api_usage_once(get_num_channels)
+
+    kernel = _get_kernel(get_num_channels, type(inpt))
+    return kernel(inpt)
+
+
+@_register_kernel_internal(get_num_channels, torch.Tensor)
+@_register_kernel_internal(get_num_channels, datapoints.Image, datapoint_wrapper=False)
 def get_num_channels_image_tensor(image: torch.Tensor) -> int:
     chw = image.shape[-3:]
     ndims = len(chw)
@@ -57,28 +68,12 @@ def get_num_channels_image_tensor(image: torch.Tensor) -> int:
         raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
-get_num_channels_image_pil = _FP.get_image_num_channels
+get_num_channels_image_pil = _register_kernel_internal(get_num_channels, PIL.Image.Image)(_FP.get_image_num_channels)
 
 
+@_register_kernel_internal(get_num_channels, datapoints.Video, datapoint_wrapper=False)
 def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image_tensor(video)
-
-
-def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> int:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(get_num_channels)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return get_num_channels_image_tensor(inpt)
-    elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
-        return inpt.num_channels
-    elif isinstance(inpt, PIL.Image.Image):
-        return get_num_channels_image_pil(inpt)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -86,7 +81,19 @@ def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoType
 get_image_num_channels = get_num_channels
 
 
-def get_spatial_size_image_tensor(image: torch.Tensor) -> List[int]:
+def get_size(inpt: datapoints._InputTypeJIT) -> List[int]:
+    if torch.jit.is_scripting():
+        return get_size_image_tensor(inpt)
+
+    _log_api_usage_once(get_size)
+
+    kernel = _get_kernel(get_size, type(inpt))
+    return kernel(inpt)
+
+
+@_register_kernel_internal(get_size, torch.Tensor)
+@_register_kernel_internal(get_size, datapoints.Image, datapoint_wrapper=False)
+def get_size_image_tensor(image: torch.Tensor) -> List[int]:
     hw = list(image.shape[-2:])
     ndims = len(hw)
     if ndims == 2:
@@ -95,56 +102,42 @@ def get_spatial_size_image_tensor(image: torch.Tensor) -> List[int]:
         raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
-@torch.jit.unused
-def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
+@_register_kernel_internal(get_size, PIL.Image.Image)
+def get_size_image_pil(image: PIL.Image.Image) -> List[int]:
     width, height = _FP.get_image_size(image)
     return [height, width]
 
 
-def get_spatial_size_video(video: torch.Tensor) -> List[int]:
-    return get_spatial_size_image_tensor(video)
+@_register_kernel_internal(get_size, datapoints.Video, datapoint_wrapper=False)
+def get_size_video(video: torch.Tensor) -> List[int]:
+    return get_size_image_tensor(video)
 
 
-def get_spatial_size_mask(mask: torch.Tensor) -> List[int]:
-    return get_spatial_size_image_tensor(mask)
+@_register_kernel_internal(get_size, datapoints.Mask, datapoint_wrapper=False)
+def get_size_mask(mask: torch.Tensor) -> List[int]:
+    return get_size_image_tensor(mask)
 
 
-@torch.jit.unused
-def get_spatial_size_bounding_box(bounding_box: datapoints.BoundingBox) -> List[int]:
-    return list(bounding_box.spatial_size)
+@_register_kernel_internal(get_size, datapoints.BoundingBoxes, datapoint_wrapper=False)
+def get_size_bounding_boxes(bounding_box: datapoints.BoundingBoxes) -> List[int]:
+    return list(bounding_box.canvas_size)
 
 
-def get_spatial_size(inpt: datapoints._InputTypeJIT) -> List[int]:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(get_spatial_size)
+@_register_unsupported_type(PIL.Image.Image, datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask)
+def get_num_frames(inpt: datapoints._VideoTypeJIT) -> int:
+    if torch.jit.is_scripting():
+        return get_num_frames_video(inpt)
 
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return get_spatial_size_image_tensor(inpt)
-    elif isinstance(inpt, (datapoints.Image, datapoints.Video, datapoints.BoundingBox, datapoints.Mask)):
-        return list(inpt.spatial_size)
-    elif isinstance(inpt, PIL.Image.Image):
-        return get_spatial_size_image_pil(inpt)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+    _log_api_usage_once(get_num_frames)
+
+    kernel = _get_kernel(get_num_frames, type(inpt))
+    return kernel(inpt)
 
 
+@_register_kernel_internal(get_num_frames, torch.Tensor)
+@_register_kernel_internal(get_num_frames, datapoints.Video, datapoint_wrapper=False)
 def get_num_frames_video(video: torch.Tensor) -> int:
     return video.shape[-4]
-
-
-def get_num_frames(inpt: datapoints._VideoTypeJIT) -> int:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(get_num_frames)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return get_num_frames_video(inpt)
-    elif isinstance(inpt, datapoints.Video):
-        return inpt.num_frames
-    else:
-        raise TypeError(f"Input can either be a plain tensor or a `Video` datapoint, but got {type(inpt)} instead.")
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
@@ -186,189 +179,97 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxy
 
 
-def _convert_format_bounding_box(
-    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
+def _convert_format_bounding_boxes(
+    bounding_boxes: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
 
     if new_format == old_format:
-        return bounding_box
+        return bounding_boxes
 
     # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
     if old_format == BoundingBoxFormat.XYWH:
-        bounding_box = _xywh_to_xyxy(bounding_box, inplace)
+        bounding_boxes = _xywh_to_xyxy(bounding_boxes, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
-        bounding_box = _cxcywh_to_xyxy(bounding_box, inplace)
+        bounding_boxes = _cxcywh_to_xyxy(bounding_boxes, inplace)
 
     if new_format == BoundingBoxFormat.XYWH:
-        bounding_box = _xyxy_to_xywh(bounding_box, inplace)
+        bounding_boxes = _xyxy_to_xywh(bounding_boxes, inplace)
     elif new_format == BoundingBoxFormat.CXCYWH:
-        bounding_box = _xyxy_to_cxcywh(bounding_box, inplace)
+        bounding_boxes = _xyxy_to_cxcywh(bounding_boxes, inplace)
 
-    return bounding_box
+    return bounding_boxes
 
 
-def convert_format_bounding_box(
+def convert_format_bounding_boxes(
     inpt: datapoints._InputTypeJIT,
     old_format: Optional[BoundingBoxFormat] = None,
     new_format: Optional[BoundingBoxFormat] = None,
     inplace: bool = False,
 ) -> datapoints._InputTypeJIT:
     # This being a kernel / dispatcher hybrid, we need an option to pass `old_format` explicitly for simple tensor
-    # inputs as well as extract it from `datapoints.BoundingBox` inputs. However, putting a default value on
+    # inputs as well as extract it from `datapoints.BoundingBoxes` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
     # default error that would be thrown if `new_format` had no default value.
     if new_format is None:
-        raise TypeError("convert_format_bounding_box() missing 1 required argument: 'new_format'")
+        raise TypeError("convert_format_bounding_boxes() missing 1 required argument: 'new_format'")
 
     if not torch.jit.is_scripting():
-        _log_api_usage_once(convert_format_bounding_box)
+        _log_api_usage_once(convert_format_bounding_boxes)
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         if old_format is None:
             raise ValueError("For simple tensor inputs, `old_format` has to be passed.")
-        return _convert_format_bounding_box(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
-    elif isinstance(inpt, datapoints.BoundingBox):
+        return _convert_format_bounding_boxes(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
+    elif isinstance(inpt, datapoints.BoundingBoxes):
         if old_format is not None:
             raise ValueError("For bounding box datapoint inputs, `old_format` must not be passed.")
-        output = _convert_format_bounding_box(
+        output = _convert_format_bounding_boxes(
             inpt.as_subclass(torch.Tensor), old_format=inpt.format, new_format=new_format, inplace=inplace
         )
-        return datapoints.BoundingBox.wrap_like(inpt, output, format=new_format)
+        return datapoints.BoundingBoxes.wrap_like(inpt, output, format=new_format)
     else:
         raise TypeError(
             f"Input can either be a plain tensor or a bounding box datapoint, but got {type(inpt)} instead."
         )
 
 
-def _clamp_bounding_box(
-    bounding_box: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
+def _clamp_bounding_boxes(
+    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: Tuple[int, int]
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
-    in_dtype = bounding_box.dtype
-    bounding_box = bounding_box.clone() if bounding_box.is_floating_point() else bounding_box.float()
-    xyxy_boxes = convert_format_bounding_box(
-        bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+    in_dtype = bounding_boxes.dtype
+    bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
+    xyxy_boxes = convert_format_bounding_boxes(
+        bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
     )
-    xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
-    xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    out_boxes = convert_format_bounding_box(
+    xyxy_boxes[..., 0::2].clamp_(min=0, max=canvas_size[1])
+    xyxy_boxes[..., 1::2].clamp_(min=0, max=canvas_size[0])
+    out_boxes = convert_format_bounding_boxes(
         xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True
     )
     return out_boxes.to(in_dtype)
 
 
-def clamp_bounding_box(
+def clamp_bounding_boxes(
     inpt: datapoints._InputTypeJIT,
     format: Optional[BoundingBoxFormat] = None,
-    spatial_size: Optional[Tuple[int, int]] = None,
+    canvas_size: Optional[Tuple[int, int]] = None,
 ) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
-        _log_api_usage_once(clamp_bounding_box)
+        _log_api_usage_once(clamp_bounding_boxes)
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        if format is None or spatial_size is None:
-            raise ValueError("For simple tensor inputs, `format` and `spatial_size` has to be passed.")
-        return _clamp_bounding_box(inpt, format=format, spatial_size=spatial_size)
-    elif isinstance(inpt, datapoints.BoundingBox):
-        if format is not None or spatial_size is not None:
-            raise ValueError("For bounding box datapoint inputs, `format` and `spatial_size` must not be passed.")
-        output = _clamp_bounding_box(inpt.as_subclass(torch.Tensor), format=inpt.format, spatial_size=inpt.spatial_size)
-        return datapoints.BoundingBox.wrap_like(inpt, output)
+
+        if format is None or canvas_size is None:
+            raise ValueError("For simple tensor inputs, `format` and `canvas_size` has to be passed.")
+        return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
+    elif isinstance(inpt, datapoints.BoundingBoxes):
+        if format is not None or canvas_size is not None:
+            raise ValueError("For bounding box datapoint inputs, `format` and `canvas_size` must not be passed.")
+        output = _clamp_bounding_boxes(inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size)
+        return datapoints.BoundingBoxes.wrap_like(inpt, output)
     else:
         raise TypeError(
             f"Input can either be a plain tensor or a bounding box datapoint, but got {type(inpt)} instead."
-        )
-
-
-def _num_value_bits(dtype: torch.dtype) -> int:
-    if dtype == torch.uint8:
-        return 8
-    elif dtype == torch.int8:
-        return 7
-    elif dtype == torch.int16:
-        return 15
-    elif dtype == torch.int32:
-        return 31
-    elif dtype == torch.int64:
-        return 63
-    else:
-        raise TypeError(f"Number of value bits is only defined for integer dtypes, but got {dtype}.")
-
-
-def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
-    if image.dtype == dtype:
-        return image
-
-    float_input = image.is_floating_point()
-    if torch.jit.is_scripting():
-        # TODO: remove this branch as soon as `dtype.is_floating_point` is supported by JIT
-        float_output = torch.tensor(0, dtype=dtype).is_floating_point()
-    else:
-        float_output = dtype.is_floating_point
-
-    if float_input:
-        # float to float
-        if float_output:
-            return image.to(dtype)
-
-        # float to int
-        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
-            image.dtype == torch.float64 and dtype == torch.int64
-        ):
-            raise RuntimeError(f"The conversion from {image.dtype} to {dtype} cannot be performed safely.")
-
-        # For data in the range `[0.0, 1.0]`, just multiplying by the maximum value of the integer range and converting
-        # to the integer dtype  is not sufficient. For example, `torch.rand(...).mul(255).to(torch.uint8)` will only
-        # be `255` if the input is exactly `1.0`. See https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
-        # for a detailed analysis.
-        # To mitigate this, we could round before we convert to the integer dtype, but this is an extra operation.
-        # Instead, we can also multiply by the maximum value plus something close to `1`. See
-        # https://github.com/pytorch/vision/pull/2078#issuecomment-613524965 for details.
-        eps = 1e-3
-        max_value = float(_max_value(dtype))
-        # We need to scale first since the conversion would otherwise turn the input range `[0.0, 1.0]` into the
-        # discrete set `{0, 1}`.
-        return image.mul(max_value + 1.0 - eps).to(dtype)
-    else:
-        # int to float
-        if float_output:
-            return image.to(dtype).mul_(1.0 / _max_value(image.dtype))
-
-        # int to int
-        num_value_bits_input = _num_value_bits(image.dtype)
-        num_value_bits_output = _num_value_bits(dtype)
-
-        if num_value_bits_input > num_value_bits_output:
-            return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
-        else:
-            return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
-
-
-# We changed the name to align it with the new naming scheme. Still, `convert_image_dtype` is
-# prevalent and well understood. Thus, we just alias it without deprecating the old name.
-convert_image_dtype = convert_dtype_image_tensor
-
-
-def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
-    return convert_dtype_image_tensor(video, dtype)
-
-
-def convert_dtype(
-    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], dtype: torch.dtype = torch.float
-) -> torch.Tensor:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(convert_dtype)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return convert_dtype_image_tensor(inpt, dtype)
-    elif isinstance(inpt, datapoints.Image):
-        output = convert_dtype_image_tensor(inpt.as_subclass(torch.Tensor), dtype)
-        return datapoints.Image.wrap_like(inpt, output)
-    elif isinstance(inpt, datapoints.Video):
-        output = convert_dtype_video(inpt.as_subclass(torch.Tensor), dtype)
-        return datapoints.Video.wrap_like(inpt, output)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor or an `Image` or `Video` datapoint, " f"but got {type(inpt)} instead."
         )

@@ -567,11 +567,11 @@ class DatasetTestCase(unittest.TestCase):
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
-        from torchvision.datapoints._datapoint import Datapoint
+        from torchvision import datapoints
         from torchvision.datasets import wrap_dataset_for_transforms_v2
 
         try:
-            with self.create_dataset(config) as (dataset, _):
+            with self.create_dataset(config) as (dataset, info):
                 for target_keys in [None, "all"]:
                     if target_keys is not None and self.DATASET_CLASS not in {
                         torchvision.datasets.CocoDetection,
@@ -584,9 +584,13 @@ class DatasetTestCase(unittest.TestCase):
                         continue
 
                     wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
-                    wrapped_sample = wrapped_dataset[0]
+                    assert isinstance(wrapped_dataset, self.DATASET_CLASS)
+                    assert len(wrapped_dataset) == info["num_examples"]
 
-                    assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
+                    wrapped_sample = wrapped_dataset[0]
+                    assert tree_any(
+                        lambda item: isinstance(item, (datapoints.Datapoint, PIL.Image.Image)), wrapped_sample
+                    )
         except TypeError as error:
             msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
             if str(error).startswith(msg):

@@ -7,9 +7,11 @@ import itertools
 import os
 import pathlib
 import random
+import re
 import shutil
 import sys
 import tempfile
+import warnings
 from collections import defaultdict
 from subprocess import CalledProcessError, check_output, STDOUT
 from typing import Callable, Sequence, Tuple, Union
@@ -25,13 +27,14 @@ from PIL import Image
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import datapoints, io
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import convert_dtype_image_tensor, to_image_tensor
+from torchvision.transforms.v2.functional import to_dtype_image_tensor, to_image_pil, to_image_tensor
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
+MPS_NOT_AVAILABLE_MSG = "MPS device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
 
 
@@ -122,16 +125,26 @@ def disable_console_output():
         yield
 
 
-def cpu_and_gpu():
+def cpu_and_cuda():
     import pytest  # noqa
 
     return ("cpu", pytest.param("cuda", marks=pytest.mark.needs_cuda))
+
+
+def cpu_and_cuda_and_mps():
+    return cpu_and_cuda() + (pytest.param("mps", marks=pytest.mark.needs_mps),)
 
 
 def needs_cuda(test_func):
     import pytest  # noqa
 
     return pytest.mark.needs_cuda(test_func)
+
+
+def needs_mps(test_func):
+    import pytest  # noqa
+
+    return pytest.mark.needs_mps(test_func)
 
 
 def _create_data(height=3, width=3, channels=3, device="cpu"):
@@ -397,6 +410,9 @@ class ArgsKwargs:
         )
 
 
+# new v2 default
+DEFAULT_SIZE = (17, 11)
+# old v2 defaults
 DEFAULT_SQUARE_SPATIAL_SIZE = 15
 DEFAULT_LANDSCAPE_SPATIAL_SIZE = (7, 33)
 DEFAULT_PORTRAIT_SPATIAL_SIZE = (31, 9)
@@ -404,13 +420,12 @@ DEFAULT_SPATIAL_SIZES = (
     DEFAULT_LANDSCAPE_SPATIAL_SIZE,
     DEFAULT_PORTRAIT_SPATIAL_SIZE,
     DEFAULT_SQUARE_SPATIAL_SIZE,
-    "random",
 )
 
 
-def _parse_spatial_size(size, *, name="size"):
+def _parse_size(size, *, name="size"):
     if size == "random":
-        return tuple(torch.randint(15, 33, (2,)).tolist())
+        raise ValueError("This should never happen")
     elif isinstance(size, int) and size > 0:
         return (size, size)
     elif (
@@ -466,9 +481,10 @@ class ImageLoader(TensorLoader):
     spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
     memory_format: torch.memory_format = torch.contiguous_format
+    canvas_size: Tuple[int, int] = dataclasses.field(init=False)
 
     def __post_init__(self):
-        self.spatial_size = self.shape[-2:]
+        self.spatial_size = self.canvas_size = self.shape[-2:]
         self.num_channels = self.shape[-3]
 
     def load(self, device):
@@ -490,8 +506,41 @@ def get_num_channels(color_space):
     return num_channels
 
 
+def make_image(
+    size=DEFAULT_SIZE,
+    *,
+    color_space="RGB",
+    batch_dims=(),
+    dtype=None,
+    device="cpu",
+    memory_format=torch.contiguous_format,
+):
+    dtype = dtype or torch.uint8
+    max_value = get_max_value(dtype)
+    data = torch.testing.make_tensor(
+        (*batch_dims, get_num_channels(color_space), *size),
+        low=0,
+        high=max_value,
+        dtype=dtype,
+        device=device,
+        memory_format=memory_format,
+    )
+    if color_space in {"GRAY_ALPHA", "RGBA"}:
+        data[..., -1, :, :] = max_value
+
+    return datapoints.Image(data)
+
+
+def make_image_tensor(*args, **kwargs):
+    return make_image(*args, **kwargs).as_subclass(torch.Tensor)
+
+
+def make_image_pil(*args, **kwargs):
+    return to_image_pil(make_image(*args, **kwargs))
+
+
 def make_image_loader(
-    size="random",
+    size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     *,
     color_space="RGB",
     extra_dims=(),
@@ -499,22 +548,23 @@ def make_image_loader(
     constant_alpha=True,
     memory_format=torch.contiguous_format,
 ):
-    size = _parse_spatial_size(size)
+    if not constant_alpha:
+        raise ValueError("This should never happen")
+    size = _parse_size(size)
     num_channels = get_num_channels(color_space)
 
     def fn(shape, dtype, device, memory_format):
-        max_value = get_max_value(dtype)
-        data = torch.testing.make_tensor(
-            shape, low=0, high=max_value, dtype=dtype, device=device, memory_format=memory_format
+        *batch_dims, _, height, width = shape
+        return make_image(
+            (height, width),
+            color_space=color_space,
+            batch_dims=batch_dims,
+            dtype=dtype,
+            device=device,
+            memory_format=memory_format,
         )
-        if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
-            data[..., -1, :, :] = max_value
-        return datapoints.Image(data)
 
     return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, memory_format=memory_format)
-
-
-make_image = from_loader(make_image_loader)
 
 
 def make_image_loaders(
@@ -538,9 +588,9 @@ make_images = from_loaders(make_image_loaders)
 
 
 def make_image_loader_for_interpolation(
-    size="random", *, color_space="RGB", dtype=torch.uint8, memory_format=torch.contiguous_format
+    size=(233, 147), *, color_space="RGB", dtype=torch.uint8, memory_format=torch.contiguous_format
 ):
-    size = _parse_spatial_size(size)
+    size = _parse_size(size)
     num_channels = get_num_channels(color_space)
 
     def fn(shape, dtype, device, memory_format):
@@ -564,7 +614,7 @@ def make_image_loader_for_interpolation(
             image_tensor = image_tensor.to(device=device, memory_format=memory_format, copy=True)
         else:
             image_tensor = image_tensor.to(device=device)
-        image_tensor = convert_dtype_image_tensor(image_tensor, dtype=dtype)
+        image_tensor = to_dtype_image_tensor(image_tensor, dtype=dtype, scale=True)
 
         return datapoints.Image(image_tensor)
 
@@ -582,81 +632,84 @@ def make_image_loaders_for_interpolation(
 
 
 @dataclasses.dataclass
-class BoundingBoxLoader(TensorLoader):
+class BoundingBoxesLoader(TensorLoader):
     format: datapoints.BoundingBoxFormat
     spatial_size: Tuple[int, int]
+    canvas_size: Tuple[int, int] = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        self.canvas_size = self.spatial_size
 
 
-def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
-    low, high = torch.broadcast_tensors(
-        *[torch.as_tensor(arg) for arg in ((0, arg1) if arg2 is None else (arg1, arg2))]
-    )
-    return torch.stack(
-        [
-            torch.randint(low_scalar, high_scalar, (), **kwargs)
-            for low_scalar, high_scalar in zip(low.flatten().tolist(), high.flatten().tolist())
-        ]
-    ).reshape(low.shape)
+def make_bounding_box(
+    canvas_size=DEFAULT_SIZE,
+    *,
+    format=datapoints.BoundingBoxFormat.XYXY,
+    batch_dims=(),
+    dtype=None,
+    device="cpu",
+):
+    def sample_position(values, max_value):
+        # We cannot use torch.randint directly here, because it only allows integer scalars as values for low and high.
+        # However, if we have batch_dims, we need tensors as limits.
+        return torch.stack([torch.randint(max_value - v, ()) for v in values.flatten().tolist()]).reshape(values.shape)
 
-
-def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dtype=torch.float32):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[format]
-    if format not in {
-        datapoints.BoundingBoxFormat.XYXY,
-        datapoints.BoundingBoxFormat.XYWH,
-        datapoints.BoundingBoxFormat.CXCYWH,
-    }:
-        raise pytest.UsageError(f"Can't make bounding box in format {format}")
 
-    spatial_size = _parse_spatial_size(spatial_size, name="spatial_size")
+    dtype = dtype or torch.float32
+
+    if any(dim == 0 for dim in batch_dims):
+        return datapoints.BoundingBoxes(
+            torch.empty(*batch_dims, 4, dtype=dtype, device=device), format=format, canvas_size=canvas_size
+        )
+
+    h, w = [torch.randint(1, c, batch_dims) for c in canvas_size]
+    y = sample_position(h, canvas_size[0])
+    x = sample_position(w, canvas_size[1])
+
+    if format is datapoints.BoundingBoxFormat.XYWH:
+        parts = (x, y, w, h)
+    elif format is datapoints.BoundingBoxFormat.XYXY:
+        x1, y1 = x, y
+        x2 = x1 + w
+        y2 = y1 + h
+        parts = (x1, y1, x2, y2)
+    elif format is datapoints.BoundingBoxFormat.CXCYWH:
+        cx = x + w / 2
+        cy = y + h / 2
+        parts = (cx, cy, w, h)
+    else:
+        raise ValueError(f"Format {format} is not supported")
+
+    return datapoints.BoundingBoxes(
+        torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, canvas_size=canvas_size
+    )
+
+
+def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.float32):
+    if isinstance(format, str):
+        format = datapoints.BoundingBoxFormat[format]
+
+    spatial_size = _parse_size(spatial_size, name="canvas_size")
 
     def fn(shape, dtype, device):
-        *extra_dims, num_coordinates = shape
+        *batch_dims, num_coordinates = shape
         if num_coordinates != 4:
             raise pytest.UsageError()
 
-        if any(dim == 0 for dim in extra_dims):
-            return datapoints.BoundingBox(
-                torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
-            )
-
-        height, width = spatial_size
-
-        if format == datapoints.BoundingBoxFormat.XYXY:
-            x1 = torch.randint(0, width // 2, extra_dims)
-            y1 = torch.randint(0, height // 2, extra_dims)
-            x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
-            y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
-            parts = (x1, y1, x2, y2)
-        elif format == datapoints.BoundingBoxFormat.XYWH:
-            x = torch.randint(0, width // 2, extra_dims)
-            y = torch.randint(0, height // 2, extra_dims)
-            w = randint_with_tensor_bounds(1, width - x)
-            h = randint_with_tensor_bounds(1, height - y)
-            parts = (x, y, w, h)
-        else:  # format == features.BoundingBoxFormat.CXCYWH:
-            cx = torch.randint(1, width - 1, extra_dims)
-            cy = torch.randint(1, height - 1, extra_dims)
-            w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
-            h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
-            parts = (cx, cy, w, h)
-
-        return datapoints.BoundingBox(
-            torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
+        return make_bounding_box(
+            format=format, canvas_size=spatial_size, batch_dims=batch_dims, dtype=dtype, device=device
         )
 
-    return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
-
-
-make_bounding_box = from_loader(make_bounding_box_loader)
+    return BoundingBoxesLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
 
 
 def make_bounding_box_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=tuple(datapoints.BoundingBoxFormat),
-    spatial_size="random",
+    spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     dtypes=(torch.float32, torch.float64, torch.int64),
 ):
     for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
@@ -670,24 +723,35 @@ class MaskLoader(TensorLoader):
     pass
 
 
-def make_detection_mask_loader(size="random", *, num_objects="random", extra_dims=(), dtype=torch.uint8):
+def make_detection_mask(size=DEFAULT_SIZE, *, num_objects=5, batch_dims=(), dtype=None, device="cpu"):
+    """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
+    return datapoints.Mask(
+        torch.testing.make_tensor(
+            (*batch_dims, num_objects, *size),
+            low=0,
+            high=2,
+            dtype=dtype or torch.bool,
+            device=device,
+        )
+    )
+
+
+def make_detection_mask_loader(size=DEFAULT_PORTRAIT_SPATIAL_SIZE, *, num_objects=5, extra_dims=(), dtype=torch.uint8):
     # This produces "detection" masks, i.e. `(*, N, H, W)`, where `N` denotes the number of objects
-    size = _parse_spatial_size(size)
-    num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
+    size = _parse_size(size)
 
     def fn(shape, dtype, device):
-        data = torch.testing.make_tensor(shape, low=0, high=2, dtype=dtype, device=device)
-        return datapoints.Mask(data)
+        *batch_dims, num_objects, height, width = shape
+        return make_detection_mask(
+            (height, width), num_objects=num_objects, batch_dims=batch_dims, dtype=dtype, device=device
+        )
 
     return MaskLoader(fn, shape=(*extra_dims, num_objects, *size), dtype=dtype)
 
 
-make_detection_mask = from_loader(make_detection_mask_loader)
-
-
 def make_detection_mask_loaders(
     sizes=DEFAULT_SPATIAL_SIZES,
-    num_objects=(1, 0, "random"),
+    num_objects=(1, 0, 5),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8,),
 ):
@@ -698,25 +762,38 @@ def make_detection_mask_loaders(
 make_detection_masks = from_loaders(make_detection_mask_loaders)
 
 
-def make_segmentation_mask_loader(size="random", *, num_categories="random", extra_dims=(), dtype=torch.uint8):
+def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
+    """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
+    return datapoints.Mask(
+        torch.testing.make_tensor(
+            (*batch_dims, *size),
+            low=0,
+            high=num_categories,
+            dtype=dtype or torch.uint8,
+            device=device,
+        )
+    )
+
+
+def make_segmentation_mask_loader(
+    size=DEFAULT_PORTRAIT_SPATIAL_SIZE, *, num_categories=10, extra_dims=(), dtype=torch.uint8
+):
     # This produces "segmentation" masks, i.e. `(*, H, W)`, where the category is encoded in the values
-    size = _parse_spatial_size(size)
-    num_categories = int(torch.randint(1, 11, ())) if num_categories == "random" else num_categories
+    size = _parse_size(size)
 
     def fn(shape, dtype, device):
-        data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=dtype, device=device)
-        return datapoints.Mask(data)
+        *batch_dims, height, width = shape
+        return make_segmentation_mask(
+            (height, width), num_categories=num_categories, batch_dims=batch_dims, dtype=dtype, device=device
+        )
 
     return MaskLoader(fn, shape=(*extra_dims, *size), dtype=dtype)
-
-
-make_segmentation_mask = from_loader(make_segmentation_mask_loader)
 
 
 def make_segmentation_mask_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
-    num_categories=(1, 2, "random"),
+    num_categories=(1, 2, 10),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8,),
 ):
@@ -730,8 +807,8 @@ make_segmentation_masks = from_loaders(make_segmentation_mask_loaders)
 def make_mask_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
-    num_objects=(1, 0, "random"),
-    num_categories=(1, 2, "random"),
+    num_objects=(1, 0, 5),
+    num_categories=(1, 2, 10),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8,),
 ):
@@ -748,27 +825,37 @@ class VideoLoader(ImageLoader):
     pass
 
 
+def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
+    return datapoints.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
+
+
+def make_video_tensor(*args, **kwargs):
+    return make_video(*args, **kwargs).as_subclass(torch.Tensor)
+
+
 def make_video_loader(
-    size="random",
+    size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     *,
     color_space="RGB",
-    num_frames="random",
+    num_frames=3,
     extra_dims=(),
     dtype=torch.uint8,
 ):
-    size = _parse_spatial_size(size)
-    num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
+    size = _parse_size(size)
 
     def fn(shape, dtype, device, memory_format):
-        video = make_image(
-            size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device, memory_format=memory_format
+        *batch_dims, num_frames, _, height, width = shape
+        return make_video(
+            (height, width),
+            num_frames=num_frames,
+            batch_dims=batch_dims,
+            color_space=color_space,
+            dtype=dtype,
+            device=device,
+            memory_format=memory_format,
         )
-        return datapoints.Video(video)
 
     return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
-
-
-make_video = from_loader(make_video_loader)
 
 
 def make_video_loaders(
@@ -778,7 +865,7 @@ def make_video_loaders(
         "GRAY",
         "RGB",
     ),
-    num_frames=(1, 0, "random"),
+    num_frames=(1, 0, 3),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8, torch.float32, torch.float64),
 ):
@@ -880,3 +967,23 @@ def assert_run_python_script(source_code):
             raise RuntimeError(f"script errored with output:\n{e.output.decode()}")
         if out != b"":
             raise AssertionError(out.decode())
+
+
+@contextlib.contextmanager
+def assert_no_warnings():
+    # The name `catch_warnings` is a misnomer as the context manager does **not** catch any warnings, but rather scopes
+    # the warning filters. All changes that are made to the filters while in this context, will be reset upon exit.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        yield
+
+
+@contextlib.contextmanager
+def ignore_jit_no_profile_information_warning():
+    # Calling a scripted object often triggers a warning like
+    # `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
+    # with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
+    # them.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=re.escape("operator() profile_node %"), category=UserWarning)
+        yield

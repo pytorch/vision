@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from types import ModuleType
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
 from torch._C import DisableTorchFunctionSubclass
 from torch.types import _device, _dtype, _size
-from torchvision.transforms import InterpolationMode
 
 
 D = TypeVar("D", bound="Datapoint")
@@ -16,7 +14,12 @@ _FillTypeJIT = Optional[List[float]]
 
 
 class Datapoint(torch.Tensor):
-    __F: Optional[ModuleType] = None
+    """[Beta] Base class for all datapoints.
+
+    You probably don't want to use this class unless you're defining your own
+    custom Datapoints. See
+    :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for details.
+    """
 
     @staticmethod
     def _to_tensor(
@@ -30,12 +33,17 @@ class Datapoint(torch.Tensor):
         return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
     @classmethod
+    def _wrap(cls: Type[D], tensor: torch.Tensor) -> D:
+        return tensor.as_subclass(cls)
+
+    @classmethod
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
-        raise NotImplementedError
+        return cls._wrap(tensor)
 
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
         torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
+        torch.Tensor.detach: lambda cls, input, output: cls.wrap_like(input, output),
         # We don't need to wrap the output of `Tensor.requires_grad_`, since it is an inplace operation and thus
         # retains the type automatically
         torch.Tensor.requires_grad_: lambda cls, input, output: output,
@@ -98,18 +106,6 @@ class Datapoint(torch.Tensor):
         extra_repr = ", ".join(f"{key}={value}" for key, value in kwargs.items())
         return f"{super().__repr__()[:-1]}, {extra_repr})"
 
-    @property
-    def _F(self) -> ModuleType:
-        # This implements a lazy import of the functional to get around the cyclic import. This import is deferred
-        # until the first time we need reference to the functional module and it's shared across all instances of
-        # the class. This approach avoids the DataLoader issue described at
-        # https://github.com/pytorch/vision/pull/6476#discussion_r953588621
-        if Datapoint.__F is None:
-            from ..transforms.v2 import functional
-
-            Datapoint.__F = functional
-        return Datapoint.__F
-
     # Add properties for common attributes like shape, dtype, device, ndim etc
     # this way we return the result without passing into __torch_function__
     @property
@@ -132,130 +128,14 @@ class Datapoint(torch.Tensor):
         with DisableTorchFunctionSubclass():
             return super().dtype
 
-    def horizontal_flip(self) -> Datapoint:
-        return self
-
-    def vertical_flip(self) -> Datapoint:
-        return self
-
-    # TODO: We have to ignore override mypy error as there is torch.Tensor built-in deprecated op: Tensor.resize
-    # https://github.com/pytorch/pytorch/blob/e8727994eb7cdb2ab642749d6549bc497563aa06/torch/_tensor.py#L588-L593
-    def resize(  # type: ignore[override]
-        self,
-        size: List[int],
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        max_size: Optional[int] = None,
-        antialias: Optional[Union[str, bool]] = "warn",
-    ) -> Datapoint:
-        return self
-
-    def crop(self, top: int, left: int, height: int, width: int) -> Datapoint:
-        return self
-
-    def center_crop(self, output_size: List[int]) -> Datapoint:
-        return self
-
-    def resized_crop(
-        self,
-        top: int,
-        left: int,
-        height: int,
-        width: int,
-        size: List[int],
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
-    ) -> Datapoint:
-        return self
-
-    def pad(
-        self,
-        padding: List[int],
-        fill: Optional[Union[int, float, List[float]]] = None,
-        padding_mode: str = "constant",
-    ) -> Datapoint:
-        return self
-
-    def rotate(
-        self,
-        angle: float,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        expand: bool = False,
-        center: Optional[List[float]] = None,
-        fill: _FillTypeJIT = None,
-    ) -> Datapoint:
-        return self
-
-    def affine(
-        self,
-        angle: Union[int, float],
-        translate: List[float],
-        scale: float,
-        shear: List[float],
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: _FillTypeJIT = None,
-        center: Optional[List[float]] = None,
-    ) -> Datapoint:
-        return self
-
-    def perspective(
-        self,
-        startpoints: Optional[List[List[int]]],
-        endpoints: Optional[List[List[int]]],
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: _FillTypeJIT = None,
-        coefficients: Optional[List[float]] = None,
-    ) -> Datapoint:
-        return self
-
-    def elastic(
-        self,
-        displacement: torch.Tensor,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: _FillTypeJIT = None,
-    ) -> Datapoint:
-        return self
-
-    def rgb_to_grayscale(self, num_output_channels: int = 1) -> Datapoint:
-        return self
-
-    def adjust_brightness(self, brightness_factor: float) -> Datapoint:
-        return self
-
-    def adjust_saturation(self, saturation_factor: float) -> Datapoint:
-        return self
-
-    def adjust_contrast(self, contrast_factor: float) -> Datapoint:
-        return self
-
-    def adjust_sharpness(self, sharpness_factor: float) -> Datapoint:
-        return self
-
-    def adjust_hue(self, hue_factor: float) -> Datapoint:
-        return self
-
-    def adjust_gamma(self, gamma: float, gain: float = 1) -> Datapoint:
-        return self
-
-    def posterize(self, bits: int) -> Datapoint:
-        return self
-
-    def solarize(self, threshold: float) -> Datapoint:
-        return self
-
-    def autocontrast(self) -> Datapoint:
-        return self
-
-    def equalize(self) -> Datapoint:
-        return self
-
-    def invert(self) -> Datapoint:
-        return self
-
-    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Datapoint:
-        return self
-
-    def permute_channels(self, permutation: List[int]) -> Datapoint:
-        return self
+    def __deepcopy__(self: D, memo: Dict[int, Any]) -> D:
+        # We need to detach first, since a plain `Tensor.clone` will be part of the computation graph, which does
+        # *not* happen for `deepcopy(Tensor)`. A side-effect from detaching is that the `Tensor.requires_grad`
+        # attribute is cleared, so we need to refill it before we return.
+        # Note: We don't explicitly handle deep-copying of the metadata here. The only metadata we currently have is
+        # `BoundingBoxes.format` and `BoundingBoxes.canvas_size`, which are immutable and thus implicitly deep-copied by
+        # `BoundingBoxes.clone()`.
+        return self.detach().clone().requires_grad_(self.requires_grad)  # type: ignore[return-value]
 
 
 _InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]

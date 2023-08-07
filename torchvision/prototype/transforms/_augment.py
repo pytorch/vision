@@ -1,4 +1,3 @@
-import math
 from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
@@ -9,100 +8,8 @@ from torchvision.ops import masks_to_boxes
 from torchvision.prototype import datapoints as proto_datapoints
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
 
-from torchvision.transforms.v2._transform import _RandomApplyTransform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_spatial_size
-
-
-class _BaseMixupCutmix(_RandomApplyTransform):
-    def __init__(self, alpha: float, p: float = 0.5) -> None:
-        super().__init__(p=p)
-        self.alpha = alpha
-        self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
-
-    def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if not (
-            has_any(flat_inputs, datapoints.Image, datapoints.Video, is_simple_tensor)
-            and has_any(flat_inputs, proto_datapoints.OneHotLabel)
-        ):
-            raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
-        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask, proto_datapoints.Label):
-            raise TypeError(
-                f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
-            )
-
-    def _mixup_onehotlabel(self, inpt: proto_datapoints.OneHotLabel, lam: float) -> proto_datapoints.OneHotLabel:
-        if inpt.ndim < 2:
-            raise ValueError("Need a batch of one hot labels")
-        output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
-        return proto_datapoints.OneHotLabel.wrap_like(inpt, output)
-
-
-class RandomMixup(_BaseMixupCutmix):
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        return dict(lam=float(self._dist.sample(())))  # type: ignore[arg-type]
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        lam = params["lam"]
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_simple_tensor(inpt):
-            expected_ndim = 5 if isinstance(inpt, datapoints.Video) else 4
-            if inpt.ndim < expected_ndim:
-                raise ValueError("The transform expects a batched input")
-            output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
-
-            if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
-
-            return output
-        elif isinstance(inpt, proto_datapoints.OneHotLabel):
-            return self._mixup_onehotlabel(inpt, lam)
-        else:
-            return inpt
-
-
-class RandomCutmix(_BaseMixupCutmix):
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        lam = float(self._dist.sample(()))  # type: ignore[arg-type]
-
-        H, W = query_spatial_size(flat_inputs)
-
-        r_x = torch.randint(W, ())
-        r_y = torch.randint(H, ())
-
-        r = 0.5 * math.sqrt(1.0 - lam)
-        r_w_half = int(r * W)
-        r_h_half = int(r * H)
-
-        x1 = int(torch.clamp(r_x - r_w_half, min=0))
-        y1 = int(torch.clamp(r_y - r_h_half, min=0))
-        x2 = int(torch.clamp(r_x + r_w_half, max=W))
-        y2 = int(torch.clamp(r_y + r_h_half, max=H))
-        box = (x1, y1, x2, y2)
-
-        lam_adjusted = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))
-
-        return dict(box=box, lam_adjusted=lam_adjusted)
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_simple_tensor(inpt):
-            box = params["box"]
-            expected_ndim = 5 if isinstance(inpt, datapoints.Video) else 4
-            if inpt.ndim < expected_ndim:
-                raise ValueError("The transform expects a batched input")
-            x1, y1, x2, y2 = box
-            rolled = inpt.roll(1, 0)
-            output = inpt.clone()
-            output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
-
-            if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
-
-            return output
-        elif isinstance(inpt, proto_datapoints.OneHotLabel):
-            lam_adjusted = params["lam_adjusted"]
-            return self._mixup_onehotlabel(inpt, lam_adjusted)
-        else:
-            return inpt
+from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 class SimpleCopyPaste(Transform):
@@ -175,7 +82,7 @@ class SimpleCopyPaste(Transform):
         # There is a similar +1 in other reference implementations:
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
-        boxes = F.convert_format_bounding_box(
+        boxes = F.convert_format_bounding_boxes(
             xyxy_boxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
@@ -184,7 +91,7 @@ class SimpleCopyPaste(Transform):
         out_target["labels"] = torch.cat([labels, paste_labels])
 
         # Check for degenerated boxes and remove them
-        boxes = F.convert_format_bounding_box(
+        boxes = F.convert_format_bounding_boxes(
             out_target["boxes"], old_format=bbox_format, new_format=datapoints.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
@@ -201,14 +108,14 @@ class SimpleCopyPaste(Transform):
         self, flat_sample: List[Any]
     ) -> Tuple[List[datapoints._TensorImageType], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
-        # with List[image], List[BoundingBox], List[Mask], List[Label]
+        # with List[image], List[BoundingBoxes], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
             if isinstance(obj, datapoints.Image) or is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
                 images.append(F.to_image_tensor(obj))
-            elif isinstance(obj, datapoints.BoundingBox):
+            elif isinstance(obj, datapoints.BoundingBoxes):
                 bboxes.append(obj)
             elif isinstance(obj, datapoints.Mask):
                 masks.append(obj)
@@ -218,7 +125,7 @@ class SimpleCopyPaste(Transform):
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain equal sized list of Images, "
-                "BoundingBoxes, Masks and Labels or OneHotLabels."
+                "BoundingBoxeses, Masks and Labels or OneHotLabels."
             )
 
         targets = []
@@ -244,8 +151,8 @@ class SimpleCopyPaste(Transform):
             elif is_simple_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
-            elif isinstance(obj, datapoints.BoundingBox):
-                flat_sample[i] = datapoints.BoundingBox.wrap_like(obj, output_targets[c1]["boxes"])
+            elif isinstance(obj, datapoints.BoundingBoxes):
+                flat_sample[i] = datapoints.BoundingBoxes.wrap_like(obj, output_targets[c1]["boxes"])
                 c1 += 1
             elif isinstance(obj, datapoints.Mask):
                 flat_sample[i] = datapoints.Mask.wrap_like(obj, output_targets[c2]["masks"])

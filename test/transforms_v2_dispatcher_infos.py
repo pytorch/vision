@@ -69,14 +69,15 @@ class DispatcherInfo(InfoBase):
             import itertools
 
             for args_kwargs in sample_inputs:
-                for name in itertools.chain(
-                    datapoint_type.__annotations__.keys(),
-                    # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
-                    #  per-dispatcher level. However, so far there is no option for that.
-                    (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
-                ):
-                    if name in args_kwargs.kwargs:
-                        del args_kwargs.kwargs[name]
+                if hasattr(datapoint_type, "__annotations__"):
+                    for name in itertools.chain(
+                        datapoint_type.__annotations__.keys(),
+                        # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
+                        #  per-dispatcher level. However, so far there is no option for that.
+                        (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
+                    ):
+                        if name in args_kwargs.kwargs:
+                            del args_kwargs.kwargs[name]
 
                 yield args_kwargs
 
@@ -139,73 +140,11 @@ xfails_pil_if_fill_sequence_needs_broadcast = xfails_pil(
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.horizontal_flip,
-        kernels={
-            datapoints.Image: F.horizontal_flip_image_tensor,
-            datapoints.Video: F.horizontal_flip_video,
-            datapoints.BoundingBox: F.horizontal_flip_bounding_box,
-            datapoints.Mask: F.horizontal_flip_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.horizontal_flip_image_pil, kernel_name="horizontal_flip_image_pil"),
-    ),
-    DispatcherInfo(
-        F.resize,
-        kernels={
-            datapoints.Image: F.resize_image_tensor,
-            datapoints.Video: F.resize_video,
-            datapoints.BoundingBox: F.resize_bounding_box,
-            datapoints.Mask: F.resize_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.resize_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("size"),
-        ],
-    ),
-    DispatcherInfo(
-        F.affine,
-        kernels={
-            datapoints.Image: F.affine_image_tensor,
-            datapoints.Video: F.affine_video,
-            datapoints.BoundingBox: F.affine_bounding_box,
-            datapoints.Mask: F.affine_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.affine_image_pil),
-        test_marks=[
-            *xfails_pil_if_fill_sequence_needs_broadcast,
-            xfail_jit_python_scalar_arg("shear"),
-            xfail_jit_python_scalar_arg("fill"),
-        ],
-    ),
-    DispatcherInfo(
-        F.vertical_flip,
-        kernels={
-            datapoints.Image: F.vertical_flip_image_tensor,
-            datapoints.Video: F.vertical_flip_video,
-            datapoints.BoundingBox: F.vertical_flip_bounding_box,
-            datapoints.Mask: F.vertical_flip_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.vertical_flip_image_pil, kernel_name="vertical_flip_image_pil"),
-    ),
-    DispatcherInfo(
-        F.rotate,
-        kernels={
-            datapoints.Image: F.rotate_image_tensor,
-            datapoints.Video: F.rotate_video,
-            datapoints.BoundingBox: F.rotate_bounding_box,
-            datapoints.Mask: F.rotate_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F.rotate_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("fill"),
-            *xfails_pil_if_fill_sequence_needs_broadcast,
-        ],
-    ),
-    DispatcherInfo(
         F.crop,
         kernels={
             datapoints.Image: F.crop_image_tensor,
             datapoints.Video: F.crop_video,
-            datapoints.BoundingBox: F.crop_bounding_box,
+            datapoints.BoundingBoxes: F.crop_bounding_boxes,
             datapoints.Mask: F.crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.crop_image_pil, kernel_name="crop_image_pil"),
@@ -215,7 +154,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.resized_crop_image_tensor,
             datapoints.Video: F.resized_crop_video,
-            datapoints.BoundingBox: F.resized_crop_bounding_box,
+            datapoints.BoundingBoxes: F.resized_crop_bounding_boxes,
             datapoints.Mask: F.resized_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.resized_crop_image_pil),
@@ -225,7 +164,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.pad_image_tensor,
             datapoints.Video: F.pad_video,
-            datapoints.BoundingBox: F.pad_bounding_box,
+            datapoints.BoundingBoxes: F.pad_bounding_boxes,
             datapoints.Mask: F.pad_mask,
         },
         pil_kernel_info=PILKernelInfo(F.pad_image_pil, kernel_name="pad_image_pil"),
@@ -247,7 +186,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.perspective_image_tensor,
             datapoints.Video: F.perspective_video,
-            datapoints.BoundingBox: F.perspective_bounding_box,
+            datapoints.BoundingBoxes: F.perspective_bounding_boxes,
             datapoints.Mask: F.perspective_mask,
         },
         pil_kernel_info=PILKernelInfo(F.perspective_image_pil),
@@ -261,7 +200,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.elastic_image_tensor,
             datapoints.Video: F.elastic_video,
-            datapoints.BoundingBox: F.elastic_bounding_box,
+            datapoints.BoundingBoxes: F.elastic_bounding_boxes,
             datapoints.Mask: F.elastic_mask,
         },
         pil_kernel_info=PILKernelInfo(F.elastic_image_pil),
@@ -272,7 +211,7 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Image: F.center_crop_image_tensor,
             datapoints.Video: F.center_crop_video,
-            datapoints.BoundingBox: F.center_crop_bounding_box,
+            datapoints.BoundingBoxes: F.center_crop_bounding_boxes,
             datapoints.Mask: F.center_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
@@ -352,14 +291,6 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.adjust_brightness,
-        kernels={
-            datapoints.Image: F.adjust_brightness_image_tensor,
-            datapoints.Video: F.adjust_brightness_video,
-        },
-        pil_kernel_info=PILKernelInfo(F.adjust_brightness_image_pil, kernel_name="adjust_brightness_image_pil"),
-    ),
-    DispatcherInfo(
         F.adjust_contrast,
         kernels={
             datapoints.Image: F.adjust_contrast_image_tensor,
@@ -427,16 +358,6 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.convert_dtype,
-        kernels={
-            datapoints.Image: F.convert_dtype_image_tensor,
-            datapoints.Video: F.convert_dtype_video,
-        },
-        test_marks=[
-            skip_dispatch_datapoint,
-        ],
-    ),
-    DispatcherInfo(
         F.uniform_temporal_subsample,
         kernels={
             datapoints.Video: F.uniform_temporal_subsample_video,
@@ -446,15 +367,15 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.clamp_bounding_box,
-        kernels={datapoints.BoundingBox: F.clamp_bounding_box},
+        F.clamp_bounding_boxes,
+        kernels={datapoints.BoundingBoxes: F.clamp_bounding_boxes},
         test_marks=[
             skip_dispatch_datapoint,
         ],
     ),
     DispatcherInfo(
-        F.convert_format_bounding_box,
-        kernels={datapoints.BoundingBox: F.convert_format_bounding_box},
+        F.convert_format_bounding_boxes,
+        kernels={datapoints.BoundingBoxes: F.convert_format_bounding_boxes},
         test_marks=[
             skip_dispatch_datapoint,
         ],

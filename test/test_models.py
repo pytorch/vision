@@ -15,7 +15,7 @@ import torch
 import torch.fx
 import torch.nn as nn
 from _utils_internal import get_relative_path
-from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
+from common_utils import cpu_and_cuda, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
 from PIL import Image
 from torchvision import models, transforms
 from torchvision.models import get_model_builder, list_models
@@ -23,6 +23,16 @@ from torchvision.models import get_model_builder, list_models
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
+
+
+@contextlib.contextmanager
+def disable_tf32():
+    previous = torch.backends.cudnn.allow_tf32
+    torch.backends.cudnn.allow_tf32 = False
+    try:
+        yield
+    finally:
+        torch.backends.cudnn.allow_tf32 = previous
 
 
 def list_model_fns(module):
@@ -666,13 +676,14 @@ def vitc_b_16(**kwargs: Any):
 
 
 @pytest.mark.parametrize("model_fn", [vitc_b_16])
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_vitc_models(model_fn, dev):
     test_classification_model(model_fn, dev)
 
 
+@disable_tf32()  # see: https://github.com/pytorch/vision/issues/7618
 @pytest.mark.parametrize("model_fn", list_model_fns(models))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_classification_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
@@ -682,11 +693,6 @@ def test_classification_model(model_fn, dev):
     model_name = model_fn.__name__
     if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
-    if model_name == "resnet101" and dev == "cuda":
-        # TODO: Investigate the Failure with CUDA 11.8: https://github.com/pytorch/vision/issues/7618
-        # TODO: Investigate/followup on previous failure: https://github.com/pytorch/vision/issues/7143
-        # its not happening on CI with CUDA 11.8 anymore. Follow up is needed if its still not resolved.
-        pytest.xfail("https://github.com/pytorch/vision/issues/7618")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
@@ -720,7 +726,7 @@ def test_classification_model(model_fn, dev):
 
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.segmentation))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
@@ -785,7 +791,7 @@ def test_segmentation_model(model_fn, dev):
 
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
@@ -917,7 +923,7 @@ def test_detection_model_validation(model_fn):
 
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.video))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_video_model(model_fn, dev):
     set_rng_seed(0)
     # the default input shape is
