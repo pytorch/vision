@@ -37,6 +37,8 @@ class Datapoint(torch.Tensor):
         return tensor.as_subclass(cls)
 
     _NO_WRAPPING_EXCEPTIONS = {
+        # The ops in this dict are those that should *preserve* the Datapoint
+        # type, i.e. they are exceptions to the "no wrapping" rule.
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
         torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
         torch.Tensor.detach: lambda cls, input, output: cls.wrap_like(input, output),
@@ -79,22 +81,22 @@ class Datapoint(torch.Tensor):
         with DisableTorchFunctionSubclass():
             output = func(*args, **kwargs or dict())
 
-            wrapper = cls._NO_WRAPPING_EXCEPTIONS.get(func)
+        wrapper = cls._NO_WRAPPING_EXCEPTIONS.get(func)
+        if wrapper and isinstance(args[0], cls):
             # Apart from `func` needing to be an exception, we also require the primary operand, i.e. `args[0]`, to be
             # an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will
             # invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,
             # `torch.Tensor(...).to(datapoints.Image(...))` will invoke `datapoints.Image.__torch_function__` with
             # `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would
             # be wrapped into a `datapoints.Image`.
-            if wrapper and isinstance(args[0], cls):
-                return wrapper(cls, args[0], output)
+            return wrapper(cls, args[0], output)
 
-            # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
-            # will retain the input type. Thus, we need to unwrap here.
-            if isinstance(output, cls):
-                return output.as_subclass(torch.Tensor)
+        if isinstance(output, cls):
+            # DisableTorchFunctionSubclass is ignored by inplace ops like `.add_(...)`,
+            # so for those, the output is still a Datapoint. Thus, we need to manually unwrap.
+            return output.as_subclass(torch.Tensor)
 
-            return output
+        return output
 
     def _make_repr(self, **kwargs: Any) -> str:
         # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
