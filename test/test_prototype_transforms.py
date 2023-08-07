@@ -20,7 +20,7 @@ from prototype_common_utils import make_label
 from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
 from torchvision.transforms.v2._utils import _convert_fill_arg
-from torchvision.transforms.v2.functional import InterpolationMode, pil_to_tensor, to_image_pil
+from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_image_pil
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
@@ -285,6 +285,37 @@ class TestFixedSizeCrop:
         assert_equal(output["bounding_boxes"], bounding_boxes[is_valid])
         assert_equal(output["masks"], masks[is_valid])
         assert_equal(output["labels"], labels[is_valid])
+
+    def test__transform_bounding_boxes_clamping(self, mocker):
+        batch_size = 3
+        canvas_size = (10, 10)
+
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
+            return_value=dict(
+                needs_crop=True,
+                top=0,
+                left=0,
+                height=canvas_size[0],
+                width=canvas_size[1],
+                is_valid=torch.full((batch_size,), fill_value=True),
+                needs_pad=False,
+            ),
+        )
+
+        bounding_boxes = make_bounding_box(
+            format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(batch_size,)
+        )
+        mock = mocker.patch(
+            "torchvision.prototype.transforms._geometry.F.clamp_bounding_boxes", wraps=clamp_bounding_boxes
+        )
+
+        transform = transforms.FixedSizeCrop((-1, -1))
+        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
+
+        transform(bounding_boxes)
+
+        mock.assert_called_once()
 
 
 class TestLabelToOneHot:
