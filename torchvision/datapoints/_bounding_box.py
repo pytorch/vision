@@ -48,11 +48,17 @@ class BoundingBoxes(Datapoint):
     canvas_size: Tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat, canvas_size: Tuple[int, int]) -> BoundingBoxes:
+    def _wrap(
+        cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int]
+    ) -> BoundingBoxes:  # type: ignore[override]
         if tensor.ndim == 1:
             tensor = tensor.unsqueeze(0)
         elif tensor.ndim != 2:
             raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
+
+        if isinstance(format, str):
+            format = BoundingBoxFormat[format.upper()]
+
         bounding_boxes = tensor.as_subclass(cls)
         bounding_boxes.format = format
         bounding_boxes.canvas_size = canvas_size
@@ -69,10 +75,6 @@ class BoundingBoxes(Datapoint):
         requires_grad: Optional[bool] = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-
-        if isinstance(format, str):
-            format = BoundingBoxFormat[format.upper()]
-
         return cls._wrap(tensor, format=format, canvas_size=canvas_size)
 
     @classmethod
@@ -81,7 +83,7 @@ class BoundingBoxes(Datapoint):
         other: BoundingBoxes,
         tensor: torch.Tensor,
         *,
-        format: Optional[BoundingBoxFormat] = None,
+        format: Optional[Union[BoundingBoxFormat, str]] = None,
         canvas_size: Optional[Tuple[int, int]] = None,
     ) -> BoundingBoxes:
         """Wrap a :class:`torch.Tensor` as :class:`BoundingBoxes` from a reference.
@@ -95,9 +97,6 @@ class BoundingBoxes(Datapoint):
                 omitted, it is taken from the reference.
 
         """
-        if isinstance(format, str):
-            format = BoundingBoxFormat[format.upper()]
-
         return cls._wrap(
             tensor,
             format=format if format is not None else other.format,

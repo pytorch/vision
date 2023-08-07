@@ -20,11 +20,6 @@ class Video(Datapoint):
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 
-    @classmethod
-    def _wrap(cls, tensor: torch.Tensor) -> Video:
-        video = tensor.as_subclass(cls)
-        return video
-
     def __new__(
         cls,
         data: Any,
@@ -36,11 +31,7 @@ class Video(Datapoint):
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if data.ndim < 4:
             raise ValueError
-        return cls._wrap(tensor)
-
-    @classmethod
-    def wrap_like(cls, other: Video, tensor: torch.Tensor) -> Video:
-        return cls._wrap(tensor)
+        return tensor.as_subclass(cls)
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()

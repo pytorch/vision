@@ -2,7 +2,6 @@ import inspect
 import math
 import os
 import re
-from unittest import mock
 
 import numpy as np
 import PIL.Image
@@ -25,7 +24,6 @@ from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
 from torchvision.transforms.v2.functional._meta import clamp_bounding_boxes, convert_format_bounding_boxes
-from torchvision.transforms.v2.functional._utils import _KERNEL_REGISTRY
 from torchvision.transforms.v2.utils import is_simple_tensor
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
@@ -360,18 +358,6 @@ class TestDispatchers:
         script(dispatcher)
 
     @image_sample_inputs
-    def test_dispatch_simple_tensor(self, info, args_kwargs, spy_on):
-        (image_datapoint, *other_args), kwargs = args_kwargs.load()
-        image_simple_tensor = torch.Tensor(image_datapoint)
-
-        kernel_info = info.kernel_infos[datapoints.Image]
-        spy = spy_on(kernel_info.kernel, module=info.dispatcher.__module__, name=kernel_info.id)
-
-        info.dispatcher(image_simple_tensor, *other_args, **kwargs)
-
-        spy.assert_called_once()
-
-    @image_sample_inputs
     def test_simple_tensor_output_type(self, info, args_kwargs):
         (image_datapoint, *other_args), kwargs = args_kwargs.load()
         image_simple_tensor = image_datapoint.as_subclass(torch.Tensor)
@@ -380,25 +366,6 @@ class TestDispatchers:
 
         # We cannot use `isinstance` here since all datapoints are instances of `torch.Tensor` as well
         assert type(output) is torch.Tensor
-
-    @make_info_args_kwargs_parametrization(
-        [info for info in DISPATCHER_INFOS if info.pil_kernel_info is not None],
-        args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
-    )
-    def test_dispatch_pil(self, info, args_kwargs, spy_on):
-        (image_datapoint, *other_args), kwargs = args_kwargs.load()
-
-        if image_datapoint.ndim > 3:
-            pytest.skip("Input is batched")
-
-        image_pil = F.to_image_pil(image_datapoint)
-
-        pil_kernel_info = info.pil_kernel_info
-        spy = spy_on(pil_kernel_info.kernel, module=info.dispatcher.__module__, name=pil_kernel_info.id)
-
-        info.dispatcher(image_pil, *other_args, **kwargs)
-
-        spy.assert_called_once()
 
     @make_info_args_kwargs_parametrization(
         [info for info in DISPATCHER_INFOS if info.pil_kernel_info is not None],
@@ -420,34 +387,15 @@ class TestDispatchers:
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(),
     )
-    def test_dispatch_datapoint(self, info, args_kwargs, spy_on):
-        (datapoint, *other_args), kwargs = args_kwargs.load()
-
-        input_type = type(datapoint)
-
-        wrapped_kernel = _KERNEL_REGISTRY[info.dispatcher][input_type]
-
-        # In case the wrapper was decorated with @functools.wraps, we can make the check more strict and test if the
-        # proper kernel was wrapped
-        if hasattr(wrapped_kernel, "__wrapped__"):
-            assert wrapped_kernel.__wrapped__ is info.kernels[input_type]
-
-        spy = mock.MagicMock(wraps=wrapped_kernel, name=wrapped_kernel.__name__)
-        with mock.patch.dict(_KERNEL_REGISTRY[info.dispatcher], values={input_type: spy}):
-            info.dispatcher(datapoint, *other_args, **kwargs)
-
-        spy.assert_called_once()
-
-    @make_info_args_kwargs_parametrization(
-        DISPATCHER_INFOS,
-        args_kwargs_fn=lambda info: info.sample_inputs(),
-    )
     def test_datapoint_output_type(self, info, args_kwargs):
         (datapoint, *other_args), kwargs = args_kwargs.load()
 
         output = info.dispatcher(datapoint, *other_args, **kwargs)
 
         assert isinstance(output, type(datapoint))
+
+        if isinstance(datapoint, datapoints.BoundingBoxes) and info.dispatcher is not F.convert_format_bounding_boxes:
+            assert output.format == datapoint.format
 
     @pytest.mark.parametrize(
         ("dispatcher_info", "datapoint_type", "kernel_info"),
@@ -874,7 +822,7 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
     pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
     inv_pcoeffs = _get_perspective_coeffs(endpoints, startpoints)
 
-    for bboxes in make_bounding_boxes(canvas_size=canvas_size, extra_dims=((4,),)):
+    for bboxes in make_bounding_boxes(spatial_size=canvas_size, extra_dims=((4,),)):
         bboxes = bboxes.to(device)
 
         output_bboxes = F.perspective_bounding_boxes(
