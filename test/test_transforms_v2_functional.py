@@ -687,7 +687,9 @@ def test_correctness_resized_crop_bounding_boxes(device, format, top, left, heig
     if format != datapoints.BoundingBoxFormat.XYXY:
         in_boxes = convert_format_bounding_boxes(in_boxes, datapoints.BoundingBoxFormat.XYXY, format)
 
-    output_boxes, output_canvas_size = F.resized_crop_bounding_boxes(in_boxes, format, top, left, height, width, size)
+    output_boxes, output_canvas_size = F.resized_crop_bounding_boxes(
+        in_boxes.as_subclass(torch.Tensor), format, top, left, height, width, size
+    )
 
     if format != datapoints.BoundingBoxFormat.XYXY:
         output_boxes = convert_format_bounding_boxes(output_boxes, format, datapoints.BoundingBoxFormat.XYXY)
@@ -743,7 +745,7 @@ def test_correctness_pad_bounding_boxes(device, padding):
         bboxes_canvas_size = bboxes.canvas_size
 
         output_boxes, output_canvas_size = F.pad_bounding_boxes(
-            bboxes, format=bboxes_format, canvas_size=bboxes_canvas_size, padding=padding
+            bboxes.as_subclass(torch.Tensor), format=bboxes_format, canvas_size=bboxes_canvas_size, padding=padding
         )
 
         torch.testing.assert_close(output_canvas_size, _compute_expected_canvas_size(bboxes, padding))
@@ -753,6 +755,9 @@ def test_correctness_pad_bounding_boxes(device, padding):
 
         expected_bboxes = []
         for bbox in bboxes:
+            print()
+            print(type(bbox))
+            print(hasattr(bbox, "format"))
             bbox = datapoints.BoundingBoxes(bbox, format=bboxes_format, canvas_size=bboxes_canvas_size)
             expected_bboxes.append(_compute_expected_bbox(bbox, padding))
 

@@ -29,11 +29,12 @@ def _register_kernel_internal(dispatcher, input_type, *, datapoint_wrapper=True)
         raise ValueError(f"Dispatcher {dispatcher} already has a kernel registered for type {input_type}.")
 
     def decorator(kernel):
-        registry[input_type] = (
-            _kernel_datapoint_wrapper(kernel)
-            if issubclass(input_type, datapoints.Datapoint) and datapoint_wrapper
-            else kernel
-        )
+        # registry[input_type] = (
+        #     _kernel_datapoint_wrapper(kernel)
+        #     if issubclass(input_type, datapoints.Datapoint) and datapoint_wrapper
+        #     else kernel
+        # )
+        registry[input_type] = kernel
         return kernel
 
     return decorator

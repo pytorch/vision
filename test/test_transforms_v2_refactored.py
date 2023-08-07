@@ -2280,3 +2280,22 @@ class TestGetKernel:
         _register_kernel_internal(F.resize, MyDatapoint, datapoint_wrapper=False)(resize_my_datapoint)
 
         assert _get_kernel(F.resize, MyDatapoint) is resize_my_datapoint
+
+
+def test_operations():
+
+    img = datapoints.Image(torch.rand(3, 10, 10))
+    t = torch.rand(3, 10, 10)
+    mask = datapoints.Mask(torch.rand(1, 10, 10))
+
+    for out in [img + t, t + img, img * t, t * img, img + 3, 3 + img, img * 3, 3 * img, img + img]:
+        assert isinstance(out, datapoints.Image)
+
+    for out in [mask + t, t + mask, mask * t, t * mask, mask + 3, 3 + mask, mask * 3, 3 * mask, mask + mask]:
+        assert isinstance(out, datapoints.Mask)
+
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        img + mask
+
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        img * mask

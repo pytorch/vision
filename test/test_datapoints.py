@@ -80,7 +80,7 @@ def test_to_datapoint_reference():
 
     tensor_to = tensor.to(image)
 
-    assert type(tensor_to) is torch.Tensor
+    assert type(tensor_to) is datapoints.Image
     assert tensor_to.dtype is torch.float64
 
 
@@ -139,7 +139,7 @@ def test_other_op_no_wrapping():
     # any operation besides the ones listed in `Datapoint._NO_WRAPPING_EXCEPTIONS` will do here
     output = image * 2
 
-    assert type(output) is torch.Tensor
+    assert type(output) is datapoints.Image
 
 
 @pytest.mark.parametrize(
@@ -163,7 +163,7 @@ def test_inplace_op_no_wrapping():
 
     output = image.add_(0)
 
-    assert type(output) is torch.Tensor
+    assert type(output) is datapoints.Image
     assert type(image) is datapoints.Image
 
 
