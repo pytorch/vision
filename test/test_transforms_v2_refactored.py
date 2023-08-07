@@ -2317,14 +2317,14 @@ class TestPermuteChannels:
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
         [
-            (F.adjust_brightness_image_tensor, torch.Tensor),
-            (F.adjust_brightness_image_pil, PIL.Image.Image),
-            (F.adjust_brightness_image_tensor, datapoints.Image),
-            (F.adjust_brightness_video, datapoints.Video),
+            (F.permute_channels_image_tensor, torch.Tensor),
+            (F.permute_channels_image_pil, PIL.Image.Image),
+            (F.permute_channels_image_tensor, datapoints.Image),
+            (F.permute_channels_video, datapoints.Video),
         ],
     )
     def test_dispatcher_signature(self, kernel, input_type):
-        check_dispatcher_kernel_signature_match(F.adjust_brightness, kernel=kernel, input_type=input_type)
+        check_dispatcher_kernel_signature_match(F.permute_channels, kernel=kernel, input_type=input_type)
 
     def reference_image_correctness(self, image, permutation):
         return datapoints.Image(image.numpy()[permutation, ...])
