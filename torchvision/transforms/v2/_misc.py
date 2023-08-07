@@ -386,9 +386,6 @@ class SanitizeBoundingBoxes(Transform):
         flat_inputs, spec = tree_flatten(inputs)
         boxes = get_bounding_boxes(flat_inputs)
 
-        if boxes.ndim != 2:
-            raise ValueError(f"boxes must be of shape (num_boxes, 4), got {boxes.shape}")
-
         if labels is not None and boxes.shape[0] != labels.shape[0]:
             raise ValueError(
                 f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
