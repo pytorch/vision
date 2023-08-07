@@ -39,7 +39,7 @@ from torchvision import datapoints
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.functional._utils import _get_kernel, _KERNEL_REGISTRY, _noop, _register_kernel_internal
+from torchvision.transforms.v2.functional._utils import _get_kernel, _noop, _register_kernel_internal
 
 
 @pytest.fixture(autouse=True)
@@ -382,35 +382,6 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
         return out_bbox
 
     return torch.stack([transform(b) for b in bounding_boxes.reshape(-1, 4).unbind()]).reshape(bounding_boxes.shape)
-
-
-@pytest.mark.parametrize(
-    ("dispatcher", "registered_input_types"),
-    [(dispatcher, set(registry.keys())) for dispatcher, registry in _KERNEL_REGISTRY.items()],
-)
-def test_exhaustive_kernel_registration(dispatcher, registered_input_types):
-    missing = {
-        torch.Tensor,
-        PIL.Image.Image,
-        datapoints.Image,
-        datapoints.BoundingBoxes,
-        datapoints.Mask,
-        datapoints.Video,
-    } - registered_input_types
-    if missing:
-        names = sorted(str(t) for t in missing)
-        raise AssertionError(
-            "\n".join(
-                [
-                    f"The dispatcher '{dispatcher.__name__}' has no kernel registered for",
-                    "",
-                    *[f"- {name}" for name in names],
-                    "",
-                    f"If available, register the kernels with @_register_kernel_internal({dispatcher.__name__}, ...).",
-                    f"If not, register explicit no-ops with @_register_explicit_noop({', '.join(names)})",
-                ]
-            )
-        )
 
 
 class TestResize:
@@ -2188,8 +2159,19 @@ class TestRegisterKernel:
         with pytest.raises(ValueError, match="Kernels can only be registered for subclasses"):
             F.register_kernel(F.resize, object)
 
-        with pytest.raises(ValueError, match="already has a kernel registered for type"):
+        with pytest.raises(ValueError, match="cannot be registered for the builtin datapoint classes"):
             F.register_kernel(F.resize, datapoints.Image)(F.resize_image_tensor)
+
+        class CustomDatapoint(datapoints.Datapoint):
+            pass
+
+        def resize_custom_datapoint():
+            pass
+
+        F.register_kernel(F.resize, CustomDatapoint)(resize_custom_datapoint)
+
+        with pytest.raises(ValueError, match="already has a kernel registered for type"):
+            F.register_kernel(F.resize, CustomDatapoint)(resize_custom_datapoint)
 
 
 class TestGetKernel:
@@ -2212,13 +2194,7 @@ class TestGetKernel:
             pass
 
         for input_type in [str, int, object, MyTensor, MyPILImage]:
-            with pytest.raises(
-                TypeError,
-                match=(
-                    "supports inputs of type torch.Tensor, PIL.Image.Image, "
-                    "and subclasses of torchvision.datapoints.Datapoint"
-                ),
-            ):
+            with pytest.raises(TypeError, match="supports inputs of type"):
                 _get_kernel(F.resize, input_type)
 
     def test_exact_match(self):
@@ -2271,8 +2247,8 @@ class TestGetKernel:
         class MyDatapoint(datapoints.Datapoint):
             pass
 
-        # Note that this will be an error in the future
-        assert _get_kernel(F.resize, MyDatapoint) is _noop
+        with pytest.raises(TypeError, match="supports inputs of type"):
+            assert _get_kernel(F.resize, MyDatapoint) is _noop
 
         def resize_my_datapoint():
             pass
