@@ -48,17 +48,13 @@ class BoundingBoxes(Datapoint):
     canvas_size: Tuple[int, int]
 
     @classmethod
-    def _wrap(
-        cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int]
-    ) -> BoundingBoxes:  # type: ignore[override]
+    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int]) -> BoundingBoxes:  # type: ignore[override]
         if tensor.ndim == 1:
             tensor = tensor.unsqueeze(0)
         elif tensor.ndim != 2:
             raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
-
         if isinstance(format, str):
             format = BoundingBoxFormat[format.upper()]
-
         bounding_boxes = tensor.as_subclass(cls)
         bounding_boxes.format = format
         bounding_boxes.canvas_size = canvas_size
