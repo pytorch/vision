@@ -2299,3 +2299,15 @@ def test_operations():
 
     with pytest.raises(TypeError, match="unsupported operand type"):
         img * mask
+
+    bboxes = datapoints.BoundingBoxes(
+        [[17, 16, 344, 495], [0, 10, 0, 10]],
+        format=datapoints.BoundingBoxFormat.XYXY,
+        canvas_size=(1000, 1000)
+    )
+    t = torch.rand(2, 4)
+
+    for out in [bboxes + t, t + bboxes, bboxes * t, t * bboxes, bboxes + 3, 3 + bboxes, bboxes * 3, 3 * bboxes, bboxes + bboxes]:
+        assert isinstance(out, datapoints.BoundingBoxes)
+        assert not(hasattr(out, "format"))
+        assert not(hasattr(out, "canvas_size"))
