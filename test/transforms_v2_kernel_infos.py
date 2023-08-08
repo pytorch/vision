@@ -222,16 +222,9 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
         out_bbox = out_bbox.to(dtype=in_dtype)
         return out_bbox
 
-    if bounding_boxes.ndim < 2:
-        bounding_boxes = [bounding_boxes]
-
-    expected_bboxes = [transform(bbox, affine_matrix, format, canvas_size) for bbox in bounding_boxes]
-    if len(expected_bboxes) > 1:
-        expected_bboxes = torch.stack(expected_bboxes)
-    else:
-        expected_bboxes = expected_bboxes[0]
-
-    return expected_bboxes
+    return torch.stack(
+        [transform(b, affine_matrix, format, canvas_size) for b in bounding_boxes.reshape(-1, 4).unbind()]
+    ).reshape(bounding_boxes.shape)
 
 
 def sample_inputs_convert_format_bounding_boxes():

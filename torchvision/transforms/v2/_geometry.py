@@ -23,7 +23,7 @@ from ._utils import (
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import has_all, has_any, is_simple_tensor, query_bounding_boxes, query_size
+from .utils import get_bounding_boxes, has_all, has_any, is_simple_tensor, query_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -1137,7 +1137,7 @@ class RandomIoUCrop(Transform):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         orig_h, orig_w = query_size(flat_inputs)
-        bboxes = query_bounding_boxes(flat_inputs)
+        bboxes = get_bounding_boxes(flat_inputs)
 
         while True:
             # sample an option

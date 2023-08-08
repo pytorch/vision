@@ -691,7 +691,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORT
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[format]
 
-    spatial_size = _parse_size(spatial_size, name="canvas_size")
+    spatial_size = _parse_size(spatial_size, name="spatial_size")
 
     def fn(shape, dtype, device):
         *batch_dims, num_coordinates = shape
@@ -702,12 +702,12 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORT
             format=format, canvas_size=spatial_size, batch_dims=batch_dims, dtype=dtype, device=device
         )
 
-    return BoundingBoxesLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
+    return BoundingBoxesLoader(fn, shape=(*extra_dims[-1:], 4), dtype=dtype, format=format, spatial_size=spatial_size)
 
 
 def make_bounding_box_loaders(
     *,
-    extra_dims=DEFAULT_EXTRA_DIMS,
+    extra_dims=tuple(d for d in DEFAULT_EXTRA_DIMS if len(d) < 2),
     formats=tuple(datapoints.BoundingBoxFormat),
     spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     dtypes=(torch.float32, torch.float64, torch.int64),
