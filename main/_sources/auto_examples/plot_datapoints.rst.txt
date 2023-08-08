@@ -22,16 +22,23 @@
 Datapoints FAQ
 ==============
 
-The :mod:`torchvision.datapoints` namespace was introduced together with ``torchvision.transforms.v2``. This example
-showcases what these datapoints are and how they behave. This is a fairly low-level topic that most users will not need
-to worry about: you do not need to understand the internals of datapoints to efficiently rely on
-``torchvision.transforms.v2``. It may however be useful for advanced users trying to implement their own datasets,
-transforms, or work directly with the datapoints.
+Datapoints are Tensor subclasses introduced together with
+``torchvision.transforms.v2``. This example showcases what these datapoints are
+and how they behave.
 
-.. GENERATED FROM PYTHON SOURCE LINES 12-26
+.. warning::
+
+    **Intended Audience** Unless you're writing your own transforms or your own datapoints, you
+    probably do not need to read this guide. This is a fairly low-level topic
+    that most users will not need to worry about: you do not need to understand
+    the internals of datapoints to efficiently rely on
+    ``torchvision.transforms.v2``. It may however be useful for advanced users
+    trying to implement their own datasets, transforms, or work directly with
+    the datapoints.
+
+.. GENERATED FROM PYTHON SOURCE LINES 22-35
 
 .. code-block:: default
-
 
     import PIL.Image
 
@@ -53,14 +60,14 @@ transforms, or work directly with the datapoints.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 27-31
+.. GENERATED FROM PYTHON SOURCE LINES 36-40
 
 What are datapoints?
 --------------------
 
 Datapoints are zero-copy tensor subclasses:
 
-.. GENERATED FROM PYTHON SOURCE LINES 31-39
+.. GENERATED FROM PYTHON SOURCE LINES 40-47
 
 .. code-block:: default
 
@@ -78,11 +85,20 @@ Datapoints are zero-copy tensor subclasses:
 
 
 
-
-.. GENERATED FROM PYTHON SOURCE LINES 40-57
+.. GENERATED FROM PYTHON SOURCE LINES 48-58
 
 Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate function
 for the input data.
+
+What can I do with a datapoint?
+-------------------------------
+
+Datapoints look and feel just like regular tensors - they **are** tensors.
+Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()`` or
+any ``torch.*`` operator will also works on datapoints. See
+:ref:`datapoint_unwrapping_behaviour` for a few gotchas.
+
+.. GENERATED FROM PYTHON SOURCE LINES 60-79
 
 What datapoints are supported?
 ------------------------------
@@ -94,12 +110,17 @@ So far :mod:`torchvision.datapoints` supports four types of datapoints:
 * :class:`~torchvision.datapoints.BoundingBoxes`
 * :class:`~torchvision.datapoints.Mask`
 
+.. _datapoint_creation:
+
 How do I construct a datapoint?
 -------------------------------
 
+Using the constructor
+^^^^^^^^^^^^^^^^^^^^^
+
 Each datapoint class takes any tensor-like data that can be turned into a :class:`~torch.Tensor`
 
-.. GENERATED FROM PYTHON SOURCE LINES 57-62
+.. GENERATED FROM PYTHON SOURCE LINES 80-85
 
 .. code-block:: default
 
@@ -122,12 +143,12 @@ Each datapoint class takes any tensor-like data that can be turned into a :class
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-65
+.. GENERATED FROM PYTHON SOURCE LINES 86-88
 
 Similar to other PyTorch creations ops, the constructor also takes the ``dtype``, ``device``, and ``requires_grad``
 parameters.
 
-.. GENERATED FROM PYTHON SOURCE LINES 65-70
+.. GENERATED FROM PYTHON SOURCE LINES 88-93
 
 .. code-block:: default
 
@@ -150,12 +171,12 @@ parameters.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 71-73
+.. GENERATED FROM PYTHON SOURCE LINES 94-96
 
-In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` also take a
+In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` can also take a
 :class:`PIL.Image.Image` directly:
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-77
+.. GENERATED FROM PYTHON SOURCE LINES 96-100
 
 .. code-block:: default
 
@@ -176,22 +197,24 @@ In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.dat
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 78-81
+.. GENERATED FROM PYTHON SOURCE LINES 101-105
 
-In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
-:class:`~torchvision.datapoints.BoundingBoxes` stores the coordinate format as well as the spatial size of the
-corresponding image alongside the actual values:
+Some datapoints require additional metadata to be passed in ordered to be constructed. For example,
+:class:`~torchvision.datapoints.BoundingBoxes` requires the coordinate format as well as the size of the
+corresponding image (``canvas_size``) alongside the actual values. These
+metadata are required to properly transform the bounding boxes.
 
-.. GENERATED FROM PYTHON SOURCE LINES 81-88
+.. GENERATED FROM PYTHON SOURCE LINES 105-113
 
 .. code-block:: default
 
 
-    bounding_box = datapoints.BoundingBoxes(
-        [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=image.shape[-2:]
+    bboxes = datapoints.BoundingBoxes(
+        [[17, 16, 344, 495], [0, 10, 0, 10]],
+        format=datapoints.BoundingBoxFormat.XYXY,
+        canvas_size=image.shape[-2:]
     )
-    print(bounding_box)
-
+    print(bboxes)
 
 
 
@@ -201,15 +224,52 @@ corresponding image alongside the actual values:
 
  .. code-block:: none
 
-    BoundingBoxes([ 17,  16, 344, 495], format=BoundingBoxFormat.XYXY, canvas_size=torch.Size([512, 512]))
+    BoundingBoxes([[ 17,  16, 344, 495],
+                   [  0,  10,   0,  10]], format=BoundingBoxFormat.XYXY, canvas_size=torch.Size([512, 512]))
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 89-101
+.. GENERATED FROM PYTHON SOURCE LINES 114-122
+
+Using the ``wrap_like()`` class method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can also use the ``wrap_like()`` class method to wrap a tensor object
+into a datapoint. This is useful when you already have an object of the
+desired type, which typically happens when writing transforms: you just want
+to wrap the output like the input. This API is inspired by utils like
+:func:`torch.zeros_like`:
+
+.. GENERATED FROM PYTHON SOURCE LINES 122-129
+
+.. code-block:: default
+
+
+    new_bboxes = torch.tensor([0, 20, 30, 40])
+    new_bboxes = datapoints.BoundingBoxes.wrap_like(bboxes, new_bboxes)
+    assert isinstance(new_bboxes, datapoints.BoundingBoxes)
+    assert new_bboxes.canvas_size == bboxes.canvas_size
+
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 130-149
+
+The metadata of ``new_bboxes`` is the same as ``bboxes``, but you could pass
+it as a parameter to override it. Check the
+:meth:`~torchvision.datapoints.BoundingBoxes.wrap_like` documentation for
+more details.
 
 Do I have to wrap the output of the datasets myself?
 ----------------------------------------------------
+
+TODO: Move this in another guide - this is user-facing, not dev-facing.
 
 Only if you are using custom datasets. For the built-in ones, you can use
 :func:`torchvision.datasets.wrap_dataset_for_transforms_v2`. Note that the function also supports subclasses of the
@@ -221,7 +281,7 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
 
 1. Perform the wrapping inside ``__getitem__``:
 
-.. GENERATED FROM PYTHON SOURCE LINES 101-123
+.. GENERATED FROM PYTHON SOURCE LINES 149-171
 
 .. code-block:: default
 
@@ -232,8 +292,8 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
         def __getitem__(self, item):
             ...
 
-            target["boxes"] = datapoints.BoundingBoxes(
-                boxes,
+            target["bboxes"] = datapoints.BoundingBoxes(
+                bboxes,
                 format=datapoints.BoundingBoxFormat.XYXY,
                 canvas_size=F.get_size(img),
             )
@@ -254,11 +314,11 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 124-125
+.. GENERATED FROM PYTHON SOURCE LINES 172-173
 
 2. Perform the wrapping inside a custom transformation at the beginning of your pipeline:
 
-.. GENERATED FROM PYTHON SOURCE LINES 125-147
+.. GENERATED FROM PYTHON SOURCE LINES 173-195
 
 .. code-block:: default
 
@@ -291,11 +351,11 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 148-166
+.. GENERATED FROM PYTHON SOURCE LINES 196-215
 
 .. note::
 
-   If both :class:`~torchvision.datapoints.BoundingBoxes`'es and :class:`~torchvision.datapoints.Mask`'s are included in
+   If both :class:`~torchvision.datapoints.BoundingBoxes` and :class:`~torchvision.datapoints.Mask`'s are included in
    the sample, ``torchvision.transforms.v2`` will transform them both. Meaning, if you don't need both, dropping or
    at least not wrapping the obsolete parts, can lead to a significant performance boost.
 
@@ -304,34 +364,66 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
    even better to not load the masks at all, but this is not possible in this example, since the bounding boxes are
    generated from the masks.
 
-How do the datapoints behave inside a computation?
---------------------------------------------------
+.. _datapoint_unwrapping_behaviour:
 
-Datapoints look and feel just like regular tensors. Everything that is supported on a plain :class:`torch.Tensor`
-also works on datapoints.
-Since for most operations involving datapoints, it cannot be safely inferred whether the result should retain the
-datapoint type, we choose to return a plain tensor instead of a datapoint (this might change, see note below):
+I had a Datapoint but now I have a Tensor. Help!
+------------------------------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-174
+For a lot of operations involving datapoints, we cannot safely infer whether
+the result should retain the datapoint type, so we choose to return a plain
+tensor instead of a datapoint (this might change, see note below):
+
+.. GENERATED FROM PYTHON SOURCE LINES 215-224
 
 .. code-block:: default
 
 
 
-    assert isinstance(image, datapoints.Image)
+    assert isinstance(bboxes, datapoints.BoundingBoxes)
 
-    new_image = image + 0
+    # Shift bboxes by 3 pixels in both H and W
+    new_bboxes = bboxes + 3
 
-    assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
-
-
-
+    assert isinstance(new_bboxes, torch.Tensor) and not isinstance(new_bboxes, datapoints.BoundingBoxes)
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 175-187
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 225-228
+
+If you're writing your own custom transforms or code involving datapoints, you
+can re-wrap the output into a datapoint by just calling their constructor, or
+by using the ``.wrap_like()`` class method:
+
+.. GENERATED FROM PYTHON SOURCE LINES 228-233
+
+.. code-block:: default
+
+
+    new_bboxes = bboxes + 3
+    new_bboxes = datapoints.BoundingBoxes.wrap_like(bboxes, new_bboxes)
+    assert isinstance(new_bboxes, datapoints.BoundingBoxes)
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 234-256
+
+See more details above in :ref:`datapoint_creation`.
+
+.. note::
+
+   You never need to re-wrap manually if you're using the built-in transforms
+   or their functional equivalents: this is automatically taken care of for
+   you.
 
 .. note::
 
@@ -339,14 +431,16 @@ datapoint type, we choose to return a plain tensor instead of a datapoint (this 
    have any suggestions on how to better support your use-cases, please reach out to us via this issue:
    https://github.com/pytorch/vision/issues/7319
 
-There are two exceptions to this rule:
+There are a few exceptions to this "unwrapping" rule:
 
-1. The operations :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`, and :meth:`~torch.Tensor.requires_grad_`
-   retain the datapoint type.
-2. Inplace operations on datapoints cannot change the type of the datapoint they are called on. However, if you use
-   the flow style, the returned value will be unwrapped:
+1. Operations like :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
+   :meth:`torch.Tensor.detach` and :meth:`~torch.Tensor.requires_grad_` retain
+   the datapoint type.
+2. Inplace operations on datapoints like ``.add_()`` preserve they type. However,
+   the **returned** value of inplace operations will be unwrapped into a pure
+   tensor:
 
-.. GENERATED FROM PYTHON SOURCE LINES 187-197
+.. GENERATED FROM PYTHON SOURCE LINES 256-270
 
 .. code-block:: default
 
@@ -355,11 +449,15 @@ There are two exceptions to this rule:
 
     new_image = image.add_(1).mul_(2)
 
-    assert isinstance(image, torch.Tensor)
+    # image got transformed in-place and is still an Image datapoint, but new_image
+    # is a Tensor. They share the same underlying data and they're equal, just
+    # different classes.
+    assert isinstance(image, datapoints.Image)
     print(image)
 
     assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
     assert (new_image == image).all()
+    assert new_image.data_ptr() == image.data_ptr()
 
 
 

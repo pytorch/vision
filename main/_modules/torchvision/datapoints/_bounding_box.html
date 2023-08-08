@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+bf03f4e) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+8faa1b1) &#x25BC</a>
     </div>
     
 
@@ -371,6 +371,12 @@
 <div class="viewcode-block" id="BoundingBoxes"><a class="viewcode-back" href="../../../generated/torchvision.datapoints.BoundingBoxes.html#torchvision.datapoints.BoundingBoxes">[docs]</a><span class="k">class</span> <span class="nc">BoundingBoxes</span><span class="p">(</span><span class="n">Datapoint</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] :class:`torch.Tensor` subclass for bounding boxes.</span>
 
+<span class="sd">    .. note::</span>
+<span class="sd">        There should be only one :class:`~torchvision.datapoints.BoundingBoxes`</span>
+<span class="sd">        instance per sample e.g. ``{&quot;img&quot;: img, &quot;bbox&quot;: BoundingBoxes(...)}``,</span>
+<span class="sd">        although one :class:`~torchvision.datapoints.BoundingBoxes` object can</span>
+<span class="sd">        contain multiple bounding boxes.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.</span>
 <span class="sd">        format (BoundingBoxFormat, str): Format of the bounding box.</span>
@@ -387,7 +393,13 @@
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_wrap</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_wrap</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="k">if</span> <span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected a 1D or 2D tensor, got </span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="nb">format</span> <span class="o">=</span> <span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="nb">format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
         <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="nb">format</span>
         <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">canvas_size</span> <span class="o">=</span> <span class="n">canvas_size</span>
@@ -404,10 +416,6 @@
         <span class="n">requires_grad</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="nb">format</span> <span class="o">=</span> <span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="nb">format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
-
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BoundingBoxes.wrap_like"><a class="viewcode-back" href="../../../generated/torchvision.datapoints.BoundingBoxes.html#torchvision.datapoints.BoundingBoxes.wrap_like">[docs]</a>    <span class="nd">@classmethod</span>
@@ -416,7 +424,7 @@
         <span class="n">other</span><span class="p">:</span> <span class="n">BoundingBoxes</span><span class="p">,</span>
         <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="nb">format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BoundingBoxFormat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="nb">format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap a :class:`torch.Tensor` as :class:`BoundingBoxes` from a reference.</span>
@@ -430,9 +438,6 @@
 <span class="sd">                omitted, it is taken from the reference.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="nb">format</span> <span class="o">=</span> <span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="nb">format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
-
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span>
             <span class="n">tensor</span><span class="p">,</span>
             <span class="nb">format</span><span class="o">=</span><span class="nb">format</span> <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">other</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
