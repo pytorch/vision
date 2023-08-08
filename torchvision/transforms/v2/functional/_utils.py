@@ -17,6 +17,8 @@ _KERNEL_REGISTRY: Dict[Callable, Dict[Type, Callable]] = {}
 def _kernel_datapoint_wrapper(kernel):
     @functools.wraps(kernel)
     def wrapper(inpt, *args, **kwargs):
+        # We always pass datapoints as pure tensors to the kernels to avoid going through the
+        # Tensor.__torch_function__ logic, which is costly.
         output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
         return type(inpt).wrap_like(inpt, output)
 
@@ -29,12 +31,11 @@ def _register_kernel_internal(dispatcher, input_type, *, datapoint_wrapper=True)
         raise ValueError(f"Dispatcher {dispatcher} already has a kernel registered for type {input_type}.")
 
     def decorator(kernel):
-        # registry[input_type] = (
-        #     _kernel_datapoint_wrapper(kernel)
-        #     if issubclass(input_type, datapoints.Datapoint) and datapoint_wrapper
-        #     else kernel
-        # )
-        registry[input_type] = kernel
+        registry[input_type] = (
+            _kernel_datapoint_wrapper(kernel)
+            if issubclass(input_type, datapoints.Datapoint) and datapoint_wrapper
+            else kernel
+        )
         return kernel
 
     return decorator
