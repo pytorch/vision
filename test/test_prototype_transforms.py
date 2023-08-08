@@ -362,7 +362,7 @@ class TestPermuteDimensions:
             if check_type(value, (Image, is_simple_tensor, Video)):
                 if transform.dims.get(value_type) is not None:
                     assert transformed_value.permute(inverse_dims[value_type]).equal(value)
-                assert type(transformed_value) == torch.Tensor
+                assert type(transformed_value) == value_type
             else:
                 assert transformed_value is value
 
@@ -407,7 +407,7 @@ class TestTransposeDimensions:
             if check_type(value, (Image, is_simple_tensor, Video)):
                 if transposed_dims is not None:
                     assert transformed_value.transpose(*transposed_dims).equal(value)
-                assert type(transformed_value) == torch.Tensor
+                assert type(transformed_value) == value_type
             else:
                 assert transformed_value is value
 

@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
 
 import PIL.Image
 import torch
-from torch._C import DisableTorchFunctionSubclass
-from torch.types import _device, _dtype, _size
 
 
 D = TypeVar("D", bound="Datapoint")

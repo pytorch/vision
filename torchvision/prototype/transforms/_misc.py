@@ -44,7 +44,7 @@ class PermuteDimensions(Transform):
     ) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
-            return inpt.as_subclass(torch.Tensor)
+            return inpt
         return inpt.permute(*dims)
 
 
@@ -68,5 +68,5 @@ class TransposeDimensions(Transform):
     ) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
-            return inpt.as_subclass(torch.Tensor)
+            return inpt
         return inpt.transpose(*dims)

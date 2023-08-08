@@ -750,7 +750,10 @@ def test_correctness_pad_bounding_boxes(device, padding):
         torch.testing.assert_close(output_canvas_size, _compute_expected_canvas_size(bboxes, padding))
 
         expected_bboxes = torch.stack(
-            [_compute_expected_bbox(b, bboxes_format, padding) for b in bboxes.reshape(-1, 4).unbind()]
+            [
+                _compute_expected_bbox(b.as_subclass(torch.Tensor), bboxes_format, padding)
+                for b in bboxes.reshape(-1, 4).unbind()
+            ]
         ).reshape(bboxes.shape)
 
         torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
@@ -838,7 +841,7 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
 
         expected_bboxes = torch.stack(
             [
-                _compute_expected_bbox(b, bboxes.format, bboxes.canvas_size, inv_pcoeffs)
+                _compute_expected_bbox(b.as_subclass(torch.Tensor), bboxes.format, bboxes.canvas_size, inv_pcoeffs)
                 for b in bboxes.reshape(-1, 4).unbind()
             ]
         ).reshape(bboxes.shape)
@@ -878,12 +881,12 @@ def test_correctness_center_crop_bounding_boxes(device, output_size):
         bboxes_canvas_size = bboxes.canvas_size
 
         output_boxes, output_canvas_size = F.center_crop_bounding_boxes(
-            bboxes, bboxes_format, bboxes_canvas_size, output_size
+            bboxes.as_subclass(torch.Tensor), bboxes_format, bboxes_canvas_size, output_size
         )
 
         expected_bboxes = torch.stack(
             [
-                _compute_expected_bbox(b, bboxes_format, bboxes_canvas_size, output_size)
+                _compute_expected_bbox(b.as_subclass(torch.Tensor), bboxes_format, bboxes_canvas_size, output_size)
                 for b in bboxes.reshape(-1, 4).unbind()
             ]
         ).reshape(bboxes.shape)
