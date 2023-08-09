@@ -1,6 +1,7 @@
 import math
 import os
 import random
+import textwrap
 import warnings
 from collections import defaultdict
 from functools import partial
@@ -24,7 +25,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes
+from common_utils import assert_equal, assert_run_python_script, cycle_over, float_dtypes, int_dtypes
 
 
 GRACE_HOPPER = get_file_path_2(
@@ -465,6 +466,16 @@ def test_resize_size_equals_small_edge_size(height, width):
     t = transforms.Resize(small_edge, max_size=max_size, antialias=True)
     result = t(img)
     assert max(result.size) == max_size
+
+
+def test_resize_equal_input_output_sizes():
+    # Regression test for https://github.com/pytorch/vision/issues/7518
+    height, width = 28, 27
+    img = Image.new("RGB", size=(width, height))
+
+    t = transforms.Resize((height, width), antialias=True)
+    result = t(img)
+    assert result is img
 
 
 class TestPad:
@@ -942,33 +953,6 @@ def test_adjust_contrast():
     y_pil = F.adjust_contrast(x_pil, 2)
     y_np = np.array(y_pil)
     y_ans = [0, 0, 0, 22, 184, 255, 0, 0, 255, 94, 255, 0]
-    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-    torch.testing.assert_close(y_np, y_ans)
-
-
-@pytest.mark.skipif(Image.__version__ >= "7", reason="Temporarily disabled")
-def test_adjust_saturation():
-    x_shape = [2, 2, 3]
-    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = Image.fromarray(x_np, mode="RGB")
-
-    # test 0
-    y_pil = F.adjust_saturation(x_pil, 1)
-    y_np = np.array(y_pil)
-    torch.testing.assert_close(y_np, x_np)
-
-    # test 1
-    y_pil = F.adjust_saturation(x_pil, 0.5)
-    y_np = np.array(y_pil)
-    y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
-    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-    torch.testing.assert_close(y_np, y_ans)
-
-    # test 2
-    y_pil = F.adjust_saturation(x_pil, 2)
-    y_np = np.array(y_pil)
-    y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
     y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
     torch.testing.assert_close(y_np, y_ans)
 
@@ -1453,7 +1437,7 @@ def test_random_order():
         if out == resize_crop_out:
             num_normal_order += 1
 
-    p_value = stats.binom_test(num_normal_order, num_samples, p=0.5)
+    p_value = stats.binomtest(num_normal_order, num_samples, p=0.5).pvalue
     random.setstate(random_state)
     assert p_value > 0.0001
 
@@ -1859,7 +1843,7 @@ def test_random_erasing(seed):
         aspect_ratios.append(h / w)
 
     count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
-    p_value = stats.binom_test(count_bigger_then_ones, trial, p=0.5)
+    p_value = stats.binomtest(count_bigger_then_ones, trial, p=0.5).pvalue
     assert p_value > 0.0001
 
     # Checking if RandomErasing can be printed as string
@@ -2280,6 +2264,36 @@ def test_random_grayscale_with_grayscale_input():
     image_pil = F.to_pil_image(image_tensor)
     output_pil = transform(image_pil)
     torch.testing.assert_close(F.pil_to_tensor(output_pil), image_tensor)
+
+
+# TODO: remove in 0.17 when we can delete functional_pil.py and functional_tensor.py
+@pytest.mark.parametrize(
+    "import_statement",
+    (
+        "from torchvision.transforms import functional_pil",
+        "from torchvision.transforms import functional_tensor",
+        "from torchvision.transforms.functional_tensor import resize",
+        "from torchvision.transforms.functional_pil import resize",
+    ),
+)
+@pytest.mark.parametrize("from_private", (True, False))
+def test_functional_deprecation_warning(import_statement, from_private):
+    if from_private:
+        import_statement = import_statement.replace("functional", "_functional")
+        source = f"""
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            {import_statement}
+        """
+    else:
+        source = f"""
+        import pytest
+        with pytest.warns(UserWarning, match="removed in 0.17"):
+            {import_statement}
+        """
+    assert_run_python_script(textwrap.dedent(source))
 
 
 if __name__ == "__main__":

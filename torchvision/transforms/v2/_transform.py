@@ -108,29 +108,16 @@ class Transform(nn.Module):
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
         # This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current
-        # v2 transform instance. It does two things:
-        # 1. Extract all available public attributes that are specific to that transform and not `nn.Module` in general
-        # 2. If available handle the `fill` attribute for v1 compatibility (see below for details)
+        # v2 transform instance. It extracts all available public attributes that are specific to that transform and
+        # not `nn.Module` in general.
         # Overwrite this method on the v2 transform class if the above is not sufficient. For example, this might happen
         # if the v2 transform introduced new parameters that are not support by the v1 transform.
         common_attrs = nn.Module().__dict__.keys()
-        params = {
+        return {
             attr: value
             for attr, value in self.__dict__.items()
             if not attr.startswith("_") and attr not in common_attrs
         }
-
-        # transforms v2 has a more complex handling for the `fill` parameter than v1. By default, the input is parsed
-        # with `prototype.transforms._utils._setup_fill_arg()`, which returns a defaultdict that holds the fill value
-        # for the different datapoint types. Below we extract the value for tensors and return that together with the
-        # other params.
-        # This is needed for `Pad`, `ElasticTransform`, `RandomAffine`, `RandomCrop`, `RandomPerspective` and
-        # `RandomRotation`
-        if "fill" in params:
-            fill_type_defaultdict = params.pop("fill")
-            params["fill"] = fill_type_defaultdict[torch.Tensor]
-
-        return params
 
     def __prepare_scriptable__(self) -> nn.Module:
         # This method is called early on when `torch.jit.script`'ing an `nn.Module` instance. If it succeeds, the return

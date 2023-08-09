@@ -206,7 +206,7 @@ class FeaturePyramidNetwork(nn.Module):
 
 class LastLevelMaxPool(ExtraFPNBlock):
     """
-    Applies a max_pool2d on top of the last feature map
+    Applies a max_pool2d (not actual max_pool2d, we just subsample) on top of the last feature map
     """
 
     def forward(
@@ -216,7 +216,8 @@ class LastLevelMaxPool(ExtraFPNBlock):
         names: List[str],
     ) -> Tuple[List[Tensor], List[str]]:
         names.append("pool")
-        x.append(F.max_pool2d(x[-1], 1, 2, 0))
+        # Use max pooling to simulate stride 2 subsampling
+        x.append(F.max_pool2d(x[-1], kernel_size=1, stride=2, padding=0))
         return x, names
 
 

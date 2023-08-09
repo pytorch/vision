@@ -2,7 +2,7 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <torch/library.h>
-#include <ATen/cuda/Atomic.cuh>
+#include <ATen/native/cuda/KernelUtils.cuh>
 
 #include "cuda_helpers.h"
 
@@ -91,7 +91,8 @@ __global__ void ps_roi_pool_backward_kernel_impl(
     int pooled_width,
     int channels_out,
     T* grad_input,
-    const T* rois) {
+    const T* rois,
+    const int memory_span) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, *, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -124,14 +125,15 @@ __global__ void ps_roi_pool_backward_kernel_impl(
     bool is_empty = (hend <= hstart) || (wend <= wstart);
 
     int c_in = channel_mapping[index];
-    T* grad_input_offset =
-        grad_input + (roi_batch_ind * channels + c_in) * height * width;
     T bin_area = (hend - hstart) * (wend - wstart);
     T diff_val = is_empty ? static_cast<T>(0) : grad_output[index] / bin_area;
+
+    const int offset = (roi_batch_ind * channels + c_in) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
         int grad_input_index = h * width + w;
-        gpuAtomicAdd(grad_input_offset + grad_input_index, diff_val);
+        at::native::fastAtomicAdd(
+            grad_input, offset + grad_input_index, memory_span, diff_val, true);
       }
     }
   }
@@ -251,6 +253,8 @@ at::Tensor ps_roi_pool_backward_kernel(
 
   int channels_out = channels / (pooled_height * pooled_width);
 
+  at::globalContext().alertNotDeterministic("ps_roi_pool_backward_kernel");
+
   auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "ps_roi_pool_backward_kernel", [&] {
@@ -267,7 +271,8 @@ at::Tensor ps_roi_pool_backward_kernel(
             pooled_width,
             channels_out,
             grad_input.data_ptr<scalar_t>(),
-            rois_.data_ptr<scalar_t>());
+            rois_.data_ptr<scalar_t>(),
+            grad_input.numel());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;

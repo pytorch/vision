@@ -9,7 +9,7 @@ import pytest
 import torch
 import torchvision.transforms.functional as F
 import torchvision.utils as utils
-from common_utils import assert_equal
+from common_utils import assert_equal, cpu_and_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageColor
 
 
@@ -120,6 +120,9 @@ def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
 
+    with pytest.raises(ValueError, match="Number of colors must be equal or larger than the number of objects"):
+        utils.draw_bounding_boxes(image=img, boxes=boxes, colors=[])
+
 
 def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
@@ -200,12 +203,13 @@ def test_draw_no_boxes():
     ],
 )
 @pytest.mark.parametrize("alpha", (0, 0.5, 0.7, 1))
-def test_draw_segmentation_masks(colors, alpha):
+@pytest.mark.parametrize("device", cpu_and_cuda())
+def test_draw_segmentation_masks(colors, alpha, device):
     """This test makes sure that masks draw their corresponding color where they should"""
     num_masks, h, w = 2, 100, 100
     dtype = torch.uint8
-    img = torch.randint(0, 256, size=(3, h, w), dtype=dtype)
-    masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool)
+    img = torch.randint(0, 256, size=(3, h, w), dtype=dtype, device=device)
+    masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool, device=device)
 
     # For testing we enforce that there's no overlap between the masks. The
     # current behaviour is that the last mask's color will take priority when
@@ -231,7 +235,7 @@ def test_draw_segmentation_masks(colors, alpha):
     for mask, color in zip(masks, colors):
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
-        color = torch.tensor(color, dtype=dtype)
+        color = torch.tensor(color, dtype=dtype, device=device)
 
         if alpha == 1:
             assert (out[:, mask] == color[:, None]).all()
@@ -242,11 +246,12 @@ def test_draw_segmentation_masks(colors, alpha):
         torch.testing.assert_close(out[:, mask], interpolated_color, rtol=0.0, atol=1.0)
 
 
-def test_draw_segmentation_masks_errors():
+@pytest.mark.parametrize("device", cpu_and_cuda())
+def test_draw_segmentation_masks_errors(device):
     h, w = 10, 10
 
-    masks = torch.randint(0, 2, size=(h, w), dtype=torch.bool)
-    img = torch.randint(0, 256, size=(3, h, w), dtype=torch.uint8)
+    masks = torch.randint(0, 2, size=(h, w), dtype=torch.bool, device=device)
+    img = torch.randint(0, 256, size=(3, h, w), dtype=torch.uint8, device=device)
 
     with pytest.raises(TypeError, match="The image must be a tensor"):
         utils.draw_segmentation_masks(image="Not A Tensor Image", masks=masks)
@@ -268,19 +273,20 @@ def test_draw_segmentation_masks_errors():
     with pytest.raises(ValueError, match="must have the same height and width"):
         masks_bad_shape = torch.randint(0, 2, size=(h + 4, w), dtype=torch.bool)
         utils.draw_segmentation_masks(image=img, masks=masks_bad_shape)
-    with pytest.raises(ValueError, match="There are more masks"):
+    with pytest.raises(ValueError, match="Number of colors must be equal or larger than the number of objects"):
         utils.draw_segmentation_masks(image=img, masks=masks, colors=[])
-    with pytest.raises(ValueError, match="colors must be a tuple or a string, or a list thereof"):
+    with pytest.raises(ValueError, match="`colors` must be a tuple or a string, or a list thereof"):
         bad_colors = np.array(["red", "blue"])  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
-    with pytest.raises(ValueError, match="It seems that you passed a tuple of colors instead of"):
+    with pytest.raises(ValueError, match="If passed as tuple, colors should be an RGB triplet"):
         bad_colors = ("red", "blue")  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
 
 
-def test_draw_no_segmention_mask():
-    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
-    masks = torch.full((0, 100, 100), 0, dtype=torch.bool)
+@pytest.mark.parametrize("device", cpu_and_cuda())
+def test_draw_no_segmention_mask(device):
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8, device=device)
+    masks = torch.full((0, 100, 100), 0, dtype=torch.bool, device=device)
     with pytest.warns(UserWarning, match=re.escape("masks doesn't contain any mask. No mask was drawn")):
         res = utils.draw_segmentation_masks(img, masks)
         # Check that the function didn't change the image

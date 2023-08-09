@@ -137,10 +137,13 @@ def get_extensions():
         + glob.glob(os.path.join(extensions_dir, "ops", "cpu", "*.cpp"))
         + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
     )
+    source_mps = glob.glob(os.path.join(extensions_dir, "ops", "mps", "*.mm"))
 
     print("Compiling extensions with following flags:")
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
     print(f"  FORCE_CUDA: {force_cuda}")
+    force_mps = os.getenv("FORCE_MPS", "0") == "1"
+    print(f"  FORCE_MPS: {force_mps}")
     debug_mode = os.getenv("DEBUG", "0") == "1"
     print(f"  DEBUG: {debug_mode}")
     use_png = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
@@ -202,6 +205,8 @@ def get_extensions():
             define_macros += [("WITH_HIP", None)]
             nvcc_flags = []
         extra_compile_args["nvcc"] = nvcc_flags
+    elif torch.backends.mps.is_available() or force_mps:
+        sources += source_mps
 
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
@@ -298,6 +303,8 @@ def get_extensions():
     use_jpeg = use_jpeg and jpeg_found
     if use_jpeg:
         print("Building torchvision with JPEG image support")
+        print(f"  libjpeg include path: {jpeg_include}")
+        print(f"  libjpeg lib path: {jpeg_lib}")
         image_link_flags.append("jpeg")
         if jpeg_conda:
             image_library += [jpeg_lib]
@@ -323,11 +330,14 @@ def get_extensions():
     image_macros += [("NVJPEG_FOUND", str(int(use_nvjpeg)))]
 
     image_path = os.path.join(extensions_dir, "io", "image")
-    image_src = (
-        glob.glob(os.path.join(image_path, "*.cpp"))
-        + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
-        + glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
-    )
+    image_src = glob.glob(os.path.join(image_path, "*.cpp")) + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
+
+    if is_rocm_pytorch:
+        image_src += glob.glob(os.path.join(image_path, "hip", "*.cpp"))
+        # we need to exclude this in favor of the hipified source
+        image_src.remove(os.path.join(image_path, "image.cpp"))
+    else:
+        image_src += glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
 
     if use_png or use_jpeg:
         ext_modules.append(
@@ -435,8 +445,8 @@ def get_extensions():
                     "swresample",
                     "swscale",
                 ],
-                extra_compile_args=["-std=c++14"] if os.name != "nt" else ["/std:c++14", "/MP"],
-                extra_link_args=["-std=c++14" if os.name != "nt" else "/std:c++14"],
+                extra_compile_args=["-std=c++17"] if os.name != "nt" else ["/std:c++17", "/MP"],
+                extra_link_args=["-std=c++17" if os.name != "nt" else "/std:c++17"],
             )
         )
 
@@ -523,7 +533,7 @@ if __name__ == "__main__":
 
     write_version_file()
 
-    with open("README.rst") as f:
+    with open("README.md") as f:
         readme = f.read()
 
     setup(
@@ -535,6 +545,7 @@ if __name__ == "__main__":
         url="https://github.com/pytorch/vision",
         description="image and video datasets and models for torch deep learning",
         long_description=readme,
+        long_description_content_type="text/markdown",
         license="BSD",
         # Package info
         packages=find_packages(exclude=("test",)),

@@ -282,7 +282,7 @@ def _mobilenet_v3(
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
     return model
 
@@ -378,7 +378,7 @@ def mobilenet_v3_large(
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.resnet.MobileNetV3``
+        **kwargs: parameters passed to the ``torchvision.models.mobilenet.MobileNetV3``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv3.py>`_
             for more details about this class.
@@ -409,7 +409,7 @@ def mobilenet_v3_small(
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.resnet.MobileNetV3``
+        **kwargs: parameters passed to the ``torchvision.models.mobilenet.MobileNetV3``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv3.py>`_
             for more details about this class.

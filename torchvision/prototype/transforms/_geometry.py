@@ -6,15 +6,15 @@ import torch
 from torchvision import datapoints
 from torchvision.prototype.datapoints import Label, OneHotLabel
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2._utils import _setup_fill_arg, _setup_size
-from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_bounding_box, query_spatial_size
+from torchvision.transforms.v2._utils import _get_fill, _setup_fill_arg, _setup_size
+from torchvision.transforms.v2.utils import get_bounding_boxes, has_any, is_simple_tensor, query_size
 
 
 class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
@@ -22,7 +22,8 @@ class FixedSizeCrop(Transform):
         self.crop_height = size[0]
         self.crop_width = size[1]
 
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
 
         self.padding_mode = padding_mode
 
@@ -38,14 +39,14 @@ class FixedSizeCrop(Transform):
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
             )
 
-        if has_any(flat_inputs, datapoints.BoundingBox) and not has_any(flat_inputs, Label, OneHotLabel):
+        if has_any(flat_inputs, datapoints.BoundingBoxes) and not has_any(flat_inputs, Label, OneHotLabel):
             raise TypeError(
-                f"If a BoundingBox is contained in the input sample, "
+                f"If a BoundingBoxes is contained in the input sample, "
                 f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
             )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
         new_height = min(height, self.crop_height)
         new_width = min(width, self.crop_width)
 
@@ -60,13 +61,13 @@ class FixedSizeCrop(Transform):
 
         bounding_boxes: Optional[torch.Tensor]
         try:
-            bounding_boxes = query_bounding_box(flat_inputs)
+            bounding_boxes = get_bounding_boxes(flat_inputs)
         except ValueError:
             bounding_boxes = None
 
         if needs_crop and bounding_boxes is not None:
             format = bounding_boxes.format
-            bounding_boxes, spatial_size = F.crop_bounding_box(
+            bounding_boxes, canvas_size = F.crop_bounding_boxes(
                 bounding_boxes.as_subclass(torch.Tensor),
                 format=format,
                 top=top,
@@ -74,8 +75,8 @@ class FixedSizeCrop(Transform):
                 height=new_height,
                 width=new_width,
             )
-            bounding_boxes = F.clamp_bounding_box(bounding_boxes, format=format, spatial_size=spatial_size)
-            height_and_width = F.convert_format_bounding_box(
+            bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size)
+            height_and_width = F.convert_format_bounding_boxes(
                 bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
@@ -111,14 +112,14 @@ class FixedSizeCrop(Transform):
         if params["is_valid"] is not None:
             if isinstance(inpt, (Label, OneHotLabel, datapoints.Mask)):
                 inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
-            elif isinstance(inpt, datapoints.BoundingBox):
-                inpt = datapoints.BoundingBox.wrap_like(
+            elif isinstance(inpt, datapoints.BoundingBoxes):
+                inpt = datapoints.BoundingBoxes.wrap_like(
                     inpt,
-                    F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size),
+                    F.clamp_bounding_boxes(inpt[params["is_valid"]], format=inpt.format, canvas_size=inpt.canvas_size),
                 )
 
         if params["needs_pad"]:
-            fill = self.fill[type(inpt)]
+            fill = _get_fill(self._fill, type(inpt))
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt

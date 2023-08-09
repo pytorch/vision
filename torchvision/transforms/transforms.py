@@ -105,7 +105,9 @@ class Compose:
 
 
 class ToTensor:
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor. This transform does not support torchscript.
+    """Convert a PIL Image or ndarray to tensor and scale the values accordingly.
+
+    This transform does not support torchscript.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
     [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
@@ -139,7 +141,9 @@ class ToTensor:
 
 
 class PILToTensor:
-    """Convert a ``PIL Image`` to a tensor of the same type. This transform does not support torchscript.
+    """Convert a PIL Image to a tensor of the same type - this does not scale values.
+
+    This transform does not support torchscript.
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
@@ -166,7 +170,8 @@ class PILToTensor:
 
 
 class ConvertImageDtype(torch.nn.Module):
-    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly.
+
     This function does not support PIL Image.
 
     Args:
@@ -194,19 +199,21 @@ class ConvertImageDtype(torch.nn.Module):
 
 
 class ToPILImage:
-    """Convert a tensor or an ndarray to PIL Image. This transform does not support torchscript.
+    """Convert a tensor or an ndarray to PIL Image
+
+    This transform does not support torchscript.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
-    H x W x C to a PIL Image while preserving the value range.
+    H x W x C to a PIL Image while adjusting the value range depending on the ``mode``.
 
     Args:
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
             If ``mode`` is ``None`` (default) there are some assumptions made about the input data:
+
             - If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
             - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
             - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
-            - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
-            ``short``).
+            - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``, ``short``).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
@@ -276,7 +283,7 @@ class Normalize(torch.nn.Module):
 class Resize(torch.nn.Module):
     """Resize the input image to the given size.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means a maximum of two leading dimensions
 
     .. warning::
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
@@ -300,13 +307,13 @@ class Resize(torch.nn.Module):
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         max_size (int, optional): The maximum allowed for the longer edge of
-            the resized image: if the longer edge of the image is greater
-            than ``max_size`` after being resized according to ``size``, then
-            the image is resized again so that the longer edge is equal to
-            ``max_size``. As a result, ``size`` might be overruled, i.e. the
-            smaller edge may be shorter than ``size``. This is only supported
-            if ``size`` is an int (or a sequence of length 1 in torchscript
-            mode).
+            the resized image. If the longer edge of the image is greater
+            than ``max_size`` after being resized according to ``size``,
+            ``size`` will be overruled so that the longer edge is equal to
+            ``max_size``.
+            As a result, the smaller edge may be shorter than ``size``. This
+            is only supported if ``size`` is an int (or a sequence of length
+            1 in torchscript mode).
         antialias (bool, optional): Whether to apply antialiasing.
             It only affects **tensors** with bilinear or bicubic modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on

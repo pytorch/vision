@@ -1,15 +1,21 @@
 from typing import Any, Dict, Union
 
-import torch
-
-from torchvision import datapoints, transforms as _transforms
+from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F, Transform
-
-from .utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
-    _transformed_types = (datapoints.BoundingBox,)
+    """[BETA] Convert bounding box coordinates to the given ``format``, eg from "CXCYWH" to "XYXY".
+
+    .. v2betastatus:: ConvertBoundingBoxFormat transform
+
+    Args:
+        format (str or datapoints.BoundingBoxFormat): output bounding box format.
+            Possible values are defined by :class:`~torchvision.datapoints.BoundingBoxFormat` and
+            string values match the enums, e.g. "XYXY" or "XYWH" etc.
+    """
+
+    _transformed_types = (datapoints.BoundingBoxes,)
 
     def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
         super().__init__()
@@ -17,32 +23,20 @@ class ConvertBoundingBoxFormat(Transform):
             format = datapoints.BoundingBoxFormat[format]
         self.format = format
 
-    def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
-        return F.convert_format_bounding_box(inpt, new_format=self.format)  # type: ignore[return-value]
+    def _transform(self, inpt: datapoints.BoundingBoxes, params: Dict[str, Any]) -> datapoints.BoundingBoxes:
+        return F.convert_format_bounding_boxes(inpt, new_format=self.format)  # type: ignore[return-value]
 
 
-class ConvertDtype(Transform):
-    _v1_transform_cls = _transforms.ConvertImageDtype
+class ClampBoundingBoxes(Transform):
+    """[BETA] Clamp bounding boxes to their corresponding image dimensions.
 
-    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
+    The clamping is done according to the bounding boxes' ``canvas_size`` meta-data.
 
-    def __init__(self, dtype: torch.dtype = torch.float32) -> None:
-        super().__init__()
-        self.dtype = dtype
+    .. v2betastatus:: ClampBoundingBoxes transform
 
-    def _transform(
-        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.TensorImageType, datapoints.TensorVideoType]:
-        return F.convert_dtype(inpt, self.dtype)
+    """
 
+    _transformed_types = (datapoints.BoundingBoxes,)
 
-# We changed the name to align it with the new naming scheme. Still, `ConvertImageDtype` is
-# prevalent and well understood. Thus, we just alias it without deprecating the old name.
-ConvertImageDtype = ConvertDtype
-
-
-class ClampBoundingBox(Transform):
-    _transformed_types = (datapoints.BoundingBox,)
-
-    def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
-        return F.clamp_bounding_box(inpt)  # type: ignore[return-value]
+    def _transform(self, inpt: datapoints.BoundingBoxes, params: Dict[str, Any]) -> datapoints.BoundingBoxes:
+        return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]

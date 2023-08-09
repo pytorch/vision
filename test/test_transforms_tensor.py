@@ -12,7 +12,7 @@ from common_utils import (
     _create_data,
     _create_data_batch,
     assert_equal,
-    cpu_and_gpu,
+    cpu_and_cuda,
     float_dtypes,
     get_tmp_dir,
     int_dtypes,
@@ -100,12 +100,12 @@ def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None,
 
 def _test_fn_save_load(fn, tmpdir):
     scripted_fn = torch.jit.script(fn)
-    p = os.path.join(tmpdir, f"t_op_list_{fn.__name__ if hasattr(fn, '__name__') else fn.__class__.__name__}.pt")
+    p = os.path.join(tmpdir, f"t_op_list_{getattr(fn, '__name__', fn.__class__.__name__)}.pt")
     scripted_fn.save(p)
     _ = torch.jit.load(p)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "func,method,fn_kwargs,match_kwargs",
     [
@@ -137,7 +137,7 @@ def test_random(func, method, device, channels, fn_kwargs, match_kwargs, request
 
 
 @pytest.mark.parametrize("seed", range(10))
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("channels", [1, 3])
 class TestColorJitter:
     @pytest.fixture(autouse=True)
@@ -233,7 +233,7 @@ class TestColorJitter:
         )
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("m", ["constant", "edge", "reflect", "symmetric"])
 @pytest.mark.parametrize("mul", [1, -1])
 def test_pad(m, mul, device):
@@ -256,7 +256,7 @@ def test_pad(m, mul, device):
     _test_op(F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_crop(device):
     fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
     # Test transforms.RandomCrop with size and padding as tuple
@@ -284,7 +284,7 @@ def test_crop(device):
     _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "padding_config",
     [
@@ -310,7 +310,7 @@ def test_random_crop_save_load(tmpdir):
     _test_fn_save_load(fn, tmpdir)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_center_crop(device, tmpdir):
     fn_kwargs = {"output_size": (4, 5)}
     meth_kwargs = {"size": (4, 5)}
@@ -340,7 +340,7 @@ def test_center_crop_save_load(tmpdir):
     _test_fn_save_load(fn, tmpdir)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "fn, method, out_length",
     [
@@ -407,7 +407,7 @@ class TestResize:
         assert y.shape[1] == size
         assert y.shape[2] == int(size * 46 / 32)
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64])
     @pytest.mark.parametrize("size", [[32], [32, 32], (32, 32), [34, 35]])
     @pytest.mark.parametrize("max_size", [None, 35, 1000])
@@ -431,7 +431,7 @@ class TestResize:
         fn = T.Resize(size=[32], antialias=True)
         _test_fn_save_load(fn, tmpdir)
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", [(0.7, 1.2), [0.7, 1.2]])
     @pytest.mark.parametrize("ratio", [(0.75, 1.333), [0.75, 1.333]])
     @pytest.mark.parametrize("size", [(32,), [44], [32], [32, 32], (32, 32), [44, 55]])
@@ -487,42 +487,42 @@ def test_random_affine_save_load(tmpdir):
     _test_fn_save_load(fn, tmpdir)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("shear", [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]])
 def test_random_affine_shear(device, interpolation, shear):
     _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, shear=shear)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("scale", [(0.7, 1.2), [0.7, 1.2]])
 def test_random_affine_scale(device, interpolation, scale):
     _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, scale=scale)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("translate", [(0.1, 0.2), [0.2, 0.1]])
 def test_random_affine_translate(device, interpolation, translate):
     _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, translate=translate)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("degrees", [45, 35.0, (-45, 45), [-90.0, 90.0]])
 def test_random_affine_degrees(device, interpolation, degrees):
     _test_random_affine_helper(device, degrees=degrees, interpolation=interpolation)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("fill", [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_random_affine_fill(device, interpolation, fill):
     _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, fill=fill)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("center", [(0, 0), [10, 10], None, (56, 44)])
 @pytest.mark.parametrize("expand", [True, False])
 @pytest.mark.parametrize("degrees", [45, 35.0, (-45, 45), [-90.0, 90.0]])
@@ -551,7 +551,7 @@ def test_random_rotate_save_load(tmpdir):
     _test_fn_save_load(fn, tmpdir)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("distortion_scale", np.linspace(0.1, 1.0, num=20))
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("fill", [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
@@ -571,7 +571,7 @@ def test_random_perspective_save_load(tmpdir):
     _test_fn_save_load(fn, tmpdir)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "Klass, meth_kwargs",
     [(T.Grayscale, {"num_output_channels": 1}), (T.Grayscale, {"num_output_channels": 3}), (T.RandomGrayscale, {})],
@@ -581,7 +581,7 @@ def test_to_grayscale(device, Klass, meth_kwargs):
     _test_class_op(Klass, meth_kwargs=meth_kwargs, test_exact_match=False, device=device, tol=tol, agg_method="max")
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("in_dtype", int_dtypes() + float_dtypes())
 @pytest.mark.parametrize("out_dtype", int_dtypes() + float_dtypes())
 def test_convert_image_dtype(device, in_dtype, out_dtype, request):
@@ -619,7 +619,7 @@ def test_convert_image_dtype_save_load(tmpdir):
     _test_fn_save_load(fn, tmpdir)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 # TODO: Why are there failures only for CIFAR10??
 @pytest.mark.parametrize("policy", [policy for policy in T.AutoAugmentPolicy if policy != T.AutoAugmentPolicy.CIFAR10])
 @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
@@ -634,7 +634,7 @@ def test_autoaugment(device, policy, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 # TODO: All fail when num_ops > 1. Is this just because random params are
 # sampled differently, or is there something more fishy here?
 @pytest.mark.parametrize("num_ops", [1])
@@ -651,7 +651,7 @@ def test_randaugment(device, num_ops, magnitude, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_trivialaugmentwide(device, fill):
     # TODO: None are passing - is it just because of randomness?
@@ -666,7 +666,7 @@ def test_trivialaugmentwide(device, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_augmix(device, fill):
     # TODO: None are passing - is it just because of randomness?
@@ -734,7 +734,7 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
     _assert_approx_equal_tensor_to_pil(out, expected_out)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "config",
     [
@@ -772,7 +772,7 @@ def test_random_erasing_with_invalid_data():
         random_erasing(img)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_normalize(device, tmpdir):
     fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     tensor, _ = _create_data(26, 34, device=device)
@@ -791,7 +791,7 @@ def test_normalize(device, tmpdir):
     scripted_fn.save(os.path.join(tmpdir, "t_norm.pt"))
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_linear_transformation(device, tmpdir):
     c, h, w = 3, 24, 32
 
@@ -817,7 +817,7 @@ def test_linear_transformation(device, tmpdir):
     scripted_fn.save(os.path.join(tmpdir, "t_norm.pt"))
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_compose(device):
     tensor, _ = _create_data(26, 34, device=device)
     tensor = tensor.to(dtype=torch.float32) / 255.0
@@ -845,7 +845,7 @@ def test_compose(device):
         torch.jit.script(t)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_random_apply(device):
     tensor, _ = _create_data(26, 34, device=device)
     tensor = tensor.to(dtype=torch.float32) / 255.0
@@ -888,7 +888,7 @@ def test_random_apply(device):
             torch.jit.script(transforms)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "meth_kwargs",
     [
@@ -932,7 +932,7 @@ def test_gaussian_blur(device, channels, meth_kwargs, request):
     )
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "fill",
     [

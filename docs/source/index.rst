@@ -32,6 +32,7 @@ architectures, and common image transformations for computer vision.
    :caption: Package Reference
 
    transforms
+   datapoints
    models
    datasets
    utils

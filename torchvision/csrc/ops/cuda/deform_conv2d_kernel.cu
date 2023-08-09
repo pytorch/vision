@@ -70,7 +70,7 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <torch/library.h>
-#include <ATen/cuda/Atomic.cuh>
+#include <ATen/native/cuda/KernelUtils.cuh>
 
 #include "cuda_helpers.h"
 
@@ -335,6 +335,8 @@ __global__ void deformable_col2im_kernel(
     index_t out_w,
     bool use_mask,
     scalar_t* grad_im) {
+  const index_t grad_im_numel = width * height * channels * batch_sz;
+
   CUDA_1D_KERNEL_LOOP_T(index, n, int64_t) {
     const index_t out_x = index % out_w;
     const index_t out_y = (index / out_w) % out_h;
@@ -381,7 +383,12 @@ __global__ void deformable_col2im_kernel(
             std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
           index_t grad_pos = ((b * channels + c) * height + yp) * width + xp;
           scalar_t weight = (1 - std::abs(y - yp)) * (1 - std::abs(x - xp));
-          gpuAtomicAdd(grad_im + grad_pos, mask_value * weight * col[index]);
+          at::native::fastAtomicAdd(
+              grad_im,
+              grad_pos,
+              grad_im_numel,
+              mask_value * weight * col[index],
+              true);
         }
       }
     }
@@ -425,6 +432,8 @@ void compute_grad_input(
   bool use_64bits_indexing = false;
   // Checks if num_kernels or columns numel larger than 2 ** 31
   use_64bits_indexing |= num_kernels > (1 << 31);
+
+  at::globalContext().alertNotDeterministic("compute_grad_input");
 
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(

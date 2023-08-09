@@ -2,7 +2,7 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <torch/library.h>
-#include <ATen/cuda/Atomic.cuh>
+#include <ATen/native/cuda/KernelUtils.cuh>
 
 #include "cuda_helpers.h"
 
@@ -212,7 +212,8 @@ __global__ void ps_roi_align_backward_kernel_impl(
     int sampling_ratio,
     int channels_out,
     T* grad_input,
-    const T* rois) {
+    const T* rois,
+    const int memory_span) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, *, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -235,8 +236,6 @@ __global__ void ps_roi_align_backward_kernel_impl(
     T bin_size_w = roi_width / static_cast<T>(pooled_width);
 
     int c_in = channel_mapping[index];
-    T* grad_input_offset =
-        grad_input + (roi_batch_ind * channels + c_in) * height * width;
 
     // Do not using floor/ceil; this implementation detail is critical
     T hstart = static_cast<T>(ph) * bin_size_h + roi_start_h;
@@ -251,6 +250,8 @@ __global__ void ps_roi_align_backward_kernel_impl(
     int roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
     const T count = roi_bin_grid_h * roi_bin_grid_w;
+
+    const int offset = (roi_batch_ind * channels + c_in) * height * width;
 
     for (int iy = 0; iy < roi_bin_grid_h; iy++) {
       const T y = hstart +
@@ -285,10 +286,30 @@ __global__ void ps_roi_align_backward_kernel_impl(
         T g4 = grad_output_this_bin * w4 / count;
 
         if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
-          gpuAtomicAdd(grad_input_offset + y_low * width + x_low, g1);
-          gpuAtomicAdd(grad_input_offset + y_low * width + x_high, g2);
-          gpuAtomicAdd(grad_input_offset + y_high * width + x_low, g3);
-          gpuAtomicAdd(grad_input_offset + y_high * width + x_high, g4);
+          at::native::fastAtomicAdd(
+              grad_input,
+              offset + y_low * width + x_low,
+              memory_span,
+              static_cast<T>(g1),
+              true);
+          at::native::fastAtomicAdd(
+              grad_input,
+              offset + y_low * width + x_high,
+              memory_span,
+              static_cast<T>(g2),
+              true);
+          at::native::fastAtomicAdd(
+              grad_input,
+              offset + y_high * width + x_low,
+              memory_span,
+              static_cast<T>(g3),
+              true);
+          at::native::fastAtomicAdd(
+              grad_input,
+              offset + y_high * width + x_high,
+              memory_span,
+              static_cast<T>(g4),
+              true);
         } // if
       } // ix
     } // iy
@@ -412,6 +433,8 @@ at::Tensor ps_roi_align_backward_kernel(
 
   int channels_out = channels / (pooled_height * pooled_width);
 
+  at::globalContext().alertNotDeterministic("ps_roi_align_backward_kernel");
+
   auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "ps_roi_align_backward_kernel", [&] {
@@ -428,7 +451,8 @@ at::Tensor ps_roi_align_backward_kernel(
             sampling_ratio,
             channels_out,
             grad_input.data_ptr<scalar_t>(),
-            rois_.data_ptr<scalar_t>());
+            rois_.data_ptr<scalar_t>(),
+            grad_input.numel());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;

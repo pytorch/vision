@@ -3,7 +3,7 @@ import warnings
 from modulefinder import Module
 
 import torch
-from torchvision import datasets, io, models, ops, transforms, utils
+from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils
 
 from .extension import _HAS_OPS
 
@@ -95,3 +95,20 @@ def get_video_backend():
 
 def _is_tracing():
     return torch._C._get_tracing_state()
+
+
+_WARN_ABOUT_BETA_TRANSFORMS = True
+_BETA_TRANSFORMS_WARNING = (
+    "The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. "
+    "While we do not expect major breaking changes, some APIs may still change "
+    "according to user feedback. Please submit any feedback you may have in "
+    "this issue: https://github.com/pytorch/vision/issues/6753, and you can also "
+    "check out https://github.com/pytorch/vision/issues/7319 to learn more about "
+    "the APIs that we suspect might involve future changes. "
+    "You can silence this warning by calling torchvision.disable_beta_transforms_warning()."
+)
+
+
+def disable_beta_transforms_warning():
+    global _WARN_ABOUT_BETA_TRANSFORMS
+    _WARN_ABOUT_BETA_TRANSFORMS = False

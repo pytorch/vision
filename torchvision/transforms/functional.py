@@ -423,13 +423,13 @@ def resize(
             supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         max_size (int, optional): The maximum allowed for the longer edge of
-            the resized image: if the longer edge of the image is greater
-            than ``max_size`` after being resized according to ``size``, then
-            the image is resized again so that the longer edge is equal to
-            ``max_size``. As a result, ``size`` might be overruled, i.e. the
-            smaller edge may be shorter than ``size``. This is only supported
-            if ``size`` is an int (or a sequence of length 1 in torchscript
-            mode).
+            the resized image. If the longer edge of the image is greater
+            than ``max_size`` after being resized according to ``size``,
+            ``size`` will be overruled so that the longer edge is equal to
+            ``max_size``.
+            As a result, the smaller edge may be shorter than ``size``. This
+            is only supported if ``size`` is an int (or a sequence of length
+            1 in torchscript mode).
         antialias (bool, optional): Whether to apply antialiasing.
             It only affects **tensors** with bilinear or bicubic modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
@@ -478,7 +478,7 @@ def resize(
         size = [size]
     output_size = _compute_resized_output_size((image_height, image_width), size, max_size)
 
-    if (image_height, image_width) == output_size:
+    if [image_height, image_width] == output_size:
         return img
 
     antialias = _check_antialias(img, antialias, interpolation)
@@ -1248,7 +1248,7 @@ def affine(
 
 # Looks like to_grayscale() is a stand-alone functional that is never called
 # from the transform classes. Perhaps it's still here for BC? I can't be
-# bothered to dig. Anyway, this can be deprecated as we migrate to V2.
+# bothered to dig.
 @torch.jit.unused
 def to_grayscale(img, num_output_channels=1):
     """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
