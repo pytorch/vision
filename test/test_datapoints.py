@@ -22,7 +22,7 @@ def test_mask_instance(data):
     assert mask.ndim == 3 and mask.shape[0] == 1
 
 
-@pytest.mark.parametrize("data", [torch.randint(0, 32, size=(5, 4)), [[0, 0, 5, 5], [2, 2, 7, 7]]])
+@pytest.mark.parametrize("data", [torch.randint(0, 32, size=(5, 4)), [[0, 0, 5, 5], [2, 2, 7, 7]], [1, 2, 3, 4]])
 @pytest.mark.parametrize(
     "format", ["XYXY", "CXCYWH", datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH]
 )
@@ -33,6 +33,12 @@ def test_bbox_instance(data, format):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat[(format.upper())]
     assert bboxes.format == format
+
+
+def test_bbox_dim_error():
+    data_3d = [[[1, 2, 3, 4]]]
+    with pytest.raises(ValueError, match="Expected a 1D or 2D tensor, got 3D"):
+        datapoints.BoundingBoxes(data_3d, format="XYXY", canvas_size=(32, 32))
 
 
 @pytest.mark.parametrize(
@@ -111,6 +117,26 @@ def test_detach_wrapping():
     image_detached = image.detach()
 
     assert type(image_detached) is datapoints.Image
+
+
+def test_no_wrapping_exceptions_with_metadata():
+    # Sanity checks for the ops in _NO_WRAPPING_EXCEPTIONS and datapoints with metadata
+    format, canvas_size = "XYXY", (32, 32)
+    bbox = datapoints.BoundingBoxes([[0, 0, 5, 5], [2, 2, 7, 7]], format=format, canvas_size=canvas_size)
+
+    bbox = bbox.clone()
+    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+
+    bbox = bbox.to(torch.float64)
+    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+
+    bbox = bbox.detach()
+    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+
+    assert not bbox.requires_grad
+    bbox.requires_grad_(True)
+    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+    assert bbox.requires_grad
 
 
 def test_other_op_no_wrapping():

@@ -41,7 +41,7 @@ class Image(Datapoint):
         elif tensor.ndim == 2:
             tensor = tensor.unsqueeze(0)
 
-        return cls._wrap(tensor)
+        return tensor.as_subclass(cls)
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()
