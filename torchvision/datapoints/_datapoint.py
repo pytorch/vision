@@ -33,12 +33,8 @@ class Datapoint(torch.Tensor):
         return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
     @classmethod
-    def _wrap(cls: Type[D], tensor: torch.Tensor) -> D:
-        return tensor.as_subclass(cls)
-
-    @classmethod
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
-        return cls._wrap(tensor)
+        return tensor.as_subclass(cls)
 
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
