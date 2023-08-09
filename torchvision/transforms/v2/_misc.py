@@ -169,9 +169,7 @@ class Normalize(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def _transform(
-        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
-    ) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 

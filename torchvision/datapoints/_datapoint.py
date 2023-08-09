@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Optional, Type, TypeVar, Union
 
-import PIL.Image
 import torch
 
 
 D = TypeVar("D", bound="Datapoint")
-_FillType = Union[int, float, Sequence[int], Sequence[float], None]
-_FillTypeJIT = Optional[List[float]]
 
 
 class Datapoint(torch.Tensor):
@@ -48,7 +45,3 @@ class Datapoint(torch.Tensor):
         # `BoundingBoxes.format` and `BoundingBoxes.canvas_size`, which are immutable and thus implicitly deep-copied by
         # `BoundingBoxes.clone()`.
         return self.detach().clone().requires_grad_(self.requires_grad)  # type: ignore[return-value]
-
-
-_InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
-_InputTypeJIT = torch.Tensor

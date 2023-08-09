@@ -26,15 +26,15 @@ class SimpleCopyPaste(Transform):
 
     def _copy_paste(
         self,
-        image: datapoints._TensorImageType,
+        image: Union[torch.Tensor, datapoints.Image],
         target: Dict[str, Any],
-        paste_image: datapoints._TensorImageType,
+        paste_image: Union[torch.Tensor, datapoints.Image],
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
         blending: bool,
         resize_interpolation: F.InterpolationMode,
         antialias: Optional[bool],
-    ) -> Tuple[datapoints._TensorImageType, Dict[str, Any]]:
+    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
 
         paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
         paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
@@ -108,7 +108,7 @@ class SimpleCopyPaste(Transform):
 
     def _extract_image_targets(
         self, flat_sample: List[Any]
-    ) -> Tuple[List[datapoints._TensorImageType], List[Dict[str, Any]]]:
+    ) -> Tuple[List[Union[torch.Tensor, datapoints.Image]], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
         # with List[image], List[BoundingBoxes], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
@@ -139,7 +139,7 @@ class SimpleCopyPaste(Transform):
     def _insert_outputs(
         self,
         flat_sample: List[Any],
-        output_images: List[datapoints._TensorImageType],
+        output_images: List[torch.Tensor],
         output_targets: List[Dict[str, Any]],
     ) -> None:
         c0, c1, c2, c3 = 0, 0, 0, 0

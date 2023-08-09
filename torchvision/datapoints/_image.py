@@ -45,9 +45,3 @@ class Image(Datapoint):
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()
-
-
-_ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
-_ImageTypeJIT = torch.Tensor
-_TensorImageType = Union[torch.Tensor, Image]
-_TensorImageTypeJIT = torch.Tensor
