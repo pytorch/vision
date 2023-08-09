@@ -17,8 +17,7 @@ _KERNEL_REGISTRY: Dict[Callable, Dict[Type, Callable]] = {}
 def _kernel_datapoint_wrapper(kernel):
     @functools.wraps(kernel)
     def wrapper(inpt, *args, **kwargs):
-        output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
-        return type(inpt).wrap_like(inpt, output)
+        return kernel(inpt, *args, **kwargs)
 
     return wrapper
 
