@@ -234,11 +234,9 @@ def sample_inputs_convert_format_bounding_boxes():
 
 
 def reference_convert_format_bounding_boxes(bounding_boxes, old_format, new_format):
-    return (
-        torchvision.ops.box_convert(bounding_boxes, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower())
-        .as_subclass(torch.Tensor)
-        .to(bounding_boxes.dtype)
-    )
+    return torchvision.ops.box_convert(
+        bounding_boxes, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
+    ).to(bounding_boxes.dtype)
 
 
 def reference_inputs_convert_format_bounding_boxes():
@@ -541,7 +539,10 @@ def reference_pad_bounding_boxes(bounding_boxes, *, format, canvas_size, padding
     width = canvas_size[1] + left + right
 
     expected_bboxes = reference_affine_bounding_boxes_helper(
-        bounding_boxes, format=format, canvas_size=(height, width), affine_matrix=affine_matrix
+        bounding_boxes,
+        format=format,
+        canvas_size=(height, width),
+        affine_matrix=affine_matrix,
     )
     return expected_bboxes, (height, width)
 

@@ -2288,10 +2288,46 @@ def test_operations():
     t = torch.rand(3, 10, 10)
     mask = datapoints.Mask(torch.rand(1, 10, 10))
 
-    for out in [img + t, t + img, img * t, t * img, img + 3, 3 + img, img * 3, 3 * img, img + img]:
+    for out in (
+        [
+            img + t,
+            t + img,
+            img * t,
+            t * img,
+            img + 3,
+            3 + img,
+            img * 3,
+            3 * img,
+            img + img,
+            img.sum(),
+            img.reshape(-1),
+            img.float(),
+            torch.stack([img, img]),
+        ]
+        + list(torch.chunk(img, 2))
+        + list(torch.unbind(img))
+    ):
         assert isinstance(out, datapoints.Image)
 
-    for out in [mask + t, t + mask, mask * t, t * mask, mask + 3, 3 + mask, mask * 3, 3 * mask, mask + mask]:
+    for out in (
+        [
+            mask + t,
+            t + mask,
+            mask * t,
+            t * mask,
+            mask + 3,
+            3 + mask,
+            mask * 3,
+            3 * mask,
+            mask + mask,
+            mask.sum(),
+            mask.reshape(-1),
+            mask.float(),
+            torch.stack([mask, mask]),
+        ]
+        + list(torch.chunk(mask, 2))
+        + list(torch.unbind(mask))
+    ):
         assert isinstance(out, datapoints.Mask)
 
     with pytest.raises(TypeError, match="unsupported operand type"):
@@ -2305,17 +2341,25 @@ def test_operations():
     )
     t = torch.rand(2, 4)
 
-    for out in [
-        bboxes + t,
-        t + bboxes,
-        bboxes * t,
-        t * bboxes,
-        bboxes + 3,
-        3 + bboxes,
-        bboxes * 3,
-        3 * bboxes,
-        bboxes + bboxes,
-    ]:
+    for out in (
+        [
+            bboxes + t,
+            t + bboxes,
+            bboxes * t,
+            t * bboxes,
+            bboxes + 3,
+            3 + bboxes,
+            bboxes * 3,
+            3 * bboxes,
+            bboxes + bboxes,
+            bboxes.sum(),
+            bboxes.reshape(-1),
+            bboxes.float(),
+            torch.stack([bboxes, bboxes]),
+        ]
+        + list(torch.chunk(bboxes, 2))
+        + list(torch.unbind(bboxes))
+    ):
         assert isinstance(out, datapoints.BoundingBoxes)
-        assert not (hasattr(out, "format"))
-        assert not (hasattr(out, "canvas_size"))
+        assert hasattr(out, "format")
+        assert hasattr(out, "canvas_size")

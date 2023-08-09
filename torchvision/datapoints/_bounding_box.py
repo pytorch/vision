@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Optional, Tuple, Union
 
 import torch
+from torch.utils._pytree import tree_flatten
 
 from ._datapoint import Datapoint
 
@@ -99,5 +100,27 @@ class BoundingBoxes(Datapoint):
             canvas_size=canvas_size if canvas_size is not None else other.canvas_size,
         )
 
-    def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
-        return self._make_repr(format=self.format, canvas_size=self.canvas_size)
+    @classmethod
+    def __torch_function__(
+        cls,
+        func,
+        types,
+        args,
+        kwargs=None,
+    ) -> torch.Tensor:
+        out = super().__torch_function__(func, types, args, kwargs)
+
+        # If there are BoundingBoxes instances in the output, their metadata got lost when we called
+        # super().__torch_function__. We need to restore the metadata somehow, so we choose to take
+        # the metadata from the first bbox in the parameters.
+        # This should be what we want in most cases. When it's not, it's probably a mis-use anyway, e.g.
+        # something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.
+        first_bbox_from_args = None
+        for obj in tree_flatten(out)[0]:
+            if isinstance(obj, BoundingBoxes):
+                if first_bbox_from_args is None:
+                    flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))
+                    first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
+                obj.format = first_bbox_from_args.format
+                obj.canvas_size = first_bbox_from_args.canvas_size
+        return out

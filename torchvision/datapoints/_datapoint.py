@@ -30,22 +30,9 @@ class Datapoint(torch.Tensor):
             requires_grad = data.requires_grad if isinstance(data, torch.Tensor) else False
         return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
-    # We have to override a few method to make sure the meta-data is preserved on them.
     @classmethod
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
         return tensor.as_subclass(cls)
-
-    def clone(self):
-        return type(self).wrap_like(self, super().clone())
-
-    def to(self, *args, **kwargs):
-        return type(self).wrap_like(self, super().to(*args, **kwargs))
-
-    def detach(self):
-        return type(self).wrap_like(self, super().detach())
-
-    def requires_grad_(self, requires_grad: bool = True):
-        return type(self).wrap_like(self, super().requires_grad_(requires_grad))
 
     def _make_repr(self, **kwargs: Any) -> str:
         # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
