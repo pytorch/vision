@@ -84,7 +84,7 @@ def register_kernel(dispatcher, datapoint_cls):
     return _register_kernel_internal(dispatcher, datapoint_cls, datapoint_wrapper=False)
 
 
-def _noop(inpt, *args, __msg__=None, **kwargs):
+def _passthrough(inpt, *args, __msg__=None, **kwargs):
     if __msg__:
         warnings.warn(__msg__, UserWarning, stacklevel=2)
     return inpt
@@ -112,7 +112,7 @@ def _get_kernel(dispatcher, input_type, *, allow_passthrough=False):
                 return registry[cls]
 
     if allow_passthrough:
-        return _noop
+        return _passthrough
 
     raise TypeError(
         f"Dispatcher F.{dispatcher.__name__} supports inputs of type {registry.keys()}, "
@@ -127,7 +127,8 @@ def _register_temporary_passthrough_kernels_internal(*datapoints_classes):
                 f"F.{dispatcher.__name__} is currently passing through inputs of type datapoints.{cls.__name__}. "
                 f"This will likely change in the future."
             )
-            _register_kernel_internal(dispatcher, cls, datapoint_wrapper=False)(functools.partial(_noop, __msg__=msg))
+            kernel = functools.partial(_passthrough, __msg__=msg)
+            _register_kernel_internal(dispatcher, cls, datapoint_wrapper=False)(kernel)
         return dispatcher
 
     return decorator
