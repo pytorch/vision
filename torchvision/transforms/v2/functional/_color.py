@@ -647,6 +647,21 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 def permute_channels(inpt: datapoints._InputTypeJIT, permutation: List[int]) -> datapoints._InputTypeJIT:
+    """Permute the channels of the input according to the given permutation.
+
+    This function supports plain :class:`~torch.Tensor`'s, :class:`PIL.Image.Image`'s, and
+    :class:`torchvision.datapoints.Image` and :class:`torchvision.datapoints.Video`.
+
+    Example:
+        >>> rgb_image = torch.rand(3, 256, 256)
+        >>> bgr_image = F.permutate_channels(rgb_image, permutation=[2, 1, 0])
+
+    Args:
+        permutation (List[int]): Valid permutation of the input channel indices.
+
+    Raises:
+        ValueError: If ``len(permutation)`` doesn't match the number of channels in the input.
+    """
     if torch.jit.is_scripting():
         return permute_channels_image_tensor(inpt, permutation=permutation)
 

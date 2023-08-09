@@ -177,7 +177,12 @@ class ColorJitter(Transform):
         return output
 
 
-class RandomPermuteChannels(Transform):
+class RandomChannelPermutation(Transform):
+    """[BETA] Randomly permute the channels of an image or video
+
+    .. v2betastatus:: RandomChannelPermutation transform
+    """
+
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,
