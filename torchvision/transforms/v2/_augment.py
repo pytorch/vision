@@ -9,6 +9,7 @@ from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2.functional._utils import _get_kernel
 
 from ._transform import _RandomApplyTransform, Transform
 from ._utils import _parse_labels_getter
@@ -131,7 +132,7 @@ class RandomErasing(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["v"] is not None:
-            inpt = self._call_or_noop(F.erase, inpt, **params, inplace=self.inplace)
+            inpt = _get_kernel(F.erase, type(inpt), allow_passthrough=True)(inpt, **params, inplace=self.inplace)
 
         return inpt
 

@@ -4,6 +4,8 @@ import torch
 from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F, Transform
 
+from torchvision.transforms.v2.functional._utils import _get_kernel
+
 
 class UniformTemporalSubsample(Transform):
     """[BETA] Uniformly subsample ``num_samples`` indices from the temporal dimension of the video.
@@ -26,4 +28,4 @@ class UniformTemporalSubsample(Transform):
         self.num_samples = num_samples
 
     def _transform(self, inpt: datapoints._VideoType, params: Dict[str, Any]) -> datapoints._VideoType:
-        return self._call_or_noop(F.uniform_temporal_subsample, inpt, self.num_samples)
+        return _get_kernel(F.uniform_temporal_subsample, type(inpt), allow_passthrough=True)(inpt, self.num_samples)

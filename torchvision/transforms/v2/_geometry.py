@@ -11,6 +11,7 @@ from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2.functional._utils import _get_kernel
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -43,7 +44,7 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomHorizontalFlip
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(F.horizontal_flip, inpt)
+        return _get_kernel(F.horizontal_flip, type(inpt), allow_passthrough=True)(inpt)
 
 
 class RandomVerticalFlip(_RandomApplyTransform):
@@ -63,7 +64,7 @@ class RandomVerticalFlip(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomVerticalFlip
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(F.vertical_flip, inpt)
+        return _get_kernel(F.vertical_flip, type(inpt), allow_passthrough=True)(inpt)
 
 
 class Resize(Transform):
@@ -151,8 +152,7 @@ class Resize(Transform):
         self.antialias = antialias
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(
-            F.resize,
+        return _get_kernel(F.resize, type(inpt), allow_passthrough=True)(
             inpt,
             self.size,
             interpolation=self.interpolation,
@@ -186,7 +186,7 @@ class CenterCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(F.center_crop, inpt, output_size=self.size)
+        return _get_kernel(F.center_crop, type(inpt), allow_passthrough=True)(inpt, output_size=self.size)
 
 
 class RandomResizedCrop(Transform):
@@ -307,8 +307,8 @@ class RandomResizedCrop(Transform):
         return dict(top=i, left=j, height=h, width=w)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(
-            F.resized_crop, inpt, **params, size=self.size, interpolation=self.interpolation, antialias=self.antialias
+        return _get_kernel(F.resized_crop, type(inpt), allow_passthrough=True)(
+            inpt, **params, size=self.size, interpolation=self.interpolation, antialias=self.antialias
         )
 
 
@@ -361,7 +361,7 @@ class FiveCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(F.five_crop, inpt, self.size)
+        return _get_kernel(F.five_crop, type(inpt), allow_passthrough=True)(inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
@@ -404,7 +404,9 @@ class TenCrop(Transform):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(F.ten_crop, inpt, self.size, vertical_flip=self.vertical_flip)
+        return _get_kernel(F.ten_crop, type(inpt), allow_passthrough=True)(
+            inpt, self.size, vertical_flip=self.vertical_flip
+        )
 
 
 class Pad(Transform):
@@ -478,7 +480,7 @@ class Pad(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_or_noop(F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
+        return _get_kernel(F.pad, type(inpt), allow_passthrough=True)(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
 class RandomZoomOut(_RandomApplyTransform):
@@ -548,7 +550,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_or_noop(F.pad, inpt, **params, fill=fill)
+        return _get_kernel(F.pad, type(inpt), allow_passthrough=True)(inpt, **params, fill=fill)
 
 
 class RandomRotation(Transform):
@@ -614,8 +616,7 @@ class RandomRotation(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_or_noop(
-            F.rotate,
+        return _get_kernel(F.rotate, type(inpt), allow_passthrough=True)(
             inpt,
             **params,
             interpolation=self.interpolation,
@@ -737,8 +738,7 @@ class RandomAffine(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_or_noop(
-            F.affine,
+        return _get_kernel(F.affine, type(inpt), allow_passthrough=True)(
             inpt,
             **params,
             interpolation=self.interpolation,
@@ -894,11 +894,13 @@ class RandomCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
             fill = _get_fill(self._fill, type(inpt))
-            inpt = self._call_or_noop(F.pad, inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
+            inpt = _get_kernel(F.pad, type(inpt), allow_passthrough=True)(
+                inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode
+            )
 
         if params["needs_crop"]:
-            inpt = self._call_or_noop(
-                F.crop, inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+            inpt = _get_kernel(F.crop, type(inpt), allow_passthrough=True)(
+                inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
             )
 
         return inpt
@@ -980,8 +982,7 @@ class RandomPerspective(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_or_noop(
-            F.perspective,
+        return _get_kernel(F.perspective, type(inpt), allow_passthrough=True)(
             inpt,
             None,
             None,
@@ -1058,7 +1059,7 @@ class ElasticTransform(Transform):
             # if kernel size is even we have to make it odd
             if kx % 2 == 0:
                 kx += 1
-            dx = self._call_or_noop(F.gaussian_blur, dx, [kx, kx], list(self.sigma))
+            dx = _get_kernel(F.gaussian_blur, type(dx), allow_passthrough=True)(dx, [kx, kx], list(self.sigma))
         dx = dx * self.alpha[0] / size[0]
 
         dy = torch.rand([1, 1] + size) * 2 - 1
@@ -1067,15 +1068,14 @@ class ElasticTransform(Transform):
             # if kernel size is even we have to make it odd
             if ky % 2 == 0:
                 ky += 1
-            dy = self._call_or_noop(F.gaussian_blur, dy, [ky, ky], list(self.sigma))
+            dy = _get_kernel(F.gaussian_blur, type(dy), allow_passthrough=True)(dy, [ky, ky], list(self.sigma))
         dy = dy * self.alpha[1] / size[1]
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_or_noop(
-            F.elastic,
+        return _get_kernel(F.elastic, type(inpt), allow_passthrough=True)(
             inpt,
             **params,
             fill=fill,
@@ -1199,8 +1199,8 @@ class RandomIoUCrop(Transform):
         if len(params) < 1:
             return inpt
 
-        output = self._call_or_noop(
-            F.crop, inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+        output = _get_kernel(F.crop, type(inpt), allow_passthrough=True)(
+            inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
         )
 
         if isinstance(output, datapoints.BoundingBoxes):
@@ -1275,8 +1275,8 @@ class ScaleJitter(Transform):
         return dict(size=(new_height, new_width))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(
-            F.resize, inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
+        return _get_kernel(F.resize, type(inpt), allow_passthrough=True)(
+            inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
         )
 
 
@@ -1345,8 +1345,8 @@ class RandomShortestSize(Transform):
         return dict(size=(new_height, new_width))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(
-            F.resize, inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
+        return _get_kernel(F.resize, type(inpt), allow_passthrough=True)(
+            inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
         )
 
 
@@ -1417,6 +1417,6 @@ class RandomResize(Transform):
         return dict(size=[size])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(
-            F.resize, inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias
+        return _get_kernel(F.resize, type(inpt), allow_passthrough=True)(
+            inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias
         )
