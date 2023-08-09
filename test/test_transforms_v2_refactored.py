@@ -39,7 +39,7 @@ from torchvision import datapoints
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.functional._utils import _get_kernel, _noop, _register_kernel_internal
+from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
 
 @pytest.fixture(autouse=True)
@@ -2248,7 +2248,7 @@ class TestGetKernel:
             pass
 
         with pytest.raises(TypeError, match="supports inputs of type"):
-            assert _get_kernel(F.resize, MyDatapoint) is _noop
+            _get_kernel(F.resize, MyDatapoint)
 
         def resize_my_datapoint():
             pass
