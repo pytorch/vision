@@ -2,8 +2,6 @@ import functools
 import warnings
 from typing import Any, Callable, Dict, Type
 
-import PIL.Image
-
 import torch
 from torchvision import datapoints
 
@@ -116,21 +114,8 @@ def _get_kernel(dispatcher, input_type, *, allow_passthrough=False):
     if allow_passthrough:
         return _noop
 
-    supported_datapoint_types = registry.keys() - {torch.Tensor, PIL.Image.Image}
-    builtin_datapoint_types = supported_datapoint_types & _BUILTIN_DATAPOINT_TYPES
-    custom_datapoint_types = supported_datapoint_types - builtin_datapoint_types
-
-    builtin_datapoint_type_names = ", ".join(f"datapoints.{t.__name__}" for t in builtin_datapoint_types)
-    custom_datapoint_types_names = ", ".join(str(t) for t in custom_datapoint_types)
-
-    supported_type_names = "torch.Tensor"
-    supported_type_names += ", PIL.Image.Image, " if PIL.Image.Image in registry else " "
-    supported_type_names += f"and subclasses of the builtin {builtin_datapoint_type_names}"
-    if custom_datapoint_types:
-        supported_type_names += f", and the custom datapoint types {custom_datapoint_types_names}"
-
     raise TypeError(
-        f"Dispatcher F.{dispatcher.__name__} supports inputs of type {supported_type_names}, "
+        f"Dispatcher F.{dispatcher.__name__} supports inputs of type {registry.keys()}, "
         f"but got {input_type} instead."
     )
 
