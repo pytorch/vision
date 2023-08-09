@@ -177,7 +177,27 @@ class ColorJitter(Transform):
         return output
 
 
-# TODO: This class seems to be untested
+class RandomChannelPermutation(Transform):
+    """[BETA] Randomly permute the channels of an image or video
+
+    .. v2betastatus:: RandomChannelPermutation transform
+    """
+
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        num_channels, *_ = query_chw(flat_inputs)
+        return dict(permutation=torch.randperm(num_channels))
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.permute_channels(inpt, params["permutation"])
+
+
 class RandomPhotometricDistort(Transform):
     """[BETA] Randomly distorts the image or video as used in `SSD: Single Shot
     MultiBox Detector <https://arxiv.org/abs/1512.02325>`_.
@@ -241,21 +261,6 @@ class RandomPhotometricDistort(Transform):
         params["channel_permutation"] = torch.randperm(num_channels) if torch.rand(1) < self.p else None
         return params
 
-    def _permute_channels(
-        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], permutation: torch.Tensor
-    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-        orig_inpt = inpt
-        if isinstance(orig_inpt, PIL.Image.Image):
-            inpt = F.pil_to_tensor(inpt)
-
-        # TODO: Find a better fix than as_subclass???
-        output = inpt[..., permutation, :, :].as_subclass(type(inpt))
-
-        if isinstance(orig_inpt, PIL.Image.Image):
-            output = F.to_image_pil(output)
-
-        return output
-
     def _transform(
         self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
@@ -270,7 +275,7 @@ class RandomPhotometricDistort(Transform):
         if params["contrast_factor"] is not None and not params["contrast_before"]:
             inpt = F.adjust_contrast(inpt, contrast_factor=params["contrast_factor"])
         if params["channel_permutation"] is not None:
-            inpt = self._permute_channels(inpt, permutation=params["channel_permutation"])
+            inpt = F.permute_channels(inpt, permutation=params["channel_permutation"])
         return inpt
 
 
