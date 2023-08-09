@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
-import PIL.Image
 import torch
 from torch._C import DisableTorchFunctionSubclass
 from torch.types import _device, _dtype, _size
 
 
 D = TypeVar("D", bound="Datapoint")
-_FillType = Union[int, float, Sequence[int], Sequence[float], None]
-_FillTypeJIT = Optional[List[float]]
 
 
 class Datapoint(torch.Tensor):
+    """[Beta] Base class for all datapoints.
+
+    You probably don't want to use this class unless you're defining your own
+    custom Datapoints. See
+    :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for details.
+    """
+
     @staticmethod
     def _to_tensor(
         data: Any,
@@ -27,7 +31,7 @@ class Datapoint(torch.Tensor):
 
     @classmethod
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
-        raise NotImplementedError
+        return tensor.as_subclass(cls)
 
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
@@ -125,7 +129,3 @@ class Datapoint(torch.Tensor):
         # `BoundingBoxes.format` and `BoundingBoxes.canvas_size`, which are immutable and thus implicitly deep-copied by
         # `BoundingBoxes.clone()`.
         return self.detach().clone().requires_grad_(self.requires_grad)  # type: ignore[return-value]
-
-
-_InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
-_InputTypeJIT = torch.Tensor

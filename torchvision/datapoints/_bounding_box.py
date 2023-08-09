@@ -26,6 +26,12 @@ class BoundingBoxFormat(Enum):
 class BoundingBoxes(Datapoint):
     """[BETA] :class:`torch.Tensor` subclass for bounding boxes.
 
+    .. note::
+        There should be only one :class:`~torchvision.datapoints.BoundingBoxes`
+        instance per sample e.g. ``{"img": img, "bbox": BoundingBoxes(...)}``,
+        although one :class:`~torchvision.datapoints.BoundingBoxes` object can
+        contain multiple bounding boxes.
+
     Args:
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format (BoundingBoxFormat, str): Format of the bounding box.
@@ -42,7 +48,13 @@ class BoundingBoxes(Datapoint):
     canvas_size: Tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat, canvas_size: Tuple[int, int]) -> BoundingBoxes:
+    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int]) -> BoundingBoxes:  # type: ignore[override]
+        if tensor.ndim == 1:
+            tensor = tensor.unsqueeze(0)
+        elif tensor.ndim != 2:
+            raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
+        if isinstance(format, str):
+            format = BoundingBoxFormat[format.upper()]
         bounding_boxes = tensor.as_subclass(cls)
         bounding_boxes.format = format
         bounding_boxes.canvas_size = canvas_size
@@ -59,10 +71,6 @@ class BoundingBoxes(Datapoint):
         requires_grad: Optional[bool] = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-
-        if isinstance(format, str):
-            format = BoundingBoxFormat[format.upper()]
-
         return cls._wrap(tensor, format=format, canvas_size=canvas_size)
 
     @classmethod
@@ -71,7 +79,7 @@ class BoundingBoxes(Datapoint):
         other: BoundingBoxes,
         tensor: torch.Tensor,
         *,
-        format: Optional[BoundingBoxFormat] = None,
+        format: Optional[Union[BoundingBoxFormat, str]] = None,
         canvas_size: Optional[Tuple[int, int]] = None,
     ) -> BoundingBoxes:
         """Wrap a :class:`torch.Tensor` as :class:`BoundingBoxes` from a reference.
@@ -85,9 +93,6 @@ class BoundingBoxes(Datapoint):
                 omitted, it is taken from the reference.
 
         """
-        if isinstance(format, str):
-            format = BoundingBoxFormat[format.upper()]
-
         return cls._wrap(
             tensor,
             format=format if format is not None else other.format,

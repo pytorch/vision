@@ -124,6 +124,7 @@ class TestSmoke:
             (transforms.RandomEqualize(p=1.0), None),
             (transforms.RandomGrayscale(p=1.0), None),
             (transforms.RandomInvert(p=1.0), None),
+            (transforms.RandomChannelPermutation(), None),
             (transforms.RandomPhotometricDistort(p=1.0), None),
             (transforms.RandomPosterize(bits=4, p=1.0), None),
             (transforms.RandomSolarize(threshold=0.5, p=1.0), None),
@@ -1652,18 +1653,6 @@ def test_sanitize_bounding_boxes_errors():
 
     with pytest.raises(ValueError, match="Number of boxes"):
         different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
-        transforms.SanitizeBoundingBoxes()(different_sizes)
-
-    with pytest.raises(ValueError, match="boxes must be of shape"):
-        bad_bbox = datapoints.BoundingBoxes(  # batch with 2 elements
-            [
-                [[0, 0, 10, 10]],
-                [[0, 0, 10, 10]],
-            ],
-            format=datapoints.BoundingBoxFormat.XYXY,
-            canvas_size=(20, 20),
-        )
-        different_sizes = {"bbox": bad_bbox, "labels": torch.arange(bad_bbox.shape[0])}
         transforms.SanitizeBoundingBoxes()(different_sizes)
 
 

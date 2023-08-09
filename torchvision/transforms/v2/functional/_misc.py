@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import PIL.Image
 import torch
@@ -11,36 +11,27 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import (
-    _get_kernel,
-    _register_explicit_noop,
-    _register_kernel_internal,
-    _register_unsupported_type,
-    is_simple_tensor,
-)
+from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, _register_unsupported_type
 
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
 @_register_unsupported_type(PIL.Image.Image)
 def normalize(
-    inpt: Union[datapoints._TensorImageTypeJIT, datapoints._TensorVideoTypeJIT],
+    inpt: torch.Tensor,
     mean: List[float],
     std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(normalize)
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting():
         return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(normalize, type(inpt))
-        return kernel(inpt, mean=mean, std=std, inplace=inplace)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor or any TorchVision datapoint, but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(normalize)
+
+    kernel = _get_kernel(normalize, type(inpt))
+    return kernel(inpt, mean=mean, std=std, inplace=inplace)
 
 
+@_register_kernel_internal(normalize, torch.Tensor)
 @_register_kernel_internal(normalize, datapoints.Image)
 def normalize_image_tensor(
     image: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False
@@ -83,24 +74,14 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
 
 
 @_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def gaussian_blur(
-    inpt: datapoints._InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
-) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(gaussian_blur)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+def gaussian_blur(inpt: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> torch.Tensor:
+    if torch.jit.is_scripting():
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(gaussian_blur, type(inpt))
-        return kernel(inpt, kernel_size=kernel_size, sigma=sigma)
-    elif isinstance(inpt, PIL.Image.Image):
-        return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
+
+    _log_api_usage_once(gaussian_blur)
+
+    kernel = _get_kernel(gaussian_blur, type(inpt))
+    return kernel(inpt, kernel_size=kernel_size, sigma=sigma)
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
@@ -119,6 +100,7 @@ def _get_gaussian_kernel2d(
     return kernel2d
 
 
+@_register_kernel_internal(gaussian_blur, torch.Tensor)
 @_register_kernel_internal(gaussian_blur, datapoints.Image)
 def gaussian_blur_image_tensor(
     image: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
@@ -184,7 +166,7 @@ def gaussian_blur_image_tensor(
     return output
 
 
-@torch.jit.unused
+@_register_kernel_internal(gaussian_blur, PIL.Image.Image)
 def gaussian_blur_image_pil(
     image: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> PIL.Image.Image:
@@ -200,21 +182,15 @@ def gaussian_blur_video(
     return gaussian_blur_image_tensor(video, kernel_size, sigma)
 
 
-def to_dtype(
-    inpt: datapoints._InputTypeJIT, dtype: torch.dtype = torch.float, scale: bool = False
-) -> datapoints._InputTypeJIT:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(to_dtype)
+@_register_unsupported_type(PIL.Image.Image)
+def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
+    if torch.jit.is_scripting():
+        return to_dtype_image_tensor(inpt, dtype=dtype, scale=scale)
 
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return to_dtype_image_tensor(inpt, dtype, scale=scale)
-    elif isinstance(inpt, datapoints.Datapoint):
-        kernel = _get_kernel(to_dtype, type(inpt))
-        return kernel(inpt, dtype, scale=scale)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor or any TorchVision datapoint, but got {type(inpt)} instead."
-        )
+    _log_api_usage_once(to_dtype)
+
+    kernel = _get_kernel(to_dtype, type(inpt))
+    return kernel(inpt, dtype=dtype, scale=scale)
 
 
 def _num_value_bits(dtype: torch.dtype) -> int:
@@ -232,6 +208,7 @@ def _num_value_bits(dtype: torch.dtype) -> int:
         raise TypeError(f"Number of value bits is only defined for integer dtypes, but got {dtype}.")
 
 
+@_register_kernel_internal(to_dtype, torch.Tensor)
 @_register_kernel_internal(to_dtype, datapoints.Image)
 def to_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
 
@@ -297,8 +274,6 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
 
 @_register_kernel_internal(to_dtype, datapoints.BoundingBoxes, datapoint_wrapper=False)
 @_register_kernel_internal(to_dtype, datapoints.Mask, datapoint_wrapper=False)
-def _to_dtype_tensor_dispatch(
-    inpt: datapoints._InputTypeJIT, dtype: torch.dtype, scale: bool = False
-) -> datapoints._InputTypeJIT:
+def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
     # We don't need to unwrap and rewrap here, since Datapoint.to() preserves the type
     return inpt.to(dtype)

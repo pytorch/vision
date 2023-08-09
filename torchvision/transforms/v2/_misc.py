@@ -10,7 +10,7 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
-from .utils import has_any, is_simple_tensor, query_bounding_boxes
+from .utils import get_bounding_boxes, has_any, is_simple_tensor
 
 
 # TODO: do we want/need to expose this?
@@ -169,9 +169,7 @@ class Normalize(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def _transform(
-        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
-    ) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
@@ -384,13 +382,7 @@ class SanitizeBoundingBoxes(Transform):
             )
 
         flat_inputs, spec = tree_flatten(inputs)
-        # TODO: this enforces one single BoundingBoxes entry.
-        # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
-        # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
-        boxes = query_bounding_boxes(flat_inputs)
-
-        if boxes.ndim != 2:
-            raise ValueError(f"boxes must be of shape (num_boxes, 4), got {boxes.shape}")
+        boxes = get_bounding_boxes(flat_inputs)
 
         if labels is not None and boxes.shape[0] != labels.shape[0]:
             raise ValueError(

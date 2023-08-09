@@ -155,6 +155,7 @@ Color
 
     ColorJitter
     v2.ColorJitter
+    v2.RandomChannelPermutation
     v2.RandomPhotometricDistort
     Grayscale
     v2.Grayscale
@@ -375,3 +376,14 @@ you can use a functional transform to build transform classes with custom behavi
     to_pil_image
     to_tensor
     vflip
+
+Developer tools
+---------------
+
+.. currentmodule:: torchvision.transforms.v2.functional
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    register_kernel
