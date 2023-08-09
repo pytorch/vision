@@ -152,8 +152,23 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   jpeg_destroy_decompress(&cinfo);
   return tensor.permute({2, 0, 1});
 }
+#endif // #if !JPEG_FOUND
 
+int64_t _jpeg_version() {
+#ifdef JPEG_FOUND
+  return JPEG_LIB_VERSION;
+#else
+  return -1;
 #endif
+}
+
+bool _is_compiled_against_turbo() {
+#ifdef LIBJPEG_TURBO_VERSION
+  return true;
+#else
+  return false;
+#endif
+}
 
 } // namespace image
 } // namespace vision
