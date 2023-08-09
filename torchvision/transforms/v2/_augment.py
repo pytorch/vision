@@ -131,7 +131,7 @@ class RandomErasing(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["v"] is not None:
-            inpt = self._call_or_noop(F.erase, inpt, **params, inplace=self.inplace)
+            inpt = self._call_kernel(F.erase, inpt, **params, inplace=self.inplace)
 
         return inpt
 

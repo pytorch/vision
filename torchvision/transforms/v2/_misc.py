@@ -171,7 +171,7 @@ class Normalize(Transform):
     def _transform(
         self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
     ) -> Any:
-        return self._call_or_noop(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
+        return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
 class GaussianBlur(Transform):
@@ -218,7 +218,7 @@ class GaussianBlur(Transform):
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(F.gaussian_blur, inpt, self.kernel_size, **params)
+        return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
 class ToDtype(Transform):
@@ -291,7 +291,7 @@ class ToDtype(Transform):
                 )
             return inpt
 
-        return self._call_or_noop(F.to_dtype, inpt, dtype=dtype, scale=self.scale)
+        return self._call_kernel(F.to_dtype, inpt, dtype=dtype, scale=self.scale)
 
 
 class ConvertImageDtype(Transform):
@@ -326,7 +326,7 @@ class ConvertImageDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_or_noop(F.to_dtype, inpt, dtype=self.dtype, scale=True)
+        return self._call_kernel(F.to_dtype, inpt, dtype=self.dtype, scale=True)
 
 
 class SanitizeBoundingBoxes(Transform):

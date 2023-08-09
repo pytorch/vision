@@ -30,7 +30,7 @@ class Transform(nn.Module):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict()
 
-    def _call_or_noop(self, dispatcher: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+    def _call_kernel(self, dispatcher: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         kernel = _get_kernel(dispatcher, type(inpt), allow_passthrough=True)
         return kernel(inpt, *args, **kwargs)
 
