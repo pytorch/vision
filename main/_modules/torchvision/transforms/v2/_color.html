@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+8faa1b1) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6b02079) &#x25BC</a>
     </div>
     
 
@@ -522,7 +522,27 @@
         <span class="k">return</span> <span class="n">output</span></div>
 
 
-<span class="c1"># TODO: This class seems to be untested</span>
+<div class="viewcode-block" id="RandomChannelPermutation"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomChannelPermutation.html#torchvision.transforms.v2.RandomChannelPermutation">[docs]</a><span class="k">class</span> <span class="nc">RandomChannelPermutation</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Randomly permute the channels of an image or video</span>
+
+<span class="sd">    .. v2betastatus:: RandomChannelPermutation transform</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_transformed_types</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
+        <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
+        <span class="n">is_simple_tensor</span><span class="p">,</span>
+        <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">num_channels</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">query_chw</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">permutation</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">num_channels</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">permute_channels</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;permutation&quot;</span><span class="p">])</span></div>
+
+
 <div class="viewcode-block" id="RandomPhotometricDistort"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomPhotometricDistort.html#torchvision.transforms.v2.RandomPhotometricDistort">[docs]</a><span class="k">class</span> <span class="nc">RandomPhotometricDistort</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Randomly distorts the image or video as used in `SSD: Single Shot</span>
 <span class="sd">    MultiBox Detector &lt;https://arxiv.org/abs/1512.02325&gt;`_.</span>
@@ -586,21 +606,6 @@
         <span class="n">params</span><span class="p">[</span><span class="s2">&quot;channel_permutation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">num_channels</span><span class="p">)</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">params</span>
 
-    <span class="k">def</span> <span class="nf">_permute_channels</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">datapoints</span><span class="o">.</span><span class="n">_ImageType</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">_VideoType</span><span class="p">],</span> <span class="n">permutation</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">datapoints</span><span class="o">.</span><span class="n">_ImageType</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">_VideoType</span><span class="p">]:</span>
-        <span class="n">orig_inpt</span> <span class="o">=</span> <span class="n">inpt</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">orig_inpt</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">):</span>
-            <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pil_to_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span>
-
-        <span class="c1"># TODO: Find a better fix than as_subclass???</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">inpt</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">permutation</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">))</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">orig_inpt</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">):</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">to_image_pil</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">output</span>
-
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">datapoints</span><span class="o">.</span><span class="n">_ImageType</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">_VideoType</span><span class="p">],</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">datapoints</span><span class="o">.</span><span class="n">_ImageType</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">_VideoType</span><span class="p">]:</span>
@@ -615,7 +620,7 @@
         <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_factor&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_before&quot;</span><span class="p">]:</span>
             <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_factor&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;channel_permutation&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">inpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_permute_channels</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">permutation</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;channel_permutation&quot;</span><span class="p">])</span>
+            <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">permute_channels</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">permutation</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;channel_permutation&quot;</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">inpt</span></div>
 
 
