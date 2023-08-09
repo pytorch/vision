@@ -261,9 +261,7 @@ class RandomPhotometricDistort(Transform):
         params["channel_permutation"] = torch.randperm(num_channels) if torch.rand(1) < self.p else None
         return params
 
-    def _transform(
-        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["brightness_factor"] is not None:
             inpt = F.adjust_brightness(inpt, brightness_factor=params["brightness_factor"])
         if params["contrast_factor"] is not None and params["contrast_before"]:

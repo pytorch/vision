@@ -1,9 +1,12 @@
 import functools
 import warnings
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import torch
 from torchvision import datapoints
+
+_FillType = Union[int, float, Sequence[int], Sequence[float], None]
+_FillTypeJIT = Optional[List[float]]
 
 
 def is_simple_tensor(inpt: Any) -> bool:

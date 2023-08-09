@@ -5,9 +5,8 @@ from typing import Any, Callable, Dict, Literal, Optional, Sequence, Type, Union
 
 import torch
 
-from torchvision import datapoints
-from torchvision.datapoints._datapoint import _FillType, _FillTypeJIT
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
+from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
 
 def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size: int = 2) -> Sequence[float]:
@@ -36,7 +35,7 @@ def _check_fill_arg(fill: Union[_FillType, Dict[Union[Type, str], _FillType]]) -
             raise TypeError("Got inappropriate fill arg, only Numbers, tuples, lists and dicts are allowed.")
 
 
-def _convert_fill_arg(fill: datapoints._FillType) -> datapoints._FillTypeJIT:
+def _convert_fill_arg(fill: _FillType) -> _FillTypeJIT:
     # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
     # So, we can't reassign fill to 0
     # if fill is None:
