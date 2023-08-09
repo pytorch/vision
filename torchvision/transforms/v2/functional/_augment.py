@@ -1,5 +1,3 @@
-from typing import Union
-
 import PIL.Image
 
 import torch
@@ -12,14 +10,14 @@ from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_inter
 
 @_register_explicit_noop(datapoints.Mask, datapoints.BoundingBoxes, warn_passthrough=True)
 def erase(
-    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT],
+    inpt: torch.Tensor,
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]:
+) -> torch.Tensor:
     if torch.jit.is_scripting():
         return erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
 

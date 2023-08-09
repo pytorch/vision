@@ -11,6 +11,7 @@ from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2.functional._utils import _FillType
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -311,9 +312,6 @@ class RandomResizedCrop(Transform):
         )
 
 
-ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
-
-
 class FiveCrop(Transform):
     """[BETA] Crop the image or video into four corners and the central crop.
 
@@ -459,7 +457,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -514,7 +512,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def __init__(
         self,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -592,7 +590,7 @@ class RandomRotation(Transform):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
@@ -674,7 +672,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -812,7 +810,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -931,7 +929,7 @@ class RandomPerspective(_RandomApplyTransform):
         distortion_scale: float = 0.5,
         p: float = 0.5,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__(p=p)
 
@@ -1033,7 +1031,7 @@ class ElasticTransform(Transform):
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
         self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
