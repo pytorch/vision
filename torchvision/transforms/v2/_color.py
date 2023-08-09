@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import torch
 from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2.functional._utils import _get_kernel
 
 from ._transform import _RandomApplyTransform
 from .utils import query_chw
@@ -29,9 +28,7 @@ class Grayscale(Transform):
         self.num_output_channels = num_output_channels
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.rgb_to_grayscale, type(inpt), allow_passthrough=True)(
-            inpt, num_output_channels=self.num_output_channels
-        )
+        return self._call_or_noop(F.rgb_to_grayscale, inpt, num_output_channels=self.num_output_channels)
 
 
 class RandomGrayscale(_RandomApplyTransform):
@@ -58,9 +55,7 @@ class RandomGrayscale(_RandomApplyTransform):
         return dict(num_input_channels=num_input_channels)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.rgb_to_grayscale, type(inpt), allow_passthrough=True)(
-            inpt, num_output_channels=params["num_input_channels"]
-        )
+        return self._call_or_noop(F.rgb_to_grayscale, inpt, num_output_channels=params["num_input_channels"])
 
 
 class ColorJitter(Transform):
@@ -157,19 +152,13 @@ class ColorJitter(Transform):
         hue_factor = params["hue_factor"]
         for fn_id in params["fn_idx"]:
             if fn_id == 0 and brightness_factor is not None:
-                output = _get_kernel(F.adjust_brightness, type(output), allow_passthrough=True)(
-                    output, brightness_factor=brightness_factor
-                )
+                output = self._call_or_noop(F.adjust_brightness, output, brightness_factor=brightness_factor)
             elif fn_id == 1 and contrast_factor is not None:
-                output = _get_kernel(F.adjust_contrast, type(output), allow_passthrough=True)(
-                    output, contrast_factor=contrast_factor
-                )
+                output = self._call_or_noop(F.adjust_contrast, output, contrast_factor=contrast_factor)
             elif fn_id == 2 and saturation_factor is not None:
-                output = _get_kernel(F.adjust_saturation, type(output), allow_passthrough=True)(
-                    output, saturation_factor=saturation_factor
-                )
+                output = self._call_or_noop(F.adjust_saturation, output, saturation_factor=saturation_factor)
             elif fn_id == 3 and hue_factor is not None:
-                output = _get_kernel(F.adjust_hue, type(output), allow_passthrough=True)(output, hue_factor=hue_factor)
+                output = self._call_or_noop(F.adjust_hue, output, hue_factor=hue_factor)
         return output
 
 
@@ -247,23 +236,15 @@ class RandomPhotometricDistort(Transform):
         self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
         if params["brightness_factor"] is not None:
-            inpt = _get_kernel(F.adjust_brightness, type(inpt), allow_passthrough=True)(
-                inpt, brightness_factor=params["brightness_factor"]
-            )
+            inpt = self._call_or_noop(F.adjust_brightness, inpt, brightness_factor=params["brightness_factor"])
         if params["contrast_factor"] is not None and params["contrast_before"]:
-            inpt = _get_kernel(F.adjust_contrast, type(inpt), allow_passthrough=True)(
-                inpt, contrast_factor=params["contrast_factor"]
-            )
+            inpt = self._call_or_noop(F.adjust_contrast, inpt, contrast_factor=params["contrast_factor"])
         if params["saturation_factor"] is not None:
-            inpt = _get_kernel(F.adjust_saturation, type(inpt), allow_passthrough=True)(
-                inpt, saturation_factor=params["saturation_factor"]
-            )
+            inpt = self._call_or_noop(F.adjust_saturation, inpt, saturation_factor=params["saturation_factor"])
         if params["hue_factor"] is not None:
-            inpt = _get_kernel(F.adjust_hue, type(inpt), allow_passthrough=True)(inpt, hue_factor=params["hue_factor"])
+            inpt = self._call_or_noop(F.adjust_hue, inpt, hue_factor=params["hue_factor"])
         if params["contrast_factor"] is not None and not params["contrast_before"]:
-            inpt = _get_kernel(F.adjust_contrast, type(inpt), allow_passthrough=True)(
-                inpt, contrast_factor=params["contrast_factor"]
-            )
+            inpt = self._call_or_noop(F.adjust_contrast, inpt, contrast_factor=params["contrast_factor"])
         if params["channel_permutation"] is not None:
             inpt = _get_kernel(F.permute_channels, type(inpt), allow_passthrough=True)(
                 inpt, permutation=params["channel_permutation"]
@@ -287,7 +268,7 @@ class RandomEqualize(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomEqualize
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.equalize, type(inpt), allow_passthrough=True)(inpt)
+        return self._call_or_noop(F.equalize, inpt)
 
 
 class RandomInvert(_RandomApplyTransform):
@@ -306,7 +287,7 @@ class RandomInvert(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomInvert
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.invert, type(inpt), allow_passthrough=True)(inpt)
+        return self._call_or_noop(F.invert, inpt)
 
 
 class RandomPosterize(_RandomApplyTransform):
@@ -331,7 +312,7 @@ class RandomPosterize(_RandomApplyTransform):
         self.bits = bits
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.posterize, type(inpt), allow_passthrough=True)(inpt, bits=self.bits)
+        return self._call_or_noop(F.posterize, inpt, bits=self.bits)
 
 
 class RandomSolarize(_RandomApplyTransform):
@@ -356,7 +337,7 @@ class RandomSolarize(_RandomApplyTransform):
         self.threshold = threshold
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.solarize, type(inpt), allow_passthrough=True)(inpt, threshold=self.threshold)
+        return self._call_or_noop(F.solarize, inpt, threshold=self.threshold)
 
 
 class RandomAutocontrast(_RandomApplyTransform):
@@ -375,7 +356,7 @@ class RandomAutocontrast(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomAutocontrast
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.autocontrast, type(inpt), allow_passthrough=True)(inpt)
+        return self._call_or_noop(F.autocontrast, inpt)
 
 
 class RandomAdjustSharpness(_RandomApplyTransform):
@@ -400,6 +381,4 @@ class RandomAdjustSharpness(_RandomApplyTransform):
         self.sharpness_factor = sharpness_factor
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.adjust_sharpness, type(inpt), allow_passthrough=True)(
-            inpt, sharpness_factor=self.sharpness_factor
-        )
+        return self._call_or_noop(F.adjust_sharpness, inpt, sharpness_factor=self.sharpness_factor)

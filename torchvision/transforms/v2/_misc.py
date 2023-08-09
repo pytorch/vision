@@ -8,7 +8,6 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 
 from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2.functional._utils import _get_kernel
 
 from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
 from .utils import get_bounding_boxes, has_any, is_simple_tensor
@@ -172,9 +171,7 @@ class Normalize(Transform):
     def _transform(
         self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
     ) -> Any:
-        return _get_kernel(F.normalize, type(inpt), allow_passthrough=True)(
-            inpt, mean=self.mean, std=self.std, inplace=self.inplace
-        )
+        return self._call_or_noop(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
 class GaussianBlur(Transform):
@@ -221,7 +218,7 @@ class GaussianBlur(Transform):
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.gaussian_blur, type(inpt), allow_passthrough=True)(inpt, self.kernel_size, **params)
+        return self._call_or_noop(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
 class ToDtype(Transform):
@@ -294,7 +291,7 @@ class ToDtype(Transform):
                 )
             return inpt
 
-        return _get_kernel(F.to_dtype, type(inpt), allow_passthrough=True)(inpt, dtype=dtype, scale=self.scale)
+        return self._call_or_noop(F.to_dtype, inpt, dtype=dtype, scale=self.scale)
 
 
 class ConvertImageDtype(Transform):
@@ -329,7 +326,7 @@ class ConvertImageDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.to_dtype, type(inpt), allow_passthrough=True)(inpt, dtype=self.dtype, scale=True)
+        return self._call_or_noop(F.to_dtype, inpt, dtype=self.dtype, scale=True)
 
 
 class SanitizeBoundingBoxes(Transform):
