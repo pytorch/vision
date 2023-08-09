@@ -657,7 +657,13 @@ def permute_channels(inpt: datapoints._InputTypeJIT, permutation: List[int]) -> 
         >>> bgr_image = F.permutate_channels(rgb_image, permutation=[2, 1, 0])
 
     Args:
-        permutation (List[int]): Valid permutation of the input channel indices.
+        permutation (List[int]): Valid permutation of the input channel indices. The index of the element determines the
+            channel index in the input and the value determines the channel index in the output. For example,
+            ``permutation=[2, 0 , 1]``
+
+            - takes ``ìnpt[..., 0, :, :]`` and puts it at ``output[..., 2, :, :]``,
+            - takes ``ìnpt[..., 1, :, :]`` and puts it at ``output[..., 0, :, :]``, and
+            - takes ``ìnpt[..., 2, :, :]`` and puts it at ``output[..., 1, :, :]``.
 
     Raises:
         ValueError: If ``len(permutation)`` doesn't match the number of channels in the input.
