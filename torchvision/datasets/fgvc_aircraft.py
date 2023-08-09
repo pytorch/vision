@@ -86,6 +86,8 @@ class FGVCAircraft(VisionDataset):
                 image_name, label_name = line.strip().split(" ", 1)
                 self._image_files.append(os.path.join(image_data_folder, f"{image_name}.jpg"))
                 self._labels.append(self.class_to_idx[label_name])
+        
+        check_if_warning_was_printed()
 
     def __len__(self) -> int:
         return len(self._image_files)
@@ -112,3 +114,21 @@ class FGVCAircraft(VisionDataset):
 
     def _check_exists(self) -> bool:
         return os.path.exists(self._data_path) and os.path.isdir(self._data_path)
+
+
+def check_if_warning_was_printed():
+    """
+    The samples are organized in sequential order in terms of labels (i.e. 0, ..., 99).
+    Print a one-time warning for the user that in order to avoid the probable bias and performace degragation, the dataloader needs to be shuffled.
+    Check if a warning was already printed, and if not, print it. Saves a boolean file in the torchvision cache directory.
+    """
+    cache_dir = os.path.join(os.path.expanduser('~'), '.cache', 'torch', 'hub', "FGVCAircraft")
+    boolean_file_path = os.path.join(cache_dir, "FGVCAircraft_shuffle_warning.txt")
+
+    if not os.path.exists(boolean_file_path):
+        print("Important: The samples in this dataset are organized sequentially by class.")
+        print("To ensure unbiased performance, it is recommended to shuffle the dataset before use.")
+        print("To do so, you can set the 'shuffle' argument in the dataloader to 'True'.")
+        os.makedirs(cache_dir, exist_ok=True)
+        with open(boolean_file_path, 'w') as boolean_file:
+            boolean_file.write("True")
