@@ -192,7 +192,7 @@ class RandomChannelPermutation(Transform):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
-        return dict(permutation=torch.randperm(num_channels).tolist())
+        return dict(permutation=torch.randperm(num_channels))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.permute_channels(inpt, params["permutation"])
