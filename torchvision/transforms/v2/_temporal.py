@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
 import torch
-from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F, Transform
 
 
@@ -25,5 +24,5 @@ class UniformTemporalSubsample(Transform):
         super().__init__()
         self.num_samples = num_samples
 
-    def _transform(self, inpt: datapoints._VideoType, params: Dict[str, Any]) -> datapoints._VideoType:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.uniform_temporal_subsample(inpt, self.num_samples)

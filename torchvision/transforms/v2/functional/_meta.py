@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import PIL.Image
 import torch
@@ -12,7 +12,7 @@ from ._utils import _get_kernel, _register_kernel_internal, _register_unsupporte
 
 
 @_register_unsupported_type(datapoints.BoundingBoxes, datapoints.Mask)
-def get_dimensions(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
+def get_dimensions(inpt: torch.Tensor) -> List[int]:
     if torch.jit.is_scripting():
         return get_dimensions_image_tensor(inpt)
 
@@ -45,7 +45,7 @@ def get_dimensions_video(video: torch.Tensor) -> List[int]:
 
 
 @_register_unsupported_type(datapoints.BoundingBoxes, datapoints.Mask)
-def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> int:
+def get_num_channels(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_channels_image_tensor(inpt)
 
@@ -81,7 +81,7 @@ def get_num_channels_video(video: torch.Tensor) -> int:
 get_image_num_channels = get_num_channels
 
 
-def get_size(inpt: datapoints._InputTypeJIT) -> List[int]:
+def get_size(inpt: torch.Tensor) -> List[int]:
     if torch.jit.is_scripting():
         return get_size_image_tensor(inpt)
 
@@ -124,7 +124,7 @@ def get_size_bounding_boxes(bounding_box: datapoints.BoundingBoxes) -> List[int]
 
 
 @_register_unsupported_type(PIL.Image.Image, datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask)
-def get_num_frames(inpt: datapoints._VideoTypeJIT) -> int:
+def get_num_frames(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_frames_video(inpt)
 
@@ -201,11 +201,11 @@ def _convert_format_bounding_boxes(
 
 
 def convert_format_bounding_boxes(
-    inpt: datapoints._InputTypeJIT,
+    inpt: torch.Tensor,
     old_format: Optional[BoundingBoxFormat] = None,
     new_format: Optional[BoundingBoxFormat] = None,
     inplace: bool = False,
-) -> datapoints._InputTypeJIT:
+) -> torch.Tensor:
     # This being a kernel / dispatcher hybrid, we need an option to pass `old_format` explicitly for simple tensor
     # inputs as well as extract it from `datapoints.BoundingBoxes` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
@@ -252,10 +252,10 @@ def _clamp_bounding_boxes(
 
 
 def clamp_bounding_boxes(
-    inpt: datapoints._InputTypeJIT,
+    inpt: torch.Tensor,
     format: Optional[BoundingBoxFormat] = None,
     canvas_size: Optional[Tuple[int, int]] = None,
-) -> datapoints._InputTypeJIT:
+) -> torch.Tensor:
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_bounding_boxes)
 
