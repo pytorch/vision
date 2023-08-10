@@ -25,13 +25,7 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import clamp_bounding_boxes, convert_format_bounding_boxes, get_size_image_pil
 
-from ._utils import (
-    _FillTypeJIT,
-    _get_kernel,
-    _register_five_ten_crop_kernel_internal,
-    _register_kernel_internal,
-    _register_temporary_passthrough_kernels_internal,
-)
+from ._utils import _FillTypeJIT, _get_kernel, _register_five_ten_crop_kernel_internal, _register_kernel_internal
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -2203,7 +2197,6 @@ def resized_crop_video(
     )
 
 
-@_register_temporary_passthrough_kernels_internal(datapoints.BoundingBoxes, datapoints.Mask)
 def five_crop(
     inpt: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -2276,7 +2269,6 @@ def five_crop_video(
     return five_crop_image_tensor(video, size)
 
 
-@_register_temporary_passthrough_kernels_internal(datapoints.BoundingBoxes, datapoints.Mask)
 def ten_crop(
     inpt: torch.Tensor, size: List[int], vertical_flip: bool = False
 ) -> Tuple[
