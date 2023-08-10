@@ -8,6 +8,7 @@ import torch
 
 from common_utils import (
     assert_equal,
+    assert_equal_with_image_support,
     DEFAULT_EXTRA_DIMS,
     make_bounding_box,
     make_detection_mask,
@@ -488,4 +489,4 @@ def test_fixed_sized_crop_against_detection_reference():
         torch.manual_seed(12)
         expected_output = t_ref(*dp)
 
-        assert_equal(expected_output, output)
+        assert_equal_with_image_support(expected_output, output)

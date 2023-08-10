@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from common_utils import (
-    assert_close,
+    assert_close_with_image_support,
     cache,
     cpu_and_cuda,
     DEFAULT_SQUARE_SPATIAL_SIZE,
@@ -139,7 +139,7 @@ class TestKernels:
         actual = kernel_scripted(input, *other_args, **kwargs)
         expected = kernel_eager(input, *other_args, **kwargs)
 
-        assert_close(
+        assert_close_with_image_support(
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
@@ -197,7 +197,7 @@ class TestKernels:
         single_inputs = self._unbatch(batched_input, data_dims=data_dims)
         expected = tree_map(lambda single_input: info.kernel(single_input, *other_args, **kwargs), single_inputs)
 
-        assert_close(
+        assert_close_with_image_support(
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=batched_input.dtype, device=batched_input.device),
@@ -228,7 +228,7 @@ class TestKernels:
         output_cpu = info.kernel(input_cpu, *other_args, **kwargs)
         output_cuda = info.kernel(input_cuda, *other_args, **kwargs)
 
-        assert_close(
+        assert_close_with_image_support(
             output_cuda,
             output_cpu,
             check_device=False,
@@ -259,7 +259,7 @@ class TestKernels:
         # metadata regardless of whether the kernel takes it explicitly or not
         expected = info.reference_fn(input, *other_args, **kwargs)
 
-        assert_close(
+        assert_close_with_image_support(
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
@@ -287,7 +287,7 @@ class TestKernels:
 
         expected = F.to_dtype_image_tensor(info.kernel(input, *other_args, **kwargs), dtype=torch.float32, scale=True)
 
-        assert_close(
+        assert_close_with_image_support(
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=torch.float32, device=input.device),
