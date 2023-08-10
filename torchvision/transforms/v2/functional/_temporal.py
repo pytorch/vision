@@ -7,7 +7,7 @@ from torchvision.utils import _log_api_usage_once
 from ._utils import _get_kernel, _register_kernel_internal
 
 
-def uniform_temporal_subsample(inpt: datapoints._VideoTypeJIT, num_samples: int) -> datapoints._VideoTypeJIT:
+def uniform_temporal_subsample(inpt: torch.Tensor, num_samples: int) -> torch.Tensor:
     if torch.jit.is_scripting():
         return uniform_temporal_subsample_video(inpt, num_samples=num_samples)
 

@@ -1,9 +1,8 @@
 import warnings
-from typing import Any, List, Union
+from typing import Any, List
 
 import torch
 
-from torchvision import datapoints
 from torchvision.transforms import functional as _F
 
 
@@ -16,7 +15,7 @@ def to_tensor(inpt: Any) -> torch.Tensor:
     return _F.to_tensor(inpt)
 
 
-def get_image_size(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
+def get_image_size(inpt: torch.Tensor) -> List[int]:
     warnings.warn(
         "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `get_size(...)` which returns `[h, w]` instead of `[w, h]`."

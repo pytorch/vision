@@ -2,7 +2,7 @@ import collections.abc
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchvision import datapoints, transforms as _transforms
+from torchvision import transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
@@ -173,7 +173,7 @@ class RandomChannelPermutation(Transform):
         return dict(permutation=torch.randperm(num_channels))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _get_kernel(F.permute_channels, type(inpt), allow_passthrough=True)(inpt, params["permutation"])
+        self._call_kernel(F.permute_channels, inpt, params["permutation"])
 
 
 class RandomPhotometricDistort(Transform):
@@ -232,9 +232,7 @@ class RandomPhotometricDistort(Transform):
         params["channel_permutation"] = torch.randperm(num_channels) if torch.rand(1) < self.p else None
         return params
 
-    def _transform(
-        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["brightness_factor"] is not None:
             inpt = self._call_kernel(F.adjust_brightness, inpt, brightness_factor=params["brightness_factor"])
         if params["contrast_factor"] is not None and params["contrast_before"]:
@@ -246,9 +244,7 @@ class RandomPhotometricDistort(Transform):
         if params["contrast_factor"] is not None and not params["contrast_before"]:
             inpt = self._call_kernel(F.adjust_contrast, inpt, contrast_factor=params["contrast_factor"])
         if params["channel_permutation"] is not None:
-            inpt = _get_kernel(F.permute_channels, type(inpt), allow_passthrough=True)(
-                inpt, permutation=params["channel_permutation"]
-            )
+            inpt = self._call_kernel(F.permute_channels, inpt, permutation=params["channel_permutation"])
         return inpt
 
 
