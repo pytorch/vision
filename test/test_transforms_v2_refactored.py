@@ -2240,17 +2240,9 @@ class TestPermuteChannels:
     def test_kernel(self, kernel, make_input, dtype, device):
         check_kernel(kernel, make_input(dtype=dtype, device=device), permutation=self._DEFAULT_PERMUTATION)
 
-    @pytest.mark.parametrize(
-        ("kernel", "make_input"),
-        [
-            (F.permute_channels_image_tensor, make_image_tensor),
-            (F.permute_channels_image_pil, make_image_pil),
-            (F.permute_channels_image_tensor, make_image),
-            (F.permute_channels_video, make_video),
-        ],
-    )
-    def test_dispatcher(self, kernel, make_input):
-        check_dispatcher(F.permute_channels, kernel, make_input(), permutation=self._DEFAULT_PERMUTATION)
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_dispatcher(self, make_input):
+        check_dispatcher(F.permute_channels, make_input(), permutation=self._DEFAULT_PERMUTATION)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
