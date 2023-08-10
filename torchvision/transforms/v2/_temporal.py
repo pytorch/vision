@@ -25,4 +25,4 @@ class UniformTemporalSubsample(Transform):
         self.num_samples = num_samples
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.uniform_temporal_subsample(inpt, self.num_samples)
+        return self._call_kernel(F.uniform_temporal_subsample, inpt, self.num_samples)

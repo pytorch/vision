@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 
 import PIL.Image
 import torch
@@ -91,6 +91,14 @@ class RandomErasing(_RandomApplyTransform):
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
+    def _call_kernel(self, dispatcher: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+        if isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask)):
+            warnings.warn(
+                f"{type(self).__name__}() is currently passing through inputs of type "
+                f"datapoints.{type(inpt).__name__}. This will likely change in the future."
+            )
+        return super()._call_kernel(dispatcher, inpt, *args, **kwargs)
+
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(flat_inputs)
 
@@ -131,7 +139,7 @@ class RandomErasing(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["v"] is not None:
-            inpt = F.erase(inpt, **params, inplace=self.inplace)
+            inpt = self._call_kernel(F.erase, inpt, **params, inplace=self.inplace)
 
         return inpt
 
