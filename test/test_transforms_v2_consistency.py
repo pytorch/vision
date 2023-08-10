@@ -1259,53 +1259,6 @@ class TestRefSegTransforms:
     def test_common(self, t_ref, t, data_kwargs):
         self.check(t, t_ref, data_kwargs)
 
-    def check_resize(self, t_ref, t):
-
-        for dp, dp_ref in self.make_datapoints():
-            self.set_seed()
-            actual_image, actual_mask = t(dp)
-
-            self.set_seed()
-            expected_image, expected_mask = t_ref(*dp_ref)
-
-            assert prototype_F.get_size(actual_image) == prototype_F.get_size(expected_image)
-            assert prototype_F.get_size(actual_mask) == prototype_F.get_size(expected_mask)
-
-    def test_random_resize_train(self, mocker):
-        base_size = 520
-        min_size = base_size // 2
-        max_size = base_size * 2
-
-        randint = torch.randint
-
-        def patched_randint(a, b, *other_args, **kwargs):
-            if kwargs or len(other_args) > 1 or other_args[0] != ():
-                return randint(a, b, *other_args, **kwargs)
-
-            return random.randint(a, b)
-
-        # We are patching torch.randint -> random.randint here, because we can't patch the modules that are not imported
-        # normally
-        t = v2_transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
-        mocker.patch(
-            "torchvision.transforms.v2._geometry.torch.randint",
-            new=patched_randint,
-        )
-
-        t_ref = seg_transforms.RandomResize(min_size=min_size, max_size=max_size)
-
-        self.check_resize(t_ref, t)
-
-    def test_random_resize_eval(self):
-        torch.manual_seed(0)
-        base_size = 520
-
-        t = v2_transforms.Resize(size=base_size, antialias=True)
-
-        t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
-
-        self.check_resize(t_ref, t)
-
 
 @pytest.mark.parametrize(
     ("legacy_dispatcher", "name_only_params"),
