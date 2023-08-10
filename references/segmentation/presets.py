@@ -63,6 +63,8 @@ class SegmentationPresetTrain:
             transforms += [T.ConvertImageDtype(torch.float)]
 
         transforms += [T.Normalize(mean=mean, std=std)]
+        if use_v2:
+            transforms += [T.ToPureTensor()]
 
         self.transforms = T.Compose(transforms)
 
@@ -98,6 +100,9 @@ class SegmentationPresetEval:
             T.ConvertImageDtype(torch.float),
             T.Normalize(mean=mean, std=std),
         ]
+        if use_v2:
+            transforms += [T.ToPureTensor()]
+
         self.transforms = T.Compose(transforms)
 
     def __call__(self, img, target):

@@ -80,3 +80,17 @@ class ToImagePIL(Transform):
 # We changed the name to align them with the new naming scheme. Still, `ToPILImage` is
 # prevalent and well understood. Thus, we just alias it without deprecating the old name.
 ToPILImage = ToImagePIL
+
+
+class ToPureTensor(Transform):
+    """[BETA] Convert all datapoints to pure tensors, removing associated metadata (if any).
+
+    .. v2betastatus:: ToPureTensor transform
+
+    This doesn't scale or change the values, only the type.
+    """
+
+    _transformed_types = (datapoints.Image, datapoints.Video, datapoints.Mask, datapoints.BoundingBoxes)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+        return inpt.as_subclass(torch.Tensor)

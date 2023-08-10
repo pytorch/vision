@@ -238,6 +238,7 @@ Conversion
     v2.ConvertImageDtype
     v2.ToDtype
     v2.ConvertBoundingBoxFormat
+    v2.ToPureTensor
 
 Auto-Augmentation
 -----------------
