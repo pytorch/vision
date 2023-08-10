@@ -90,7 +90,7 @@ class ToPureTensor(Transform):
     This doesn't scale or change the values, only the type.
     """
 
-    _transformed_types = (datapoints.Image, datapoints.Video, datapoints.Mask, datapoints.BoundingBoxes)
+    _transformed_types = (datapoints.Datapoint,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)
