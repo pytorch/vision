@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type, Union
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -103,10 +103,10 @@ class BoundingBoxes(Datapoint):
     @classmethod
     def __torch_function__(
         cls,
-        func,
-        types,
-        args,
-        kwargs=None,
+        func: Callable[..., torch.Tensor],
+        types: Tuple[Type[torch.Tensor], ...],
+        args: Sequence[Any] = (),
+        kwargs: Optional[Mapping[str, Any]] = None,
     ) -> torch.Tensor:
         out = super().__torch_function__(func, types, args, kwargs)
 
@@ -119,7 +119,7 @@ class BoundingBoxes(Datapoint):
         for obj in tree_flatten(out)[0]:
             if isinstance(obj, BoundingBoxes):
                 if first_bbox_from_args is None:
-                    flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))
+                    flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
                     first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
                 obj.format = first_bbox_from_args.format
                 obj.canvas_size = first_bbox_from_args.canvas_size
