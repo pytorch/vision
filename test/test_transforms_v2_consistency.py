@@ -1259,32 +1259,17 @@ class TestRefSegTransforms:
     def test_common(self, t_ref, t, data_kwargs):
         self.check(t, t_ref, data_kwargs)
 
-    def check_resize(self, mocker, t_ref, t):
-        mock = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
-        mock_ref = mocker.patch("torchvision.transforms.functional.resize")
+    def check_resize(self, t_ref, t):
 
         for dp, dp_ref in self.make_datapoints():
-            mock.reset_mock()
-            mock_ref.reset_mock()
+            self.set_seed()
+            actual_image, actual_mask = t(dp)
 
             self.set_seed()
-            t(dp)
-            assert mock.call_count == 2
-            assert all(
-                actual is expected
-                for actual, expected in zip([call_args[0][0] for call_args in mock.call_args_list], dp)
-            )
+            expected_image, expected_mask = t_ref(*dp_ref)
 
-            self.set_seed()
-            t_ref(*dp_ref)
-            assert mock_ref.call_count == 2
-            assert all(
-                actual is expected
-                for actual, expected in zip([call_args[0][0] for call_args in mock_ref.call_args_list], dp_ref)
-            )
-
-            for args_kwargs, args_kwargs_ref in zip(mock.call_args_list, mock_ref.call_args_list):
-                assert args_kwargs[0][1] == [args_kwargs_ref[0][1]]
+            assert prototype_F.get_size(actual_image) == prototype_F.get_size(expected_image)
+            assert prototype_F.get_size(actual_mask) == prototype_F.get_size(expected_mask)
 
     def test_random_resize_train(self, mocker):
         base_size = 520
@@ -1309,9 +1294,9 @@ class TestRefSegTransforms:
 
         t_ref = seg_transforms.RandomResize(min_size=min_size, max_size=max_size)
 
-        self.check_resize(mocker, t_ref, t)
+        self.check_resize(t_ref, t)
 
-    def test_random_resize_eval(self, mocker):
+    def test_random_resize_eval(self):
         torch.manual_seed(0)
         base_size = 520
 
@@ -1319,7 +1304,7 @@ class TestRefSegTransforms:
 
         t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
 
-        self.check_resize(mocker, t_ref, t)
+        self.check_resize(t_ref, t)
 
 
 @pytest.mark.parametrize(

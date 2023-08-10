@@ -173,7 +173,7 @@ class RandomChannelPermutation(Transform):
         return dict(permutation=torch.randperm(num_channels))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        self._call_kernel(F.permute_channels, inpt, params["permutation"])
+        return self._call_kernel(F.permute_channels, inpt, params["permutation"])
 
 
 class RandomPhotometricDistort(Transform):
