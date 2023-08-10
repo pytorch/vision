@@ -6,10 +6,10 @@ import torch
 import torchvision.models.detection.mask_rcnn
 import utils
 from coco_eval import CocoEvaluator
-from coco_utils import get_coco_api_from_dataset
+from coco_utils import get_coco_api_from_dataset, CostumCocoDataset
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, scaler=None):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, scaler=None, CostumCocoDataset=False):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value:.6f}"))
@@ -26,7 +26,23 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
 
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
         images = list(image.to(device) for image in images)
-        targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
+        
+        if CostumCocoDataset:
+            """if use custom datasets from coco_utils.py need to
+            use this handle the targets
+            use 1 batch in dataloader for better results
+            """
+            W, H = targets["masks"].shape[-2], targets["masks"].shape[-1]
+            targets["boxes"] = targets["boxes"].reshape(-1, 4).to(device)
+            targets["labels"] = targets["labels"].reshape(-1,).to(device)
+            targets["masks"] = targets["masks"].reshape(-1, W, H).to(device)
+            targets["image_id"] = targets["image_id"].reshape(-1,).to(device)
+            targets["area"] = targets["area"].reshape(-1,).to(device)
+            targets["iscrowd"] = targets["iscrowd"].reshape(-1,).to(device)
+            targets = [targets]
+        else
+            targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
+            
         with torch.cuda.amp.autocast(enabled=scaler is not None):
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
