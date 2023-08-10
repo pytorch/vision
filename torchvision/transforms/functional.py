@@ -602,8 +602,8 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
         if crop_width == image_width and crop_height == image_height:
             return img
 
-    crop_top = int(round((image_height - crop_height) / 2.0))
-    crop_left = int(round((image_width - crop_width) / 2.0))
+    crop_top = int(np.round((image_height - crop_height) / 2.0))
+    crop_left = int(np.round((image_width - crop_width) / 2.0))
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
 
