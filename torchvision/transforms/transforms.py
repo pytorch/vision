@@ -2158,3 +2158,54 @@ class ElasticTransform(torch.nn.Module):
         format_string += f", interpolation={self.interpolation}"
         format_string += f", fill={self.fill})"
         return format_string
+
+class RichardsonLucy(torch.nn.Module):
+    
+    """It helps deblurring the blurry and noisy image (Gray Scale).
+        Can be most helpful in Outer Space dataset and Medical imaging dataset
+    Args:
+        image : ndarray   [1, H, W]
+           Input degraded image (can be n-dimensional).
+        psf : ndarray
+           The point spread function. [1, K, k]
+        pad : tensor padding constant, reflect (default), circular
+        Helps in keeping up edges after mathematical operations.
+        num_iter : int, optional (default = 30)
+           Number of iterations. This parameter plays the role of
+           regularisation.
+        clip : boolean, optional
+           True by default. If true, pixel value of the result above 1 or
+           under -1
+        eps: float, optional (default = 1e-12)
+           Value below which intermediate results become 0 to avoid division
+           by small numbers.
+    Returns:
+        im_deconv : ndarray
+            The deconvolved image.
+    """
+    
+    def __init__(self, image, psf, pad = 'reflect', clip = True, num_iter=50, eps = 1e-12):
+
+        super().__init__()
+        #_log_api_usage_once(self)
+        self.image=image
+        self.psf=psf
+        self.pad=pad
+        self.clip=clip
+        self.num_iter=num_iter
+        self.eps=eps
+
+    def forward(self, tensor: Tensor) -> Tensor:
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be deconvulved
+        Returns:
+            PIL Image or Tensor: Deconvolved image.
+        """
+
+        return F.richardson_lucy(self.image, self.psf, self.pad, self.clip, self.num_iter, self.eps)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(image={self.image}, psf={self.psf}, pad={self.pad}, clip={self.clip}, num_iter={self.num_iter}, eps={self.eps})"
+
+
