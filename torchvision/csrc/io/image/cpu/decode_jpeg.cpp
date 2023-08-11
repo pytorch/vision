@@ -67,58 +67,53 @@ static void torch_jpeg_set_source_mgr(
   src->pub.next_input_byte = src->data;
 }
 
-inline void _convert_pixel_cmyk_to_rgb(
-    bool has_adobe_marker,
-    int c,
-    int m,
-    int y,
-    int k,
-    int& r,
-    int& g,
-    int& b) {
-  r = (has_adobe_marker) ? (k * c) / 255 : (255 - k) * (255 - c) / 255;
-  g = (has_adobe_marker) ? (k * m) / 255 : (255 - k) * (255 - m) / 255;
-  b = (has_adobe_marker) ? (k * y) / 255 : (255 - k) * (255 - y) / 255;
+inline unsigned char clamped_cmyk_rgb_convert(unsigned char k, unsigned char cmy) {
+  // Inspired from Pillow:
+  // https://github.com/python-pillow/Pillow/blob/07623d1a7cc65206a5355fba2ae256550bfcaba6/src/libImaging/Convert.c#L568-L569
+  auto v = k * cmy + 128;
+  v = ((v >> 8) + v) >> 8;
+  return std::clamp(k - v, 0, 255);
 }
 
 void convert_line_cmyk_to_rgb(
     j_decompress_ptr cinfo,
     const unsigned char* cmyk_line,
     unsigned char* rgb_line) {
-  auto has_adobe_marker = cinfo->saw_Adobe_marker;
   int width = cinfo->output_width;
   for (int i = 0; i < width; ++i) {
-    int r, g, b;
     int c = cmyk_line[i * 4 + 0];
     int m = cmyk_line[i * 4 + 1];
     int y = cmyk_line[i * 4 + 2];
     int k = cmyk_line[i * 4 + 3];
 
-    _convert_pixel_cmyk_to_rgb(has_adobe_marker, c, m, y, k, r, g, b);
-
-    rgb_line[i * 3 + 0] = r;
-    rgb_line[i * 3 + 1] = g;
-    rgb_line[i * 3 + 2] = b;
+    rgb_line[i * 3 + 0] = clamped_cmyk_rgb_convert(k, 255 - c);
+    rgb_line[i * 3 + 1] = clamped_cmyk_rgb_convert(k, 255 - m);
+    rgb_line[i * 3 + 2] = clamped_cmyk_rgb_convert(k, 255 - y);
   }
+}
+
+inline unsigned char rgb_to_gray(int r, int g, int b) {
+  // Inspired from Pillow:
+  // https://github.com/python-pillow/Pillow/blob/07623d1a7cc65206a5355fba2ae256550bfcaba6/src/libImaging/Convert.c#L226
+  return (r * 19595 + g * 38470 + b * 7471 + 0x8000) >> 16;
 }
 
 void convert_line_cmyk_to_gray(
     j_decompress_ptr cinfo,
     const unsigned char* cmyk_line,
     unsigned char* gray_line) {
-  auto has_adobe_marker = cinfo->saw_Adobe_marker;
   int width = cinfo->output_width;
   for (int i = 0; i < width; ++i) {
-    int r, g, b;
     int c = cmyk_line[i * 4 + 0];
     int m = cmyk_line[i * 4 + 1];
     int y = cmyk_line[i * 4 + 2];
     int k = cmyk_line[i * 4 + 3];
 
-    _convert_pixel_cmyk_to_rgb(has_adobe_marker, c, m, y, k, r, g, b);
+    int r = clamped_cmyk_rgb_convert(k, 255 - c);
+    int g = clamped_cmyk_rgb_convert(k, 255 - m);
+    int b = clamped_cmyk_rgb_convert(k, 255 - y);
 
-    float gray = 0.2989 * (float)r + 0.5870 * (float)g + 0.1140 * (float)b;
-    gray_line[i] = (unsigned char)gray;
+    gray_line[i] = rgb_to_gray(r, g, b);
   }
 }
 
