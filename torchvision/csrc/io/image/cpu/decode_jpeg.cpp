@@ -67,7 +67,9 @@ static void torch_jpeg_set_source_mgr(
   src->pub.next_input_byte = src->data;
 }
 
-inline unsigned char clamped_cmyk_rgb_convert(unsigned char k, unsigned char cmy) {
+inline unsigned char clamped_cmyk_rgb_convert(
+    unsigned char k,
+    unsigned char cmy) {
   // Inspired from Pillow:
   // https://github.com/python-pillow/Pillow/blob/07623d1a7cc65206a5355fba2ae256550bfcaba6/src/libImaging/Convert.c#L568-L569
   auto v = k * cmy + 128;
