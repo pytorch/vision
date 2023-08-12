@@ -8,6 +8,12 @@ from PIL import Image
 from torchvision import datapoints
 
 
+@pytest.fixture(autouse=True)
+def preserve_default_wrapping_behaviour():
+    yield
+    datapoints.set_return_type("Tensor")
+
+
 @pytest.mark.parametrize("data", [torch.rand(3, 32, 32), Image.new("RGB", (32, 32), color=123)])
 def test_image_instance(data):
     image = datapoints.Image(data)
@@ -80,30 +86,36 @@ def test_to_wrapping():
     assert image_to.dtype is torch.float64
 
 
-def test_to_datapoint_reference():
+@pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
+def test_to_datapoint_reference(return_type):
     tensor = torch.rand((3, 16, 16), dtype=torch.float64)
     image = datapoints.Image(tensor)
 
+    datapoints.set_return_type(return_type)
     tensor_to = tensor.to(image)
 
-    assert type(tensor_to) is datapoints.Image
+    assert type(tensor_to) is (datapoints.Image if return_type == "datapoint" else torch.Tensor)
     assert tensor_to.dtype is torch.float64
 
 
-def test_clone_wrapping():
+@pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
+def test_clone_wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16))
 
+    datapoints.set_return_type(return_type)
     image_clone = image.clone()
 
     assert type(image_clone) is datapoints.Image
     assert image_clone.data_ptr() != image.data_ptr()
 
 
-def test_requires_grad__wrapping():
+@pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
+def test_requires_grad__wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16))
 
     assert not image.requires_grad
 
+    datapoints.set_return_type(return_type)
     image_requires_grad = image.requires_grad_(True)
 
     assert type(image_requires_grad) is datapoints.Image
@@ -111,41 +123,52 @@ def test_requires_grad__wrapping():
     assert image_requires_grad.requires_grad
 
 
-def test_detach_wrapping():
+@pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
+def test_detach_wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16), requires_grad=True)
 
+    datapoints.set_return_type(return_type)
     image_detached = image.detach()
 
     assert type(image_detached) is datapoints.Image
 
 
-def test_no_wrapping_exceptions_with_metadata():
-    # Sanity checks for the ops in _NO_WRAPPING_EXCEPTIONS and datapoints with metadata
+@pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
+def test_force_subclass_with_metadata(return_type):
+    # Sanity checks for the ops in _FORCE_TORCHFUNCTION_SUBCLASS and datapoints with metadata
     format, canvas_size = "XYXY", (32, 32)
     bbox = datapoints.BoundingBoxes([[0, 0, 5, 5], [2, 2, 7, 7]], format=format, canvas_size=canvas_size)
 
+    datapoints.set_return_type(return_type)
+
     bbox = bbox.clone()
-    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+    if return_type == "datapoint":
+        assert bbox.format, bbox.canvas_size == (format, canvas_size)
 
     bbox = bbox.to(torch.float64)
-    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+    if return_type == "datapoint":
+        assert bbox.format, bbox.canvas_size == (format, canvas_size)
 
     bbox = bbox.detach()
-    assert bbox.format, bbox.canvas_size == (format, canvas_size)
+    if return_type == "datapoint":
+        assert bbox.format, bbox.canvas_size == (format, canvas_size)
 
     assert not bbox.requires_grad
     bbox.requires_grad_(True)
-    assert bbox.format, bbox.canvas_size == (format, canvas_size)
-    assert bbox.requires_grad
+    if return_type == "datapoint":
+        assert bbox.format, bbox.canvas_size == (format, canvas_size)
+        assert bbox.requires_grad
 
 
-def test_other_op_no_wrapping():
+@pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
+def test_other_op_no_wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16))
 
-    # any operation besides the ones listed in `Datapoint._NO_WRAPPING_EXCEPTIONS` will do here
+    datapoints.set_return_type(return_type)
+    # any operation besides the ones listed in _FORCE_TORCHFUNCTION_SUBCLASS will do here
     output = image * 2
 
-    assert type(output) is datapoints.Image
+    assert type(output) is (datapoints.Image if return_type == "datapoint" else torch.Tensor)
 
 
 @pytest.mark.parametrize(
@@ -164,19 +187,21 @@ def test_no_tensor_output_op_no_wrapping(op):
     assert type(output) is not datapoints.Image
 
 
-def test_inplace_op_no_wrapping():
+@pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
+def test_inplace_op_no_wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16))
 
+    datapoints.set_return_type(return_type)
     output = image.add_(0)
 
-    assert type(output) is datapoints.Image
+    assert type(output) is (datapoints.Image if return_type == "datapoint" else torch.Tensor)
     assert type(image) is datapoints.Image
 
 
 def test_wrap_like():
     image = datapoints.Image(torch.rand(3, 16, 16))
 
-    # any operation besides the ones listed in `Datapoint._NO_WRAPPING_EXCEPTIONS` will do here
+    # any operation besides the ones listed in _FORCE_TORCHFUNCTION_SUBCLASS will do here
     output = image * 2
 
     image_new = datapoints.Image.wrap_like(image, output)
@@ -209,3 +234,91 @@ def test_deepcopy(datapoint, requires_grad):
 
     assert type(datapoint_deepcopied) is type(datapoint)
     assert datapoint_deepcopied.requires_grad is requires_grad
+
+
+@pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
+def test_operations(return_type):
+    datapoints.set_return_type(return_type)
+
+    img = datapoints.Image(torch.rand(3, 10, 10))
+    t = torch.rand(3, 10, 10)
+    mask = datapoints.Mask(torch.rand(1, 10, 10))
+
+    for out in (
+        [
+            img + t,
+            t + img,
+            img * t,
+            t * img,
+            img + 3,
+            3 + img,
+            img * 3,
+            3 * img,
+            img + img,
+            img.sum(),
+            img.reshape(-1),
+            img.float(),
+            torch.stack([img, img]),
+        ]
+        + list(torch.chunk(img, 2))
+        + list(torch.unbind(img))
+    ):
+        assert type(out) is (datapoints.Image if return_type == "datapoint" else torch.Tensor)
+
+    for out in (
+        [
+            mask + t,
+            t + mask,
+            mask * t,
+            t * mask,
+            mask + 3,
+            3 + mask,
+            mask * 3,
+            3 * mask,
+            mask + mask,
+            mask.sum(),
+            mask.reshape(-1),
+            mask.float(),
+            torch.stack([mask, mask]),
+        ]
+        + list(torch.chunk(mask, 2))
+        + list(torch.unbind(mask))
+    ):
+        assert type(out) is (datapoints.Mask if return_type == "datapoint" else torch.Tensor)
+
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        img + mask
+
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        img * mask
+
+    bboxes = datapoints.BoundingBoxes(
+        [[17, 16, 344, 495], [0, 10, 0, 10]], format=datapoints.BoundingBoxFormat.XYXY, canvas_size=(1000, 1000)
+    )
+    t = torch.rand(2, 4)
+
+    for out in (
+        [
+            bboxes + t,
+            t + bboxes,
+            bboxes * t,
+            t * bboxes,
+            bboxes + 3,
+            3 + bboxes,
+            bboxes * 3,
+            3 * bboxes,
+            bboxes + bboxes,
+            bboxes.sum(),
+            bboxes.reshape(-1),
+            bboxes.float(),
+            torch.stack([bboxes, bboxes]),
+        ]
+        + list(torch.chunk(bboxes, 2))
+        + list(torch.unbind(bboxes))
+    ):
+        if return_type == "Tensor":
+            assert type(out) is torch.Tensor
+        else:
+            assert isinstance(out, datapoints.BoundingBoxes)
+            assert hasattr(out, "format")
+            assert hasattr(out, "canvas_size")

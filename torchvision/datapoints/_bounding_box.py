@@ -49,11 +49,12 @@ class BoundingBoxes(Datapoint):
     canvas_size: Tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int]) -> BoundingBoxes:  # type: ignore[override]
-        if tensor.ndim == 1:
-            tensor = tensor.unsqueeze(0)
-        elif tensor.ndim != 2:
-            raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
+    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int], check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
+        if check_dims:
+            if tensor.ndim == 1:
+                tensor = tensor.unsqueeze(0)
+            elif tensor.ndim != 2:
+                raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
         if isinstance(format, str):
             format = BoundingBoxFormat[format.upper()]
         bounding_boxes = tensor.as_subclass(cls)
@@ -101,26 +102,25 @@ class BoundingBoxes(Datapoint):
         )
 
     @classmethod
-    def __torch_function__(
+    def _wrap_output(
         cls,
-        func: Callable[..., torch.Tensor],
-        types: Tuple[Type[torch.Tensor], ...],
+        output: torch.tensor,
         args: Sequence[Any] = (),
         kwargs: Optional[Mapping[str, Any]] = None,
-    ) -> torch.Tensor:
-        out = super().__torch_function__(func, types, args, kwargs)
-
+    ) -> BoundingBoxes:
         # If there are BoundingBoxes instances in the output, their metadata got lost when we called
         # super().__torch_function__. We need to restore the metadata somehow, so we choose to take
         # the metadata from the first bbox in the parameters.
         # This should be what we want in most cases. When it's not, it's probably a mis-use anyway, e.g.
         # something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.
-        first_bbox_from_args = None
-        for obj in tree_flatten(out)[0]:
-            if isinstance(obj, BoundingBoxes):
-                if first_bbox_from_args is None:
-                    flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
-                    first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
-                obj.format = first_bbox_from_args.format
-                obj.canvas_size = first_bbox_from_args.canvas_size
-        return out
+        flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
+        first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
+        format, canvas_size = first_bbox_from_args.format, first_bbox_from_args.canvas_size
+
+        if isinstance(output, torch.Tensor) and not isinstance(output, BoundingBoxes):
+            output = BoundingBoxes._wrap(output, format=format, canvas_size=canvas_size, check_dims=False)
+        elif isinstance(output, (tuple, list)):
+            output = type(output)(
+                BoundingBoxes._wrap(part, format=format, canvas_size=canvas_size, check_dims=False) for part in output
+            )
+        return output
