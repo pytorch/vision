@@ -5,10 +5,9 @@ from torchvision import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal
+from ._utils import _get_kernel, _register_kernel_internal
 
 
-@_register_explicit_noop(datapoints.Mask, datapoints.BoundingBoxes, warn_passthrough=True)
 def erase(
     inpt: torch.Tensor,
     i: int,

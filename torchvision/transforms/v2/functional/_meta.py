@@ -8,10 +8,9 @@ from torchvision.transforms import _functional_pil as _FP
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_kernel_internal, _register_unsupported_type, is_simple_tensor
+from ._utils import _get_kernel, _register_kernel_internal, is_simple_tensor
 
 
-@_register_unsupported_type(datapoints.BoundingBoxes, datapoints.Mask)
 def get_dimensions(inpt: torch.Tensor) -> List[int]:
     if torch.jit.is_scripting():
         return get_dimensions_image_tensor(inpt)
@@ -44,7 +43,6 @@ def get_dimensions_video(video: torch.Tensor) -> List[int]:
     return get_dimensions_image_tensor(video)
 
 
-@_register_unsupported_type(datapoints.BoundingBoxes, datapoints.Mask)
 def get_num_channels(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_channels_image_tensor(inpt)
@@ -123,7 +121,6 @@ def get_size_bounding_boxes(bounding_box: datapoints.BoundingBoxes) -> List[int]
     return list(bounding_box.canvas_size)
 
 
-@_register_unsupported_type(PIL.Image.Image, datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask)
 def get_num_frames(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_frames_video(inpt)

@@ -181,7 +181,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
 
     print("Copying dependencies to wheel directory")
     new_libraries_path = osp.join(output_dir, "torchvision.libs")
-    os.makedirs(new_libraries_path)
+    os.makedirs(new_libraries_path, exist_ok=True)
 
     new_names = {binary: binary_path}
 
