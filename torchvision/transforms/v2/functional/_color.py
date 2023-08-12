@@ -320,9 +320,7 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     vpqt = torch.stack((v, p, q, t), dim=-3)
 
     # vpqt -> rgb mapping based on i
-    select = torch.tensor(
-        [[0, 2, 1, 1, 3, 0], [3, 0, 0, 2, 1, 1], [1, 1, 3, 0, 0, 2]], dtype=torch.long
-    )
+    select = torch.tensor([[0, 2, 1, 1, 3, 0], [3, 0, 0, 2, 1, 1], [1, 1, 3, 0, 0, 2]], dtype=torch.long)
     select = select.to(device=img.device, non_blocking=True)
 
     select = select[:, i]
