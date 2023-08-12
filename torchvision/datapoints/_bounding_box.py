@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
 from torch.utils._pytree import tree_flatten

@@ -539,10 +539,7 @@ def reference_pad_bounding_boxes(bounding_boxes, *, format, canvas_size, padding
     width = canvas_size[1] + left + right
 
     expected_bboxes = reference_affine_bounding_boxes_helper(
-        bounding_boxes,
-        format=format,
-        canvas_size=(height, width),
-        affine_matrix=affine_matrix,
+        bounding_boxes, format=format, canvas_size=(height, width), affine_matrix=affine_matrix
     )
     return expected_bboxes, (height, width)
 

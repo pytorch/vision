@@ -66,7 +66,7 @@ class SimpleCopyPaste(Transform):
 
         # Copy-paste masks:
         masks = masks * inverse_paste_alpha_mask
-        non_all_zero_masks = (masks.sum((-1, -2)) > 0).as_subclass(torch.Tensor)
+        non_all_zero_masks = masks.sum((-1, -2)) > 0
         masks = masks[non_all_zero_masks]
 
         # Do a shallow copy of the target dict
@@ -92,9 +92,7 @@ class SimpleCopyPaste(Transform):
 
         # Check for degenerated boxes and remove them
         boxes = F.convert_format_bounding_boxes(
-            out_target["boxes"].as_subclass(torch.Tensor),
-            old_format=bbox_format,
-            new_format=datapoints.BoundingBoxFormat.XYXY,
+            out_target["boxes"], old_format=bbox_format, new_format=datapoints.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
         if degenerate_boxes.any():

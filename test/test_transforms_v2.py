@@ -36,7 +36,7 @@ def make_vanilla_tensor_images(*args, **kwargs):
     for image in make_images(*args, **kwargs):
         if image.ndim > 3:
             continue
-        yield image.as_subclass(torch.Tensor)
+        yield image.data
 
 
 def make_pil_images(*args, **kwargs):

@@ -116,11 +116,7 @@ class FixedSizeCrop(Transform):
             elif isinstance(inpt, datapoints.BoundingBoxes):
                 inpt = datapoints.BoundingBoxes.wrap_like(
                     inpt,
-                    F.clamp_bounding_boxes(
-                        inpt[params["is_valid"]].as_subclass(torch.Tensor),
-                        format=inpt.format,
-                        canvas_size=inpt.canvas_size,
-                    ),
+                    F.clamp_bounding_boxes(inpt[params["is_valid"]], format=inpt.format, canvas_size=inpt.canvas_size),
                 )
 
         if params["needs_pad"]:
