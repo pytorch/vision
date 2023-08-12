@@ -124,3 +124,6 @@ class BoundingBoxes(Datapoint):
                 BoundingBoxes._wrap(part, format=format, canvas_size=canvas_size, check_dims=False) for part in output
             )
         return output
+
+    def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
+        return self._make_repr(format=self.format, canvas_size=self.canvas_size)

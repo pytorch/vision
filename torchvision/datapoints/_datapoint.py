@@ -5,11 +5,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type
 import torch
 from torch._C import DisableTorchFunctionSubclass
 
-from torchvision.datapoints._torch_function_helpers import (
-    _FORCE_TORCHFUNCTION_SUBCLASS,
-    _must_return_subclass,
-    _TORCHFUNCTION_SUBCLASS,
-)
+from torchvision.datapoints._torch_function_helpers import _FORCE_TORCHFUNCTION_SUBCLASS, _must_return_subclass
 
 
 D = TypeVar("D", bound="Datapoint")
@@ -78,6 +74,8 @@ class Datapoint(torch.Tensor):
         if not all(issubclass(cls, t) for t in types):
             return NotImplemented
 
+        # Like in the base Tensor.__torch_function__ implementation, it's easier to always use
+        # DisableTorchFunctionSubclass and then manually re-wrap the output if necessary
         with DisableTorchFunctionSubclass():
             output = func(*args, **kwargs or dict())
 
@@ -90,7 +88,7 @@ class Datapoint(torch.Tensor):
             # be wrapped into a `datapoints.Image`.
             return cls._wrap_output(output, args, kwargs)
 
-        if not _TORCHFUNCTION_SUBCLASS and isinstance(output, cls):
+        if not _must_return_subclass() and isinstance(output, cls):
             # DisableTorchFunctionSubclass is ignored by inplace ops like `.add_(...)`,
             # so for those, the output is still a Datapoint. Thus, we need to manually unwrap.
             return output.as_subclass(torch.Tensor)
