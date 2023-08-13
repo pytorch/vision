@@ -1,4 +1,6 @@
 """
+.. _e2e_object_detection_v2:
+
 ==================================================
 Transforms v2: End-to-end object detection example
 ==================================================
