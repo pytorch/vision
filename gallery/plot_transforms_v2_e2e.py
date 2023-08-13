@@ -5,8 +5,8 @@ Transforms v2: End-to-end object detection example
 
 Object detection is not supported out of the box by ``torchvision.transforms`` v1, since it only supports images.
 ``torchvision.transforms.v2`` enables jointly transforming images, videos, bounding boxes, and masks. This example
-showcases an end-to-end object detection training using the stable ``torchvision.datasets`` and ``torchvision.models`` as
-well as the new ``torchvision.transforms.v2`` v2 API.
+showcases an end-to-end object detection training using the stable ``torchvision.datasets`` and ``torchvision.models``
+as well as the new ``torchvision.transforms.v2`` v2 API.
 """
 
 import pathlib
