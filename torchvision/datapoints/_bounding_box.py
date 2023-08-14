@@ -104,7 +104,7 @@ class BoundingBoxes(Datapoint):
     @classmethod
     def _wrap_output(
         cls,
-        output: torch.tensor,
+        output: torch.Tensor,
         args: Sequence[Any] = (),
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> BoundingBoxes:

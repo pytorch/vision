@@ -6,6 +6,14 @@ from common_utils import assert_equal
 from PIL import Image
 
 from torchvision import datapoints
+from common_utils import (
+    make_bounding_box,
+    make_detection_mask,
+    make_image,
+    make_image_tensor,
+    make_segmentation_mask,
+    make_video,
+)
 
 
 @pytest.fixture(autouse=True)

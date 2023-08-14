@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type
 
 import torch
 from torch._C import DisableTorchFunctionSubclass
+from torch.types import _device, _dtype, _size
 
 from torchvision.datapoints._torch_function_helpers import _FORCE_TORCHFUNCTION_SUBCLASS, _must_return_subclass
 
@@ -37,10 +38,10 @@ class Datapoint(torch.Tensor):
     @classmethod
     def _wrap_output(
         cls,
-        output: torch.tensor,
+        output: torch.Tensor,
         args: Sequence[Any] = (),
         kwargs: Optional[Mapping[str, Any]] = None,
-    ) -> D:
+    ) -> torch.Tensor:
         # Same as torch._tensor._convert
         if isinstance(output, torch.Tensor) and not isinstance(output, cls):
             output = output.as_subclass(cls)
