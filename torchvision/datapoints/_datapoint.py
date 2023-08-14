@@ -41,7 +41,14 @@ class Datapoint(torch.Tensor):
         args: Sequence[Any] = (),
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> D:
-        return torch._tensor._convert(output, cls)
+        # Same as torch._tensor._convert
+        if isinstance(output, torch.Tensor) and not isinstance(output, cls):
+            output = output.as_subclass(cls)
+
+        if isinstance(output, (tuple, list)):
+            # Also handles things like namedtuples
+            output = type(output)(cls._wrap_output(part, args, kwargs) for part in output)
+        return output
 
     @classmethod
     def __torch_function__(
