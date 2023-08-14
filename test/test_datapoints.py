@@ -259,10 +259,10 @@ def test_deepcopy(make_input, requires_grad):
     ),
 )
 def test_usual_operations(make_input, return_type, op):
-    datapoints.set_return_type(return_type)
 
     dp = make_input()
-    out = op(dp)
+    with datapoints.set_return_type(return_type):
+        out = op(dp)
     assert type(out) is (type(dp) if return_type == "datapoint" else torch.Tensor)
     if isinstance(dp, datapoints.BoundingBoxes) and return_type == "datapoint":
         assert hasattr(out, "format")
@@ -295,3 +295,7 @@ def test_set_return_type():
             assert type(img + 3) is datapoints.Image
             datapoints.set_return_type("tensor")
             assert type(img + 3) is torch.Tensor
+        assert type(img + 3) is torch.Tensor
+    # Exiting a context manager will restore the return type as it was prior to entering it,
+    # regardless of whether the "global" datapoints.set_return_type() was called within the context manager.
+    assert type(img + 3) is datapoints.Image
