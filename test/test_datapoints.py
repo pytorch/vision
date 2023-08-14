@@ -9,7 +9,9 @@ from torchvision import datapoints
 
 
 @pytest.fixture(autouse=True)
-def preserve_default_wrapping_behaviour():
+def restore_tensor_return_type():
+    # This is for security, as we should already be restoring the default manually in each test anyway
+    # (at least at the time of writing...)
     yield
     datapoints.set_return_type("Tensor")
 
@@ -164,6 +166,7 @@ def test_force_subclass_with_metadata(return_type):
     if return_type == "datapoint":
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
         assert bbox.requires_grad
+    datapoints.set_return_type("tensor")
 
 
 @pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
@@ -299,3 +302,5 @@ def test_set_return_type():
     # Exiting a context manager will restore the return type as it was prior to entering it,
     # regardless of whether the "global" datapoints.set_return_type() was called within the context manager.
     assert type(img + 3) is datapoints.Image
+
+    datapoints.set_return_type("tensor")
