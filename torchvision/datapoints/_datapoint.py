@@ -86,7 +86,8 @@ class Datapoint(torch.Tensor):
         with DisableTorchFunctionSubclass():
             output = func(*args, **kwargs or dict())
 
-        if _must_return_subclass() or (func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)):
+        must_return_subclass = _must_return_subclass()
+        if must_return_subclass or (func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)):
             # We also require the primary operand, i.e. `args[0]`, to be
             # an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will
             # invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,
@@ -95,7 +96,7 @@ class Datapoint(torch.Tensor):
             # be wrapped into a `datapoints.Image`.
             return cls._wrap_output(output, args, kwargs)
 
-        if not _must_return_subclass() and isinstance(output, cls):
+        if not must_return_subclass and isinstance(output, cls):
             # DisableTorchFunctionSubclass is ignored by inplace ops like `.add_(...)`,
             # so for those, the output is still a Datapoint. Thus, we need to manually unwrap.
             return output.as_subclass(torch.Tensor)

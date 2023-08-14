@@ -91,8 +91,8 @@ def test_to_datapoint_reference(return_type):
     tensor = torch.rand((3, 16, 16), dtype=torch.float64)
     image = datapoints.Image(tensor)
 
-    datapoints.set_return_type(return_type)
-    tensor_to = tensor.to(image)
+    with datapoints.set_return_type(return_type):
+        tensor_to = tensor.to(image)
 
     assert type(tensor_to) is (datapoints.Image if return_type == "datapoint" else torch.Tensor)
     assert tensor_to.dtype is torch.float64
@@ -102,8 +102,8 @@ def test_to_datapoint_reference(return_type):
 def test_clone_wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16))
 
-    datapoints.set_return_type(return_type)
-    image_clone = image.clone()
+    with datapoints.set_return_type(return_type):
+        image_clone = image.clone()
 
     assert type(image_clone) is datapoints.Image
     assert image_clone.data_ptr() != image.data_ptr()
@@ -115,8 +115,8 @@ def test_requires_grad__wrapping(return_type):
 
     assert not image.requires_grad
 
-    datapoints.set_return_type(return_type)
-    image_requires_grad = image.requires_grad_(True)
+    with datapoints.set_return_type(return_type):
+        image_requires_grad = image.requires_grad_(True)
 
     assert type(image_requires_grad) is datapoints.Image
     assert image.requires_grad
@@ -127,8 +127,8 @@ def test_requires_grad__wrapping(return_type):
 def test_detach_wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16), requires_grad=True)
 
-    datapoints.set_return_type(return_type)
-    image_detached = image.detach()
+    with datapoints.set_return_type(return_type):
+        image_detached = image.detach()
 
     assert type(image_detached) is datapoints.Image
 
@@ -140,7 +140,6 @@ def test_force_subclass_with_metadata(return_type):
     bbox = datapoints.BoundingBoxes([[0, 0, 5, 5], [2, 2, 7, 7]], format=format, canvas_size=canvas_size)
 
     datapoints.set_return_type(return_type)
-
     bbox = bbox.clone()
     if return_type == "datapoint":
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
@@ -164,9 +163,9 @@ def test_force_subclass_with_metadata(return_type):
 def test_other_op_no_wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16))
 
-    datapoints.set_return_type(return_type)
-    # any operation besides the ones listed in _FORCE_TORCHFUNCTION_SUBCLASS will do here
-    output = image * 2
+    with datapoints.set_return_type(return_type):
+        # any operation besides the ones listed in _FORCE_TORCHFUNCTION_SUBCLASS will do here
+        output = image * 2
 
     assert type(output) is (datapoints.Image if return_type == "datapoint" else torch.Tensor)
 
@@ -191,8 +190,8 @@ def test_no_tensor_output_op_no_wrapping(op):
 def test_inplace_op_no_wrapping(return_type):
     image = datapoints.Image(torch.rand(3, 16, 16))
 
-    datapoints.set_return_type(return_type)
-    output = image.add_(0)
+    with datapoints.set_return_type(return_type):
+        output = image.add_(0)
 
     assert type(output) is (datapoints.Image if return_type == "datapoint" else torch.Tensor)
     assert type(image) is datapoints.Image
