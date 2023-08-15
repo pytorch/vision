@@ -112,7 +112,7 @@ class FixedSizeCrop(Transform):
 
         if params["is_valid"] is not None:
             if isinstance(inpt, (Label, OneHotLabel, datapoints.Mask)):
-                inpt = datapoints.wrap(inpt[params["is_valid"]], like=inpt)  # type: ignore[arg-type]
+                inpt = datapoints.wrap(inpt[params["is_valid"]], like=inpt)
             elif isinstance(inpt, datapoints.BoundingBoxes):
                 inpt = datapoints.wrap(
                     F.clamp_bounding_boxes(inpt[params["is_valid"]], format=inpt.format, canvas_size=inpt.canvas_size),

@@ -223,7 +223,7 @@ def convert_format_bounding_boxes(
         output = _convert_format_bounding_boxes(
             inpt.as_subclass(torch.Tensor), old_format=inpt.format, new_format=new_format, inplace=inplace
         )
-        return datapoints.wrap(output, like=inpts, format=new_format)
+        return datapoints.wrap(output, like=inpt, format=new_format)
     else:
         raise TypeError(
             f"Input can either be a plain tensor or a bounding box datapoint, but got {type(inpt)} instead."

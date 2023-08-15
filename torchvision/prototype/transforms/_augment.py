@@ -156,7 +156,7 @@ class SimpleCopyPaste(Transform):
                 flat_sample[i] = datapoints.wrap(output_targets[c2]["masks"], like=obj)
                 c2 += 1
             elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
-                flat_sample[i] = datapoints.wrap(output_targets[c3]["labels"], like=obj)  # type: ignore[arg-type]
+                flat_sample[i] = datapoints.wrap(output_targets[c3]["labels"], like=obj)
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
