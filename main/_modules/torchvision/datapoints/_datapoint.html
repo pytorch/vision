@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6b02079) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+f244e27) &#x25BC</a>
     </div>
     
 
@@ -345,17 +345,16 @@
   <h1>Source code for torchvision.datapoints._datapoint</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">PIL.Image</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch._C</span> <span class="kn">import</span> <span class="n">DisableTorchFunctionSubclass</span>
 <span class="kn">from</span> <span class="nn">torch.types</span> <span class="kn">import</span> <span class="n">_device</span><span class="p">,</span> <span class="n">_dtype</span><span class="p">,</span> <span class="n">_size</span>
 
+<span class="kn">from</span> <span class="nn">torchvision.datapoints._torch_function_helpers</span> <span class="kn">import</span> <span class="n">_FORCE_TORCHFUNCTION_SUBCLASS</span><span class="p">,</span> <span class="n">_must_return_subclass</span>
+
 
 <span class="n">D</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;Datapoint&quot;</span><span class="p">)</span>
-<span class="n">_FillType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
-<span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
 
 
 <div class="viewcode-block" id="Datapoint"><a class="viewcode-back" href="../../../generated/torchvision.datapoints.Datapoint.html#torchvision.datapoints.Datapoint">[docs]</a><span class="k">class</span> <span class="nc">Datapoint</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
@@ -381,14 +380,21 @@
     <span class="k">def</span> <span class="nf">wrap_like</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">D</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">D</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">D</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
-    <span class="n">_NO_WRAPPING_EXCEPTIONS</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="o">.</span><span class="n">clone</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">cls</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">wrap_like</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">),</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="o">.</span><span class="n">to</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">cls</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">wrap_like</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">),</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="o">.</span><span class="n">detach</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">cls</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">wrap_like</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">),</span>
-        <span class="c1"># We don&#39;t need to wrap the output of `Tensor.requires_grad_`, since it is an inplace operation and thus</span>
-        <span class="c1"># retains the type automatically</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">cls</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
-    <span class="p">}</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_wrap_output</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">args</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># Same as torch._tensor._convert</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="c1"># Also handles things like namedtuples</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">output</span><span class="p">)(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_wrap_output</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__torch_function__</span><span class="p">(</span>
@@ -413,7 +419,7 @@
 <span class="sd">        2. For most operations, there is no way of knowing if the input type is still valid for the output.</span>
 
 <span class="sd">        For these reasons, the automatic output wrapping is turned off for most operators. The only exceptions are</span>
-<span class="sd">        listed in :attr:`Datapoint._NO_WRAPPING_EXCEPTIONS`</span>
+<span class="sd">        listed in _FORCE_TORCHFUNCTION_SUBCLASS</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we</span>
         <span class="c1"># need to reimplement the functionality.</span>
@@ -421,25 +427,27 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">types</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">NotImplemented</span>
 
+        <span class="c1"># Like in the base Tensor.__torch_function__ implementation, it&#39;s easier to always use</span>
+        <span class="c1"># DisableTorchFunctionSubclass and then manually re-wrap the output if necessary</span>
         <span class="k">with</span> <span class="n">DisableTorchFunctionSubclass</span><span class="p">():</span>
             <span class="n">output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="ow">or</span> <span class="nb">dict</span><span class="p">())</span>
 
-            <span class="n">wrapper</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_NO_WRAPPING_EXCEPTIONS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-            <span class="c1"># Apart from `func` needing to be an exception, we also require the primary operand, i.e. `args[0]`, to be</span>
+        <span class="n">must_return_subclass</span> <span class="o">=</span> <span class="n">_must_return_subclass</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">must_return_subclass</span> <span class="ow">or</span> <span class="p">(</span><span class="n">func</span> <span class="ow">in</span> <span class="n">_FORCE_TORCHFUNCTION_SUBCLASS</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">cls</span><span class="p">)):</span>
+            <span class="c1"># We also require the primary operand, i.e. `args[0]`, to be</span>
             <span class="c1"># an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will</span>
             <span class="c1"># invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,</span>
             <span class="c1"># `torch.Tensor(...).to(datapoints.Image(...))` will invoke `datapoints.Image.__torch_function__` with</span>
             <span class="c1"># `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would</span>
             <span class="c1"># be wrapped into a `datapoints.Image`.</span>
-            <span class="k">if</span> <span class="n">wrapper</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">cls</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">wrapper</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">output</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap_output</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
 
-            <span class="c1"># Inplace `func`&#39;s, canonically identified with a trailing underscore in their name like `.add_(...)`,</span>
-            <span class="c1"># will retain the input type. Thus, we need to unwrap here.</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">must_return_subclass</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+            <span class="c1"># DisableTorchFunctionSubclass is ignored by inplace ops like `.add_(...)`,</span>
+            <span class="c1"># so for those, the output is still a Datapoint. Thus, we need to manually unwrap.</span>
+            <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">output</span>
+        <span class="k">return</span> <span class="n">output</span>
 
     <span class="k">def</span> <span class="nf">_make_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="c1"># This is a poor man&#39;s implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.</span>
@@ -477,10 +485,6 @@
         <span class="c1"># `BoundingBoxes.format` and `BoundingBoxes.canvas_size`, which are immutable and thus implicitly deep-copied by</span>
         <span class="c1"># `BoundingBoxes.clone()`.</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span>  <span class="c1"># type: ignore[return-value]</span></div>
-
-
-<span class="n">_InputType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">Datapoint</span><span class="p">]</span>
-<span class="n">_InputTypeJIT</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 </pre></div>
 
              </article>

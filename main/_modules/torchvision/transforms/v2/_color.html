@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6b02079) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+f244e27) &#x25BC</a>
     </div>
     
 
@@ -346,13 +346,12 @@
 <span></span><span class="kn">import</span> <span class="nn">collections.abc</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">PIL.Image</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span><span class="p">,</span> <span class="n">transforms</span> <span class="k">as</span> <span class="n">_transforms</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">transforms</span> <span class="k">as</span> <span class="n">_transforms</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms.v2</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span><span class="p">,</span> <span class="n">Transform</span>
 
 <span class="kn">from</span> <span class="nn">._transform</span> <span class="kn">import</span> <span class="n">_RandomApplyTransform</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">is_simple_tensor</span><span class="p">,</span> <span class="n">query_chw</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">query_chw</span>
 
 
 <div class="viewcode-block" id="Grayscale"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Grayscale.html#torchvision.transforms.v2.Grayscale">[docs]</a><span class="k">class</span> <span class="nc">Grayscale</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
@@ -369,19 +368,12 @@
 
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">Grayscale</span>
 
-    <span class="n">_transformed_types</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
-        <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
-        <span class="n">is_simple_tensor</span><span class="p">,</span>
-        <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">,</span>
-    <span class="p">)</span>
-
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span> <span class="o">=</span> <span class="n">num_output_channels</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RandomGrayscale"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomGrayscale.html#torchvision.transforms.v2.RandomGrayscale">[docs]</a><span class="k">class</span> <span class="nc">RandomGrayscale</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
@@ -400,13 +392,6 @@
 
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">RandomGrayscale</span>
 
-    <span class="n">_transformed_types</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
-        <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
-        <span class="n">is_simple_tensor</span><span class="p">,</span>
-        <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">,</span>
-    <span class="p">)</span>
-
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
 
@@ -415,7 +400,7 @@
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">num_input_channels</span><span class="o">=</span><span class="n">num_input_channels</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;num_input_channels&quot;</span><span class="p">])</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;num_input_channels&quot;</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="ColorJitter"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.ColorJitter.html#torchvision.transforms.v2.ColorJitter">[docs]</a><span class="k">class</span> <span class="nc">ColorJitter</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
@@ -512,13 +497,13 @@
         <span class="n">hue_factor</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;hue_factor&quot;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">fn_id</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;fn_idx&quot;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">brightness_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">output</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_brightness</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="o">=</span><span class="n">brightness_factor</span><span class="p">)</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_brightness</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="o">=</span><span class="n">brightness_factor</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">contrast_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">output</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">contrast_factor</span><span class="p">)</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">contrast_factor</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">saturation_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">output</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_saturation</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="o">=</span><span class="n">saturation_factor</span><span class="p">)</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_saturation</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="o">=</span><span class="n">saturation_factor</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">hue_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">output</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">hue_factor</span><span class="o">=</span><span class="n">hue_factor</span><span class="p">)</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">hue_factor</span><span class="o">=</span><span class="n">hue_factor</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">output</span></div>
 
 
@@ -528,19 +513,12 @@
 <span class="sd">    .. v2betastatus:: RandomChannelPermutation transform</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">_transformed_types</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
-        <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
-        <span class="n">is_simple_tensor</span><span class="p">,</span>
-        <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">,</span>
-    <span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">num_channels</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">query_chw</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">permutation</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">num_channels</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">permute_channels</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;permutation&quot;</span><span class="p">])</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">permute_channels</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;permutation&quot;</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="RandomPhotometricDistort"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomPhotometricDistort.html#torchvision.transforms.v2.RandomPhotometricDistort">[docs]</a><span class="k">class</span> <span class="nc">RandomPhotometricDistort</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
@@ -568,13 +546,6 @@
 <span class="sd">        p (float, optional) probability each distortion operation (contrast, saturation, ...) to be applied.</span>
 <span class="sd">            Default is 0.5.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">_transformed_types</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
-        <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
-        <span class="n">is_simple_tensor</span><span class="p">,</span>
-        <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">,</span>
-    <span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -606,21 +577,19 @@
         <span class="n">params</span><span class="p">[</span><span class="s2">&quot;channel_permutation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">num_channels</span><span class="p">)</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">params</span>
 
-    <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">datapoints</span><span class="o">.</span><span class="n">_ImageType</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">_VideoType</span><span class="p">],</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">datapoints</span><span class="o">.</span><span class="n">_ImageType</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">_VideoType</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;brightness_factor&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_brightness</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;brightness_factor&quot;</span><span class="p">])</span>
+            <span class="n">inpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_brightness</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;brightness_factor&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_factor&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_before&quot;</span><span class="p">]:</span>
-            <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_factor&quot;</span><span class="p">])</span>
+            <span class="n">inpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_factor&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;saturation_factor&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_saturation</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;saturation_factor&quot;</span><span class="p">])</span>
+            <span class="n">inpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_saturation</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;saturation_factor&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;hue_factor&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">hue_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;hue_factor&quot;</span><span class="p">])</span>
+            <span class="n">inpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">hue_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;hue_factor&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_factor&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_before&quot;</span><span class="p">]:</span>
-            <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_factor&quot;</span><span class="p">])</span>
+            <span class="n">inpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;contrast_factor&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;channel_permutation&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">inpt</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">permute_channels</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">permutation</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;channel_permutation&quot;</span><span class="p">])</span>
+            <span class="n">inpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">permute_channels</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">permutation</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;channel_permutation&quot;</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">inpt</span></div>
 
 
@@ -640,7 +609,7 @@
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">RandomEqualize</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">equalize</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">equalize</span><span class="p">,</span> <span class="n">inpt</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RandomInvert"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomInvert.html#torchvision.transforms.v2.RandomInvert">[docs]</a><span class="k">class</span> <span class="nc">RandomInvert</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
@@ -659,7 +628,7 @@
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">RandomInvert</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">invert</span><span class="p">,</span> <span class="n">inpt</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RandomPosterize"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomPosterize.html#torchvision.transforms.v2.RandomPosterize">[docs]</a><span class="k">class</span> <span class="nc">RandomPosterize</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
@@ -684,7 +653,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bits</span> <span class="o">=</span> <span class="n">bits</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">posterize</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bits</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">posterize</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bits</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RandomSolarize"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomSolarize.html#torchvision.transforms.v2.RandomSolarize">[docs]</a><span class="k">class</span> <span class="nc">RandomSolarize</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
@@ -709,7 +678,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">solarize</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">solarize</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RandomAutocontrast"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomAutocontrast.html#torchvision.transforms.v2.RandomAutocontrast">[docs]</a><span class="k">class</span> <span class="nc">RandomAutocontrast</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
@@ -728,7 +697,7 @@
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">RandomAutocontrast</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">,</span> <span class="n">inpt</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RandomAdjustSharpness"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomAdjustSharpness.html#torchvision.transforms.v2.RandomAdjustSharpness">[docs]</a><span class="k">class</span> <span class="nc">RandomAdjustSharpness</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
@@ -753,7 +722,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span> <span class="o">=</span> <span class="n">sharpness_factor</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_sharpness</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">adjust_sharpness</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span><span class="p">)</span></div>
 </pre></div>
 
              </article>

@@ -24,8 +24,8 @@ Transforms v2: End-to-end object detection example
 
 Object detection is not supported out of the box by ``torchvision.transforms`` v1, since it only supports images.
 ``torchvision.transforms.v2`` enables jointly transforming images, videos, bounding boxes, and masks. This example
-showcases an end-to-end object detection training using the stable ``torchvisio.datasets`` and ``torchvision.models`` as
-well as the new ``torchvision.transforms.v2`` v2 API.
+showcases an end-to-end object detection training using the stable ``torchvision.datasets`` and ``torchvision.models``
+as well as the new ``torchvision.transforms.v2`` v2 API.
 
 .. GENERATED FROM PYTHON SOURCE LINES 11-50
 
@@ -302,7 +302,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.933 seconds)
+   **Total running time of the script:** ( 0 minutes  2.958 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms_v2_e2e.py:

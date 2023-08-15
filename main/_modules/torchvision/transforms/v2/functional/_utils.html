@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6b02079) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+f244e27) &#x25BC</a>
     </div>
     
 
@@ -344,34 +344,38 @@
               
   <h1>Source code for torchvision.transforms.v2.functional._utils</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">functools</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Type</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span>
+
+<span class="n">_FillType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+<span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
 
 
 <span class="k">def</span> <span class="nf">is_simple_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Datapoint</span><span class="p">)</span>
 
 
-<span class="c1"># {dispatcher: {input_type: type_specific_kernel}}</span>
+<span class="c1"># {functional: {input_type: type_specific_kernel}}</span>
 <span class="n">_KERNEL_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
 
 <span class="k">def</span> <span class="nf">_kernel_datapoint_wrapper</span><span class="p">(</span><span class="n">kernel</span><span class="p">):</span>
     <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># We always pass datapoints as pure tensors to the kernels to avoid going through the</span>
+        <span class="c1"># Tensor.__torch_function__ logic, which is costly.</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="o">.</span><span class="n">wrap_like</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">wrapper</span>
 
 
-<span class="k">def</span> <span class="nf">_register_kernel_internal</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="n">input_type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="n">registry</span> <span class="o">=</span> <span class="n">_KERNEL_REGISTRY</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="p">{})</span>
+<span class="k">def</span> <span class="nf">_register_kernel_internal</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="n">input_type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">registry</span> <span class="o">=</span> <span class="n">_KERNEL_REGISTRY</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="p">{})</span>
     <span class="k">if</span> <span class="n">input_type</span> <span class="ow">in</span> <span class="n">registry</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dispatcher </span><span class="si">{</span><span class="n">dispatcher</span><span class="si">}</span><span class="s2"> already has a kernel registered for type </span><span class="si">{</span><span class="n">input_type</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Functional </span><span class="si">{</span><span class="n">functional</span><span class="si">}</span><span class="s2"> already has a kernel registered for type </span><span class="si">{</span><span class="n">input_type</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">kernel</span><span class="p">):</span>
         <span class="n">registry</span><span class="p">[</span><span class="n">input_type</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
@@ -384,51 +388,55 @@
     <span class="k">return</span> <span class="n">decorator</span>
 
 
-<span class="k">def</span> <span class="nf">_name_to_dispatcher</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_name_to_functional</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
     <span class="kn">import</span> <span class="nn">torchvision.transforms.v2.functional</span>  <span class="c1"># noqa</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torchvision</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">v2</span><span class="o">.</span><span class="n">functional</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Could not find dispatcher with name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; in torchvision.transforms.v2.functional.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Could not find functional with name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; in torchvision.transforms.v2.functional.&quot;</span>
         <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
 
 
-<div class="viewcode-block" id="register_kernel"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.register_kernel.html#torchvision.transforms.v2.functional.register_kernel">[docs]</a><span class="k">def</span> <span class="nf">register_kernel</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="n">datapoint_cls</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate a kernel to register it for a dispatcher and a (custom) datapoint type.</span>
+<span class="n">_BUILTIN_DATAPOINT_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">obj</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">datapoints</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Datapoint</span><span class="p">)</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="register_kernel"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.register_kernel.html#torchvision.transforms.v2.functional.register_kernel">[docs]</a><span class="k">def</span> <span class="nf">register_kernel</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="n">datapoint_cls</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate a kernel to register it for a functional and a (custom) datapoint type.</span>
 
 <span class="sd">    See :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for usage</span>
 <span class="sd">    details.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="n">dispatcher</span> <span class="o">=</span> <span class="n">_name_to_dispatcher</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">dispatcher</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">functional</span> <span class="o">=</span> <span class="n">_name_to_functional</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">functional</span><span class="p">)</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span>
-        <span class="nb">callable</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">)</span>
-        <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;torchvision.transforms.v2.functional&quot;</span><span class="p">)</span>
+        <span class="nb">callable</span><span class="p">(</span><span class="n">functional</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;torchvision.transforms.v2.functional&quot;</span><span class="p">)</span>
     <span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Kernels can only be registered on dispatchers from the torchvision.transforms.v2.functional namespace, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;but got </span><span class="si">{</span><span class="n">dispatcher</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Kernels can only be registered on functionals from the torchvision.transforms.v2.functional namespace, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;but got </span><span class="si">{</span><span class="n">functional</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-        <span class="nb">isinstance</span><span class="p">(</span><span class="n">datapoint_cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
-        <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">datapoint_cls</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Datapoint</span><span class="p">)</span>
-        <span class="ow">and</span> <span class="n">datapoint_cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Datapoint</span>
-    <span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">datapoint_cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">datapoint_cls</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Datapoint</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Kernels can only be registered for subclasses of torchvision.datapoints.Datapoint, &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;but got </span><span class="si">{</span><span class="n">datapoint_cls</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="n">datapoint_cls</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+    <span class="k">if</span> <span class="n">datapoint_cls</span> <span class="ow">in</span> <span class="n">_BUILTIN_DATAPOINT_TYPES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Kernels cannot be registered for the builtin datapoint classes, but got </span><span class="si">{</span><span class="n">datapoint_cls</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="n">datapoint_cls</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_get_kernel</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="n">input_type</span><span class="p">):</span>
-    <span class="n">registry</span> <span class="o">=</span> <span class="n">_KERNEL_REGISTRY</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_get_kernel</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="n">input_type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">allow_passthrough</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">registry</span> <span class="o">=</span> <span class="n">_KERNEL_REGISTRY</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">functional</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">registry</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No kernel registered for dispatcher </span><span class="si">{</span><span class="n">dispatcher</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No kernel registered for functional </span><span class="si">{</span><span class="n">functional</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="c1"># In case we have an exact type match, we take a shortcut.</span>
     <span class="k">if</span> <span class="n">input_type</span> <span class="ow">in</span> <span class="n">registry</span><span class="p">:</span>
@@ -446,81 +454,21 @@
             <span class="k">elif</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">registry</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">registry</span><span class="p">[</span><span class="bp">cls</span><span class="p">]</span>
 
-        <span class="c1"># Note that in the future we are not going to return a noop here, but rather raise the error below</span>
-        <span class="k">return</span> <span class="n">_noop</span>
+    <span class="k">if</span> <span class="n">allow_passthrough</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">inpt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">inpt</span>
 
     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Dispatcher </span><span class="si">{</span><span class="n">dispatcher</span><span class="si">}</span><span class="s2"> supports inputs of type torch.Tensor, PIL.Image.Image, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;and subclasses of torchvision.datapoints.Datapoint, &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Functional F.</span><span class="si">{</span><span class="n">functional</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> supports inputs of type </span><span class="si">{</span><span class="n">registry</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">, &quot;</span>
         <span class="sa">f</span><span class="s2">&quot;but got </span><span class="si">{</span><span class="n">input_type</span><span class="si">}</span><span class="s2"> instead.&quot;</span>
     <span class="p">)</span>
 
 
-<span class="c1"># Everything below this block is stuff that we need right now, since it looks like we need to release in an intermediate</span>
-<span class="c1"># stage. See https://github.com/pytorch/vision/pull/7747#issuecomment-1661698450 for details.</span>
-
-
-<span class="c1"># In the future, the default behavior will be to error on unsupported types in dispatchers. The noop behavior that we</span>
-<span class="c1"># need for transforms will be handled by _get_kernel rather than actually registering no-ops on the dispatcher.</span>
-<span class="c1"># Finally, the use case of preventing users from registering kernels for our builtin types will be handled inside</span>
-<span class="c1"># register_kernel.</span>
-<span class="k">def</span> <span class="nf">_register_explicit_noop</span><span class="p">(</span><span class="o">*</span><span class="n">datapoints_classes</span><span class="p">,</span> <span class="n">warn_passthrough</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Although this looks redundant with the no-op behavior of _get_kernel, this explicit registration prevents users</span>
-<span class="sd">    from registering kernels for builtin datapoints on builtin dispatchers that rely on the no-op behavior.</span>
-
-<span class="sd">    For example, without explicit no-op registration the following would be valid user code:</span>
-
-<span class="sd">    .. code::</span>
-<span class="sd">        from torchvision.transforms.v2 import functional as F</span>
-
-<span class="sd">        @F.register_kernel(F.adjust_brightness, datapoints.BoundingBox)</span>
-<span class="sd">        def lol(...):</span>
-<span class="sd">            ...</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">):</span>
-        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">datapoints_classes</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;F.</span><span class="si">{</span><span class="n">dispatcher</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> is currently passing through inputs of type datapoints.</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;This will likely change in the future.&quot;</span>
-            <span class="p">)</span>
-            <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)(</span>
-                <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">_noop</span><span class="p">,</span> <span class="n">__msg__</span><span class="o">=</span><span class="n">msg</span> <span class="k">if</span> <span class="n">warn_passthrough</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">dispatcher</span>
-
-    <span class="k">return</span> <span class="n">decorator</span>
-
-
-<span class="k">def</span> <span class="nf">_noop</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">__msg__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">__msg__</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">__msg__</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">inpt</span>
-
-
-<span class="c1"># TODO: we only need this, since our default behavior in case no kernel is found is passthrough. When we change that</span>
-<span class="c1"># to error later, this decorator can be removed, since the error will be raised by _get_kernel</span>
-<span class="k">def</span> <span class="nf">_register_unsupported_type</span><span class="p">(</span><span class="o">*</span><span class="n">input_types</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">kernel</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">__dispatcher_name__</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;F.</span><span class="si">{</span><span class="n">__dispatcher_name__</span><span class="si">}</span><span class="s2"> does not support inputs of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">input_type</span> <span class="ow">in</span> <span class="n">input_types</span><span class="p">:</span>
-            <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="n">input_type</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)(</span>
-                <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">__dispatcher_name__</span><span class="o">=</span><span class="n">dispatcher</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">dispatcher</span>
-
-    <span class="k">return</span> <span class="n">decorator</span>
-
-
 <span class="c1"># This basically replicates _register_kernel_internal, but with a specialized wrapper for five_crop / ten_crop</span>
-<span class="c1"># We could get rid of this by letting _register_kernel_internal take arbitrary dispatchers rather than wrap_kernel: bool</span>
-<span class="k">def</span> <span class="nf">_register_five_ten_crop_kernel</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="n">input_type</span><span class="p">):</span>
-    <span class="n">registry</span> <span class="o">=</span> <span class="n">_KERNEL_REGISTRY</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span> <span class="p">{})</span>
+<span class="c1"># We could get rid of this by letting _register_kernel_internal take arbitrary functionals rather than wrap_kernel: bool</span>
+<span class="k">def</span> <span class="nf">_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="n">input_type</span><span class="p">):</span>
+    <span class="n">registry</span> <span class="o">=</span> <span class="n">_KERNEL_REGISTRY</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="p">{})</span>
     <span class="k">if</span> <span class="n">input_type</span> <span class="ow">in</span> <span class="n">registry</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dispatcher &#39;</span><span class="si">{</span><span class="n">dispatcher</span><span class="si">}</span><span class="s2">&#39; already has a kernel registered for type &#39;</span><span class="si">{</span><span class="n">input_type</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Functional &#39;</span><span class="si">{</span><span class="n">functional</span><span class="si">}</span><span class="s2">&#39; already has a kernel registered for type &#39;</span><span class="si">{</span><span class="n">input_type</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">kernel</span><span class="p">):</span>
         <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>

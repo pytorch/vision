@@ -102,7 +102,7 @@ operation of our MyDatapoint class, and register it to the functional API.
     from torchvision.transforms.v2 import functional as F
 
 
-    @F.register_kernel(dispatcher="hflip", datapoint_cls=MyDatapoint)
+    @F.register_kernel(functional="hflip", datapoint_cls=MyDatapoint)
     def hflip_my_datapoint(my_dp, *args, **kwargs):
         print("Flipping!")
         out = my_dp.flip(-1)
@@ -125,9 +125,9 @@ we will explain it below in :ref:`param_forwarding`.
 .. note::
 
     In our call to ``register_kernel`` above we used a string
-    ``dispatcher="hflip"`` to refer to the functional we want to hook into. We
+    ``functional="hflip"`` to refer to the functional we want to hook into. We
     could also have used the  functional *itself*, i.e.
-    ``@register_kernel(dispatcher=F.hflip, ...)``.
+    ``@register_kernel(functional=F.hflip, ...)``.
 
     The functionals that you can be hooked into are the ones in
     ``torchvision.transforms.v2.functional`` and they are documented in
@@ -239,7 +239,7 @@ will be able to accept any new parameter that we may add in the future.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.026 seconds)
+   **Total running time of the script:** ( 0 minutes  0.027 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_custom_datapoints.py:
