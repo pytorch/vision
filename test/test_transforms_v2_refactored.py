@@ -519,7 +519,7 @@ class TestResize:
         ("kernel", "make_input"),
         [
             (F.resize_image_tensor, make_image_tensor),
-            (F.resize_image_pil, make_image_pil),
+            (F._resize_image_pil, make_image_pil),
             (F.resize_image_tensor, make_image),
             (F.resize_bounding_boxes, make_bounding_box),
             (F.resize_mask, make_segmentation_mask),
@@ -540,7 +540,7 @@ class TestResize:
         ("kernel", "input_type"),
         [
             (F.resize_image_tensor, torch.Tensor),
-            (F.resize_image_pil, PIL.Image.Image),
+            (F._resize_image_pil, PIL.Image.Image),
             (F.resize_image_tensor, datapoints.Image),
             (F.resize_bounding_boxes, datapoints.BoundingBoxes),
             (F.resize_mask, datapoints.Mask),
@@ -586,7 +586,7 @@ class TestResize:
 
         actual = fn(image, size=size, interpolation=interpolation, **max_size_kwarg, antialias=True)
         expected = F.to_image_tensor(
-            F.resize(F.to_image_pil(image), size=size, interpolation=interpolation, **max_size_kwarg)
+            F.resize(F._to_image_pil(image), size=size, interpolation=interpolation, **max_size_kwarg)
         )
 
         self._check_output_size(image, actual, size=size, **max_size_kwarg)
@@ -808,7 +808,7 @@ class TestHorizontalFlip:
         ("kernel", "make_input"),
         [
             (F.horizontal_flip_image_tensor, make_image_tensor),
-            (F.horizontal_flip_image_pil, make_image_pil),
+            (F._horizontal_flip_image_pil, make_image_pil),
             (F.horizontal_flip_image_tensor, make_image),
             (F.horizontal_flip_bounding_boxes, make_bounding_box),
             (F.horizontal_flip_mask, make_segmentation_mask),
@@ -822,7 +822,7 @@ class TestHorizontalFlip:
         ("kernel", "input_type"),
         [
             (F.horizontal_flip_image_tensor, torch.Tensor),
-            (F.horizontal_flip_image_pil, PIL.Image.Image),
+            (F._horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image_tensor, datapoints.Image),
             (F.horizontal_flip_bounding_boxes, datapoints.BoundingBoxes),
             (F.horizontal_flip_mask, datapoints.Mask),
@@ -847,7 +847,7 @@ class TestHorizontalFlip:
         image = make_image(dtype=torch.uint8, device="cpu")
 
         actual = fn(image)
-        expected = F.to_image_tensor(F.horizontal_flip(F.to_image_pil(image)))
+        expected = F.to_image_tensor(F.horizontal_flip(F._to_image_pil(image)))
 
         torch.testing.assert_close(actual, expected)
 
@@ -991,7 +991,7 @@ class TestAffine:
         ("kernel", "make_input"),
         [
             (F.affine_image_tensor, make_image_tensor),
-            (F.affine_image_pil, make_image_pil),
+            (F._affine_image_pil, make_image_pil),
             (F.affine_image_tensor, make_image),
             (F.affine_bounding_boxes, make_bounding_box),
             (F.affine_mask, make_segmentation_mask),
@@ -1005,7 +1005,7 @@ class TestAffine:
         ("kernel", "input_type"),
         [
             (F.affine_image_tensor, torch.Tensor),
-            (F.affine_image_pil, PIL.Image.Image),
+            (F._affine_image_pil, PIL.Image.Image),
             (F.affine_image_tensor, datapoints.Image),
             (F.affine_bounding_boxes, datapoints.BoundingBoxes),
             (F.affine_mask, datapoints.Mask),
@@ -1051,7 +1051,7 @@ class TestAffine:
         )
         expected = F.to_image_tensor(
             F.affine(
-                F.to_image_pil(image),
+                F._to_image_pil(image),
                 angle=angle,
                 translate=translate,
                 scale=scale,
@@ -1084,7 +1084,7 @@ class TestAffine:
         actual = transform(image)
 
         torch.manual_seed(seed)
-        expected = F.to_image_tensor(transform(F.to_image_pil(image)))
+        expected = F.to_image_tensor(transform(F._to_image_pil(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 2 if interpolation is transforms.InterpolationMode.NEAREST else 8
@@ -1287,7 +1287,7 @@ class TestVerticalFlip:
         ("kernel", "make_input"),
         [
             (F.vertical_flip_image_tensor, make_image_tensor),
-            (F.vertical_flip_image_pil, make_image_pil),
+            (F._vertical_flip_image_pil, make_image_pil),
             (F.vertical_flip_image_tensor, make_image),
             (F.vertical_flip_bounding_boxes, make_bounding_box),
             (F.vertical_flip_mask, make_segmentation_mask),
@@ -1301,7 +1301,7 @@ class TestVerticalFlip:
         ("kernel", "input_type"),
         [
             (F.vertical_flip_image_tensor, torch.Tensor),
-            (F.vertical_flip_image_pil, PIL.Image.Image),
+            (F._vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image_tensor, datapoints.Image),
             (F.vertical_flip_bounding_boxes, datapoints.BoundingBoxes),
             (F.vertical_flip_mask, datapoints.Mask),
@@ -1324,7 +1324,7 @@ class TestVerticalFlip:
         image = make_image(dtype=torch.uint8, device="cpu")
 
         actual = fn(image)
-        expected = F.to_image_tensor(F.vertical_flip(F.to_image_pil(image)))
+        expected = F.to_image_tensor(F.vertical_flip(F._to_image_pil(image)))
 
         torch.testing.assert_close(actual, expected)
 
@@ -1444,7 +1444,7 @@ class TestRotate:
         ("kernel", "make_input"),
         [
             (F.rotate_image_tensor, make_image_tensor),
-            (F.rotate_image_pil, make_image_pil),
+            (F._rotate_image_pil, make_image_pil),
             (F.rotate_image_tensor, make_image),
             (F.rotate_bounding_boxes, make_bounding_box),
             (F.rotate_mask, make_segmentation_mask),
@@ -1458,7 +1458,7 @@ class TestRotate:
         ("kernel", "input_type"),
         [
             (F.rotate_image_tensor, torch.Tensor),
-            (F.rotate_image_pil, PIL.Image.Image),
+            (F._rotate_image_pil, PIL.Image.Image),
             (F.rotate_image_tensor, datapoints.Image),
             (F.rotate_bounding_boxes, datapoints.BoundingBoxes),
             (F.rotate_mask, datapoints.Mask),
@@ -1493,7 +1493,7 @@ class TestRotate:
         actual = F.rotate(image, angle=angle, center=center, interpolation=interpolation, expand=expand, fill=fill)
         expected = F.to_image_tensor(
             F.rotate(
-                F.to_image_pil(image), angle=angle, center=center, interpolation=interpolation, expand=expand, fill=fill
+                F._to_image_pil(image), angle=angle, center=center, interpolation=interpolation, expand=expand, fill=fill
             )
         )
 
@@ -1524,7 +1524,7 @@ class TestRotate:
         actual = transform(image)
 
         torch.manual_seed(seed)
-        expected = F.to_image_tensor(transform(F.to_image_pil(image)))
+        expected = F.to_image_tensor(transform(F._to_image_pil(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
@@ -1894,7 +1894,7 @@ class TestAdjustBrightness:
         ("kernel", "make_input"),
         [
             (F.adjust_brightness_image_tensor, make_image_tensor),
-            (F.adjust_brightness_image_pil, make_image_pil),
+            (F._adjust_brightness_image_pil, make_image_pil),
             (F.adjust_brightness_image_tensor, make_image),
             (F.adjust_brightness_video, make_video),
         ],
@@ -1906,7 +1906,7 @@ class TestAdjustBrightness:
         ("kernel", "input_type"),
         [
             (F.adjust_brightness_image_tensor, torch.Tensor),
-            (F.adjust_brightness_image_pil, PIL.Image.Image),
+            (F._adjust_brightness_image_pil, PIL.Image.Image),
             (F.adjust_brightness_image_tensor, datapoints.Image),
             (F.adjust_brightness_video, datapoints.Video),
         ],
@@ -1919,7 +1919,7 @@ class TestAdjustBrightness:
         image = make_image(dtype=torch.uint8, device="cpu")
 
         actual = F.adjust_brightness(image, brightness_factor=brightness_factor)
-        expected = F.to_image_tensor(F.adjust_brightness(F.to_image_pil(image), brightness_factor=brightness_factor))
+        expected = F.to_image_tensor(F.adjust_brightness(F._to_image_pil(image), brightness_factor=brightness_factor))
 
         torch.testing.assert_close(actual, expected)
 
@@ -2068,7 +2068,7 @@ class TestShapeGetters:
         ("kernel", "make_input"),
         [
             (F.get_dimensions_image_tensor, make_image_tensor),
-            (F.get_dimensions_image_pil, make_image_pil),
+            (F._get_dimensions_image_pil, make_image_pil),
             (F.get_dimensions_image_tensor, make_image),
             (F.get_dimensions_video, make_video),
         ],
@@ -2085,7 +2085,7 @@ class TestShapeGetters:
         ("kernel", "make_input"),
         [
             (F.get_num_channels_image_tensor, make_image_tensor),
-            (F.get_num_channels_image_pil, make_image_pil),
+            (F._get_num_channels_image_pil, make_image_pil),
             (F.get_num_channels_image_tensor, make_image),
             (F.get_num_channels_video, make_video),
         ],
@@ -2101,7 +2101,7 @@ class TestShapeGetters:
         ("kernel", "make_input"),
         [
             (F.get_size_image_tensor, make_image_tensor),
-            (F.get_size_image_pil, make_image_pil),
+            (F._get_size_image_pil, make_image_pil),
             (F.get_size_image_tensor, make_image),
             (F.get_size_bounding_boxes, make_bounding_box),
             (F.get_size_mask, make_detection_mask),
@@ -2197,7 +2197,7 @@ class TestGetKernel:
     # would also be fine
     KERNELS = {
         torch.Tensor: F.resize_image_tensor,
-        PIL.Image.Image: F.resize_image_pil,
+        PIL.Image.Image: F._resize_image_pil,
         datapoints.Image: F.resize_image_tensor,
         datapoints.BoundingBoxes: F.resize_bounding_boxes,
         datapoints.Mask: F.resize_mask,

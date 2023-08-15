@@ -36,7 +36,7 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
         raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
-get_dimensions_image_pil = _register_kernel_internal(get_dimensions, PIL.Image.Image)(_FP.get_dimensions)
+_get_dimensions_image_pil = _register_kernel_internal(get_dimensions, PIL.Image.Image)(_FP.get_dimensions)
 
 
 @_register_kernel_internal(get_dimensions, datapoints.Video, datapoint_wrapper=False)
@@ -68,7 +68,7 @@ def get_num_channels_image_tensor(image: torch.Tensor) -> int:
         raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
-get_num_channels_image_pil = _register_kernel_internal(get_num_channels, PIL.Image.Image)(_FP.get_image_num_channels)
+_get_num_channels_image_pil = _register_kernel_internal(get_num_channels, PIL.Image.Image)(_FP.get_image_num_channels)
 
 
 @_register_kernel_internal(get_num_channels, datapoints.Video, datapoint_wrapper=False)
@@ -103,7 +103,7 @@ def get_size_image_tensor(image: torch.Tensor) -> List[int]:
 
 
 @_register_kernel_internal(get_size, PIL.Image.Image)
-def get_size_image_pil(image: PIL.Image.Image) -> List[int]:
+def _get_size_image_pil(image: PIL.Image.Image) -> List[int]:
     width, height = _FP.get_image_size(image)
     return [height, width]
 

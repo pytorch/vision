@@ -42,7 +42,7 @@ def erase_image_tensor(
 
 
 @_register_kernel_internal(erase, PIL.Image.Image)
-def erase_image_pil(
+def _erase_image_pil(
     image: PIL.Image.Image, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(image)

@@ -169,7 +169,7 @@ def gaussian_blur_image_tensor(
 
 
 @_register_kernel_internal(gaussian_blur, PIL.Image.Image)
-def gaussian_blur_image_pil(
+def _gaussian_blur_image_pil(
     image: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(image)

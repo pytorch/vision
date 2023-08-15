@@ -23,7 +23,7 @@ from torchvision.transforms.functional import (
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import clamp_bounding_boxes, convert_format_bounding_boxes, get_size_image_pil
+from ._meta import clamp_bounding_boxes, convert_format_bounding_boxes, _get_size_image_pil
 
 from ._utils import _get_kernel, _register_explicit_noop, _register_five_ten_crop_kernel, _register_kernel_internal
 
@@ -56,7 +56,7 @@ def horizontal_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
 
 
 @_register_kernel_internal(horizontal_flip, PIL.Image.Image)
-def horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
+def _horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.hflip(image)
 
 
@@ -112,7 +112,7 @@ def vertical_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
 
 
 @_register_kernel_internal(vertical_flip, PIL.Image.Image)
-def vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
+def _vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
     return _FP.vflip(image)
 
 
@@ -267,7 +267,7 @@ def resize_image_tensor(
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
-def resize_image_pil(
+def _resize_image_pil(
     image: PIL.Image.Image,
     size: Union[Sequence[int], int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -289,7 +289,7 @@ def resize_image_pil(
 
 
 @_register_kernel_internal(resize, PIL.Image.Image)
-def _resize_image_pil_dispatch(
+def __resize_image_pil_dispatch(
     image: PIL.Image.Image,
     size: Union[Sequence[int], int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -298,7 +298,7 @@ def _resize_image_pil_dispatch(
 ) -> PIL.Image.Image:
     if antialias is False:
         warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
-    return resize_image_pil(image, size=size, interpolation=interpolation, max_size=max_size)
+    return _resize_image_pil(image, size=size, interpolation=interpolation, max_size=max_size)
 
 
 def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
@@ -702,7 +702,7 @@ def affine_image_tensor(
 
 
 @_register_kernel_internal(affine, PIL.Image.Image)
-def affine_image_pil(
+def _affine_image_pil(
     image: PIL.Image.Image,
     angle: Union[int, float],
     translate: List[float],
@@ -719,7 +719,7 @@ def affine_image_pil(
     # it is visually better to estimate the center without 0.5 offset
     # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
     if center is None:
-        height, width = get_size_image_pil(image)
+        height, width = _get_size_image_pil(image)
         center = [width * 0.5, height * 0.5]
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
@@ -1006,7 +1006,7 @@ def rotate_image_tensor(
 
 
 @_register_kernel_internal(rotate, PIL.Image.Image)
-def rotate_image_pil(
+def _rotate_image_pil(
     image: PIL.Image.Image,
     angle: float,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
@@ -1255,7 +1255,7 @@ def _pad_with_vector_fill(
     return output
 
 
-pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
+_pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
 
 
 @_register_kernel_internal(pad, datapoints.Mask)
@@ -1366,8 +1366,8 @@ def crop_image_tensor(image: torch.Tensor, top: int, left: int, height: int, wid
     return image[..., top:bottom, left:right]
 
 
-crop_image_pil = _FP.crop
-_register_kernel_internal(crop, PIL.Image.Image)(crop_image_pil)
+_crop_image_pil = _FP.crop
+_register_kernel_internal(crop, PIL.Image.Image)(_crop_image_pil)
 
 
 def crop_bounding_boxes(
@@ -1549,7 +1549,7 @@ def perspective_image_tensor(
 
 
 @_register_kernel_internal(perspective, PIL.Image.Image)
-def perspective_image_pil(
+def _perspective_image_pil(
     image: PIL.Image.Image,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
@@ -1808,7 +1808,7 @@ def elastic_image_tensor(
 
 
 @_register_kernel_internal(elastic, PIL.Image.Image)
-def elastic_image_pil(
+def _elastic_image_pil(
     image: PIL.Image.Image,
     displacement: torch.Tensor,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
@@ -1988,20 +1988,20 @@ def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> tor
 
 
 @_register_kernel_internal(center_crop, PIL.Image.Image)
-def center_crop_image_pil(image: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
+def _center_crop_image_pil(image: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    image_height, image_width = get_size_image_pil(image)
+    image_height, image_width = _get_size_image_pil(image)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        image = pad_image_pil(image, padding_ltrb, fill=0)
+        image = _pad_image_pil(image, padding_ltrb, fill=0)
 
-        image_height, image_width = get_size_image_pil(image)
+        image_height, image_width = _get_size_image_pil(image)
         if crop_width == image_width and crop_height == image_height:
             return image
 
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
-    return crop_image_pil(image, crop_top, crop_left, crop_height, crop_width)
+    return _crop_image_pil(image, crop_top, crop_left, crop_height, crop_width)
 
 
 def center_crop_bounding_boxes(
@@ -2101,7 +2101,7 @@ def resized_crop_image_tensor(
     return resize_image_tensor(image, size, interpolation=interpolation, antialias=antialias)
 
 
-def resized_crop_image_pil(
+def _resized_crop_image_pil(
     image: PIL.Image.Image,
     top: int,
     left: int,
@@ -2110,12 +2110,12 @@ def resized_crop_image_pil(
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
 ) -> PIL.Image.Image:
-    image = crop_image_pil(image, top, left, height, width)
-    return resize_image_pil(image, size, interpolation=interpolation)
+    image = _crop_image_pil(image, top, left, height, width)
+    return _resize_image_pil(image, size, interpolation=interpolation)
 
 
 @_register_kernel_internal(resized_crop, PIL.Image.Image)
-def resized_crop_image_pil_dispatch(
+def _resized_crop_image_pil_dispatch(
     image: PIL.Image.Image,
     top: int,
     left: int,
@@ -2127,7 +2127,7 @@ def resized_crop_image_pil_dispatch(
 ) -> PIL.Image.Image:
     if antialias is False:
         warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
-    return resized_crop_image_pil(
+    return _resized_crop_image_pil(
         image,
         top=top,
         left=left,
@@ -2253,20 +2253,20 @@ def five_crop_image_tensor(
 
 
 @_register_five_ten_crop_kernel(five_crop, PIL.Image.Image)
-def five_crop_image_pil(
+def _five_crop_image_pil(
     image: PIL.Image.Image, size: List[int]
 ) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    image_height, image_width = get_size_image_pil(image)
+    image_height, image_width = _get_size_image_pil(image)
 
     if crop_width > image_width or crop_height > image_height:
         raise ValueError(f"Requested crop size {size} is bigger than input size {(image_height, image_width)}")
 
-    tl = crop_image_pil(image, 0, 0, crop_height, crop_width)
-    tr = crop_image_pil(image, 0, image_width - crop_width, crop_height, crop_width)
-    bl = crop_image_pil(image, image_height - crop_height, 0, crop_height, crop_width)
-    br = crop_image_pil(image, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
-    center = center_crop_image_pil(image, [crop_height, crop_width])
+    tl = _crop_image_pil(image, 0, 0, crop_height, crop_width)
+    tr = _crop_image_pil(image, 0, image_width - crop_width, crop_height, crop_width)
+    bl = _crop_image_pil(image, image_height - crop_height, 0, crop_height, crop_width)
+    br = _crop_image_pil(image, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
+    center = _center_crop_image_pil(image, [crop_height, crop_width])
 
     return tl, tr, bl, br, center
 
@@ -2331,7 +2331,7 @@ def ten_crop_image_tensor(
 
 
 @_register_five_ten_crop_kernel(ten_crop, PIL.Image.Image)
-def ten_crop_image_pil(
+def _ten_crop_image_pil(
     image: PIL.Image.Image, size: List[int], vertical_flip: bool = False
 ) -> Tuple[
     PIL.Image.Image,
@@ -2345,14 +2345,14 @@ def ten_crop_image_pil(
     PIL.Image.Image,
     PIL.Image.Image,
 ]:
-    non_flipped = five_crop_image_pil(image, size)
+    non_flipped = _five_crop_image_pil(image, size)
 
     if vertical_flip:
-        image = vertical_flip_image_pil(image)
+        image = _vertical_flip_image_pil(image)
     else:
-        image = horizontal_flip_image_pil(image)
+        image = _horizontal_flip_image_pil(image)
 
-    flipped = five_crop_image_pil(image, size)
+    flipped = _five_crop_image_pil(image, size)
 
     return non_flipped + flipped
 
