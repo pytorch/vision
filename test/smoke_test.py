@@ -81,10 +81,9 @@ def main() -> None:
 
     # Turn 1.11.0aHASH into 1.11 (major.minor only)
     version = release = ".".join(torchvision.__version__.split(".")[:2])
-    if(version >= "0.16") {
+    if(version >= "0.16"):
         print(f"{torch.ops.image._jpeg_version() = }")
         assert torch.ops.image._is_compiled_against_turbo()
-    }
 
     smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
