@@ -49,7 +49,7 @@ my_dp
 from torchvision.transforms.v2 import functional as F
 
 
-@F.register_kernel(dispatcher="hflip", datapoint_cls=MyDatapoint)
+@F.register_kernel(functional="hflip", datapoint_cls=MyDatapoint)
 def hflip_my_datapoint(my_dp, *args, **kwargs):
     print("Flipping!")
     out = my_dp.flip(-1)
@@ -64,9 +64,9 @@ def hflip_my_datapoint(my_dp, *args, **kwargs):
 # .. note::
 #
 #     In our call to ``register_kernel`` above we used a string
-#     ``dispatcher="hflip"`` to refer to the functional we want to hook into. We
+#     ``functional="hflip"`` to refer to the functional we want to hook into. We
 #     could also have used the  functional *itself*, i.e.
-#     ``@register_kernel(dispatcher=F.hflip, ...)``.
+#     ``@register_kernel(functional=F.hflip, ...)``.
 #
 #     The functionals that you can be hooked into are the ones in
 #     ``torchvision.transforms.v2.functional`` and they are documented in

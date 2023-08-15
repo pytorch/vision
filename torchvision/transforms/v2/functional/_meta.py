@@ -203,7 +203,7 @@ def convert_format_bounding_boxes(
     new_format: Optional[BoundingBoxFormat] = None,
     inplace: bool = False,
 ) -> torch.Tensor:
-    # This being a kernel / dispatcher hybrid, we need an option to pass `old_format` explicitly for simple tensor
+    # This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for simple tensor
     # inputs as well as extract it from `datapoints.BoundingBoxes` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
     # default error that would be thrown if `new_format` had no default value.
