@@ -541,7 +541,7 @@ class TestResize:
 
         actual = fn(image, size=size, interpolation=interpolation, **max_size_kwarg, antialias=True)
         expected = F.to_image_tensor(
-            F.resize(F._to_image_pil(image), size=size, interpolation=interpolation, **max_size_kwarg)
+            F.resize(F.to_image_pil(image), size=size, interpolation=interpolation, **max_size_kwarg)
         )
 
         self._check_output_size(image, actual, size=size, **max_size_kwarg)
@@ -795,7 +795,7 @@ class TestHorizontalFlip:
         image = make_image(dtype=torch.uint8, device="cpu")
 
         actual = fn(image)
-        expected = F.to_image_tensor(F.horizontal_flip(F._to_image_pil(image)))
+        expected = F.to_image_tensor(F.horizontal_flip(F.to_image_pil(image)))
 
         torch.testing.assert_close(actual, expected)
 
@@ -992,7 +992,7 @@ class TestAffine:
         )
         expected = F.to_image_tensor(
             F.affine(
-                F._to_image_pil(image),
+                F.to_image_pil(image),
                 angle=angle,
                 translate=translate,
                 scale=scale,
@@ -1025,7 +1025,7 @@ class TestAffine:
         actual = transform(image)
 
         torch.manual_seed(seed)
-        expected = F.to_image_tensor(transform(F._to_image_pil(image)))
+        expected = F.to_image_tensor(transform(F.to_image_pil(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 2 if interpolation is transforms.InterpolationMode.NEAREST else 8
@@ -1258,7 +1258,7 @@ class TestVerticalFlip:
         image = make_image(dtype=torch.uint8, device="cpu")
 
         actual = fn(image)
-        expected = F.to_image_tensor(F.vertical_flip(F._to_image_pil(image)))
+        expected = F.to_image_tensor(F.vertical_flip(F.to_image_pil(image)))
 
         torch.testing.assert_close(actual, expected)
 
@@ -1420,7 +1420,7 @@ class TestRotate:
         actual = F.rotate(image, angle=angle, center=center, interpolation=interpolation, expand=expand, fill=fill)
         expected = F.to_image_tensor(
             F.rotate(
-                F._to_image_pil(image),
+                F.to_image_pil(image),
                 angle=angle,
                 center=center,
                 interpolation=interpolation,
@@ -1456,7 +1456,7 @@ class TestRotate:
         actual = transform(image)
 
         torch.manual_seed(seed)
-        expected = F.to_image_tensor(transform(F._to_image_pil(image)))
+        expected = F.to_image_tensor(transform(F.to_image_pil(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
@@ -1835,7 +1835,7 @@ class TestAdjustBrightness:
         image = make_image(dtype=torch.uint8, device="cpu")
 
         actual = F.adjust_brightness(image, brightness_factor=brightness_factor)
-        expected = F.to_image_tensor(F.adjust_brightness(F._to_image_pil(image), brightness_factor=brightness_factor))
+        expected = F.to_image_tensor(F.adjust_brightness(F.to_image_pil(image), brightness_factor=brightness_factor))
 
         torch.testing.assert_close(actual, expected)
 
@@ -2229,7 +2229,7 @@ class TestPermuteChannels:
         ("kernel", "input_type"),
         [
             (F.permute_channels_image_tensor, torch.Tensor),
-            (F.permute_channels_image_pil, PIL.Image.Image),
+            (F._permute_channels_image_pil, PIL.Image.Image),
             (F.permute_channels_image_tensor, datapoints.Image),
             (F.permute_channels_video, datapoints.Video),
         ],
