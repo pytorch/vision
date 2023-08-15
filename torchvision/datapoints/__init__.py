@@ -1,10 +1,12 @@
+import torch
 from torchvision import _BETA_TRANSFORMS_WARNING, _WARN_ABOUT_BETA_TRANSFORMS
 
 from ._bounding_box import BoundingBoxes, BoundingBoxFormat
-from ._datapoint import _FillType, _FillTypeJIT, _InputType, _InputTypeJIT, Datapoint
-from ._image import _ImageType, _ImageTypeJIT, _TensorImageType, _TensorImageTypeJIT, Image
+from ._datapoint import Datapoint
+from ._image import Image
 from ._mask import Mask
-from ._video import _TensorVideoType, _TensorVideoTypeJIT, _VideoType, _VideoTypeJIT, Video
+from ._torch_function_helpers import set_return_type
+from ._video import Video
 
 if _WARN_ABOUT_BETA_TRANSFORMS:
     import warnings

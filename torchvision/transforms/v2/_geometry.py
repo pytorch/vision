@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, cast, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -11,6 +11,7 @@ from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2.functional._utils import _FillType
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -43,7 +44,7 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomHorizontalFlip
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.horizontal_flip(inpt)
+        return self._call_kernel(F.horizontal_flip, inpt)
 
 
 class RandomVerticalFlip(_RandomApplyTransform):
@@ -63,7 +64,7 @@ class RandomVerticalFlip(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomVerticalFlip
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.vertical_flip(inpt)
+        return self._call_kernel(F.vertical_flip, inpt)
 
 
 class Resize(Transform):
@@ -151,7 +152,8 @@ class Resize(Transform):
         self.antialias = antialias
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(
+        return self._call_kernel(
+            F.resize,
             inpt,
             self.size,
             interpolation=self.interpolation,
@@ -185,7 +187,7 @@ class CenterCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.center_crop(inpt, output_size=self.size)
+        return self._call_kernel(F.center_crop, inpt, output_size=self.size)
 
 
 class RandomResizedCrop(Transform):
@@ -306,12 +308,9 @@ class RandomResizedCrop(Transform):
         return dict(top=i, left=j, height=h, width=w)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resized_crop(
-            inpt, **params, size=self.size, interpolation=self.interpolation, antialias=self.antialias
+        return self._call_kernel(
+            F.resized_crop, inpt, **params, size=self.size, interpolation=self.interpolation, antialias=self.antialias
         )
-
-
-ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
 
 
 class FiveCrop(Transform):
@@ -359,8 +358,16 @@ class FiveCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
+    def _call_kernel(self, dispatcher: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+        if isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask)):
+            warnings.warn(
+                f"{type(self).__name__}() is currently passing through inputs of type "
+                f"datapoints.{type(inpt).__name__}. This will likely change in the future."
+            )
+        return super()._call_kernel(dispatcher, inpt, *args, **kwargs)
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.five_crop(inpt, self.size)
+        return self._call_kernel(F.five_crop, inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
@@ -398,12 +405,20 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
+    def _call_kernel(self, dispatcher: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+        if isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask)):
+            warnings.warn(
+                f"{type(self).__name__}() is currently passing through inputs of type "
+                f"datapoints.{type(inpt).__name__}. This will likely change in the future."
+            )
+        return super()._call_kernel(dispatcher, inpt, *args, **kwargs)
+
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
+        return self._call_kernel(F.ten_crop, inpt, self.size, vertical_flip=self.vertical_flip)
 
 
 class Pad(Transform):
@@ -459,7 +474,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -477,7 +492,7 @@ class Pad(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
+        return self._call_kernel(F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
 class RandomZoomOut(_RandomApplyTransform):
@@ -514,7 +529,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def __init__(
         self,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -547,7 +562,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return F.pad(inpt, **params, fill=fill)
+        return self._call_kernel(F.pad, inpt, **params, fill=fill)
 
 
 class RandomRotation(Transform):
@@ -592,7 +607,7 @@ class RandomRotation(Transform):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
@@ -613,7 +628,8 @@ class RandomRotation(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return F.rotate(
+        return self._call_kernel(
+            F.rotate,
             inpt,
             **params,
             interpolation=self.interpolation,
@@ -674,7 +690,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -735,7 +751,8 @@ class RandomAffine(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return F.affine(
+        return self._call_kernel(
+            F.affine,
             inpt,
             **params,
             interpolation=self.interpolation,
@@ -812,7 +829,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -891,10 +908,12 @@ class RandomCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
             fill = _get_fill(self._fill, type(inpt))
-            inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
+            inpt = self._call_kernel(F.pad, inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         if params["needs_crop"]:
-            inpt = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
+            inpt = self._call_kernel(
+                F.crop, inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+            )
 
         return inpt
 
@@ -931,7 +950,7 @@ class RandomPerspective(_RandomApplyTransform):
         distortion_scale: float = 0.5,
         p: float = 0.5,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__(p=p)
 
@@ -975,7 +994,8 @@ class RandomPerspective(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return F.perspective(
+        return self._call_kernel(
+            F.perspective,
             inpt,
             None,
             None,
@@ -1033,7 +1053,7 @@ class ElasticTransform(Transform):
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
         self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
@@ -1052,7 +1072,7 @@ class ElasticTransform(Transform):
             # if kernel size is even we have to make it odd
             if kx % 2 == 0:
                 kx += 1
-            dx = F.gaussian_blur(dx, [kx, kx], list(self.sigma))
+            dx = self._call_kernel(F.gaussian_blur, dx, [kx, kx], list(self.sigma))
         dx = dx * self.alpha[0] / size[0]
 
         dy = torch.rand([1, 1] + size) * 2 - 1
@@ -1061,14 +1081,15 @@ class ElasticTransform(Transform):
             # if kernel size is even we have to make it odd
             if ky % 2 == 0:
                 ky += 1
-            dy = F.gaussian_blur(dy, [ky, ky], list(self.sigma))
+            dy = self._call_kernel(F.gaussian_blur, dy, [ky, ky], list(self.sigma))
         dy = dy * self.alpha[1] / size[1]
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return F.elastic(
+        return self._call_kernel(
+            F.elastic,
             inpt,
             **params,
             fill=fill,
@@ -1166,7 +1187,9 @@ class RandomIoUCrop(Transform):
 
                 # check for any valid boxes with centers within the crop area
                 xyxy_bboxes = F.convert_format_bounding_boxes(
-                    bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
+                    bboxes.as_subclass(torch.Tensor),
+                    bboxes.format,
+                    datapoints.BoundingBoxFormat.XYXY,
                 )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
                 cy = 0.5 * (xyxy_bboxes[..., 1] + xyxy_bboxes[..., 3])
@@ -1190,7 +1213,9 @@ class RandomIoUCrop(Transform):
         if len(params) < 1:
             return inpt
 
-        output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
+        output = self._call_kernel(
+            F.crop, inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+        )
 
         if isinstance(output, datapoints.BoundingBoxes):
             # We "mark" the invalid boxes as degenreate, and they can be
@@ -1264,7 +1289,9 @@ class ScaleJitter(Transform):
         return dict(size=(new_height, new_width))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias)
+        return self._call_kernel(
+            F.resize, inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
+        )
 
 
 class RandomShortestSize(Transform):
@@ -1332,7 +1359,9 @@ class RandomShortestSize(Transform):
         return dict(size=(new_height, new_width))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias)
+        return self._call_kernel(
+            F.resize, inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
+        )
 
 
 class RandomResize(Transform):
@@ -1402,4 +1431,6 @@ class RandomResize(Transform):
         return dict(size=[size])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias)
+        return self._call_kernel(
+            F.resize, inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias
+        )

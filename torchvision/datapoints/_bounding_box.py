@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
+from torch.utils._pytree import tree_flatten
 
 from ._datapoint import Datapoint
 
@@ -48,11 +49,12 @@ class BoundingBoxes(Datapoint):
     canvas_size: Tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int]) -> BoundingBoxes:  # type: ignore[override]
-        if tensor.ndim == 1:
-            tensor = tensor.unsqueeze(0)
-        elif tensor.ndim != 2:
-            raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
+    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int], check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
+        if check_dims:
+            if tensor.ndim == 1:
+                tensor = tensor.unsqueeze(0)
+            elif tensor.ndim != 2:
+                raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
         if isinstance(format, str):
             format = BoundingBoxFormat[format.upper()]
         bounding_boxes = tensor.as_subclass(cls)
@@ -98,6 +100,30 @@ class BoundingBoxes(Datapoint):
             format=format if format is not None else other.format,
             canvas_size=canvas_size if canvas_size is not None else other.canvas_size,
         )
+
+    @classmethod
+    def _wrap_output(
+        cls,
+        output: torch.Tensor,
+        args: Sequence[Any] = (),
+        kwargs: Optional[Mapping[str, Any]] = None,
+    ) -> BoundingBoxes:
+        # If there are BoundingBoxes instances in the output, their metadata got lost when we called
+        # super().__torch_function__. We need to restore the metadata somehow, so we choose to take
+        # the metadata from the first bbox in the parameters.
+        # This should be what we want in most cases. When it's not, it's probably a mis-use anyway, e.g.
+        # something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.
+        flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
+        first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
+        format, canvas_size = first_bbox_from_args.format, first_bbox_from_args.canvas_size
+
+        if isinstance(output, torch.Tensor) and not isinstance(output, BoundingBoxes):
+            output = BoundingBoxes._wrap(output, format=format, canvas_size=canvas_size, check_dims=False)
+        elif isinstance(output, (tuple, list)):
+            output = type(output)(
+                BoundingBoxes._wrap(part, format=format, canvas_size=canvas_size, check_dims=False) for part in output
+            )
+        return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(format=self.format, canvas_size=self.canvas_size)
