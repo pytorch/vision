@@ -36,11 +36,9 @@ class SimpleCopyPaste(Transform):
         antialias: Optional[bool],
     ) -> Tuple[torch.Tensor, Dict[str, Any]]:
 
-        paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
-        paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
-        paste_labels = paste_target["labels"].wrap_like(
-            paste_target["labels"], paste_target["labels"][random_selection]
-        )
+        paste_masks = datapoints.wrap(paste_target["masks"][random_selection], like=paste_target["masks"])
+        paste_boxes = datapoints.wrap(paste_target["boxes"][random_selection], like=paste_target["boxes"])
+        paste_labels = datapoints.wrap(paste_target["labels"][random_selection], like=paste_target["labels"])
 
         masks = target["masks"]
 
@@ -143,7 +141,7 @@ class SimpleCopyPaste(Transform):
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):
             if isinstance(obj, datapoints.Image):
-                flat_sample[i] = datapoints.Image.wrap_like(obj, output_images[c0])
+                flat_sample[i] = datapoints.wrap(output_images[c0], like=obj)
                 c0 += 1
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_image_pil(output_images[c0])
@@ -152,13 +150,13 @@ class SimpleCopyPaste(Transform):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, datapoints.BoundingBoxes):
-                flat_sample[i] = datapoints.BoundingBoxes.wrap_like(obj, output_targets[c1]["boxes"])
+                flat_sample[i] = datapoints.wrap(output_targets[c1]["boxes"], like=obj)
                 c1 += 1
             elif isinstance(obj, datapoints.Mask):
-                flat_sample[i] = datapoints.Mask.wrap_like(obj, output_targets[c2]["masks"])
+                flat_sample[i] = datapoints.wrap(output_targets[c2]["masks"], like=obj)
                 c2 += 1
             elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
-                flat_sample[i] = obj.wrap_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
+                flat_sample[i] = datapoints.wrap(output_targets[c3]["labels"], like=obj)  # type: ignore[arg-type]
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
