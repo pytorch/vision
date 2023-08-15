@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List
 
 import PIL.Image
 import torch
@@ -10,13 +10,11 @@ from torchvision.transforms._functional_tensor import _max_value
 from torchvision.utils import _log_api_usage_once
 
 from ._misc import _num_value_bits, to_dtype_image_tensor
-from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal
+from ._type_conversion import pil_to_tensor, to_image_pil
+from ._utils import _get_kernel, _register_kernel_internal
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask, datapoints.Video)
-def rgb_to_grayscale(
-    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], num_output_channels: int = 1
-) -> Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]:
+def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
     if torch.jit.is_scripting():
         return rgb_to_grayscale_image_tensor(inpt, num_output_channels=num_output_channels)
 
@@ -70,8 +68,8 @@ def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Te
     return output if fp else output.to(image1.dtype)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def adjust_brightness(inpt: datapoints._InputTypeJIT, brightness_factor: float) -> datapoints._InputTypeJIT:
+def adjust_brightness(inpt: torch.Tensor, brightness_factor: float) -> torch.Tensor:
+
     if torch.jit.is_scripting():
         return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
 
@@ -107,8 +105,7 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
     return adjust_brightness_image_tensor(video, brightness_factor=brightness_factor)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def adjust_saturation(inpt: datapoints._InputTypeJIT, saturation_factor: float) -> datapoints._InputTypeJIT:
+def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     if torch.jit.is_scripting():
         return adjust_saturation_image_tensor(inpt, saturation_factor=saturation_factor)
 
@@ -146,8 +143,7 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
     return adjust_saturation_image_tensor(video, saturation_factor=saturation_factor)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def adjust_contrast(inpt: datapoints._InputTypeJIT, contrast_factor: float) -> datapoints._InputTypeJIT:
+def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     if torch.jit.is_scripting():
         return adjust_contrast_image_tensor(inpt, contrast_factor=contrast_factor)
 
@@ -185,8 +181,7 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
     return adjust_contrast_image_tensor(video, contrast_factor=contrast_factor)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def adjust_sharpness(inpt: datapoints._InputTypeJIT, sharpness_factor: float) -> datapoints._InputTypeJIT:
+def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
     if torch.jit.is_scripting():
         return adjust_sharpness_image_tensor(inpt, sharpness_factor=sharpness_factor)
 
@@ -258,8 +253,7 @@ def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torc
     return adjust_sharpness_image_tensor(video, sharpness_factor=sharpness_factor)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def adjust_hue(inpt: datapoints._InputTypeJIT, hue_factor: float) -> datapoints._InputTypeJIT:
+def adjust_hue(inpt: torch.Tensor, hue_factor: float) -> torch.Tensor:
     if torch.jit.is_scripting():
         return adjust_hue_image_tensor(inpt, hue_factor=hue_factor)
 
@@ -370,8 +364,7 @@ def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
     return adjust_hue_image_tensor(video, hue_factor=hue_factor)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def adjust_gamma(inpt: datapoints._InputTypeJIT, gamma: float, gain: float = 1) -> datapoints._InputTypeJIT:
+def adjust_gamma(inpt: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
     if torch.jit.is_scripting():
         return adjust_gamma_image_tensor(inpt, gamma=gamma, gain=gain)
 
@@ -410,8 +403,7 @@ def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> to
     return adjust_gamma_image_tensor(video, gamma=gamma, gain=gain)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def posterize(inpt: datapoints._InputTypeJIT, bits: int) -> datapoints._InputTypeJIT:
+def posterize(inpt: torch.Tensor, bits: int) -> torch.Tensor:
     if torch.jit.is_scripting():
         return posterize_image_tensor(inpt, bits=bits)
 
@@ -444,8 +436,7 @@ def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
     return posterize_image_tensor(video, bits=bits)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def solarize(inpt: datapoints._InputTypeJIT, threshold: float) -> datapoints._InputTypeJIT:
+def solarize(inpt: torch.Tensor, threshold: float) -> torch.Tensor:
     if torch.jit.is_scripting():
         return solarize_image_tensor(inpt, threshold=threshold)
 
@@ -472,8 +463,7 @@ def solarize_video(video: torch.Tensor, threshold: float) -> torch.Tensor:
     return solarize_image_tensor(video, threshold=threshold)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def autocontrast(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
+def autocontrast(inpt: torch.Tensor) -> torch.Tensor:
     if torch.jit.is_scripting():
         return autocontrast_image_tensor(inpt)
 
@@ -522,8 +512,7 @@ def autocontrast_video(video: torch.Tensor) -> torch.Tensor:
     return autocontrast_image_tensor(video)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def equalize(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
+def equalize(inpt: torch.Tensor) -> torch.Tensor:
     if torch.jit.is_scripting():
         return equalize_image_tensor(inpt)
 
@@ -612,8 +601,7 @@ def equalize_video(video: torch.Tensor) -> torch.Tensor:
     return equalize_image_tensor(video)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def invert(inpt: datapoints._InputTypeJIT) -> datapoints._InputTypeJIT:
+def invert(inpt: torch.Tensor) -> torch.Tensor:
     if torch.jit.is_scripting():
         return invert_image_tensor(inpt)
 
@@ -641,3 +629,63 @@ _invert_image_pil = _register_kernel_internal(invert, PIL.Image.Image)(_FP.inver
 @_register_kernel_internal(invert, datapoints.Video)
 def invert_video(video: torch.Tensor) -> torch.Tensor:
     return invert_image_tensor(video)
+
+
+def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+    """Permute the channels of the input according to the given permutation.
+
+    This function supports plain :class:`~torch.Tensor`'s, :class:`PIL.Image.Image`'s, and
+    :class:`torchvision.datapoints.Image` and :class:`torchvision.datapoints.Video`.
+
+    Example:
+        >>> rgb_image = torch.rand(3, 256, 256)
+        >>> bgr_image = F.permutate_channels(rgb_image, permutation=[2, 1, 0])
+
+    Args:
+        permutation (List[int]): Valid permutation of the input channel indices. The index of the element determines the
+            channel index in the input and the value determines the channel index in the output. For example,
+            ``permutation=[2, 0 , 1]``
+
+            - takes ``ìnpt[..., 0, :, :]`` and puts it at ``output[..., 2, :, :]``,
+            - takes ``ìnpt[..., 1, :, :]`` and puts it at ``output[..., 0, :, :]``, and
+            - takes ``ìnpt[..., 2, :, :]`` and puts it at ``output[..., 1, :, :]``.
+
+    Raises:
+        ValueError: If ``len(permutation)`` doesn't match the number of channels in the input.
+    """
+    if torch.jit.is_scripting():
+        return permute_channels_image_tensor(inpt, permutation=permutation)
+
+    _log_api_usage_once(permute_channels)
+
+    kernel = _get_kernel(permute_channels, type(inpt))
+    return kernel(inpt, permutation=permutation)
+
+
+@_register_kernel_internal(permute_channels, torch.Tensor)
+@_register_kernel_internal(permute_channels, datapoints.Image)
+def permute_channels_image_tensor(image: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+    shape = image.shape
+    num_channels, height, width = shape[-3:]
+
+    if len(permutation) != num_channels:
+        raise ValueError(
+            f"Length of permutation does not match number of channels: " f"{len(permutation)} != {num_channels}"
+        )
+
+    if image.numel() == 0:
+        return image
+
+    image = image.reshape(-1, num_channels, height, width)
+    image = image[:, permutation, :, :]
+    return image.reshape(shape)
+
+
+@_register_kernel_internal(permute_channels, PIL.Image.Image)
+def permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image:
+    return to_image_pil(permute_channels_image_tensor(pil_to_tensor(image), permutation=permutation))
+
+
+@_register_kernel_internal(permute_channels, datapoints.Video)
+def permute_channels_video(video: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+    return permute_channels_image_tensor(video, permutation=permutation)

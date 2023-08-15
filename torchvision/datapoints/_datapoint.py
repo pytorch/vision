@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
-import PIL.Image
 import torch
 from torch._C import DisableTorchFunctionSubclass
 from torch.types import _device, _dtype, _size
 
+from torchvision.datapoints._torch_function_helpers import _FORCE_TORCHFUNCTION_SUBCLASS, _must_return_subclass
+
 
 D = TypeVar("D", bound="Datapoint")
-_FillType = Union[int, float, Sequence[int], Sequence[float], None]
-_FillTypeJIT = Optional[List[float]]
 
 
 class Datapoint(torch.Tensor):
@@ -36,14 +35,21 @@ class Datapoint(torch.Tensor):
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
         return tensor.as_subclass(cls)
 
-    _NO_WRAPPING_EXCEPTIONS = {
-        torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
-        torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
-        torch.Tensor.detach: lambda cls, input, output: cls.wrap_like(input, output),
-        # We don't need to wrap the output of `Tensor.requires_grad_`, since it is an inplace operation and thus
-        # retains the type automatically
-        torch.Tensor.requires_grad_: lambda cls, input, output: output,
-    }
+    @classmethod
+    def _wrap_output(
+        cls,
+        output: torch.Tensor,
+        args: Sequence[Any] = (),
+        kwargs: Optional[Mapping[str, Any]] = None,
+    ) -> torch.Tensor:
+        # Same as torch._tensor._convert
+        if isinstance(output, torch.Tensor) and not isinstance(output, cls):
+            output = output.as_subclass(cls)
+
+        if isinstance(output, (tuple, list)):
+            # Also handles things like namedtuples
+            output = type(output)(cls._wrap_output(part, args, kwargs) for part in output)
+        return output
 
     @classmethod
     def __torch_function__(
@@ -68,7 +74,7 @@ class Datapoint(torch.Tensor):
         2. For most operations, there is no way of knowing if the input type is still valid for the output.
 
         For these reasons, the automatic output wrapping is turned off for most operators. The only exceptions are
-        listed in :attr:`Datapoint._NO_WRAPPING_EXCEPTIONS`
+        listed in _FORCE_TORCHFUNCTION_SUBCLASS
         """
         # Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we
         # need to reimplement the functionality.
@@ -76,25 +82,27 @@ class Datapoint(torch.Tensor):
         if not all(issubclass(cls, t) for t in types):
             return NotImplemented
 
+        # Like in the base Tensor.__torch_function__ implementation, it's easier to always use
+        # DisableTorchFunctionSubclass and then manually re-wrap the output if necessary
         with DisableTorchFunctionSubclass():
             output = func(*args, **kwargs or dict())
 
-            wrapper = cls._NO_WRAPPING_EXCEPTIONS.get(func)
-            # Apart from `func` needing to be an exception, we also require the primary operand, i.e. `args[0]`, to be
+        must_return_subclass = _must_return_subclass()
+        if must_return_subclass or (func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)):
+            # We also require the primary operand, i.e. `args[0]`, to be
             # an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will
             # invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,
             # `torch.Tensor(...).to(datapoints.Image(...))` will invoke `datapoints.Image.__torch_function__` with
             # `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would
             # be wrapped into a `datapoints.Image`.
-            if wrapper and isinstance(args[0], cls):
-                return wrapper(cls, args[0], output)
+            return cls._wrap_output(output, args, kwargs)
 
-            # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
-            # will retain the input type. Thus, we need to unwrap here.
-            if isinstance(output, cls):
-                return output.as_subclass(torch.Tensor)
+        if not must_return_subclass and isinstance(output, cls):
+            # DisableTorchFunctionSubclass is ignored by inplace ops like `.add_(...)`,
+            # so for those, the output is still a Datapoint. Thus, we need to manually unwrap.
+            return output.as_subclass(torch.Tensor)
 
-            return output
+        return output
 
     def _make_repr(self, **kwargs: Any) -> str:
         # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
@@ -132,7 +140,3 @@ class Datapoint(torch.Tensor):
         # `BoundingBoxes.format` and `BoundingBoxes.canvas_size`, which are immutable and thus implicitly deep-copied by
         # `BoundingBoxes.clone()`.
         return self.detach().clone().requires_grad_(self.requires_grad)  # type: ignore[return-value]
-
-
-_InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
-_InputTypeJIT = torch.Tensor

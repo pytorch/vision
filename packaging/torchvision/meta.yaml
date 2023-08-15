@@ -10,7 +10,7 @@ requirements:
   build:
     - {{ compiler('c') }} # [win]
     - libpng
-    - jpeg
+    - libjpeg-turbo
     # NOTE: The only ffmpeg version that we build is actually 4.2
     - ffmpeg >=4.2  # [not win]
 
@@ -28,7 +28,7 @@ requirements:
     - requests
     - libpng
     - ffmpeg >=4.2  # [not win]
-    - jpeg
+    - libjpeg-turbo
     - pillow >=5.3.0, !=8.3.*
     - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
@@ -62,7 +62,7 @@ test:
   requires:
     - pytest
     - scipy
-    - jpeg
+    - libjpeg-turbo
     - ca-certificates
 
 

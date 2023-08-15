@@ -106,7 +106,7 @@ class LinearTransformation(Transform):
 
     def _check_inputs(self, sample: Any) -> Any:
         if has_any(sample, PIL.Image.Image):
-            raise TypeError("LinearTransformation does not work on PIL Images")
+            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         shape = inpt.shape
@@ -157,7 +157,6 @@ class Normalize(Transform):
     """
 
     _v1_transform_cls = _transforms.Normalize
-    _transformed_types = (datapoints.Image, is_simple_tensor, datapoints.Video)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()
@@ -169,10 +168,8 @@ class Normalize(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def _transform(
-        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
-    ) -> Any:
-        return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
 class GaussianBlur(Transform):
@@ -219,7 +216,7 @@ class GaussianBlur(Transform):
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.gaussian_blur(inpt, self.kernel_size, **params)
+        return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
 class ToDtype(Transform):
@@ -292,7 +289,7 @@ class ToDtype(Transform):
                 )
             return inpt
 
-        return F.to_dtype(inpt, dtype=dtype, scale=self.scale)
+        return self._call_kernel(F.to_dtype, inpt, dtype=dtype, scale=self.scale)
 
 
 class ConvertImageDtype(Transform):
@@ -322,14 +319,12 @@ class ConvertImageDtype(Transform):
 
     _v1_transform_cls = _transforms.ConvertImageDtype
 
-    _transformed_types = (is_simple_tensor, datapoints.Image)
-
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.to_dtype(inpt, dtype=self.dtype, scale=True)
+        return self._call_kernel(F.to_dtype, inpt, dtype=self.dtype, scale=True)
 
 
 class SanitizeBoundingBoxes(Transform):
@@ -406,7 +401,7 @@ class SanitizeBoundingBoxes(Transform):
         valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
         valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
-        params = dict(valid=valid, labels=labels)
+        params = dict(valid=valid.as_subclass(torch.Tensor), labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
             # _transform() will only care about BoundingBoxeses and the labels

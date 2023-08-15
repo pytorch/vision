@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import PIL.Image
 import torch
@@ -11,13 +11,11 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, _register_unsupported_type
+from ._utils import _get_kernel, _register_kernel_internal
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-@_register_unsupported_type(PIL.Image.Image)
 def normalize(
-    inpt: Union[datapoints._TensorImageTypeJIT, datapoints._TensorVideoTypeJIT],
+    inpt: torch.Tensor,
     mean: List[float],
     std: List[float],
     inplace: bool = False,
@@ -73,10 +71,7 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
     return normalize_image_tensor(video, mean, std, inplace=inplace)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def gaussian_blur(
-    inpt: datapoints._InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
-) -> datapoints._InputTypeJIT:
+def gaussian_blur(inpt: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> torch.Tensor:
     if torch.jit.is_scripting():
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
 
@@ -184,10 +179,7 @@ def gaussian_blur_video(
     return gaussian_blur_image_tensor(video, kernel_size, sigma)
 
 
-@_register_unsupported_type(PIL.Image.Image)
-def to_dtype(
-    inpt: datapoints._InputTypeJIT, dtype: torch.dtype = torch.float, scale: bool = False
-) -> datapoints._InputTypeJIT:
+def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     if torch.jit.is_scripting():
         return to_dtype_image_tensor(inpt, dtype=dtype, scale=scale)
 
@@ -278,8 +270,6 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
 
 @_register_kernel_internal(to_dtype, datapoints.BoundingBoxes, datapoint_wrapper=False)
 @_register_kernel_internal(to_dtype, datapoints.Mask, datapoint_wrapper=False)
-def _to_dtype_tensor_dispatch(
-    inpt: datapoints._InputTypeJIT, dtype: torch.dtype, scale: bool = False
-) -> datapoints._InputTypeJIT:
+def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
     # We don't need to unwrap and rewrap here, since Datapoint.to() preserves the type
     return inpt.to(dtype)

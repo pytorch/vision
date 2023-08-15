@@ -35,9 +35,3 @@ class Video(Datapoint):
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()
-
-
-_VideoType = Union[torch.Tensor, Video]
-_VideoTypeJIT = torch.Tensor
-_TensorVideoType = Union[torch.Tensor, Video]
-_TensorVideoTypeJIT = torch.Tensor
