@@ -3,7 +3,7 @@
 How to write your own Datapoint class
 =====================================
 
-This guide is intended for downstream library maintainers. We explain how to
+This guide is intended for advanced users and downstream library maintainers. We explain how to
 write your own datapoint class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
 :ref:`sphx_glr_auto_examples_plot_datapoints.py`.
@@ -67,10 +67,6 @@ def hflip_my_datapoint(my_dp, *args, **kwargs):
 #     ``functional="hflip"`` to refer to the functional we want to hook into. We
 #     could also have used the  functional *itself*, i.e.
 #     ``@register_kernel(functional=F.hflip, ...)``.
-#
-#     The functionals that you can be hooked into are the ones in
-#     ``torchvision.transforms.v2.functional`` and they are documented in
-#     :ref:`functional_transforms`.
 #
 # Now that we have registered our kernel, we can call the functional API on a
 # ``MyDatapoint`` instance:

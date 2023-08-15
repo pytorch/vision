@@ -101,6 +101,7 @@ def test_to_datapoint_reference(make_input, return_type):
 
     assert type(tensor_to) is (type(dp) if return_type == "datapoint" else torch.Tensor)
     assert tensor_to.dtype is dp.dtype
+    assert type(tensor) is torch.Tensor
 
 
 @pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])

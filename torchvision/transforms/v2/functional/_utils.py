@@ -19,8 +19,15 @@ _KERNEL_REGISTRY: Dict[Callable, Dict[Type, Callable]] = {}
 def _kernel_datapoint_wrapper(kernel):
     @functools.wraps(kernel)
     def wrapper(inpt, *args, **kwargs):
-        # We always pass datapoints as pure tensors to the kernels to avoid going through the
-        # Tensor.__torch_function__ logic, which is costly.
+        # If you're wondering whether we could / should get rid of this wrapper,
+        # the answer is no: we want to pass pure Tensors to avoid the overhead
+        # of the __torch_function__ machinery. Note that this is always valid,
+        # regardless of whether we override __torch_function__ in our base class
+        # or not.
+        # Also, even if we didn't call `as_subclass` here, we would still need
+        # this wrapper to call wrap_like(), because the Datapoint type would be
+        # lost after the first operation due to our own __torch_function__
+        # logic.
         output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
         return type(inpt).wrap_like(inpt, output)
 
