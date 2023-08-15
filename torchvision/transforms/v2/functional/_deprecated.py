@@ -10,7 +10,7 @@ from torchvision.transforms import functional as _F
 def to_tensor(inpt: Any) -> torch.Tensor:
     warnings.warn(
         "The function `to_tensor(...)` is deprecated and will be removed in a future release. "
-        "Instead, please use `to_image_tensor(...)` followed by `to_dtype(..., dtype=torch.float32, scale=True)`."
+        "Instead, please use `to_image(...)` followed by `to_dtype(..., dtype=torch.float32, scale=True)`."
     )
     return _F.to_tensor(inpt)
 

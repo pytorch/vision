@@ -9,14 +9,14 @@ from torchvision.transforms._functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
-from ._misc import _num_value_bits, to_dtype_image_tensor
+from ._misc import _num_value_bits, to_dtype_image
 from ._type_conversion import pil_to_tensor, to_image_pil
 from ._utils import _get_kernel, _register_kernel_internal
 
 
 def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return rgb_to_grayscale_image_tensor(inpt, num_output_channels=num_output_channels)
+        return rgb_to_grayscale_image(inpt, num_output_channels=num_output_channels)
 
     _log_api_usage_once(rgb_to_grayscale)
 
@@ -29,7 +29,7 @@ def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.
 to_grayscale = rgb_to_grayscale
 
 
-def _rgb_to_grayscale_image_tensor(
+def _rgb_to_grayscale_image(
     image: torch.Tensor, num_output_channels: int = 1, preserve_dtype: bool = True
 ) -> torch.Tensor:
     if image.shape[-3] == 1:
@@ -47,10 +47,10 @@ def _rgb_to_grayscale_image_tensor(
 
 @_register_kernel_internal(rgb_to_grayscale, torch.Tensor)
 @_register_kernel_internal(rgb_to_grayscale, datapoints.Image)
-def rgb_to_grayscale_image_tensor(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
+def rgb_to_grayscale_image(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
     if num_output_channels not in (1, 3):
         raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
-    return _rgb_to_grayscale_image_tensor(image, num_output_channels=num_output_channels, preserve_dtype=True)
+    return _rgb_to_grayscale_image(image, num_output_channels=num_output_channels, preserve_dtype=True)
 
 
 @_register_kernel_internal(rgb_to_grayscale, PIL.Image.Image)
@@ -71,7 +71,7 @@ def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Te
 def adjust_brightness(inpt: torch.Tensor, brightness_factor: float) -> torch.Tensor:
 
     if torch.jit.is_scripting():
-        return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
+        return adjust_brightness_image(inpt, brightness_factor=brightness_factor)
 
     _log_api_usage_once(adjust_brightness)
 
@@ -81,7 +81,7 @@ def adjust_brightness(inpt: torch.Tensor, brightness_factor: float) -> torch.Ten
 
 @_register_kernel_internal(adjust_brightness, torch.Tensor)
 @_register_kernel_internal(adjust_brightness, datapoints.Image)
-def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float) -> torch.Tensor:
+def adjust_brightness_image(image: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     if brightness_factor < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
 
@@ -102,12 +102,12 @@ def _adjust_brightness_image_pil(image: PIL.Image.Image, brightness_factor: floa
 
 @_register_kernel_internal(adjust_brightness, datapoints.Video)
 def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> torch.Tensor:
-    return adjust_brightness_image_tensor(video, brightness_factor=brightness_factor)
+    return adjust_brightness_image(video, brightness_factor=brightness_factor)
 
 
 def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return adjust_saturation_image_tensor(inpt, saturation_factor=saturation_factor)
+        return adjust_saturation_image(inpt, saturation_factor=saturation_factor)
 
     _log_api_usage_once(adjust_saturation)
 
@@ -117,7 +117,7 @@ def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Ten
 
 @_register_kernel_internal(adjust_saturation, torch.Tensor)
 @_register_kernel_internal(adjust_saturation, datapoints.Image)
-def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float) -> torch.Tensor:
+def adjust_saturation_image(image: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
@@ -128,7 +128,7 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
     if c == 1:  # Match PIL behaviour
         return image
 
-    grayscale_image = _rgb_to_grayscale_image_tensor(image, num_output_channels=1, preserve_dtype=False)
+    grayscale_image = _rgb_to_grayscale_image(image, num_output_channels=1, preserve_dtype=False)
     if not image.is_floating_point():
         grayscale_image = grayscale_image.floor_()
 
@@ -140,12 +140,12 @@ _adjust_saturation_image_pil = _register_kernel_internal(adjust_saturation, PIL.
 
 @_register_kernel_internal(adjust_saturation, datapoints.Video)
 def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> torch.Tensor:
-    return adjust_saturation_image_tensor(video, saturation_factor=saturation_factor)
+    return adjust_saturation_image(video, saturation_factor=saturation_factor)
 
 
 def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return adjust_contrast_image_tensor(inpt, contrast_factor=contrast_factor)
+        return adjust_contrast_image(inpt, contrast_factor=contrast_factor)
 
     _log_api_usage_once(adjust_contrast)
 
@@ -155,7 +155,7 @@ def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
 
 @_register_kernel_internal(adjust_contrast, torch.Tensor)
 @_register_kernel_internal(adjust_contrast, datapoints.Image)
-def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) -> torch.Tensor:
+def adjust_contrast_image(image: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     if contrast_factor < 0:
         raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
 
@@ -164,7 +164,7 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
         raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
     fp = image.is_floating_point()
     if c == 3:
-        grayscale_image = _rgb_to_grayscale_image_tensor(image, num_output_channels=1, preserve_dtype=False)
+        grayscale_image = _rgb_to_grayscale_image(image, num_output_channels=1, preserve_dtype=False)
         if not fp:
             grayscale_image = grayscale_image.floor_()
     else:
@@ -178,12 +178,12 @@ _adjust_contrast_image_pil = _register_kernel_internal(adjust_contrast, PIL.Imag
 
 @_register_kernel_internal(adjust_contrast, datapoints.Video)
 def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.Tensor:
-    return adjust_contrast_image_tensor(video, contrast_factor=contrast_factor)
+    return adjust_contrast_image(video, contrast_factor=contrast_factor)
 
 
 def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return adjust_sharpness_image_tensor(inpt, sharpness_factor=sharpness_factor)
+        return adjust_sharpness_image(inpt, sharpness_factor=sharpness_factor)
 
     _log_api_usage_once(adjust_sharpness)
 
@@ -193,7 +193,7 @@ def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tenso
 
 @_register_kernel_internal(adjust_sharpness, torch.Tensor)
 @_register_kernel_internal(adjust_sharpness, datapoints.Image)
-def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
+def adjust_sharpness_image(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
     num_channels, height, width = image.shape[-3:]
     if num_channels not in (1, 3):
         raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
@@ -250,12 +250,12 @@ _adjust_sharpness_image_pil = _register_kernel_internal(adjust_sharpness, PIL.Im
 
 @_register_kernel_internal(adjust_sharpness, datapoints.Video)
 def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    return adjust_sharpness_image_tensor(video, sharpness_factor=sharpness_factor)
+    return adjust_sharpness_image(video, sharpness_factor=sharpness_factor)
 
 
 def adjust_hue(inpt: torch.Tensor, hue_factor: float) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return adjust_hue_image_tensor(inpt, hue_factor=hue_factor)
+        return adjust_hue_image(inpt, hue_factor=hue_factor)
 
     _log_api_usage_once(adjust_hue)
 
@@ -329,7 +329,7 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
 
 @_register_kernel_internal(adjust_hue, torch.Tensor)
 @_register_kernel_internal(adjust_hue, datapoints.Image)
-def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
+def adjust_hue_image(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
 
@@ -345,7 +345,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
         return image
 
     orig_dtype = image.dtype
-    image = to_dtype_image_tensor(image, torch.float32, scale=True)
+    image = to_dtype_image(image, torch.float32, scale=True)
 
     image = _rgb_to_hsv(image)
     h, s, v = image.unbind(dim=-3)
@@ -353,7 +353,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     image = torch.stack((h, s, v), dim=-3)
     image_hue_adj = _hsv_to_rgb(image)
 
-    return to_dtype_image_tensor(image_hue_adj, orig_dtype, scale=True)
+    return to_dtype_image(image_hue_adj, orig_dtype, scale=True)
 
 
 _adjust_hue_image_pil = _register_kernel_internal(adjust_hue, PIL.Image.Image)(_FP.adjust_hue)
@@ -361,12 +361,12 @@ _adjust_hue_image_pil = _register_kernel_internal(adjust_hue, PIL.Image.Image)(_
 
 @_register_kernel_internal(adjust_hue, datapoints.Video)
 def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
-    return adjust_hue_image_tensor(video, hue_factor=hue_factor)
+    return adjust_hue_image(video, hue_factor=hue_factor)
 
 
 def adjust_gamma(inpt: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return adjust_gamma_image_tensor(inpt, gamma=gamma, gain=gain)
+        return adjust_gamma_image(inpt, gamma=gamma, gain=gain)
 
     _log_api_usage_once(adjust_gamma)
 
@@ -376,14 +376,14 @@ def adjust_gamma(inpt: torch.Tensor, gamma: float, gain: float = 1) -> torch.Ten
 
 @_register_kernel_internal(adjust_gamma, torch.Tensor)
 @_register_kernel_internal(adjust_gamma, datapoints.Image)
-def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1.0) -> torch.Tensor:
+def adjust_gamma_image(image: torch.Tensor, gamma: float, gain: float = 1.0) -> torch.Tensor:
     if gamma < 0:
         raise ValueError("Gamma should be a non-negative real number")
 
     # The input image is either assumed to be at [0, 1] scale (if float) or is converted to that scale (if integer).
     # Since the gamma is non-negative, the output remains at [0, 1] scale.
     if not torch.is_floating_point(image):
-        output = to_dtype_image_tensor(image, torch.float32, scale=True).pow_(gamma)
+        output = to_dtype_image(image, torch.float32, scale=True).pow_(gamma)
     else:
         output = image.pow(gamma)
 
@@ -392,7 +392,7 @@ def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1
         # of the output can go beyond [0, 1].
         output = output.mul_(gain).clamp_(0.0, 1.0)
 
-    return to_dtype_image_tensor(output, image.dtype, scale=True)
+    return to_dtype_image(output, image.dtype, scale=True)
 
 
 _adjust_gamma_image_pil = _register_kernel_internal(adjust_gamma, PIL.Image.Image)(_FP.adjust_gamma)
@@ -400,12 +400,12 @@ _adjust_gamma_image_pil = _register_kernel_internal(adjust_gamma, PIL.Image.Imag
 
 @_register_kernel_internal(adjust_gamma, datapoints.Video)
 def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
-    return adjust_gamma_image_tensor(video, gamma=gamma, gain=gain)
+    return adjust_gamma_image(video, gamma=gamma, gain=gain)
 
 
 def posterize(inpt: torch.Tensor, bits: int) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return posterize_image_tensor(inpt, bits=bits)
+        return posterize_image(inpt, bits=bits)
 
     _log_api_usage_once(posterize)
 
@@ -415,7 +415,7 @@ def posterize(inpt: torch.Tensor, bits: int) -> torch.Tensor:
 
 @_register_kernel_internal(posterize, torch.Tensor)
 @_register_kernel_internal(posterize, datapoints.Image)
-def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
+def posterize_image(image: torch.Tensor, bits: int) -> torch.Tensor:
     if image.is_floating_point():
         levels = 1 << bits
         return image.mul(levels).floor_().clamp_(0, levels - 1).mul_(1.0 / levels)
@@ -433,12 +433,12 @@ _posterize_image_pil = _register_kernel_internal(posterize, PIL.Image.Image)(_FP
 
 @_register_kernel_internal(posterize, datapoints.Video)
 def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
-    return posterize_image_tensor(video, bits=bits)
+    return posterize_image(video, bits=bits)
 
 
 def solarize(inpt: torch.Tensor, threshold: float) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return solarize_image_tensor(inpt, threshold=threshold)
+        return solarize_image(inpt, threshold=threshold)
 
     _log_api_usage_once(solarize)
 
@@ -448,11 +448,11 @@ def solarize(inpt: torch.Tensor, threshold: float) -> torch.Tensor:
 
 @_register_kernel_internal(solarize, torch.Tensor)
 @_register_kernel_internal(solarize, datapoints.Image)
-def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor:
+def solarize_image(image: torch.Tensor, threshold: float) -> torch.Tensor:
     if threshold > _max_value(image.dtype):
         raise TypeError(f"Threshold should be less or equal the maximum value of the dtype, but got {threshold}")
 
-    return torch.where(image >= threshold, invert_image_tensor(image), image)
+    return torch.where(image >= threshold, invert_image(image), image)
 
 
 _solarize_image_pil = _register_kernel_internal(solarize, PIL.Image.Image)(_FP.solarize)
@@ -460,12 +460,12 @@ _solarize_image_pil = _register_kernel_internal(solarize, PIL.Image.Image)(_FP.s
 
 @_register_kernel_internal(solarize, datapoints.Video)
 def solarize_video(video: torch.Tensor, threshold: float) -> torch.Tensor:
-    return solarize_image_tensor(video, threshold=threshold)
+    return solarize_image(video, threshold=threshold)
 
 
 def autocontrast(inpt: torch.Tensor) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return autocontrast_image_tensor(inpt)
+        return autocontrast_image(inpt)
 
     _log_api_usage_once(autocontrast)
 
@@ -475,7 +475,7 @@ def autocontrast(inpt: torch.Tensor) -> torch.Tensor:
 
 @_register_kernel_internal(autocontrast, torch.Tensor)
 @_register_kernel_internal(autocontrast, datapoints.Image)
-def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
+def autocontrast_image(image: torch.Tensor) -> torch.Tensor:
     c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
@@ -509,12 +509,12 @@ _autocontrast_image_pil = _register_kernel_internal(autocontrast, PIL.Image.Imag
 
 @_register_kernel_internal(autocontrast, datapoints.Video)
 def autocontrast_video(video: torch.Tensor) -> torch.Tensor:
-    return autocontrast_image_tensor(video)
+    return autocontrast_image(video)
 
 
 def equalize(inpt: torch.Tensor) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return equalize_image_tensor(inpt)
+        return equalize_image(inpt)
 
     _log_api_usage_once(equalize)
 
@@ -524,7 +524,7 @@ def equalize(inpt: torch.Tensor) -> torch.Tensor:
 
 @_register_kernel_internal(equalize, torch.Tensor)
 @_register_kernel_internal(equalize, datapoints.Image)
-def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
+def equalize_image(image: torch.Tensor) -> torch.Tensor:
     if image.numel() == 0:
         return image
 
@@ -539,7 +539,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     # Since we need to convert in most cases anyway and out of the acceptable dtypes mentioned in 1. `torch.uint8` is
     # by far the most common, we choose it as base.
     output_dtype = image.dtype
-    image = to_dtype_image_tensor(image, torch.uint8, scale=True)
+    image = to_dtype_image(image, torch.uint8, scale=True)
 
     # The histogram is computed by using the flattened image as index. For example, a pixel value of 127 in the image
     # corresponds to adding 1 to index 127 in the histogram.
@@ -590,7 +590,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     equalized_image = lut.gather(dim=-1, index=flat_image).view_as(image)
 
     output = torch.where(valid_equalization, equalized_image, image)
-    return to_dtype_image_tensor(output, output_dtype, scale=True)
+    return to_dtype_image(output, output_dtype, scale=True)
 
 
 _equalize_image_pil = _register_kernel_internal(equalize, PIL.Image.Image)(_FP.equalize)
@@ -598,12 +598,12 @@ _equalize_image_pil = _register_kernel_internal(equalize, PIL.Image.Image)(_FP.e
 
 @_register_kernel_internal(equalize, datapoints.Video)
 def equalize_video(video: torch.Tensor) -> torch.Tensor:
-    return equalize_image_tensor(video)
+    return equalize_image(video)
 
 
 def invert(inpt: torch.Tensor) -> torch.Tensor:
     if torch.jit.is_scripting():
-        return invert_image_tensor(inpt)
+        return invert_image(inpt)
 
     _log_api_usage_once(invert)
 
@@ -613,7 +613,7 @@ def invert(inpt: torch.Tensor) -> torch.Tensor:
 
 @_register_kernel_internal(invert, torch.Tensor)
 @_register_kernel_internal(invert, datapoints.Image)
-def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
+def invert_image(image: torch.Tensor) -> torch.Tensor:
     if image.is_floating_point():
         return 1.0 - image
     elif image.dtype == torch.uint8:
@@ -628,7 +628,7 @@ _invert_image_pil = _register_kernel_internal(invert, PIL.Image.Image)(_FP.inver
 
 @_register_kernel_internal(invert, datapoints.Video)
 def invert_video(video: torch.Tensor) -> torch.Tensor:
-    return invert_image_tensor(video)
+    return invert_image(video)
 
 
 def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor:
@@ -654,7 +654,7 @@ def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor
         ValueError: If ``len(permutation)`` doesn't match the number of channels in the input.
     """
     if torch.jit.is_scripting():
-        return permute_channels_image_tensor(inpt, permutation=permutation)
+        return permute_channels_image(inpt, permutation=permutation)
 
     _log_api_usage_once(permute_channels)
 
@@ -664,7 +664,7 @@ def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor
 
 @_register_kernel_internal(permute_channels, torch.Tensor)
 @_register_kernel_internal(permute_channels, datapoints.Image)
-def permute_channels_image_tensor(image: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+def permute_channels_image(image: torch.Tensor, permutation: List[int]) -> torch.Tensor:
     shape = image.shape
     num_channels, height, width = shape[-3:]
 
@@ -683,9 +683,9 @@ def permute_channels_image_tensor(image: torch.Tensor, permutation: List[int]) -
 
 @_register_kernel_internal(permute_channels, PIL.Image.Image)
 def _permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image:
-    return to_image_pil(permute_channels_image_tensor(pil_to_tensor(image), permutation=permutation))
+    return to_image_pil(permute_channels_image(pil_to_tensor(image), permutation=permutation))
 
 
 @_register_kernel_internal(permute_channels, datapoints.Video)
 def permute_channels_video(video: torch.Tensor, permutation: List[int]) -> torch.Tensor:
-    return permute_channels_image_tensor(video, permutation=permutation)
+    return permute_channels_image(video, permutation=permutation)
