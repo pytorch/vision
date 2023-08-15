@@ -80,8 +80,8 @@ def main() -> None:
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
 
     # Turn 1.11.0aHASH into 1.11 (major.minor only)
-    version = release = ".".join(torchvision.__version__.split(".")[:2])
-    if(version >= "0.16"):
+    version = ".".join(torchvision.__version__.split(".")[:2])
+    if version >= "0.16":
         print(f"{torch.ops.image._jpeg_version() = }")
         assert torch.ops.image._is_compiled_against_turbo()
 
