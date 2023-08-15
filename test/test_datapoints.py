@@ -219,7 +219,7 @@ def test_wrap_like(make_input):
     # any operation besides the ones listed in _FORCE_TORCHFUNCTION_SUBCLASS will do here
     output = dp * 2
 
-    dp_new = type(dp).wrap_like(dp, output)
+    dp_new = datapoints.wrap(output, like=dp)
 
     assert type(dp_new) is type(dp)
     assert dp_new.data_ptr() == output.data_ptr()
