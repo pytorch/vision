@@ -70,7 +70,7 @@ class Datapoint(torch.Tensor):
         of the output. In our case, we want to return pure tensors instead (with a few exceptions). Refer to the
         "Datapoints FAQ" gallery example for a rationale of this behaviour (TL;DR: perf + no silver bullet).
 
-        Our implementation below is very similar to the base implementation in torch.Tensor - go check it out.
+        Our implementation below is very similar to the base implementation in ``torch.Tensor`` - go check it out.
         """
         if not all(issubclass(cls, t) for t in types):
             return NotImplemented

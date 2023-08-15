@@ -221,7 +221,7 @@ assert not isinstance(new_bboxes, datapoints.BoundingBoxes)
 # .. note::
 #
 #    This behavior only affects native ``torch`` operations. If you are using
-#    the builtin ``torchvision`` transforms or functionals, you will always get
+#    the built-in ``torchvision`` transforms or functionals, you will always get
 #    as output the same type that you passed as input (pure ``Tensor`` or
 #    ``Datapoint``).
 
@@ -255,16 +255,16 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 # `__torch_function__
 # <https://pytorch.org/docs/stable/notes/extending.html#extending-torch>`_
 # protocol. This induces a small overhead, which we want to avoid when possible.
-# This doesn't matter for builtin ``torchvision`` transforms because we can
+# This doesn't matter for built-in ``torchvision`` transforms because we can
 # avoid the overhead there, but it could be a problem in your model's
 # ``forward``.
 #
 # **The alternative isn't much better anyway.** For every operation where
 # preserving the :class:`~torchvision.datapoints.Datapoint` type makes
 # sense, there are just as many operations where returning a pure Tensor is
-# preferable: is ``img.sum()`` still an :class:`~torchvision.datapoints.Image`?
+# preferable: for example, is ``img.sum()`` still an :class:`~torchvision.datapoints.Image`?
 # If we were to preserve :class:`~torchvision.datapoints.Datapoint` types all
-# the way, even your logits or the output of your loss function would end up
+# the way, even model's logits or the output of the loss function would end up
 # being of type :class:`~torchvision.datapoints.Image`, and surely that's not
 # desirable.
 #
