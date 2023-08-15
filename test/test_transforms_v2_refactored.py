@@ -1420,12 +1420,7 @@ class TestRotate:
         actual = F.rotate(image, angle=angle, center=center, interpolation=interpolation, expand=expand, fill=fill)
         expected = F.to_image_tensor(
             F.rotate(
-                F.to_image_pil(image),
-                angle=angle,
-                center=center,
-                interpolation=interpolation,
-                expand=expand,
-                fill=fill,
+                F.to_image_pil(image), angle=angle, center=center, interpolation=interpolation, expand=expand, fill=fill
             )
         )
 
