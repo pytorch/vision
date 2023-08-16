@@ -101,6 +101,7 @@ def test_to_datapoint_reference(make_input, return_type):
 
     assert type(tensor_to) is (type(dp) if return_type == "datapoint" else torch.Tensor)
     assert tensor_to.dtype is dp.dtype
+    assert type(tensor) is torch.Tensor
 
 
 @pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
@@ -212,13 +213,13 @@ def test_inplace_op_no_wrapping(make_input, return_type):
 
 
 @pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
-def test_wrap_like(make_input):
+def test_wrap(make_input):
     dp = make_input()
 
     # any operation besides the ones listed in _FORCE_TORCHFUNCTION_SUBCLASS will do here
     output = dp * 2
 
-    dp_new = type(dp).wrap_like(dp, output)
+    dp_new = datapoints.wrap(output, like=dp)
 
     assert type(dp_new) is type(dp)
     assert dp_new.data_ptr() == output.data_ptr()
