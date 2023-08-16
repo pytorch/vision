@@ -1753,6 +1753,9 @@ def elastic_image(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
+    if not isinstance(displacement, torch.Tensor):
+        raise TypeError("Argument displacement should be a Tensor")
+
     interpolation = _check_interpolation(interpolation)
 
     if image.numel() == 0:
@@ -1833,6 +1836,12 @@ def elastic_bounding_boxes(
     canvas_size: Tuple[int, int],
     displacement: torch.Tensor,
 ) -> torch.Tensor:
+    expected_shape = (1, canvas_size[0], canvas_size[1], 2)
+    if not isinstance(displacement, torch.Tensor):
+        raise TypeError("Argument displacement should be a Tensor")
+    elif displacement.shape != expected_shape:
+        raise ValueError(f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}")
+
     if bounding_boxes.numel() == 0:
         return bounding_boxes
 
