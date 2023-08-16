@@ -172,6 +172,6 @@ from ._misc import (
     to_dtype_video,
 )
 from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
-from ._type_conversion import pil_to_tensor, to_image_pil, to_image_tensor, to_pil_image
+from ._type_conversion import pil_to_tensor, to_image, to_pil_image
 
 from ._deprecated import get_image_size, to_tensor  # usort: skip

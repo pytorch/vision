@@ -622,6 +622,6 @@ class AugMix(_AutoAugmentBase):
         if isinstance(orig_image_or_video, (datapoints.Image, datapoints.Video)):
             mix = datapoints.wrap(mix, like=orig_image_or_video)
         elif isinstance(orig_image_or_video, PIL.Image.Image):
-            mix = F.to_image_pil(mix)
+            mix = F.to_pil_image(mix)
 
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, mix)

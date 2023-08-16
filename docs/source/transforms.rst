@@ -233,7 +233,7 @@ Conversion
     v2.ToTensor
     PILToTensor
     v2.PILToTensor
-    v2.ToImageTensor
+    v2.ToImage
     ConvertImageDtype
     v2.ConvertImageDtype
     v2.ToDtype

@@ -10,7 +10,7 @@ from torchvision.transforms._functional_tensor import _max_value
 from torchvision.utils import _log_api_usage_once
 
 from ._misc import _num_value_bits, to_dtype_image
-from ._type_conversion import pil_to_tensor, to_image_pil
+from ._type_conversion import pil_to_tensor, to_pil_image
 from ._utils import _get_kernel, _register_kernel_internal
 
 
@@ -689,7 +689,7 @@ def permute_channels_image(image: torch.Tensor, permutation: List[int]) -> torch
 
 @_register_kernel_internal(permute_channels, PIL.Image.Image)
 def _permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image:
-    return to_image_pil(permute_channels_image(pil_to_tensor(image), permutation=permutation))
+    return to_pil_image(permute_channels_image(pil_to_tensor(image), permutation=permutation))
 
 
 @_register_kernel_internal(permute_channels, datapoints.Video)

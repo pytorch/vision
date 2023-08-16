@@ -127,7 +127,7 @@ def pil_reference_wrapper(pil_kernel):
         if not isinstance(output_pil, PIL.Image.Image):
             return output_pil
 
-        output_tensor = F.to_image_tensor(output_pil)
+        output_tensor = F.to_image(output_pil)
 
         # 2D mask shenanigans
         if output_tensor.ndim == 2 and input_tensor.ndim == 3:
@@ -1517,8 +1517,7 @@ def multi_crop_pil_reference_wrapper(pil_kernel):
     def wrapper(input_tensor, *other_args, **kwargs):
         output = pil_reference_wrapper(pil_kernel)(input_tensor, *other_args, **kwargs)
         return type(output)(
-            F.to_dtype_image(F.to_image_tensor(output_pil), dtype=input_tensor.dtype, scale=True)
-            for output_pil in output
+            F.to_dtype_image(F.to_image(output_pil), dtype=input_tensor.dtype, scale=True) for output_pil in output
         )
 
     return wrapper

@@ -978,7 +978,7 @@ def test_correctness_gaussian_blur_image_tensor(device, canvas_size, dt, ksize, 
     ],
 )
 def test_to_image_tensor(inpt):
-    output = F.to_image_tensor(inpt)
+    output = F.to_image(inpt)
     assert isinstance(output, torch.Tensor)
     assert output.shape == (3, 32, 32)
 
