@@ -112,7 +112,7 @@ def write_video(
 
             num_channels = audio_array.shape[0]
             audio_layout = "stereo" if num_channels > 1 else "mono"
-            audio_sample_fmt = container.streams.audio[0].format.name
+            audio_sample_fmt = a_stream.format.name
 
             format_dtype = np.dtype(audio_format_dtypes[audio_sample_fmt])
             audio_array = torch.as_tensor(audio_array).numpy().astype(format_dtype)
