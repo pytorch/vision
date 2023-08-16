@@ -652,7 +652,7 @@ class BoundingBoxesLoader(TensorLoader):
         self.canvas_size = self.spatial_size
 
 
-def make_bounding_box(
+def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
     format=datapoints.BoundingBoxFormat.XYXY,
@@ -709,7 +709,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORT
         if num_coordinates != 4:
             raise pytest.UsageError()
 
-        return make_bounding_box(
+        return make_bounding_boxes(
             format=format, canvas_size=spatial_size, batch_dims=batch_dims, dtype=dtype, device=device
         )
 
@@ -727,7 +727,7 @@ def make_bounding_box_loaders(
         yield make_bounding_box_loader(**params, spatial_size=spatial_size)
 
 
-make_bounding_boxes = from_loaders(make_bounding_box_loaders)
+make_multiple_bounding_boxes = from_loaders(make_bounding_box_loaders)
 
 
 class MaskLoader(TensorLoader):
