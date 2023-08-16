@@ -3,6 +3,7 @@ import decimal
 import inspect
 import math
 import re
+from pathlib import Path
 from unittest import mock
 
 import numpy as np
@@ -2126,16 +2127,10 @@ class TestGetKernel:
         datapoints.Video: F.resize_video,
     }
 
-    def test_unsupported_types(self):
-        class MyTensor(torch.Tensor):
-            pass
-
-        class MyPILImage(PIL.Image.Image):
-            pass
-
-        for input_type in [str, int, object, MyTensor, MyPILImage]:
-            with pytest.raises(TypeError, match="supports inputs of type"):
-                _get_kernel(F.resize, input_type)
+    @pytest.mark.parametrize("input_type", [str, int, object])
+    def test_unsupported_types(self, input_type):
+        with pytest.raises(TypeError, match="supports inputs of type"):
+            _get_kernel(F.resize, input_type)
 
     def test_exact_match(self):
         # We cannot use F.resize together with self.KERNELS mapping here directly here, since this is only the
@@ -2196,6 +2191,24 @@ class TestGetKernel:
         _register_kernel_internal(F.resize, MyDatapoint, datapoint_wrapper=False)(resize_my_datapoint)
 
         assert _get_kernel(F.resize, MyDatapoint) is resize_my_datapoint
+
+    def test_pil_image_subclass(self):
+        opened_image = PIL.Image.open(Path(__file__).parent / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg")
+        loaded_image = opened_image.convert("RGB")
+
+        # check the assumptions
+        assert isinstance(opened_image, PIL.Image.Image)
+        assert type(opened_image) is not PIL.Image.Image
+
+        assert type(loaded_image) is PIL.Image.Image
+
+        size = [17, 11]
+        for image in [opened_image, loaded_image]:
+            kernel = _get_kernel(F.resize, type(image))
+
+            output = kernel(image, size=size)
+
+            assert F.get_size(output) == size
 
 
 class TestPermuteChannels:

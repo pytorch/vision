@@ -100,21 +100,14 @@ def _get_kernel(functional, input_type, *, allow_passthrough=False):
     if not registry:
         raise ValueError(f"No kernel registered for functional {functional.__name__}.")
 
-    # In case we have an exact type match, we take a shortcut.
-    if input_type in registry:
-        return registry[input_type]
-
-    # In case of datapoints, we check if we have a kernel for a superclass registered
-    if issubclass(input_type, datapoints.Datapoint):
-        # Since we have already checked for an exact match above, we can start the traversal at the superclass.
-        for cls in input_type.__mro__[1:]:
-            if cls is datapoints.Datapoint:
-                # We don't want user-defined datapoints to dispatch to the pure Tensor kernels, so we explicit stop the
-                # MRO traversal before hitting torch.Tensor. We can even stop at datapoints.Datapoint, since we don't
-                # allow kernels to be registered for datapoints.Datapoint anyway.
-                break
-            elif cls in registry:
-                return registry[cls]
+    for cls in input_type.__mro__:
+        if cls in registry:
+            return registry[cls]
+        elif issubclass(input_type, datapoints.Datapoint) and cls is datapoints.Datapoint:
+            # We don't want user-defined datapoints to dispatch to the pure Tensor kernels, so we explicit stop the
+            # MRO traversal before hitting torch.Tensor. We can even stop at datapoints.Datapoint, since we don't
+            # allow kernels to be registered for datapoints.Datapoint anyway.
+            break
 
     if allow_passthrough:
         return lambda inpt, *args, **kwargs: inpt
