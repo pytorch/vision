@@ -22,7 +22,7 @@ def wrap(wrappee, *, like, **kwargs):
 
     Args:
         wrappee (Tensor): The tensor to convert.
-        like (Datapoint): The
+        like (Datapoint): The reference. ``wrappee`` will be converted into the same subclass as ``like``.
         kwargs: Can contain "format" and "canvas_size" if ``like`` is a :class:`~torchvision.datapoint.BoundingBoxes`.
             Ignored otherwise.
     """
