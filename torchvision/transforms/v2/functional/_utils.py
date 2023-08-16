@@ -25,11 +25,11 @@ def _kernel_datapoint_wrapper(kernel):
         # regardless of whether we override __torch_function__ in our base class
         # or not.
         # Also, even if we didn't call `as_subclass` here, we would still need
-        # this wrapper to call wrap_like(), because the Datapoint type would be
+        # this wrapper to call wrap(), because the Datapoint type would be
         # lost after the first operation due to our own __torch_function__
         # logic.
         output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
-        return type(inpt).wrap_like(inpt, output)
+        return datapoints.wrap(output, like=inpt)
 
     return wrapper
 
@@ -130,7 +130,7 @@ def _register_five_ten_crop_kernel_internal(functional, input_type):
         def wrapper(inpt, *args, **kwargs):
             output = kernel(inpt, *args, **kwargs)
             container_type = type(output)
-            return container_type(type(inpt).wrap_like(inpt, o) for o in output)
+            return container_type(datapoints.wrap(o, like=inpt) for o in output)
 
         return wrapper
 

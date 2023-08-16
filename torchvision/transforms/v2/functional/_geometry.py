@@ -87,7 +87,7 @@ def _horizontal_flip_bounding_boxes_dispatch(inpt: datapoints.BoundingBoxes) -> 
     output = horizontal_flip_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 @_register_kernel_internal(horizontal_flip, datapoints.Video)
@@ -143,7 +143,7 @@ def _vertical_flip_bounding_boxes_dispatch(inpt: datapoints.BoundingBoxes) -> da
     output = vertical_flip_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 @_register_kernel_internal(vertical_flip, datapoints.Video)
@@ -321,7 +321,7 @@ def _resize_mask_dispatch(
     inpt: datapoints.Mask, size: List[int], max_size: Optional[int] = None, **kwargs: Any
 ) -> datapoints.Mask:
     output = resize_mask(inpt.as_subclass(torch.Tensor), size, max_size=max_size)
-    return datapoints.Mask.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 def resize_bounding_boxes(
@@ -349,7 +349,7 @@ def _resize_bounding_boxes_dispatch(
     output, canvas_size = resize_bounding_boxes(
         inpt.as_subclass(torch.Tensor), inpt.canvas_size, size, max_size=max_size
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output, canvas_size=canvas_size)
+    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 @_register_kernel_internal(resize, datapoints.Video)
@@ -857,7 +857,7 @@ def _affine_bounding_boxes_dispatch(
         shear=shear,
         center=center,
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 def affine_mask(
@@ -912,7 +912,7 @@ def _affine_mask_dispatch(
         fill=fill,
         center=center,
     )
-    return datapoints.Mask.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 @_register_kernel_internal(affine, datapoints.Video)
@@ -1058,7 +1058,7 @@ def _rotate_bounding_boxes_dispatch(
         expand=expand,
         center=center,
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output, canvas_size=canvas_size)
+    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 def rotate_mask(
@@ -1099,7 +1099,7 @@ def _rotate_mask_dispatch(
     **kwargs,
 ) -> datapoints.Mask:
     output = rotate_mask(inpt.as_subclass(torch.Tensor), angle=angle, expand=expand, fill=fill, center=center)
-    return datapoints.Mask.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 @_register_kernel_internal(rotate, datapoints.Video)
@@ -1321,7 +1321,7 @@ def _pad_bounding_boxes_dispatch(
         padding=padding,
         padding_mode=padding_mode,
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output, canvas_size=canvas_size)
+    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 @_register_kernel_internal(pad, datapoints.Video)
@@ -1396,7 +1396,7 @@ def _crop_bounding_boxes_dispatch(
     output, canvas_size = crop_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output, canvas_size=canvas_size)
+    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 @_register_kernel_internal(crop, datapoints.Mask)
@@ -1670,7 +1670,7 @@ def _perspective_bounding_boxes_dispatch(
         endpoints=endpoints,
         coefficients=coefficients,
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 def perspective_mask(
@@ -1712,7 +1712,7 @@ def _perspective_mask_dispatch(
         fill=fill,
         coefficients=coefficients,
     )
-    return datapoints.Mask.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 @_register_kernel_internal(perspective, datapoints.Video)
@@ -1887,7 +1887,7 @@ def _elastic_bounding_boxes_dispatch(
     output = elastic_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, displacement=displacement
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 def elastic_mask(
@@ -1914,7 +1914,7 @@ def _elastic_mask_dispatch(
     inpt: datapoints.Mask, displacement: torch.Tensor, fill: _FillTypeJIT = None, **kwargs
 ) -> datapoints.Mask:
     output = elastic_mask(inpt.as_subclass(torch.Tensor), displacement=displacement, fill=fill)
-    return datapoints.Mask.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 @_register_kernel_internal(elastic, datapoints.Video)
@@ -2022,7 +2022,7 @@ def _center_crop_bounding_boxes_dispatch(
     output, canvas_size = center_crop_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, output_size=output_size
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output, canvas_size=canvas_size)
+    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 @_register_kernel_internal(center_crop, datapoints.Mask)
@@ -2156,7 +2156,7 @@ def _resized_crop_bounding_boxes_dispatch(
     output, canvas_size = resized_crop_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width, size=size
     )
-    return datapoints.BoundingBoxes.wrap_like(inpt, output, canvas_size=canvas_size)
+    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 def resized_crop_mask(
@@ -2178,7 +2178,7 @@ def _resized_crop_mask_dispatch(
     output = resized_crop_mask(
         inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width, size=size
     )
-    return datapoints.Mask.wrap_like(inpt, output)
+    return datapoints.wrap(output, like=inpt)
 
 
 @_register_kernel_internal(resized_crop, datapoints.Video)
