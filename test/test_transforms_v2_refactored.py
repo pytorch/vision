@@ -570,7 +570,7 @@ class TestResize:
             canvas_size=(new_height, new_width),
             affine_matrix=affine_matrix,
         )
-        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes, canvas_size=(new_height, new_width))
+        return datapoints.wrap(expected_bboxes, like=bounding_boxes, canvas_size=(new_height, new_width))
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
@@ -815,7 +815,7 @@ class TestHorizontalFlip:
             affine_matrix=affine_matrix,
         )
 
-        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes)
+        return datapoints.wrap(expected_bboxes, like=bounding_boxes)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize(
@@ -1278,7 +1278,7 @@ class TestVerticalFlip:
             affine_matrix=affine_matrix,
         )
 
-        return datapoints.BoundingBoxes.wrap_like(bounding_boxes, expected_bboxes)
+        return datapoints.wrap(expected_bboxes, like=bounding_boxes)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])

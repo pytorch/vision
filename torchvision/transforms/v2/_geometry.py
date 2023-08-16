@@ -338,7 +338,7 @@ class FiveCrop(Transform):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
-        ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
+        ...         images_or_videos = datapoints.wrap(torch.stack(images_or_videos), like=image_or_video)
         ...         labels = torch.full((batch_size,), label, device=images_or_videos.device)
         ...         return images_or_videos, labels
         ...

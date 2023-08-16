@@ -107,26 +107,23 @@ bboxes = datapoints.BoundingBoxes(
 print(bboxes)
 
 # %%
-# Using the ``wrap_like()`` class method
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Using ``datapoints.wrap()``
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# You can also use the ``wrap_like()`` class method to wrap a tensor object
+# You can also use the :func:`~torchvision.datapoints.wrap` function to wrap a tensor object
 # into a datapoint. This is useful when you already have an object of the
 # desired type, which typically happens when writing transforms: you just want
-# to wrap the output like the input. This API is inspired by utils like
-# :func:`torch.zeros_like`:
+# to wrap the output like the input.
 
 new_bboxes = torch.tensor([0, 20, 30, 40])
-new_bboxes = datapoints.BoundingBoxes.wrap_like(bboxes, new_bboxes)
+new_bboxes = datapoints.wrap(new_bboxes, like=bboxes)
 assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 assert new_bboxes.canvas_size == bboxes.canvas_size
 
 
 # %%
 # The metadata of ``new_bboxes`` is the same as ``bboxes``, but you could pass
-# it as a parameter to override it. Check the
-# :meth:`~torchvision.datapoints.BoundingBoxes.wrap_like` documentation for
-# more details.
+# it as a parameter to override it.
 #
 # Do I have to wrap the output of the datasets myself?
 # ----------------------------------------------------
@@ -230,11 +227,11 @@ assert not isinstance(new_bboxes, datapoints.BoundingBoxes)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # You can re-wrap a pure tensor into a datapoint by just calling the datapoint
-# constructor, or by using the ``.wrap_like()`` class method (see more details
-# above in :ref:`datapoint_creation`):
+# constructor, or by using the :func:`~torchvision.datapoints.wrap` function
+# (see more details above in :ref:`datapoint_creation`):
 
 new_bboxes = bboxes + 3
-new_bboxes = datapoints.BoundingBoxes.wrap_like(bboxes, new_bboxes)
+new_bboxes = datapoints.wrap(new_bboxes, like=bboxes)
 assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 
 # %%

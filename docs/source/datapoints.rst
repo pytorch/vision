@@ -19,3 +19,4 @@ see e.g. :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`.
     Mask
     Datapoint
     set_return_type
+    wrap
