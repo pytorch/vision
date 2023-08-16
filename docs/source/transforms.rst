@@ -228,7 +228,6 @@ Conversion
 
     ToPILImage
     v2.ToPILImage
-    v2.ToImagePIL
     ToTensor
     v2.ToTensor
     PILToTensor
