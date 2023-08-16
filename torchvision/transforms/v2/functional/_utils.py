@@ -103,7 +103,7 @@ def _get_kernel(functional, input_type, *, allow_passthrough=False):
     for cls in input_type.__mro__:
         if cls in registry:
             return registry[cls]
-        elif issubclass(input_type, datapoints.Datapoint) and cls is datapoints.Datapoint:
+        elif cls is datapoints.Datapoint:
             # We don't want user-defined datapoints to dispatch to the pure Tensor kernels, so we explicit stop the
             # MRO traversal before hitting torch.Tensor. We can even stop at datapoints.Datapoint, since we don't
             # allow kernels to be registered for datapoints.Datapoint anyway.
