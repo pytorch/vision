@@ -14,7 +14,9 @@ if _WARN_ABOUT_BETA_TRANSFORMS:
     warnings.warn(_BETA_TRANSFORMS_WARNING)
 
 
-def wrap(wrappee, *, like, **kwargs):
+D = TypeVar("D", bounds=Datapoint)
+
+def wrap(wrappee: torch.Tensor, *, like: D, **kwargs: Any) -> D:
     """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.datapoint.Datapoint` subclass as ``like``.
 
     If ``like`` is a :class:`~torchvision.datapoint.BoundingBoxes`, the ``format`` and ``canvas_size`` of
