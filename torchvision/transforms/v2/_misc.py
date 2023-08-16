@@ -131,7 +131,7 @@ class LinearTransformation(Transform):
         output = output.reshape(shape)
 
         if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
+            output = datapoints.wrap(output, like=inpt)
         return output
 
 
@@ -423,4 +423,4 @@ class SanitizeBoundingBoxes(Transform):
         if is_label:
             return output
 
-        return type(inpt).wrap_like(inpt, output)
+        return datapoints.wrap(output, like=inpt)

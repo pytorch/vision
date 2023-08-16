@@ -53,11 +53,11 @@ from torchvision.transforms.v2 import functional as F
 def hflip_my_datapoint(my_dp, *args, **kwargs):
     print("Flipping!")
     out = my_dp.flip(-1)
-    return MyDatapoint.wrap_like(my_dp, out)
+    return datapoints.wrap(out, like=my_dp)
 
 
 # %%
-# To understand why ``wrap_like`` is used, see
+# To understand why :func:`~torchvision.datapoints.wrap` is used, see
 # :ref:`datapoint_unwrapping_behaviour`. Ignore the ``*args, **kwargs`` for now,
 # we will explain it below in :ref:`param_forwarding`.
 #
@@ -107,7 +107,7 @@ _ = t(my_dp)
 def hflip_my_datapoint(my_dp):  # noqa
     print("Flipping!")
     out = my_dp.flip(-1)
-    return MyDatapoint.wrap_like(my_dp, out)
+    return datapoints.wrap(out, like=my_dp)
 
 
 # %%

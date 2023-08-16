@@ -33,13 +33,6 @@ class _LabelBase(Datapoint):
         return cls._wrap(tensor, categories=categories)
 
     @classmethod
-    def wrap_like(cls: Type[L], other: L, tensor: torch.Tensor, *, categories: Optional[Sequence[str]] = None) -> L:
-        return cls._wrap(
-            tensor,
-            categories=categories if categories is not None else other.categories,
-        )
-
-    @classmethod
     def from_category(
         cls: Type[L],
         category: str,

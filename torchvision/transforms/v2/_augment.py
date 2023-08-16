@@ -249,7 +249,7 @@ class MixUp(_BaseMixUpCutMix):
             output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
 
             if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
+                output = datapoints.wrap(output, like=inpt)
 
             return output
         else:
@@ -319,7 +319,7 @@ class CutMix(_BaseMixUpCutMix):
             output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
             if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
+                output = datapoints.wrap(output, like=inpt)
 
             return output
         else:
