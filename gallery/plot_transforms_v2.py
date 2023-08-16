@@ -29,14 +29,14 @@ def load_data():
 
     masks = datapoints.Mask(merged_masks == labels.view(-1, 1, 1))
 
-    bounding_boxes = datapoints.BoundingBox(
-        masks_to_boxes(masks), format=datapoints.BoundingBoxFormat.XYXY, spatial_size=image.shape[-2:]
+    bounding_boxes = datapoints.BoundingBoxes(
+        masks_to_boxes(masks), format=datapoints.BoundingBoxFormat.XYXY, canvas_size=image.shape[-2:]
     )
 
     return path, image, bounding_boxes, masks, labels
 
 
-########################################################################################################################
+# %%
 # The :mod:`torchvision.transforms.v2` API supports images, videos, bounding boxes, and instance and segmentation
 # masks. Thus, it offers native support for many Computer Vision tasks, like image and video classification, object
 # detection or instance and semantic segmentation. Still, the interface is the same, making
@@ -55,7 +55,7 @@ transform = transforms.Compose(
     ]
 )
 
-########################################################################################################################
+# %%
 # :mod:`torchvision.transforms.v2` natively supports jointly transforming multiple inputs while making sure that
 # potential random behavior is consistent across all inputs. However, it doesn't enforce a specific input structure or
 # order.
@@ -70,7 +70,7 @@ new_image, new_bounding_boxes, new_masks, new_labels = transform(
 )  # Instance Segmentation
 new_image, new_target = transform((image, {"boxes": bounding_boxes, "labels": labels}))  # Arbitrary Structure
 
-########################################################################################################################
+# %%
 # Under the hood, :mod:`torchvision.transforms.v2` relies on :mod:`torchvision.datapoints` for the dispatch to the
 # appropriate function for the input data: :ref:`sphx_glr_auto_examples_plot_datapoints.py`. Note however, that as
 # regular user, you likely don't have to touch this yourself. See
@@ -84,7 +84,7 @@ new_sample = transform(sample)
 
 assert new_sample["path"] is sample["path"]
 
-########################################################################################################################
+# %%
 # As stated above, :mod:`torchvision.transforms.v2` is a drop-in replacement for :mod:`torchvision.transforms` and thus
 # also supports transforming plain :class:`torch.Tensor`'s as image or video if applicable. This is achieved with a
 # simple heuristic:

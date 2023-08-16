@@ -9,10 +9,14 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms import _functional_tensor as _FT
 from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.functional._meta import get_spatial_size
+from torchvision.transforms.v2.functional._meta import get_size
+from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
-from ._utils import _setup_fill_arg
+from ._utils import _get_fill, _setup_fill_arg
 from .utils import check_type, is_simple_tensor
+
+
+ImageOrVideo = Union[torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video]
 
 
 class _AutoAugmentBase(Transform):
@@ -20,7 +24,7 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
         super().__init__()
         self.interpolation = _check_interpolation(interpolation)
@@ -34,8 +38,8 @@ class _AutoAugmentBase(Transform):
     def _flatten_and_extract_image_or_video(
         self,
         inputs: Any,
-        unsupported_types: Tuple[Type, ...] = (datapoints.BoundingBox, datapoints.Mask),
-    ) -> Tuple[Tuple[List[Any], TreeSpec, int], Union[datapoints._ImageType, datapoints._VideoType]]:
+        unsupported_types: Tuple[Type, ...] = (datapoints.BoundingBoxes, datapoints.Mask),
+    ) -> Tuple[Tuple[List[Any], TreeSpec, int], ImageOrVideo]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
@@ -68,7 +72,7 @@ class _AutoAugmentBase(Transform):
     def _unflatten_and_insert_image_or_video(
         self,
         flat_inputs_with_spec: Tuple[List[Any], TreeSpec, int],
-        image_or_video: Union[datapoints._ImageType, datapoints._VideoType],
+        image_or_video: ImageOrVideo,
     ) -> Any:
         flat_inputs, spec, idx = flat_inputs_with_spec
         flat_inputs[idx] = image_or_video
@@ -76,13 +80,13 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_or_video_transform(
         self,
-        image: Union[datapoints._ImageType, datapoints._VideoType],
+        image: ImageOrVideo,
         transform_id: str,
         magnitude: float,
         interpolation: Union[InterpolationMode, int],
-        fill: Dict[Type, datapoints._FillTypeJIT],
-    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-        fill_ = fill[type(image)]
+        fill: Dict[Union[Type, str], _FillTypeJIT],
+    ) -> ImageOrVideo:
+        fill_ = _get_fill(fill, type(image))
 
         if transform_id == "Identity":
             return image
@@ -214,7 +218,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -312,7 +316,7 @@ class AutoAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_spatial_size(image_or_video)
+        height, width = get_size(image_or_video)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -394,7 +398,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -403,7 +407,7 @@ class RandAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_spatial_size(image_or_video)
+        height, width = get_size(image_or_video)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -467,14 +471,14 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_spatial_size(image_or_video)
+        height, width = get_size(image_or_video)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
@@ -550,7 +554,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10
@@ -568,7 +572,7 @@ class AugMix(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, orig_image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_spatial_size(orig_image_or_video)
+        height, width = get_size(orig_image_or_video)
 
         if isinstance(orig_image_or_video, torch.Tensor):
             image_or_video = orig_image_or_video
@@ -616,7 +620,7 @@ class AugMix(_AutoAugmentBase):
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
         if isinstance(orig_image_or_video, (datapoints.Image, datapoints.Video)):
-            mix = orig_image_or_video.wrap_like(orig_image_or_video, mix)  # type: ignore[arg-type]
+            mix = datapoints.wrap(mix, like=orig_image_or_video)
         elif isinstance(orig_image_or_video, PIL.Image.Image):
             mix = F.to_image_pil(mix)
 

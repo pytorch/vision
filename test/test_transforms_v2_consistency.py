@@ -4,7 +4,6 @@ import importlib.util
 import inspect
 import random
 import re
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -30,8 +29,9 @@ from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
+from torchvision.transforms.v2._utils import _get_fill
 from torchvision.transforms.v2.functional import to_image_pil
-from torchvision.transforms.v2.utils import query_spatial_size
+from torchvision.transforms.v2.utils import query_size
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
@@ -191,7 +191,7 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.ConvertDtype,
+        v2_transforms.ConvertImageDtype,
         legacy_transforms.ConvertImageDtype,
         [
             ArgsKwargs(torch.float16),
@@ -1090,7 +1090,7 @@ class TestRefDetTransforms:
 
         pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1100,7 +1100,7 @@ class TestRefDetTransforms:
 
         tensor_image = torch.Tensor(make_image(size=size, color_space="RGB", dtype=torch.float32))
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1110,7 +1110,7 @@ class TestRefDetTransforms:
 
         datapoint_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
         target = {
-            "boxes": make_bounding_box(spatial_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1127,13 +1127,13 @@ class TestRefDetTransforms:
                 v2_transforms.Compose(
                     [
                         v2_transforms.RandomIoUCrop(),
-                        v2_transforms.SanitizeBoundingBox(labels_getter=lambda sample: sample[1]["labels"]),
+                        v2_transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
                     ]
                 ),
                 {"with_mask": False},
             ),
             (det_transforms.RandomZoomOut(), v2_transforms.RandomZoomOut(), {"with_mask": False}),
-            (det_transforms.ScaleJitter((1024, 1024)), v2_transforms.ScaleJitter((1024, 1024)), {}),
+            (det_transforms.ScaleJitter((1024, 1024)), v2_transforms.ScaleJitter((1024, 1024), antialias=True), {}),
             (
                 det_transforms.RandomShortestSize(
                     min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
@@ -1172,7 +1172,7 @@ class PadIfSmaller(v2_transforms.Transform):
         self.fill = v2_transforms._geometry._setup_fill_arg(fill)
 
     def _get_params(self, sample):
-        height, width = query_spatial_size(sample)
+        height, width = query_size(sample)
         padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
         needs_padding = any(padding)
         return dict(padding=padding, needs_padding=needs_padding)
@@ -1181,7 +1181,7 @@ class PadIfSmaller(v2_transforms.Transform):
         if not params["needs_padding"]:
             return inpt
 
-        fill = self.fill[type(inpt)]
+        fill = _get_fill(self.fill, type(inpt))
         return prototype_F.pad(inpt, padding=params["padding"], fill=fill)
 
 
@@ -1243,7 +1243,7 @@ class TestRefSegTransforms:
                 seg_transforms.RandomCrop(size=480),
                 v2_transforms.Compose(
                     [
-                        PadIfSmaller(size=480, fill=defaultdict(lambda: 0, {datapoints.Mask: 255})),
+                        PadIfSmaller(size=480, fill={datapoints.Mask: 255, "others": 0}),
                         v2_transforms.RandomCrop(size=480),
                     ]
                 ),
@@ -1258,68 +1258,6 @@ class TestRefSegTransforms:
     )
     def test_common(self, t_ref, t, data_kwargs):
         self.check(t, t_ref, data_kwargs)
-
-    def check_resize(self, mocker, t_ref, t):
-        mock = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
-        mock_ref = mocker.patch("torchvision.transforms.functional.resize")
-
-        for dp, dp_ref in self.make_datapoints():
-            mock.reset_mock()
-            mock_ref.reset_mock()
-
-            self.set_seed()
-            t(dp)
-            assert mock.call_count == 2
-            assert all(
-                actual is expected
-                for actual, expected in zip([call_args[0][0] for call_args in mock.call_args_list], dp)
-            )
-
-            self.set_seed()
-            t_ref(*dp_ref)
-            assert mock_ref.call_count == 2
-            assert all(
-                actual is expected
-                for actual, expected in zip([call_args[0][0] for call_args in mock_ref.call_args_list], dp_ref)
-            )
-
-            for args_kwargs, args_kwargs_ref in zip(mock.call_args_list, mock_ref.call_args_list):
-                assert args_kwargs[0][1] == [args_kwargs_ref[0][1]]
-
-    def test_random_resize_train(self, mocker):
-        base_size = 520
-        min_size = base_size // 2
-        max_size = base_size * 2
-
-        randint = torch.randint
-
-        def patched_randint(a, b, *other_args, **kwargs):
-            if kwargs or len(other_args) > 1 or other_args[0] != ():
-                return randint(a, b, *other_args, **kwargs)
-
-            return random.randint(a, b)
-
-        # We are patching torch.randint -> random.randint here, because we can't patch the modules that are not imported
-        # normally
-        t = v2_transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
-        mocker.patch(
-            "torchvision.transforms.v2._geometry.torch.randint",
-            new=patched_randint,
-        )
-
-        t_ref = seg_transforms.RandomResize(min_size=min_size, max_size=max_size)
-
-        self.check_resize(mocker, t_ref, t)
-
-    def test_random_resize_eval(self, mocker):
-        torch.manual_seed(0)
-        base_size = 520
-
-        t = v2_transforms.Resize(size=base_size, antialias=True)
-
-        t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
-
-        self.check_resize(mocker, t_ref, t)
 
 
 @pytest.mark.parametrize(
