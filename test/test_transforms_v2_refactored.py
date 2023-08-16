@@ -2279,7 +2279,7 @@ class TestElastic:
         image = make_image_tensor(dtype=dtype, device=device)
 
         check_kernel(
-            F.elastic_image_tensor,
+            F.elastic_image,
             image,
             displacement=self._make_displacement(image),
             **{param: value},
@@ -2320,9 +2320,9 @@ class TestElastic:
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
         [
-            (F.elastic_image_tensor, torch.Tensor),
-            (F.elastic_image_pil, PIL.Image.Image),
-            (F.elastic_image_tensor, datapoints.Image),
+            (F.elastic_image, torch.Tensor),
+            (F._elastic_image_pil, PIL.Image.Image),
+            (F.elastic_image, datapoints.Image),
             (F.elastic_bounding_boxes, datapoints.BoundingBoxes),
             (F.elastic_mask, datapoints.Mask),
             (F.elastic_video, datapoints.Video),
