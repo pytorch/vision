@@ -213,7 +213,7 @@ def test_inplace_op_no_wrapping(make_input, return_type):
 
 
 @pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
-def test_wrap_like(make_input):
+def test_wrap(make_input):
     dp = make_input()
 
     # any operation besides the ones listed in _FORCE_TORCHFUNCTION_SUBCLASS will do here
