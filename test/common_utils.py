@@ -27,7 +27,7 @@ from PIL import Image
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import datapoints, io
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import to_dtype_image_tensor, to_image_pil, to_image_tensor
+from torchvision.transforms.v2.functional import to_dtype_image, to_image, to_pil_image
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
@@ -293,7 +293,7 @@ class ImagePair(TensorLikePair):
         **other_parameters,
     ):
         if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
-            actual, expected = [to_image_tensor(input) for input in [actual, expected]]
+            actual, expected = [to_image(input) for input in [actual, expected]]
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae
@@ -536,7 +536,7 @@ def make_image_tensor(*args, **kwargs):
 
 
 def make_image_pil(*args, **kwargs):
-    return to_image_pil(make_image(*args, **kwargs))
+    return to_pil_image(make_image(*args, **kwargs))
 
 
 def make_image_loader(
@@ -609,12 +609,12 @@ def make_image_loader_for_interpolation(
             )
         )
 
-        image_tensor = to_image_tensor(image_pil)
+        image_tensor = to_image(image_pil)
         if memory_format == torch.contiguous_format:
             image_tensor = image_tensor.to(device=device, memory_format=memory_format, copy=True)
         else:
             image_tensor = image_tensor.to(device=device)
-        image_tensor = to_dtype_image_tensor(image_tensor, dtype=dtype, scale=True)
+        image_tensor = to_dtype_image(image_tensor, dtype=dtype, scale=True)
 
         return datapoints.Image(image_tensor)
 

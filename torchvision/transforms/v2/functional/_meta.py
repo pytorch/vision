@@ -13,7 +13,7 @@ from ._utils import _get_kernel, _register_kernel_internal, is_simple_tensor
 
 def get_dimensions(inpt: torch.Tensor) -> List[int]:
     if torch.jit.is_scripting():
-        return get_dimensions_image_tensor(inpt)
+        return get_dimensions_image(inpt)
 
     _log_api_usage_once(get_dimensions)
 
@@ -23,7 +23,7 @@ def get_dimensions(inpt: torch.Tensor) -> List[int]:
 
 @_register_kernel_internal(get_dimensions, torch.Tensor)
 @_register_kernel_internal(get_dimensions, datapoints.Image, datapoint_wrapper=False)
-def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
+def get_dimensions_image(image: torch.Tensor) -> List[int]:
     chw = list(image.shape[-3:])
     ndims = len(chw)
     if ndims == 3:
@@ -35,17 +35,17 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
         raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
-get_dimensions_image_pil = _register_kernel_internal(get_dimensions, PIL.Image.Image)(_FP.get_dimensions)
+_get_dimensions_image_pil = _register_kernel_internal(get_dimensions, PIL.Image.Image)(_FP.get_dimensions)
 
 
 @_register_kernel_internal(get_dimensions, datapoints.Video, datapoint_wrapper=False)
 def get_dimensions_video(video: torch.Tensor) -> List[int]:
-    return get_dimensions_image_tensor(video)
+    return get_dimensions_image(video)
 
 
 def get_num_channels(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
-        return get_num_channels_image_tensor(inpt)
+        return get_num_channels_image(inpt)
 
     _log_api_usage_once(get_num_channels)
 
@@ -55,7 +55,7 @@ def get_num_channels(inpt: torch.Tensor) -> int:
 
 @_register_kernel_internal(get_num_channels, torch.Tensor)
 @_register_kernel_internal(get_num_channels, datapoints.Image, datapoint_wrapper=False)
-def get_num_channels_image_tensor(image: torch.Tensor) -> int:
+def get_num_channels_image(image: torch.Tensor) -> int:
     chw = image.shape[-3:]
     ndims = len(chw)
     if ndims == 3:
@@ -66,12 +66,12 @@ def get_num_channels_image_tensor(image: torch.Tensor) -> int:
         raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
-get_num_channels_image_pil = _register_kernel_internal(get_num_channels, PIL.Image.Image)(_FP.get_image_num_channels)
+_get_num_channels_image_pil = _register_kernel_internal(get_num_channels, PIL.Image.Image)(_FP.get_image_num_channels)
 
 
 @_register_kernel_internal(get_num_channels, datapoints.Video, datapoint_wrapper=False)
 def get_num_channels_video(video: torch.Tensor) -> int:
-    return get_num_channels_image_tensor(video)
+    return get_num_channels_image(video)
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -81,7 +81,7 @@ get_image_num_channels = get_num_channels
 
 def get_size(inpt: torch.Tensor) -> List[int]:
     if torch.jit.is_scripting():
-        return get_size_image_tensor(inpt)
+        return get_size_image(inpt)
 
     _log_api_usage_once(get_size)
 
@@ -91,7 +91,7 @@ def get_size(inpt: torch.Tensor) -> List[int]:
 
 @_register_kernel_internal(get_size, torch.Tensor)
 @_register_kernel_internal(get_size, datapoints.Image, datapoint_wrapper=False)
-def get_size_image_tensor(image: torch.Tensor) -> List[int]:
+def get_size_image(image: torch.Tensor) -> List[int]:
     hw = list(image.shape[-2:])
     ndims = len(hw)
     if ndims == 2:
@@ -101,19 +101,19 @@ def get_size_image_tensor(image: torch.Tensor) -> List[int]:
 
 
 @_register_kernel_internal(get_size, PIL.Image.Image)
-def get_size_image_pil(image: PIL.Image.Image) -> List[int]:
+def _get_size_image_pil(image: PIL.Image.Image) -> List[int]:
     width, height = _FP.get_image_size(image)
     return [height, width]
 
 
 @_register_kernel_internal(get_size, datapoints.Video, datapoint_wrapper=False)
 def get_size_video(video: torch.Tensor) -> List[int]:
-    return get_size_image_tensor(video)
+    return get_size_image(video)
 
 
 @_register_kernel_internal(get_size, datapoints.Mask, datapoint_wrapper=False)
 def get_size_mask(mask: torch.Tensor) -> List[int]:
-    return get_size_image_tensor(mask)
+    return get_size_image(mask)
 
 
 @_register_kernel_internal(get_size, datapoints.BoundingBoxes, datapoint_wrapper=False)

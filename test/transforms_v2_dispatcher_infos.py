@@ -142,32 +142,32 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.crop,
         kernels={
-            datapoints.Image: F.crop_image_tensor,
+            datapoints.Image: F.crop_image,
             datapoints.Video: F.crop_video,
             datapoints.BoundingBoxes: F.crop_bounding_boxes,
             datapoints.Mask: F.crop_mask,
         },
-        pil_kernel_info=PILKernelInfo(F.crop_image_pil, kernel_name="crop_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._crop_image_pil, kernel_name="crop_image_pil"),
     ),
     DispatcherInfo(
         F.resized_crop,
         kernels={
-            datapoints.Image: F.resized_crop_image_tensor,
+            datapoints.Image: F.resized_crop_image,
             datapoints.Video: F.resized_crop_video,
             datapoints.BoundingBoxes: F.resized_crop_bounding_boxes,
             datapoints.Mask: F.resized_crop_mask,
         },
-        pil_kernel_info=PILKernelInfo(F.resized_crop_image_pil),
+        pil_kernel_info=PILKernelInfo(F._resized_crop_image_pil),
     ),
     DispatcherInfo(
         F.pad,
         kernels={
-            datapoints.Image: F.pad_image_tensor,
+            datapoints.Image: F.pad_image,
             datapoints.Video: F.pad_video,
             datapoints.BoundingBoxes: F.pad_bounding_boxes,
             datapoints.Mask: F.pad_mask,
         },
-        pil_kernel_info=PILKernelInfo(F.pad_image_pil, kernel_name="pad_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._pad_image_pil, kernel_name="pad_image_pil"),
         test_marks=[
             *xfails_pil(
                 reason=(
@@ -184,12 +184,12 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.perspective,
         kernels={
-            datapoints.Image: F.perspective_image_tensor,
+            datapoints.Image: F.perspective_image,
             datapoints.Video: F.perspective_video,
             datapoints.BoundingBoxes: F.perspective_bounding_boxes,
             datapoints.Mask: F.perspective_mask,
         },
-        pil_kernel_info=PILKernelInfo(F.perspective_image_pil),
+        pil_kernel_info=PILKernelInfo(F._perspective_image_pil),
         test_marks=[
             *xfails_pil_if_fill_sequence_needs_broadcast,
             xfail_jit_python_scalar_arg("fill"),
@@ -198,23 +198,23 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.elastic,
         kernels={
-            datapoints.Image: F.elastic_image_tensor,
+            datapoints.Image: F.elastic_image,
             datapoints.Video: F.elastic_video,
             datapoints.BoundingBoxes: F.elastic_bounding_boxes,
             datapoints.Mask: F.elastic_mask,
         },
-        pil_kernel_info=PILKernelInfo(F.elastic_image_pil),
+        pil_kernel_info=PILKernelInfo(F._elastic_image_pil),
         test_marks=[xfail_jit_python_scalar_arg("fill")],
     ),
     DispatcherInfo(
         F.center_crop,
         kernels={
-            datapoints.Image: F.center_crop_image_tensor,
+            datapoints.Image: F.center_crop_image,
             datapoints.Video: F.center_crop_video,
             datapoints.BoundingBoxes: F.center_crop_bounding_boxes,
             datapoints.Mask: F.center_crop_mask,
         },
-        pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
+        pil_kernel_info=PILKernelInfo(F._center_crop_image_pil),
         test_marks=[
             xfail_jit_python_scalar_arg("output_size"),
         ],
@@ -222,10 +222,10 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.gaussian_blur,
         kernels={
-            datapoints.Image: F.gaussian_blur_image_tensor,
+            datapoints.Image: F.gaussian_blur_image,
             datapoints.Video: F.gaussian_blur_video,
         },
-        pil_kernel_info=PILKernelInfo(F.gaussian_blur_image_pil),
+        pil_kernel_info=PILKernelInfo(F._gaussian_blur_image_pil),
         test_marks=[
             xfail_jit_python_scalar_arg("kernel_size"),
             xfail_jit_python_scalar_arg("sigma"),
@@ -234,58 +234,58 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.equalize,
         kernels={
-            datapoints.Image: F.equalize_image_tensor,
+            datapoints.Image: F.equalize_image,
             datapoints.Video: F.equalize_video,
         },
-        pil_kernel_info=PILKernelInfo(F.equalize_image_pil, kernel_name="equalize_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._equalize_image_pil, kernel_name="equalize_image_pil"),
     ),
     DispatcherInfo(
         F.invert,
         kernels={
-            datapoints.Image: F.invert_image_tensor,
+            datapoints.Image: F.invert_image,
             datapoints.Video: F.invert_video,
         },
-        pil_kernel_info=PILKernelInfo(F.invert_image_pil, kernel_name="invert_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._invert_image_pil, kernel_name="invert_image_pil"),
     ),
     DispatcherInfo(
         F.posterize,
         kernels={
-            datapoints.Image: F.posterize_image_tensor,
+            datapoints.Image: F.posterize_image,
             datapoints.Video: F.posterize_video,
         },
-        pil_kernel_info=PILKernelInfo(F.posterize_image_pil, kernel_name="posterize_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._posterize_image_pil, kernel_name="posterize_image_pil"),
     ),
     DispatcherInfo(
         F.solarize,
         kernels={
-            datapoints.Image: F.solarize_image_tensor,
+            datapoints.Image: F.solarize_image,
             datapoints.Video: F.solarize_video,
         },
-        pil_kernel_info=PILKernelInfo(F.solarize_image_pil, kernel_name="solarize_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._solarize_image_pil, kernel_name="solarize_image_pil"),
     ),
     DispatcherInfo(
         F.autocontrast,
         kernels={
-            datapoints.Image: F.autocontrast_image_tensor,
+            datapoints.Image: F.autocontrast_image,
             datapoints.Video: F.autocontrast_video,
         },
-        pil_kernel_info=PILKernelInfo(F.autocontrast_image_pil, kernel_name="autocontrast_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._autocontrast_image_pil, kernel_name="autocontrast_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_sharpness,
         kernels={
-            datapoints.Image: F.adjust_sharpness_image_tensor,
+            datapoints.Image: F.adjust_sharpness_image,
             datapoints.Video: F.adjust_sharpness_video,
         },
-        pil_kernel_info=PILKernelInfo(F.adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
     ),
     DispatcherInfo(
         F.erase,
         kernels={
-            datapoints.Image: F.erase_image_tensor,
+            datapoints.Image: F.erase_image,
             datapoints.Video: F.erase_video,
         },
-        pil_kernel_info=PILKernelInfo(F.erase_image_pil),
+        pil_kernel_info=PILKernelInfo(F._erase_image_pil),
         test_marks=[
             skip_dispatch_datapoint,
         ],
@@ -293,42 +293,42 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.adjust_contrast,
         kernels={
-            datapoints.Image: F.adjust_contrast_image_tensor,
+            datapoints.Image: F.adjust_contrast_image,
             datapoints.Video: F.adjust_contrast_video,
         },
-        pil_kernel_info=PILKernelInfo(F.adjust_contrast_image_pil, kernel_name="adjust_contrast_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._adjust_contrast_image_pil, kernel_name="adjust_contrast_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_gamma,
         kernels={
-            datapoints.Image: F.adjust_gamma_image_tensor,
+            datapoints.Image: F.adjust_gamma_image,
             datapoints.Video: F.adjust_gamma_video,
         },
-        pil_kernel_info=PILKernelInfo(F.adjust_gamma_image_pil, kernel_name="adjust_gamma_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._adjust_gamma_image_pil, kernel_name="adjust_gamma_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_hue,
         kernels={
-            datapoints.Image: F.adjust_hue_image_tensor,
+            datapoints.Image: F.adjust_hue_image,
             datapoints.Video: F.adjust_hue_video,
         },
-        pil_kernel_info=PILKernelInfo(F.adjust_hue_image_pil, kernel_name="adjust_hue_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._adjust_hue_image_pil, kernel_name="adjust_hue_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_saturation,
         kernels={
-            datapoints.Image: F.adjust_saturation_image_tensor,
+            datapoints.Image: F.adjust_saturation_image,
             datapoints.Video: F.adjust_saturation_video,
         },
-        pil_kernel_info=PILKernelInfo(F.adjust_saturation_image_pil, kernel_name="adjust_saturation_image_pil"),
+        pil_kernel_info=PILKernelInfo(F._adjust_saturation_image_pil, kernel_name="adjust_saturation_image_pil"),
     ),
     DispatcherInfo(
         F.five_crop,
         kernels={
-            datapoints.Image: F.five_crop_image_tensor,
+            datapoints.Image: F.five_crop_image,
             datapoints.Video: F.five_crop_video,
         },
-        pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
+        pil_kernel_info=PILKernelInfo(F._five_crop_image_pil),
         test_marks=[
             xfail_jit_python_scalar_arg("size"),
             *multi_crop_skips,
@@ -337,19 +337,19 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.ten_crop,
         kernels={
-            datapoints.Image: F.ten_crop_image_tensor,
+            datapoints.Image: F.ten_crop_image,
             datapoints.Video: F.ten_crop_video,
         },
         test_marks=[
             xfail_jit_python_scalar_arg("size"),
             *multi_crop_skips,
         ],
-        pil_kernel_info=PILKernelInfo(F.ten_crop_image_pil),
+        pil_kernel_info=PILKernelInfo(F._ten_crop_image_pil),
     ),
     DispatcherInfo(
         F.normalize,
         kernels={
-            datapoints.Image: F.normalize_image_tensor,
+            datapoints.Image: F.normalize_image,
             datapoints.Video: F.normalize_video,
         },
         test_marks=[
