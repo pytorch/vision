@@ -76,32 +76,6 @@ class BoundingBoxes(Datapoint):
         return cls._wrap(tensor, format=format, canvas_size=canvas_size)
 
     @classmethod
-    def wrap_like(
-        cls,
-        other: BoundingBoxes,
-        tensor: torch.Tensor,
-        *,
-        format: Optional[Union[BoundingBoxFormat, str]] = None,
-        canvas_size: Optional[Tuple[int, int]] = None,
-    ) -> BoundingBoxes:
-        """Wrap a :class:`torch.Tensor` as :class:`BoundingBoxes` from a reference.
-
-        Args:
-            other (BoundingBoxes): Reference bounding box.
-            tensor (Tensor): Tensor to be wrapped as :class:`BoundingBoxes`
-            format (BoundingBoxFormat, str, optional): Format of the bounding box.  If omitted, it is taken from the
-                reference.
-            canvas_size (two-tuple of ints, optional): Height and width of the corresponding image or video. If
-                omitted, it is taken from the reference.
-
-        """
-        return cls._wrap(
-            tensor,
-            format=format if format is not None else other.format,
-            canvas_size=canvas_size if canvas_size is not None else other.canvas_size,
-        )
-
-    @classmethod
     def _wrap_output(
         cls,
         output: torch.Tensor,
