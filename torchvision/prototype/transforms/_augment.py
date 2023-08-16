@@ -112,7 +112,7 @@ class SimpleCopyPaste(Transform):
             if isinstance(obj, datapoints.Image) or is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(F.to_image_tensor(obj))
+                images.append(F.to_image(obj))
             elif isinstance(obj, datapoints.BoundingBoxes):
                 bboxes.append(obj)
             elif isinstance(obj, datapoints.Mask):
@@ -144,7 +144,7 @@ class SimpleCopyPaste(Transform):
                 flat_sample[i] = datapoints.wrap(output_images[c0], like=obj)
                 c0 += 1
             elif isinstance(obj, PIL.Image.Image):
-                flat_sample[i] = F.to_image_pil(output_images[c0])
+                flat_sample[i] = F.to_pil_image(output_images[c0])
                 c0 += 1
             elif is_simple_tensor(obj):
                 flat_sample[i] = output_images[c0]

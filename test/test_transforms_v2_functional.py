@@ -377,7 +377,7 @@ class TestDispatchers:
         if image_datapoint.ndim > 3:
             pytest.skip("Input is batched")
 
-        image_pil = F.to_image_pil(image_datapoint)
+        image_pil = F.to_pil_image(image_datapoint)
 
         output = info.dispatcher(image_pil, *other_args, **kwargs)
 
@@ -470,7 +470,7 @@ class TestDispatchers:
             (F.hflip, F.horizontal_flip),
             (F.vflip, F.vertical_flip),
             (F.get_image_num_channels, F.get_num_channels),
-            (F.to_pil_image, F.to_image_pil),
+            (F.to_pil_image, F.to_pil_image),
             (F.elastic_transform, F.elastic),
             (F.to_grayscale, F.rgb_to_grayscale),
         ]
@@ -977,8 +977,8 @@ def test_correctness_gaussian_blur_image_tensor(device, canvas_size, dt, ksize, 
         PIL.Image.new("RGB", (32, 32), 122),
     ],
 )
-def test_to_image_tensor(inpt):
-    output = F.to_image_tensor(inpt)
+def test_to_image(inpt):
+    output = F.to_image(inpt)
     assert isinstance(output, torch.Tensor)
     assert output.shape == (3, 32, 32)
 
@@ -993,8 +993,8 @@ def test_to_image_tensor(inpt):
     ],
 )
 @pytest.mark.parametrize("mode", [None, "RGB"])
-def test_to_image_pil(inpt, mode):
-    output = F.to_image_pil(inpt, mode=mode)
+def test_to_pil_image(inpt, mode):
+    output = F.to_pil_image(inpt, mode=mode)
     assert isinstance(output, PIL.Image.Image)
 
     assert np.asarray(inpt).sum() == np.asarray(output).sum()
