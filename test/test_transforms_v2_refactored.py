@@ -410,8 +410,16 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, exp
         float(np.max(transformed_points[:4, 1])),
     ]
     if expand:
-        width = int(np.max(transformed_points[4:, 0]) - np.min(transformed_points[4:, 0]))
-        height = int(np.max(transformed_points[4:, 1]) - np.min(transformed_points[4:, 1]))
+        x_translate = float(np.min(transformed_points[4:, 0]))
+        y_translate = float(np.min(transformed_points[4:, 1]))
+
+        output_xyxy[0] -= x_translate
+        output_xyxy[1] -= y_translate
+        output_xyxy[2] -= x_translate
+        output_xyxy[3] -= y_translate
+
+        width = int(np.max(transformed_points[4:, 0]) - x_translate)
+        height = int(np.max(transformed_points[4:, 1]) - y_translate)
     output_xyxy = datapoints.BoundingBoxes(
         output_xyxy, format=datapoints.BoundingBoxFormat.XYXY, canvas_size=(height, width)
     )
@@ -1526,11 +1534,10 @@ class TestRotate:
     def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center):
         if center is None:
             center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
+        cx, cy = center
 
         a = np.cos(angle * np.pi / 180.0)
         b = np.sin(angle * np.pi / 180.0)
-        cx = center[0]
-        cy = center[1]
         affine_matrix = np.array(
             [
                 [a, b, cx - cx * a - b * cy],
@@ -1550,18 +1557,11 @@ class TestRotate:
         actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
 
-        if expand:
-            # FIXME: this demonstrates the mismatch between the expanded size of images and bounding boxes
-            #  This should be removed after that is fixed
-            actual_image = F.rotate(make_image(F.get_size(bounding_boxes)), angle=angle, expand=expand, center=center)
-            assert F.get_size(actual) == F.get_size(actual_image)
-        else:
-            torch.testing.assert_close(actual, expected)
-            assert F.get_size(actual) == F.get_size(expected)
+        torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    # FIXME: re-add True here when the mismatch above is fixed
-    @pytest.mark.parametrize("expand", [False])
+    @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
@@ -1578,7 +1578,7 @@ class TestRotate:
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
-        assert F.get_size(actual) == F.get_size(expected)
+        torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
     @pytest.mark.parametrize("degrees", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["degrees"])
     @pytest.mark.parametrize("seed", list(range(10)))
