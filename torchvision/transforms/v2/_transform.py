@@ -56,7 +56,7 @@ class Transform(nn.Module):
 
     def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
         # Below is a heuristic on how to deal with pure tensor inputs:
-        # 1. Simple tensors, i.e. tensors that are not a datapoint, are passed through if there is an explicit image
+        # 1. Pure tensors, i.e. tensors that are not a datapoint, are passed through if there is an explicit image
         #    (`datapoints.Image` or `PIL.Image.Image`) or video (`datapoints.Video`) in the sample.
         # 2. If there is no explicit image or video in the sample, only the first encountered pure tensor is
         #    transformed as image, while the rest is passed through. The order is defined by the returned `flat_inputs`
