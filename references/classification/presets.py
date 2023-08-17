@@ -68,6 +68,9 @@ class ClassificationPresetTrain:
         if random_erase_prob > 0:
             transforms.append(T.RandomErasing(p=random_erase_prob))
 
+        if use_v2:
+            transforms.append(T.ToPureTensor())
+
         self.transforms = T.Compose(transforms)
 
     def __call__(self, img):
@@ -106,6 +109,9 @@ class ClassificationPresetEval:
             T.ConvertImageDtype(torch.float),
             T.Normalize(mean=mean, std=std),
         ]
+
+        if use_v2:
+            transforms.append(T.ToPureTensor())
 
         self.transforms = T.Compose(transforms)
 

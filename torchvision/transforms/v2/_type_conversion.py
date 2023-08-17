@@ -75,3 +75,17 @@ class ToPILImage(Transform):
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> PIL.Image.Image:
         return F.to_pil_image(inpt, mode=self.mode)
+
+
+class ToPureTensor(Transform):
+    """[BETA] Convert all datapoints to pure tensors, removing associated metadata (if any).
+
+    .. v2betastatus:: ToPureTensor transform
+
+    This doesn't scale or change the values, only the type.
+    """
+
+    _transformed_types = (datapoints.Datapoint,)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+        return inpt.as_subclass(torch.Tensor)
