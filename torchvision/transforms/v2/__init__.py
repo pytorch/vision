@@ -52,7 +52,7 @@ from ._misc import (
     ToDtype,
 )
 from ._temporal import UniformTemporalSubsample
-from ._type_conversion import PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
+from ._type_conversion import PILToTensor, ToImage, ToPILImage
 
 from ._deprecated import ToTensor  # usort: skip
 

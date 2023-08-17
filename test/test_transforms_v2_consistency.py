@@ -30,7 +30,7 @@ from torchvision._utils import sequence_to_str
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
 from torchvision.transforms.v2._utils import _get_fill
-from torchvision.transforms.v2.functional import to_image_pil
+from torchvision.transforms.v2.functional import to_pil_image
 from torchvision.transforms.v2.utils import query_size
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
@@ -630,7 +630,7 @@ def check_call_consistency(
         )
 
         if image.ndim == 3 and supports_pil:
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
 
             try:
                 torch.manual_seed(0)
@@ -869,7 +869,7 @@ class TestToTensorTransforms:
         legacy_transform = legacy_transforms.PILToTensor()
 
         for image in make_images(extra_dims=[()]):
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
 
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
 
@@ -879,7 +879,7 @@ class TestToTensorTransforms:
         legacy_transform = legacy_transforms.ToTensor()
 
         for image in make_images(extra_dims=[()]):
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
             image_numpy = np.array(image_pil)
 
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
@@ -1088,7 +1088,7 @@ class TestRefDetTransforms:
         def make_label(extra_dims, categories):
             return torch.randint(categories, extra_dims, dtype=torch.int64)
 
-        pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
+        pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -1192,7 +1192,7 @@ class TestRefSegTransforms:
 
         conv_fns = []
         if supports_pil:
-            conv_fns.append(to_image_pil)
+            conv_fns.append(to_pil_image)
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
@@ -1201,8 +1201,8 @@ class TestRefSegTransforms:
 
             dp = (conv_fn(datapoint_image), datapoint_mask)
             dp_ref = (
-                to_image_pil(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
-                to_image_pil(datapoint_mask),
+                to_pil_image(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
+                to_pil_image(datapoint_mask),
             )
 
             yield dp, dp_ref
