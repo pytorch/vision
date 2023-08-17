@@ -9,7 +9,7 @@ from torchvision.prototype import datapoints as proto_datapoints
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
 
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.utils import is_simple_tensor
+from torchvision.transforms.v2.utils import is_pure_tensor
 
 
 class SimpleCopyPaste(Transform):
@@ -109,7 +109,7 @@ class SimpleCopyPaste(Transform):
         # with List[image], List[BoundingBoxes], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, datapoints.Image) or is_simple_tensor(obj):
+            if isinstance(obj, datapoints.Image) or is_pure_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
                 images.append(F.to_image(obj))
@@ -146,7 +146,7 @@ class SimpleCopyPaste(Transform):
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_pil_image(output_images[c0])
                 c0 += 1
-            elif is_simple_tensor(obj):
+            elif is_pure_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, datapoints.BoundingBoxes):

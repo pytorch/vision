@@ -29,7 +29,7 @@ from torchvision import datapoints
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
+from torchvision.transforms.v2.utils import check_type, is_pure_tensor, query_chw
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -71,7 +71,7 @@ def auto_augment_adapter(transform, input, device):
         if isinstance(value, (datapoints.BoundingBoxes, datapoints.Mask)):
             # AA transforms don't support bounding boxes or masks
             continue
-        elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor, PIL.Image.Image)):
+        elif check_type(value, (datapoints.Image, datapoints.Video, is_pure_tensor, PIL.Image.Image)):
             if image_or_video_found:
                 # AA transforms only support a single image or video
                 continue
@@ -101,7 +101,7 @@ def normalize_adapter(transform, input, device):
         if isinstance(value, PIL.Image.Image):
             # normalize doesn't support PIL images
             continue
-        elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor)):
+        elif check_type(value, (datapoints.Image, datapoints.Video, is_pure_tensor)):
             # normalize doesn't support integer images
             value = F.to_dtype(value, torch.float32, scale=True)
         adapted_input[key] = value
@@ -357,19 +357,19 @@ class TestSmoke:
         3,
     ),
 )
-def test_simple_tensor_heuristic(flat_inputs):
-    def split_on_simple_tensor(to_split):
+def test_pure_tensor_heuristic(flat_inputs):
+    def split_on_pure_tensor(to_split):
         # This takes a sequence that is structurally aligned with `flat_inputs` and splits its items into three parts:
         # 1. The first pure tensor. If none is present, this will be `None`
         # 2. A list of the remaining pure tensors
         # 3. A list of all other items
-        simple_tensors = []
+        pure_tensors = []
         others = []
         # Splitting always happens on the original `flat_inputs` to avoid any erroneous type changes by the transform to
         # affect the splitting.
         for item, inpt in zip(to_split, flat_inputs):
-            (simple_tensors if is_simple_tensor(inpt) else others).append(item)
-        return simple_tensors[0] if simple_tensors else None, simple_tensors[1:], others
+            (pure_tensors if is_pure_tensor(inpt) else others).append(item)
+        return pure_tensors[0] if pure_tensors else None, pure_tensors[1:], others
 
     class CopyCloneTransform(transforms.Transform):
         def _transform(self, inpt, params):
@@ -385,20 +385,20 @@ def test_simple_tensor_heuristic(flat_inputs):
             assert_equal(output, inpt)
             return True
 
-    first_simple_tensor_input, other_simple_tensor_inputs, other_inputs = split_on_simple_tensor(flat_inputs)
+    first_pure_tensor_input, other_pure_tensor_inputs, other_inputs = split_on_pure_tensor(flat_inputs)
 
     transform = CopyCloneTransform()
     transformed_sample = transform(flat_inputs)
 
-    first_simple_tensor_output, other_simple_tensor_outputs, other_outputs = split_on_simple_tensor(transformed_sample)
+    first_pure_tensor_output, other_pure_tensor_outputs, other_outputs = split_on_pure_tensor(transformed_sample)
 
-    if first_simple_tensor_input is not None:
+    if first_pure_tensor_input is not None:
         if other_inputs:
-            assert not transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+            assert not transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
         else:
-            assert transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+            assert transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
 
-    for output, inpt in zip(other_simple_tensor_outputs, other_simple_tensor_inputs):
+    for output, inpt in zip(other_pure_tensor_outputs, other_pure_tensor_inputs):
         assert not transform.was_applied(output, inpt)
 
     for input, output in zip(other_inputs, other_outputs):
@@ -1004,7 +1004,7 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
         image = to_pil_image(image[0])
     elif image_type is torch.Tensor:
         image = image.as_subclass(torch.Tensor)
-        assert is_simple_tensor(image)
+        assert is_pure_tensor(image)
 
     label = 1 if label_type is int else torch.tensor([1])
 
@@ -1125,7 +1125,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
         image = to_pil_image(image[0])
     elif image_type is torch.Tensor:
         image = image.as_subclass(torch.Tensor)
-        assert is_simple_tensor(image)
+        assert is_pure_tensor(image)
 
     label = torch.randint(0, 10, size=(num_boxes,))
 
@@ -1146,7 +1146,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     out = t(sample)
 
     if isinstance(to_tensor, transforms.ToTensor) and image_type is not datapoints.Image:
-        assert is_simple_tensor(out["image"])
+        assert is_pure_tensor(out["image"])
     else:
         assert isinstance(out["image"], datapoints.Image)
     assert isinstance(out["label"], type(sample["label"]))

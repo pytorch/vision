@@ -8,7 +8,7 @@ import torch
 from torchvision import datapoints
 from torchvision.transforms.v2 import Transform
 
-from torchvision.transforms.v2.utils import is_simple_tensor
+from torchvision.transforms.v2.utils import is_pure_tensor
 
 
 T = TypeVar("T")
@@ -25,7 +25,7 @@ def _get_defaultdict(default: T) -> Dict[Any, T]:
 
 
 class PermuteDimensions(Transform):
-    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_pure_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, dims: Union[Sequence[int], Dict[Type, Optional[Sequence[int]]]]) -> None:
         super().__init__()
@@ -47,7 +47,7 @@ class PermuteDimensions(Transform):
 
 
 class TransposeDimensions(Transform):
-    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_pure_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, dims: Union[Tuple[int, int], Dict[Type, Optional[Tuple[int, int]]]]) -> None:
         super().__init__()

@@ -8,7 +8,7 @@ import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints
-from torchvision.transforms.v2.utils import check_type, has_any, is_simple_tensor
+from torchvision.transforms.v2.utils import check_type, has_any, is_pure_tensor
 from torchvision.utils import _log_api_usage_once
 
 from .functional._utils import _get_kernel
@@ -72,15 +72,15 @@ class Transform(nn.Module):
         # However, this case wasn't supported by transforms v1 either, so there is no BC concern.
 
         needs_transform_list = []
-        transform_simple_tensor = not has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
+        transform_pure_tensor = not has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
         for inpt in flat_inputs:
             needs_transform = True
 
             if not check_type(inpt, self._transformed_types):
                 needs_transform = False
-            elif is_simple_tensor(inpt):
-                if transform_simple_tensor:
-                    transform_simple_tensor = False
+            elif is_pure_tensor(inpt):
+                if transform_pure_tensor:
+                    transform_pure_tensor = False
                 else:
                     needs_transform = False
             needs_transform_list.append(needs_transform)

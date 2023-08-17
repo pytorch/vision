@@ -8,7 +8,7 @@ from torchvision.transforms import _functional_pil as _FP
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_kernel_internal, is_simple_tensor
+from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
 
 
 def get_dimensions(inpt: torch.Tensor) -> List[int]:
@@ -213,7 +213,7 @@ def convert_format_bounding_boxes(
     if not torch.jit.is_scripting():
         _log_api_usage_once(convert_format_bounding_boxes)
 
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting() or is_pure_tensor(inpt):
         if old_format is None:
             raise ValueError("For pure tensor inputs, `old_format` has to be passed.")
         return _convert_format_bounding_boxes(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
@@ -256,7 +256,7 @@ def clamp_bounding_boxes(
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_bounding_boxes)
 
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
         if format is None or canvas_size is None:
             raise ValueError("For pure tensor inputs, `format` and `canvas_size` has to be passed.")
