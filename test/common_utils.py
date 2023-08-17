@@ -402,7 +402,7 @@ def make_image_pil(*args, **kwargs):
     return to_pil_image(make_image(*args, **kwargs))
 
 
-def make_bounding_box(
+def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
     format=datapoints.BoundingBoxFormat.XYXY,

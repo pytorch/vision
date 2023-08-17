@@ -18,7 +18,11 @@ from torchvision.transforms.v2.functional._meta import clamp_bounding_boxes, con
 from torchvision.transforms.v2.utils import is_simple_tensor
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
-from transforms_v2_legacy_utils import DEFAULT_SQUARE_SPATIAL_SIZE, make_bounding_boxes, parametrized_error_message
+from transforms_v2_legacy_utils import (
+    DEFAULT_SQUARE_SPATIAL_SIZE,
+    make_multiple_bounding_boxes,
+    parametrized_error_message,
+)
 
 
 KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
@@ -498,7 +502,7 @@ class TestClampBoundingBoxes:
         ],
     )
     def test_simple_tensor_insufficient_metadata(self, metadata):
-        simple_tensor = next(make_bounding_boxes()).as_subclass(torch.Tensor)
+        simple_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
 
         with pytest.raises(ValueError, match=re.escape("`format` and `canvas_size` has to be passed")):
             F.clamp_bounding_boxes(simple_tensor, **metadata)
@@ -512,7 +516,7 @@ class TestClampBoundingBoxes:
         ],
     )
     def test_datapoint_explicit_metadata(self, metadata):
-        datapoint = next(make_bounding_boxes())
+        datapoint = next(make_multiple_bounding_boxes())
 
         with pytest.raises(ValueError, match=re.escape("`format` and `canvas_size` must not be passed")):
             F.clamp_bounding_boxes(datapoint, **metadata)
@@ -522,8 +526,8 @@ class TestConvertFormatBoundingBoxes:
     @pytest.mark.parametrize(
         ("inpt", "old_format"),
         [
-            (next(make_bounding_boxes()), None),
-            (next(make_bounding_boxes()).as_subclass(torch.Tensor), datapoints.BoundingBoxFormat.XYXY),
+            (next(make_multiple_bounding_boxes()), None),
+            (next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor), datapoints.BoundingBoxFormat.XYXY),
         ],
     )
     def test_missing_new_format(self, inpt, old_format):
@@ -531,13 +535,13 @@ class TestConvertFormatBoundingBoxes:
             F.convert_format_bounding_boxes(inpt, old_format)
 
     def test_simple_tensor_insufficient_metadata(self):
-        simple_tensor = next(make_bounding_boxes()).as_subclass(torch.Tensor)
+        simple_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
 
         with pytest.raises(ValueError, match=re.escape("`old_format` has to be passed")):
             F.convert_format_bounding_boxes(simple_tensor, new_format=datapoints.BoundingBoxFormat.CXCYWH)
 
     def test_datapoint_explicit_metadata(self):
-        datapoint = next(make_bounding_boxes())
+        datapoint = next(make_multiple_bounding_boxes())
 
         with pytest.raises(ValueError, match=re.escape("`old_format` must not be passed")):
             F.convert_format_bounding_boxes(
@@ -728,7 +732,7 @@ def test_correctness_pad_bounding_boxes(device, padding):
         height, width = bbox.canvas_size
         return height + pad_up + pad_down, width + pad_left + pad_right
 
-    for bboxes in make_bounding_boxes(extra_dims=((4,),)):
+    for bboxes in make_multiple_bounding_boxes(extra_dims=((4,),)):
         bboxes = bboxes.to(device)
         bboxes_format = bboxes.format
         bboxes_canvas_size = bboxes.canvas_size
@@ -814,7 +818,7 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
     pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
     inv_pcoeffs = _get_perspective_coeffs(endpoints, startpoints)
 
-    for bboxes in make_bounding_boxes(spatial_size=canvas_size, extra_dims=((4,),)):
+    for bboxes in make_multiple_bounding_boxes(spatial_size=canvas_size, extra_dims=((4,),)):
         bboxes = bboxes.to(device)
 
         output_bboxes = F.perspective_bounding_boxes(
@@ -862,7 +866,7 @@ def test_correctness_center_crop_bounding_boxes(device, output_size):
         out_bbox = clamp_bounding_boxes(out_bbox, format=format_, canvas_size=output_size)
         return out_bbox.to(dtype=dtype, device=bbox.device)
 
-    for bboxes in make_bounding_boxes(extra_dims=((4,),)):
+    for bboxes in make_multiple_bounding_boxes(extra_dims=((4,),)):
         bboxes = bboxes.to(device)
         bboxes_format = bboxes.format
         bboxes_canvas_size = bboxes.canvas_size

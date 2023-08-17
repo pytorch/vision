@@ -24,7 +24,7 @@ from torchvision.transforms.v2.functional import to_pil_image
 from torchvision.transforms.v2.utils import query_size
 from transforms_v2_legacy_utils import (
     ArgsKwargs,
-    make_bounding_box,
+    make_bounding_boxes,
     make_detection_mask,
     make_image,
     make_images,
@@ -1088,7 +1088,7 @@ class TestRefDetTransforms:
 
         pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1098,7 +1098,7 @@ class TestRefDetTransforms:
 
         tensor_image = torch.Tensor(make_image(size=size, color_space="RGB", dtype=torch.float32))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1108,7 +1108,7 @@ class TestRefDetTransforms:
 
         datapoint_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:

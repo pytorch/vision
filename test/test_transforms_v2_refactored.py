@@ -19,7 +19,7 @@ from common_utils import (
     cpu_and_cuda,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
-    make_bounding_box,
+    make_bounding_boxes,
     make_detection_mask,
     make_image,
     make_image_pil,
@@ -456,7 +456,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_boxes = make_bounding_box(
+        bounding_boxes = make_bounding_boxes(
             format=format,
             canvas_size=self.INPUT_SIZE,
             dtype=dtype,
@@ -481,7 +481,7 @@ class TestResize:
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, size, make_input):
         check_functional(
@@ -514,7 +514,7 @@ class TestResize:
             make_image_tensor,
             make_image_pil,
             make_image,
-            make_bounding_box,
+            make_bounding_boxes,
             make_segmentation_mask,
             make_detection_mask,
             make_video,
@@ -579,7 +579,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        bounding_boxes = make_bounding_box(format=format, canvas_size=self.INPUT_SIZE)
+        bounding_boxes = make_bounding_boxes(format=format, canvas_size=self.INPUT_SIZE)
 
         actual = fn(bounding_boxes, size=size, **max_size_kwarg)
         expected = self._reference_resize_bounding_boxes(bounding_boxes, size=size, **max_size_kwarg)
@@ -618,7 +618,7 @@ class TestResize:
             make_image_tensor,
             make_image_pil,
             make_image,
-            make_bounding_box,
+            make_bounding_boxes,
             make_segmentation_mask,
             make_detection_mask,
             make_video,
@@ -687,7 +687,7 @@ class TestResize:
             make_image_tensor,
             make_image_pil,
             make_image,
-            make_bounding_box,
+            make_bounding_boxes,
             make_segmentation_mask,
             make_detection_mask,
             make_video,
@@ -714,7 +714,7 @@ class TestResize:
             make_image_tensor,
             make_image_pil,
             make_image,
-            make_bounding_box,
+            make_bounding_boxes,
             make_segmentation_mask,
             make_detection_mask,
             make_video,
@@ -743,7 +743,7 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
-        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
         check_kernel(
             F.horizontal_flip_bounding_boxes,
             bounding_boxes,
@@ -760,7 +760,7 @@ class TestHorizontalFlip:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
         check_functional(F.horizontal_flip, make_input())
@@ -781,7 +781,7 @@ class TestHorizontalFlip:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
@@ -821,7 +821,7 @@ class TestHorizontalFlip:
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
     def test_bounding_boxes_correctness(self, format, fn):
-        bounding_boxes = make_bounding_box(format=format)
+        bounding_boxes = make_bounding_boxes(format=format)
 
         actual = fn(bounding_boxes)
         expected = self._reference_horizontal_flip_bounding_boxes(bounding_boxes)
@@ -830,7 +830,7 @@ class TestHorizontalFlip:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform_noop(self, make_input, device):
@@ -917,7 +917,7 @@ class TestAffine:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
-        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
         self._check_kernel(
             F.affine_bounding_boxes,
             bounding_boxes,
@@ -936,7 +936,7 @@ class TestAffine:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
         check_functional(F.affine, make_input(), **self._MINIMAL_AFFINE_KWARGS)
@@ -957,7 +957,7 @@ class TestAffine:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
@@ -1076,7 +1076,7 @@ class TestAffine:
     @pytest.mark.parametrize("shear", _CORRECTNESS_AFFINE_KWARGS["shear"])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     def test_functional_bounding_boxes_correctness(self, format, angle, translate, scale, shear, center):
-        bounding_boxes = make_bounding_box(format=format)
+        bounding_boxes = make_bounding_boxes(format=format)
 
         actual = F.affine(
             bounding_boxes,
@@ -1101,7 +1101,7 @@ class TestAffine:
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, center, seed):
-        bounding_boxes = make_bounding_box(format=format)
+        bounding_boxes = make_bounding_boxes(format=format)
 
         transform = transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, center=center)
 
@@ -1208,7 +1208,7 @@ class TestVerticalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
-        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
         check_kernel(
             F.vertical_flip_bounding_boxes,
             bounding_boxes,
@@ -1225,7 +1225,7 @@ class TestVerticalFlip:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
         check_functional(F.vertical_flip, make_input())
@@ -1246,7 +1246,7 @@ class TestVerticalFlip:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
@@ -1282,7 +1282,7 @@ class TestVerticalFlip:
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_bounding_boxes_correctness(self, format, fn):
-        bounding_boxes = make_bounding_box(format=format)
+        bounding_boxes = make_bounding_boxes(format=format)
 
         actual = fn(bounding_boxes)
         expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes)
@@ -1291,7 +1291,7 @@ class TestVerticalFlip:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform_noop(self, make_input, device):
@@ -1356,7 +1356,7 @@ class TestRotate:
         if param != "angle":
             kwargs["angle"] = self._MINIMAL_AFFINE_KWARGS["angle"]
 
-        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
 
         check_kernel(
             F.rotate_bounding_boxes,
@@ -1375,7 +1375,7 @@ class TestRotate:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
         check_functional(F.rotate, make_input(), **self._MINIMAL_AFFINE_KWARGS)
@@ -1396,7 +1396,7 @@ class TestRotate:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
@@ -1490,7 +1490,7 @@ class TestRotate:
     @pytest.mark.parametrize("expand", [False])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     def test_functional_bounding_boxes_correctness(self, format, angle, expand, center):
-        bounding_boxes = make_bounding_box(format=format)
+        bounding_boxes = make_bounding_boxes(format=format)
 
         actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
@@ -1503,7 +1503,7 @@ class TestRotate:
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
-        bounding_boxes = make_bounding_box(format=format)
+        bounding_boxes = make_bounding_boxes(format=format)
 
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
@@ -1652,7 +1652,7 @@ class TestToDtype:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
     @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
@@ -1727,7 +1727,7 @@ class TestToDtype:
         mask_dtype = torch.bool
         sample = {
             "inpt": make_input(size=(H, W), dtype=inpt_dtype),
-            "bbox": make_bounding_box(canvas_size=(H, W), dtype=bbox_dtype),
+            "bbox": make_bounding_boxes(canvas_size=(H, W), dtype=bbox_dtype),
             "mask": make_detection_mask(size=(H, W), dtype=mask_dtype),
         }
 
@@ -2013,7 +2013,7 @@ class TestShapeGetters:
             (F.get_size_image, make_image_tensor),
             (F._get_size_image_pil, make_image_pil),
             (F.get_size_image, make_image),
-            (F.get_size_bounding_boxes, make_bounding_box),
+            (F.get_size_bounding_boxes, make_bounding_boxes),
             (F.get_size_mask, make_detection_mask),
             (F.get_size_mask, make_segmentation_mask),
             (F.get_size_video, make_video),
@@ -2043,15 +2043,15 @@ class TestShapeGetters:
     @pytest.mark.parametrize(
         ("functional", "make_input"),
         [
-            (F.get_dimensions, make_bounding_box),
+            (F.get_dimensions, make_bounding_boxes),
             (F.get_dimensions, make_detection_mask),
             (F.get_dimensions, make_segmentation_mask),
-            (F.get_num_channels, make_bounding_box),
+            (F.get_num_channels, make_bounding_boxes),
             (F.get_num_channels, make_detection_mask),
             (F.get_num_channels, make_segmentation_mask),
             (F.get_num_frames, make_image_pil),
             (F.get_num_frames, make_image),
-            (F.get_num_frames, make_bounding_box),
+            (F.get_num_frames, make_bounding_boxes),
             (F.get_num_frames, make_detection_mask),
             (F.get_num_frames, make_segmentation_mask),
         ],
@@ -2290,7 +2290,7 @@ class TestElastic:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
-        bounding_boxes = make_bounding_box(format=format, dtype=dtype, device=device)
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
 
         check_kernel(
             F.elastic_bounding_boxes,
@@ -2311,7 +2311,7 @@ class TestElastic:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
         input = make_input()
@@ -2333,7 +2333,7 @@ class TestElastic:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_displacement_error(self, make_input):
         input = make_input()
@@ -2346,7 +2346,7 @@ class TestElastic:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_box, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
     @pytest.mark.parametrize("size", [(163, 163), (72, 333), (313, 95)])

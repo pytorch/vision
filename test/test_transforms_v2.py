@@ -15,7 +15,7 @@ from common_utils import (
     assert_equal,
     assert_run_python_script,
     cpu_and_cuda,
-    make_bounding_box,
+    make_bounding_boxes,
     make_detection_mask,
     make_image,
     make_segmentation_mask,
@@ -27,7 +27,7 @@ from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
-from transforms_v2_legacy_utils import make_bounding_boxes, make_images, make_videos
+from transforms_v2_legacy_utils import make_images, make_multiple_bounding_boxes, make_videos
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -43,7 +43,7 @@ def make_pil_images(*args, **kwargs):
 
 
 def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
-    for bounding_boxes in make_bounding_boxes(*args, **kwargs):
+    for bounding_boxes in make_multiple_bounding_boxes(*args, **kwargs):
         yield bounding_boxes.data
 
 
@@ -178,13 +178,13 @@ class TestSmoke:
             image_datapoint=make_image(size=canvas_size),
             video_datapoint=make_video(size=canvas_size),
             image_pil=next(make_pil_images(sizes=[canvas_size], color_spaces=["RGB"])),
-            bounding_boxes_xyxy=make_bounding_box(
+            bounding_boxes_xyxy=make_bounding_boxes(
                 format=datapoints.BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(3,)
             ),
-            bounding_boxes_xywh=make_bounding_box(
+            bounding_boxes_xywh=make_bounding_boxes(
                 format=datapoints.BoundingBoxFormat.XYWH, canvas_size=canvas_size, batch_dims=(4,)
             ),
-            bounding_boxes_cxcywh=make_bounding_box(
+            bounding_boxes_cxcywh=make_bounding_boxes(
                 format=datapoints.BoundingBoxFormat.CXCYWH, canvas_size=canvas_size, batch_dims=(5,)
             ),
             bounding_boxes_degenerate_xyxy=datapoints.BoundingBoxes(
@@ -811,7 +811,7 @@ class TestRandomIoUCrop:
 
         size = (32, 24)
         image = make_image(size)
-        bboxes = make_bounding_box(format="XYXY", canvas_size=size, batch_dims=(6,))
+        bboxes = make_bounding_boxes(format="XYXY", canvas_size=size, batch_dims=(6,))
         masks = make_detection_mask(size, num_objects=6)
 
         sample = [image, bboxes, masks]
