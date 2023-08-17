@@ -10,7 +10,7 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
-from .utils import get_bounding_boxes, has_any, is_simple_tensor
+from .utils import get_bounding_boxes, has_any, is_pure_tensor
 
 
 # TODO: do we want/need to expose this?
@@ -75,7 +75,7 @@ class LinearTransformation(Transform):
 
     _v1_transform_cls = _transforms.LinearTransformation
 
-    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_pure_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
@@ -264,7 +264,7 @@ class ToDtype(Transform):
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
-            if not is_simple_tensor(inpt) and not isinstance(inpt, (datapoints.Image, datapoints.Video)):
+            if not is_pure_tensor(inpt) and not isinstance(inpt, (datapoints.Image, datapoints.Video)):
                 return inpt
 
             dtype: Optional[torch.dtype] = self.dtype
@@ -281,7 +281,7 @@ class ToDtype(Transform):
                 'e.g. dtype={datapoints.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
             )
 
-        supports_scaling = is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video))
+        supports_scaling = is_pure_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video))
         if dtype is None:
             if self.scale and supports_scaling:
                 warnings.warn(

@@ -11,7 +11,7 @@ from prototype_common_utils import make_label
 from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
 from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_pil_image
-from torchvision.transforms.v2.utils import check_type, is_simple_tensor
+from torchvision.transforms.v2.utils import check_type, is_pure_tensor
 from transforms_v2_legacy_utils import (
     DEFAULT_EXTRA_DIMS,
     make_bounding_boxes,
@@ -296,7 +296,7 @@ class TestPermuteDimensions:
             value_type = type(value)
             transformed_value = transformed_sample[key]
 
-            if check_type(value, (Image, is_simple_tensor, Video)):
+            if check_type(value, (Image, is_pure_tensor, Video)):
                 if transform.dims.get(value_type) is not None:
                     assert transformed_value.permute(inverse_dims[value_type]).equal(value)
                 assert type(transformed_value) == torch.Tensor
@@ -341,7 +341,7 @@ class TestTransposeDimensions:
             transformed_value = transformed_sample[key]
 
             transposed_dims = transform.dims.get(value_type)
-            if check_type(value, (Image, is_simple_tensor, Video)):
+            if check_type(value, (Image, is_pure_tensor, Video)):
                 if transposed_dims is not None:
                     assert transformed_value.transpose(*transposed_dims).equal(value)
                 assert type(transformed_value) == torch.Tensor

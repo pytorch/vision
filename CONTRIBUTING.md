@@ -30,30 +30,49 @@ clear and has sufficient instructions to be able to reproduce the issue.
 
 ## Development installation
 
-### Install PyTorch Nightly 
+
+### Dependencies
+
+Start by installing the **nightly** build of PyTorch following the [official
+instructions](https://pytorch.org/get-started/locally/).
+
+**Optionally**, install `libpng` and `libjpeg-turbo` if you want to enable
+support for
+native encoding / decoding of PNG and JPEG formats in
+[torchvision.io](https://pytorch.org/vision/stable/io.html#image):
 
 ```bash
-conda install pytorch -c pytorch-nightly
-# or with pip (see https://pytorch.org/get-started/locally/)
-# pip install numpy
-# pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
+conda install libpng libjpeg-turbo -c pytorch
 ```
 
-### Install Torchvision
+Note: you can use the `TORCHVISION_INCLUDE` and `TORCHVISION_LIBRARY`
+environment variables to tell the build system where to find those libraries if
+they are in specific locations. Take a look at
+[setup.py](https://github.com/pytorch/vision/blob/main/setup.py) for more
+details.
+
+### Clone and install torchvision
 
 ```bash
 git clone https://github.com/pytorch/vision.git
 cd vision
-python setup.py develop
+python setup.py develop  # use install instead of develop if you don't care about development.
 # or, for OSX
 # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py develop
-# for C++ debugging, please use DEBUG=1
+# for C++ debugging, use DEBUG=1
 # DEBUG=1 python setup.py develop
-pip install flake8 typing mypy pytest pytest-mock scipy
 ```
-You may also have to install `libpng-dev` and `libjpeg-turbo8-dev` libraries:
-```bash
-conda install libpng jpeg
+
+By default, GPU support is built if CUDA is found and `torch.cuda.is_available()` is true. It's possible to force
+building GPU support by setting `FORCE_CUDA=1` environment variable, which is useful when building a docker image.
+
+We don't officially support building from source using `pip`, but _if_ you do, you'll need to use the
+`--no-build-isolation` flag.
+
+Other development dependencies include:
+
+```
+pip install flake8 typing mypy pytest pytest-mock scipy
 ```
 
 ## Development Process
@@ -192,7 +211,7 @@ Please refer to the guidelines in [Contributing to Torchvision - Models](https:/
  
 ### New dataset
 
-More details on how to add a new dataset will be provided later. Please, do not send any PR with a new dataset without discussing 
+Please, do not send any PR with a new dataset without discussing 
 it in an issue as, most likely, it will not be accepted.
 
 ### Pull Request

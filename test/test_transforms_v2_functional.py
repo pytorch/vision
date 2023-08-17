@@ -15,7 +15,7 @@ from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
 from torchvision.transforms.v2.functional._meta import clamp_bounding_boxes, convert_format_bounding_boxes
-from torchvision.transforms.v2.utils import is_simple_tensor
+from torchvision.transforms.v2.utils import is_pure_tensor
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
 from transforms_v2_legacy_utils import (
@@ -164,7 +164,7 @@ class TestKernels:
     def test_batched_vs_single(self, test_id, info, args_kwargs, device):
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
-        datapoint_type = datapoints.Image if is_simple_tensor(batched_input) else type(batched_input)
+        datapoint_type = datapoints.Image if is_pure_tensor(batched_input) else type(batched_input)
         # This dictionary contains the number of rightmost dimensions that contain the actual data.
         # Everything to the left is considered a batch dimension.
         data_dims = {
@@ -329,9 +329,9 @@ class TestDispatchers:
         dispatcher = script(info.dispatcher)
 
         (image_datapoint, *other_args), kwargs = args_kwargs.load(device)
-        image_simple_tensor = torch.Tensor(image_datapoint)
+        image_pure_tensor = torch.Tensor(image_datapoint)
 
-        dispatcher(image_simple_tensor, *other_args, **kwargs)
+        dispatcher(image_pure_tensor, *other_args, **kwargs)
 
     # TODO: We need this until the dispatchers below also have `DispatcherInfo`'s. If they do, `test_scripted_smoke`
     #  replaces this test for them.
@@ -354,11 +354,11 @@ class TestDispatchers:
         script(dispatcher)
 
     @image_sample_inputs
-    def test_simple_tensor_output_type(self, info, args_kwargs):
+    def test_pure_tensor_output_type(self, info, args_kwargs):
         (image_datapoint, *other_args), kwargs = args_kwargs.load()
-        image_simple_tensor = image_datapoint.as_subclass(torch.Tensor)
+        image_pure_tensor = image_datapoint.as_subclass(torch.Tensor)
 
-        output = info.dispatcher(image_simple_tensor, *other_args, **kwargs)
+        output = info.dispatcher(image_pure_tensor, *other_args, **kwargs)
 
         # We cannot use `isinstance` here since all datapoints are instances of `torch.Tensor` as well
         assert type(output) is torch.Tensor
@@ -501,11 +501,11 @@ class TestClampBoundingBoxes:
             dict(canvas_size=(1, 1)),
         ],
     )
-    def test_simple_tensor_insufficient_metadata(self, metadata):
-        simple_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
+    def test_pure_tensor_insufficient_metadata(self, metadata):
+        pure_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
 
         with pytest.raises(ValueError, match=re.escape("`format` and `canvas_size` has to be passed")):
-            F.clamp_bounding_boxes(simple_tensor, **metadata)
+            F.clamp_bounding_boxes(pure_tensor, **metadata)
 
     @pytest.mark.parametrize(
         "metadata",
@@ -534,11 +534,11 @@ class TestConvertFormatBoundingBoxes:
         with pytest.raises(TypeError, match=re.escape("missing 1 required argument: 'new_format'")):
             F.convert_format_bounding_boxes(inpt, old_format)
 
-    def test_simple_tensor_insufficient_metadata(self):
-        simple_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
+    def test_pure_tensor_insufficient_metadata(self):
+        pure_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
 
         with pytest.raises(ValueError, match=re.escape("`old_format` has to be passed")):
-            F.convert_format_bounding_boxes(simple_tensor, new_format=datapoints.BoundingBoxFormat.CXCYWH)
+            F.convert_format_bounding_boxes(pure_tensor, new_format=datapoints.BoundingBoxFormat.CXCYWH)
 
     def test_datapoint_explicit_metadata(self):
         datapoint = next(make_multiple_bounding_boxes())

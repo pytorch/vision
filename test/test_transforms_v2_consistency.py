@@ -600,7 +600,7 @@ def check_call_consistency(
             raise AssertionError(
                 f"Transforming a tensor image with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`is_simple_tensor` path in `_transform`."
+                f"`is_pure_tensor` path in `_transform`."
             ) from exc
 
         assert_close(

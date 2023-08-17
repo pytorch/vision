@@ -7,7 +7,7 @@ import torch
 from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F, Transform
 
-from torchvision.transforms.v2.utils import is_simple_tensor
+from torchvision.transforms.v2.utils import is_pure_tensor
 
 
 class PILToTensor(Transform):
@@ -30,12 +30,12 @@ class ToImage(Transform):
     """[BETA] Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.datapoints.Image`
     ; this does not scale values.
 
-    .. v2betastatus:: ToImageTensor transform
+    .. v2betastatus:: ToImage transform
 
     This transform does not support torchscript.
     """
 
-    _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_pure_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
@@ -46,7 +46,7 @@ class ToImage(Transform):
 class ToPILImage(Transform):
     """[BETA] Convert a tensor or an ndarray to PIL Image - this does not scale values.
 
-    .. v2betastatus:: ToImagePIL transform
+    .. v2betastatus:: ToPILImage transform
 
     This transform does not support torchscript.
 
@@ -65,7 +65,7 @@ class ToPILImage(Transform):
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
 
-    _transformed_types = (is_simple_tensor, datapoints.Image, np.ndarray)
+    _transformed_types = (is_pure_tensor, datapoints.Image, np.ndarray)
 
     def __init__(self, mode: Optional[str] = None) -> None:
         super().__init__()
@@ -75,3 +75,17 @@ class ToPILImage(Transform):
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> PIL.Image.Image:
         return F.to_pil_image(inpt, mode=self.mode)
+
+
+class ToPureTensor(Transform):
+    """[BETA] Convert all datapoints to pure tensors, removing associated metadata (if any).
+
+    .. v2betastatus:: ToPureTensor transform
+
+    This doesn't scale or change the values, only the type.
+    """
+
+    _transformed_types = (datapoints.Datapoint,)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+        return inpt.as_subclass(torch.Tensor)
