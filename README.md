@@ -82,9 +82,10 @@ Torchvision currently supports the following image backends:
 - [libjpeg](http://ijg.org/) - can be installed via conda `conda install jpeg` or any of the package managers for
   debian-based and RHEL-based Linux distributions. [libjpeg-turbo](https://libjpeg-turbo.org/) can be used as well.
 
-**Notes:** `libpng` and `libjpeg` must be available at compilation time in order to be available. Make sure that it is
-available on the standard library locations, otherwise, add the include and library paths in the environment variables
-`TORCHVISION_INCLUDE` and `TORCHVISION_LIBRARY`, respectively.
+**Notes:** `libpng` and `libjpeg` are optional dependencies. If any of them is available on the system, 
+torchvision will provide encoding/decoding image functionalities from `torchvision.io.image`. 
+When building torchvision from source, `libpng` and `libjpeg` can be found on the standard library locations.
+Otherwise, please use `TORCHVISION_INCLUDE` and `TORCHVISION_LIBRARY` environment variables to set up include and library paths.
 
 ## Video Backend
 

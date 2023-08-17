@@ -107,7 +107,7 @@ multi_crop_skips = [
         ("TestDispatchers", test_name),
         pytest.mark.skip(reason="Multi-crop dispatchers return a sequence of items rather than a single one."),
     )
-    for test_name in ["test_simple_tensor_output_type", "test_pil_output_type", "test_datapoint_output_type"]
+    for test_name in ["test_pure_tensor_output_type", "test_pil_output_type", "test_datapoint_output_type"]
 ]
 multi_crop_skips.append(skip_dispatch_datapoint)
 

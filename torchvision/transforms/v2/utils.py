@@ -6,7 +6,7 @@ import PIL.Image
 from torchvision import datapoints
 
 from torchvision._utils import sequence_to_str
-from torchvision.transforms.v2.functional import get_dimensions, get_size, is_simple_tensor
+from torchvision.transforms.v2.functional import get_dimensions, get_size, is_pure_tensor
 
 
 def get_bounding_boxes(flat_inputs: List[Any]) -> datapoints.BoundingBoxes:
@@ -21,7 +21,7 @@ def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     chws = {
         tuple(get_dimensions(inpt))
         for inpt in flat_inputs
-        if check_type(inpt, (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video))
+        if check_type(inpt, (is_pure_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video))
     }
     if not chws:
         raise TypeError("No image or video was found in the sample")
@@ -38,7 +38,7 @@ def query_size(flat_inputs: List[Any]) -> Tuple[int, int]:
         if check_type(
             inpt,
             (
-                is_simple_tensor,
+                is_pure_tensor,
                 datapoints.Image,
                 PIL.Image.Image,
                 datapoints.Video,
