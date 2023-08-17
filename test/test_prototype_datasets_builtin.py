@@ -151,7 +151,7 @@ class TestCommon:
         ):
             raise AssertionError(
                 f"The values of key(s) "
-                f"{sequence_to_str(sorted(simple_tensors), separate_last='and ')} contained simple tensors, "
+                f"{sequence_to_str(sorted(simple_tensors), separate_last='and ')} contained pure tensors, "
                 f"but didn't find any (encoded) image or video."
             )
 

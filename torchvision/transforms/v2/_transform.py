@@ -55,20 +55,20 @@ class Transform(nn.Module):
         return tree_unflatten(flat_outputs, spec)
 
     def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
-        # Below is a heuristic on how to deal with simple tensor inputs:
+        # Below is a heuristic on how to deal with pure tensor inputs:
         # 1. Simple tensors, i.e. tensors that are not a datapoint, are passed through if there is an explicit image
         #    (`datapoints.Image` or `PIL.Image.Image`) or video (`datapoints.Video`) in the sample.
-        # 2. If there is no explicit image or video in the sample, only the first encountered simple tensor is
+        # 2. If there is no explicit image or video in the sample, only the first encountered pure tensor is
         #    transformed as image, while the rest is passed through. The order is defined by the returned `flat_inputs`
         #    of `tree_flatten`, which recurses depth-first through the input.
         #
         # This heuristic stems from two requirements:
-        # 1. We need to keep BC for single input simple tensors and treat them as images.
-        # 2. We don't want to treat all simple tensors as images, because some datasets like `CelebA` or `Widerface`
+        # 1. We need to keep BC for single input pure tensors and treat them as images.
+        # 2. We don't want to treat all pure tensors as images, because some datasets like `CelebA` or `Widerface`
         #    return supplemental numerical data as tensors that cannot be transformed as images.
         #
         # The heuristic should work well for most people in practice. The only case where it doesn't is if someone
-        # tries to transform multiple simple tensors at the same time, expecting them all to be treated as images.
+        # tries to transform multiple pure tensors at the same time, expecting them all to be treated as images.
         # However, this case wasn't supported by transforms v1 either, so there is no BC concern.
 
         needs_transform_list = []

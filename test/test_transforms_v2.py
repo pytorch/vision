@@ -360,8 +360,8 @@ class TestSmoke:
 def test_simple_tensor_heuristic(flat_inputs):
     def split_on_simple_tensor(to_split):
         # This takes a sequence that is structurally aligned with `flat_inputs` and splits its items into three parts:
-        # 1. The first simple tensor. If none is present, this will be `None`
-        # 2. A list of the remaining simple tensors
+        # 1. The first pure tensor. If none is present, this will be `None`
+        # 2. A list of the remaining pure tensors
         # 3. A list of all other items
         simple_tensors = []
         others = []

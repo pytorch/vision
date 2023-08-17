@@ -203,7 +203,7 @@ def convert_format_bounding_boxes(
     new_format: Optional[BoundingBoxFormat] = None,
     inplace: bool = False,
 ) -> torch.Tensor:
-    # This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for simple tensor
+    # This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for pure tensor
     # inputs as well as extract it from `datapoints.BoundingBoxes` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
     # default error that would be thrown if `new_format` had no default value.
@@ -215,7 +215,7 @@ def convert_format_bounding_boxes(
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         if old_format is None:
-            raise ValueError("For simple tensor inputs, `old_format` has to be passed.")
+            raise ValueError("For pure tensor inputs, `old_format` has to be passed.")
         return _convert_format_bounding_boxes(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
     elif isinstance(inpt, datapoints.BoundingBoxes):
         if old_format is not None:
@@ -259,7 +259,7 @@ def clamp_bounding_boxes(
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
 
         if format is None or canvas_size is None:
-            raise ValueError("For simple tensor inputs, `format` and `canvas_size` has to be passed.")
+            raise ValueError("For pure tensor inputs, `format` and `canvas_size` has to be passed.")
         return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
     elif isinstance(inpt, datapoints.BoundingBoxes):
         if format is not None or canvas_size is not None:
