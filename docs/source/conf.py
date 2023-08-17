@@ -29,8 +29,8 @@ from pathlib import Path
 import pytorch_sphinx_theme
 import torchvision
 import torchvision.models as M
-from tabulate import tabulate
 from sphinx_gallery.sorting import ExplicitOrder
+from tabulate import tabulate
 
 sys.path.append(os.path.abspath("."))
 
@@ -62,7 +62,7 @@ extensions = [
 sphinx_gallery_conf = {
     "examples_dirs": "../../gallery/",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
-    'subsection_order': ExplicitOrder(["../../gallery/v2_transforms", "../../gallery/others"]),
+    "subsection_order": ExplicitOrder(["../../gallery/v2_transforms", "../../gallery/others"]),
     "backreferences_dir": "gen_modules/backreferences",
     "doc_module": ("torchvision",),
     "remove_config_comments": True,
