@@ -17,7 +17,7 @@ from prototype_common_utils import make_label
 
 from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
-from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_image_pil
+from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_pil_image
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
@@ -387,7 +387,7 @@ def test_fixed_sized_crop_against_detection_reference():
         size = (600, 800)
         num_objects = 22
 
-        pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
+        pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),

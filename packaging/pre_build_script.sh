@@ -11,7 +11,7 @@ if [[ "$(uname)" == Darwin ]]; then
   conda install -yq wget
 fi
 
-if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
+if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" || "$ARCH" == "aarch64" ]]; then
   # Install libpng from Anaconda (defaults)
   conda install libpng -yq
   conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch

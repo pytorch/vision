@@ -122,12 +122,12 @@ def pil_reference_wrapper(pil_kernel):
                 f"Can only test single tensor images against PIL, but input has shape {input_tensor.shape}"
             )
 
-        input_pil = F.to_image_pil(input_tensor)
+        input_pil = F.to_pil_image(input_tensor)
         output_pil = pil_kernel(input_pil, *other_args, **kwargs)
         if not isinstance(output_pil, PIL.Image.Image):
             return output_pil
 
-        output_tensor = F.to_image_tensor(output_pil)
+        output_tensor = F.to_image(output_pil)
 
         # 2D mask shenanigans
         if output_tensor.ndim == 2 and input_tensor.ndim == 3:
@@ -331,10 +331,10 @@ def reference_inputs_crop_bounding_boxes():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.crop_image_tensor,
+            F.crop_image,
             kernel_name="crop_image_tensor",
             sample_inputs_fn=sample_inputs_crop_image_tensor,
-            reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            reference_fn=pil_reference_wrapper(F._crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_image_tensor,
             float32_vs_uint8=True,
         ),
@@ -347,7 +347,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.crop_mask,
             sample_inputs_fn=sample_inputs_crop_mask,
-            reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            reference_fn=pil_reference_wrapper(F._crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_mask,
             float32_vs_uint8=True,
         ),
@@ -373,7 +373,7 @@ def reference_resized_crop_image_tensor(*args, **kwargs):
         F.InterpolationMode.BICUBIC,
     }:
         raise pytest.UsageError("Anti-aliasing is always active in PIL")
-    return F.resized_crop_image_pil(*args, **kwargs)
+    return F._resized_crop_image_pil(*args, **kwargs)
 
 
 def reference_inputs_resized_crop_image_tensor():
@@ -417,7 +417,7 @@ def sample_inputs_resized_crop_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.resized_crop_image_tensor,
+            F.resized_crop_image,
             sample_inputs_fn=sample_inputs_resized_crop_image_tensor,
             reference_fn=reference_resized_crop_image_tensor,
             reference_inputs_fn=reference_inputs_resized_crop_image_tensor,
@@ -570,9 +570,9 @@ def pad_xfail_jit_fill_condition(args_kwargs):
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.pad_image_tensor,
+            F.pad_image,
             sample_inputs_fn=sample_inputs_pad_image_tensor,
-            reference_fn=pil_reference_wrapper(F.pad_image_pil),
+            reference_fn=pil_reference_wrapper(F._pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
@@ -595,7 +595,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.pad_mask,
             sample_inputs_fn=sample_inputs_pad_mask,
-            reference_fn=pil_reference_wrapper(F.pad_image_pil),
+            reference_fn=pil_reference_wrapper(F._pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_mask,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
         ),
@@ -690,9 +690,9 @@ def sample_inputs_perspective_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.perspective_image_tensor,
+            F.perspective_image,
             sample_inputs_fn=sample_inputs_perspective_image_tensor,
-            reference_fn=pil_reference_wrapper(F.perspective_image_pil),
+            reference_fn=pil_reference_wrapper(F._perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs={
@@ -715,7 +715,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.perspective_mask,
             sample_inputs_fn=sample_inputs_perspective_mask,
-            reference_fn=pil_reference_wrapper(F.perspective_image_pil),
+            reference_fn=pil_reference_wrapper(F._perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_mask,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -786,7 +786,7 @@ def sample_inputs_elastic_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.elastic_image_tensor,
+            F.elastic_image,
             sample_inputs_fn=sample_inputs_elastic_image_tensor,
             reference_inputs_fn=reference_inputs_elastic_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
@@ -870,9 +870,9 @@ def sample_inputs_center_crop_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.center_crop_image_tensor,
+            F.center_crop_image,
             sample_inputs_fn=sample_inputs_center_crop_image_tensor,
-            reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
+            reference_fn=pil_reference_wrapper(F._center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
             float32_vs_uint8=True,
             test_marks=[
@@ -889,7 +889,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.center_crop_mask,
             sample_inputs_fn=sample_inputs_center_crop_mask,
-            reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
+            reference_fn=pil_reference_wrapper(F._center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_mask,
             float32_vs_uint8=True,
             test_marks=[
@@ -924,7 +924,7 @@ def sample_inputs_gaussian_blur_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.gaussian_blur_image_tensor,
+            F.gaussian_blur_image,
             sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
             closeness_kwargs=cuda_vs_cpu_pixel_difference(),
             test_marks=[
@@ -1010,10 +1010,10 @@ def sample_inputs_equalize_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.equalize_image_tensor,
+            F.equalize_image,
             kernel_name="equalize_image_tensor",
             sample_inputs_fn=sample_inputs_equalize_image_tensor,
-            reference_fn=pil_reference_wrapper(F.equalize_image_pil),
+            reference_fn=pil_reference_wrapper(F._equalize_image_pil),
             float32_vs_uint8=True,
             reference_inputs_fn=reference_inputs_equalize_image_tensor,
         ),
@@ -1043,10 +1043,10 @@ def sample_inputs_invert_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.invert_image_tensor,
+            F.invert_image,
             kernel_name="invert_image_tensor",
             sample_inputs_fn=sample_inputs_invert_image_tensor,
-            reference_fn=pil_reference_wrapper(F.invert_image_pil),
+            reference_fn=pil_reference_wrapper(F._invert_image_pil),
             reference_inputs_fn=reference_inputs_invert_image_tensor,
             float32_vs_uint8=True,
         ),
@@ -1082,10 +1082,10 @@ def sample_inputs_posterize_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.posterize_image_tensor,
+            F.posterize_image,
             kernel_name="posterize_image_tensor",
             sample_inputs_fn=sample_inputs_posterize_image_tensor,
-            reference_fn=pil_reference_wrapper(F.posterize_image_pil),
+            reference_fn=pil_reference_wrapper(F._posterize_image_pil),
             reference_inputs_fn=reference_inputs_posterize_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
@@ -1127,10 +1127,10 @@ def sample_inputs_solarize_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.solarize_image_tensor,
+            F.solarize_image,
             kernel_name="solarize_image_tensor",
             sample_inputs_fn=sample_inputs_solarize_image_tensor,
-            reference_fn=pil_reference_wrapper(F.solarize_image_pil),
+            reference_fn=pil_reference_wrapper(F._solarize_image_pil),
             reference_inputs_fn=reference_inputs_solarize_image_tensor,
             float32_vs_uint8=uint8_to_float32_threshold_adapter,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
@@ -1161,10 +1161,10 @@ def sample_inputs_autocontrast_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.autocontrast_image_tensor,
+            F.autocontrast_image,
             kernel_name="autocontrast_image_tensor",
             sample_inputs_fn=sample_inputs_autocontrast_image_tensor,
-            reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
+            reference_fn=pil_reference_wrapper(F._autocontrast_image_pil),
             reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1206,10 +1206,10 @@ def sample_inputs_adjust_sharpness_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_sharpness_image_tensor,
+            F.adjust_sharpness_image,
             kernel_name="adjust_sharpness_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_sharpness_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_sharpness_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_sharpness_image_pil),
             reference_inputs_fn=reference_inputs_adjust_sharpness_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs=float32_vs_uint8_pixel_difference(2),
@@ -1241,7 +1241,7 @@ def sample_inputs_erase_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.erase_image_tensor,
+            F.erase_image,
             kernel_name="erase_image_tensor",
             sample_inputs_fn=sample_inputs_erase_image_tensor,
         ),
@@ -1276,10 +1276,10 @@ def sample_inputs_adjust_contrast_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_contrast_image_tensor,
+            F.adjust_contrast_image,
             kernel_name="adjust_contrast_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_contrast_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_contrast_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_contrast_image_pil),
             reference_inputs_fn=reference_inputs_adjust_contrast_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1329,10 +1329,10 @@ def sample_inputs_adjust_gamma_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_gamma_image_tensor,
+            F.adjust_gamma_image,
             kernel_name="adjust_gamma_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_gamma_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_gamma_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_gamma_image_pil),
             reference_inputs_fn=reference_inputs_adjust_gamma_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1372,10 +1372,10 @@ def sample_inputs_adjust_hue_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_hue_image_tensor,
+            F.adjust_hue_image,
             kernel_name="adjust_hue_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_hue_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_hue_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_hue_image_pil),
             reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1414,10 +1414,10 @@ def sample_inputs_adjust_saturation_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_saturation_image_tensor,
+            F.adjust_saturation_image,
             kernel_name="adjust_saturation_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_saturation_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_saturation_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_saturation_image_pil),
             reference_inputs_fn=reference_inputs_adjust_saturation_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1517,8 +1517,7 @@ def multi_crop_pil_reference_wrapper(pil_kernel):
     def wrapper(input_tensor, *other_args, **kwargs):
         output = pil_reference_wrapper(pil_kernel)(input_tensor, *other_args, **kwargs)
         return type(output)(
-            F.to_dtype_image_tensor(F.to_image_tensor(output_pil), dtype=input_tensor.dtype, scale=True)
-            for output_pil in output
+            F.to_dtype_image(F.to_image(output_pil), dtype=input_tensor.dtype, scale=True) for output_pil in output
         )
 
     return wrapper
@@ -1532,9 +1531,9 @@ _common_five_ten_crop_marks = [
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.five_crop_image_tensor,
+            F.five_crop_image,
             sample_inputs_fn=sample_inputs_five_crop_image_tensor,
-            reference_fn=multi_crop_pil_reference_wrapper(F.five_crop_image_pil),
+            reference_fn=multi_crop_pil_reference_wrapper(F._five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
         ),
@@ -1544,9 +1543,9 @@ KERNEL_INFOS.extend(
             test_marks=_common_five_ten_crop_marks,
         ),
         KernelInfo(
-            F.ten_crop_image_tensor,
+            F.ten_crop_image,
             sample_inputs_fn=sample_inputs_ten_crop_image_tensor,
-            reference_fn=multi_crop_pil_reference_wrapper(F.ten_crop_image_pil),
+            reference_fn=multi_crop_pil_reference_wrapper(F._ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
         ),
@@ -1600,7 +1599,7 @@ def sample_inputs_normalize_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.normalize_image_tensor,
+            F.normalize_image,
             kernel_name="normalize_image_tensor",
             sample_inputs_fn=sample_inputs_normalize_image_tensor,
             reference_fn=reference_normalize_image_tensor,

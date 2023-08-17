@@ -666,41 +666,24 @@ class TestTransform:
                 t(inpt)
 
 
-class TestToImageTensor:
+class TestToImage:
     @pytest.mark.parametrize(
         "inpt_type",
         [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
     )
     def test__transform(self, inpt_type, mocker):
         fn = mocker.patch(
-            "torchvision.transforms.v2.functional.to_image_tensor",
+            "torchvision.transforms.v2.functional.to_image",
             return_value=torch.rand(1, 3, 8, 8),
         )
 
         inpt = mocker.MagicMock(spec=inpt_type)
-        transform = transforms.ToImageTensor()
+        transform = transforms.ToImage()
         transform(inpt)
         if inpt_type in (datapoints.BoundingBoxes, datapoints.Image, str, int):
             assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt)
-
-
-class TestToImagePIL:
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
-    )
-    def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.v2.functional.to_image_pil")
-
-        inpt = mocker.MagicMock(spec=inpt_type)
-        transform = transforms.ToImagePIL()
-        transform(inpt)
-        if inpt_type in (datapoints.BoundingBoxes, PIL.Image.Image, str, int):
-            assert fn.call_count == 0
-        else:
-            fn.assert_called_once_with(inpt, mode=transform.mode)
 
 
 class TestToPILImage:
@@ -709,7 +692,7 @@ class TestToPILImage:
         [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
     )
     def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.v2.functional.to_image_pil")
+        fn = mocker.patch("torchvision.transforms.v2.functional.to_pil_image")
 
         inpt = mocker.MagicMock(spec=inpt_type)
         transform = transforms.ToPILImage()
@@ -1013,7 +996,7 @@ def test_antialias_warning():
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
 @pytest.mark.parametrize("label_type", (torch.Tensor, int))
 @pytest.mark.parametrize("dataset_return_type", (dict, tuple))
-@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImage))
 def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
 
     image = datapoints.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
@@ -1074,7 +1057,7 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
 
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
 @pytest.mark.parametrize("data_augmentation", ("hflip", "lsj", "multiscale", "ssd", "ssdlite"))
-@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImage))
 @pytest.mark.parametrize("sanitize", (True, False))
 def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     torch.manual_seed(0)

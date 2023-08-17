@@ -7,7 +7,7 @@ import torchvision.transforms.v2.utils
 from common_utils import DEFAULT_SIZE, make_bounding_boxes, make_detection_mask, make_image
 
 from torchvision import datapoints
-from torchvision.transforms.v2.functional import to_image_pil
+from torchvision.transforms.v2.functional import to_pil_image
 from torchvision.transforms.v2.utils import has_all, has_any
 
 
@@ -44,7 +44,7 @@ MASK = make_detection_mask(DEFAULT_SIZE)
             True,
         ),
         (
-            (to_image_pil(IMAGE),),
+            (to_pil_image(IMAGE),),
             (datapoints.Image, PIL.Image.Image, torchvision.transforms.v2.utils.is_simple_tensor),
             True,
         ),
