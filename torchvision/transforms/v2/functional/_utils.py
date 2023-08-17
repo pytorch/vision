@@ -8,7 +8,7 @@ _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[List[float]]
 
 
-def is_simple_tensor(inpt: Any) -> bool:
+def is_pure_tensor(inpt: Any) -> bool:
     return isinstance(inpt, torch.Tensor) and not isinstance(inpt, datapoints.Datapoint)
 
 
