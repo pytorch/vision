@@ -72,7 +72,7 @@ inline unsigned char clamped_cmyk_rgb_convert(
     unsigned char cmy) {
   // Inspired from Pillow:
   // https://github.com/python-pillow/Pillow/blob/07623d1a7cc65206a5355fba2ae256550bfcaba6/src/libImaging/Convert.c#L568-L569
-  auto v = k * cmy + 128;
+  int v = k * cmy + 128;
   v = ((v >> 8) + v) >> 8;
   return std::clamp(k - v, 0, 255);
 }
@@ -200,9 +200,9 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   auto tensor =
       torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
   auto ptr = tensor.data_ptr<uint8_t>();
-  torch::Tensor temp_tensor;
+  torch::Tensor cmyk_line_tensor;
   if (cmyk_to_rgb_or_gray) {
-    temp_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
+    cmyk_line_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
   }
 
   while (cinfo.output_scanline < cinfo.output_height) {
@@ -211,13 +211,13 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
      * more than one scanline at a time if that's more convenient.
      */
     if (cmyk_to_rgb_or_gray) {
-      auto temp_buffer = temp_tensor.data_ptr<uint8_t>();
-      jpeg_read_scanlines(&cinfo, &temp_buffer, 1);
+      auto cmyk_line_ptr = cmyk_line_tensor.data_ptr<uint8_t>();
+      jpeg_read_scanlines(&cinfo, &cmyk_line_ptr, 1);
 
       if (channels == 3) {
-        convert_line_cmyk_to_rgb(&cinfo, temp_buffer, ptr);
+        convert_line_cmyk_to_rgb(&cinfo, cmyk_line_ptr, ptr);
       } else if (channels == 1) {
-        convert_line_cmyk_to_gray(&cinfo, temp_buffer, ptr);
+        convert_line_cmyk_to_gray(&cinfo, cmyk_line_ptr, ptr);
       }
     } else {
       jpeg_read_scanlines(&cinfo, &ptr, 1);
