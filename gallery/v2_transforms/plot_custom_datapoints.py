@@ -6,7 +6,7 @@ How to write your own Datapoint class
 This guide is intended for advanced users and downstream library maintainers. We explain how to
 write your own datapoint class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
-:ref:`sphx_glr_auto_examples_plot_datapoints.py`.
+:ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`.
 """
 
 # %%

@@ -58,7 +58,7 @@ show([dog1, dog2])
 # --------------------------
 # Most transforms natively support tensors on top of PIL images (to visualize
 # the effect of the transforms, you may refer to see
-# :ref:`sphx_glr_auto_examples_plot_transforms.py`).
+# :ref:`sphx_glr_auto_examples_others_plot_transforms.py`).
 # Using tensor images, we can run the transforms on GPUs if cuda is available!
 
 import torch.nn as nn
