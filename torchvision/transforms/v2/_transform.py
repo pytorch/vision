@@ -11,6 +11,8 @@ from torchvision import datapoints
 from torchvision.transforms.v2.utils import check_type, has_any, is_simple_tensor
 from torchvision.utils import _log_api_usage_once
 
+from .functional._utils import _get_kernel
+
 
 class Transform(nn.Module):
 
@@ -27,6 +29,10 @@ class Transform(nn.Module):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict()
+
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+        kernel = _get_kernel(functional, type(inpt), allow_passthrough=True)
+        return kernel(inpt, *args, **kwargs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         raise NotImplementedError

@@ -155,6 +155,7 @@ Color
 
     ColorJitter
     v2.ColorJitter
+    v2.RandomChannelPermutation
     v2.RandomPhotometricDistort
     Grayscale
     v2.Grayscale
@@ -206,8 +207,8 @@ Miscellaneous
     v2.RandomErasing
     Lambda
     v2.Lambda
-    v2.SanitizeBoundingBox
-    v2.ClampBoundingBox
+    v2.SanitizeBoundingBoxes
+    v2.ClampBoundingBoxes
     v2.UniformTemporalSubsample
 
 .. _conversion_transforms:
@@ -227,12 +228,11 @@ Conversion
 
     ToPILImage
     v2.ToPILImage
-    v2.ToImagePIL
     ToTensor
     v2.ToTensor
     PILToTensor
     v2.PILToTensor
-    v2.ToImageTensor
+    v2.ToImage
     ConvertImageDtype
     v2.ConvertImageDtype
     v2.ToDtype
@@ -261,21 +261,21 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     AugMix
     v2.AugMix
 
-Cutmix - Mixup
+CutMix - MixUp
 --------------
 
-Cutmix and Mixup are special transforms that
+CutMix and MixUp are special transforms that
 are meant to be used on batches rather than on individual images, because they
-are combining pairs of images together. These can be used after the dataloader,
-or part of a collation function. See
+are combining pairs of images together. These can be used after the dataloader
+(once the samples are batched), or part of a collation function. See
 :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
-    v2.Cutmix
-    v2.Mixup
+    v2.CutMix
+    v2.MixUp
 
 .. _functional_transforms:
 
@@ -375,3 +375,14 @@ you can use a functional transform to build transform classes with custom behavi
     to_pil_image
     to_tensor
     vflip
+
+Developer tools
+---------------
+
+.. currentmodule:: torchvision.transforms.v2.functional
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    register_kernel

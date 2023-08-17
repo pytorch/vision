@@ -8,7 +8,7 @@ class PadIfSmaller(v2.Transform):
     def __init__(self, size, fill=0):
         super().__init__()
         self.size = size
-        self.fill = v2._geometry._setup_fill_arg(fill)
+        self.fill = v2._utils._setup_fill_arg(fill)
 
     def _get_params(self, sample):
         _, height, width = v2.utils.query_chw(sample)
@@ -20,7 +20,7 @@ class PadIfSmaller(v2.Transform):
         if not params["needs_padding"]:
             return inpt
 
-        fill = self.fill[type(inpt)]
+        fill = v2._utils._get_fill(self.fill, type(inpt))
         fill = v2._utils._convert_fill_arg(fill)
 
         return v2.functional.pad(inpt, padding=params["padding"], fill=fill)

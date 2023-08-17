@@ -10,7 +10,7 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
-from .utils import has_any, is_simple_tensor, query_bounding_box
+from .utils import get_bounding_boxes, has_any, is_simple_tensor
 
 
 # TODO: do we want/need to expose this?
@@ -106,7 +106,7 @@ class LinearTransformation(Transform):
 
     def _check_inputs(self, sample: Any) -> Any:
         if has_any(sample, PIL.Image.Image):
-            raise TypeError("LinearTransformation does not work on PIL Images")
+            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         shape = inpt.shape
@@ -131,7 +131,7 @@ class LinearTransformation(Transform):
         output = output.reshape(shape)
 
         if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
+            output = datapoints.wrap(output, like=inpt)
         return output
 
 
@@ -157,7 +157,6 @@ class Normalize(Transform):
     """
 
     _v1_transform_cls = _transforms.Normalize
-    _transformed_types = (datapoints.Image, is_simple_tensor, datapoints.Video)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()
@@ -169,10 +168,8 @@ class Normalize(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def _transform(
-        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
-    ) -> Any:
-        return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
 class GaussianBlur(Transform):
@@ -219,7 +216,7 @@ class GaussianBlur(Transform):
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.gaussian_blur(inpt, self.kernel_size, **params)
+        return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
 class ToDtype(Transform):
@@ -292,7 +289,7 @@ class ToDtype(Transform):
                 )
             return inpt
 
-        return F.to_dtype(inpt, dtype=dtype, scale=self.scale)
+        return self._call_kernel(F.to_dtype, inpt, dtype=dtype, scale=self.scale)
 
 
 class ConvertImageDtype(Transform):
@@ -322,26 +319,24 @@ class ConvertImageDtype(Transform):
 
     _v1_transform_cls = _transforms.ConvertImageDtype
 
-    _transformed_types = (is_simple_tensor, datapoints.Image)
-
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.to_dtype(inpt, dtype=self.dtype, scale=True)
+        return self._call_kernel(F.to_dtype, inpt, dtype=self.dtype, scale=True)
 
 
-class SanitizeBoundingBox(Transform):
+class SanitizeBoundingBoxes(Transform):
     """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
-    .. v2betastatus:: SanitizeBoundingBox transform
+    .. v2betastatus:: SanitizeBoundingBoxes transform
 
     This transform removes bounding boxes and their associated labels/masks that:
 
     - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
-      call :class:`~torchvision.transforms.v2.ClampBoundingBox` first to avoid undesired removals.
+      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
@@ -384,13 +379,7 @@ class SanitizeBoundingBox(Transform):
             )
 
         flat_inputs, spec = tree_flatten(inputs)
-        # TODO: this enforces one single BoundingBox entry.
-        # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
-        # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
-        boxes = query_bounding_box(flat_inputs)
-
-        if boxes.ndim != 2:
-            raise ValueError(f"boxes must be of shape (num_boxes, 4), got {boxes.shape}")
+        boxes = get_bounding_boxes(flat_inputs)
 
         if labels is not None and boxes.shape[0] != labels.shape[0]:
             raise ValueError(
@@ -398,8 +387,8 @@ class SanitizeBoundingBox(Transform):
             )
 
         boxes = cast(
-            datapoints.BoundingBox,
-            F.convert_format_bounding_box(
+            datapoints.BoundingBoxes,
+            F.convert_format_bounding_boxes(
                 boxes,
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             ),
@@ -408,14 +397,14 @@ class SanitizeBoundingBox(Transform):
         valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
-        image_h, image_w = boxes.spatial_size
+        image_h, image_w = boxes.canvas_size
         valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
         valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
-        params = dict(valid=valid, labels=labels)
+        params = dict(valid=valid.as_subclass(torch.Tensor), labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
-            # _transform() will only care about BoundingBoxes and the labels
+            # _transform() will only care about BoundingBoxeses and the labels
             self._transform(inpt, params)
             for inpt in flat_inputs
         ]
@@ -424,9 +413,9 @@ class SanitizeBoundingBox(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_box_or_mask = isinstance(inpt, (datapoints.BoundingBox, datapoints.Mask))
+        is_bounding_boxes_or_mask = isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask))
 
-        if not (is_label or is_bounding_box_or_mask):
+        if not (is_label or is_bounding_boxes_or_mask):
             return inpt
 
         output = inpt[params["valid"]]
@@ -434,4 +423,4 @@ class SanitizeBoundingBox(Transform):
         if is_label:
             return output
 
-        return type(inpt).wrap_like(inpt, output)
+        return datapoints.wrap(output, like=inpt)

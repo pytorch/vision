@@ -15,7 +15,7 @@ class ConvertBoundingBoxFormat(Transform):
             string values match the enums, e.g. "XYXY" or "XYWH" etc.
     """
 
-    _transformed_types = (datapoints.BoundingBox,)
+    _transformed_types = (datapoints.BoundingBoxes,)
 
     def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
         super().__init__()
@@ -23,20 +23,20 @@ class ConvertBoundingBoxFormat(Transform):
             format = datapoints.BoundingBoxFormat[format]
         self.format = format
 
-    def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
-        return F.convert_format_bounding_box(inpt, new_format=self.format)  # type: ignore[return-value]
+    def _transform(self, inpt: datapoints.BoundingBoxes, params: Dict[str, Any]) -> datapoints.BoundingBoxes:
+        return F.convert_format_bounding_boxes(inpt, new_format=self.format)  # type: ignore[return-value]
 
 
-class ClampBoundingBox(Transform):
+class ClampBoundingBoxes(Transform):
     """[BETA] Clamp bounding boxes to their corresponding image dimensions.
 
-    The clamping is done according to the bounding boxes' ``spatial_size`` meta-data.
+    The clamping is done according to the bounding boxes' ``canvas_size`` meta-data.
 
-    .. v2betastatus:: ClampBoundingBox transform
+    .. v2betastatus:: ClampBoundingBoxes transform
 
     """
 
-    _transformed_types = (datapoints.BoundingBox,)
+    _transformed_types = (datapoints.BoundingBoxes,)
 
-    def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
-        return F.clamp_bounding_box(inpt)  # type: ignore[return-value]
+    def _transform(self, inpt: datapoints.BoundingBoxes, params: Dict[str, Any]) -> datapoints.BoundingBoxes:
+        return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]

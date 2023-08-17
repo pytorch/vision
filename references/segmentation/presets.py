@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 import torch
 
 
@@ -34,7 +32,7 @@ class SegmentationPresetTrain:
         transforms = []
         backend = backend.lower()
         if backend == "datapoint":
-            transforms.append(T.ToImageTensor())
+            transforms.append(T.ToImage())
         elif backend == "tensor":
             transforms.append(T.PILToTensor())
         elif backend != "pil":
@@ -48,7 +46,7 @@ class SegmentationPresetTrain:
         if use_v2:
             # We need a custom pad transform here, since the padding we want to perform here is fundamentally
             # different from the padding in `RandomCrop` if `pad_if_needed=True`.
-            transforms += [v2_extras.PadIfSmaller(crop_size, fill=defaultdict(lambda: 0, {datapoints.Mask: 255}))]
+            transforms += [v2_extras.PadIfSmaller(crop_size, fill={datapoints.Mask: 255, "others": 0})]
 
         transforms += [T.RandomCrop(crop_size)]
 
@@ -83,7 +81,7 @@ class SegmentationPresetEval:
         if backend == "tensor":
             transforms += [T.PILToTensor()]
         elif backend == "datapoint":
-            transforms += [T.ToImageTensor()]
+            transforms += [T.ToImage()]
         elif backend != "pil":
             raise ValueError(f"backend can be 'datapoint', 'tensor' or 'pil', but got {backend}")
 
@@ -94,7 +92,7 @@ class SegmentationPresetEval:
 
         if backend == "pil":
             # Note: we could just convert to pure tensors even in v2?
-            transforms += [T.ToImageTensor() if use_v2 else T.PILToTensor()]
+            transforms += [T.ToImage() if use_v2 else T.PILToTensor()]
 
         transforms += [
             T.ConvertImageDtype(torch.float),

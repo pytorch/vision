@@ -122,12 +122,12 @@ def pil_reference_wrapper(pil_kernel):
                 f"Can only test single tensor images against PIL, but input has shape {input_tensor.shape}"
             )
 
-        input_pil = F.to_image_pil(input_tensor)
+        input_pil = F.to_pil_image(input_tensor)
         output_pil = pil_kernel(input_pil, *other_args, **kwargs)
         if not isinstance(output_pil, PIL.Image.Image):
             return output_pil
 
-        output_tensor = F.to_image_tensor(output_pil)
+        output_tensor = F.to_image(output_pil)
 
         # 2D mask shenanigans
         if output_tensor.ndim == 2 and input_tensor.ndim == 3:
@@ -184,13 +184,13 @@ def float32_vs_uint8_fill_adapter(other_args, kwargs):
     return other_args, dict(kwargs, fill=fill)
 
 
-def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, affine_matrix):
-    def transform(bbox, affine_matrix_, format_, spatial_size_):
+def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_size, affine_matrix):
+    def transform(bbox, affine_matrix_, format_, canvas_size_):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
         if not torch.is_floating_point(bbox):
             bbox = bbox.float()
-        bbox_xyxy = F.convert_format_bounding_box(
+        bbox_xyxy = F.convert_format_bounding_boxes(
             bbox.as_subclass(torch.Tensor),
             old_format=format_,
             new_format=datapoints.BoundingBoxFormat.XYXY,
@@ -214,50 +214,43 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
             ],
             dtype=bbox_xyxy.dtype,
         )
-        out_bbox = F.convert_format_bounding_box(
+        out_bbox = F.convert_format_bounding_boxes(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-        out_bbox = F.clamp_bounding_box(out_bbox, format=format_, spatial_size=spatial_size_)
+        out_bbox = F.clamp_bounding_boxes(out_bbox, format=format_, canvas_size=canvas_size_)
         out_bbox = out_bbox.to(dtype=in_dtype)
         return out_bbox
 
-    if bounding_box.ndim < 2:
-        bounding_box = [bounding_box]
-
-    expected_bboxes = [transform(bbox, affine_matrix, format, spatial_size) for bbox in bounding_box]
-    if len(expected_bboxes) > 1:
-        expected_bboxes = torch.stack(expected_bboxes)
-    else:
-        expected_bboxes = expected_bboxes[0]
-
-    return expected_bboxes
+    return torch.stack(
+        [transform(b, affine_matrix, format, canvas_size) for b in bounding_boxes.reshape(-1, 4).unbind()]
+    ).reshape(bounding_boxes.shape)
 
 
-def sample_inputs_convert_format_bounding_box():
+def sample_inputs_convert_format_bounding_boxes():
     formats = list(datapoints.BoundingBoxFormat)
-    for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
-        yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
+    for bounding_boxes_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
+        yield ArgsKwargs(bounding_boxes_loader, old_format=bounding_boxes_loader.format, new_format=new_format)
 
 
-def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
+def reference_convert_format_bounding_boxes(bounding_boxes, old_format, new_format):
     return torchvision.ops.box_convert(
-        bounding_box, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
-    ).to(bounding_box.dtype)
+        bounding_boxes, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
+    ).to(bounding_boxes.dtype)
 
 
-def reference_inputs_convert_format_bounding_box():
-    for args_kwargs in sample_inputs_convert_format_bounding_box():
+def reference_inputs_convert_format_bounding_boxes():
+    for args_kwargs in sample_inputs_convert_format_bounding_boxes():
         if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
 
 KERNEL_INFOS.append(
     KernelInfo(
-        F.convert_format_bounding_box,
-        sample_inputs_fn=sample_inputs_convert_format_bounding_box,
-        reference_fn=reference_convert_format_bounding_box,
-        reference_inputs_fn=reference_inputs_convert_format_bounding_box,
+        F.convert_format_bounding_boxes,
+        sample_inputs_fn=sample_inputs_convert_format_bounding_boxes,
+        reference_fn=reference_convert_format_bounding_boxes,
+        reference_inputs_fn=reference_inputs_convert_format_bounding_boxes,
         logs_usage=True,
         closeness_kwargs={
             (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
@@ -290,11 +283,11 @@ def reference_inputs_crop_image_tensor():
         yield ArgsKwargs(image_loader, **params)
 
 
-def sample_inputs_crop_bounding_box():
-    for bounding_box_loader, params in itertools.product(
+def sample_inputs_crop_bounding_boxes():
+    for bounding_boxes_loader, params in itertools.product(
         make_bounding_box_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]
     ):
-        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, **params)
+        yield ArgsKwargs(bounding_boxes_loader, format=bounding_boxes_loader.format, **params)
 
 
 def sample_inputs_crop_mask():
@@ -312,49 +305,49 @@ def sample_inputs_crop_video():
         yield ArgsKwargs(video_loader, top=4, left=3, height=7, width=8)
 
 
-def reference_crop_bounding_box(bounding_box, *, format, top, left, height, width):
+def reference_crop_bounding_boxes(bounding_boxes, *, format, top, left, height, width):
     affine_matrix = np.array(
         [
             [1, 0, -left],
             [0, 1, -top],
         ],
-        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+        dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
     )
 
-    spatial_size = (height, width)
-    expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    canvas_size = (height, width)
+    expected_bboxes = reference_affine_bounding_boxes_helper(
+        bounding_boxes, format=format, canvas_size=canvas_size, affine_matrix=affine_matrix
     )
-    return expected_bboxes, spatial_size
+    return expected_bboxes, canvas_size
 
 
-def reference_inputs_crop_bounding_box():
-    for bounding_box_loader, params in itertools.product(
+def reference_inputs_crop_bounding_boxes():
+    for bounding_boxes_loader, params in itertools.product(
         make_bounding_box_loaders(extra_dims=((), (4,))), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]
     ):
-        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, **params)
+        yield ArgsKwargs(bounding_boxes_loader, format=bounding_boxes_loader.format, **params)
 
 
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.crop_image_tensor,
+            F.crop_image,
             kernel_name="crop_image_tensor",
             sample_inputs_fn=sample_inputs_crop_image_tensor,
-            reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            reference_fn=pil_reference_wrapper(F._crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_image_tensor,
             float32_vs_uint8=True,
         ),
         KernelInfo(
-            F.crop_bounding_box,
-            sample_inputs_fn=sample_inputs_crop_bounding_box,
-            reference_fn=reference_crop_bounding_box,
-            reference_inputs_fn=reference_inputs_crop_bounding_box,
+            F.crop_bounding_boxes,
+            sample_inputs_fn=sample_inputs_crop_bounding_boxes,
+            reference_fn=reference_crop_bounding_boxes,
+            reference_inputs_fn=reference_inputs_crop_bounding_boxes,
         ),
         KernelInfo(
             F.crop_mask,
             sample_inputs_fn=sample_inputs_crop_mask,
-            reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            reference_fn=pil_reference_wrapper(F._crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_mask,
             float32_vs_uint8=True,
         ),
@@ -380,7 +373,7 @@ def reference_resized_crop_image_tensor(*args, **kwargs):
         F.InterpolationMode.BICUBIC,
     }:
         raise pytest.UsageError("Anti-aliasing is always active in PIL")
-    return F.resized_crop_image_pil(*args, **kwargs)
+    return F._resized_crop_image_pil(*args, **kwargs)
 
 
 def reference_inputs_resized_crop_image_tensor():
@@ -406,9 +399,9 @@ def reference_inputs_resized_crop_image_tensor():
         )
 
 
-def sample_inputs_resized_crop_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders():
-        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, **_RESIZED_CROP_PARAMS[0])
+def sample_inputs_resized_crop_bounding_boxes():
+    for bounding_boxes_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(bounding_boxes_loader, format=bounding_boxes_loader.format, **_RESIZED_CROP_PARAMS[0])
 
 
 def sample_inputs_resized_crop_mask():
@@ -424,7 +417,7 @@ def sample_inputs_resized_crop_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.resized_crop_image_tensor,
+            F.resized_crop_image,
             sample_inputs_fn=sample_inputs_resized_crop_image_tensor,
             reference_fn=reference_resized_crop_image_tensor,
             reference_inputs_fn=reference_inputs_resized_crop_image_tensor,
@@ -436,8 +429,8 @@ KERNEL_INFOS.extend(
             },
         ),
         KernelInfo(
-            F.resized_crop_bounding_box,
-            sample_inputs_fn=sample_inputs_resized_crop_bounding_box,
+            F.resized_crop_bounding_boxes,
+            sample_inputs_fn=sample_inputs_resized_crop_bounding_boxes,
         ),
         KernelInfo(
             F.resized_crop_mask,
@@ -500,14 +493,14 @@ def reference_inputs_pad_image_tensor():
             yield ArgsKwargs(image_loader, fill=fill, **params)
 
 
-def sample_inputs_pad_bounding_box():
-    for bounding_box_loader, padding in itertools.product(
+def sample_inputs_pad_bounding_boxes():
+    for bounding_boxes_loader, padding in itertools.product(
         make_bounding_box_loaders(), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
     ):
         yield ArgsKwargs(
-            bounding_box_loader,
-            format=bounding_box_loader.format,
-            spatial_size=bounding_box_loader.spatial_size,
+            bounding_boxes_loader,
+            format=bounding_boxes_loader.format,
+            canvas_size=bounding_boxes_loader.canvas_size,
             padding=padding,
             padding_mode="constant",
         )
@@ -530,7 +523,7 @@ def sample_inputs_pad_video():
         yield ArgsKwargs(video_loader, padding=[1])
 
 
-def reference_pad_bounding_box(bounding_box, *, format, spatial_size, padding, padding_mode):
+def reference_pad_bounding_boxes(bounding_boxes, *, format, canvas_size, padding, padding_mode):
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
@@ -539,26 +532,26 @@ def reference_pad_bounding_box(bounding_box, *, format, spatial_size, padding, p
             [1, 0, left],
             [0, 1, top],
         ],
-        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+        dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
     )
 
-    height = spatial_size[0] + top + bottom
-    width = spatial_size[1] + left + right
+    height = canvas_size[0] + top + bottom
+    width = canvas_size[1] + left + right
 
-    expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=format, spatial_size=(height, width), affine_matrix=affine_matrix
+    expected_bboxes = reference_affine_bounding_boxes_helper(
+        bounding_boxes, format=format, canvas_size=(height, width), affine_matrix=affine_matrix
     )
     return expected_bboxes, (height, width)
 
 
-def reference_inputs_pad_bounding_box():
-    for bounding_box_loader, padding in itertools.product(
+def reference_inputs_pad_bounding_boxes():
+    for bounding_boxes_loader, padding in itertools.product(
         make_bounding_box_loaders(extra_dims=((), (4,))), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
     ):
         yield ArgsKwargs(
-            bounding_box_loader,
-            format=bounding_box_loader.format,
-            spatial_size=bounding_box_loader.spatial_size,
+            bounding_boxes_loader,
+            format=bounding_boxes_loader.format,
+            canvas_size=bounding_boxes_loader.canvas_size,
             padding=padding,
             padding_mode="constant",
         )
@@ -577,9 +570,9 @@ def pad_xfail_jit_fill_condition(args_kwargs):
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.pad_image_tensor,
+            F.pad_image,
             sample_inputs_fn=sample_inputs_pad_image_tensor,
-            reference_fn=pil_reference_wrapper(F.pad_image_pil),
+            reference_fn=pil_reference_wrapper(F._pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
@@ -591,10 +584,10 @@ KERNEL_INFOS.extend(
             ],
         ),
         KernelInfo(
-            F.pad_bounding_box,
-            sample_inputs_fn=sample_inputs_pad_bounding_box,
-            reference_fn=reference_pad_bounding_box,
-            reference_inputs_fn=reference_inputs_pad_bounding_box,
+            F.pad_bounding_boxes,
+            sample_inputs_fn=sample_inputs_pad_bounding_boxes,
+            reference_fn=reference_pad_bounding_boxes,
+            reference_inputs_fn=reference_inputs_pad_bounding_boxes,
             test_marks=[
                 xfail_jit_python_scalar_arg("padding"),
             ],
@@ -602,7 +595,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.pad_mask,
             sample_inputs_fn=sample_inputs_pad_mask,
-            reference_fn=pil_reference_wrapper(F.pad_image_pil),
+            reference_fn=pil_reference_wrapper(F._pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_mask,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
         ),
@@ -655,12 +648,12 @@ def reference_inputs_perspective_image_tensor():
             )
 
 
-def sample_inputs_perspective_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders():
+def sample_inputs_perspective_bounding_boxes():
+    for bounding_boxes_loader in make_bounding_box_loaders():
         yield ArgsKwargs(
-            bounding_box_loader,
-            format=bounding_box_loader.format,
-            spatial_size=bounding_box_loader.spatial_size,
+            bounding_boxes_loader,
+            format=bounding_boxes_loader.format,
+            canvas_size=bounding_boxes_loader.canvas_size,
             startpoints=None,
             endpoints=None,
             coefficients=_PERSPECTIVE_COEFFS[0],
@@ -669,7 +662,7 @@ def sample_inputs_perspective_bounding_box():
     format = datapoints.BoundingBoxFormat.XYXY
     loader = make_bounding_box_loader(format=format)
     yield ArgsKwargs(
-        loader, format=format, spatial_size=loader.spatial_size, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS
+        loader, format=format, canvas_size=loader.canvas_size, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS
     )
 
 
@@ -697,9 +690,9 @@ def sample_inputs_perspective_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.perspective_image_tensor,
+            F.perspective_image,
             sample_inputs_fn=sample_inputs_perspective_image_tensor,
-            reference_fn=pil_reference_wrapper(F.perspective_image_pil),
+            reference_fn=pil_reference_wrapper(F._perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs={
@@ -712,8 +705,8 @@ KERNEL_INFOS.extend(
             test_marks=[xfail_jit_python_scalar_arg("fill")],
         ),
         KernelInfo(
-            F.perspective_bounding_box,
-            sample_inputs_fn=sample_inputs_perspective_bounding_box,
+            F.perspective_bounding_boxes,
+            sample_inputs_fn=sample_inputs_perspective_bounding_boxes,
             closeness_kwargs={
                 **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
                 **scripted_vs_eager_float64_tolerances("cuda", atol=1e-6, rtol=1e-6),
@@ -722,7 +715,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.perspective_mask,
             sample_inputs_fn=sample_inputs_perspective_mask,
-            reference_fn=pil_reference_wrapper(F.perspective_image_pil),
+            reference_fn=pil_reference_wrapper(F._perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_mask,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -742,13 +735,13 @@ KERNEL_INFOS.extend(
 )
 
 
-def _get_elastic_displacement(spatial_size):
-    return torch.rand(1, *spatial_size, 2)
+def _get_elastic_displacement(canvas_size):
+    return torch.rand(1, *canvas_size, 2)
 
 
 def sample_inputs_elastic_image_tensor():
     for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
-        displacement = _get_elastic_displacement(image_loader.spatial_size)
+        displacement = _get_elastic_displacement(image_loader.canvas_size)
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
 
@@ -762,18 +755,18 @@ def reference_inputs_elastic_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        displacement = _get_elastic_displacement(image_loader.spatial_size)
+        displacement = _get_elastic_displacement(image_loader.canvas_size)
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, interpolation=interpolation, displacement=displacement, fill=fill)
 
 
-def sample_inputs_elastic_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders():
-        displacement = _get_elastic_displacement(bounding_box_loader.spatial_size)
+def sample_inputs_elastic_bounding_boxes():
+    for bounding_boxes_loader in make_bounding_box_loaders():
+        displacement = _get_elastic_displacement(bounding_boxes_loader.canvas_size)
         yield ArgsKwargs(
-            bounding_box_loader,
-            format=bounding_box_loader.format,
-            spatial_size=bounding_box_loader.spatial_size,
+            bounding_boxes_loader,
+            format=bounding_boxes_loader.format,
+            canvas_size=bounding_boxes_loader.canvas_size,
             displacement=displacement,
         )
 
@@ -793,7 +786,7 @@ def sample_inputs_elastic_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.elastic_image_tensor,
+            F.elastic_image,
             sample_inputs_fn=sample_inputs_elastic_image_tensor,
             reference_inputs_fn=reference_inputs_elastic_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
@@ -804,8 +797,8 @@ KERNEL_INFOS.extend(
             test_marks=[xfail_jit_python_scalar_arg("fill")],
         ),
         KernelInfo(
-            F.elastic_bounding_box,
-            sample_inputs_fn=sample_inputs_elastic_bounding_box,
+            F.elastic_bounding_boxes,
+            sample_inputs_fn=sample_inputs_elastic_bounding_boxes,
         ),
         KernelInfo(
             F.elastic_mask,
@@ -845,12 +838,12 @@ def reference_inputs_center_crop_image_tensor():
         yield ArgsKwargs(image_loader, output_size=output_size)
 
 
-def sample_inputs_center_crop_bounding_box():
-    for bounding_box_loader, output_size in itertools.product(make_bounding_box_loaders(), _CENTER_CROP_OUTPUT_SIZES):
+def sample_inputs_center_crop_bounding_boxes():
+    for bounding_boxes_loader, output_size in itertools.product(make_bounding_box_loaders(), _CENTER_CROP_OUTPUT_SIZES):
         yield ArgsKwargs(
-            bounding_box_loader,
-            format=bounding_box_loader.format,
-            spatial_size=bounding_box_loader.spatial_size,
+            bounding_boxes_loader,
+            format=bounding_boxes_loader.format,
+            canvas_size=bounding_boxes_loader.canvas_size,
             output_size=output_size,
         )
 
@@ -877,9 +870,9 @@ def sample_inputs_center_crop_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.center_crop_image_tensor,
+            F.center_crop_image,
             sample_inputs_fn=sample_inputs_center_crop_image_tensor,
-            reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
+            reference_fn=pil_reference_wrapper(F._center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
             float32_vs_uint8=True,
             test_marks=[
@@ -887,8 +880,8 @@ KERNEL_INFOS.extend(
             ],
         ),
         KernelInfo(
-            F.center_crop_bounding_box,
-            sample_inputs_fn=sample_inputs_center_crop_bounding_box,
+            F.center_crop_bounding_boxes,
+            sample_inputs_fn=sample_inputs_center_crop_bounding_boxes,
             test_marks=[
                 xfail_jit_python_scalar_arg("output_size"),
             ],
@@ -896,7 +889,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.center_crop_mask,
             sample_inputs_fn=sample_inputs_center_crop_mask,
-            reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
+            reference_fn=pil_reference_wrapper(F._center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_mask,
             float32_vs_uint8=True,
             test_marks=[
@@ -931,7 +924,7 @@ def sample_inputs_gaussian_blur_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.gaussian_blur_image_tensor,
+            F.gaussian_blur_image,
             sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
             closeness_kwargs=cuda_vs_cpu_pixel_difference(),
             test_marks=[
@@ -975,7 +968,7 @@ def reference_inputs_equalize_image_tensor():
             image.mul_(torch.iinfo(dtype).max).round_()
         return image.to(dtype=dtype, device=device, memory_format=memory_format, copy=True)
 
-    spatial_size = (256, 256)
+    canvas_size = (256, 256)
     for dtype, color_space, fn in itertools.product(
         [torch.uint8],
         ["GRAY", "RGB"],
@@ -1005,7 +998,7 @@ def reference_inputs_equalize_image_tensor():
             ],
         ],
     ):
-        image_loader = ImageLoader(fn, shape=(get_num_channels(color_space), *spatial_size), dtype=dtype)
+        image_loader = ImageLoader(fn, shape=(get_num_channels(color_space), *canvas_size), dtype=dtype)
         yield ArgsKwargs(image_loader)
 
 
@@ -1017,10 +1010,10 @@ def sample_inputs_equalize_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.equalize_image_tensor,
+            F.equalize_image,
             kernel_name="equalize_image_tensor",
             sample_inputs_fn=sample_inputs_equalize_image_tensor,
-            reference_fn=pil_reference_wrapper(F.equalize_image_pil),
+            reference_fn=pil_reference_wrapper(F._equalize_image_pil),
             float32_vs_uint8=True,
             reference_inputs_fn=reference_inputs_equalize_image_tensor,
         ),
@@ -1050,10 +1043,10 @@ def sample_inputs_invert_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.invert_image_tensor,
+            F.invert_image,
             kernel_name="invert_image_tensor",
             sample_inputs_fn=sample_inputs_invert_image_tensor,
-            reference_fn=pil_reference_wrapper(F.invert_image_pil),
+            reference_fn=pil_reference_wrapper(F._invert_image_pil),
             reference_inputs_fn=reference_inputs_invert_image_tensor,
             float32_vs_uint8=True,
         ),
@@ -1089,10 +1082,10 @@ def sample_inputs_posterize_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.posterize_image_tensor,
+            F.posterize_image,
             kernel_name="posterize_image_tensor",
             sample_inputs_fn=sample_inputs_posterize_image_tensor,
-            reference_fn=pil_reference_wrapper(F.posterize_image_pil),
+            reference_fn=pil_reference_wrapper(F._posterize_image_pil),
             reference_inputs_fn=reference_inputs_posterize_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
@@ -1134,10 +1127,10 @@ def sample_inputs_solarize_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.solarize_image_tensor,
+            F.solarize_image,
             kernel_name="solarize_image_tensor",
             sample_inputs_fn=sample_inputs_solarize_image_tensor,
-            reference_fn=pil_reference_wrapper(F.solarize_image_pil),
+            reference_fn=pil_reference_wrapper(F._solarize_image_pil),
             reference_inputs_fn=reference_inputs_solarize_image_tensor,
             float32_vs_uint8=uint8_to_float32_threshold_adapter,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
@@ -1168,10 +1161,10 @@ def sample_inputs_autocontrast_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.autocontrast_image_tensor,
+            F.autocontrast_image,
             kernel_name="autocontrast_image_tensor",
             sample_inputs_fn=sample_inputs_autocontrast_image_tensor,
-            reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
+            reference_fn=pil_reference_wrapper(F._autocontrast_image_pil),
             reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1213,10 +1206,10 @@ def sample_inputs_adjust_sharpness_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_sharpness_image_tensor,
+            F.adjust_sharpness_image,
             kernel_name="adjust_sharpness_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_sharpness_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_sharpness_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_sharpness_image_pil),
             reference_inputs_fn=reference_inputs_adjust_sharpness_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs=float32_vs_uint8_pixel_difference(2),
@@ -1248,7 +1241,7 @@ def sample_inputs_erase_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.erase_image_tensor,
+            F.erase_image,
             kernel_name="erase_image_tensor",
             sample_inputs_fn=sample_inputs_erase_image_tensor,
         ),
@@ -1258,46 +1251,6 @@ KERNEL_INFOS.extend(
         ),
     ]
 )
-
-_ADJUST_BRIGHTNESS_FACTORS = [0.1, 0.5]
-
-
-def sample_inputs_adjust_brightness_image_tensor():
-    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
-        yield ArgsKwargs(image_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
-
-
-def reference_inputs_adjust_brightness_image_tensor():
-    for image_loader, brightness_factor in itertools.product(
-        make_image_loaders(color_spaces=("GRAY", "RGB"), extra_dims=[()], dtypes=[torch.uint8]),
-        _ADJUST_BRIGHTNESS_FACTORS,
-    ):
-        yield ArgsKwargs(image_loader, brightness_factor=brightness_factor)
-
-
-def sample_inputs_adjust_brightness_video():
-    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
-        yield ArgsKwargs(video_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.adjust_brightness_image_tensor,
-            kernel_name="adjust_brightness_image_tensor",
-            sample_inputs_fn=sample_inputs_adjust_brightness_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_brightness_image_pil),
-            reference_inputs_fn=reference_inputs_adjust_brightness_image_tensor,
-            float32_vs_uint8=True,
-            closeness_kwargs=float32_vs_uint8_pixel_difference(),
-        ),
-        KernelInfo(
-            F.adjust_brightness_video,
-            sample_inputs_fn=sample_inputs_adjust_brightness_video,
-        ),
-    ]
-)
-
 
 _ADJUST_CONTRAST_FACTORS = [0.1, 0.5]
 
@@ -1323,10 +1276,10 @@ def sample_inputs_adjust_contrast_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_contrast_image_tensor,
+            F.adjust_contrast_image,
             kernel_name="adjust_contrast_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_contrast_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_contrast_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_contrast_image_pil),
             reference_inputs_fn=reference_inputs_adjust_contrast_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1376,10 +1329,10 @@ def sample_inputs_adjust_gamma_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_gamma_image_tensor,
+            F.adjust_gamma_image,
             kernel_name="adjust_gamma_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_gamma_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_gamma_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_gamma_image_pil),
             reference_inputs_fn=reference_inputs_adjust_gamma_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1419,10 +1372,10 @@ def sample_inputs_adjust_hue_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_hue_image_tensor,
+            F.adjust_hue_image,
             kernel_name="adjust_hue_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_hue_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_hue_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_hue_image_pil),
             reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1461,10 +1414,10 @@ def sample_inputs_adjust_saturation_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.adjust_saturation_image_tensor,
+            F.adjust_saturation_image,
             kernel_name="adjust_saturation_image_tensor",
             sample_inputs_fn=sample_inputs_adjust_saturation_image_tensor,
-            reference_fn=pil_reference_wrapper(F.adjust_saturation_image_pil),
+            reference_fn=pil_reference_wrapper(F._adjust_saturation_image_pil),
             reference_inputs_fn=reference_inputs_adjust_saturation_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
@@ -1482,19 +1435,19 @@ KERNEL_INFOS.extend(
 )
 
 
-def sample_inputs_clamp_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders():
+def sample_inputs_clamp_bounding_boxes():
+    for bounding_boxes_loader in make_bounding_box_loaders():
         yield ArgsKwargs(
-            bounding_box_loader,
-            format=bounding_box_loader.format,
-            spatial_size=bounding_box_loader.spatial_size,
+            bounding_boxes_loader,
+            format=bounding_boxes_loader.format,
+            canvas_size=bounding_boxes_loader.canvas_size,
         )
 
 
 KERNEL_INFOS.append(
     KernelInfo(
-        F.clamp_bounding_box,
-        sample_inputs_fn=sample_inputs_clamp_bounding_box,
+        F.clamp_bounding_boxes,
+        sample_inputs_fn=sample_inputs_clamp_bounding_boxes,
         logs_usage=True,
     )
 )
@@ -1502,7 +1455,7 @@ KERNEL_INFOS.append(
 _FIVE_TEN_CROP_SIZES = [7, (6,), [5], (6, 5), [7, 6]]
 
 
-def _get_five_ten_crop_spatial_size(size):
+def _get_five_ten_crop_canvas_size(size):
     if isinstance(size, int):
         crop_height = crop_width = size
     elif len(size) == 1:
@@ -1515,7 +1468,7 @@ def _get_five_ten_crop_spatial_size(size):
 def sample_inputs_five_crop_image_tensor():
     for size in _FIVE_TEN_CROP_SIZES:
         for image_loader in make_image_loaders(
-            sizes=[_get_five_ten_crop_spatial_size(size)],
+            sizes=[_get_five_ten_crop_canvas_size(size)],
             color_spaces=["RGB"],
             dtypes=[torch.float32],
         ):
@@ -1525,21 +1478,21 @@ def sample_inputs_five_crop_image_tensor():
 def reference_inputs_five_crop_image_tensor():
     for size in _FIVE_TEN_CROP_SIZES:
         for image_loader in make_image_loaders(
-            sizes=[_get_five_ten_crop_spatial_size(size)], extra_dims=[()], dtypes=[torch.uint8]
+            sizes=[_get_five_ten_crop_canvas_size(size)], extra_dims=[()], dtypes=[torch.uint8]
         ):
             yield ArgsKwargs(image_loader, size=size)
 
 
 def sample_inputs_five_crop_video():
     size = _FIVE_TEN_CROP_SIZES[0]
-    for video_loader in make_video_loaders(sizes=[_get_five_ten_crop_spatial_size(size)]):
+    for video_loader in make_video_loaders(sizes=[_get_five_ten_crop_canvas_size(size)]):
         yield ArgsKwargs(video_loader, size=size)
 
 
 def sample_inputs_ten_crop_image_tensor():
     for size, vertical_flip in itertools.product(_FIVE_TEN_CROP_SIZES, [False, True]):
         for image_loader in make_image_loaders(
-            sizes=[_get_five_ten_crop_spatial_size(size)],
+            sizes=[_get_five_ten_crop_canvas_size(size)],
             color_spaces=["RGB"],
             dtypes=[torch.float32],
         ):
@@ -1549,14 +1502,14 @@ def sample_inputs_ten_crop_image_tensor():
 def reference_inputs_ten_crop_image_tensor():
     for size, vertical_flip in itertools.product(_FIVE_TEN_CROP_SIZES, [False, True]):
         for image_loader in make_image_loaders(
-            sizes=[_get_five_ten_crop_spatial_size(size)], extra_dims=[()], dtypes=[torch.uint8]
+            sizes=[_get_five_ten_crop_canvas_size(size)], extra_dims=[()], dtypes=[torch.uint8]
         ):
             yield ArgsKwargs(image_loader, size=size, vertical_flip=vertical_flip)
 
 
 def sample_inputs_ten_crop_video():
     size = _FIVE_TEN_CROP_SIZES[0]
-    for video_loader in make_video_loaders(sizes=[_get_five_ten_crop_spatial_size(size)]):
+    for video_loader in make_video_loaders(sizes=[_get_five_ten_crop_canvas_size(size)]):
         yield ArgsKwargs(video_loader, size=size)
 
 
@@ -1564,8 +1517,7 @@ def multi_crop_pil_reference_wrapper(pil_kernel):
     def wrapper(input_tensor, *other_args, **kwargs):
         output = pil_reference_wrapper(pil_kernel)(input_tensor, *other_args, **kwargs)
         return type(output)(
-            F.to_dtype_image_tensor(F.to_image_tensor(output_pil), dtype=input_tensor.dtype, scale=True)
-            for output_pil in output
+            F.to_dtype_image(F.to_image(output_pil), dtype=input_tensor.dtype, scale=True) for output_pil in output
         )
 
     return wrapper
@@ -1579,9 +1531,9 @@ _common_five_ten_crop_marks = [
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.five_crop_image_tensor,
+            F.five_crop_image,
             sample_inputs_fn=sample_inputs_five_crop_image_tensor,
-            reference_fn=multi_crop_pil_reference_wrapper(F.five_crop_image_pil),
+            reference_fn=multi_crop_pil_reference_wrapper(F._five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
         ),
@@ -1591,9 +1543,9 @@ KERNEL_INFOS.extend(
             test_marks=_common_five_ten_crop_marks,
         ),
         KernelInfo(
-            F.ten_crop_image_tensor,
+            F.ten_crop_image,
             sample_inputs_fn=sample_inputs_ten_crop_image_tensor,
-            reference_fn=multi_crop_pil_reference_wrapper(F.ten_crop_image_pil),
+            reference_fn=multi_crop_pil_reference_wrapper(F._ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
         ),
@@ -1647,7 +1599,7 @@ def sample_inputs_normalize_video():
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.normalize_image_tensor,
+            F.normalize_image,
             kernel_name="normalize_image_tensor",
             sample_inputs_fn=sample_inputs_normalize_image_tensor,
             reference_fn=reference_normalize_image_tensor,

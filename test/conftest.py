@@ -8,12 +8,20 @@ import torchvision
 
 torchvision.disable_beta_transforms_warning()
 
-from common_utils import CUDA_NOT_AVAILABLE_MSG, IN_FBCODE, IN_OSS_CI, IN_RE_WORKER, OSS_CI_GPU_NO_CUDA_MSG
+from common_utils import (
+    CUDA_NOT_AVAILABLE_MSG,
+    IN_FBCODE,
+    IN_OSS_CI,
+    IN_RE_WORKER,
+    MPS_NOT_AVAILABLE_MSG,
+    OSS_CI_GPU_NO_CUDA_MSG,
+)
 
 
 def pytest_configure(config):
     # register an additional marker (see pytest_collection_modifyitems)
     config.addinivalue_line("markers", "needs_cuda: mark for tests that rely on a CUDA device")
+    config.addinivalue_line("markers", "needs_mps: mark for tests that rely on a MPS device")
     config.addinivalue_line("markers", "dont_collect: mark for tests that should not be collected")
 
 
@@ -37,11 +45,15 @@ def pytest_collection_modifyitems(items):
         # the "instances" of the tests where device == 'cuda' will have the 'needs_cuda' mark,
         # and the ones with device == 'cpu' won't have the mark.
         needs_cuda = item.get_closest_marker("needs_cuda") is not None
+        needs_mps = item.get_closest_marker("needs_mps") is not None
 
         if needs_cuda and not torch.cuda.is_available():
             # In general, we skip cuda tests on machines without a GPU
             # There are special cases though, see below
             item.add_marker(pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG))
+
+        if needs_mps and not torch.backends.mps.is_available():
+            item.add_marker(pytest.mark.skip(reason=MPS_NOT_AVAILABLE_MSG))
 
         if IN_FBCODE:
             # fbcode doesn't like skipping tests, so instead we  just don't collect the test
@@ -53,6 +65,9 @@ def pytest_collection_modifyitems(items):
                 # On the test machines without a GPU, we want to ignore the tests that need cuda.
                 # TODO: something more robust would be to do that only in a sandcastle instance,
                 # so that we can still see the test being skipped when testing locally from a devvm
+                continue
+            if needs_mps and not torch.backends.mps.is_available():
+                # Same as above, but for MPS
                 continue
         elif IN_OSS_CI:
             # Here we're not in fbcode, so we can safely collect and skip tests.

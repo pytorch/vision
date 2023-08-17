@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple
 
 import PIL.Image
 import torch
@@ -12,7 +12,7 @@ from torchvision.transforms.v2 import functional as F
 
 from ._transform import _RandomApplyTransform, Transform
 from ._utils import _parse_labels_getter
-from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
+from .utils import has_any, is_simple_tensor, query_chw, query_size
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -56,8 +56,6 @@ class RandomErasing(_RandomApplyTransform):
             value="random" if self.value is None else self.value,
         )
 
-    _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
-
     def __init__(
         self,
         p: float = 0.5,
@@ -92,6 +90,14 @@ class RandomErasing(_RandomApplyTransform):
         self.inplace = inplace
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
+
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+        if isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask)):
+            warnings.warn(
+                f"{type(self).__name__}() is currently passing through inputs of type "
+                f"datapoints.{type(inpt).__name__}. This will likely change in the future."
+            )
+        return super()._call_kernel(functional, inpt, *args, **kwargs)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(flat_inputs)
@@ -131,19 +137,17 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(
-        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["v"] is not None:
-            inpt = F.erase(inpt, **params, inplace=self.inplace)
+            inpt = self._call_kernel(F.erase, inpt, **params, inplace=self.inplace)
 
         return inpt
 
 
-class _BaseMixupCutmix(Transform):
-    def __init__(self, *, alpha: float = 1, num_classes: int, labels_getter="default") -> None:
+class _BaseMixUpCutMix(Transform):
+    def __init__(self, *, alpha: float = 1.0, num_classes: int, labels_getter="default") -> None:
         super().__init__()
-        self.alpha = alpha
+        self.alpha = float(alpha)
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
         self.num_classes = num_classes
@@ -155,7 +159,7 @@ class _BaseMixupCutmix(Transform):
         flat_inputs, spec = tree_flatten(inputs)
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
-        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask):
+        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBoxes, datapoints.Mask):
             raise ValueError(f"{type(self).__name__}() does not support PIL images, bounding boxes and masks.")
 
         labels = self._labels_getter(inputs)
@@ -203,14 +207,21 @@ class _BaseMixupCutmix(Transform):
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
 
 
-class Mixup(_BaseMixupCutmix):
-    """[BETA] Apply Mixup to the provided batch of images and labels.
+class MixUp(_BaseMixUpCutMix):
+    """[BETA] Apply MixUp to the provided batch of images and labels.
 
-    .. v2betastatus:: Mixup transform
+    .. v2betastatus:: MixUp transform
 
     Paper: `mixup: Beyond Empirical Risk Minimization <https://arxiv.org/abs/1710.09412>`_.
 
-    See :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+    .. note::
+        This transform is meant to be used on **batches** of samples, not
+        individual images. See
+        :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage
+        examples.
+        The sample pairing is deterministic and done by matching consecutive
+        samples in the batch, so the batch needs to be shuffled (this is an
+        implementation detail, not a guaranteed convention.)
 
     In the input, the labels are expected to be a tensor of shape ``(batch_size,)``. They will be transformed
     into a tensor of shape ``(batch_size, num_classes)``.
@@ -220,7 +231,7 @@ class Mixup(_BaseMixupCutmix):
         num_classes (int): number of classes in the batch. Used for one-hot-encoding.
         labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
             By default, this will pick the second parameter a the labels if it's a tensor. This covers the most
-            common scenario where this transform is called as ``Mixup()(imgs_batch, labels_batch)``.
+            common scenario where this transform is called as ``MixUp()(imgs_batch, labels_batch)``.
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
@@ -238,22 +249,29 @@ class Mixup(_BaseMixupCutmix):
             output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
 
             if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
+                output = datapoints.wrap(output, like=inpt)
 
             return output
         else:
             return inpt
 
 
-class Cutmix(_BaseMixupCutmix):
-    """[BETA] Apply Cutmix to the provided batch of images and labels.
+class CutMix(_BaseMixUpCutMix):
+    """[BETA] Apply CutMix to the provided batch of images and labels.
 
-    .. v2betastatus:: Cutmix transform
+    .. v2betastatus:: CutMix transform
 
     Paper: `CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features
     <https://arxiv.org/abs/1905.04899>`_.
 
-    See :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+    .. note::
+        This transform is meant to be used on **batches** of samples, not
+        individual images. See
+        :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage
+        examples.
+        The sample pairing is deterministic and done by matching consecutive
+        samples in the batch, so the batch needs to be shuffled (this is an
+        implementation detail, not a guaranteed convention.)
 
     In the input, the labels are expected to be a tensor of shape ``(batch_size,)``. They will be transformed
     into a tensor of shape ``(batch_size, num_classes)``.
@@ -263,14 +281,14 @@ class Cutmix(_BaseMixupCutmix):
         num_classes (int): number of classes in the batch. Used for one-hot-encoding.
         labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
             By default, this will pick the second parameter a the labels if it's a tensor. This covers the most
-            common scenario where this transform is called as ``Cutmix()(imgs_batch, labels_batch)``.
+            common scenario where this transform is called as ``CutMix()(imgs_batch, labels_batch)``.
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
-        H, W = query_spatial_size(flat_inputs)
+        H, W = query_size(flat_inputs)
 
         r_x = torch.randint(W, size=(1,))
         r_y = torch.randint(H, size=(1,))
@@ -301,7 +319,7 @@ class Cutmix(_BaseMixupCutmix):
             output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
             if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
+                output = datapoints.wrap(output, like=inpt)
 
             return output
         else:

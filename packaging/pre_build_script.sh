@@ -11,10 +11,10 @@ if [[ "$(uname)" == Darwin ]]; then
   conda install -yq wget
 fi
 
-if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
+if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" || "$ARCH" == "aarch64" ]]; then
   # Install libpng from Anaconda (defaults)
-  conda install libpng "jpeg<=9b" -yq
-  conda install -yq ffmpeg=4.2 -c pytorch
+  conda install libpng -yq
+  conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch
 
   # Copy binaries to be included in the wheel distribution
   if [[ "$OSTYPE" == "msys" ]]; then
