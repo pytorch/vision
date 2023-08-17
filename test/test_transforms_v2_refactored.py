@@ -13,6 +13,7 @@ import pytest
 import torch
 import torchvision.transforms.v2 as transforms
 from common_utils import (
+    assert_default_rng_is_unchanged,
     assert_equal,
     assert_no_warnings,
     cache,
@@ -254,6 +255,10 @@ def check_transform(transform_cls, input, *args, **kwargs):
         assert output.format == input.format
 
     _check_transform_v1_compatibility(transform, input)
+
+    if "generator" in inspect.signature(transform_cls).parameters:
+        with assert_default_rng_is_unchanged():
+            transform_cls(*args, generator=torch.Generator(), **kwargs)(input)
 
 
 def transform_cls_to_functional(transform_cls, **transform_specific_kwargs):
@@ -2374,3 +2379,34 @@ class TestToPureTensor:
                 assert isinstance(out_value, torch.Tensor) and not isinstance(out_value, datapoints.Datapoint)
             else:
                 assert isinstance(out_value, type(input_value))
+
+
+def test_transforms_rng_with_dataloader():
+    # This is more of a sanity test for torch core's handling of Generators within the Dataloader
+    # But worth having it here as well for security.
+    class MyTransform(torch.nn.Module):
+        def __init__(self, generator):
+            super().__init__()
+            self.generator = generator
+
+        def forward(self):
+            return torch.randint(0, 100_000, size=(1,), generator=self.generator).item()
+
+    class Dataset:
+        def __init__(self, transform):
+            self.transform = transform
+
+        def __getitem__(self, _):
+            return self.transform()
+
+        def __len__(self):
+            return 10
+
+    rng = torch.Generator().manual_seed(0)
+    t = MyTransform(rng)
+    ds = Dataset(t, multiprocessing_context="fork")
+
+    dl = DataLoader(ds, num_workers=2)
+    all_samples = [x.item() for x in dl]
+    # If the RNG were the same across workers, we would get duplicated samples here. We assert they're all unique.
+    assert len(set(all_samples)) == len(all_samples)

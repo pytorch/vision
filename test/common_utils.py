@@ -103,6 +103,16 @@ def freeze_rng_state():
     torch.set_rng_state(rng_state)
 
 
+@contextlib.contextmanager
+def assert_default_rng_is_unchanged():
+    default_state = torch.random.get_rng_state()
+    yield
+    try:
+        torch.testing.assert_close(default_state, torch.random.get_rng_state(), rtol=0, atol=0)
+    except AssertionError as e:
+        raise AssertionError("The default RNG got consumed.") from e
+
+
 def cycle_over(objs):
     for idx, obj1 in enumerate(objs):
         for obj2 in objs[:idx] + objs[idx + 1 :]:

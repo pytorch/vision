@@ -122,7 +122,7 @@ class Transform(nn.Module):
         return {
             attr: value
             for attr, value in self.__dict__.items()
-            if not attr.startswith("_") and attr not in common_attrs
+            if not attr.startswith("_") and attr not in common_attrs and attr != "generator"
         }
 
     def __prepare_scriptable__(self) -> nn.Module:
@@ -143,11 +143,12 @@ class Transform(nn.Module):
 
 
 class _RandomApplyTransform(Transform):
-    def __init__(self, p: float = 0.5) -> None:
+    def __init__(self, p: float = 0.5, generator=None) -> None:
         if not (0.0 <= p <= 1.0):
             raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
 
         super().__init__()
+        self.generator = generator
         self.p = p
 
     def forward(self, *inputs: Any) -> Any:
@@ -160,7 +161,7 @@ class _RandomApplyTransform(Transform):
 
         self._check_inputs(flat_inputs)
 
-        if torch.rand(1) >= self.p:
+        if torch.rand(1, generator=self.generator) >= self.p:
             return inputs
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
