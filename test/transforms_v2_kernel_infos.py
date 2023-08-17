@@ -7,11 +7,11 @@ import pytest
 import torch.testing
 import torchvision.ops
 import torchvision.transforms.v2.functional as F
-from common_utils import combinations_grid
 from torchvision import datapoints
 from torchvision.transforms._functional_tensor import _max_value as get_max_value, _parse_pad_padding
 from transforms_v2_legacy_utils import (
     ArgsKwargs,
+    combinations_grid,
     DEFAULT_PORTRAIT_SPATIAL_SIZE,
     get_num_channels,
     ImageLoader,

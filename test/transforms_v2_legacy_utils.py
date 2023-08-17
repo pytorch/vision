@@ -18,27 +18,159 @@ all the legacy modules including this one and drop the _refactored prefix from t
 import collections.abc
 import dataclasses
 import enum
+import itertools
 import pathlib
 from collections import defaultdict
 from typing import Callable, Sequence, Tuple, Union
 
 import PIL.Image
-
 import pytest
 import torch
 
-from common_utils import (
-    combinations_grid,
-    make_bounding_boxes,
-    make_detection_mask,
-    make_image,
-    make_segmentation_mask,
-    make_video,
-    NUM_CHANNELS_MAP,
-)
-
 from torchvision import datapoints
-from torchvision.transforms.v2.functional import to_dtype_image, to_image
+from torchvision.transforms._functional_tensor import _max_value as get_max_value
+from torchvision.transforms.v2.functional import to_dtype_image, to_image, to_pil_image
+
+
+def combinations_grid(**kwargs):
+    """Creates a grid of input combinations.
+
+    Each element in the returned sequence is a dictionary containing one possible combination as values.
+
+    Example:
+        >>> combinations_grid(foo=("bar", "baz"), spam=("eggs", "ham"))
+        [
+            {'foo': 'bar', 'spam': 'eggs'},
+            {'foo': 'bar', 'spam': 'ham'},
+            {'foo': 'baz', 'spam': 'eggs'},
+            {'foo': 'baz', 'spam': 'ham'}
+        ]
+    """
+    return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
+
+
+DEFAULT_SIZE = (17, 11)
+
+NUM_CHANNELS_MAP = {
+    "GRAY": 1,
+    "GRAY_ALPHA": 2,
+    "RGB": 3,
+    "RGBA": 4,
+}
+
+
+def make_image(
+    size=DEFAULT_SIZE,
+    *,
+    color_space="RGB",
+    batch_dims=(),
+    dtype=None,
+    device="cpu",
+    memory_format=torch.contiguous_format,
+):
+    num_channels = NUM_CHANNELS_MAP[color_space]
+    dtype = dtype or torch.uint8
+    max_value = get_max_value(dtype)
+    data = torch.testing.make_tensor(
+        (*batch_dims, num_channels, *size),
+        low=0,
+        high=max_value,
+        dtype=dtype,
+        device=device,
+        memory_format=memory_format,
+    )
+    if color_space in {"GRAY_ALPHA", "RGBA"}:
+        data[..., -1, :, :] = max_value
+
+    return datapoints.Image(data)
+
+
+def make_image_tensor(*args, **kwargs):
+    return make_image(*args, **kwargs).as_subclass(torch.Tensor)
+
+
+def make_image_pil(*args, **kwargs):
+    return to_pil_image(make_image(*args, **kwargs))
+
+
+def make_bounding_boxes(
+    canvas_size=DEFAULT_SIZE,
+    *,
+    format=datapoints.BoundingBoxFormat.XYXY,
+    batch_dims=(),
+    dtype=None,
+    device="cpu",
+):
+    def sample_position(values, max_value):
+        # We cannot use torch.randint directly here, because it only allows integer scalars as values for low and high.
+        # However, if we have batch_dims, we need tensors as limits.
+        return torch.stack([torch.randint(max_value - v, ()) for v in values.flatten().tolist()]).reshape(values.shape)
+
+    if isinstance(format, str):
+        format = datapoints.BoundingBoxFormat[format]
+
+    dtype = dtype or torch.float32
+
+    if any(dim == 0 for dim in batch_dims):
+        return datapoints.BoundingBoxes(
+            torch.empty(*batch_dims, 4, dtype=dtype, device=device), format=format, canvas_size=canvas_size
+        )
+
+    h, w = [torch.randint(1, c, batch_dims) for c in canvas_size]
+    y = sample_position(h, canvas_size[0])
+    x = sample_position(w, canvas_size[1])
+
+    if format is datapoints.BoundingBoxFormat.XYWH:
+        parts = (x, y, w, h)
+    elif format is datapoints.BoundingBoxFormat.XYXY:
+        x1, y1 = x, y
+        x2 = x1 + w
+        y2 = y1 + h
+        parts = (x1, y1, x2, y2)
+    elif format is datapoints.BoundingBoxFormat.CXCYWH:
+        cx = x + w / 2
+        cy = y + h / 2
+        parts = (cx, cy, w, h)
+    else:
+        raise ValueError(f"Format {format} is not supported")
+
+    return datapoints.BoundingBoxes(
+        torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, canvas_size=canvas_size
+    )
+
+
+def make_detection_mask(size=DEFAULT_SIZE, *, num_objects=5, batch_dims=(), dtype=None, device="cpu"):
+    """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
+    return datapoints.Mask(
+        torch.testing.make_tensor(
+            (*batch_dims, num_objects, *size),
+            low=0,
+            high=2,
+            dtype=dtype or torch.bool,
+            device=device,
+        )
+    )
+
+
+def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
+    """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
+    return datapoints.Mask(
+        torch.testing.make_tensor(
+            (*batch_dims, *size),
+            low=0,
+            high=num_categories,
+            dtype=dtype or torch.uint8,
+            device=device,
+        )
+    )
+
+
+def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
+    return datapoints.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
+
+
+def make_video_tensor(*args, **kwargs):
+    return make_video(*args, **kwargs).as_subclass(torch.Tensor)
 
 
 DEFAULT_SQUARE_SPATIAL_SIZE = 15
