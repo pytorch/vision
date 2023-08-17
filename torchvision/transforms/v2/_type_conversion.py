@@ -30,7 +30,7 @@ class ToImage(Transform):
     """[BETA] Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.datapoints.Image`
     ; this does not scale values.
 
-    .. v2betastatus:: ToImageTensor transform
+    .. v2betastatus:: ToImage transform
 
     This transform does not support torchscript.
     """
@@ -46,7 +46,7 @@ class ToImage(Transform):
 class ToPILImage(Transform):
     """[BETA] Convert a tensor or an ndarray to PIL Image - this does not scale values.
 
-    .. v2betastatus:: ToImagePIL transform
+    .. v2betastatus:: ToPILImage transform
 
     This transform does not support torchscript.
 
