@@ -91,13 +91,13 @@ class RandomErasing(_RandomApplyTransform):
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
-    def _call_kernel(self, dispatcher: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         if isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask)):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
                 f"datapoints.{type(inpt).__name__}. This will likely change in the future."
             )
-        return super()._call_kernel(dispatcher, inpt, *args, **kwargs)
+        return super()._call_kernel(functional, inpt, *args, **kwargs)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(flat_inputs)
@@ -249,7 +249,7 @@ class MixUp(_BaseMixUpCutMix):
             output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
 
             if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
+                output = datapoints.wrap(output, like=inpt)
 
             return output
         else:
@@ -319,7 +319,7 @@ class CutMix(_BaseMixUpCutMix):
             output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
             if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
+                output = datapoints.wrap(output, like=inpt)
 
             return output
         else:

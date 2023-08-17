@@ -338,7 +338,7 @@ class FiveCrop(Transform):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
-        ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
+        ...         images_or_videos = datapoints.wrap(torch.stack(images_or_videos), like=image_or_video)
         ...         labels = torch.full((batch_size,), label, device=images_or_videos.device)
         ...         return images_or_videos, labels
         ...
@@ -358,13 +358,13 @@ class FiveCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _call_kernel(self, dispatcher: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         if isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask)):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
                 f"datapoints.{type(inpt).__name__}. This will likely change in the future."
             )
-        return super()._call_kernel(dispatcher, inpt, *args, **kwargs)
+        return super()._call_kernel(functional, inpt, *args, **kwargs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.five_crop, inpt, self.size)
@@ -405,13 +405,13 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _call_kernel(self, dispatcher: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         if isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask)):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
                 f"datapoints.{type(inpt).__name__}. This will likely change in the future."
             )
-        return super()._call_kernel(dispatcher, inpt, *args, **kwargs)
+        return super()._call_kernel(functional, inpt, *args, **kwargs)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
