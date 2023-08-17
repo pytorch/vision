@@ -8,8 +8,14 @@ vision.
 
 ## Installation
 
-We recommend Anaconda as Python package management system. Please refer to [pytorch.org](https://pytorch.org/) for the
-detail of PyTorch (`torch`) installation. The following is the corresponding `torchvision` versions and supported Python
+Please refer to the [official
+instructions](https://pytorch.org/get-started/locally/) to install the stable
+versions of `torch` and `torchvision` on your system.
+
+To build source, refer to our [contributing
+page](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation).
+
+The following is the corresponding `torchvision` versions and supported Python
 versions.
 
 | `torch`            | `torchvision`      | Python              |
@@ -39,55 +45,18 @@ versions.
 
 </details>
 
-Anaconda:
-
-```
-conda install torchvision -c pytorch
-```
-
-pip:
-
-```
-pip install torchvision
-```
-
-From source:
-
-```
-python setup.py install
-# or, for OSX
-# MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
-```
-
-We don't officially support building from source using `pip`, but _if_ you do, you'll need to use the
-`--no-build-isolation` flag. In case building TorchVision from source fails, install the nightly version of PyTorch
-following the linked guide on the
-[contributing page](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation) and retry the
-install.
-
-By default, GPU support is built if CUDA is found and `torch.cuda.is_available()` is true. It's possible to force
-building GPU support by setting `FORCE_CUDA=1` environment variable, which is useful when building a docker image.
-
-## Image Backend
+## Image Backends
 
 Torchvision currently supports the following image backends:
 
-- [Pillow](https://python-pillow.org/) (default)
-- [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
-  If installed will be used as the default.
-- [accimage](https://github.com/pytorch/accimage) - if installed can be activated by calling
-  `torchvision.set_image_backend('accimage')`
-- [libpng](http://www.libpng.org/pub/png/libpng.html) - can be installed via conda `conda install libpng` or any of the
-  package managers for debian-based and RHEL-based Linux distributions.
-- [libjpeg](http://ijg.org/) - can be installed via conda `conda install jpeg` or any of the package managers for
-  debian-based and RHEL-based Linux distributions. [libjpeg-turbo](https://libjpeg-turbo.org/) can be used as well.
+- torch tensors
+- PIL images:
+    - [Pillow](https://python-pillow.org/)
+    - [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
 
-**Notes:** `libpng` and `libjpeg` are optional dependencies. If any of them is available on the system, 
-torchvision will provide encoding/decoding image functionalities from `torchvision.io.image`. 
-When building torchvision from source, `libpng` and `libjpeg` can be found on the standard library locations.
-Otherwise, please use `TORCHVISION_INCLUDE` and `TORCHVISION_LIBRARY` environment variables to set up include and library paths.
+Read more in in our [docs](https://pytorch.org/vision/stable/transforms.html).
 
-## Video Backend
+## [UNSTABLE] Video Backend
 
 Torchvision currently supports the following video backends:
 
