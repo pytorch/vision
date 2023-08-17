@@ -280,12 +280,12 @@ class TestKernels:
         adapted_other_args, adapted_kwargs = info.float32_vs_uint8(other_args, kwargs)
 
         actual = info.kernel(
-            F.to_dtype_image_tensor(input, dtype=torch.float32, scale=True),
+            F.to_dtype_image(input, dtype=torch.float32, scale=True),
             *adapted_other_args,
             **adapted_kwargs,
         )
 
-        expected = F.to_dtype_image_tensor(info.kernel(input, *other_args, **kwargs), dtype=torch.float32, scale=True)
+        expected = F.to_dtype_image(info.kernel(input, *other_args, **kwargs), dtype=torch.float32, scale=True)
 
         assert_close(
             actual,
@@ -377,7 +377,7 @@ class TestDispatchers:
         if image_datapoint.ndim > 3:
             pytest.skip("Input is batched")
 
-        image_pil = F.to_image_pil(image_datapoint)
+        image_pil = F.to_pil_image(image_datapoint)
 
         output = info.dispatcher(image_pil, *other_args, **kwargs)
 
@@ -470,7 +470,7 @@ class TestDispatchers:
             (F.hflip, F.horizontal_flip),
             (F.vflip, F.vertical_flip),
             (F.get_image_num_channels, F.get_num_channels),
-            (F.to_pil_image, F.to_image_pil),
+            (F.to_pil_image, F.to_pil_image),
             (F.elastic_transform, F.elastic),
             (F.to_grayscale, F.rgb_to_grayscale),
         ]
@@ -493,7 +493,7 @@ def test_normalize_image_tensor_stats(device, num_channels):
     mean = image.mean(dim=(1, 2)).tolist()
     std = image.std(dim=(1, 2)).tolist()
 
-    assert_samples_from_standard_normal(F.normalize_image_tensor(image, mean, std))
+    assert_samples_from_standard_normal(F.normalize_image(image, mean, std))
 
 
 class TestClampBoundingBoxes:
@@ -899,7 +899,7 @@ def test_correctness_center_crop_mask(device, output_size):
         _, image_height, image_width = mask.shape
         if crop_width > image_height or crop_height > image_width:
             padding = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-            mask = F.pad_image_tensor(mask, padding, fill=0)
+            mask = F.pad_image(mask, padding, fill=0)
 
         left = round((image_width - crop_width) * 0.5)
         top = round((image_height - crop_height) * 0.5)
@@ -920,7 +920,7 @@ def test_correctness_center_crop_mask(device, output_size):
 @pytest.mark.parametrize("ksize", [(3, 3), [3, 5], (23, 23)])
 @pytest.mark.parametrize("sigma", [[0.5, 0.5], (0.5, 0.5), (0.8, 0.8), (1.7, 1.7)])
 def test_correctness_gaussian_blur_image_tensor(device, canvas_size, dt, ksize, sigma):
-    fn = F.gaussian_blur_image_tensor
+    fn = F.gaussian_blur_image
 
     # true_cv2_results = {
     #     # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
@@ -977,8 +977,8 @@ def test_correctness_gaussian_blur_image_tensor(device, canvas_size, dt, ksize, 
         PIL.Image.new("RGB", (32, 32), 122),
     ],
 )
-def test_to_image_tensor(inpt):
-    output = F.to_image_tensor(inpt)
+def test_to_image(inpt):
+    output = F.to_image(inpt)
     assert isinstance(output, torch.Tensor)
     assert output.shape == (3, 32, 32)
 
@@ -993,8 +993,8 @@ def test_to_image_tensor(inpt):
     ],
 )
 @pytest.mark.parametrize("mode", [None, "RGB"])
-def test_to_image_pil(inpt, mode):
-    output = F.to_image_pil(inpt, mode=mode)
+def test_to_pil_image(inpt, mode):
+    output = F.to_pil_image(inpt, mode=mode)
     assert isinstance(output, PIL.Image.Image)
 
     assert np.asarray(inpt).sum() == np.asarray(output).sum()
@@ -1002,12 +1002,12 @@ def test_to_image_pil(inpt, mode):
 
 def test_equalize_image_tensor_edge_cases():
     inpt = torch.zeros(3, 200, 200, dtype=torch.uint8)
-    output = F.equalize_image_tensor(inpt)
+    output = F.equalize_image(inpt)
     torch.testing.assert_close(inpt, output)
 
     inpt = torch.zeros(5, 3, 200, 200, dtype=torch.uint8)
     inpt[..., 100:, 100:] = 1
-    output = F.equalize_image_tensor(inpt)
+    output = F.equalize_image(inpt)
     assert output.unique().tolist() == [0, 255]
 
 
@@ -1024,7 +1024,7 @@ def test_correctness_uniform_temporal_subsample(device):
 # TODO: We can remove this test and related torchvision workaround
 # once we fixed related pytorch issue: https://github.com/pytorch/pytorch/issues/68430
 @make_info_args_kwargs_parametrization(
-    [info for info in KERNEL_INFOS if info.kernel is F.resize_image_tensor],
+    [info for info in KERNEL_INFOS if info.kernel is F.resize_image],
     args_kwargs_fn=lambda info: info.reference_inputs_fn(),
 )
 def test_memory_format_consistency_resize_image_tensor(test_id, info, args_kwargs):
