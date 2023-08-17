@@ -16,7 +16,7 @@ class _ReturnTypeCM:
 
 
 def set_return_type(return_type: str):
-    """Set the return type of torch operations on datapoints.
+    """[BETA] Set the return type of torch operations on datapoints.
 
     This only affects the behaviour of torch operations. It has no effect on
     ``torchvision`` transforms or functionals, which will always return as
