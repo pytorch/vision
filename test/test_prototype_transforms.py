@@ -1,5 +1,3 @@
-import itertools
-
 import re
 
 import PIL.Image
@@ -19,8 +17,7 @@ from prototype_common_utils import make_label
 
 from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
-from torchvision.transforms.v2._utils import _convert_fill_arg
-from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_image_pil
+from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_pil_image
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
@@ -186,66 +183,6 @@ class TestFixedSizeCrop:
 
         assert params["needs_pad"]
         assert any(pad > 0 for pad in params["padding"])
-
-    @pytest.mark.parametrize("needs", list(itertools.product((False, True), repeat=2)))
-    def test__transform(self, mocker, needs):
-        fill_sentinel = 12
-        padding_mode_sentinel = mocker.MagicMock()
-
-        transform = transforms.FixedSizeCrop((-1, -1), fill=fill_sentinel, padding_mode=padding_mode_sentinel)
-        transform._transformed_types = (mocker.MagicMock,)
-        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
-
-        needs_crop, needs_pad = needs
-        top_sentinel = mocker.MagicMock()
-        left_sentinel = mocker.MagicMock()
-        height_sentinel = mocker.MagicMock()
-        width_sentinel = mocker.MagicMock()
-        is_valid = mocker.MagicMock() if needs_crop else None
-        padding_sentinel = mocker.MagicMock()
-        mocker.patch(
-            "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
-            return_value=dict(
-                needs_crop=needs_crop,
-                top=top_sentinel,
-                left=left_sentinel,
-                height=height_sentinel,
-                width=width_sentinel,
-                is_valid=is_valid,
-                padding=padding_sentinel,
-                needs_pad=needs_pad,
-            ),
-        )
-
-        inpt_sentinel = mocker.MagicMock()
-
-        mock_crop = mocker.patch("torchvision.prototype.transforms._geometry.F.crop")
-        mock_pad = mocker.patch("torchvision.prototype.transforms._geometry.F.pad")
-        transform(inpt_sentinel)
-
-        if needs_crop:
-            mock_crop.assert_called_once_with(
-                inpt_sentinel,
-                top=top_sentinel,
-                left=left_sentinel,
-                height=height_sentinel,
-                width=width_sentinel,
-            )
-        else:
-            mock_crop.assert_not_called()
-
-        if needs_pad:
-            # If we cropped before, the input to F.pad is no longer inpt_sentinel. Thus, we can't use
-            # `MagicMock.assert_called_once_with` and have to perform the checks manually
-            mock_pad.assert_called_once()
-            args, kwargs = mock_pad.call_args
-            if not needs_crop:
-                assert args[0] is inpt_sentinel
-            assert args[1] is padding_sentinel
-            fill_sentinel = _convert_fill_arg(fill_sentinel)
-            assert kwargs == dict(fill=fill_sentinel, padding_mode=padding_mode_sentinel)
-        else:
-            mock_pad.assert_not_called()
 
     def test__transform_culling(self, mocker):
         batch_size = 10
@@ -450,7 +387,7 @@ def test_fixed_sized_crop_against_detection_reference():
         size = (600, 800)
         num_objects = 22
 
-        pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
+        pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),

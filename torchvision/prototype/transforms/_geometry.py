@@ -101,7 +101,8 @@ class FixedSizeCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_crop"]:
-            inpt = F.crop(
+            inpt = self._call_kernel(
+                F.crop,
                 inpt,
                 top=params["top"],
                 left=params["left"],
@@ -111,15 +112,15 @@ class FixedSizeCrop(Transform):
 
         if params["is_valid"] is not None:
             if isinstance(inpt, (Label, OneHotLabel, datapoints.Mask)):
-                inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
+                inpt = datapoints.wrap(inpt[params["is_valid"]], like=inpt)
             elif isinstance(inpt, datapoints.BoundingBoxes):
-                inpt = datapoints.BoundingBoxes.wrap_like(
-                    inpt,
+                inpt = datapoints.wrap(
                     F.clamp_bounding_boxes(inpt[params["is_valid"]], format=inpt.format, canvas_size=inpt.canvas_size),
+                    like=inpt,
                 )
 
         if params["needs_pad"]:
             fill = _get_fill(self._fill, type(inpt))
-            inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
+            inpt = self._call_kernel(F.pad, inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt

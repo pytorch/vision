@@ -26,7 +26,7 @@ class PILToTensor(Transform):
         return F.pil_to_tensor(inpt)
 
 
-class ToImageTensor(Transform):
+class ToImage(Transform):
     """[BETA] Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.datapoints.Image`
     ; this does not scale values.
 
@@ -40,10 +40,10 @@ class ToImageTensor(Transform):
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> datapoints.Image:
-        return F.to_image_tensor(inpt)
+        return F.to_image(inpt)
 
 
-class ToImagePIL(Transform):
+class ToPILImage(Transform):
     """[BETA] Convert a tensor or an ndarray to PIL Image - this does not scale values.
 
     .. v2betastatus:: ToImagePIL transform
@@ -74,12 +74,7 @@ class ToImagePIL(Transform):
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> PIL.Image.Image:
-        return F.to_image_pil(inpt, mode=self.mode)
-
-
-# We changed the name to align them with the new naming scheme. Still, `ToPILImage` is
-# prevalent and well understood. Thus, we just alias it without deprecating the old name.
-ToPILImage = ToImagePIL
+        return F.to_pil_image(inpt, mode=self.mode)
 
 
 class ToPureTensor(Transform):

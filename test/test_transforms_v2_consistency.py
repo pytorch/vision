@@ -30,7 +30,7 @@ from torchvision._utils import sequence_to_str
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
 from torchvision.transforms.v2._utils import _get_fill
-from torchvision.transforms.v2.functional import to_image_pil
+from torchvision.transforms.v2.functional import to_pil_image
 from torchvision.transforms.v2.utils import query_size
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
@@ -630,7 +630,7 @@ def check_call_consistency(
         )
 
         if image.ndim == 3 and supports_pil:
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
 
             try:
                 torch.manual_seed(0)
@@ -869,7 +869,7 @@ class TestToTensorTransforms:
         legacy_transform = legacy_transforms.PILToTensor()
 
         for image in make_images(extra_dims=[()]):
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
 
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
 
@@ -879,7 +879,7 @@ class TestToTensorTransforms:
         legacy_transform = legacy_transforms.ToTensor()
 
         for image in make_images(extra_dims=[()]):
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
             image_numpy = np.array(image_pil)
 
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
@@ -1088,7 +1088,7 @@ class TestRefDetTransforms:
         def make_label(extra_dims, categories):
             return torch.randint(categories, extra_dims, dtype=torch.int64)
 
-        pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
+        pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -1192,7 +1192,7 @@ class TestRefSegTransforms:
 
         conv_fns = []
         if supports_pil:
-            conv_fns.append(to_image_pil)
+            conv_fns.append(to_pil_image)
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
@@ -1201,8 +1201,8 @@ class TestRefSegTransforms:
 
             dp = (conv_fn(datapoint_image), datapoint_mask)
             dp_ref = (
-                to_image_pil(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
-                to_image_pil(datapoint_mask),
+                to_pil_image(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
+                to_pil_image(datapoint_mask),
             )
 
             yield dp, dp_ref
@@ -1258,68 +1258,6 @@ class TestRefSegTransforms:
     )
     def test_common(self, t_ref, t, data_kwargs):
         self.check(t, t_ref, data_kwargs)
-
-    def check_resize(self, mocker, t_ref, t):
-        mock = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
-        mock_ref = mocker.patch("torchvision.transforms.functional.resize")
-
-        for dp, dp_ref in self.make_datapoints():
-            mock.reset_mock()
-            mock_ref.reset_mock()
-
-            self.set_seed()
-            t(dp)
-            assert mock.call_count == 2
-            assert all(
-                actual is expected
-                for actual, expected in zip([call_args[0][0] for call_args in mock.call_args_list], dp)
-            )
-
-            self.set_seed()
-            t_ref(*dp_ref)
-            assert mock_ref.call_count == 2
-            assert all(
-                actual is expected
-                for actual, expected in zip([call_args[0][0] for call_args in mock_ref.call_args_list], dp_ref)
-            )
-
-            for args_kwargs, args_kwargs_ref in zip(mock.call_args_list, mock_ref.call_args_list):
-                assert args_kwargs[0][1] == [args_kwargs_ref[0][1]]
-
-    def test_random_resize_train(self, mocker):
-        base_size = 520
-        min_size = base_size // 2
-        max_size = base_size * 2
-
-        randint = torch.randint
-
-        def patched_randint(a, b, *other_args, **kwargs):
-            if kwargs or len(other_args) > 1 or other_args[0] != ():
-                return randint(a, b, *other_args, **kwargs)
-
-            return random.randint(a, b)
-
-        # We are patching torch.randint -> random.randint here, because we can't patch the modules that are not imported
-        # normally
-        t = v2_transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
-        mocker.patch(
-            "torchvision.transforms.v2._geometry.torch.randint",
-            new=patched_randint,
-        )
-
-        t_ref = seg_transforms.RandomResize(min_size=min_size, max_size=max_size)
-
-        self.check_resize(mocker, t_ref, t)
-
-    def test_random_resize_eval(self, mocker):
-        torch.manual_seed(0)
-        base_size = 520
-
-        t = v2_transforms.Resize(size=base_size, antialias=True)
-
-        t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
-
-        self.check_resize(mocker, t_ref, t)
 
 
 @pytest.mark.parametrize(
