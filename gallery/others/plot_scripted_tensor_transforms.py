@@ -49,8 +49,8 @@ def show(imgs):
 # The :func:`~torchvision.io.read_image` function allows to read an image and
 # directly load it as a tensor
 
-dog1 = read_image(str(Path('assets') / 'dog1.jpg'))
-dog2 = read_image(str(Path('assets') / 'dog2.jpg'))
+dog1 = read_image(str(Path('../assets') / 'dog1.jpg'))
+dog2 = read_image(str(Path('../assets') / 'dog2.jpg'))
 show([dog1, dog2])
 
 # %%
@@ -121,7 +121,7 @@ res_scripted = scripted_predictor(batch)
 
 import json
 
-with open(Path('assets') / 'imagenet_class_index.json') as labels_file:
+with open(Path('../assets') / 'imagenet_class_index.json') as labels_file:
     labels = json.load(labels_file)
 
 for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):
