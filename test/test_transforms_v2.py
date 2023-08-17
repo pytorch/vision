@@ -16,13 +16,10 @@ from common_utils import (
     assert_run_python_script,
     cpu_and_cuda,
     make_bounding_box,
-    make_bounding_boxes,
     make_detection_mask,
     make_image,
-    make_images,
     make_segmentation_mask,
     make_video,
-    make_videos,
 )
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints
@@ -30,6 +27,7 @@ from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
+from transforms_v2_legacy_utils import make_bounding_boxes, make_images, make_videos
 
 
 def make_vanilla_tensor_images(*args, **kwargs):

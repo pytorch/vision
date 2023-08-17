@@ -4,14 +4,7 @@ import PIL.Image
 import pytest
 import torch
 
-from common_utils import (
-    assert_equal,
-    DEFAULT_EXTRA_DIMS,
-    make_bounding_box,
-    make_detection_mask,
-    make_image,
-    make_video,
-)
+from common_utils import assert_equal, make_bounding_box, make_detection_mask, make_image, make_video
 
 from prototype_common_utils import make_label
 
@@ -19,6 +12,7 @@ from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask
 from torchvision.prototype import datapoints, transforms
 from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_pil_image
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor
+from transforms_v2_legacy_utils import DEFAULT_EXTRA_DIMS
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
 

@@ -8,16 +8,7 @@ import PIL.Image
 import pytest
 import torch
 
-from common_utils import (
-    assert_close,
-    cache,
-    cpu_and_cuda,
-    DEFAULT_SQUARE_SPATIAL_SIZE,
-    make_bounding_boxes,
-    needs_cuda,
-    parametrized_error_message,
-    set_rng_seed,
-)
+from common_utils import assert_close, cache, cpu_and_cuda, needs_cuda, set_rng_seed
 from torch.utils._pytree import tree_map
 from torchvision import datapoints
 from torchvision.transforms.functional import _get_perspective_coeffs
@@ -27,6 +18,7 @@ from torchvision.transforms.v2.functional._meta import clamp_bounding_boxes, con
 from torchvision.transforms.v2.utils import is_simple_tensor
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
+from transforms_v2_legacy_utils import DEFAULT_SQUARE_SPATIAL_SIZE, make_bounding_boxes, parametrized_error_message
 
 
 KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
