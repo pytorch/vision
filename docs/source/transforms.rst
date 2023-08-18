@@ -85,25 +85,6 @@ The following examples illustrate the use of the available transforms:
     produce the same results.
 
 
-Transforms scriptability
-------------------------
-
-.. TODO: Add note about v2 scriptability (in next PR)
-
-In order to script the transformations, please use ``torch.nn.Sequential`` instead of :class:`Compose`.
-
-.. code:: python
-
-    transforms = torch.nn.Sequential(
-        transforms.CenterCrop(10),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-    )
-    scripted_transforms = torch.jit.script(transforms)
-
-Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor`` and does not require
-`lambda` functions or ``PIL.Image``.
-
-For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
 V2 - Recommended
 ----------------
@@ -563,3 +544,32 @@ you can use a functional transform to build transform classes with custom behavi
     to_pil_image
     to_tensor
     vflip
+
+
+Torchscript support
+-------------------
+
+Most transforms (v1 and v2) support torchscript. For composing transforms, use
+:class:`torch.nn.Sequential` instead of ``Compose``:
+
+.. code:: python
+
+    transforms = torch.nn.Sequential(
+        CenterCrop(10),
+        Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    )
+    scripted_transforms = torch.jit.script(transforms)
+
+.. warning::
+
+    v2 transforms support torchscript, but if you call ``torch.jit.script()`` on
+    a v2 **class** transform, you'll actually end up with its (scripted) v1
+    equivalent.  This may lead to slightly different results between the
+    scripted and eager executions due to implementation differences between v1
+    and v2.
+
+    If you really need torchscript support for the v2 tranforms, we recommend
+    scripting the **functionals** from the
+    ``torchvision.transforms.v2.functional`` namespace to avoid surprises.
+
+For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
