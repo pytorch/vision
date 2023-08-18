@@ -1,9 +1,21 @@
 :orphan:
 
-Example gallery
-===============
+Examples and tutorials
+======================
 
-Below is a gallery of examples
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+
+.. raw:: html
+
+    </div>
+
+V2 transforms
+-------------
 
 
 
@@ -18,10 +30,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_custom_datapoints_thumb.png
+  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_custom_datapoints_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py`
+  :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py`
 
 .. raw:: html
 
@@ -35,10 +47,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_custom_transforms_thumb.png
+  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_custom_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_custom_transforms.py`
+  :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_transforms.py`
 
 .. raw:: html
 
@@ -48,31 +60,14 @@ Below is a gallery of examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
-
-.. only:: html
-
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Tensor transforms and JIT</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="Most computer vision tasks are not supported out of the box by torchvision.transforms v1, since...">
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_transforms_v2_thumb.png
+  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_transforms_v2_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_transforms_v2.py`
+  :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py`
 
 .. raw:: html
 
@@ -86,10 +81,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_cutmix_mixup_thumb.png
+  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_cutmix_mixup_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py`
+  :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py`
 
 .. raw:: html
 
@@ -103,10 +98,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_transforms_v2_e2e_thumb.png
+  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_transforms_v2_e2e_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`
+  :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py`
 
 .. raw:: html
 
@@ -120,10 +115,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_datapoints_thumb.png
+  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_datapoints_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_datapoints.py`
+  :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`
 
 .. raw:: html
 
@@ -133,14 +128,45 @@ Below is a gallery of examples
 
 .. raw:: html
 
+    </div>
+
+Others
+------
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
+
+.. only:: html
+
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Tensor transforms and JIT</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Optical flow is the task of predicting movement between two images, usually two consecutive fra...">
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_optical_flow_thumb.png
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_optical_flow_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_optical_flow.py`
+  :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py`
 
 .. raw:: html
 
@@ -154,10 +180,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_repurposing_annotations_thumb.png
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_repurposing_annotations_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_repurposing_annotations.py`
+  :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py`
 
 .. raw:: html
 
@@ -171,10 +197,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_transforms_thumb.png
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_transforms.py`
+  :ref:`sphx_glr_auto_examples_others_plot_transforms.py`
 
 .. raw:: html
 
@@ -188,10 +214,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_visualization_utils.py`
+  :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py`
 
 .. raw:: html
 
@@ -205,10 +231,10 @@ Below is a gallery of examples
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_plot_video_api_thumb.png
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_video_api_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_plot_video_api.py`
+  :ref:`sphx_glr_auto_examples_others_plot_video_api.py`
 
 .. raw:: html
 
@@ -223,19 +249,11 @@ Below is a gallery of examples
 
 .. toctree::
    :hidden:
+   :includehidden:
 
-   /auto_examples/plot_custom_datapoints
-   /auto_examples/plot_custom_transforms
-   /auto_examples/plot_scripted_tensor_transforms
-   /auto_examples/plot_transforms_v2
-   /auto_examples/plot_cutmix_mixup
-   /auto_examples/plot_transforms_v2_e2e
-   /auto_examples/plot_datapoints
-   /auto_examples/plot_optical_flow
-   /auto_examples/plot_repurposing_annotations
-   /auto_examples/plot_transforms
-   /auto_examples/plot_visualization_utils
-   /auto_examples/plot_video_api
+
+   /auto_examples/v2_transforms/index.rst
+   /auto_examples/others/index.rst
 
 
 .. only:: html

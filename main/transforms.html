@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6241d47) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+87d54c4) &#x25BC</a>
     </div>
     
 
@@ -257,7 +257,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Example gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Examples and tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="training_references.html">Training references</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
@@ -355,7 +355,7 @@ not just images but also bounding boxes, masks, or videos. These transforms
 are fully backward compatible with the current ones, and you’ll see them
 documented below with a <cite>v2.</cite> prefix. To get started with those new
 transforms, you can check out
-<a class="reference internal" href="auto_examples/plot_transforms_v2_e2e.html#sphx-glr-auto-examples-plot-transforms-v2-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection example</span></a>.
+<a class="reference internal" href="auto_examples/v2_transforms/plot_transforms_v2_e2e.html#sphx-glr-auto-examples-v2-transforms-plot-transforms-v2-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection example</span></a>.
 Note that these transforms are still BETA, and while we don’t expect major
 breaking changes in the future, some APIs may still change according to user
 feedback. Please submit any feedback you may have <a class="reference external" href="https://github.com/pytorch/vision/issues/6753">here</a>, and you can also check
@@ -391,14 +391,14 @@ across calls. For reproducible transformations across calls, you may use
 <p>The following examples illustrate the use of the available transforms:</p>
 <blockquote>
 <div><ul>
-<li><p><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></p>
+<li><p><a class="reference internal" href="auto_examples/others/plot_transforms.html#sphx-glr-auto-examples-others-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></p>
 <blockquote>
 <div><figure class="align-center">
 <a class="reference internal image-reference" href="_images/sphx_glr_plot_transforms_001.png"><img alt="_images/sphx_glr_plot_transforms_001.png" src="_images/sphx_glr_plot_transforms_001.png" style="width: 408.85px; height: 94.9px;" /></a>
 </figure>
 </div></blockquote>
 </li>
-<li><p><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></p>
+<li><p><a class="reference internal" href="auto_examples/others/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-others-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></p>
 <blockquote>
 <div><figure class="align-center">
 <a class="reference internal image-reference" href="_images/sphx_glr_plot_scripted_tensor_transforms_001.png"><img alt="_images/sphx_glr_plot_scripted_tensor_transforms_001.png" src="_images/sphx_glr_plot_scripted_tensor_transforms_001.png" style="width: 154.5px; height: 73.5px;" /></a>
@@ -781,7 +781,7 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 are meant to be used on batches rather than on individual images, because they
 are combining pairs of images together. These can be used after the dataloader
 (once the samples are batched), or part of a collation function. See
-<a class="reference internal" href="auto_examples/plot_cutmix_mixup.html#sphx-glr-auto-examples-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a> for detailed usage examples.</p>
+<a class="reference internal" href="auto_examples/v2_transforms/plot_cutmix_mixup.html#sphx-glr-auto-examples-v2-transforms-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a> for detailed usage examples.</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.CutMix.html#torchvision.transforms.v2.CutMix" title="torchvision.transforms.v2.CutMix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.CutMix</span></code></a>(*[, alpha, labels_getter])</p></td>
