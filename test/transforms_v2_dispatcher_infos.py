@@ -374,8 +374,8 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.convert_format_bounding_boxes,
-        kernels={datapoints.BoundingBoxes: F.convert_format_bounding_boxes},
+        F.convert_bounding_box_format,
+        kernels={datapoints.BoundingBoxes: F.convert_bounding_box_format},
         test_marks=[
             skip_dispatch_datapoint,
         ],

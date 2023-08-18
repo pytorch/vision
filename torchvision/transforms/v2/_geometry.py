@@ -1186,7 +1186,7 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_boxes(
+                xyxy_bboxes = F.convert_bounding_box_format(
                     bboxes.as_subclass(torch.Tensor),
                     bboxes.format,
                     datapoints.BoundingBoxFormat.XYXY,

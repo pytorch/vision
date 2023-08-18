@@ -4,7 +4,7 @@ from ._utils import is_pure_tensor, register_kernel  # usort: skip
 
 from ._meta import (
     clamp_bounding_boxes,
-    convert_format_bounding_boxes,
+    convert_bounding_box_format,
     get_dimensions_image,
     _get_dimensions_image_pil,
     get_dimensions_video,

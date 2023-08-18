@@ -105,142 +105,218 @@ Make sure to use only scriptable transformations, i.e. that work with ``torch.Te
 
 For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
+V2 - Recommended
+----------------
 
 Geometry
---------
+^^^^^^^^
+
+
+Resizing
+""""""""
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
-    Resize
     v2.Resize
     v2.ScaleJitter
     v2.RandomShortestSize
     v2.RandomResize
-    RandomCrop
-    v2.RandomCrop
-    RandomResizedCrop
-    v2.RandomResizedCrop
-    v2.RandomIoUCrop
-    CenterCrop
-    v2.CenterCrop
-    FiveCrop
-    v2.FiveCrop
-    TenCrop
-    v2.TenCrop
-    Pad
-    v2.Pad
-    v2.RandomZoomOut
-    RandomRotation
-    v2.RandomRotation
-    RandomAffine
-    v2.RandomAffine
-    RandomPerspective
-    v2.RandomPerspective
-    ElasticTransform
-    v2.ElasticTransform
-    RandomHorizontalFlip
-    v2.RandomHorizontalFlip
-    RandomVerticalFlip
-    v2.RandomVerticalFlip
 
+Functionals
 
-Color
------
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    v2.functional.resize
+
+Cropping
+""""""""
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
-    ColorJitter
+    v2.RandomCrop
+    v2.RandomResizedCrop
+    v2.RandomIoUCrop
+    v2.CenterCrop
+    v2.FiveCrop
+    v2.TenCrop
+
+Functionals
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    v2.functional.crop
+    v2.functional.resized_crop
+    v2.functional.ten_crop
+    v2.functional.center_crop
+    v2.functional.five_crop
+
+Others
+""""""
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    v2.RandomHorizontalFlip
+    v2.RandomVerticalFlip
+    v2.Pad
+    v2.RandomZoomOut
+    v2.RandomRotation
+    v2.RandomAffine
+    v2.RandomPerspective
+    v2.ElasticTransform
+
+Functionals
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    v2.functional.horizontal_flip
+    v2.functional.vertical_flip
+    v2.functional.pad
+    v2.functional.rotate
+    v2.functional.affine
+    v2.functional.perspective
+    v2.functional.elastic
+
+Color
+^^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
     v2.ColorJitter
     v2.RandomChannelPermutation
     v2.RandomPhotometricDistort
-    Grayscale
     v2.Grayscale
-    RandomGrayscale
     v2.RandomGrayscale
-    GaussianBlur
     v2.GaussianBlur
-    RandomInvert
     v2.RandomInvert
-    RandomPosterize
     v2.RandomPosterize
-    RandomSolarize
     v2.RandomSolarize
-    RandomAdjustSharpness
     v2.RandomAdjustSharpness
-    RandomAutocontrast
     v2.RandomAutocontrast
-    RandomEqualize
     v2.RandomEqualize
 
+Functionals
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    v2.functional.permute_channels
+    v2.functional.rgb_to_grayscale
+    v2.functional.to_grayscale
+    v2.functional.gaussian_blur
+    v2.functional.invert
+    v2.functional.posterize
+    v2.functional.solarize
+    v2.functional.adjust_sharpness
+    v2.functional.autocontrast
+    v2.functional.adjust_contrast
+    v2.functional.equalize
+    v2.functional.adjust_brightness
+    v2.functional.adjust_saturation
+    v2.functional.adjust_hue
+    v2.functional.adjust_gamma
+
+
 Composition
------------
+^^^^^^^^^^^
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
-    Compose
     v2.Compose
-    RandomApply
     v2.RandomApply
-    RandomChoice
     v2.RandomChoice
-    RandomOrder
     v2.RandomOrder
 
 Miscellaneous
--------------
+^^^^^^^^^^^^^
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
-    LinearTransformation
     v2.LinearTransformation
-    Normalize
     v2.Normalize
-    RandomErasing
     v2.RandomErasing
-    Lambda
     v2.Lambda
     v2.SanitizeBoundingBoxes
     v2.ClampBoundingBoxes
     v2.UniformTemporalSubsample
 
+Functionals
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    v2.functional.normalize
+    v2.functional.erase
+    v2.functional.clamp_bounding_boxes
+    v2.functional.uniform_temporal_subsample
+
 .. _conversion_transforms:
 
 Conversion
-----------
+^^^^^^^^^^
 
 .. note::
     Beware, some of these conversion transforms below will scale the values
     while performing the conversion, while some may not do any scaling. By
     scaling, we mean e.g. that a ``uint8`` -> ``float32`` would map the [0,
     255] range into [0, 1] (and vice-versa).
-    
+
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
-    ToPILImage
-    v2.ToPILImage
-    ToTensor
-    v2.ToTensor
-    PILToTensor
-    v2.PILToTensor
     v2.ToImage
-    ConvertImageDtype
-    v2.ConvertImageDtype
+    v2.ToPureTensor
+    v2.PILToTensor
+    v2.ToPILImage
     v2.ToDtype
     v2.ConvertBoundingBoxFormat
-    v2.ToPureTensor
+
+functionals
+
+.. autosummary::
+    :toctree: generated/
+    :template: functional.rst
+
+    v2.functional.to_image
+    v2.functional.pil_to_tensor
+    v2.functional.to_pil_image
+    v2.functional.to_dtype
+    v2.functional.convert_bounding_box_format
+
+
+Deprecated
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    v2.ToTensor
+    v2.functional.to_tensor
+    v2.ConvertImageDtype
+    v2.functional.convert_image_dtype
 
 Auto-Augmentation
------------------
+^^^^^^^^^^^^^^^^^
 
 `AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
 Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
@@ -252,18 +328,14 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     :toctree: generated/
     :template: class.rst
 
-    AutoAugmentPolicy
-    AutoAugment
     v2.AutoAugment
-    RandAugment
     v2.RandAugment
-    TrivialAugmentWide
     v2.TrivialAugmentWide
-    AugMix
     v2.AugMix
 
+
 CutMix - MixUp
---------------
+^^^^^^^^^^^^^^
 
 CutMix and MixUp are special transforms that
 are meant to be used on batches rather than on individual images, because they
@@ -278,10 +350,125 @@ are combining pairs of images together. These can be used after the dataloader
     v2.CutMix
     v2.MixUp
 
+Developer tools
+^^^^^^^^^^^^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    v2.functional.register_kernel
+
+
+V1
+--
+
+Geometry
+^^^^^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    Resize
+    RandomCrop
+    RandomResizedCrop
+    CenterCrop
+    FiveCrop
+    TenCrop
+    Pad
+    RandomRotation
+    RandomAffine
+    RandomPerspective
+    ElasticTransform
+    RandomHorizontalFlip
+    RandomVerticalFlip
+
+
+Color
+^^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    ColorJitter
+    Grayscale
+    RandomGrayscale
+    GaussianBlur
+    RandomInvert
+    RandomPosterize
+    RandomSolarize
+    RandomAdjustSharpness
+    RandomAutocontrast
+    RandomEqualize
+
+Composition
+^^^^^^^^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    Compose
+    RandomApply
+    RandomChoice
+    RandomOrder
+
+Miscellaneous
+^^^^^^^^^^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    LinearTransformation
+    Normalize
+    RandomErasing
+    Lambda
+
+Conversion
+^^^^^^^^^^
+
+.. note::
+    Beware, some of these conversion transforms below will scale the values
+    while performing the conversion, while some may not do any scaling. By
+    scaling, we mean e.g. that a ``uint8`` -> ``float32`` would map the [0,
+    255] range into [0, 1] (and vice-versa).
+    
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    ToPILImage
+    ToTensor
+    PILToTensor
+    ConvertImageDtype
+
+Auto-Augmentation
+^^^^^^^^^^^^^^^^^
+
+`AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
+Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
+ImageNet policies provide significant improvements when applied to other datasets.
+In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFAR10 and SVHN.
+The new transform can be used standalone or mixed-and-matched with existing transforms:
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    AutoAugmentPolicy
+    AutoAugment
+    RandAugment
+    TrivialAugmentWide
+    AugMix
+
+
 .. _functional_transforms:
 
 Functional Transforms
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. currentmodule:: torchvision.transforms.functional
 
@@ -376,14 +563,3 @@ you can use a functional transform to build transform classes with custom behavi
     to_pil_image
     to_tensor
     vflip
-
-Developer tools
----------------
-
-.. currentmodule:: torchvision.transforms.v2.functional
-
-.. autosummary::
-    :toctree: generated/
-    :template: function.rst
-
-    register_kernel
