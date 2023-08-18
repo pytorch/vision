@@ -15,7 +15,6 @@ example showcases the core functionality of the new ``torchvision.transforms.v2`
 import pathlib
 
 import torch
-import torchvision
 
 
 def load_data():
@@ -46,9 +45,6 @@ def load_data():
 # detection or instance and semantic segmentation. Still, the interface is the same, making
 # :mod:`torchvision.transforms.v2` a drop-in replacement for the existing :mod:`torchvision.transforms` API, aka v1.
 
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
 import torchvision.transforms.v2 as transforms
 
 transform = transforms.Compose(

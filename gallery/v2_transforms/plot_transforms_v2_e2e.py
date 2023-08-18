@@ -20,7 +20,8 @@ import PIL.Image
 import torch
 import torch.utils.data
 
-import torchvision
+from torchvision import models, datasets
+import torchvision.transforms.v2 as transforms
 
 
 def show(sample):
@@ -43,18 +44,9 @@ def show(sample):
     fig.show()
 
 
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
-from torchvision import models, datasets
-import torchvision.transforms.v2 as transforms
-
-
 # %%
 # We start off by loading the :class:`~torchvision.datasets.CocoDetection` dataset to have a look at what it currently
 # returns, and we'll see how to convert it to a format that is compatible with our new transforms.
-
 
 def load_example_coco_detection_dataset(**kwargs):
     # This loads fake data for illustration purposes of this example. In practice, you'll have
