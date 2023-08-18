@@ -13,11 +13,6 @@ import sys
 import zipfile
 from base64 import urlsafe_b64encode
 
-# Third party imports
-if sys.platform == "linux":
-    from auditwheel.lddtree import lddtree
-
-
 ALLOWLIST = {
     "libgcc_s.so.1",
     "libstdc++.so.6",
@@ -147,6 +142,8 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
 
     print(f"Relocating {binary}")
     binary_path = osp.join(output_library, binary)
+
+    from auditwheel.lddtree import lddtree
 
     ld_tree = lddtree(binary_path)
     tree_libs = ld_tree["libs"]
@@ -301,7 +298,7 @@ def compress_wheel(output_dir, wheel, wheel_dir, wheel_name):
     shutil.rmtree(output_dir)
 
 
-def patch_linux():
+def patch_linux_x86():
     # Get patchelf location
     patchelf = find_program("patchelf")
     if patchelf is None:
@@ -374,7 +371,7 @@ def patch_win():
 
 
 if __name__ == "__main__":
-    if sys.platform == "linux":
-        patch_linux()
+    if sys.platform == "linux" and "x86" in platform.machine():
+        patch_linux_x86()
     elif sys.platform == "win32":
         patch_win()
