@@ -1,6 +1,6 @@
 from torchvision.transforms import InterpolationMode  # usort: skip
 
-from ._utils import is_simple_tensor, register_kernel  # usort: skip
+from ._utils import is_pure_tensor, register_kernel  # usort: skip
 
 from ._meta import (
     clamp_bounding_boxes,

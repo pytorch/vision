@@ -24,7 +24,7 @@ from ._utils import (
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import get_bounding_boxes, has_all, has_any, is_simple_tensor, query_size
+from .utils import get_bounding_boxes, has_all, has_any, is_pure_tensor, query_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -1149,7 +1149,7 @@ class RandomIoUCrop(Transform):
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
             has_all(flat_inputs, datapoints.BoundingBoxes)
-            and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
+            and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_pure_tensor)
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain tensor or PIL images "

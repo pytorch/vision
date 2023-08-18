@@ -13,7 +13,7 @@ Transforming and augmenting images
     are fully backward compatible with the current ones, and you'll see them
     documented below with a `v2.` prefix. To get started with those new
     transforms, you can check out
-    :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`.
+    :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py`.
     Note that these transforms are still BETA, and while we don't expect major
     breaking changes in the future, some APIs may still change according to user
     feedback. Please submit any feedback you may have `here
@@ -54,15 +54,15 @@ across calls. For reproducible transformations across calls, you may use
 
 The following examples illustrate the use of the available transforms:
 
-    * :ref:`sphx_glr_auto_examples_plot_transforms.py`
+    * :ref:`sphx_glr_auto_examples_others_plot_transforms.py`
 
-        .. figure:: ../source/auto_examples/images/sphx_glr_plot_transforms_001.png
+        .. figure:: ../source/auto_examples/others/images/sphx_glr_plot_transforms_001.png
             :align: center
             :scale: 65%
 
-    * :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py`
+    * :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
 
-        .. figure:: ../source/auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_001.png
+        .. figure:: ../source/auto_examples/others/images/sphx_glr_plot_scripted_tensor_transforms_001.png
             :align: center
             :scale: 30%
 
@@ -237,6 +237,7 @@ Conversion
     v2.ConvertImageDtype
     v2.ToDtype
     v2.ConvertBoundingBoxFormat
+    v2.ToPureTensor
 
 Auto-Augmentation
 -----------------
@@ -268,7 +269,7 @@ CutMix and MixUp are special transforms that
 are meant to be used on batches rather than on individual images, because they
 are combining pairs of images together. These can be used after the dataloader
 (once the samples are batched), or part of a collation function. See
-:ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage examples.
+:ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` for detailed usage examples.
 
 .. autosummary::
     :toctree: generated/
