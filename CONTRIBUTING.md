@@ -4,22 +4,22 @@ We want to make contributing to this project as easy and transparent as possible
 
 ## TL;DR
 
-We appreciate all contributions. If you are interested in contributing to Torchvision, there are many ways to help out. 
+We appreciate all contributions. If you are interested in contributing to Torchvision, there are many ways to help out.
 Your contributions may fall into the following categories:
 
-- It helps the project if you could 
+- It helps the project if you could
     - Report issues you're facing
-    - Give a :+1: on issues that others reported and that are relevant to you 
+    - Give a :+1: on issues that others reported and that are relevant to you
 
 - Answering queries on the issue tracker, investigating bugs are very valuable contributions to the project.
 
-- You would like to improve the documentation. This is no less important than improving the library itself! 
+- You would like to improve the documentation. This is no less important than improving the library itself!
 If you find a typo in the documentation, do not hesitate to submit a GitHub pull request.
 
 - If you would like to fix a bug
     - please pick one from the [list of open issues labelled as "help wanted"](https://github.com/pytorch/vision/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
     - comment on the issue that you want to work on this issue
-    - send a PR with your fix, see below. 
+    - send a PR with your fix, see below.
 
 - If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
 
@@ -85,12 +85,12 @@ If you plan to modify the code or documentation, please follow the steps below:
 4. Ensure the test suite passes.
 5. Make sure your code passes the formatting checks (see below).
 
-For more details about pull requests, 
-please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request). 
+For more details about pull requests,
+please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
 
 If you would like to contribute a new model, please see [here](#New-architecture-or-improved-model-weights).
 
-If you would like to contribute a new dataset, please see [here](#New-dataset). 
+If you would like to contribute a new dataset, please see [here](#New-dataset).
 
 ### Code formatting and typing
 
@@ -145,8 +145,8 @@ mypy --config-file mypy.ini
 
 ### Unit tests
 
-If you have modified the code by adding a new feature or a bug-fix, please add unit tests for that. To run a specific 
-test: 
+If you have modified the code by adding a new feature or a bug-fix, please add unit tests for that. To run a specific
+test:
 ```bash
 pytest test/<test-module.py> -vvv -k <test_myfunc>
 # e.g. pytest test/test_transforms.py -vvv -k test_center_crop
@@ -155,7 +155,7 @@ pytest test/<test-module.py> -vvv -k <test_myfunc>
 If you would like to run all tests:
 ```bash
 pytest test -vvv
-``` 
+```
 
 Tests that require internet access should be in
 `test/test_internet.py`.
@@ -208,18 +208,18 @@ with "transforms" in their name.
 ### New architecture or improved model weights
 
 Please refer to the guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
- 
+
 ### New dataset
 
-Please, do not send any PR with a new dataset without discussing 
+Please, do not send any PR with a new dataset without discussing
 it in an issue as, most likely, it will not be accepted.
 
 ### Pull Request
 
-If all previous checks (flake8, mypy, unit tests) are passing, please send a PR. Submitted PR will pass other tests on 
+If all previous checks (flake8, mypy, unit tests) are passing, please send a PR. Submitted PR will pass other tests on
 different operating systems, python versions and hardware.
 
-For more details about pull requests workflow, 
+For more details about pull requests workflow,
 please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
 
 ## License
