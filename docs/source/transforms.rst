@@ -5,8 +5,103 @@ Transforming and augmenting images
 
 .. currentmodule:: torchvision.transforms
 
+:ref:`Check out the gallery<transforms_gallery>`!
 
-.. note::
+Transforms are common image transformations available in the
+``torchvision.transforms`` module. They can be chained together using
+:class:`Compose`.
+Most transform classes have a function equivalent: :ref:`functional
+transforms <functional_transforms>` give fine-grained control over the
+transformations.
+This is useful if you have to build a more complex transformation pipeline
+(e.g. in the case of segmentation tasks).
+
+
+
+Supported input types and conventions
+-------------------------------------
+
+Most transformations accept both `PIL <https://pillow.readthedocs.io>`_ images
+and tensor images, although some transformations are PIL-only and some are
+tensor-only. The :ref:`conversion_transforms` may be used to convert to and from
+PIL images, or for converting dtypes and ranges.
+
+The transformations that accept tensor images also accept batches of tensor
+images. A Tensor Image is a tensor with ``(C, H, W)`` shape, where ``C`` is a
+number of channels, ``H`` and ``W`` are image height and width. A batch of
+Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number
+of images in the batch.
+
+.. _range_and_dtype:
+
+Dtype and expected value range
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The expected range of the values of a tensor image is implicitly defined by
+the tensor dtype. Tensor images with a float dtype are expected to have
+values in ``[0, 1)``. Tensor images with an integer dtype are expected to
+have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
+that can be represented in that dtype. For example, images of dtype
+``torch.uint8`` are expected to have values in ``[0, 255]``.
+
+
+.. _functional_transforms:
+
+Transforms, functionals, and kernels
+------------------------------------
+
+Randomized transformations will apply the same transformation to all the
+images of a given batch, but they will produce different transformations
+across calls. For reproducible transformations across calls, you may use
+:ref:`functional transforms <functional_transforms>`.
+
+Functional transforms give you fine-grained control of the transformation pipeline.
+As opposed to the transformations above, functional transforms don't contain a random number
+generator for their parameters.
+That means you have to specify/generate all parameters, but the functional transform will give you
+reproducible results across calls.
+
+Example:
+you can apply a functional transform with the same parameters to multiple images like this:
+
+.. code:: python
+
+    import torchvision.transforms.functional as TF
+    import random
+
+    def my_segmentation_transforms(image, segmentation):
+        if random.random() > 0.5:
+            angle = random.randint(-30, 30)
+            image = TF.rotate(image, angle)
+            segmentation = TF.rotate(segmentation, angle)
+        # more transforms ...
+        return image, segmentation
+
+
+Example:
+you can use a functional transform to build transform classes with custom behavior:
+
+.. code:: python
+
+    import torchvision.transforms.functional as TF
+    import random
+
+    class MyRotationTransform:
+        """Rotate by one of the given angles."""
+
+        def __init__(self, angles):
+            self.angles = angles
+
+        def __call__(self, x):
+            angle = random.choice(self.angles)
+            return TF.rotate(x, angle)
+
+    rotation_transform = MyRotationTransform(angles=[-30, -15, 0, 15, 30])
+
+
+V1 or V2? Which one should I use?
+---------------------------------
+
     In 0.15, we released a new set of transforms available in the
     ``torchvision.transforms.v2`` namespace, which add support for transforming
     not just images but also bounding boxes, masks, or videos. These transforms
@@ -21,58 +116,44 @@ Transforming and augmenting images
     out `this issue <https://github.com/pytorch/vision/issues/7319>`_ to learn
     more about the APIs that we suspect might involve future changes.
 
-Transforms are common image transformations available in the
-``torchvision.transforms`` module. They can be chained together using
-:class:`Compose`.
-Most transform classes have a function equivalent: :ref:`functional
-transforms <functional_transforms>` give fine-grained control over the
-transformations.
-This is useful if you have to build a more complex transformation pipeline
-(e.g. in the case of segmentation tasks).
+Performance considerations
+--------------------------
 
-Most transformations accept both `PIL <https://pillow.readthedocs.io>`_ images
-and tensor images, although some transformations are PIL-only and some are
-tensor-only. The :ref:`conversion_transforms` may be used to convert to and from
-PIL images, or for converting dtypes and ranges.
+Use uint8 LMAO.
 
-The transformations that accept tensor images also accept batches of tensor
-images. A Tensor Image is a tensor with ``(C, H, W)`` shape, where ``C`` is a
-number of channels, ``H`` and ``W`` are image height and width. A batch of
-Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number
-of images in the batch.
+Torchscript support
+-------------------
 
-The expected range of the values of a tensor image is implicitly defined by
-the tensor dtype. Tensor images with a float dtype are expected to have
-values in ``[0, 1)``. Tensor images with an integer dtype are expected to
-have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
-that can be represented in that dtype.
+Most transform classes and functionals support torchscript. For composing
+transforms, use :class:`torch.nn.Sequential` instead of ``Compose``:
 
-Randomized transformations will apply the same transformation to all the
-images of a given batch, but they will produce different transformations
-across calls. For reproducible transformations across calls, you may use
-:ref:`functional transforms <functional_transforms>`.
+.. code:: python
 
-The following examples illustrate the use of the available transforms:
+    transforms = torch.nn.Sequential(
+        CenterCrop(10),
+        Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    )
+    scripted_transforms = torch.jit.script(transforms)
 
-    * :ref:`sphx_glr_auto_examples_others_plot_transforms.py`
+.. warning::
 
-        .. figure:: ../source/auto_examples/others/images/sphx_glr_plot_transforms_001.png
-            :align: center
-            :scale: 65%
+    v2 transforms support torchscript, but if you call ``torch.jit.script()`` on
+    a v2 **class** transform, you'll actually end up with its (scripted) v1
+    equivalent.  This may lead to slightly different results between the
+    scripted and eager executions due to implementation differences between v1
+    and v2.
 
-    * :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
+    If you really need torchscript support for the v2 tranforms, we recommend
+    scripting the **functionals** from the
+    ``torchvision.transforms.v2.functional`` namespace to avoid surprises.
 
-        .. figure:: ../source/auto_examples/others/images/sphx_glr_plot_scripted_tensor_transforms_001.png
-            :align: center
-            :scale: 30%
+For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
-
-V2 - Recommended
-----------------
+V2 API reference - Recommended
+------------------------------
 
 Geometry
 ^^^^^^^^
-
 
 Resizing
 """"""""
@@ -240,7 +321,7 @@ Conversion
     Beware, some of these conversion transforms below will scale the values
     while performing the conversion, while some may not do any scaling. By
     scaling, we mean e.g. that a ``uint8`` -> ``float32`` would map the [0,
-    255] range into [0, 1] (and vice-versa).
+    255] range into [0, 1] (and vice-versa). See :ref:`range_and_dtype`.
 
 .. autosummary::
     :toctree: generated/
@@ -322,8 +403,8 @@ Developer tools
     v2.functional.register_kernel
 
 
-V1
---
+V1 API Reference
+----------------
 
 Geometry
 ^^^^^^^^
@@ -396,7 +477,7 @@ Conversion
     Beware, some of these conversion transforms below will scale the values
     while performing the conversion, while some may not do any scaling. By
     scaling, we mean e.g. that a ``uint8`` -> ``float32`` would map the [0,
-    255] range into [0, 1] (and vice-versa).
+    255] range into [0, 1] (and vice-versa). See :ref:`range_and_dtype`.
     
 .. autosummary::
     :toctree: generated/
@@ -427,64 +508,11 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     AugMix
 
 
-.. _functional_transforms:
 
 Functional Transforms
 ^^^^^^^^^^^^^^^^^^^^^
 
 .. currentmodule:: torchvision.transforms.functional
-
-
-.. note::
-    You'll find below the documentation for the existing
-    ``torchvision.transforms.functional`` namespace. The
-    ``torchvision.transforms.v2.functional`` namespace exists as well and can be
-    used! The same functionals are present, so you simply need to change your
-    import to rely on the ``v2`` namespace.
-
-Functional transforms give you fine-grained control of the transformation pipeline.
-As opposed to the transformations above, functional transforms don't contain a random number
-generator for their parameters.
-That means you have to specify/generate all parameters, but the functional transform will give you
-reproducible results across calls.
-
-Example:
-you can apply a functional transform with the same parameters to multiple images like this:
-
-.. code:: python
-
-    import torchvision.transforms.functional as TF
-    import random
-
-    def my_segmentation_transforms(image, segmentation):
-        if random.random() > 0.5:
-            angle = random.randint(-30, 30)
-            image = TF.rotate(image, angle)
-            segmentation = TF.rotate(segmentation, angle)
-        # more transforms ...
-        return image, segmentation
-
-
-Example:
-you can use a functional transform to build transform classes with custom behavior:
-
-.. code:: python
-
-    import torchvision.transforms.functional as TF
-    import random
-
-    class MyRotationTransform:
-        """Rotate by one of the given angles."""
-
-        def __init__(self, angles):
-            self.angles = angles
-
-        def __call__(self, x):
-            angle = random.choice(self.angles)
-            return TF.rotate(x, angle)
-
-    rotation_transform = MyRotationTransform(angles=[-30, -15, 0, 15, 30])
-
 
 .. autosummary::
     :toctree: generated/
@@ -526,31 +554,3 @@ you can use a functional transform to build transform classes with custom behavi
     to_tensor
     vflip
 
-
-Torchscript support
--------------------
-
-Most transforms (v1 and v2) support torchscript. For composing transforms, use
-:class:`torch.nn.Sequential` instead of ``Compose``:
-
-.. code:: python
-
-    transforms = torch.nn.Sequential(
-        CenterCrop(10),
-        Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-    )
-    scripted_transforms = torch.jit.script(transforms)
-
-.. warning::
-
-    v2 transforms support torchscript, but if you call ``torch.jit.script()`` on
-    a v2 **class** transform, you'll actually end up with its (scripted) v1
-    equivalent.  This may lead to slightly different results between the
-    scripted and eager executions due to implementation differences between v1
-    and v2.
-
-    If you really need torchscript support for the v2 tranforms, we recommend
-    scripting the **functionals** from the
-    ``torchvision.transforms.v2.functional`` namespace to avoid surprises.
-
-For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
