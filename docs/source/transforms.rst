@@ -66,25 +66,6 @@ The following examples illustrate the use of the available transforms:
             :align: center
             :scale: 30%
 
-.. warning::
-
-    Since v0.8.0 all random transformations are using torch default random generator to sample random parameters.
-    It is a backward compatibility breaking change and user should set the random state as following:
-
-    .. code:: python
-
-        # Previous versions
-        # import random
-        # random.seed(12)
-
-        # Now
-        import torch
-        torch.manual_seed(17)
-
-    Please, keep in mind that the same seed for torch random generator and Python random generator will not
-    produce the same results.
-
-
 
 V2 - Recommended
 ----------------
