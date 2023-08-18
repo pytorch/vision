@@ -55,7 +55,7 @@ import torchvision.transforms.v2 as transforms
 def load_example_coco_detection_dataset(**kwargs):
     # This loads fake data for illustration purposes of this example. In practice, you'll have
     # to replace this with the proper data
-    root = pathlib.Path("assets") / "coco"
+    root = pathlib.Path("../assets") / "coco"
     return datasets.CocoDetection(str(root / "images"), str(root / "instances.json"), **kwargs)
 
 
