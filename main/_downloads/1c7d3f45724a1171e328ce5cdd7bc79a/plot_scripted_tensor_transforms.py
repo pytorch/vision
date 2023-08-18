@@ -3,6 +3,10 @@
 Tensor transforms and JIT
 =========================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_scripted_tensor_transforms.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py>` to download the full example code.
+
 This example illustrates various features that are now supported by the
 :ref:`image transformations <transforms>` on Tensor images. In particular, we
 show how image transforms can be performed on GPU, and how one can also script

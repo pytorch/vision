@@ -5,14 +5,6 @@
 .. "auto_examples/v2_transforms/plot_custom_transforms.py"
 .. LINE NUMBERS ARE GIVEN BELOW.
 
-.. only:: html
-
-    .. note::
-        :class: sphx-glr-download-link-note
-
-        :ref:`Go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_custom_transforms.py>`
-        to download the full example code
-
 .. rst-class:: sphx-glr-example-title
 
 .. _sphx_glr_auto_examples_v2_transforms_plot_custom_transforms.py:
@@ -22,10 +14,14 @@
 How to write your own v2 transforms
 ===================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_custom_transforms.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_custom_transforms.py>` to download the full example code.
+
 This guide explains how to write transforms that are compatible with the
 torchvision transforms V2 API.
 
-.. GENERATED FROM PYTHON SOURCE LINES 11-16
+.. GENERATED FROM PYTHON SOURCE LINES 15-20
 
 .. code-block:: default
 
@@ -41,7 +37,7 @@ torchvision transforms V2 API.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 17-41
+.. GENERATED FROM PYTHON SOURCE LINES 21-45
 
 Just create a ``nn.Module`` and override the ``forward`` method
 ===============================================================
@@ -68,7 +64,7 @@ your ``forward`` method to accept just that, e.g.
 We will illustrate this more completely below with a typical detection case,
 where our samples are just images, bounding boxes and labels:
 
-.. GENERATED FROM PYTHON SOURCE LINES 41-69
+.. GENERATED FROM PYTHON SOURCE LINES 45-73
 
 .. code-block:: default
 
@@ -115,7 +111,7 @@ where our samples are just images, bounding boxes and labels:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 70-71
+.. GENERATED FROM PYTHON SOURCE LINES 74-75
 
 .. code-block:: default
 
@@ -129,14 +125,14 @@ where our samples are just images, bounding boxes and labels:
  .. code-block:: none
 
     Output image shape: torch.Size([3, 224, 224])
-    out_bboxes = BoundingBoxes([[224,   0, 224,  10],
-                   [179,  43, 203,  65]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224))
+    out_bboxes = BoundingBoxes([[224,  11, 224,  40],
+                   [224, 128, 224, 186]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224))
     out_label = 3
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 72-89
+.. GENERATED FROM PYTHON SOURCE LINES 76-93
 
 .. note::
     While working with datapoint classes in your code, make sure to
@@ -156,7 +152,7 @@ arbitrary input structure and return the same structure as output (with
 transformed entries). For example, transforms can accept a single image, or a
 tuple of ``(img, label)``, or an arbitrary nested dictionary as input:
 
-.. GENERATED FROM PYTHON SOURCE LINES 89-101
+.. GENERATED FROM PYTHON SOURCE LINES 93-105
 
 .. code-block:: default
 
@@ -187,7 +183,7 @@ tuple of ``(img, label)``, or an arbitrary nested dictionary as input:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 102-118
+.. GENERATED FROM PYTHON SOURCE LINES 106-122
 
 If you want to reproduce this behavior in your own transform, we invite you to
 look at our `code
@@ -209,7 +205,7 @@ an issue on our `GitHub repo <https://github.com/pytorch/vision/issues>`_.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.006 seconds)
+   **Total running time of the script:** ( 0 minutes  0.007 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_custom_transforms.py:

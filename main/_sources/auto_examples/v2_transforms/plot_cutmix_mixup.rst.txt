@@ -5,14 +5,6 @@
 .. "auto_examples/v2_transforms/plot_cutmix_mixup.py"
 .. LINE NUMBERS ARE GIVEN BELOW.
 
-.. only:: html
-
-    .. note::
-        :class: sphx-glr-download-link-note
-
-        :ref:`Go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_cutmix_mixup.py>`
-        to download the full example code
-
 .. rst-class:: sphx-glr-example-title
 
 .. _sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py:
@@ -21,6 +13,10 @@
 ===========================
 How to use CutMix and MixUp
 ===========================
+
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_cutmix_mixup.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_cutmix_mixup.py>` to download the full example code.
 
 :class:`~torchvision.transforms.v2.CutMix` and
 :class:`~torchvision.transforms.v2.MixUp` are popular augmentation strategies
@@ -32,7 +28,7 @@ transforms, because they expect
 explain how to use them: after the ``DataLoader``, or as part of a collation
 function.
 
-.. GENERATED FROM PYTHON SOURCE LINES 19-26
+.. GENERATED FROM PYTHON SOURCE LINES 23-30
 
 .. code-block:: default
 
@@ -50,14 +46,14 @@ function.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 27-31
+.. GENERATED FROM PYTHON SOURCE LINES 31-35
 
 Pre-processing pipeline
 -----------------------
 
 We'll use a simple but typical image classification pipeline:
 
-.. GENERATED FROM PYTHON SOURCE LINES 31-45
+.. GENERATED FROM PYTHON SOURCE LINES 35-49
 
 .. code-block:: default
 
@@ -88,14 +84,14 @@ We'll use a simple but typical image classification pipeline:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 46-50
+.. GENERATED FROM PYTHON SOURCE LINES 50-54
 
 One important thing to note is that neither CutMix nor MixUp are part of this
 pre-processing pipeline. We'll add them a bit later once we define the
 DataLoader. Just as a refresher, this is what the DataLoader and training loop
 would look like if we weren't using CutMix or MixUp:
 
-.. GENERATED FROM PYTHON SOURCE LINES 51-61
+.. GENERATED FROM PYTHON SOURCE LINES 55-65
 
 .. code-block:: default
 
@@ -123,7 +119,7 @@ would look like if we weren't using CutMix or MixUp:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 64-73
+.. GENERATED FROM PYTHON SOURCE LINES 68-77
 
 Where to use MixUp and CutMix
 -----------------------------
@@ -135,7 +131,7 @@ Now let's add CutMix and MixUp. The simplest way to do this right after the
 DataLoader: the Dataloader has already batched the images and labels for us,
 and this is exactly what these transforms expect as input:
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-87
+.. GENERATED FROM PYTHON SOURCE LINES 77-91
 
 .. code-block:: default
 
@@ -167,7 +163,7 @@ and this is exactly what these transforms expect as input:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 88-102
+.. GENERATED FROM PYTHON SOURCE LINES 92-106
 
 Note how the labels were also transformed: we went from a batched label of
 shape (batch_size,) to a tensor of shape (batch_size, num_classes). The
@@ -184,7 +180,7 @@ the collation function (refer to the `PyTorch docs
 <https://pytorch.org/docs/stable/data.html#dataloader-collate-fn>`_ to learn
 more about collation).
 
-.. GENERATED FROM PYTHON SOURCE LINES 103-119
+.. GENERATED FROM PYTHON SOURCE LINES 107-123
 
 .. code-block:: default
 
@@ -217,7 +213,7 @@ more about collation).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 120-131
+.. GENERATED FROM PYTHON SOURCE LINES 124-135
 
 Non-standard input format
 -------------------------
@@ -231,7 +227,7 @@ or dict with a "label[s]" key. Look at the documentation of the
 If your samples have a different structure, you can still use CutMix and MixUp
 by passing a callable to the ``labels_getter`` parameter. For example:
 
-.. GENERATED FROM PYTHON SOURCE LINES 131-147
+.. GENERATED FROM PYTHON SOURCE LINES 135-151
 
 .. code-block:: default
 
@@ -267,7 +263,7 @@ by passing a callable to the ``labels_getter`` parameter. For example:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.131 seconds)
+   **Total running time of the script:** ( 0 minutes  0.119 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_cutmix_mixup.py:

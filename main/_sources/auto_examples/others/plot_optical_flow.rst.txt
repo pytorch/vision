@@ -5,14 +5,6 @@
 .. "auto_examples/others/plot_optical_flow.py"
 .. LINE NUMBERS ARE GIVEN BELOW.
 
-.. only:: html
-
-    .. note::
-        :class: sphx-glr-download-link-note
-
-        :ref:`Go to the end <sphx_glr_download_auto_examples_others_plot_optical_flow.py>`
-        to download the full example code
-
 .. rst-class:: sphx-glr-example-title
 
 .. _sphx_glr_auto_examples_others_plot_optical_flow.py:
@@ -21,6 +13,10 @@
 =====================================================
 Optical Flow: Predicting movement with the RAFT model
 =====================================================
+
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_optical_flow.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_optical_flow.py>` to download the full example code.
 
 Optical flow is the task of predicting movement between two images, usually two
 consecutive frames of a video. Optical flow models take two images as input, and
@@ -33,7 +29,7 @@ The following example illustrates how torchvision can be used to predict flows
 using our implementation of the RAFT model. We will also see how to convert the
 predicted flows to RGB images for visualization.
 
-.. GENERATED FROM PYTHON SOURCE LINES 17-44
+.. GENERATED FROM PYTHON SOURCE LINES 21-48
 
 .. code-block:: default
 
@@ -71,7 +67,7 @@ predicted flows to RGB images for visualization.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 46-54
+.. GENERATED FROM PYTHON SOURCE LINES 50-58
 
 Reading Videos Using Torchvision
 --------------------------------
@@ -82,7 +78,7 @@ The video we will use here is free of use from `pexels.com
 <https://www.pexels.com/video/a-man-playing-a-game-of-basketball-5192157/>`_,
 credits go to `Pavel Danilyuk <https://www.pexels.com/@pavel-danilyuk>`_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 54-65
+.. GENERATED FROM PYTHON SOURCE LINES 58-69
 
 .. code-block:: default
 
@@ -104,7 +100,7 @@ credits go to `Pavel Danilyuk <https://www.pexels.com/@pavel-danilyuk>`_.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 66-73
+.. GENERATED FROM PYTHON SOURCE LINES 70-77
 
 :func:`~torchvision.io.read_video` returns the video frames, audio frames and
 the metadata associated with the video. In our case, we only need the video
@@ -114,7 +110,7 @@ Here we will just make 2 predictions between 2 pre-selected pairs of frames,
 namely frames (100, 101) and (150, 151). Each of these pairs corresponds to a
 single model input.
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-82
+.. GENERATED FROM PYTHON SOURCE LINES 77-86
 
 .. code-block:: default
 
@@ -146,7 +142,7 @@ single model input.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 83-89
+.. GENERATED FROM PYTHON SOURCE LINES 87-93
 
 The RAFT model accepts RGB images. We first get the frames from
 :func:`~torchvision.io.read_video` and resize them to ensure their dimensions
@@ -155,7 +151,7 @@ this is how those models were trained. Then we use the transforms bundled into
 the weights in order to preprocess the input and rescale its values to the
 required ``[-1, 1]`` interval.
 
-.. GENERATED FROM PYTHON SOURCE LINES 89-107
+.. GENERATED FROM PYTHON SOURCE LINES 93-111
 
 .. code-block:: default
 
@@ -190,7 +186,7 @@ required ``[-1, 1]`` interval.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 108-115
+.. GENERATED FROM PYTHON SOURCE LINES 112-119
 
 Estimating Optical flow using RAFT
 ----------------------------------
@@ -200,7 +196,7 @@ architecture as the one described in the `original paper <https://arxiv.org/abs/
 We also provide the :func:`~torchvision.models.optical_flow.raft_small` model
 builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
-.. GENERATED FROM PYTHON SOURCE LINES 115-128
+.. GENERATED FROM PYTHON SOURCE LINES 119-132
 
 .. code-block:: default
 
@@ -232,7 +228,7 @@ builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 129-141
+.. GENERATED FROM PYTHON SOURCE LINES 133-145
 
 The RAFT model outputs lists of predicted flows where each entry is a
 (N, 2, H, W) batch of predicted flows that corresponds to a given "iteration"
@@ -247,7 +243,7 @@ vertical displacement of each pixel from the first image to the second image.
 Note that the predicted flows are in "pixel" unit, they are not normalized
 w.r.t. the dimensions of the images.
 
-.. GENERATED FROM PYTHON SOURCE LINES 141-147
+.. GENERATED FROM PYTHON SOURCE LINES 145-151
 
 .. code-block:: default
 
@@ -272,7 +268,7 @@ w.r.t. the dimensions of the images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 148-158
+.. GENERATED FROM PYTHON SOURCE LINES 152-162
 
 Visualizing predicted flows
 ---------------------------
@@ -285,7 +281,7 @@ the ball and the player. Note in particular the different predicted direction
 of the ball in the first image (going to the left) and in the second image
 (going up).
 
-.. GENERATED FROM PYTHON SOURCE LINES 158-169
+.. GENERATED FROM PYTHON SOURCE LINES 162-173
 
 .. code-block:: default
 
@@ -312,7 +308,7 @@ of the ball in the first image (going to the left) and in the second image
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 170-178
+.. GENERATED FROM PYTHON SOURCE LINES 174-182
 
 Bonus: Creating GIFs of predicted flows
 ---------------------------------------
@@ -323,7 +319,7 @@ snippet that can get you started with this. We comment out the code, because
 this example is being rendered on a machine without a GPU, and it would take
 too long to run it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 178-190
+.. GENERATED FROM PYTHON SOURCE LINES 182-194
 
 .. code-block:: default
 
@@ -346,7 +342,7 @@ too long to run it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 191-195
+.. GENERATED FROM PYTHON SOURCE LINES 195-199
 
 Once the .jpg flow images are saved, you can convert them into a video or a
 GIF using ffmpeg with e.g.:
@@ -356,7 +352,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  9.715 seconds)
+   **Total running time of the script:** ( 0 minutes  9.797 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_optical_flow.py:

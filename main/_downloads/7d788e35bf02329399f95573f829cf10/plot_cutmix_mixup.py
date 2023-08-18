@@ -4,6 +4,10 @@
 How to use CutMix and MixUp
 ===========================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_cutmix_mixup.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_cutmix_mixup.py>` to download the full example code.
+
 :class:`~torchvision.transforms.v2.CutMix` and
 :class:`~torchvision.transforms.v2.MixUp` are popular augmentation strategies
 that can improve classification accuracy.

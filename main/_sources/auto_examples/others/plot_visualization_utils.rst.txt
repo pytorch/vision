@@ -5,14 +5,6 @@
 .. "auto_examples/others/plot_visualization_utils.py"
 .. LINE NUMBERS ARE GIVEN BELOW.
 
-.. only:: html
-
-    .. note::
-        :class: sphx-glr-download-link-note
-
-        :ref:`Go to the end <sphx_glr_download_auto_examples_others_plot_visualization_utils.py>`
-        to download the full example code
-
 .. rst-class:: sphx-glr-example-title
 
 .. _sphx_glr_auto_examples_others_plot_visualization_utils.py:
@@ -22,10 +14,14 @@
 Visualization utilities
 =======================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_visualization_utils.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_visualization_utils.py>` to download the full example code.
+
 This example illustrates some of the utilities that torchvision offers for
 visualizing images, bounding boxes, segmentation masks and keypoints.
 
-.. GENERATED FROM PYTHON SOURCE LINES 9-32
+.. GENERATED FROM PYTHON SOURCE LINES 13-36
 
 .. code-block:: default
 
@@ -59,7 +55,7 @@ visualizing images, bounding boxes, segmentation masks and keypoints.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 34-39
+.. GENERATED FROM PYTHON SOURCE LINES 38-43
 
 Visualizing a grid of images
 ----------------------------
@@ -67,7 +63,7 @@ The :func:`~torchvision.utils.make_grid` function can be used to create a
 tensor that represents multiple images in a grid.  This util requires a single
 image of dtype ``uint8`` as input.
 
-.. GENERATED FROM PYTHON SOURCE LINES 39-51
+.. GENERATED FROM PYTHON SOURCE LINES 43-55
 
 .. code-block:: default
 
@@ -95,7 +91,7 @@ image of dtype ``uint8`` as input.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 52-57
+.. GENERATED FROM PYTHON SOURCE LINES 56-61
 
 Visualizing bounding boxes
 --------------------------
@@ -103,7 +99,7 @@ We can use :func:`~torchvision.utils.draw_bounding_boxes` to draw boxes on an
 image. We can set the colors, labels, width as well as font and font size.
 The boxes are in ``(xmin, ymin, xmax, ymax)`` format.
 
-.. GENERATED FROM PYTHON SOURCE LINES 57-67
+.. GENERATED FROM PYTHON SOURCE LINES 61-71
 
 .. code-block:: default
 
@@ -129,7 +125,7 @@ The boxes are in ``(xmin, ymin, xmax, ymax)`` format.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 68-73
+.. GENERATED FROM PYTHON SOURCE LINES 72-77
 
 Naturally, we can also plot bounding boxes produced by torchvision detection
 models.  Here is a demo with a Faster R-CNN model loaded from
@@ -137,7 +133,7 @@ models.  Here is a demo with a Faster R-CNN model loaded from
 model. For more details on the output of such models, you may
 refer to :ref:`instance_seg_output`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-88
+.. GENERATED FROM PYTHON SOURCE LINES 77-92
 
 .. code-block:: default
 
@@ -173,12 +169,12 @@ refer to :ref:`instance_seg_output`.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 89-91
+.. GENERATED FROM PYTHON SOURCE LINES 93-95
 
 Let's plot the boxes detected by our model. We will only plot the boxes with a
 score greater than a given threshold.
 
-.. GENERATED FROM PYTHON SOURCE LINES 91-99
+.. GENERATED FROM PYTHON SOURCE LINES 95-103
 
 .. code-block:: default
 
@@ -202,7 +198,7 @@ score greater than a given threshold.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 100-115
+.. GENERATED FROM PYTHON SOURCE LINES 104-119
 
 Visualizing segmentation masks
 ------------------------------
@@ -220,7 +216,7 @@ We will see how to use it with torchvision's FCN Resnet-50, loaded with
 :func:`~torchvision.models.segmentation.fcn_resnet50`. Let's start by looking
 at the output of the model.
 
-.. GENERATED FROM PYTHON SOURCE LINES 115-128
+.. GENERATED FROM PYTHON SOURCE LINES 119-132
 
 .. code-block:: default
 
@@ -251,7 +247,7 @@ at the output of the model.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 129-137
+.. GENERATED FROM PYTHON SOURCE LINES 133-141
 
 As we can see above, the output of the segmentation model is a tensor of shape
 ``(batch_size, num_classes, H, W)``. Each value is a non-normalized score, and
@@ -262,7 +258,7 @@ pixel is to belong to a given class.
 Let's plot the masks that have been detected for the dog class and for the
 boat class:
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-150
+.. GENERATED FROM PYTHON SOURCE LINES 141-154
 
 .. code-block:: default
 
@@ -291,7 +287,7 @@ boat class:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 151-158
+.. GENERATED FROM PYTHON SOURCE LINES 155-162
 
 As expected, the model is confident about the dog class, but not so much for
 the boat class.
@@ -301,7 +297,7 @@ plots those masks on top of the original image. This function expects the
 masks to be boolean masks, but our masks above contain probabilities in ``[0,
 1]``. To get boolean masks, we can do the following:
 
-.. GENERATED FROM PYTHON SOURCE LINES 158-165
+.. GENERATED FROM PYTHON SOURCE LINES 162-169
 
 .. code-block:: default
 
@@ -330,7 +326,7 @@ masks to be boolean masks, but our masks above contain probabilities in ``[0,
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-178
+.. GENERATED FROM PYTHON SOURCE LINES 170-182
 
 The line above where we define ``boolean_dog_masks`` is a bit cryptic, but you
 can read it as the following query: "For which pixels is 'dog' the most likely
@@ -345,7 +341,7 @@ Now that we have boolean masks, we can use them with
 :func:`~torchvision.utils.draw_segmentation_masks` to plot them on top of the
 original images:
 
-.. GENERATED FROM PYTHON SOURCE LINES 178-187
+.. GENERATED FROM PYTHON SOURCE LINES 182-191
 
 .. code-block:: default
 
@@ -370,7 +366,7 @@ original images:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 188-195
+.. GENERATED FROM PYTHON SOURCE LINES 192-199
 
 We can plot more than one mask per image! Remember that the model returned as
 many masks as there are classes. Let's ask the same query as above, but this
@@ -380,7 +376,7 @@ C, is class C the most likely class?"
 This one is a bit more involved, so we'll first show how to do it with a
 single image, and then we'll generalize to the batch
 
-.. GENERATED FROM PYTHON SOURCE LINES 195-207
+.. GENERATED FROM PYTHON SOURCE LINES 199-211
 
 .. code-block:: default
 
@@ -415,7 +411,7 @@ single image, and then we'll generalize to the batch
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 208-220
+.. GENERATED FROM PYTHON SOURCE LINES 212-224
 
 We can see in the image above that only 2 masks were drawn: the mask for the
 background and the mask for the dog. This is because the model thinks that
@@ -430,7 +426,7 @@ class with index 0.
 Let's now do the same but for an entire batch of images. The code is similar
 but involves a bit more juggling with the dimensions.
 
-.. GENERATED FROM PYTHON SOURCE LINES 220-234
+.. GENERATED FROM PYTHON SOURCE LINES 224-238
 
 .. code-block:: default
 
@@ -466,7 +462,7 @@ but involves a bit more juggling with the dimensions.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-254
+.. GENERATED FROM PYTHON SOURCE LINES 239-258
 
 .. _instance_seg_output:
 
@@ -488,7 +484,7 @@ use the normalized batch.
     of them may not have masks, like
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 254-268
+.. GENERATED FROM PYTHON SOURCE LINES 258-272
 
 .. code-block:: default
 
@@ -562,7 +558,7 @@ use the normalized batch.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 269-285
+.. GENERATED FROM PYTHON SOURCE LINES 273-289
 
 Let's break this down. For each image in the batch, the model outputs some
 detections (or instances). The number of detections varies for each input
@@ -581,7 +577,7 @@ as above, but here we're more interested in the masks. These masks are quite
 different from the masks that we saw above for the semantic segmentation
 models.
 
-.. GENERATED FROM PYTHON SOURCE LINES 285-291
+.. GENERATED FROM PYTHON SOURCE LINES 289-295
 
 .. code-block:: default
 
@@ -604,14 +600,14 @@ models.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 292-296
+.. GENERATED FROM PYTHON SOURCE LINES 296-300
 
 Here the masks correspond to probabilities indicating, for each pixel, how
 likely it is to belong to the predicted label of that instance. Those
 predicted labels correspond to the 'labels' element in the same output dict.
 Let's see which labels were predicted for the instances of the first image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 296-300
+.. GENERATED FROM PYTHON SOURCE LINES 300-304
 
 .. code-block:: default
 
@@ -633,7 +629,7 @@ Let's see which labels were predicted for the instances of the first image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 301-308
+.. GENERATED FROM PYTHON SOURCE LINES 305-312
 
 Interestingly, the model detects two persons in the image. Let's go ahead and
 plot those masks. Since :func:`~torchvision.utils.draw_segmentation_masks`
@@ -643,7 +639,7 @@ to belong to the predicted class?". As a result, a natural way of converting
 those masks into boolean values is to threshold them with the 0.5 probability
 (one could also choose a different threshold).
 
-.. GENERATED FROM PYTHON SOURCE LINES 308-318
+.. GENERATED FROM PYTHON SOURCE LINES 312-322
 
 .. code-block:: default
 
@@ -675,13 +671,13 @@ those masks into boolean values is to threshold them with the 0.5 probability
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 319-322
+.. GENERATED FROM PYTHON SOURCE LINES 323-326
 
 The model seems to have properly detected the dog, but it also confused trees
 with people. Looking more closely at the scores will help us plot more
 relevant masks:
 
-.. GENERATED FROM PYTHON SOURCE LINES 322-325
+.. GENERATED FROM PYTHON SOURCE LINES 326-329
 
 .. code-block:: default
 
@@ -701,14 +697,14 @@ relevant masks:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 326-330
+.. GENERATED FROM PYTHON SOURCE LINES 330-334
 
 Clearly the model is more confident about the dog detection than it is about
 the people detections. That's good news. When plotting the masks, we can ask
 for only those that have a good score. Let's use a score threshold of .75
 here, and also plot the masks of the second dog.
 
-.. GENERATED FROM PYTHON SOURCE LINES 330-344
+.. GENERATED FROM PYTHON SOURCE LINES 334-348
 
 .. code-block:: default
 
@@ -738,13 +734,13 @@ here, and also plot the masks of the second dog.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 345-348
+.. GENERATED FROM PYTHON SOURCE LINES 349-352
 
 The two 'people' masks in the first image where not selected because they have
 a lower score than the score threshold. Similarly, in the second image, the
 instance with class 15 (which corresponds to 'bench') was not selected.
 
-.. GENERATED FROM PYTHON SOURCE LINES 350-359
+.. GENERATED FROM PYTHON SOURCE LINES 354-363
 
 .. _keypoint_output:
 
@@ -756,7 +752,7 @@ torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keyp
 We will first have a look at output of the model.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 359-376
+.. GENERATED FROM PYTHON SOURCE LINES 363-380
 
 .. code-block:: default
 
@@ -831,7 +827,7 @@ We will first have a look at output of the model.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 377-384
+.. GENERATED FROM PYTHON SOURCE LINES 381-388
 
 As we see the output contains a list of dictionaries.
 The output list is of length batch_size.
@@ -841,7 +837,7 @@ and it is a dict with keys `boxes`, `labels`, `scores`, `keypoints` and `keypoin
 Each value associated to those keys has `num_instances` elements in it.
 In our case above there are 2 instances detected in the image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 384-391
+.. GENERATED FROM PYTHON SOURCE LINES 388-395
 
 .. code-block:: default
 
@@ -900,7 +896,7 @@ In our case above there are 2 instances detected in the image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 392-398
+.. GENERATED FROM PYTHON SOURCE LINES 396-402
 
 The KeypointRCNN model detects there are two instances in the image.
 If you plot the boxes by using :func:`~draw_bounding_boxes`
@@ -909,7 +905,7 @@ If we look at the scores, we will realize that the model is much more confident 
 We could now set a threshold confidence and plot instances which we are confident enough.
 Let us set a threshold of 0.75 and filter out the keypoints corresponding to the person.
 
-.. GENERATED FROM PYTHON SOURCE LINES 398-405
+.. GENERATED FROM PYTHON SOURCE LINES 402-409
 
 .. code-block:: default
 
@@ -949,14 +945,14 @@ Let us set a threshold of 0.75 and filter out the keypoints corresponding to the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 406-410
+.. GENERATED FROM PYTHON SOURCE LINES 410-414
 
 Great, now we have the keypoints corresponding to the person.
 Each keypoint is represented by x, y coordinates and the visibility.
 We can now use the :func:`~torchvision.utils.draw_keypoints` function to draw keypoints.
 Note that the utility expects uint8 images.
 
-.. GENERATED FROM PYTHON SOURCE LINES 410-416
+.. GENERATED FROM PYTHON SOURCE LINES 414-420
 
 .. code-block:: default
 
@@ -978,12 +974,12 @@ Note that the utility expects uint8 images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 417-419
+.. GENERATED FROM PYTHON SOURCE LINES 421-423
 
 As we see the keypoints appear as colored circles over the image.
 The coco keypoints for a person are ordered and represent the following list.\
 
-.. GENERATED FROM PYTHON SOURCE LINES 419-427
+.. GENERATED FROM PYTHON SOURCE LINES 423-431
 
 .. code-block:: default
 
@@ -1002,7 +998,7 @@ The coco keypoints for a person are ordered and represent the following list.\
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 428-447
+.. GENERATED FROM PYTHON SOURCE LINES 432-451
 
 What if we are interested in joining the keypoints?
 This is especially useful in creating pose detection or action recognition.
@@ -1024,7 +1020,7 @@ right_shoulder -> right_hip -> right_knee -> right_ankle.  (6, 12), (12, 14), (1
 
 We will create a list containing these keypoint ids to be connected.
 
-.. GENERATED FROM PYTHON SOURCE LINES 447-453
+.. GENERATED FROM PYTHON SOURCE LINES 451-457
 
 .. code-block:: default
 
@@ -1041,12 +1037,12 @@ We will create a list containing these keypoint ids to be connected.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 454-456
+.. GENERATED FROM PYTHON SOURCE LINES 458-460
 
 We pass the above list to the connectivity parameter to connect the keypoints.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 456-459
+.. GENERATED FROM PYTHON SOURCE LINES 460-463
 
 .. code-block:: default
 
@@ -1068,7 +1064,7 @@ We pass the above list to the connectivity parameter to connect the keypoints.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  12.698 seconds)
+   **Total running time of the script:** ( 0 minutes  13.012 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_visualization_utils.py:

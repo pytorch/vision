@@ -5,14 +5,6 @@
 .. "auto_examples/others/plot_scripted_tensor_transforms.py"
 .. LINE NUMBERS ARE GIVEN BELOW.
 
-.. only:: html
-
-    .. note::
-        :class: sphx-glr-download-link-note
-
-        :ref:`Go to the end <sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py>`
-        to download the full example code
-
 .. rst-class:: sphx-glr-example-title
 
 .. _sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py:
@@ -21,6 +13,10 @@
 =========================
 Tensor transforms and JIT
 =========================
+
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_scripted_tensor_transforms.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py>` to download the full example code.
 
 This example illustrates various features that are now supported by the
 :ref:`image transformations <transforms>` on Tensor images. In particular, we
@@ -41,7 +37,7 @@ new features:
 .. note::
     These features are only possible with **Tensor** images.
 
-.. GENERATED FROM PYTHON SOURCE LINES 25-48
+.. GENERATED FROM PYTHON SOURCE LINES 29-52
 
 .. code-block:: default
 
@@ -75,12 +71,12 @@ new features:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-51
+.. GENERATED FROM PYTHON SOURCE LINES 53-55
 
 The :func:`~torchvision.io.read_image` function allows to read an image and
 directly load it as a tensor
 
-.. GENERATED FROM PYTHON SOURCE LINES 51-56
+.. GENERATED FROM PYTHON SOURCE LINES 55-60
 
 .. code-block:: default
 
@@ -101,7 +97,7 @@ directly load it as a tensor
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 57-63
+.. GENERATED FROM PYTHON SOURCE LINES 61-67
 
 Transforming images on GPU
 --------------------------
@@ -110,7 +106,7 @@ the effect of the transforms, you may refer to see
 :ref:`sphx_glr_auto_examples_others_plot_transforms.py`).
 Using tensor images, we can run the transforms on GPUs if cuda is available!
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-79
+.. GENERATED FROM PYTHON SOURCE LINES 67-83
 
 .. code-block:: default
 
@@ -142,7 +138,7 @@ Using tensor images, we can run the transforms on GPUs if cuda is available!
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 80-87
+.. GENERATED FROM PYTHON SOURCE LINES 84-91
 
 Scriptable transforms for easier deployment via torchscript
 -----------------------------------------------------------
@@ -152,7 +148,7 @@ while using ``torch.jit.script`` to obtain a single scripted module.
 Let's define a ``Predictor`` module that transforms the input tensor and then
 applies an ImageNet model on it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 87-106
+.. GENERATED FROM PYTHON SOURCE LINES 91-110
 
 .. code-block:: default
 
@@ -182,12 +178,12 @@ applies an ImageNet model on it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 107-109
+.. GENERATED FROM PYTHON SOURCE LINES 111-113
 
 Now, let's define scripted and non-scripted instances of ``Predictor`` and
 apply it on multiple tensor images of the same size
 
-.. GENERATED FROM PYTHON SOURCE LINES 109-118
+.. GENERATED FROM PYTHON SOURCE LINES 113-122
 
 .. code-block:: default
 
@@ -217,12 +213,12 @@ apply it on multiple tensor images of the same size
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 119-121
+.. GENERATED FROM PYTHON SOURCE LINES 123-125
 
 We can verify that the prediction of the scripted and non-scripted models are
 the same:
 
-.. GENERATED FROM PYTHON SOURCE LINES 121-131
+.. GENERATED FROM PYTHON SOURCE LINES 125-135
 
 .. code-block:: default
 
@@ -250,11 +246,11 @@ the same:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 132-133
+.. GENERATED FROM PYTHON SOURCE LINES 136-137
 
 Since the model is scripted, it can be easily dumped on disk and re-used
 
-.. GENERATED FROM PYTHON SOURCE LINES 133-142
+.. GENERATED FROM PYTHON SOURCE LINES 137-146
 
 .. code-block:: default
 
@@ -283,7 +279,7 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.634 seconds)
+   **Total running time of the script:** ( 0 minutes  1.710 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py:

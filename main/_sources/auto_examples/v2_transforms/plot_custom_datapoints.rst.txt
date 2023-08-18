@@ -5,14 +5,6 @@
 .. "auto_examples/v2_transforms/plot_custom_datapoints.py"
 .. LINE NUMBERS ARE GIVEN BELOW.
 
-.. only:: html
-
-    .. note::
-        :class: sphx-glr-download-link-note
-
-        :ref:`Go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_custom_datapoints.py>`
-        to download the full example code
-
 .. rst-class:: sphx-glr-example-title
 
 .. _sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py:
@@ -22,12 +14,16 @@
 How to write your own Datapoint class
 =====================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_custom_datapoints.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_custom_datapoints.py>` to download the full example code.
+
 This guide is intended for advanced users and downstream library maintainers. We explain how to
 write your own datapoint class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
 :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 13-17
+.. GENERATED FROM PYTHON SOURCE LINES 17-21
 
 .. code-block:: default
 
@@ -42,7 +38,7 @@ Torchvision v2 transforms. Before continuing, make sure you have read
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 18-24
+.. GENERATED FROM PYTHON SOURCE LINES 22-28
 
 We will create a very simple class that just inherits from the base
 :class:`~torchvision.datapoints.Datapoint` class. It will be enough to cover
@@ -51,7 +47,7 @@ to create a class that carries meta-data, take a look at how the
 :class:`~torchvision.datapoints.BoundingBoxes` class is `implemented
 <https://github.com/pytorch/vision/blob/main/torchvision/datapoints/_bounding_box.py>`_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 24-33
+.. GENERATED FROM PYTHON SOURCE LINES 28-37
 
 .. code-block:: default
 
@@ -77,7 +73,7 @@ to create a class that carries meta-data, take a look at how the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 34-42
+.. GENERATED FROM PYTHON SOURCE LINES 38-46
 
 Now that we have defined our custom Datapoint class, we want it to be
 compatible with the built-in torchvision transforms, and the functional API.
@@ -88,7 +84,7 @@ via :func:`~torchvision.transforms.v2.functional.register_kernel`.
 We illustrate this process below: we create a kernel for the "horizontal flip"
 operation of our MyDatapoint class, and register it to the functional API.
 
-.. GENERATED FROM PYTHON SOURCE LINES 42-53
+.. GENERATED FROM PYTHON SOURCE LINES 46-57
 
 .. code-block:: default
 
@@ -110,7 +106,7 @@ operation of our MyDatapoint class, and register it to the functional API.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 54-67
+.. GENERATED FROM PYTHON SOURCE LINES 58-71
 
 To understand why :func:`~torchvision.datapoints.wrap` is used, see
 :ref:`datapoint_unwrapping_behaviour`. Ignore the ``*args, **kwargs`` for now,
@@ -126,7 +122,7 @@ we will explain it below in :ref:`param_forwarding`.
 Now that we have registered our kernel, we can call the functional API on a
 ``MyDatapoint`` instance:
 
-.. GENERATED FROM PYTHON SOURCE LINES 67-71
+.. GENERATED FROM PYTHON SOURCE LINES 71-75
 
 .. code-block:: default
 
@@ -147,12 +143,12 @@ Now that we have registered our kernel, we can call the functional API on a
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 72-74
+.. GENERATED FROM PYTHON SOURCE LINES 76-78
 
 And we can also use the
 :class:`~torchvision.transforms.v2.RandomHorizontalFlip` transform, since it relies on :func:`~torchvision.transforms.v2.functional.hflip` internally:
 
-.. GENERATED FROM PYTHON SOURCE LINES 74-77
+.. GENERATED FROM PYTHON SOURCE LINES 78-81
 
 .. code-block:: default
 
@@ -172,7 +168,7 @@ And we can also use the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 78-100
+.. GENERATED FROM PYTHON SOURCE LINES 82-104
 
 .. note::
 
@@ -197,7 +193,7 @@ Imagine that in a future version, Torchvision adds a new ``inplace`` parameter
 to its :func:`~torchvision.transforms.v2.functional.hflip` functional. If you
 already defined and registered your own kernel as
 
-.. GENERATED FROM PYTHON SOURCE LINES 100-107
+.. GENERATED FROM PYTHON SOURCE LINES 104-111
 
 .. code-block:: default
 
@@ -215,7 +211,7 @@ already defined and registered your own kernel as
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 108-116
+.. GENERATED FROM PYTHON SOURCE LINES 112-120
 
 then calling ``F.hflip(my_dp)`` will **fail**, because ``hflip`` will try to
 pass the new ``inplace`` parameter to your kernel, but your kernel doesn't
@@ -229,7 +225,7 @@ will be able to accept any new parameter that we may add in the future.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.026 seconds)
+   **Total running time of the script:** ( 0 minutes  0.024 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_custom_datapoints.py:

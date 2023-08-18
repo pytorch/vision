@@ -5,14 +5,6 @@
 .. "auto_examples/others/plot_repurposing_annotations.py"
 .. LINE NUMBERS ARE GIVEN BELOW.
 
-.. only:: html
-
-    .. note::
-        :class: sphx-glr-download-link-note
-
-        :ref:`Go to the end <sphx_glr_download_auto_examples_others_plot_repurposing_annotations.py>`
-        to download the full example code
-
 .. rst-class:: sphx-glr-example-title
 
 .. _sphx_glr_auto_examples_others_plot_repurposing_annotations.py:
@@ -22,13 +14,17 @@
 Repurposing masks into bounding boxes
 =====================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_repurposing_annotations.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_repurposing_annotations.py>` to download the full example code.
+
 The following example illustrates the operations available
 the :ref:`torchvision.ops <ops>` module for repurposing
 segmentation masks into object localization annotations for different tasks
 (e.g. transforming masks used by instance and panoptic segmentation
 methods into bounding boxes used by object detection methods).
 
-.. GENERATED FROM PYTHON SOURCE LINES 12-38
+.. GENERATED FROM PYTHON SOURCE LINES 16-42
 
 .. code-block:: default
 
@@ -65,7 +61,7 @@ methods into bounding boxes used by object detection methods).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-55
+.. GENERATED FROM PYTHON SOURCE LINES 44-59
 
 Masks
 -----
@@ -83,7 +79,7 @@ of your masks annotation has the following shape:
 A nice property of masks is that they can be easily repurposed to be used in methods to solve a variety of object
 localization tasks.
 
-.. GENERATED FROM PYTHON SOURCE LINES 57-63
+.. GENERATED FROM PYTHON SOURCE LINES 61-67
 
 Converting Masks to Bounding Boxes
 -----------------------------------------------
@@ -92,7 +88,7 @@ transform masks into bounding boxes that can be
 used as input to detection models such as FasterRCNN and RetinaNet.
 We will take images and masks from the `PenFudan Dataset <https://www.cis.upenn.edu/~jshi/ped_html/>`_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-73
+.. GENERATED FROM PYTHON SOURCE LINES 67-77
 
 .. code-block:: default
 
@@ -113,13 +109,13 @@ We will take images and masks from the `PenFudan Dataset <https://www.cis.upenn.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 74-77
+.. GENERATED FROM PYTHON SOURCE LINES 78-81
 
 Here the masks are represented as a PNG Image, with floating point values.
 Each pixel is encoded as different colors, with 0 being background.
 Notice that the spatial dimensions of image and mask match.
 
-.. GENERATED FROM PYTHON SOURCE LINES 77-82
+.. GENERATED FROM PYTHON SOURCE LINES 81-86
 
 .. code-block:: default
 
@@ -149,7 +145,7 @@ Notice that the spatial dimensions of image and mask match.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 83-94
+.. GENERATED FROM PYTHON SOURCE LINES 87-98
 
 .. code-block:: default
 
@@ -171,7 +167,7 @@ Notice that the spatial dimensions of image and mask match.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-100
+.. GENERATED FROM PYTHON SOURCE LINES 99-104
 
 Now the masks are a boolean tensor.
 The first dimension in this case 3 and denotes the number of instances: there are 3 people in the image.
@@ -179,7 +175,7 @@ The other two dimensions are height and width, which are equal to the dimensions
 For each instance, the boolean tensors represent if the particular pixel
 belongs to the segmentation mask of the image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 100-104
+.. GENERATED FROM PYTHON SOURCE LINES 104-108
 
 .. code-block:: default
 
@@ -223,12 +219,12 @@ belongs to the segmentation mask of the image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 105-107
+.. GENERATED FROM PYTHON SOURCE LINES 109-111
 
 Let us visualize an image and plot its corresponding segmentation masks.
 We will use the :func:`~torchvision.utils.draw_segmentation_masks` to draw the segmentation masks.
 
-.. GENERATED FROM PYTHON SOURCE LINES 107-116
+.. GENERATED FROM PYTHON SOURCE LINES 111-120
 
 .. code-block:: default
 
@@ -253,13 +249,13 @@ We will use the :func:`~torchvision.utils.draw_segmentation_masks` to draw the s
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 117-120
+.. GENERATED FROM PYTHON SOURCE LINES 121-124
 
 To convert the boolean masks into bounding boxes.
 We will use the :func:`~torchvision.ops.masks_to_boxes` from the torchvision.ops module
 It returns the boxes in ``(xmin, ymin, xmax, ymax)`` format.
 
-.. GENERATED FROM PYTHON SOURCE LINES 120-127
+.. GENERATED FROM PYTHON SOURCE LINES 124-131
 
 .. code-block:: default
 
@@ -286,13 +282,13 @@ It returns the boxes in ``(xmin, ymin, xmax, ymax)`` format.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-131
+.. GENERATED FROM PYTHON SOURCE LINES 132-135
 
 As the shape denotes, there are 3 boxes and in ``(xmin, ymin, xmax, ymax)`` format.
 These can be visualized very easily with :func:`~torchvision.utils.draw_bounding_boxes` utility
 provided in :ref:`torchvision.utils <utils>`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 131-137
+.. GENERATED FROM PYTHON SOURCE LINES 135-141
 
 .. code-block:: default
 
@@ -314,13 +310,13 @@ provided in :ref:`torchvision.utils <utils>`.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 138-141
+.. GENERATED FROM PYTHON SOURCE LINES 142-145
 
 These boxes can now directly be used by detection models in torchvision.
 Here is demo with a Faster R-CNN model loaded from
 :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
 
-.. GENERATED FROM PYTHON SOURCE LINES 141-156
+.. GENERATED FROM PYTHON SOURCE LINES 145-160
 
 .. code-block:: default
 
@@ -353,7 +349,7 @@ Here is demo with a Faster R-CNN model loaded from
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 157-165
+.. GENERATED FROM PYTHON SOURCE LINES 161-169
 
 Converting Segmentation Dataset to Detection Dataset
 ----------------------------------------------------
@@ -364,7 +360,7 @@ One can similarly convert panoptic dataset to detection dataset.
 Here is an example where we re-purpose the dataset from the
 `PenFudan Detection Tutorial <https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html>`_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 165-208
+.. GENERATED FROM PYTHON SOURCE LINES 169-212
 
 .. code-block:: default
 
@@ -421,7 +417,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.464 seconds)
+   **Total running time of the script:** ( 0 minutes  2.617 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_repurposing_annotations.py:

@@ -99,7 +99,7 @@ V2 transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/_generated_ipynb_notebook...">
+    <div class="sphx-glr-thumbcontainer" tooltip=" Datapoints are Tensor subclasses introduced together with torchvision.transforms.v2. This exam...">
 
 .. only:: html
 

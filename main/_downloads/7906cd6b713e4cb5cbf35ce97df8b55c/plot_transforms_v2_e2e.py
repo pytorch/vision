@@ -3,6 +3,10 @@
 Transforms v2: End-to-end object detection example
 ==================================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_v2_e2e.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2_e2e.py>` to download the full example code.
+
 Object detection is not supported out of the box by ``torchvision.transforms`` v1, since it only supports images.
 ``torchvision.transforms.v2`` enables jointly transforming images, videos, bounding boxes, and masks. This example
 showcases an end-to-end object detection training using the stable ``torchvision.datasets`` and ``torchvision.models``
