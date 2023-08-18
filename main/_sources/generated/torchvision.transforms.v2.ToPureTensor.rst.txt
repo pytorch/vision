@@ -3,8 +3,8 @@
 .. currentmodule:: torchvision.transforms.v2
 
 
-ToImagePIL
-==========
+ToPureTensor
+============
 
-.. autoclass:: ToImagePIL
+.. autoclass:: ToPureTensor
     :members:

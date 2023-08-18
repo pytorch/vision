@@ -50,7 +50,7 @@ as well as the new ``torchvision.transforms.v2`` v2 API.
 
         image, target = sample
         if isinstance(image, PIL.Image.Image):
-            image = F.to_image_tensor(image)
+            image = F.to_image(image)
         image = F.to_dtype(image, torch.uint8, scale=True)
         annotated_image = draw_bounding_boxes(image, target["boxes"], colors="yellow", width=3)
 
@@ -200,7 +200,7 @@ With the dataset properly set up, we can now define the augmentation pipeline. T
             transforms.RandomZoomOut(fill={PIL.Image.Image: (123, 117, 104), "others": 0}),
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(),
-            transforms.ToImageTensor(),
+            transforms.ToImage(),
             transforms.ConvertImageDtype(torch.float32),
             transforms.SanitizeBoundingBoxes(),
         ]
@@ -302,7 +302,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.958 seconds)
+   **Total running time of the script:** ( 0 minutes  2.869 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms_v2_e2e.py:

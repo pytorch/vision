@@ -10,7 +10,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reading/Writing images and videos &mdash; Torchvision main documentation</title>
+  <title>Decoding / Encoding images and videos &mdash; Torchvision main documentation</title>
   
 
   
@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="read_video" href="generated/torchvision.io.read_video.html" />
+    <link rel="next" title="read_image" href="generated/torchvision.io.read_image.html" />
     <link rel="prev" title="stochastic_depth" href="generated/torchvision.ops.stochastic_depth.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+f244e27) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6241d47) &#x25BC</a>
     </div>
     
 
@@ -252,7 +252,7 @@
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Reading/Writing images and videos</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Decoding / Encoding images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -309,7 +309,7 @@
       </li>
 
         
-      <li>Reading/Writing images and videos</li>
+      <li>Decoding / Encoding images and videos</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -345,11 +345,55 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <section id="reading-writing-images-and-videos">
-<h1>Reading/Writing images and videos<a class="headerlink" href="#reading-writing-images-and-videos" title="Permalink to this heading">¶</a></h1>
+  <section id="decoding-encoding-images-and-videos">
+<h1>Decoding / Encoding images and videos<a class="headerlink" href="#decoding-encoding-images-and-videos" title="Permalink to this heading">¶</a></h1>
 <p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.io</span></code> package provides functions for performing IO
-operations. They are currently specific to reading and writing video and
-images.</p>
+operations. They are currently specific to reading and writing images and
+videos.</p>
+<section id="images">
+<h2>Images<a class="headerlink" href="#images" title="Permalink to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_image.html#torchvision.io.read_image" title="torchvision.io.read_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_image</span></code></a>(path[, mode])</p></td>
+<td><p>Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image" title="torchvision.io.decode_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_image</span></code></a>(input[, mode])</p></td>
+<td><p>Detects whether an image is a JPEG or PNG and performs the appropriate operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg" title="torchvision.io.encode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_jpeg</span></code></a>(input[, quality])</p></td>
+<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding JPEG file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg" title="torchvision.io.decode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_jpeg</span></code></a>(input[, mode, device])</p></td>
+<td><p>Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg" title="torchvision.io.write_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_jpeg</span></code></a>(input, filename[, quality])</p></td>
+<td><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.encode_png.html#torchvision.io.encode_png" title="torchvision.io.encode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_png</span></code></a>(input[, compression_level])</p></td>
+<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding PNG file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_png.html#torchvision.io.decode_png" title="torchvision.io.decode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_png</span></code></a>(input[, mode])</p></td>
+<td><p>Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_png.html#torchvision.io.write_png" title="torchvision.io.write_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_png</span></code></a>(input, filename[, compression_level])</p></td>
+<td><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images) and saves it in a PNG file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_file.html#torchvision.io.read_file" title="torchvision.io.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(path)</p></td>
+<td><p>Reads and outputs the bytes contents of a file as a uint8 Tensor with one dimension.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_file.html#torchvision.io.write_file" title="torchvision.io.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(filename, data)</p></td>
+<td><p>Writes the contents of an uint8 tensor with one dimension to a file.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ImageReadMode</span></code></a>(value)</p></td>
+<td><p>Support for various modes while reading images.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="video">
 <h2>Video<a class="headerlink" href="#video" title="Permalink to this heading">¶</a></h2>
 <table class="autosummary longtable docutils align-default">
@@ -365,9 +409,8 @@ images.</p>
 </tr>
 </tbody>
 </table>
-</section>
 <section id="fine-grained-video-api">
-<h2>Fine-grained video API<a class="headerlink" href="#fine-grained-video-api" title="Permalink to this heading">¶</a></h2>
+<h3>Fine-grained video API<a class="headerlink" href="#fine-grained-video-api" title="Permalink to this heading">¶</a></h3>
 <p>In addition to the <code class="xref py py-mod docutils literal notranslate"><span class="pre">read_video</span></code> function, we provide a high-performance
 lower-level API for more fine-grained control compared to the <code class="xref py py-mod docutils literal notranslate"><span class="pre">read_video</span></code> function.
 It does all this whilst fully supporting torchscript.</p>
@@ -408,49 +451,6 @@ It does all this whilst fully supporting torchscript.</p>
 </pre></div>
 </div>
 </section>
-<section id="image">
-<h2>Image<a class="headerlink" href="#image" title="Permalink to this heading">¶</a></h2>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ImageReadMode</span></code></a>(value)</p></td>
-<td><p>Support for various modes while reading images.</p></td>
-</tr>
-</tbody>
-</table>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_image.html#torchvision.io.read_image" title="torchvision.io.read_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_image</span></code></a>(path[, mode])</p></td>
-<td><p>Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image" title="torchvision.io.decode_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_image</span></code></a>(input[, mode])</p></td>
-<td><p>Detects whether an image is a JPEG or PNG and performs the appropriate operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg" title="torchvision.io.encode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_jpeg</span></code></a>(input[, quality])</p></td>
-<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding JPEG file.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg" title="torchvision.io.decode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_jpeg</span></code></a>(input[, mode, device])</p></td>
-<td><p>Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg" title="torchvision.io.write_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_jpeg</span></code></a>(input, filename[, quality])</p></td>
-<td><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.encode_png.html#torchvision.io.encode_png" title="torchvision.io.encode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_png</span></code></a>(input[, compression_level])</p></td>
-<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding PNG file.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_png.html#torchvision.io.decode_png" title="torchvision.io.decode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_png</span></code></a>(input[, mode])</p></td>
-<td><p>Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_png.html#torchvision.io.write_png" title="torchvision.io.write_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_png</span></code></a>(input, filename[, compression_level])</p></td>
-<td><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images) and saves it in a PNG file.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_file.html#torchvision.io.read_file" title="torchvision.io.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(path)</p></td>
-<td><p>Reads and outputs the bytes contents of a file as a uint8 Tensor with one dimension.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_file.html#torchvision.io.write_file" title="torchvision.io.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(filename, data)</p></td>
-<td><p>Writes the contents of an uint8 tensor with one dimension to a file.</p></td>
-</tr>
-</tbody>
-</table>
 </section>
 </section>
 
@@ -462,7 +462,7 @@ It does all this whilst fully supporting torchscript.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="generated/torchvision.io.read_video.html" class="btn btn-neutral float-right" title="read_video" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="generated/torchvision.io.read_image.html" class="btn btn-neutral float-right" title="read_image" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
         <a href="generated/torchvision.ops.stochastic_depth.html" class="btn btn-neutral" title="stochastic_depth" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
@@ -497,10 +497,12 @@ It does all this whilst fully supporting torchscript.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">Reading/Writing images and videos</a><ul>
-<li><a class="reference internal" href="#video">Video</a></li>
+<li><a class="reference internal" href="#">Decoding / Encoding images and videos</a><ul>
+<li><a class="reference internal" href="#images">Images</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#video">Video</a><ul>
 <li><a class="reference internal" href="#fine-grained-video-api">Fine-grained video API</a></li>
-<li><a class="reference internal" href="#image">Image</a><ul>
 </ul>
 </li>
 </ul>

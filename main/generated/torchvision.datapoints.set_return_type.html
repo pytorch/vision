@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Models and pre-trained weights" href="../models.html" />
+    <link rel="next" title="wrap" href="torchvision.datapoints.wrap.html" />
     <link rel="prev" title="Datapoint" href="torchvision.datapoints.Datapoint.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+f244e27) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6241d47) &#x25BC</a>
     </div>
     
 
@@ -252,7 +252,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html">Decoding / Encoding images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -352,15 +352,21 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="torchvision.datapoints.set_return_type">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.datapoints.</span></span><span class="sig-name descname"><span class="pre">set_return_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/datapoints/_torch_function_helpers.html#set_return_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datapoints.set_return_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the return type of torch operations on datapoints.</p>
+<dd><p>[BETA] Set the return type of torch operations on datapoints.</p>
+<p>This only affects the behaviour of torch operations. It has no effect on
+<code class="docutils literal notranslate"><span class="pre">torchvision</span></code> transforms or functionals, which will always return as
+output the same type that was passed as input.</p>
 <p>Can be used as a global flag for the entire program:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">set_return_type</span><span class="p">(</span><span class="s2">&quot;datapoints&quot;</span><span class="p">)</span>
-<span class="n">img</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">img</span> <span class="o">+</span> <span class="mi">2</span>  <span class="c1"># This is a pure Tensor (default behaviour)</span>
+
+<span class="n">set_return_type</span><span class="p">(</span><span class="s2">&quot;datapoints&quot;</span><span class="p">)</span>
 <span class="n">img</span> <span class="o">+</span> <span class="mi">2</span>  <span class="c1"># This is an Image</span>
 </pre></div>
 </div>
 <p>or as a context manager to restrict the scope:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">img</span> <span class="o">+</span> <span class="mi">2</span>  <span class="c1"># This is a pure Tensor</span>
 <span class="k">with</span> <span class="n">set_return_type</span><span class="p">(</span><span class="s2">&quot;datapoints&quot;</span><span class="p">):</span>
     <span class="n">img</span> <span class="o">+</span> <span class="mi">2</span>  <span class="c1"># This is an Image</span>
 <span class="n">img</span> <span class="o">+</span> <span class="mi">2</span>  <span class="c1"># This is a pure Tensor</span>
@@ -371,7 +377,11 @@
 <dd class="field-odd"><p><strong>return_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – Can be “datapoint” or “tensor”. Default is “tensor”.</p>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">set_return_type</span></code>:</p>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/_generated_ipynb_notebook..."><img alt="" src="../_images/sphx_glr_plot_datapoints_thumb.png" />
+<p><a class="reference internal" href="../auto_examples/plot_datapoints.html#sphx-glr-auto-examples-plot-datapoints-py"><span class="std std-ref">Datapoints FAQ</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Datapoints FAQ</div>
+</div></div></dd></dl>
 
 </section>
 
@@ -383,7 +393,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../models.html" class="btn btn-neutral float-right" title="Models and pre-trained weights" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="torchvision.datapoints.wrap.html" class="btn btn-neutral float-right" title="wrap" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
         <a href="torchvision.datapoints.Datapoint.html" class="btn btn-neutral" title="Datapoint" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>

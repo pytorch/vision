@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+f244e27) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6241d47) &#x25BC</a>
     </div>
     
 
@@ -249,7 +249,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -309,6 +309,8 @@
           <li><a href="../../index.html">Module code</a> &gt;</li>
         
           <li><a href="../../torchvision.html">torchvision</a> &gt;</li>
+        
+          <li><a href="../datapoints.html">torchvision.datapoints</a> &gt;</li>
         
       <li>torchvision.datapoints._datapoint</li>
     
@@ -377,10 +379,6 @@
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="n">requires_grad</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">wrap_like</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">D</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">D</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">D</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">_wrap_output</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -411,19 +409,12 @@
 <span class="sd">        ``__torch_function__`` method. If one is found, it is invoked with the operator as ``func`` as well as the</span>
 <span class="sd">        ``args`` and ``kwargs`` of the original call.</span>
 
-<span class="sd">        The default behavior of :class:`~torch.Tensor`&#39;s is to retain a custom tensor type. For the :class:`Datapoint`</span>
-<span class="sd">        use case, this has two downsides:</span>
+<span class="sd">        Why do we override this? Because the base implementation in torch.Tensor would preserve the Datapoint type</span>
+<span class="sd">        of the output. In our case, we want to return pure tensors instead (with a few exceptions). Refer to the</span>
+<span class="sd">        &quot;Datapoints FAQ&quot; gallery example for a rationale of this behaviour (TL;DR: perf + no silver bullet).</span>
 
-<span class="sd">        1. Since some :class:`Datapoint`&#39;s require metadata to be constructed, the default wrapping, i.e.</span>
-<span class="sd">           ``return cls(func(*args, **kwargs))``, will fail for them.</span>
-<span class="sd">        2. For most operations, there is no way of knowing if the input type is still valid for the output.</span>
-
-<span class="sd">        For these reasons, the automatic output wrapping is turned off for most operators. The only exceptions are</span>
-<span class="sd">        listed in _FORCE_TORCHFUNCTION_SUBCLASS</span>
+<span class="sd">        Our implementation below is very similar to the base implementation in ``torch.Tensor`` - go check it out.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we</span>
-        <span class="c1"># need to reimplement the functionality.</span>
-
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">types</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">NotImplemented</span>
 
@@ -434,12 +425,13 @@
 
         <span class="n">must_return_subclass</span> <span class="o">=</span> <span class="n">_must_return_subclass</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">must_return_subclass</span> <span class="ow">or</span> <span class="p">(</span><span class="n">func</span> <span class="ow">in</span> <span class="n">_FORCE_TORCHFUNCTION_SUBCLASS</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">cls</span><span class="p">)):</span>
-            <span class="c1"># We also require the primary operand, i.e. `args[0]`, to be</span>
-            <span class="c1"># an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will</span>
-            <span class="c1"># invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,</span>
-            <span class="c1"># `torch.Tensor(...).to(datapoints.Image(...))` will invoke `datapoints.Image.__torch_function__` with</span>
-            <span class="c1"># `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would</span>
-            <span class="c1"># be wrapped into a `datapoints.Image`.</span>
+            <span class="c1"># If you&#39;re wondering why we need the `isinstance(args[0], cls)` check, remove it and see what fails</span>
+            <span class="c1"># in test_to_datapoint_reference().</span>
+            <span class="c1"># The __torch_function__ protocol will invoke the __torch_function__ method on *all* types involved in</span>
+            <span class="c1"># the computation by walking the MRO upwards. For example,</span>
+            <span class="c1"># `out = a_pure_tensor.to(an_image)` will invoke `Image.__torch_function__` with</span>
+            <span class="c1"># `args = (a_pure_tensor, an_image)` first. Without this guard, `out` would</span>
+            <span class="c1"># be wrapped into an `Image`.</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap_output</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">must_return_subclass</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>

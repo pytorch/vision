@@ -22,7 +22,7 @@
 How to write your own Datapoint class
 =====================================
 
-This guide is intended for downstream library maintainers. We explain how to
+This guide is intended for advanced users and downstream library maintainers. We explain how to
 write your own datapoint class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
 :ref:`sphx_glr_auto_examples_plot_datapoints.py`.
@@ -106,7 +106,7 @@ operation of our MyDatapoint class, and register it to the functional API.
     def hflip_my_datapoint(my_dp, *args, **kwargs):
         print("Flipping!")
         out = my_dp.flip(-1)
-        return MyDatapoint.wrap_like(my_dp, out)
+        return datapoints.wrap(out, like=my_dp)
 
 
 
@@ -116,9 +116,9 @@ operation of our MyDatapoint class, and register it to the functional API.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 60-77
+.. GENERATED FROM PYTHON SOURCE LINES 60-73
 
-To understand why ``wrap_like`` is used, see
+To understand why :func:`~torchvision.datapoints.wrap` is used, see
 :ref:`datapoint_unwrapping_behaviour`. Ignore the ``*args, **kwargs`` for now,
 we will explain it below in :ref:`param_forwarding`.
 
@@ -129,14 +129,10 @@ we will explain it below in :ref:`param_forwarding`.
     could also have used the  functional *itself*, i.e.
     ``@register_kernel(functional=F.hflip, ...)``.
 
-    The functionals that you can be hooked into are the ones in
-    ``torchvision.transforms.v2.functional`` and they are documented in
-    :ref:`functional_transforms`.
-
 Now that we have registered our kernel, we can call the functional API on a
 ``MyDatapoint`` instance:
 
-.. GENERATED FROM PYTHON SOURCE LINES 77-81
+.. GENERATED FROM PYTHON SOURCE LINES 73-77
 
 .. code-block:: default
 
@@ -157,12 +153,12 @@ Now that we have registered our kernel, we can call the functional API on a
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-84
+.. GENERATED FROM PYTHON SOURCE LINES 78-80
 
 And we can also use the
 :class:`~torchvision.transforms.v2.RandomHorizontalFlip` transform, since it relies on :func:`~torchvision.transforms.v2.functional.hflip` internally:
 
-.. GENERATED FROM PYTHON SOURCE LINES 84-87
+.. GENERATED FROM PYTHON SOURCE LINES 80-83
 
 .. code-block:: default
 
@@ -182,7 +178,7 @@ And we can also use the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 88-110
+.. GENERATED FROM PYTHON SOURCE LINES 84-106
 
 .. note::
 
@@ -207,7 +203,7 @@ Imagine that in a future version, Torchvision adds a new ``inplace`` parameter
 to its :func:`~torchvision.transforms.v2.functional.hflip` functional. If you
 already defined and registered your own kernel as
 
-.. GENERATED FROM PYTHON SOURCE LINES 110-117
+.. GENERATED FROM PYTHON SOURCE LINES 106-113
 
 .. code-block:: default
 
@@ -215,7 +211,7 @@ already defined and registered your own kernel as
     def hflip_my_datapoint(my_dp):  # noqa
         print("Flipping!")
         out = my_dp.flip(-1)
-        return MyDatapoint.wrap_like(my_dp, out)
+        return datapoints.wrap(out, like=my_dp)
 
 
 
@@ -225,7 +221,7 @@ already defined and registered your own kernel as
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 118-126
+.. GENERATED FROM PYTHON SOURCE LINES 114-122
 
 then calling ``F.hflip(my_dp)`` will **fail**, because ``hflip`` will try to
 pass the new ``inplace`` parameter to your kernel, but your kernel doesn't
@@ -239,7 +235,7 @@ will be able to accept any new parameter that we may add in the future.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.027 seconds)
+   **Total running time of the script:** ( 0 minutes  0.024 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_custom_datapoints.py:

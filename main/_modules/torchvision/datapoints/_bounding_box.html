@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+f244e27) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+6241d47) &#x25BC</a>
     </div>
     
 
@@ -249,7 +249,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -309,6 +309,8 @@
           <li><a href="../../index.html">Module code</a> &gt;</li>
         
           <li><a href="../../torchvision.html">torchvision</a> &gt;</li>
+        
+          <li><a href="../datapoints.html">torchvision.datapoints</a> &gt;</li>
         
       <li>torchvision.datapoints._bounding_box</li>
     
@@ -419,32 +421,6 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
-
-<div class="viewcode-block" id="BoundingBoxes.wrap_like"><a class="viewcode-back" href="../../../generated/torchvision.datapoints.BoundingBoxes.html#torchvision.datapoints.BoundingBoxes.wrap_like">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">wrap_like</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">other</span><span class="p">:</span> <span class="n">BoundingBoxes</span><span class="p">,</span>
-        <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-        <span class="o">*</span><span class="p">,</span>
-        <span class="nb">format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap a :class:`torch.Tensor` as :class:`BoundingBoxes` from a reference.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            other (BoundingBoxes): Reference bounding box.</span>
-<span class="sd">            tensor (Tensor): Tensor to be wrapped as :class:`BoundingBoxes`</span>
-<span class="sd">            format (BoundingBoxFormat, str, optional): Format of the bounding box.  If omitted, it is taken from the</span>
-<span class="sd">                reference.</span>
-<span class="sd">            canvas_size (two-tuple of ints, optional): Height and width of the corresponding image or video. If</span>
-<span class="sd">                omitted, it is taken from the reference.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span>
-            <span class="n">tensor</span><span class="p">,</span>
-            <span class="nb">format</span><span class="o">=</span><span class="nb">format</span> <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">other</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
-            <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span> <span class="k">if</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">other</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span>
-        <span class="p">)</span></div>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">_wrap_output</span><span class="p">(</span>

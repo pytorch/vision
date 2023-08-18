@@ -135,8 +135,8 @@ where our samples are just images, bounding boxes and labels:
  .. code-block:: none
 
     Output image shape: torch.Size([3, 224, 224])
-    out_bboxes = BoundingBoxes([[224,   0, 224,   9],
-                   [224, 107, 224, 172]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224))
+    out_bboxes = BoundingBoxes([[224,   0, 224,   0],
+                   [171,  29, 193,  51]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224))
     out_label = 3
 
 
@@ -215,7 +215,7 @@ an issue on our `GitHub repo <https://github.com/pytorch/vision/issues>`_.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.006 seconds)
+   **Total running time of the script:** ( 0 minutes  0.007 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_custom_transforms.py:

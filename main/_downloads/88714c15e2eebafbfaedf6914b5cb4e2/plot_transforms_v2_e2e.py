@@ -27,7 +27,7 @@ def show(sample):
 
     image, target = sample
     if isinstance(image, PIL.Image.Image):
-        image = F.to_image_tensor(image)
+        image = F.to_image(image)
     image = F.to_dtype(image, torch.uint8, scale=True)
     annotated_image = draw_bounding_boxes(image, target["boxes"], colors="yellow", width=3)
 
@@ -101,7 +101,7 @@ transform = transforms.Compose(
         transforms.RandomZoomOut(fill={PIL.Image.Image: (123, 117, 104), "others": 0}),
         transforms.RandomIoUCrop(),
         transforms.RandomHorizontalFlip(),
-        transforms.ToImageTensor(),
+        transforms.ToImage(),
         transforms.ConvertImageDtype(torch.float32),
         transforms.SanitizeBoundingBoxes(),
     ]
