@@ -25,17 +25,11 @@ How to write your own v2 transforms
 This guide explains how to write transforms that are compatible with the
 torchvision transforms V2 API.
 
-.. GENERATED FROM PYTHON SOURCE LINES 11-22
+.. GENERATED FROM PYTHON SOURCE LINES 11-16
 
 .. code-block:: default
 
     import torch
-    import torchvision
-
-    # We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-    # some APIs may slightly change in the future
-    torchvision.disable_beta_transforms_warning()
-
     from torchvision import datapoints
     from torchvision.transforms import v2
 
@@ -47,7 +41,7 @@ torchvision transforms V2 API.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 23-47
+.. GENERATED FROM PYTHON SOURCE LINES 17-41
 
 Just create a ``nn.Module`` and override the ``forward`` method
 ===============================================================
@@ -74,7 +68,7 @@ your ``forward`` method to accept just that, e.g.
 We will illustrate this more completely below with a typical detection case,
 where our samples are just images, bounding boxes and labels:
 
-.. GENERATED FROM PYTHON SOURCE LINES 47-75
+.. GENERATED FROM PYTHON SOURCE LINES 41-69
 
 .. code-block:: default
 
@@ -121,7 +115,7 @@ where our samples are just images, bounding boxes and labels:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 76-77
+.. GENERATED FROM PYTHON SOURCE LINES 70-71
 
 .. code-block:: default
 
@@ -135,14 +129,14 @@ where our samples are just images, bounding boxes and labels:
  .. code-block:: none
 
     Output image shape: torch.Size([3, 224, 224])
-    out_bboxes = BoundingBoxes([[224,   0, 224,   0],
-                   [224,   0, 224,   2]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224))
+    out_bboxes = BoundingBoxes([[224,   0, 224,  10],
+                   [179,  43, 203,  65]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224))
     out_label = 3
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 78-95
+.. GENERATED FROM PYTHON SOURCE LINES 72-89
 
 .. note::
     While working with datapoint classes in your code, make sure to
@@ -162,7 +156,7 @@ arbitrary input structure and return the same structure as output (with
 transformed entries). For example, transforms can accept a single image, or a
 tuple of ``(img, label)``, or an arbitrary nested dictionary as input:
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-107
+.. GENERATED FROM PYTHON SOURCE LINES 89-101
 
 .. code-block:: default
 
@@ -193,7 +187,7 @@ tuple of ``(img, label)``, or an arbitrary nested dictionary as input:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 108-124
+.. GENERATED FROM PYTHON SOURCE LINES 102-118
 
 If you want to reproduce this behavior in your own transform, we invite you to
 look at our `code
@@ -215,7 +209,7 @@ an issue on our `GitHub repo <https://github.com/pytorch/vision/issues>`_.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.007 seconds)
+   **Total running time of the script:** ( 0 minutes  0.006 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_custom_transforms.py:

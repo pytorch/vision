@@ -32,18 +32,12 @@ transforms, because they expect
 explain how to use them: after the ``DataLoader``, or as part of a collation
 function.
 
-.. GENERATED FROM PYTHON SOURCE LINES 19-32
+.. GENERATED FROM PYTHON SOURCE LINES 19-26
 
 .. code-block:: default
 
     import torch
-    import torchvision
     from torchvision.datasets import FakeData
-
-    # We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-    # some APIs may slightly change in the future
-    torchvision.disable_beta_transforms_warning()
-
     from torchvision.transforms import v2
 
 
@@ -56,14 +50,14 @@ function.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 33-37
+.. GENERATED FROM PYTHON SOURCE LINES 27-31
 
 Pre-processing pipeline
 -----------------------
 
 We'll use a simple but typical image classification pipeline:
 
-.. GENERATED FROM PYTHON SOURCE LINES 37-51
+.. GENERATED FROM PYTHON SOURCE LINES 31-45
 
 .. code-block:: default
 
@@ -94,14 +88,14 @@ We'll use a simple but typical image classification pipeline:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 52-56
+.. GENERATED FROM PYTHON SOURCE LINES 46-50
 
 One important thing to note is that neither CutMix nor MixUp are part of this
 pre-processing pipeline. We'll add them a bit later once we define the
 DataLoader. Just as a refresher, this is what the DataLoader and training loop
 would look like if we weren't using CutMix or MixUp:
 
-.. GENERATED FROM PYTHON SOURCE LINES 57-67
+.. GENERATED FROM PYTHON SOURCE LINES 51-61
 
 .. code-block:: default
 
@@ -129,7 +123,7 @@ would look like if we weren't using CutMix or MixUp:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 70-79
+.. GENERATED FROM PYTHON SOURCE LINES 64-73
 
 Where to use MixUp and CutMix
 -----------------------------
@@ -141,7 +135,7 @@ Now let's add CutMix and MixUp. The simplest way to do this right after the
 DataLoader: the Dataloader has already batched the images and labels for us,
 and this is exactly what these transforms expect as input:
 
-.. GENERATED FROM PYTHON SOURCE LINES 79-93
+.. GENERATED FROM PYTHON SOURCE LINES 73-87
 
 .. code-block:: default
 
@@ -173,7 +167,7 @@ and this is exactly what these transforms expect as input:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 94-108
+.. GENERATED FROM PYTHON SOURCE LINES 88-102
 
 Note how the labels were also transformed: we went from a batched label of
 shape (batch_size,) to a tensor of shape (batch_size, num_classes). The
@@ -190,7 +184,7 @@ the collation function (refer to the `PyTorch docs
 <https://pytorch.org/docs/stable/data.html#dataloader-collate-fn>`_ to learn
 more about collation).
 
-.. GENERATED FROM PYTHON SOURCE LINES 109-125
+.. GENERATED FROM PYTHON SOURCE LINES 103-119
 
 .. code-block:: default
 
@@ -223,7 +217,7 @@ more about collation).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 126-137
+.. GENERATED FROM PYTHON SOURCE LINES 120-131
 
 Non-standard input format
 -------------------------
@@ -237,7 +231,7 @@ or dict with a "label[s]" key. Look at the documentation of the
 If your samples have a different structure, you can still use CutMix and MixUp
 by passing a callable to the ``labels_getter`` parameter. For example:
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-153
+.. GENERATED FROM PYTHON SOURCE LINES 131-147
 
 .. code-block:: default
 
@@ -273,7 +267,7 @@ by passing a callable to the ``labels_getter`` parameter. For example:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.117 seconds)
+   **Total running time of the script:** ( 0 minutes  0.131 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_cutmix_mixup.py:

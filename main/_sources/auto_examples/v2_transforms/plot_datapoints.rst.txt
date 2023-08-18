@@ -38,19 +38,13 @@ and how they behave.
     trying to implement their own datasets, transforms, or work directly with
     the datapoints.
 
-.. GENERATED FROM PYTHON SOURCE LINES 24-37
+.. GENERATED FROM PYTHON SOURCE LINES 24-31
 
 .. code-block:: default
 
     import PIL.Image
 
     import torch
-    import torchvision
-
-    # We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-    # some APIs may slightly change in the future
-    torchvision.disable_beta_transforms_warning()
-
     from torchvision import datapoints
     from torchvision.transforms.v2 import functional as F
 
@@ -62,14 +56,14 @@ and how they behave.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 38-42
+.. GENERATED FROM PYTHON SOURCE LINES 32-36
 
 What are datapoints?
 --------------------
 
 Datapoints are zero-copy tensor subclasses:
 
-.. GENERATED FROM PYTHON SOURCE LINES 42-49
+.. GENERATED FROM PYTHON SOURCE LINES 36-43
 
 .. code-block:: default
 
@@ -87,7 +81,7 @@ Datapoints are zero-copy tensor subclasses:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 50-67
+.. GENERATED FROM PYTHON SOURCE LINES 44-61
 
 Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate function
 for the input data.
@@ -107,7 +101,7 @@ Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()`` or
 any ``torch.*`` operator will also work on datapoints. See
 :ref:`datapoint_unwrapping_behaviour` for a few gotchas.
 
-.. GENERATED FROM PYTHON SOURCE LINES 69-78
+.. GENERATED FROM PYTHON SOURCE LINES 63-72
 
 .. _datapoint_creation:
 
@@ -119,7 +113,7 @@ Using the constructor
 
 Each datapoint class takes any tensor-like data that can be turned into a :class:`~torch.Tensor`
 
-.. GENERATED FROM PYTHON SOURCE LINES 78-83
+.. GENERATED FROM PYTHON SOURCE LINES 72-77
 
 .. code-block:: default
 
@@ -142,12 +136,12 @@ Each datapoint class takes any tensor-like data that can be turned into a :class
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 84-86
+.. GENERATED FROM PYTHON SOURCE LINES 78-80
 
 Similar to other PyTorch creations ops, the constructor also takes the ``dtype``, ``device``, and ``requires_grad``
 parameters.
 
-.. GENERATED FROM PYTHON SOURCE LINES 86-91
+.. GENERATED FROM PYTHON SOURCE LINES 80-85
 
 .. code-block:: default
 
@@ -170,12 +164,12 @@ parameters.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 92-94
+.. GENERATED FROM PYTHON SOURCE LINES 86-88
 
 In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` can also take a
 :class:`PIL.Image.Image` directly:
 
-.. GENERATED FROM PYTHON SOURCE LINES 94-98
+.. GENERATED FROM PYTHON SOURCE LINES 88-92
 
 .. code-block:: default
 
@@ -196,14 +190,14 @@ In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.dat
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 99-103
+.. GENERATED FROM PYTHON SOURCE LINES 93-97
 
 Some datapoints require additional metadata to be passed in ordered to be constructed. For example,
 :class:`~torchvision.datapoints.BoundingBoxes` requires the coordinate format as well as the size of the
 corresponding image (``canvas_size``) alongside the actual values. These
 metadata are required to properly transform the bounding boxes.
 
-.. GENERATED FROM PYTHON SOURCE LINES 103-111
+.. GENERATED FROM PYTHON SOURCE LINES 97-105
 
 .. code-block:: default
 
@@ -229,7 +223,7 @@ metadata are required to properly transform the bounding boxes.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 112-119
+.. GENERATED FROM PYTHON SOURCE LINES 106-113
 
 Using ``datapoints.wrap()``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -239,7 +233,7 @@ into a datapoint. This is useful when you already have an object of the
 desired type, which typically happens when writing transforms: you just want
 to wrap the output like the input.
 
-.. GENERATED FROM PYTHON SOURCE LINES 119-126
+.. GENERATED FROM PYTHON SOURCE LINES 113-120
 
 .. code-block:: default
 
@@ -257,7 +251,7 @@ to wrap the output like the input.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 127-144
+.. GENERATED FROM PYTHON SOURCE LINES 121-138
 
 The metadata of ``new_bboxes`` is the same as ``bboxes``, but you could pass
 it as a parameter to override it.
@@ -277,7 +271,7 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
 
 1. Perform the wrapping inside ``__getitem__``:
 
-.. GENERATED FROM PYTHON SOURCE LINES 144-166
+.. GENERATED FROM PYTHON SOURCE LINES 138-160
 
 .. code-block:: default
 
@@ -310,11 +304,11 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 167-168
+.. GENERATED FROM PYTHON SOURCE LINES 161-162
 
 2. Perform the wrapping inside a custom transformation at the beginning of your pipeline:
 
-.. GENERATED FROM PYTHON SOURCE LINES 168-190
+.. GENERATED FROM PYTHON SOURCE LINES 162-184
 
 .. code-block:: default
 
@@ -347,7 +341,7 @@ If you have a custom dataset, for example the ``PennFudanDataset`` from
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 191-209
+.. GENERATED FROM PYTHON SOURCE LINES 185-203
 
 .. note::
 
@@ -368,7 +362,7 @@ I had a Datapoint but now I have a Tensor. Help!
 By default, operations on :class:`~torchvision.datapoints.Datapoint` objects
 will return a pure Tensor:
 
-.. GENERATED FROM PYTHON SOURCE LINES 209-219
+.. GENERATED FROM PYTHON SOURCE LINES 203-213
 
 .. code-block:: default
 
@@ -389,7 +383,7 @@ will return a pure Tensor:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 220-226
+.. GENERATED FROM PYTHON SOURCE LINES 214-220
 
 .. note::
 
@@ -398,7 +392,7 @@ will return a pure Tensor:
    as output the same type that you passed as input (pure ``Tensor`` or
    ``Datapoint``).
 
-.. GENERATED FROM PYTHON SOURCE LINES 228-234
+.. GENERATED FROM PYTHON SOURCE LINES 222-228
 
 But I want a Datapoint back!
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -407,7 +401,7 @@ You can re-wrap a pure tensor into a datapoint by just calling the datapoint
 constructor, or by using the :func:`~torchvision.datapoints.wrap` function
 (see more details above in :ref:`datapoint_creation`):
 
-.. GENERATED FROM PYTHON SOURCE LINES 234-239
+.. GENERATED FROM PYTHON SOURCE LINES 228-233
 
 .. code-block:: default
 
@@ -423,12 +417,12 @@ constructor, or by using the :func:`~torchvision.datapoints.wrap` function
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 240-242
+.. GENERATED FROM PYTHON SOURCE LINES 234-236
 
 Alternatively, you can use the :func:`~torchvision.datapoints.set_return_type`
 as a global config setting for the whole program, or as a context manager:
 
-.. GENERATED FROM PYTHON SOURCE LINES 242-247
+.. GENERATED FROM PYTHON SOURCE LINES 236-241
 
 .. code-block:: default
 
@@ -444,7 +438,7 @@ as a global config setting for the whole program, or as a context manager:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 248-287
+.. GENERATED FROM PYTHON SOURCE LINES 242-281
 
 Why is this happening?
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -486,7 +480,7 @@ There are a few exceptions to this "unwrapping" rule:
    the **returned** value of inplace operations will be unwrapped into a pure
    tensor:
 
-.. GENERATED FROM PYTHON SOURCE LINES 287-301
+.. GENERATED FROM PYTHON SOURCE LINES 281-295
 
 .. code-block:: default
 

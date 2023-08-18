@@ -27,7 +27,7 @@ Object detection is not supported out of the box by ``torchvision.transforms`` v
 showcases an end-to-end object detection training using the stable ``torchvision.datasets`` and ``torchvision.models``
 as well as the new ``torchvision.transforms.v2`` v2 API.
 
-.. GENERATED FROM PYTHON SOURCE LINES 11-50
+.. GENERATED FROM PYTHON SOURCE LINES 11-43
 
 .. code-block:: default
 
@@ -39,7 +39,8 @@ as well as the new ``torchvision.transforms.v2`` v2 API.
     import torch
     import torch.utils.data
 
-    import torchvision
+    from torchvision import models, datasets
+    import torchvision.transforms.v2 as transforms
 
 
     def show(sample):
@@ -62,12 +63,6 @@ as well as the new ``torchvision.transforms.v2`` v2 API.
         fig.show()
 
 
-    # We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-    # some APIs may slightly change in the future
-    torchvision.disable_beta_transforms_warning()
-
-    from torchvision import models, datasets
-    import torchvision.transforms.v2 as transforms
 
 
 
@@ -75,17 +70,14 @@ as well as the new ``torchvision.transforms.v2`` v2 API.
 
 
 
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 51-53
+.. GENERATED FROM PYTHON SOURCE LINES 44-46
 
 We start off by loading the :class:`~torchvision.datasets.CocoDetection` dataset to have a look at what it currently
 returns, and we'll see how to convert it to a format that is compatible with our new transforms.
 
-.. GENERATED FROM PYTHON SOURCE LINES 53-70
+.. GENERATED FROM PYTHON SOURCE LINES 46-62
 
 .. code-block:: default
-
 
 
     def load_example_coco_detection_dataset(**kwargs):
@@ -121,7 +113,7 @@ returns, and we'll see how to convert it to a format that is compatible with our
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 71-79
+.. GENERATED FROM PYTHON SOURCE LINES 63-71
 
 The dataset returns a two-tuple with the first item being a :class:`PIL.Image.Image` and second one a list of
 dictionaries, which each containing the annotations for a single object instance. As is, this format is not compatible
@@ -132,7 +124,7 @@ also adds the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` wrapped
 ``torchvision.datapoints``. By default, it only returns ``"boxes"`` and ``"labels"`` to avoid transforming unnecessary
 items down the line, but you can pass the ``target_type`` parameter for fine-grained control.
 
-.. GENERATED FROM PYTHON SOURCE LINES 79-88
+.. GENERATED FROM PYTHON SOURCE LINES 71-80
 
 .. code-block:: default
 
@@ -160,11 +152,11 @@ items down the line, but you can pass the ``target_type`` parameter for fine-gra
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 89-90
+.. GENERATED FROM PYTHON SOURCE LINES 81-82
 
 As baseline, let's have a look at a sample without transformations:
 
-.. GENERATED FROM PYTHON SOURCE LINES 90-94
+.. GENERATED FROM PYTHON SOURCE LINES 82-86
 
 .. code-block:: default
 
@@ -184,12 +176,12 @@ As baseline, let's have a look at a sample without transformations:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-97
+.. GENERATED FROM PYTHON SOURCE LINES 87-89
 
 With the dataset properly set up, we can now define the augmentation pipeline. This is done the same way it is done in
 ``torchvision.transforms`` v1, but now handles bounding boxes and masks without any extra configuration.
 
-.. GENERATED FROM PYTHON SOURCE LINES 97-110
+.. GENERATED FROM PYTHON SOURCE LINES 89-102
 
 .. code-block:: default
 
@@ -213,7 +205,7 @@ With the dataset properly set up, we can now define the augmentation pipeline. T
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-118
+.. GENERATED FROM PYTHON SOURCE LINES 103-110
 
 .. note::
    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
@@ -223,7 +215,7 @@ With the dataset properly set up, we can now define the augmentation pipeline. T
 
 Let's look how the sample looks like with our augmentation pipeline in place:
 
-.. GENERATED FROM PYTHON SOURCE LINES 118-128
+.. GENERATED FROM PYTHON SOURCE LINES 110-120
 
 .. code-block:: default
 
@@ -258,12 +250,12 @@ Let's look how the sample looks like with our augmentation pipeline in place:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 130-132
+.. GENERATED FROM PYTHON SOURCE LINES 122-124
 
 We can see that the color of the image was distorted, we zoomed out on it (off center) and flipped it horizontally.
 In all of this, the bounding box was transformed accordingly. And without any further ado, we can start training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 132-151
+.. GENERATED FROM PYTHON SOURCE LINES 124-143
 
 .. code-block:: default
 
@@ -302,7 +294,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.894 seconds)
+   **Total running time of the script:** ( 0 minutes  2.877 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2_e2e.py:

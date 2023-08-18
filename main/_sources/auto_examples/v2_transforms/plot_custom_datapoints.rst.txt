@@ -27,17 +27,11 @@ write your own datapoint class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
 :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 13-23
+.. GENERATED FROM PYTHON SOURCE LINES 13-17
 
 .. code-block:: default
 
     import torch
-    import torchvision
-
-    # We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-    # some APIs may slightly change in the future
-    torchvision.disable_beta_transforms_warning()
-
     from torchvision import datapoints
     from torchvision.transforms import v2
 
@@ -48,7 +42,7 @@ Torchvision v2 transforms. Before continuing, make sure you have read
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 24-30
+.. GENERATED FROM PYTHON SOURCE LINES 18-24
 
 We will create a very simple class that just inherits from the base
 :class:`~torchvision.datapoints.Datapoint` class. It will be enough to cover
@@ -57,7 +51,7 @@ to create a class that carries meta-data, take a look at how the
 :class:`~torchvision.datapoints.BoundingBoxes` class is `implemented
 <https://github.com/pytorch/vision/blob/main/torchvision/datapoints/_bounding_box.py>`_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 30-39
+.. GENERATED FROM PYTHON SOURCE LINES 24-33
 
 .. code-block:: default
 
@@ -83,7 +77,7 @@ to create a class that carries meta-data, take a look at how the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-48
+.. GENERATED FROM PYTHON SOURCE LINES 34-42
 
 Now that we have defined our custom Datapoint class, we want it to be
 compatible with the built-in torchvision transforms, and the functional API.
@@ -94,7 +88,7 @@ via :func:`~torchvision.transforms.v2.functional.register_kernel`.
 We illustrate this process below: we create a kernel for the "horizontal flip"
 operation of our MyDatapoint class, and register it to the functional API.
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-59
+.. GENERATED FROM PYTHON SOURCE LINES 42-53
 
 .. code-block:: default
 
@@ -116,7 +110,7 @@ operation of our MyDatapoint class, and register it to the functional API.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 60-73
+.. GENERATED FROM PYTHON SOURCE LINES 54-67
 
 To understand why :func:`~torchvision.datapoints.wrap` is used, see
 :ref:`datapoint_unwrapping_behaviour`. Ignore the ``*args, **kwargs`` for now,
@@ -132,7 +126,7 @@ we will explain it below in :ref:`param_forwarding`.
 Now that we have registered our kernel, we can call the functional API on a
 ``MyDatapoint`` instance:
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-77
+.. GENERATED FROM PYTHON SOURCE LINES 67-71
 
 .. code-block:: default
 
@@ -153,12 +147,12 @@ Now that we have registered our kernel, we can call the functional API on a
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 78-80
+.. GENERATED FROM PYTHON SOURCE LINES 72-74
 
 And we can also use the
 :class:`~torchvision.transforms.v2.RandomHorizontalFlip` transform, since it relies on :func:`~torchvision.transforms.v2.functional.hflip` internally:
 
-.. GENERATED FROM PYTHON SOURCE LINES 80-83
+.. GENERATED FROM PYTHON SOURCE LINES 74-77
 
 .. code-block:: default
 
@@ -178,7 +172,7 @@ And we can also use the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 84-106
+.. GENERATED FROM PYTHON SOURCE LINES 78-100
 
 .. note::
 
@@ -203,7 +197,7 @@ Imagine that in a future version, Torchvision adds a new ``inplace`` parameter
 to its :func:`~torchvision.transforms.v2.functional.hflip` functional. If you
 already defined and registered your own kernel as
 
-.. GENERATED FROM PYTHON SOURCE LINES 106-113
+.. GENERATED FROM PYTHON SOURCE LINES 100-107
 
 .. code-block:: default
 
@@ -221,7 +215,7 @@ already defined and registered your own kernel as
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-122
+.. GENERATED FROM PYTHON SOURCE LINES 108-116
 
 then calling ``F.hflip(my_dp)`` will **fail**, because ``hflip`` will try to
 pass the new ``inplace`` parameter to your kernel, but your kernel doesn't
@@ -235,7 +229,7 @@ will be able to accept any new parameter that we may add in the future.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.025 seconds)
+   **Total running time of the script:** ( 0 minutes  0.026 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_custom_datapoints.py:

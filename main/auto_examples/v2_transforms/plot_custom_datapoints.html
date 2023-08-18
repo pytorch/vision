@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+87d54c4) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+90e0b79) &#x25BC</a>
     </div>
     
 
@@ -361,12 +361,6 @@ write your own datapoint class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
 <a class="reference internal" href="plot_datapoints.html#sphx-glr-auto-examples-v2-transforms-plot-datapoints-py"><span class="std std-ref">Datapoints FAQ</span></a>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torchvision</span>
-
-<span class="c1"># We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that</span>
-<span class="c1"># some APIs may slightly change in the future</span>
-<span class="n">torchvision</span><span class="o">.</span><span class="n">disable_beta_transforms_warning</span><span class="p">()</span>
-
 <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">v2</span>
 </pre></div>
@@ -463,7 +457,7 @@ accept it.</p>
 <code class="docutils literal notranslate"><span class="pre">*args,</span> <span class="pre">**kwargs</span></code> in their signature, as done above. This way, your kernel
 will be able to accept any new parameter that we may add in the future.
 (Technically, adding <cite>**kwargs</cite> only should be enough).</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.025 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.026 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-v2-transforms-plot-custom-datapoints-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/8cfe70d7f3c67870fdd09f6b13d34a22/plot_custom_datapoints.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_custom_datapoints.py</span></code></a></p>
