@@ -2,9 +2,9 @@ import collections.abc
 
 import pytest
 import torchvision.transforms.v2.functional as F
-from common_utils import InfoBase, TestMark
 from torchvision import datapoints
 from transforms_v2_kernel_infos import KERNEL_INFOS, pad_xfail_jit_fill_condition
+from transforms_v2_legacy_utils import InfoBase, TestMark
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 
