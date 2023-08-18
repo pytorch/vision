@@ -1,5 +1,3 @@
-from torchvision.datapoints._dataset_wrapper import wrap_dataset_for_transforms_v2
-
 from ._optical_flow import FlyingChairs, FlyingThings3D, HD1K, KittiFlow, Sintel
 from ._stereo_matching import (
     CarlaStereo,
@@ -131,3 +129,16 @@ __all__ = (
     "ETH3DStereo",
     "wrap_dataset_for_transforms_v2",
 )
+
+
+# We override current module's attributes to handle the import:
+# from torchvision.datasets import wrap_dataset_for_transforms_v2
+# without a cyclic error.
+# Ref: https://peps.python.org/pep-0562/
+def __getattr__(name):
+    if name in ("wrap_dataset_for_transforms_v2",):
+        from torchvision.datapoints._dataset_wrapper import wrap_dataset_for_transforms_v2
+
+        return wrap_dataset_for_transforms_v2
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
