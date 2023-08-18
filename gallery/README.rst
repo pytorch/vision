@@ -1,4 +1,2 @@
-Example gallery
-===============
-
-Below is a gallery of examples
+Examples and tutorials
+======================

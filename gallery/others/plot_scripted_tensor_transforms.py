@@ -49,8 +49,8 @@ def show(imgs):
 # The :func:`~torchvision.io.read_image` function allows to read an image and
 # directly load it as a tensor
 
-dog1 = read_image(str(Path('assets') / 'dog1.jpg'))
-dog2 = read_image(str(Path('assets') / 'dog2.jpg'))
+dog1 = read_image(str(Path('../assets') / 'dog1.jpg'))
+dog2 = read_image(str(Path('../assets') / 'dog2.jpg'))
 show([dog1, dog2])
 
 # %%
@@ -58,7 +58,7 @@ show([dog1, dog2])
 # --------------------------
 # Most transforms natively support tensors on top of PIL images (to visualize
 # the effect of the transforms, you may refer to see
-# :ref:`sphx_glr_auto_examples_plot_transforms.py`).
+# :ref:`sphx_glr_auto_examples_others_plot_transforms.py`).
 # Using tensor images, we can run the transforms on GPUs if cuda is available!
 
 import torch.nn as nn
@@ -121,7 +121,7 @@ res_scripted = scripted_predictor(batch)
 
 import json
 
-with open(Path('assets') / 'imagenet_class_index.json') as labels_file:
+with open(Path('../assets') / 'imagenet_class_index.json') as labels_file:
     labels = json.load(labels_file)
 
 for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):

@@ -69,7 +69,7 @@ _BUILTIN_DATAPOINT_TYPES = {
 def register_kernel(functional, datapoint_cls):
     """Decorate a kernel to register it for a functional and a (custom) datapoint type.
 
-    See :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for usage
+    See :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py` for usage
     details.
     """
     if isinstance(functional, str):
