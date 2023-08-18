@@ -4,7 +4,7 @@ import pytest
 import torch
 
 import torchvision.transforms.v2.utils
-from common_utils import DEFAULT_SIZE, make_bounding_box, make_detection_mask, make_image
+from common_utils import DEFAULT_SIZE, make_bounding_boxes, make_detection_mask, make_image
 
 from torchvision import datapoints
 from torchvision.transforms.v2.functional import to_pil_image
@@ -12,7 +12,7 @@ from torchvision.transforms.v2.utils import has_all, has_any
 
 
 IMAGE = make_image(DEFAULT_SIZE, color_space="RGB")
-BOUNDING_BOX = make_bounding_box(DEFAULT_SIZE, format=datapoints.BoundingBoxFormat.XYXY)
+BOUNDING_BOX = make_bounding_boxes(DEFAULT_SIZE, format=datapoints.BoundingBoxFormat.XYXY)
 MASK = make_detection_mask(DEFAULT_SIZE)
 
 
