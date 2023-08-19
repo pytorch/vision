@@ -3,6 +3,10 @@
 Transforms v2: End-to-end object detection example
 ==================================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_v2_e2e.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2_e2e.py>` to download the full example code.
+
 Object detection is not supported out of the box by ``torchvision.transforms`` v1, since it only supports images.
 ``torchvision.transforms.v2`` enables jointly transforming images, videos, bounding boxes, and masks. This example
 showcases an end-to-end object detection training using the stable ``torchvision.datasets`` and ``torchvision.models``
@@ -16,7 +20,8 @@ import PIL.Image
 import torch
 import torch.utils.data
 
-import torchvision
+from torchvision import models, datasets
+import torchvision.transforms.v2 as transforms
 
 
 def show(sample):
@@ -39,18 +44,9 @@ def show(sample):
     fig.show()
 
 
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
-from torchvision import models, datasets
-import torchvision.transforms.v2 as transforms
-
-
 # %%
 # We start off by loading the :class:`~torchvision.datasets.CocoDetection` dataset to have a look at what it currently
 # returns, and we'll see how to convert it to a format that is compatible with our new transforms.
-
 
 def load_example_coco_detection_dataset(**kwargs):
     # This loads fake data for illustration purposes of this example. In practice, you'll have

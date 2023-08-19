@@ -3,6 +3,10 @@
 How to write your own Datapoint class
 =====================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_custom_datapoints.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_custom_datapoints.py>` to download the full example code.
+
 This guide is intended for advanced users and downstream library maintainers. We explain how to
 write your own datapoint class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
@@ -11,12 +15,6 @@ Torchvision v2 transforms. Before continuing, make sure you have read
 
 # %%
 import torch
-import torchvision
-
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
 from torchvision import datapoints
 from torchvision.transforms import v2
 

@@ -3,18 +3,16 @@
 How to write your own v2 transforms
 ===================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_custom_transforms.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_custom_transforms.py>` to download the full example code.
+
 This guide explains how to write transforms that are compatible with the
 torchvision transforms V2 API.
 """
 
 # %%
 import torch
-import torchvision
-
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
 from torchvision import datapoints
 from torchvision.transforms import v2
 
