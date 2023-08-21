@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import collections.abc
-
 import contextlib
 from collections import defaultdict
 
@@ -97,6 +96,10 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
             f"but got {target_keys}"
         )
 
+    return _make_wrapped_dataset(dataset, target_keys)
+
+
+def _make_wrapped_dataset(dataset, target_keys):
     # Imagine we have isinstance(dataset, datasets.ImageNet). This will create a new class with the name
     # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetDatapointWrapper (see below) as well as the
     # original ImageNet class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks,
@@ -162,6 +165,7 @@ class VisionDatasetDatapointWrapper:
                 raise TypeError(msg)
 
         self._dataset = dataset
+        self._target_keys = target_keys
         self._wrapper = wrapper_factory(dataset, target_keys)
 
         # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
@@ -196,6 +200,9 @@ class VisionDatasetDatapointWrapper:
 
     def __len__(self):
         return len(self._dataset)
+
+    def __reduce__(self):
+        return _make_wrapped_dataset, (self._dataset, self._target_keys)
 
 
 def raise_not_supported(description):

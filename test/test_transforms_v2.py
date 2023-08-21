@@ -1,5 +1,6 @@
 import itertools
 import pathlib
+import pickle
 import random
 import warnings
 
@@ -169,8 +170,11 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
         ],
     )
+    @pytest.mark.parametrize("de_serialize", [lambda t: t, lambda t: pickle.loads(pickle.dumps(t))])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_common(self, transform, adapter, container_type, image_or_video, device):
+    def test_common(self, transform, adapter, container_type, image_or_video, de_serialize, device):
+        transform = de_serialize(transform)
+
         canvas_size = F.get_size(image_or_video)
         input = dict(
             image_or_video=image_or_video,
@@ -234,6 +238,7 @@ class TestSmoke:
             tensor=torch.empty(5),
             array=np.empty(5),
         )
+
         if adapter is not None:
             input = adapter(transform, input, device)
 

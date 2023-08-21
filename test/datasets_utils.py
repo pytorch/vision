@@ -5,6 +5,7 @@ import inspect
 import itertools
 import os
 import pathlib
+import pickle
 import random
 import shutil
 import string
@@ -572,34 +573,41 @@ class DatasetTestCase(unittest.TestCase):
 
         try:
             with self.create_dataset(config) as (dataset, info):
-                for target_keys in [None, "all"]:
-                    if target_keys is not None and self.DATASET_CLASS not in {
-                        torchvision.datasets.CocoDetection,
-                        torchvision.datasets.VOCDetection,
-                        torchvision.datasets.Kitti,
-                        torchvision.datasets.WIDERFace,
-                    }:
-                        with self.assertRaisesRegex(ValueError, "`target_keys` is currently only supported for"):
-                            wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
-                        continue
-
-                    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
-                    assert isinstance(wrapped_dataset, self.DATASET_CLASS)
-                    assert len(wrapped_dataset) == info["num_examples"]
-
-                    wrapped_sample = wrapped_dataset[0]
-                    assert tree_any(
-                        lambda item: isinstance(item, (datapoints.Datapoint, PIL.Image.Image)), wrapped_sample
-                    )
+                wrap_dataset_for_transforms_v2(dataset)
         except TypeError as error:
             msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
             if str(error).startswith(msg):
-                pytest.skip(msg)
+                return
             raise error
         except RuntimeError as error:
             if "currently not supported by this wrapper" in str(error):
-                pytest.skip("Config is currently not supported by this wrapper")
+                return
             raise error
+
+        for target_keys, de_serialize in itertools.product(
+            [None, "all"], [lambda d: d, lambda d: pickle.loads(pickle.dumps(d))]
+        ):
+
+            with self.create_dataset(config) as (dataset, info):
+                if target_keys is not None and self.DATASET_CLASS not in {
+                    torchvision.datasets.CocoDetection,
+                    torchvision.datasets.VOCDetection,
+                    torchvision.datasets.Kitti,
+                    torchvision.datasets.WIDERFace,
+                }:
+                    with self.assertRaisesRegex(ValueError, "`target_keys` is currently only supported for"):
+                        wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                    continue
+
+                wrapped_dataset = de_serialize(wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys))
+
+                assert isinstance(wrapped_dataset, self.DATASET_CLASS)
+                assert len(wrapped_dataset) == info["num_examples"]
+
+                wrapped_sample = wrapped_dataset[0]
+                assert tree_any(
+                    lambda item: isinstance(item, (datapoints.Image, datapoints.Video, PIL.Image.Image)), wrapped_sample
+                )
 
 
 class ImageDatasetTestCase(DatasetTestCase):
