@@ -19,6 +19,7 @@ table.dataframe {
   color: var(--sg-text-color);
   font-size: 12px;
   table-layout: fixed;
+  width: auto;
 }
 table.dataframe thead {
   border-bottom: 1px solid var(--sg-text-color);

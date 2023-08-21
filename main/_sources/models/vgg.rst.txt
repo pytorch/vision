@@ -11,7 +11,7 @@ Model builders
 --------------
 
 The following model builders can be used to instantiate a VGG model, with or
-without pre-trained weights. All the model buidlers internally rely on the
+without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.vgg.VGG`` base class. Please refer to the `source code
 <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_ for
 more details about this class.

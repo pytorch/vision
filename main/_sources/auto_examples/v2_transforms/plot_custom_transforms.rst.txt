@@ -126,7 +126,7 @@ where our samples are just images, bounding boxes and labels:
 
     Output image shape: torch.Size([3, 224, 224])
     out_bboxes = BoundingBoxes([[224,   0, 224,   0],
-                   [224,  22, 224,  57]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224))
+                   [224,  13, 224,  51]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224))
     out_label = 3
 
 
@@ -145,7 +145,7 @@ Supporting arbitrary input structures
 In the section above, we have assumed that you already know the structure of
 your inputs and that you're OK with hard-coding this expected structure in
 your code. If you want your custom transforms to be as flexible as possible,
-this can be a bit limitting.
+this can be a bit limiting.
 
 A key feature of the builtin Torchvision V2 transforms is that they can accept
 arbitrary input structure and return the same structure as output (with
@@ -205,7 +205,7 @@ an issue on our `GitHub repo <https://github.com/pytorch/vision/issues>`_.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.007 seconds)
+   **Total running time of the script:** (0 minutes 0.007 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_custom_transforms.py:

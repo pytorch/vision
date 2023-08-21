@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+a7501e1) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+965bcab) &#x25BC</a>
     </div>
     
 
@@ -484,7 +484,7 @@ length = 12 = number of iterations of the model
 (N, 2, H, W) batch of predicted flows that corresponds to a given “iteration”
 in the model. For more details on the iterative nature of the model, please
 refer to the <a class="reference external" href="https://arxiv.org/abs/2003.12039">original paper</a>. Here, we
-are only interested in the final predicted flows (they are the most acccurate
+are only interested in the final predicted flows (they are the most accurate
 ones), so we will just retrieve the last item in the list.</p>
 <p>As described above, a flow is a tensor with dimensions (2, H, W) (or (N, 2, H,
 W) for batches of flows) where each entry corresponds to the horizontal and
@@ -505,7 +505,7 @@ min = -3.8997180461883545, max = 6.400400161743164
 </section>
 <section id="visualizing-predicted-flows">
 <h2>Visualizing predicted flows<a class="headerlink" href="#visualizing-predicted-flows" title="Permalink to this heading">¶</a></h2>
-<p>Torchvision provides the <a class="reference internal" href="../../generated/torchvision.utils.flow_to_image.html#torchvision.utils.flow_to_image" title="torchvision.utils.flow_to_image"><code class="xref py py-func docutils literal notranslate"><span class="pre">flow_to_image()</span></code></a> utlity to
+<p>Torchvision provides the <a class="reference internal" href="../../generated/torchvision.utils.flow_to_image.html#torchvision.utils.flow_to_image" title="torchvision.utils.flow_to_image"><code class="xref py py-func docutils literal notranslate"><span class="pre">flow_to_image()</span></code></a> utility to
 convert a flow into an RGB image. It also supports batches of flows.
 each “direction” in the flow will be mapped to a given RGB color. In the
 images below, pixels with similar colors are assumed by the model to be moving
@@ -548,7 +548,7 @@ too long to run it.</p>
 <p>Once the .jpg flow images are saved, you can convert them into a video or a
 GIF using ffmpeg with e.g.:</p>
 <p>ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  9.656 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 9.606 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-others-plot-optical-flow-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/6acd2f50f8be085d0a8ac5874560f268/plot_optical_flow.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_optical_flow.py</span></code></a></p>
