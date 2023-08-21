@@ -3,7 +3,10 @@
 Datapoints FAQ
 ==============
 
-https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/_generated_ipynb_notebooks/plot_datapoints.ipynb
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_datapoints.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_datapoints.py>` to download the full example code.
+
 
 Datapoints are Tensor subclasses introduced together with
 ``torchvision.transforms.v2``. This example showcases what these datapoints are
@@ -24,12 +27,6 @@ and how they behave.
 import PIL.Image
 
 import torch
-import torchvision
-
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
 from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F
 
@@ -92,7 +89,7 @@ print(float_image)
 # In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` can also take a
 # :class:`PIL.Image.Image` directly:
 
-image = datapoints.Image(PIL.Image.open("assets/astronaut.jpg"))
+image = datapoints.Image(PIL.Image.open("../assets/astronaut.jpg"))
 print(image.shape, image.dtype)
 
 # %%

@@ -3,6 +3,10 @@
 Optical Flow: Predicting movement with the RAFT model
 =====================================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_optical_flow.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_optical_flow.py>` to download the full example code.
+
 Optical flow is the task of predicting movement between two images, usually two
 consecutive frames of a video. Optical flow models take two images as input, and
 predict a flow: the flow indicates the displacement of every single pixel in the
@@ -130,7 +134,7 @@ print(f"length = {len(list_of_flows)} = number of iterations of the model")
 # (N, 2, H, W) batch of predicted flows that corresponds to a given "iteration"
 # in the model. For more details on the iterative nature of the model, please
 # refer to the `original paper <https://arxiv.org/abs/2003.12039>`_. Here, we
-# are only interested in the final predicted flows (they are the most acccurate
+# are only interested in the final predicted flows (they are the most accurate
 # ones), so we will just retrieve the last item in the list.
 #
 # As described above, a flow is a tensor with dimensions (2, H, W) (or (N, 2, H,
@@ -147,7 +151,7 @@ print(f"min = {predicted_flows.min()}, max = {predicted_flows.max()}")
 # %%
 # Visualizing predicted flows
 # ---------------------------
-# Torchvision provides the :func:`~torchvision.utils.flow_to_image` utlity to
+# Torchvision provides the :func:`~torchvision.utils.flow_to_image` utility to
 # convert a flow into an RGB image. It also supports batches of flows.
 # each "direction" in the flow will be mapped to a given RGB color. In the
 # images below, pixels with similar colors are assumed by the model to be moving
