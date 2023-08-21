@@ -73,7 +73,7 @@ class DetectionPresetTrain:
             # Note: we could just convert to pure tensors even in v2.
             transforms += [T.ToImage() if use_v2 else T.PILToTensor()]
 
-        transforms += [T.ConvertImageDtype(torch.float)]
+        transforms += [T.ToDtype(torch.float, scale=True)]
 
         if use_v2:
             transforms += [
@@ -103,7 +103,7 @@ class DetectionPresetEval:
         else:
             raise ValueError(f"backend can be 'datapoint', 'tensor' or 'pil', but got {backend}")
 
-        transforms += [T.ConvertImageDtype(torch.float)]
+        transforms += [T.ToDtype(torch.float, scale=True)]
 
         if use_v2:
             transforms += [T.ToPureTensor()]
