@@ -84,7 +84,7 @@ print(f"Output image shape: {out_img.shape}\nout_bboxes = {out_bboxes}\n{out_lab
 # In the section above, we have assumed that you already know the structure of
 # your inputs and that you're OK with hard-coding this expected structure in
 # your code. If you want your custom transforms to be as flexible as possible,
-# this can be a bit limitting.
+# this can be a bit limiting.
 #
 # A key feature of the builtin Torchvision V2 transforms is that they can accept
 # arbitrary input structure and return the same structure as output (with
