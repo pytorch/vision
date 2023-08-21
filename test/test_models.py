@@ -1037,7 +1037,7 @@ def test_raft(model_fn, scripted):
     torch.manual_seed(0)
 
     # We need very small images, otherwise the pickle size would exceed the 50KB
-    # As a resut we need to override the correlation pyramid to not downsample
+    # As a result we need to override the correlation pyramid to not downsample
     # too much, otherwise we would get nan values (effective H and W would be
     # reduced to 1)
     corr_block = models.optical_flow.raft.CorrBlock(num_levels=2, radius=2)

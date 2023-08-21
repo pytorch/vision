@@ -134,7 +134,7 @@ print(f"length = {len(list_of_flows)} = number of iterations of the model")
 # (N, 2, H, W) batch of predicted flows that corresponds to a given "iteration"
 # in the model. For more details on the iterative nature of the model, please
 # refer to the `original paper <https://arxiv.org/abs/2003.12039>`_. Here, we
-# are only interested in the final predicted flows (they are the most acccurate
+# are only interested in the final predicted flows (they are the most accurate
 # ones), so we will just retrieve the last item in the list.
 #
 # As described above, a flow is a tensor with dimensions (2, H, W) (or (N, 2, H,
@@ -151,7 +151,7 @@ print(f"min = {predicted_flows.min()}, max = {predicted_flows.max()}")
 # %%
 # Visualizing predicted flows
 # ---------------------------
-# Torchvision provides the :func:`~torchvision.utils.flow_to_image` utlity to
+# Torchvision provides the :func:`~torchvision.utils.flow_to_image` utility to
 # convert a flow into an RGB image. It also supports batches of flows.
 # each "direction" in the flow will be mapped to a given RGB color. In the
 # images below, pixels with similar colors are assumed by the model to be moving
