@@ -2404,9 +2404,9 @@ def test_transforms_rng_with_dataloader():
 
     rng = torch.Generator().manual_seed(0)
     t = MyTransform(rng)
-    ds = Dataset(t, multiprocessing_context="fork")
+    ds = Dataset(t)
 
-    dl = DataLoader(ds, num_workers=2)
+    dl = DataLoader(ds, num_workers=2, multiprocessing_context="fork")
     all_samples = [x.item() for x in dl]
     # If the RNG were the same across workers, we would get duplicated samples here. We assert they're all unique.
     assert len(set(all_samples)) == len(all_samples)
