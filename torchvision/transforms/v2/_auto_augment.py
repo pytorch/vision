@@ -25,14 +25,16 @@ class _AutoAugmentBase(Transform):
         *,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        generator=None,
     ) -> None:
         super().__init__()
         self.interpolation = _check_interpolation(interpolation)
         self.fill = _setup_fill_arg(fill)
+        self.generator = generator
 
     def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
         keys = tuple(dct.keys())
-        key = keys[int(torch.randint(len(keys), ()))]
+        key = keys[int(torch.randint(len(keys), (), generator=self.generator))]
         return key, dct[key]
 
     def _flatten_and_extract_image_or_video(
@@ -219,8 +221,9 @@ class AutoAugment(_AutoAugmentBase):
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        generator=None,
     ) -> None:
-        super().__init__(interpolation=interpolation, fill=fill)
+        super().__init__(interpolation=interpolation, fill=fill, generator=generator)
         self.policy = policy
         self._policies = self._get_policies(policy)
 
@@ -318,10 +321,10 @@ class AutoAugment(_AutoAugmentBase):
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
         height, width = get_size(image_or_video)
 
-        policy = self._policies[int(torch.randint(len(self._policies), ()))]
+        policy = self._policies[int(torch.randint(len(self._policies), (), generator=self.generator))]
 
         for transform_id, probability, magnitude_idx in policy:
-            if not torch.rand(()) <= probability:
+            if not torch.rand((), generator=self.generator) <= probability:
                 continue
 
             magnitudes_fn, signed = self._AUGMENTATION_SPACE[transform_id]
@@ -329,7 +332,7 @@ class AutoAugment(_AutoAugmentBase):
             magnitudes = magnitudes_fn(10, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[magnitude_idx])
-                if signed and torch.rand(()) <= 0.5:
+                if signed and torch.rand((), generator=self.generator) <= 0.5:
                     magnitude *= -1
             else:
                 magnitude = 0.0
@@ -399,8 +402,9 @@ class RandAugment(_AutoAugmentBase):
         num_magnitude_bins: int = 31,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        generator=None,
     ) -> None:
-        super().__init__(interpolation=interpolation, fill=fill)
+        super().__init__(interpolation=interpolation, fill=fill, generator=generator)
         self.num_ops = num_ops
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
@@ -414,7 +418,7 @@ class RandAugment(_AutoAugmentBase):
             magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[self.magnitude])
-                if signed and torch.rand(()) <= 0.5:
+                if signed and torch.rand((), generator=self.generator) <= 0.5:
                     magnitude *= -1
             else:
                 magnitude = 0.0
@@ -472,8 +476,9 @@ class TrivialAugmentWide(_AutoAugmentBase):
         num_magnitude_bins: int = 31,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        generator=None,
     ):
-        super().__init__(interpolation=interpolation, fill=fill)
+        super().__init__(interpolation=interpolation, fill=fill, generator=generator)
         self.num_magnitude_bins = num_magnitude_bins
 
     def forward(self, *inputs: Any) -> Any:
@@ -484,8 +489,8 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
         magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
         if magnitudes is not None:
-            magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
-            if signed and torch.rand(()) <= 0.5:
+            magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, (), generator=self.generator))])
+            if signed and torch.rand((), generator=self.generator) <= 0.5:
                 magnitude *= -1
         else:
             magnitude = 0.0
@@ -555,8 +560,9 @@ class AugMix(_AutoAugmentBase):
         all_ops: bool = True,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        generator=None,
     ) -> None:
-        super().__init__(interpolation=interpolation, fill=fill)
+        super().__init__(interpolation=interpolation, fill=fill, generator=generator)
         self._PARAMETER_MAX = 10
         if not (1 <= severity <= self._PARAMETER_MAX):
             raise ValueError(f"The severity must be between [1, {self._PARAMETER_MAX}]. Got {severity} instead.")
@@ -601,14 +607,18 @@ class AugMix(_AutoAugmentBase):
         mix = m[:, 0].reshape(batch_dims) * batch
         for i in range(self.mixture_width):
             aug = batch
-            depth = self.chain_depth if self.chain_depth > 0 else int(torch.randint(low=1, high=4, size=(1,)).item())
+            depth = (
+                self.chain_depth
+                if self.chain_depth > 0
+                else int(torch.randint(low=1, high=4, size=(1,), generator=self.generator).item())
+            )
             for _ in range(depth):
                 transform_id, (magnitudes_fn, signed) = self._get_random_item(augmentation_space)
 
                 magnitudes = magnitudes_fn(self._PARAMETER_MAX, height, width)
                 if magnitudes is not None:
-                    magnitude = float(magnitudes[int(torch.randint(self.severity, ()))])
-                    if signed and torch.rand(()) <= 0.5:
+                    magnitude = float(magnitudes[int(torch.randint(self.severity, (), generator=self.generator))])
+                    if signed and torch.rand((), generator=self.generator) <= 0.5:
                         magnitude *= -1
                 else:
                     magnitude = 0.0

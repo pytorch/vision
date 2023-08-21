@@ -85,7 +85,7 @@ class RandomApply(Transform):
 
     _v1_transform_cls = _transforms.RandomApply
 
-    def __init__(self, transforms: Union[Sequence[Callable], nn.ModuleList], p: float = 0.5) -> None:
+    def __init__(self, transforms: Union[Sequence[Callable], nn.ModuleList], p: float = 0.5, generator=None) -> None:
         super().__init__()
 
         if not isinstance(transforms, (Sequence, nn.ModuleList)):
@@ -95,6 +95,7 @@ class RandomApply(Transform):
         if not (0.0 <= p <= 1.0):
             raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
         self.p = p
+        self.generator = generator
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
         return {"transforms": self.transforms, "p": self.p}
@@ -102,7 +103,7 @@ class RandomApply(Transform):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        if torch.rand(1) >= self.p:
+        if torch.rand(1, generator=self.generator) >= self.p:
             return sample
 
         for transform in self.transforms:
@@ -166,15 +167,16 @@ class RandomOrder(Transform):
         transforms (sequence or torch.nn.Module): list of transformations
     """
 
-    def __init__(self, transforms: Sequence[Callable]) -> None:
+    def __init__(self, transforms: Sequence[Callable], generator=None) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
         super().__init__()
         self.transforms = transforms
+        self.generator = generator
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        for idx in torch.randperm(len(self.transforms)):
+        for idx in torch.randperm(len(self.transforms), generator=self.generator):
             transform = self.transforms[idx]
             sample = transform(sample)
         return sample

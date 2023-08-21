@@ -3,6 +3,7 @@ import decimal
 import inspect
 import math
 import re
+import sys
 from pathlib import Path
 from unittest import mock
 
@@ -2381,6 +2382,7 @@ class TestToPureTensor:
                 assert isinstance(out_value, type(input_value))
 
 
+@pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="Windows doesn't support fork()")
 def test_transforms_rng_with_dataloader():
     # This is more of a sanity test for torch core's handling of Generators within the Dataloader
     # But worth having it here as well for security.

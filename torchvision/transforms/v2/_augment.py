@@ -63,8 +63,9 @@ class RandomErasing(_RandomApplyTransform):
         ratio: Tuple[float, float] = (0.3, 3.3),
         value: float = 0.0,
         inplace: bool = False,
+        generator=None,
     ):
-        super().__init__(p=p)
+        super().__init__(p=p, generator=generator)
         if not isinstance(value, (numbers.Number, str, tuple, list)):
             raise TypeError("Argument value should be either a number or str or a sequence")
         if isinstance(value, str) and value != "random":
@@ -111,11 +112,12 @@ class RandomErasing(_RandomApplyTransform):
 
         log_ratio = self._log_ratio
         for _ in range(10):
-            erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
+            erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1], generator=self.generator).item()
             aspect_ratio = torch.exp(
                 torch.empty(1).uniform_(
                     log_ratio[0],  # type: ignore[arg-type]
                     log_ratio[1],  # type: ignore[arg-type]
+                    generator=self.generator,
                 )
             ).item()
 
@@ -129,8 +131,8 @@ class RandomErasing(_RandomApplyTransform):
             else:
                 v = torch.tensor(self.value)[:, None, None]
 
-            i = torch.randint(0, img_h - h + 1, size=(1,)).item()
-            j = torch.randint(0, img_w - w + 1, size=(1,)).item()
+            i = torch.randint(0, img_h - h + 1, size=(1,), generator=self.generator).item()
+            j = torch.randint(0, img_w - w + 1, size=(1,), generator=self.generator).item()
             break
         else:
             i, j, h, w, v = 0, 0, img_h, img_w, None

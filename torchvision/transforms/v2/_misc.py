@@ -191,7 +191,10 @@ class GaussianBlur(Transform):
     _v1_transform_cls = _transforms.GaussianBlur
 
     def __init__(
-        self, kernel_size: Union[int, Sequence[int]], sigma: Union[int, float, Sequence[float]] = (0.1, 2.0)
+        self,
+        kernel_size: Union[int, Sequence[int]],
+        sigma: Union[int, float, Sequence[float]] = (0.1, 2.0),
+        generator=None,
     ) -> None:
         super().__init__()
         self.kernel_size = _setup_size(kernel_size, "Kernel size should be a tuple/list of two integers")
@@ -210,9 +213,10 @@ class GaussianBlur(Transform):
             raise TypeError("sigma should be a single int or float or a list/tuple with length 2 floats.")
 
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
+        self.generator = generator
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
+        sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1], generator=self.generator).item()
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
