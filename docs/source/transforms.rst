@@ -5,32 +5,64 @@ Transforming and augmenting images
 
 .. currentmodule:: torchvision.transforms
 
-:ref:`Check out the gallery<transforms_gallery>`!
+Torchvision supports common computer vision transformations in the
+``torchvision.transforms`` and ``torchvision.transforms.v2`` modules. Transforms
+can be used to transform or augment data for training or inference of different
+tasks (image classification, detection, segmentation, video classification).
 
-Transforms are common image transformations available in the
-``torchvision.transforms`` module. They can be chained together using
-:class:`Compose`.
-Most transform classes have a function equivalent: :ref:`functional
-transforms <functional_transforms>` give fine-grained control over the
-transformations.
-This is useful if you have to build a more complex transformation pipeline
-(e.g. in the case of segmentation tasks).
+.. code:: python
 
+    # Image Classification
+    import torch
+    from torchvision.transforms import v2
 
+    H, W = 32, 32
+    img = torch.randint(0, 256, size=(3, H, W), dtype=torch.uint8)
+
+    transforms = v2.Compose([
+        v2.RandomResizedCrop(size=(224, 224), antialias=True),
+        v2.RandomHorizontalFlip(p=0.5),
+        v2.ToDtype(torch.float32, scale=True),
+        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    img = transforms(img)
+
+.. code:: python
+
+    # Detection (re-using imports and transforms from above)
+    from torchvision import datapoints
+
+    img = torch.randint(0, 256, size=(3, H, W), dtype=torch.uint8)
+    bboxes = torch.randint(0, H // 2, size=(3, 4))
+    bboxes[:, 2:] += bboxes[:, :2]
+    bboxes = datapoints.BoundingBoxes(bboxes, format="XYXY", canvas_size=(H, W))
+
+    # The same transforms can be used!
+    img, bboxes = transforms(img, bboxes)
+    # And you can pass arbitrary input structures
+    output_dict = transforms({"image": img, "bboxes": bboxes})
+
+Transforms are typically passed as the ``transform`` or ``transforms`` argument
+to the :ref:`Datasets <datasets>`.
+
+.. TODO: add link to getting started guide here.
 
 Supported input types and conventions
 -------------------------------------
 
 Most transformations accept both `PIL <https://pillow.readthedocs.io>`_ images
-and tensor images, although some transformations are PIL-only and some are
-tensor-only. The :ref:`conversion_transforms` may be used to convert to and from
-PIL images, or for converting dtypes and ranges.
+and tensor images. The result of both backends (PIL or Tensors) should be very
+close. In general, we recommend relying on the tensor backend :ref:`for
+performance <transforms_perf>`.  The :ref:`conversion transforms
+<conversion_transforms>` may be used to convert to and from PIL images, or for
+converting dtypes and ranges.
 
-The transformations that accept tensor images also accept batches of tensor
-images. A Tensor Image is a tensor with ``(C, H, W)`` shape, where ``C`` is a
-number of channels, ``H`` and ``W`` are image height and width. A batch of
-Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number
-of images in the batch.
+Tensor image are expected to be of shape ``(C, H, W)``, where ``C`` is the
+number of channels, and ``H`` and ``W`` refer to height and width. Most
+transforms support batched tensor input. A batch of Tensor images is a tensor of
+shape ``(N, C, H, W)``, where ``N`` is a number of images in the batch. The
+:ref:`v2 <v1_or_v2>` transforms generally accept an arbitrary number of leading
+dimensions ``(..., C, H, W)`` and can handle batched images or batched videos.
 
 .. _range_and_dtype:
 
@@ -41,85 +73,135 @@ The expected range of the values of a tensor image is implicitly defined by
 the tensor dtype. Tensor images with a float dtype are expected to have
 values in ``[0, 1)``. Tensor images with an integer dtype are expected to
 have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
-that can be represented in that dtype. For example, images of dtype
+that can be represented in that dtype. Typically, images of dtype
 ``torch.uint8`` are expected to have values in ``[0, 255]``.
 
+Use :class:`~torchvision.transforms.v2.ToDtype` to convert both the dtype and
+range of the inputs.
 
-.. _functional_transforms:
-
-Transforms, functionals, and kernels
-------------------------------------
-
-Randomized transformations will apply the same transformation to all the
-images of a given batch, but they will produce different transformations
-across calls. For reproducible transformations across calls, you may use
-:ref:`functional transforms <functional_transforms>`.
-
-Functional transforms give you fine-grained control of the transformation pipeline.
-As opposed to the transformations above, functional transforms don't contain a random number
-generator for their parameters.
-That means you have to specify/generate all parameters, but the functional transform will give you
-reproducible results across calls.
-
-Example:
-you can apply a functional transform with the same parameters to multiple images like this:
-
-.. code:: python
-
-    import torchvision.transforms.functional as TF
-    import random
-
-    def my_segmentation_transforms(image, segmentation):
-        if random.random() > 0.5:
-            angle = random.randint(-30, 30)
-            image = TF.rotate(image, angle)
-            segmentation = TF.rotate(segmentation, angle)
-        # more transforms ...
-        return image, segmentation
-
-
-Example:
-you can use a functional transform to build transform classes with custom behavior:
-
-.. code:: python
-
-    import torchvision.transforms.functional as TF
-    import random
-
-    class MyRotationTransform:
-        """Rotate by one of the given angles."""
-
-        def __init__(self, angles):
-            self.angles = angles
-
-        def __call__(self, x):
-            angle = random.choice(self.angles)
-            return TF.rotate(x, angle)
-
-    rotation_transform = MyRotationTransform(angles=[-30, -15, 0, 15, 30])
-
+.. _v1_or_v2:
 
 V1 or V2? Which one should I use?
 ---------------------------------
 
-    In 0.15, we released a new set of transforms available in the
-    ``torchvision.transforms.v2`` namespace, which add support for transforming
-    not just images but also bounding boxes, masks, or videos. These transforms
-    are fully backward compatible with the current ones, and you'll see them
-    documented below with a `v2.` prefix. To get started with those new
-    transforms, you can check out
-    :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py`.
-    Note that these transforms are still BETA, and while we don't expect major
-    breaking changes in the future, some APIs may still change according to user
-    feedback. Please submit any feedback you may have `here
-    <https://github.com/pytorch/vision/issues/6753>`_, and you can also check
-    out `this issue <https://github.com/pytorch/vision/issues/7319>`_ to learn
-    more about the APIs that we suspect might involve future changes.
+**TL;DR** We recommending using the ``torchvision.transforms.v2`` transforms
+instead of those in ``torchvision.transforms``. They're faster and they can do
+more things. Just change the import and you should be good to go.
+
+In Torchvision 0.15 (March 2023), we released a new set of transforms available
+in the ``torchvision.transforms.v2`` namespace. These transforms have a lot of
+advantages compared to the v1 ones (in ``torchvision.transforms``):
+
+- They can transform images **but also** bounding boxes, masks, or videos. This
+  provides support for tasks beyond image classification: detection, segmentation,
+  video classification, etc.
+- They support more transforms like :class:`~torchvision.transforms.v2.CutMix`
+  and :class:`~torchvision.transforms.v2.MixUp`.
+- They're :ref:`faster <transforms_perf>`.
+- They support arbitrary input structures (dicts, lists, tuples, etc.).
+- Future improvements and features will be added to the v2 transforms only.
+
+.. TODO: Add link to e2e example for first bullet point.
+
+These transforms are **fully backward compatible** with the v1 ones, so if
+you're already using tranforms from ``torchvision.transforms``, all you need to
+do to is to update the import to ``torchvision.transforms.v2``. In terms of
+output, there might be negligible differences due to implementation differences.
+
+To learn more about the v2 transforms, check out
+:ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py`.
+
+.. TODO: make sure link is still good!!
+
+.. note::
+
+    The v2 transforms are still BETA, but at this point we do not expect
+    disruptive changes to be made to their public APIs. We're planning to make
+    them fully stable in version 0.17. Please submit any feedback you may have
+    `here <https://github.com/pytorch/vision/issues/6753>`_.
+
+.. _transforms_perf:
 
 Performance considerations
 --------------------------
 
-Use uint8 LMAO.
+We recommend the following guidelines to get the best performance out of the
+transforms:
+
+- Rely on the v2 transforms from ``torchvision.transforms.v2``
+- Use tensors instead of PIL images
+- Use ``torch.uint8`` dtype, especially for resizing
+- Resize with bilinear or bicubic mode
+
+This is what a typical transform pipeline could look like:
+
+.. code:: python
+
+    from torchvision.transforms import v2
+    transforms = v2.Compose([
+        v2.ToImage(),  # Convert to tensor, only needed if you had a PIL image
+        v2.ToDtype(torch.uint8, scale=True),  # optional, most input are already uint8 at this point
+        # ...
+        v2.RandomResizedCrop(size=(224, 224), antialias=True),  # Or Resize(antialias=True)
+        # ...
+        v2.ToDtype(torch.float32, scale=True),  # Normalize expects float input
+        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+
+The above should give you the best performance in a typical training environment
+that relies on the :class:`torch.utils.data.DataLoader` with ``num_workers >
+0``.
+
+Transforms tend to be sensitive to the input strides / memory layout. Some
+transforms will be faster with channels-first images while others prefer
+channels-last. You may want to experiment a bit if you're chasing the very
+best performance. Using :func:`torch.compile` on individual transforms may
+also help factoring out the layout variable (e.g. on
+:class:`~torchvision.transforms.v2.Normalize`).
+
+Note that resize transforms like :class:`~torchvision.transforms.v2.Resize`
+and :class:`~torchvision.transforms.v2.RandomResizedCrop` typically prefer
+channels-last input and tend **not** to benefit from :func:`torch.compile` at
+this time.
+
+.. _functional_transforms:
+
+Transform classes, functionals, and kernels
+-------------------------------------------
+
+Transforms are available as classes like
+:class:`~torchvision.transforms.v2.Resize`, but also as functionals like
+:func:`~torchvision.transforms.v2.functional.resize` in the
+``torchvision.transforms.v2.functional`` namespace.
+This is very much like the :mod:`torch.nn` package which defines both classes
+and functional equivalents in :mod:`torch.nn.functional`.
+
+The functionals support PIL images, pure tensors, or :ref:`datapoints
+<datapoints>`, e.g. both ``resize(image_tensor)`` and ``resize(bboxes)`` are
+valid.
+
+.. note::
+
+    Random transforms like :class:`~torchvision.transforms.v2.RandomCrop` will
+    randomly sample some parameter each time they're called. Their functional
+    counterpart (:func:`~torchvision.transforms.v2.functional.crop`) do not do
+    any kind of random sampling and thus have a slighlty different
+    parametrization. The ``get_params()`` class method of the transforms class
+    can be used to perform parameter sampling when using the functional APIs.
+
+
+The ``torchvision.transforms.v2.functional`` namespace also contains what we
+call the "kernels". These are the low-level functions that implement the
+core functionalities for specific types, e.g. ``resize_bounding_boxes`` or
+```resized_crop_mask``. They are public, although not documented. Check the
+`code
+<https://github.com/pytorch/vision/blob/main/torchvision/transforms/v2/functional/__init__.py>`_
+to see which ones are available (note that those starting with a leading
+underscore are **not** public!). Kernels are only really useful if you want
+:ref:`torchscript support <transforms_torchscript>` for types like bounding
+boxes or masks.
+
+.. _transforms_torchscript:
 
 Torchscript support
 -------------------
@@ -146,6 +228,12 @@ transforms, use :class:`torch.nn.Sequential` instead of ``Compose``:
     If you really need torchscript support for the v2 tranforms, we recommend
     scripting the **functionals** from the
     ``torchvision.transforms.v2.functional`` namespace to avoid surprises.
+
+
+Also note that the functionals only support torchscript for pure tensors, which
+are always treated as images. If you need torchscript support for other types
+like bounding boxes or masks, you can rely on the :ref:`low-level kernels
+<functional_transforms>`.
 
 For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
@@ -553,4 +641,3 @@ Functional Transforms
     to_pil_image
     to_tensor
     vflip
-

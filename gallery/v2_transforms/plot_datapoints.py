@@ -235,7 +235,8 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 
 # %%
 # Alternatively, you can use the :func:`~torchvision.datapoints.set_return_type`
-# as a global config setting for the whole program, or as a context manager:
+# as a global config setting for the whole program, or as a context manager
+# (read its docs to learn more about caveats):
 
 with datapoints.set_return_type("datapoint"):
     new_bboxes = bboxes + 3
