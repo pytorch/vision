@@ -1023,7 +1023,7 @@ class ElasticTransform(Transform):
 
     .. note::
         Implementation to transform bounding boxes is approximative (not exact).
-        We construct an approximation of the inverse grid as ``inverse_grid = idenity - displacement``.
+        We construct an approximation of the inverse grid as ``inverse_grid = identity - displacement``.
         This is not an exact inverse of the grid used to transform images, i.e. ``grid = identity + displacement``.
         Our assumption is that ``displacement * displacement`` is small and can be ignored.
         Large displacements would lead to large errors in the approximation.
