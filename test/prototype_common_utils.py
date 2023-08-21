@@ -4,11 +4,11 @@ from typing import Optional, Sequence
 
 import pytest
 import torch
-
-from common_utils import combinations_grid, DEFAULT_EXTRA_DIMS, from_loader, from_loaders, TensorLoader
 from torch.nn.functional import one_hot
 
 from torchvision.prototype import datapoints
+
+from transforms_v2_legacy_utils import combinations_grid, DEFAULT_EXTRA_DIMS, from_loader, from_loaders, TensorLoader
 
 
 @dataclasses.dataclass
