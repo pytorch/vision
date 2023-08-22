@@ -184,7 +184,7 @@ valid.
 
     Random transforms like :class:`~torchvision.transforms.v2.RandomCrop` will
     randomly sample some parameter each time they're called. Their functional
-    counterpart (:func:`~torchvision.transforms.v2.functional.crop`) do not do
+    counterpart (:func:`~torchvision.transforms.v2.functional.crop`) does not do
     any kind of random sampling and thus have a slighlty different
     parametrization. The ``get_params()`` class method of the transforms class
     can be used to perform parameter sampling when using the functional APIs.
