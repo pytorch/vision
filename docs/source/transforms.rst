@@ -156,8 +156,9 @@ Transforms tend to be sensitive to the input strides / memory layout. Some
 transforms will be faster with channels-first images while others prefer
 channels-last. You may want to experiment a bit if you're chasing the very
 best performance. Using :func:`torch.compile` on individual transforms may
-also help factoring out the layout variable (e.g. on
-:class:`~torchvision.transforms.v2.Normalize`).
+also help factoring out the memory layout variable (e.g. on
+:class:`~torchvision.transforms.v2.Normalize`). Note that we're talking about
+**memory layout**, not tensor shape.
 
 Note that resize transforms like :class:`~torchvision.transforms.v2.Resize`
 and :class:`~torchvision.transforms.v2.RandomResizedCrop` typically prefer
