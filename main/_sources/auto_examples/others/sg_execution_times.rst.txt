@@ -6,18 +6,18 @@
 
 Computation times
 =================
-**00:40.741** total execution time for **auto_examples_others** files:
+**00:40.750** total execution time for **auto_examples_others** files:
 
 +------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``plot_visualization_utils.py``)               | 00:12.885 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``plot_visualization_utils.py``)               | 00:12.972 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``plot_optical_flow.py``)                             | 00:09.606 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``plot_optical_flow.py``)                             | 00:10.030 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_others_plot_transforms.py` (``plot_transforms.py``)                                 | 00:09.074 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_others_plot_transforms.py` (``plot_transforms.py``)                                 | 00:08.718 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_others_plot_video_api.py` (``plot_video_api.py``)                                   | 00:05.012 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_others_plot_video_api.py` (``plot_video_api.py``)                                   | 00:04.922 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``plot_repurposing_annotations.py``)       | 00:02.520 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``plot_repurposing_annotations.py``)       | 00:02.492 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``plot_scripted_tensor_transforms.py``) | 00:01.645 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``plot_scripted_tensor_transforms.py``) | 00:01.615 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------+-----------+--------+

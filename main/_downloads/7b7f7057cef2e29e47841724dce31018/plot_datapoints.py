@@ -235,7 +235,8 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 
 # %%
 # Alternatively, you can use the :func:`~torchvision.datapoints.set_return_type`
-# as a global config setting for the whole program, or as a context manager:
+# as a global config setting for the whole program, or as a context manager
+# (read its docs to learn more about caveats):
 
 with datapoints.set_return_type("datapoint"):
     new_bboxes = bboxes + 3
@@ -274,13 +275,13 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 # ^^^^^^^^^^
 #
 # There are a few exceptions to this "unwrapping" rule:
+# :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
+# :meth:`torch.Tensor.detach`, and :meth:`~torch.Tensor.requires_grad_` retain
+# the datapoint type.
 #
-# 1. Operations like :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
-#    :meth:`torch.Tensor.detach` and :meth:`~torch.Tensor.requires_grad_` retain
-#    the datapoint type.
-# 2. Inplace operations on datapoints like ``.add_()`` preserve they type. However,
-#    the **returned** value of inplace operations will be unwrapped into a pure
-#    tensor:
+# Inplace operations on datapoints like ``obj.add_()`` will preserve the type of
+# ``obj``. However, the **returned** value of inplace operations will be a pure
+# tensor:
 
 image = datapoints.Image([[[0, 1], [1, 0]]])
 

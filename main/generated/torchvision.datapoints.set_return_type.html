@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+965bcab) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+9c4f738) &#x25BC</a>
     </div>
     
 
@@ -356,6 +356,13 @@
 <p>This only affects the behaviour of torch operations. It has no effect on
 <code class="docutils literal notranslate"><span class="pre">torchvision</span></code> transforms or functionals, which will always return as
 output the same type that was passed as input.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>We recommend using <a class="reference internal" href="torchvision.transforms.v2.ToPureTensor.html#torchvision.transforms.v2.ToPureTensor" title="torchvision.transforms.v2.ToPureTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToPureTensor</span></code></a> at
+the end of your transform pipelines if you use
+<code class="docutils literal notranslate"><span class="pre">set_return_type(&quot;dataptoint&quot;)</span></code>. This will avoid the
+<code class="docutils literal notranslate"><span class="pre">__torch_function__</span></code> overhead in the models <code class="docutils literal notranslate"><span class="pre">forward()</span></code>.</p>
+</div>
 <p>Can be used as a global flag for the entire program:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 <span class="n">img</span> <span class="o">+</span> <span class="mi">2</span>  <span class="c1"># This is a pure Tensor (default behaviour)</span>

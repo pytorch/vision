@@ -1,3 +1,5 @@
+.. _datapoints:
+
 Datapoints
 ==========
 
