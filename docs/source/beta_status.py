@@ -5,10 +5,11 @@ from docutils.parsers.rst import Directive
 class BetaStatus(Directive):
     has_content = True
     text = "The {api_name} is in Beta stage, and backward compatibility is not guaranteed."
+    node = nodes.warning
 
     def run(self):
         text = self.text.format(api_name=" ".join(self.content))
-        return [nodes.warning("", nodes.paragraph("", "", nodes.Text(text)))]
+        return [self.node("", nodes.paragraph("", "", nodes.Text(text)))]
 
 
 class V2BetaStatus(BetaStatus):
@@ -19,6 +20,7 @@ class V2BetaStatus(BetaStatus):
         "out https://github.com/pytorch/vision/issues/7319 to learn "
         "more about the APIs that we suspect might involve future changes."
     )
+    node = nodes.note
 
 
 def setup(app):
