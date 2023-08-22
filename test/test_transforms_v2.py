@@ -238,7 +238,6 @@ class TestSmoke:
             tensor=torch.empty(5),
             array=np.empty(5),
         )
-
         if adapter is not None:
             input = adapter(transform, input, device)
 

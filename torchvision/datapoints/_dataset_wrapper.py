@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import collections.abc
+
 import contextlib
 from collections import defaultdict
 
