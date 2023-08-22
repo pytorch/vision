@@ -45,13 +45,17 @@ tasks (image classification, detection, segmentation, video classification).
 Transforms are typically passed as the ``transform`` or ``transforms`` argument
 to the :ref:`Datasets <datasets>`.
 
+.. TODO: Reader guide, i.e. what to read depending on what you're looking for
 .. TODO: add link to getting started guide here.
+
+.. _conventions:
 
 Supported input types and conventions
 -------------------------------------
 
 Most transformations accept both `PIL <https://pillow.readthedocs.io>`_ images
-and tensor images. The result of both backends (PIL or Tensors) should be very
+and tensor inputs. Both CPU and CUDA tensors are supported.
+The result of both backends (PIL or Tensors) should be very
 close. In general, we recommend relying on the tensor backend :ref:`for
 performance <transforms_perf>`.  The :ref:`conversion transforms
 <conversion_transforms>` may be used to convert to and from PIL images, or for
@@ -154,11 +158,13 @@ that relies on the :class:`torch.utils.data.DataLoader` with ``num_workers >
 
 Transforms tend to be sensitive to the input strides / memory layout. Some
 transforms will be faster with channels-first images while others prefer
-channels-last. You may want to experiment a bit if you're chasing the very
-best performance. Using :func:`torch.compile` on individual transforms may
-also help factoring out the memory layout variable (e.g. on
+channels-last. Like ``torch`` operators, most transforms will preserve the
+layout of the input, but this may not always be respected due to implementation
+details.  You may want to experiment a bit if you're chasing the very best
+performance.  Using :func:`torch.compile` on individual transforms may also help
+factoring out the memory layout variable (e.g. on
 :class:`~torchvision.transforms.v2.Normalize`). Note that we're talking about
-**memory layout**, not tensor shape.
+**memory layout**, not :ref:`tensor shape <conventions>`.
 
 Note that resize transforms like :class:`~torchvision.transforms.v2.Resize`
 and :class:`~torchvision.transforms.v2.RandomResizedCrop` typically prefer
