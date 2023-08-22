@@ -368,7 +368,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             target["image_id"] = image_id
 
         if "boxes" in target_keys:
-            target["boxes"] = F.convert_format_bounding_boxes(
+            target["boxes"] = F.convert_bounding_box_format(
                 datapoints.BoundingBoxes(
                     batched_target["bbox"],
                     format=datapoints.BoundingBoxFormat.XYWH,
@@ -489,7 +489,7 @@ def celeba_wrapper_factory(dataset, target_keys):
             target,
             target_types=dataset.target_type,
             type_wrappers={
-                "bbox": lambda item: F.convert_format_bounding_boxes(
+                "bbox": lambda item: F.convert_bounding_box_format(
                     datapoints.BoundingBoxes(
                         item,
                         format=datapoints.BoundingBoxFormat.XYWH,
@@ -636,7 +636,7 @@ def widerface_wrapper(dataset, target_keys):
         target = {key: target[key] for key in target_keys}
 
         if "bbox" in target_keys:
-            target["bbox"] = F.convert_format_bounding_boxes(
+            target["bbox"] = F.convert_bounding_box_format(
                 datapoints.BoundingBoxes(
                     target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, canvas_size=(image.height, image.width)
                 ),

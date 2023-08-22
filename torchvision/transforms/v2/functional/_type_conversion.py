@@ -9,6 +9,7 @@ from torchvision.transforms import functional as _F
 
 @torch.jit.unused
 def to_image(inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> datapoints.Image:
+    """[BETA] See :class:`~torchvision.transforms.v2.ToImage` for details."""
     if isinstance(inpt, np.ndarray):
         output = torch.from_numpy(inpt).permute((2, 0, 1)).contiguous()
     elif isinstance(inpt, PIL.Image.Image):

@@ -293,7 +293,9 @@ class ToDtype(Transform):
 
 
 class ConvertImageDtype(Transform):
-    """[BETA] Convert input image to the given ``dtype`` and scale the values accordingly.
+    """[BETA] [DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.
+
+    Convert input image to the given ``dtype`` and scale the values accordingly.
 
     .. v2betastatus:: ConvertImageDtype transform
 
@@ -388,7 +390,7 @@ class SanitizeBoundingBoxes(Transform):
 
         boxes = cast(
             datapoints.BoundingBoxes,
-            F.convert_format_bounding_boxes(
+            F.convert_bounding_box_format(
                 boxes,
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             ),
