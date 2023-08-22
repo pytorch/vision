@@ -194,7 +194,7 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir) / "caltech256" / "256_ObjectCategories"
 
-        categories = ((1, "ak47"), (127, "laptop-101"), (257, "clutter"))
+        categories = ((1, "ak47"), (2, "american-flag"), (3, "backpack"))
         num_images_per_category = 2
 
         for idx, category in categories:

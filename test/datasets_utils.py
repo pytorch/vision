@@ -549,7 +549,7 @@ class DatasetTestCase(unittest.TestCase):
     @test_all_configs
     def test_num_examples(self, config):
         with self.create_dataset(config) as (dataset, info):
-            assert len(dataset) == info["num_examples"]
+            assert len(list(dataset)) == len(dataset) == info["num_examples"]
 
     @test_all_configs
     def test_transforms(self, config):
