@@ -12,17 +12,7 @@ import pytest
 
 import torch
 import torchvision.transforms.v2 as v2_transforms
-from common_utils import (
-    ArgsKwargs,
-    assert_close,
-    assert_equal,
-    make_bounding_box,
-    make_detection_mask,
-    make_image,
-    make_images,
-    make_segmentation_mask,
-    set_rng_seed,
-)
+from common_utils import assert_close, assert_equal, set_rng_seed
 from torch import nn
 from torchvision import datapoints, transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
@@ -32,6 +22,14 @@ from torchvision.transforms.v2 import functional as prototype_F
 from torchvision.transforms.v2._utils import _get_fill
 from torchvision.transforms.v2.functional import to_pil_image
 from torchvision.transforms.v2.utils import query_size
+from transforms_v2_legacy_utils import (
+    ArgsKwargs,
+    make_bounding_boxes,
+    make_detection_mask,
+    make_image,
+    make_images,
+    make_segmentation_mask,
+)
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
@@ -602,7 +600,7 @@ def check_call_consistency(
             raise AssertionError(
                 f"Transforming a tensor image with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`is_simple_tensor` path in `_transform`."
+                f"`is_pure_tensor` path in `_transform`."
             ) from exc
 
         assert_close(
@@ -1184,7 +1182,7 @@ class TestRefDetTransforms:
 
         pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1194,7 +1192,7 @@ class TestRefDetTransforms:
 
         tensor_image = torch.Tensor(make_image(size=size, color_space="RGB", dtype=torch.float32))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1204,7 +1202,7 @@ class TestRefDetTransforms:
 
         datapoint_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:

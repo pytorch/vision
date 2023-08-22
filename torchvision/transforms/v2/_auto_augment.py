@@ -13,7 +13,7 @@ from torchvision.transforms.v2.functional._meta import get_size
 from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
 from ._utils import _get_fill, _setup_fill_arg
-from .utils import check_type, is_simple_tensor
+from .utils import check_type, is_pure_tensor
 
 
 ImageOrVideo = Union[torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video]
@@ -59,7 +59,7 @@ class _AutoAugmentBase(Transform):
                 (
                     datapoints.Image,
                     PIL.Image.Image,
-                    is_simple_tensor,
+                    is_pure_tensor,
                     datapoints.Video,
                 ),
             ):

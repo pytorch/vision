@@ -8,7 +8,7 @@ from torchvision.transforms import _functional_pil as _FP
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_kernel_internal, is_simple_tensor
+from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
 
 
 def get_dimensions(inpt: torch.Tensor) -> List[int]:
@@ -176,7 +176,7 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxy
 
 
-def _convert_format_bounding_boxes(
+def _convert_bounding_box_format(
     bounding_boxes: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
 
@@ -197,30 +197,31 @@ def _convert_format_bounding_boxes(
     return bounding_boxes
 
 
-def convert_format_bounding_boxes(
+def convert_bounding_box_format(
     inpt: torch.Tensor,
     old_format: Optional[BoundingBoxFormat] = None,
     new_format: Optional[BoundingBoxFormat] = None,
     inplace: bool = False,
 ) -> torch.Tensor:
-    # This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for simple tensor
+    """[BETA] See :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat` for details."""
+    # This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for pure tensor
     # inputs as well as extract it from `datapoints.BoundingBoxes` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
     # default error that would be thrown if `new_format` had no default value.
     if new_format is None:
-        raise TypeError("convert_format_bounding_boxes() missing 1 required argument: 'new_format'")
+        raise TypeError("convert_bounding_box_format() missing 1 required argument: 'new_format'")
 
     if not torch.jit.is_scripting():
-        _log_api_usage_once(convert_format_bounding_boxes)
+        _log_api_usage_once(convert_bounding_box_format)
 
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting() or is_pure_tensor(inpt):
         if old_format is None:
-            raise ValueError("For simple tensor inputs, `old_format` has to be passed.")
-        return _convert_format_bounding_boxes(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
+            raise ValueError("For pure tensor inputs, `old_format` has to be passed.")
+        return _convert_bounding_box_format(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
     elif isinstance(inpt, datapoints.BoundingBoxes):
         if old_format is not None:
             raise ValueError("For bounding box datapoint inputs, `old_format` must not be passed.")
-        output = _convert_format_bounding_boxes(
+        output = _convert_bounding_box_format(
             inpt.as_subclass(torch.Tensor), old_format=inpt.format, new_format=new_format, inplace=inplace
         )
         return datapoints.wrap(output, like=inpt, format=new_format)
@@ -237,12 +238,12 @@ def _clamp_bounding_boxes(
     #  BoundingBoxFormat instead of converting back and forth
     in_dtype = bounding_boxes.dtype
     bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
-    xyxy_boxes = convert_format_bounding_boxes(
+    xyxy_boxes = convert_bounding_box_format(
         bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
     )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=canvas_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=canvas_size[0])
-    out_boxes = convert_format_bounding_boxes(
+    out_boxes = convert_bounding_box_format(
         xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True
     )
     return out_boxes.to(in_dtype)
@@ -253,13 +254,14 @@ def clamp_bounding_boxes(
     format: Optional[BoundingBoxFormat] = None,
     canvas_size: Optional[Tuple[int, int]] = None,
 ) -> torch.Tensor:
+    """[BETA] See :func:`~torchvision.transforms.v2.ClampBoundingBoxes` for details."""
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_bounding_boxes)
 
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
         if format is None or canvas_size is None:
-            raise ValueError("For simple tensor inputs, `format` and `canvas_size` has to be passed.")
+            raise ValueError("For pure tensor inputs, `format` and `canvas_size` has to be passed.")
         return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
     elif isinstance(inpt, datapoints.BoundingBoxes):
         if format is not None or canvas_size is not None:

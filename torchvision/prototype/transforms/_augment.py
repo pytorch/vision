@@ -9,7 +9,7 @@ from torchvision.prototype import datapoints as proto_datapoints
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
 
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.utils import is_simple_tensor
+from torchvision.transforms.v2.utils import is_pure_tensor
 
 
 class SimpleCopyPaste(Transform):
@@ -80,7 +80,7 @@ class SimpleCopyPaste(Transform):
         # There is a similar +1 in other reference implementations:
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
-        boxes = F.convert_format_bounding_boxes(
+        boxes = F.convert_bounding_box_format(
             xyxy_boxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
@@ -89,7 +89,7 @@ class SimpleCopyPaste(Transform):
         out_target["labels"] = torch.cat([labels, paste_labels])
 
         # Check for degenerated boxes and remove them
-        boxes = F.convert_format_bounding_boxes(
+        boxes = F.convert_bounding_box_format(
             out_target["boxes"], old_format=bbox_format, new_format=datapoints.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
@@ -109,7 +109,7 @@ class SimpleCopyPaste(Transform):
         # with List[image], List[BoundingBoxes], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, datapoints.Image) or is_simple_tensor(obj):
+            if isinstance(obj, datapoints.Image) or is_pure_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
                 images.append(F.to_image(obj))
@@ -146,7 +146,7 @@ class SimpleCopyPaste(Transform):
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_pil_image(output_images[c0])
                 c0 += 1
-            elif is_simple_tensor(obj):
+            elif is_pure_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, datapoints.BoundingBoxes):

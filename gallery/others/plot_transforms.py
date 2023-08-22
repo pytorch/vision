@@ -3,6 +3,10 @@
 Illustration of transforms
 ==========================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_transforms.py>` to download the full example code.
+
 This example illustrates the various transforms available in :ref:`the
 torchvision.transforms module <transforms>`.
 """
@@ -19,7 +23,7 @@ import torchvision.transforms as T
 
 
 plt.rcParams["savefig.bbox"] = 'tight'
-orig_img = Image.open(Path('assets') / 'astronaut.jpg')
+orig_img = Image.open(Path('../assets') / 'astronaut.jpg')
 # if you change the seed, make sure that the randomly-applied transforms
 # properly show that the image can be both transformed and *not* transformed!
 torch.manual_seed(0)

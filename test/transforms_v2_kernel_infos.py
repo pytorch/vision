@@ -7,7 +7,9 @@ import pytest
 import torch.testing
 import torchvision.ops
 import torchvision.transforms.v2.functional as F
-from common_utils import (
+from torchvision import datapoints
+from torchvision.transforms._functional_tensor import _max_value as get_max_value, _parse_pad_padding
+from transforms_v2_legacy_utils import (
     ArgsKwargs,
     combinations_grid,
     DEFAULT_PORTRAIT_SPATIAL_SIZE,
@@ -26,8 +28,6 @@ from common_utils import (
     mark_framework_limitation,
     TestMark,
 )
-from torchvision import datapoints
-from torchvision.transforms._functional_tensor import _max_value as get_max_value, _parse_pad_padding
 
 __all__ = ["KernelInfo", "KERNEL_INFOS"]
 
@@ -190,7 +190,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
         in_dtype = bbox.dtype
         if not torch.is_floating_point(bbox):
             bbox = bbox.float()
-        bbox_xyxy = F.convert_format_bounding_boxes(
+        bbox_xyxy = F.convert_bounding_box_format(
             bbox.as_subclass(torch.Tensor),
             old_format=format_,
             new_format=datapoints.BoundingBoxFormat.XYXY,
@@ -214,7 +214,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
             ],
             dtype=bbox_xyxy.dtype,
         )
-        out_bbox = F.convert_format_bounding_boxes(
+        out_bbox = F.convert_bounding_box_format(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
@@ -227,30 +227,30 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
     ).reshape(bounding_boxes.shape)
 
 
-def sample_inputs_convert_format_bounding_boxes():
+def sample_inputs_convert_bounding_box_format():
     formats = list(datapoints.BoundingBoxFormat)
     for bounding_boxes_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
         yield ArgsKwargs(bounding_boxes_loader, old_format=bounding_boxes_loader.format, new_format=new_format)
 
 
-def reference_convert_format_bounding_boxes(bounding_boxes, old_format, new_format):
+def reference_convert_bounding_box_format(bounding_boxes, old_format, new_format):
     return torchvision.ops.box_convert(
         bounding_boxes, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
     ).to(bounding_boxes.dtype)
 
 
-def reference_inputs_convert_format_bounding_boxes():
-    for args_kwargs in sample_inputs_convert_format_bounding_boxes():
+def reference_inputs_convert_bounding_box_format():
+    for args_kwargs in sample_inputs_convert_bounding_box_format():
         if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
 
 KERNEL_INFOS.append(
     KernelInfo(
-        F.convert_format_bounding_boxes,
-        sample_inputs_fn=sample_inputs_convert_format_bounding_boxes,
-        reference_fn=reference_convert_format_bounding_boxes,
-        reference_inputs_fn=reference_inputs_convert_format_bounding_boxes,
+        F.convert_bounding_box_format,
+        sample_inputs_fn=sample_inputs_convert_bounding_box_format,
+        reference_fn=reference_convert_bounding_box_format,
+        reference_inputs_fn=reference_inputs_convert_bounding_box_format,
         logs_usage=True,
         closeness_kwargs={
             (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),

@@ -3,10 +3,6 @@ import random
 import numpy as np
 import pytest
 import torch
-import torchvision
-
-
-torchvision.disable_beta_transforms_warning()
 
 from common_utils import (
     CUDA_NOT_AVAILABLE_MSG,

@@ -8,7 +8,7 @@ _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[List[float]]
 
 
-def is_simple_tensor(inpt: Any) -> bool:
+def is_pure_tensor(inpt: Any) -> bool:
     return isinstance(inpt, torch.Tensor) and not isinstance(inpt, datapoints.Datapoint)
 
 
@@ -67,9 +67,9 @@ _BUILTIN_DATAPOINT_TYPES = {
 
 
 def register_kernel(functional, datapoint_cls):
-    """Decorate a kernel to register it for a functional and a (custom) datapoint type.
+    """[BETA] Decorate a kernel to register it for a functional and a (custom) datapoint type.
 
-    See :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for usage
+    See :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py` for usage
     details.
     """
     if isinstance(functional, str):
