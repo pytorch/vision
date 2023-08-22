@@ -12,7 +12,7 @@ from torchvision.transforms.v2 import functional as F
 
 from ._transform import _RandomApplyTransform, Transform
 from ._utils import _parse_labels_getter
-from .utils import has_any, is_simple_tensor, query_chw, query_size
+from .utils import has_any, is_pure_tensor, query_chw, query_size
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -217,7 +217,7 @@ class MixUp(_BaseMixUpCutMix):
     .. note::
         This transform is meant to be used on **batches** of samples, not
         individual images. See
-        :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage
+        :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` for detailed usage
         examples.
         The sample pairing is deterministic and done by matching consecutive
         samples in the batch, so the batch needs to be shuffled (this is an
@@ -243,7 +243,7 @@ class MixUp(_BaseMixUpCutMix):
 
         if inpt is params["labels"]:
             return self._mixup_label(inpt, lam=lam)
-        elif isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_simple_tensor(inpt):
+        elif isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_pure_tensor(inpt):
             self._check_image_or_video(inpt, batch_size=params["batch_size"])
 
             output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
@@ -267,7 +267,7 @@ class CutMix(_BaseMixUpCutMix):
     .. note::
         This transform is meant to be used on **batches** of samples, not
         individual images. See
-        :ref:`sphx_glr_auto_examples_plot_cutmix_mixup.py` for detailed usage
+        :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` for detailed usage
         examples.
         The sample pairing is deterministic and done by matching consecutive
         samples in the batch, so the batch needs to be shuffled (this is an
@@ -310,7 +310,7 @@ class CutMix(_BaseMixUpCutMix):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if inpt is params["labels"]:
             return self._mixup_label(inpt, lam=params["lam_adjusted"])
-        elif isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_simple_tensor(inpt):
+        elif isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_pure_tensor(inpt):
             self._check_image_or_video(inpt, batch_size=params["batch_size"])
 
             x1, y1, x2, y2 = params["box"]

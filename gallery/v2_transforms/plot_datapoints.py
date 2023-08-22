@@ -3,7 +3,10 @@
 Datapoints FAQ
 ==============
 
-https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/_generated_ipynb_notebooks/plot_datapoints.ipynb
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_datapoints.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_datapoints.py>` to download the full example code.
+
 
 Datapoints are Tensor subclasses introduced together with
 ``torchvision.transforms.v2``. This example showcases what these datapoints are
@@ -24,12 +27,6 @@ and how they behave.
 import PIL.Image
 
 import torch
-import torchvision
-
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
 from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F
 
@@ -92,7 +89,7 @@ print(float_image)
 # In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` can also take a
 # :class:`PIL.Image.Image` directly:
 
-image = datapoints.Image(PIL.Image.open("assets/astronaut.jpg"))
+image = datapoints.Image(PIL.Image.open("../assets/astronaut.jpg"))
 print(image.shape, image.dtype)
 
 # %%
@@ -238,7 +235,8 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 
 # %%
 # Alternatively, you can use the :func:`~torchvision.datapoints.set_return_type`
-# as a global config setting for the whole program, or as a context manager:
+# as a global config setting for the whole program, or as a context manager
+# (read its docs to learn more about caveats):
 
 with datapoints.set_return_type("datapoint"):
     new_bboxes = bboxes + 3
@@ -277,13 +275,13 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 # ^^^^^^^^^^
 #
 # There are a few exceptions to this "unwrapping" rule:
+# :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
+# :meth:`torch.Tensor.detach`, and :meth:`~torch.Tensor.requires_grad_` retain
+# the datapoint type.
 #
-# 1. Operations like :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
-#    :meth:`torch.Tensor.detach` and :meth:`~torch.Tensor.requires_grad_` retain
-#    the datapoint type.
-# 2. Inplace operations on datapoints like ``.add_()`` preserve they type. However,
-#    the **returned** value of inplace operations will be unwrapped into a pure
-#    tensor:
+# Inplace operations on datapoints like ``obj.add_()`` will preserve the type of
+# ``obj``. However, the **returned** value of inplace operations will be a pure
+# tensor:
 
 image = datapoints.Image([[[0, 1], [1, 0]]])
 

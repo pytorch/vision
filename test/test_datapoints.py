@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 import torch
-from common_utils import assert_equal, make_bounding_box, make_image, make_segmentation_mask, make_video
+from common_utils import assert_equal, make_bounding_boxes, make_image, make_segmentation_mask, make_video
 from PIL import Image
 
 from torchvision import datapoints
@@ -68,7 +68,7 @@ def test_new_requires_grad(data, input_requires_grad, expected_requires_grad):
     assert datapoint.requires_grad is expected_requires_grad
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 def test_isinstance(make_input):
     assert isinstance(make_input(), torch.Tensor)
 
@@ -80,7 +80,7 @@ def test_wrapping_no_copy():
     assert image.data_ptr() == tensor.data_ptr()
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 def test_to_wrapping(make_input):
     dp = make_input()
 
@@ -90,7 +90,7 @@ def test_to_wrapping(make_input):
     assert dp_to.dtype is torch.float64
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
 def test_to_datapoint_reference(make_input, return_type):
     tensor = torch.rand((3, 16, 16), dtype=torch.float64)
@@ -104,7 +104,7 @@ def test_to_datapoint_reference(make_input, return_type):
     assert type(tensor) is torch.Tensor
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
 def test_clone_wrapping(make_input, return_type):
     dp = make_input()
@@ -116,7 +116,7 @@ def test_clone_wrapping(make_input, return_type):
     assert dp_clone.data_ptr() != dp.data_ptr()
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
 def test_requires_grad__wrapping(make_input, return_type):
     dp = make_input(dtype=torch.float)
@@ -131,7 +131,7 @@ def test_requires_grad__wrapping(make_input, return_type):
     assert dp_requires_grad.requires_grad
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
 def test_detach_wrapping(make_input, return_type):
     dp = make_input(dtype=torch.float).requires_grad_(True)
@@ -170,7 +170,7 @@ def test_force_subclass_with_metadata(return_type):
     datapoints.set_return_type("tensor")
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
 def test_other_op_no_wrapping(make_input, return_type):
     dp = make_input()
@@ -182,7 +182,7 @@ def test_other_op_no_wrapping(make_input, return_type):
     assert type(output) is (type(dp) if return_type == "datapoint" else torch.Tensor)
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize(
     "op",
     [
@@ -199,7 +199,7 @@ def test_no_tensor_output_op_no_wrapping(make_input, op):
     assert type(output) is not type(dp)
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
 def test_inplace_op_no_wrapping(make_input, return_type):
     dp = make_input()
@@ -212,7 +212,7 @@ def test_inplace_op_no_wrapping(make_input, return_type):
     assert type(dp) is original_type
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 def test_wrap(make_input):
     dp = make_input()
 
@@ -225,7 +225,7 @@ def test_wrap(make_input):
     assert dp_new.data_ptr() == output.data_ptr()
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize("requires_grad", [False, True])
 def test_deepcopy(make_input, requires_grad):
     dp = make_input(dtype=torch.float)
@@ -242,7 +242,7 @@ def test_deepcopy(make_input, requires_grad):
     assert dp_deepcopied.requires_grad is requires_grad
 
 
-@pytest.mark.parametrize("make_input", [make_image, make_bounding_box, make_segmentation_mask, make_video])
+@pytest.mark.parametrize("make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video])
 @pytest.mark.parametrize("return_type", ["Tensor", "datapoint"])
 @pytest.mark.parametrize(
     "op",

@@ -3,6 +3,10 @@
 Getting started with transforms v2
 ==================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_v2.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2.py>` to download the full example code.
+
 Most computer vision tasks are not supported out of the box by ``torchvision.transforms`` v1, since it only supports
 images. ``torchvision.transforms.v2`` enables jointly transforming images, videos, bounding boxes, and masks. This
 example showcases the core functionality of the new ``torchvision.transforms.v2`` API.
@@ -11,7 +15,6 @@ example showcases the core functionality of the new ``torchvision.transforms.v2`
 import pathlib
 
 import torch
-import torchvision
 
 
 def load_data():
@@ -19,7 +22,7 @@ def load_data():
     from torchvision import datapoints
     from torchvision.ops import masks_to_boxes
 
-    assets_directory = pathlib.Path("assets")
+    assets_directory = pathlib.Path("../assets")
 
     path = assets_directory / "FudanPed00054.png"
     image = datapoints.Image(read_image(str(path)))
@@ -42,9 +45,6 @@ def load_data():
 # detection or instance and semantic segmentation. Still, the interface is the same, making
 # :mod:`torchvision.transforms.v2` a drop-in replacement for the existing :mod:`torchvision.transforms` API, aka v1.
 
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
 import torchvision.transforms.v2 as transforms
 
 transform = transforms.Compose(
@@ -72,9 +72,9 @@ new_image, new_target = transform((image, {"boxes": bounding_boxes, "labels": la
 
 # %%
 # Under the hood, :mod:`torchvision.transforms.v2` relies on :mod:`torchvision.datapoints` for the dispatch to the
-# appropriate function for the input data: :ref:`sphx_glr_auto_examples_plot_datapoints.py`. Note however, that as
+# appropriate function for the input data: :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`. Note however, that as
 # regular user, you likely don't have to touch this yourself. See
-# :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`.
+# :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py`.
 #
 # All "foreign" types like :class:`str`'s or :class:`pathlib.Path`'s are passed through, allowing to store extra
 # information directly with the sample:

@@ -37,17 +37,17 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
         * :class:`~torchvision.datasets.CocoDetection`: Instead of returning the target as list of dicts, the wrapper
           returns a dict of lists. In addition, the key-value-pairs ``"boxes"`` (in ``XYXY`` coordinate format),
           ``"masks"`` and ``"labels"`` are added and wrap the data in the corresponding ``torchvision.datapoints``.
-          The original keys are preserved. If ``target_keys`` is ommitted, returns only the values for the
+          The original keys are preserved. If ``target_keys`` is omitted, returns only the values for the
           ``"image_id"``, ``"boxes"``, and ``"labels"``.
         * :class:`~torchvision.datasets.VOCDetection`: The key-value-pairs ``"boxes"`` and ``"labels"`` are added to
           the target and wrap the data in the corresponding ``torchvision.datapoints``. The original keys are
-          preserved. If ``target_keys`` is ommitted, returns only the values for the ``"boxes"`` and ``"labels"``.
+          preserved. If ``target_keys`` is omitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`~torchvision.datasets.CelebA`: The target for ``target_type="bbox"`` is converted to the ``XYXY``
           coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBoxes` datapoint.
         * :class:`~torchvision.datasets.Kitti`: Instead returning the target as list of dicts, the wrapper returns a
           dict of lists. In addition, the key-value-pairs ``"boxes"`` and ``"labels"`` are added and wrap the data
           in the corresponding ``torchvision.datapoints``. The original keys are preserved. If ``target_keys`` is
-          ommitted, returns only the values for the ``"boxes"`` and ``"labels"``.
+          omitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`~torchvision.datasets.OxfordIIITPet`: The target for ``target_type="segmentation"`` is wrapped into a
           :class:`~torchvision.datapoints.Mask` datapoint.
         * :class:`~torchvision.datasets.Cityscapes`: The target for ``target_type="semantic"`` is wrapped into a
@@ -368,7 +368,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             target["image_id"] = image_id
 
         if "boxes" in target_keys:
-            target["boxes"] = F.convert_format_bounding_boxes(
+            target["boxes"] = F.convert_bounding_box_format(
                 datapoints.BoundingBoxes(
                     batched_target["bbox"],
                     format=datapoints.BoundingBoxFormat.XYWH,
@@ -489,7 +489,7 @@ def celeba_wrapper_factory(dataset, target_keys):
             target,
             target_types=dataset.target_type,
             type_wrappers={
-                "bbox": lambda item: F.convert_format_bounding_boxes(
+                "bbox": lambda item: F.convert_bounding_box_format(
                     datapoints.BoundingBoxes(
                         item,
                         format=datapoints.BoundingBoxFormat.XYWH,
@@ -636,7 +636,7 @@ def widerface_wrapper(dataset, target_keys):
         target = {key: target[key] for key in target_keys}
 
         if "bbox" in target_keys:
-            target["bbox"] = F.convert_format_bounding_boxes(
+            target["bbox"] = F.convert_bounding_box_format(
                 datapoints.BoundingBoxes(
                     target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, canvas_size=(image.height, image.width)
                 ),
