@@ -171,46 +171,6 @@ def test_all_configs(test):
     return wrapper
 
 
-def _no_collate(batch):
-    return batch
-
-
-def check_transforms_v2_wrapper(dataset_test_case, *, config=None, supports_target_keys=False):
-    from torch.utils.data import DataLoader
-    from torchvision import datapoints
-    from torchvision.datasets import wrap_dataset_for_transforms_v2
-
-    def check_wrapped_samples(dataset):
-        for wrapped_sample in dataset:
-            assert tree_any(
-                lambda item: isinstance(item, (datapoints.Image, datapoints.Video, PIL.Image.Image)), wrapped_sample
-            )
-
-    target_keyss = [None]
-    if supports_target_keys:
-        target_keyss.append("all")
-
-    for target_keys in target_keyss:
-        with dataset_test_case.create_dataset(config) as (dataset, info):
-            wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
-
-            assert isinstance(wrapped_dataset, type(dataset))
-            assert len(wrapped_dataset) == info["num_examples"]
-
-            check_wrapped_samples(wrapped_dataset)
-
-    # On macOS, forking for multiprocessing is not available and thus spawning is used by default. For this to work,
-    # the whole pipeline including the dataset needs to be pickleable, which is what we are enforcing here.
-    if platform.system() == "Darwin":
-        with dataset_test_case.create_dataset(config) as (dataset, _):
-            wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
-            dataloader = DataLoader(
-                wrapped_dataset, num_workers=2, multiprocessing_context="spawn", collate_fn=_no_collate
-            )
-
-            check_wrapped_samples(dataloader)
-
-
 class DatasetTestCase(unittest.TestCase):
     """Abstract base class for all dataset testcases.
 
@@ -606,6 +566,42 @@ class DatasetTestCase(unittest.TestCase):
 
                 mock.assert_called()
 
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        from torchvision import datapoints
+        from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+        try:
+            with self.create_dataset(config) as (dataset, info):
+                for target_keys in [None, "all"]:
+                    if target_keys is not None and self.DATASET_CLASS not in {
+                        torchvision.datasets.CocoDetection,
+                        torchvision.datasets.VOCDetection,
+                        torchvision.datasets.Kitti,
+                        torchvision.datasets.WIDERFace,
+                    }:
+                        with self.assertRaisesRegex(ValueError, "`target_keys` is currently only supported for"):
+                            wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                        continue
+
+                    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                    assert isinstance(wrapped_dataset, self.DATASET_CLASS)
+                    assert len(wrapped_dataset) == info["num_examples"]
+
+                    wrapped_sample = wrapped_dataset[0]
+                    assert tree_any(
+                        lambda item: isinstance(item, (datapoints.Datapoint, PIL.Image.Image)), wrapped_sample
+                    )
+        except TypeError as error:
+            msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
+            if str(error).startswith(msg):
+                pytest.skip(msg)
+            raise error
+        except RuntimeError as error:
+            if "currently not supported by this wrapper" in str(error):
+                pytest.skip("Config is currently not supported by this wrapper")
+            raise error
+
 
 class ImageDatasetTestCase(DatasetTestCase):
     """Abstract base class for image dataset testcases.
@@ -686,6 +682,40 @@ class VideoDatasetTestCase(DatasetTestCase):
             return args
 
         return wrapper
+
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        # `output_format == "THWC"` is not supported by the wrapper. Thus, we skip the `config` if it is set explicitly
+        # or use the supported `"TCHW"`
+        if config.setdefault("output_format", "TCHW") == "THWC":
+            return
+
+        super().test_transforms_v2_wrapper.__wrapped__(self, config)
+
+
+def _no_collate(batch):
+    return batch
+
+
+def check_transforms_v2_wrapper_spawn(dataset):
+    # On Linux and Windows, the DataLoader forks the main process by default. This is not available on macOS, so new
+    # subprocesses are spawned. This requires the whole pipeline including the dataset to be pickleable, which is what
+    # we are enforcing here.
+    if platform.system() != "Darwin":
+        pytest.skip("Multiprocessing spawning is only checked on macOS.")
+
+    from torch.utils.data import DataLoader
+    from torchvision import datapoints
+    from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+
+    dataloader = DataLoader(wrapped_dataset, num_workers=2, multiprocessing_context="spawn", collate_fn=_no_collate)
+
+    for wrapped_sample in dataloader:
+        assert tree_any(
+            lambda item: isinstance(item, (datapoints.Image, datapoints.Video, PIL.Image.Image)), wrapped_sample
+        )
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
