@@ -93,16 +93,6 @@ class ToDtype:
         return image, target
 
 
-# Keep ConvertImageDtype for BC
-class ConvertImageDtype:
-    def __init__(self, dtype):
-        self.dtype = dtype
-
-    def __call__(self, image, target):
-        image = F.convert_image_dtype(image, self.dtype)
-        return image, target
-
-
 class Normalize:
     def __init__(self, mean, std):
         self.mean = mean
