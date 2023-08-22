@@ -71,7 +71,7 @@ Dtype and expected value range
 
 The expected range of the values of a tensor image is implicitly defined by
 the tensor dtype. Tensor images with a float dtype are expected to have
-values in ``[0, 1)``. Tensor images with an integer dtype are expected to
+values in ``[0, 1]``. Tensor images with an integer dtype are expected to
 have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
 that can be represented in that dtype. Typically, images of dtype
 ``torch.uint8`` are expected to have values in ``[0, 255]``.
