@@ -20,7 +20,7 @@ class Image(Datapoint):
     Args:
         data (tensor-like, PIL.Image.Image): Any data that can be turned into a tensor with :func:`torch.as_tensor` as
             well as PIL images.
-        dtype (torch.dtype, optional): Desired data typebox. If omitted, will be inferred from
+        dtype (torch.dtype, optional): Desired data type. If omitted, will be inferred from
             ``data``.
         device (torch.device, optional): Desired device. If omitted and ``data`` is a
             :class:`torch.Tensor`, the device is taken from it. Otherwise, the image is constructed on the CPU.
