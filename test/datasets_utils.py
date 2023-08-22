@@ -3,9 +3,9 @@ import functools
 import importlib
 import inspect
 import itertools
+import multiprocessing
 import os
 import pathlib
-import pickle
 import random
 import shutil
 import string
@@ -169,6 +169,38 @@ def test_all_configs(test):
                 test(self, config)
 
     return wrapper
+
+
+def _no_collate(batch):
+    return batch
+
+
+def check_transforms_v2_wrapper(dataset_test_case, *, config=None, supports_target_keys=False):
+    from torch.utils.data import DataLoader
+    from torchvision import datapoints
+    from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+    target_keyss = [None]
+    if supports_target_keys:
+        target_keyss.append("all")
+
+    for target_keys, multiprocessing_context in itertools.product(
+        target_keyss, multiprocessing.get_all_start_methods()
+    ):
+        with dataset_test_case.create_dataset(config) as (dataset, info):
+            wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+
+            assert isinstance(wrapped_dataset, type(dataset))
+            assert len(wrapped_dataset) == info["num_examples"]
+
+            dataloader = DataLoader(
+                wrapped_dataset, num_workers=2, multiprocessing_context=multiprocessing_context, collate_fn=_no_collate
+            )
+
+            for wrapped_sample in dataloader:
+                assert tree_any(
+                    lambda item: isinstance(item, (datapoints.Image, datapoints.Video, PIL.Image.Image)), wrapped_sample
+                )
 
 
 class DatasetTestCase(unittest.TestCase):
@@ -566,49 +598,6 @@ class DatasetTestCase(unittest.TestCase):
 
                 mock.assert_called()
 
-    @test_all_configs
-    def test_transforms_v2_wrapper(self, config):
-        from torchvision import datapoints
-        from torchvision.datasets import wrap_dataset_for_transforms_v2
-
-        try:
-            with self.create_dataset(config) as (dataset, info):
-                wrap_dataset_for_transforms_v2(dataset)
-        except TypeError as error:
-            msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
-            if str(error).startswith(msg):
-                return
-            raise error
-        except RuntimeError as error:
-            if "currently not supported by this wrapper" in str(error):
-                return
-            raise error
-
-        for target_keys, de_serialize in itertools.product(
-            [None, "all"], [lambda d: d, lambda d: pickle.loads(pickle.dumps(d))]
-        ):
-
-            with self.create_dataset(config) as (dataset, info):
-                if target_keys is not None and self.DATASET_CLASS not in {
-                    torchvision.datasets.CocoDetection,
-                    torchvision.datasets.VOCDetection,
-                    torchvision.datasets.Kitti,
-                    torchvision.datasets.WIDERFace,
-                }:
-                    with self.assertRaisesRegex(ValueError, "`target_keys` is currently only supported for"):
-                        wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
-                    continue
-
-                wrapped_dataset = de_serialize(wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys))
-
-                assert isinstance(wrapped_dataset, self.DATASET_CLASS)
-                assert len(wrapped_dataset) == info["num_examples"]
-
-                wrapped_sample = wrapped_dataset[0]
-                assert tree_any(
-                    lambda item: isinstance(item, (datapoints.Image, datapoints.Video, PIL.Image.Image)), wrapped_sample
-                )
-
 
 class ImageDatasetTestCase(DatasetTestCase):
     """Abstract base class for image dataset testcases.
@@ -689,15 +678,6 @@ class VideoDatasetTestCase(DatasetTestCase):
             return args
 
         return wrapper
-
-    @test_all_configs
-    def test_transforms_v2_wrapper(self, config):
-        # `output_format == "THWC"` is not supported by the wrapper. Thus, we skip the `config` if it is set explicitly
-        # or use the supported `"TCHW"`
-        if config.setdefault("output_format", "TCHW") == "THWC":
-            return
-
-        super().test_transforms_v2_wrapper.__wrapped__(self, config)
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
