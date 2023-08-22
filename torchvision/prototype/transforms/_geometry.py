@@ -84,7 +84,7 @@ class FixedSizeCrop(Transform):
                 width=new_width,
             )
             bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size)
-            height_and_width = F.convert_format_bounding_boxes(
+            height_and_width = F.convert_bounding_box_format(
                 bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
