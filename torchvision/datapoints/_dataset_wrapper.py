@@ -96,10 +96,6 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
             f"but got {target_keys}"
         )
 
-    return _make_wrapped_dataset(dataset, target_keys)
-
-
-def _make_wrapped_dataset(dataset, target_keys):
     # Imagine we have isinstance(dataset, datasets.ImageNet). This will create a new class with the name
     # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetDatapointWrapper (see below) as well as the
     # original ImageNet class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks,
@@ -202,7 +198,7 @@ class VisionDatasetDatapointWrapper:
         return len(self._dataset)
 
     def __reduce__(self):
-        return _make_wrapped_dataset, (self._dataset, self._target_keys)
+        return wrap_dataset_for_transforms_v2, (self._dataset, self._target_keys)
 
 
 def raise_not_supported(description):
