@@ -5,6 +5,7 @@ import inspect
 import itertools
 import os
 import pathlib
+import platform
 import random
 import shutil
 import string
@@ -198,11 +199,16 @@ def check_transforms_v2_wrapper(dataset_test_case, *, config=None, supports_targ
 
             check_wrapped_samples(wrapped_dataset)
 
-    with dataset_test_case.create_dataset(config) as (dataset, _):
-        wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
-        dataloader = DataLoader(wrapped_dataset, num_workers=2, multiprocessing_context="spawn", collate_fn=_no_collate)
+    # On macOS, forking for multiprocessing is not available and thus spawning is used by default. For this to work,
+    # the whole pipeline including the dataset needs to be pickleable, which is what we are enforcing here.
+    if platform.system() == "Darwin":
+        with dataset_test_case.create_dataset(config) as (dataset, _):
+            wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+            dataloader = DataLoader(
+                wrapped_dataset, num_workers=2, multiprocessing_context="spawn", collate_fn=_no_collate
+            )
 
-        check_wrapped_samples(dataloader)
+            check_wrapped_samples(dataloader)
 
 
 class DatasetTestCase(unittest.TestCase):
