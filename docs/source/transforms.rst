@@ -156,15 +156,15 @@ The above should give you the best performance in a typical training environment
 that relies on the :class:`torch.utils.data.DataLoader` with ``num_workers >
 0``.
 
-Transforms tend to be sensitive to the input strides / memory layout. Some
+Transforms tend to be sensitive to the input strides / memory format. Some
 transforms will be faster with channels-first images while others prefer
 channels-last. Like ``torch`` operators, most transforms will preserve the
-layout of the input, but this may not always be respected due to implementation
-details.  You may want to experiment a bit if you're chasing the very best
-performance.  Using :func:`torch.compile` on individual transforms may also help
-factoring out the memory layout variable (e.g. on
+memory format of the input, but this may not always be respected due to
+implementation details. You may want to experiment a bit if you're chasing the
+very best performance.  Using :func:`torch.compile` on individual transforms may
+also help factoring out the memory format variable (e.g. on
 :class:`~torchvision.transforms.v2.Normalize`). Note that we're talking about
-**memory layout**, not :ref:`tensor shape <conventions>`.
+**memory format**, not :ref:`tensor shape <conventions>`.
 
 Note that resize transforms like :class:`~torchvision.transforms.v2.Resize`
 and :class:`~torchvision.transforms.v2.RandomResizedCrop` typically prefer
