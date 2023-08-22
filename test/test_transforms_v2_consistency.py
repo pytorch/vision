@@ -19,9 +19,8 @@ from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
-from torchvision.transforms.v2._utils import _get_fill
+from torchvision.transforms.v2._utils import _get_fill, query_size
 from torchvision.transforms.v2.functional import to_pil_image
-from torchvision.transforms.v2.utils import query_size
 from transforms_v2_legacy_utils import (
     ArgsKwargs,
     make_bounding_boxes,
