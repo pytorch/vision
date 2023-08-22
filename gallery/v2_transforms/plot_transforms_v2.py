@@ -217,7 +217,7 @@ print(f"{out_target['this_is_ignored']}")
 #
 # Roughly speaking, the output of the datasets must correspond to the input of
 # the transforms. How to do that depends on whether you're using the torchvision
-# :ref:`builtin datatsets <datasets>`, or your own custom datasets.
+# :ref:`built-in datatsets <datasets>`, or your own custom datasets.
 #
 # Using built-in datasets
 # ^^^^^^^^^^^^^^^^^^^^^^^
