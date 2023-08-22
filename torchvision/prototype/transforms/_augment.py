@@ -7,9 +7,9 @@ from torchvision import datapoints
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import datapoints as proto_datapoints
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2._utils import is_pure_tensor
 
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.utils import is_pure_tensor
 
 
 class SimpleCopyPaste(Transform):

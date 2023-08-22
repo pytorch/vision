@@ -25,7 +25,7 @@ from torchvision.prototype import datasets
 from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import EncodedImage
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
-from torchvision.transforms.v2.utils import is_pure_tensor
+from torchvision.transforms.v2._utils import is_pure_tensor
 
 
 def assert_samples_equal(*args, msg=None, **kwargs):
