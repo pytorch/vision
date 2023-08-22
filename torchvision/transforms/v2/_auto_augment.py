@@ -27,7 +27,16 @@ class _AutoAugmentBase(Transform):
     ) -> None:
         super().__init__()
         self.interpolation = _check_interpolation(interpolation)
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+
+        if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
+            raise ValueError(f"{type(self).__name__}() can only be scripted for a scalar `fill`, but got {self.fill}.")
+
+        return params
 
     def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
         keys = tuple(dct.keys())
@@ -334,7 +343,7 @@ class AutoAugment(_AutoAugmentBase):
                 magnitude = 0.0
 
             image_or_video = self._apply_image_or_video_transform(
-                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
             )
 
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
@@ -418,7 +427,7 @@ class RandAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
             image_or_video = self._apply_image_or_video_transform(
-                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
             )
 
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
@@ -490,7 +499,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
             magnitude = 0.0
 
         image_or_video = self._apply_image_or_video_transform(
-            image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+            image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
         )
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
 
@@ -613,7 +622,7 @@ class AugMix(_AutoAugmentBase):
                     magnitude = 0.0
 
                 aug = self._apply_image_or_video_transform(
-                    aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+                    aug, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
                 )
             mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
