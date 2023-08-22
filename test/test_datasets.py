@@ -206,9 +206,6 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_images_per_category * len(categories)
 
-    def test_transforms_v2_wrapper(self):
-        datasets_utils.check_transforms_v2_wrapper(self)
-
 
 class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.WIDERFace
@@ -486,9 +483,6 @@ class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
             actual = dataset.class_to_idx
             assert actual == expected
 
-    def test_transforms_v2_wrapper(self):
-        datasets_utils.check_transforms_v2_wrapper(self)
-
 
 class CIFAR100(CIFAR10TestCase):
     DATASET_CLASS = datasets.CIFAR100
@@ -502,9 +496,6 @@ class CIFAR100(CIFAR10TestCase):
         num_categories=100,
         categories_key="fine_label_names",
     )
-
-    def test_transforms_v2_wrapper(self):
-        datasets_utils.check_transforms_v2_wrapper(self)
 
 
 class CelebATestCase(datasets_utils.ImageDatasetTestCase):
@@ -901,9 +892,6 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
         with open(pathlib.Path(root) / name, "w") as fh:
             fh.writelines(f"{str(file).replace(os.sep, '/')}\n" for file in sorted(video_files))
 
-    def test_transforms_v2_wrapper(self):
-        datasets_utils.check_transforms_v2_wrapper(self, config=dict(output_format="TCHW"))
-
 
 class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.LSUN
@@ -1072,9 +1060,6 @@ class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
                 fh.writelines(f"{file.name} {1 if file in train_videos else 2}\n" for file in videos)
 
         return num_train_videos if train else (num_videos - num_train_videos)
-
-    def test_transforms_v2_wrapper(self):
-        datasets_utils.check_transforms_v2_wrapper(self, config=dict(output_format="TCHW"))
 
 
 class OmniglotTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1487,9 +1472,6 @@ class MNISTTestCase(datasets_utils.ImageDatasetTestCase):
     def _encode(self, v):
         return torch.tensor(v, dtype=torch.int32).numpy().tobytes()[::-1]
 
-    def test_transforms_v2_wrapper(self):
-        datasets_utils.check_transforms_v2_wrapper(self)
-
 
 class FashionMNISTTestCase(MNISTTestCase):
     DATASET_CLASS = datasets.FashionMNIST
@@ -1641,9 +1623,6 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
             assert len(dataset.classes) == len(info["classes"])
             assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
 
-    def test_transforms_v2_wrapper(self):
-        datasets_utils.check_transforms_v2_wrapper(self)
-
 
 class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageFolder
@@ -1664,9 +1643,6 @@ class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(config) as (dataset, info):
             assert len(dataset.classes) == len(info["classes"])
             assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
-
-    def test_transforms_v2_wrapper(self):
-        datasets_utils.check_transforms_v2_wrapper(self)
 
 
 class KittiTestCase(datasets_utils.ImageDatasetTestCase):
