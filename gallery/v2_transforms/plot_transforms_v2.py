@@ -8,7 +8,7 @@ Getting started with transforms v2
     or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2.py>` to download the full example code.
 
 This example illustrates all of what you need to know to get started with the
-new :mod:`torchvision.transforms.v2` transforms. We'll cover simple tasks like
+new :mod:`torchvision.transforms.v2` API. We'll cover simple tasks like
 image classification, and more advanced ones like object detection /
 segmentation.
 """
@@ -36,7 +36,7 @@ print(f"{type(img) = }, {img.dtype = }, {img.shape = }")
 # ----------
 #
 # The Torchvision transforms behave like a regular :class:`torch.nn.Module` (in
-# fact, most of them are): instanciate a transform, pass an input, get a
+# fact, most of them are): instantiate a transform, pass an input, get a
 # transformed output:
 
 transform = v2.RandomCrop(size=(224, 224))
@@ -170,7 +170,7 @@ target = {
 out_img, out_target = transforms(img, target)
 
 plot([(img, target["bboxes"]), (out_img, out_target["bboxes"])])
-print(f"{out_target['this_is_ignored'] = }")
+print(f"{out_target['this_is_ignored']}")
 
 # %%
 # We passed a tuple so we get a tuple back, and the second element is the
