@@ -8,6 +8,7 @@ from torchvision.transforms import functional as _F
 
 @torch.jit.unused
 def to_tensor(inpt: Any) -> torch.Tensor:
+    """[BETA] [DEPREACTED] Use to_image() and to_dtype() instead."""
     warnings.warn(
         "The function `to_tensor(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `to_image(...)` followed by `to_dtype(..., dtype=torch.float32, scale=True)`."

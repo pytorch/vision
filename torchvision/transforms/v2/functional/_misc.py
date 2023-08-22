@@ -20,6 +20,7 @@ def normalize(
     std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.Normalize` for details."""
     if torch.jit.is_scripting():
         return normalize_image(inpt, mean=mean, std=std, inplace=inplace)
 
@@ -70,6 +71,7 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
 
 
 def gaussian_blur(inpt: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.GaussianBlur` for details."""
     if torch.jit.is_scripting():
         return gaussian_blur_image(inpt, kernel_size=kernel_size, sigma=sigma)
 
@@ -178,6 +180,7 @@ def gaussian_blur_video(
 
 
 def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
+    """[BETA] See :func:`~torchvision.transforms.v2.ToDtype` for details."""
     if torch.jit.is_scripting():
         return to_dtype_image(inpt, dtype=dtype, scale=scale)
 
@@ -258,6 +261,7 @@ def to_dtype_image(image: torch.Tensor, dtype: torch.dtype = torch.float, scale:
 
 # We encourage users to use to_dtype() instead but we keep this for BC
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float32) -> torch.Tensor:
+    """[BETA] [DEPRECATED] Use to_dtype() instead."""
     return to_dtype_image(image, dtype=dtype, scale=True)
 
 
