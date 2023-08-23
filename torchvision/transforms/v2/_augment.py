@@ -11,8 +11,7 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F
 
 from ._transform import _RandomApplyTransform, Transform
-from ._utils import _parse_labels_getter
-from .utils import has_any, is_pure_tensor, query_chw, query_size
+from ._utils import _parse_labels_getter, has_any, is_pure_tensor, query_chw, query_size
 
 
 class RandomErasing(_RandomApplyTransform):
