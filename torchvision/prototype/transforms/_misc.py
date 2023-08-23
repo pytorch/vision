@@ -8,7 +8,7 @@ import torch
 from torchvision import datapoints
 from torchvision.transforms.v2 import Transform
 
-from torchvision.transforms.v2.utils import is_pure_tensor
+from torchvision.transforms.v2._utils import is_pure_tensor
 
 
 T = TypeVar("T")

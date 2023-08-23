@@ -12,8 +12,7 @@ from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._meta import get_size
 from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
-from ._utils import _get_fill, _setup_fill_arg
-from .utils import check_type, is_pure_tensor
+from ._utils import _get_fill, _setup_fill_arg, check_type, is_pure_tensor
 
 
 ImageOrVideo = Union[torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video]

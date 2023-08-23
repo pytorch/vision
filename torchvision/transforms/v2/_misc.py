@@ -9,8 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
-from .utils import get_bounding_boxes, has_any, is_pure_tensor
+from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
 
 
 # TODO: do we want/need to expose this?
