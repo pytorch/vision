@@ -197,7 +197,7 @@ print(f"{out_target['this_is_ignored']}")
 #     determine whether a pure Tensor should be treated as an image (or video),
 #     or just ignored:
 #
-#     * If we there is an :class:`~torchvision.datapoints.Image`,
+#     * If there is an :class:`~torchvision.datapoints.Image`,
 #       :class:`~torchvision.datapoints.Video`,
 #       or :class:`PIL.Image.Image` instance in the input, all other pure
 #       tensors are passed-through.
