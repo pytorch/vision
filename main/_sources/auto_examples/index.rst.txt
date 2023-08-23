@@ -61,7 +61,24 @@ V2 transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Most computer vision tasks are not supported out of the box by torchvision.transforms v1, since...">
+    <div class="sphx-glr-thumbcontainer" tooltip=" Datapoints are Tensor subclasses introduced together with torchvision.transforms.v2. This exam...">
+
+.. only:: html
+
+  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_datapoints_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Datapoints FAQ</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates all of what you need to know to get started with the new torchvision.t...">
 
 .. only:: html
 
@@ -107,23 +124,6 @@ V2 transforms
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Transforms v2: End-to-end object detection example</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip=" Datapoints are Tensor subclasses introduced together with torchvision.transforms.v2. This exam...">
-
-.. only:: html
-
-  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_datapoints_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Datapoints FAQ</div>
     </div>
 
 
