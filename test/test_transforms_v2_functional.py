@@ -13,9 +13,9 @@ from torch.utils._pytree import tree_map
 from torchvision import datapoints
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2._utils import is_pure_tensor
 from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
 from torchvision.transforms.v2.functional._meta import clamp_bounding_boxes, convert_bounding_box_format
-from torchvision.transforms.v2.utils import is_pure_tensor
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
 from transforms_v2_legacy_utils import (
