@@ -204,7 +204,8 @@ print(f"{out_target['this_is_ignored']}")
 #     * If there is no :class:`~torchvision.datapoints.Image` or
 #       :class:`~torchvision.datapoints.Video` instance, only the first pure
 #       :class:`torch.Tensor` will be transformed as image or video, while all
-#       others will be passed-through.
+#       others will be passed-through. Here "first" means "first in a depth-wise
+#       traversal".
 #
 #     This is what happened in the detection example above: the first pure
 #     tensor was the image so it got transformed properly, and all other pure
