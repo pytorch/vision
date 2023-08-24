@@ -395,6 +395,7 @@ class SanitizeBoundingBoxes(Transform):
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             ),
         )
+        print(f"{type(boxes) =}")
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
         valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
         # TODO: Do we really need to check for out of bounds here? All
@@ -425,4 +426,5 @@ class SanitizeBoundingBoxes(Transform):
         if is_label:
             return output
 
-        return datapoints.wrap(output, like=inpt)
+        out = datapoints.wrap(output, like=inpt)
+        return out

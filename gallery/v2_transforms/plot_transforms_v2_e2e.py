@@ -13,113 +13,118 @@ showcases an end-to-end object detection training using the stable ``torchvision
 as well as the new ``torchvision.transforms.v2`` v2 API.
 """
 
+# %%
 import pathlib
-
-import PIL.Image
 
 import torch
 import torch.utils.data
+import PIL.Image
 
-from torchvision import models, datasets
-import torchvision.transforms.v2 as transforms
+from torchvision import models, datasets, datapoints
+from torchvision.transforms import v2
 
+torch.manual_seed(1)
 
-def show(sample):
-    import matplotlib.pyplot as plt
-
-    from torchvision.transforms.v2 import functional as F
-    from torchvision.utils import draw_bounding_boxes
-
-    image, target = sample
-    if isinstance(image, PIL.Image.Image):
-        image = F.to_image(image)
-    image = F.to_dtype(image, torch.uint8, scale=True)
-    annotated_image = draw_bounding_boxes(image, target["boxes"], colors="yellow", width=3)
-
-    fig, ax = plt.subplots()
-    ax.imshow(annotated_image.permute(1, 2, 0).numpy())
-    ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-    fig.tight_layout()
-
-    fig.show()
+# This loads fake data for illustration purposes of this example. In practice, you'll have
+# to replace this with the proper data.
+# If you're trying to run that on collab, you can download the assets and the
+# helpers from https://github.com/pytorch/vision/tree/main/gallery/
+ROOT = pathlib.Path("../assets") / "coco"
+IMAGES_PATH = str(ROOT / "images")
+ANNOTATIONS_PATH = str(ROOT / "instances.json")
+from helpers import plot
 
 
 # %%
 # We start off by loading the :class:`~torchvision.datasets.CocoDetection` dataset to have a look at what it currently
-# returns, and we'll see how to convert it to a format that is compatible with our new transforms.
+# returns.
 
-def load_example_coco_detection_dataset(**kwargs):
-    # This loads fake data for illustration purposes of this example. In practice, you'll have
-    # to replace this with the proper data
-    root = pathlib.Path("../assets") / "coco"
-    return datasets.CocoDetection(str(root / "images"), str(root / "instances.json"), **kwargs)
-
-
-dataset = load_example_coco_detection_dataset()
+dataset = datasets.CocoDetection(IMAGES_PATH, ANNOTATIONS_PATH)
 
 sample = dataset[0]
-image, target = sample
-print(type(image))
-print(type(target), type(target[0]), list(target[0].keys()))
+img, target = sample
+print(f"{type(img) = }\n{type(target) = }\n{type(target[0]) = }\n{target[0].keys() = }")
 
 
 # %%
-# The dataset returns a two-tuple with the first item being a :class:`PIL.Image.Image` and second one a list of
-# dictionaries, which each containing the annotations for a single object instance. As is, this format is not compatible
-# with the ``torchvision.transforms.v2``, nor with the models. To overcome that, we provide the
+# Torchvision datasets preserve the data structure and types as it was intended
+# by the datasets authors. So by default, the output structure may not always be
+# compatible with the models or the transforms.
+#
+# To overcome that, we can use the
 # :func:`~torchvision.datasets.wrap_dataset_for_transforms_v2` function. For
-# :class:`~torchvision.datasets.CocoDetection`, this changes the target structure to a single dictionary of lists. It
-# also adds the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` wrapped in the corresponding
-# ``torchvision.datapoints``. By default, it only returns ``"boxes"`` and ``"labels"`` to avoid transforming unnecessary
-# items down the line, but you can pass the ``target_type`` parameter for fine-grained control.
+# :class:`~torchvision.datasets.CocoDetection`, this changes the target
+# structure to a single dictionary of lists:
 
-dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
+dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels", "masks"))
 
 sample = dataset[0]
-image, target = sample
-print(type(image))
-print(type(target), list(target.keys()))
-print(type(target["boxes"]), type(target["labels"]))
+img, target = sample
+print(f"{type(img) = }\n{type(target) = }\n{target.keys() = }")
+print(f"{type(target['boxes']) = }\n{type(target['labels']) = }\n{type(target['masks']) = }")
+
+# We used the ``target_keys`` parameter to specify the kind of output we're
+# interested in. Our dataset now returns a target which is dict where the values
+# are :ref:`Datapoints <what_are_datapoints>` (all are :class:`torch.Tensor`
+# subclasses). We're dropped all unncessary keys from the previous output, but
+# if you need any of the original keys e.g. "image_id", you can still ask for
+# it.
+#
+# .. note::
+#
+#     If you just want to do detection, you don't need and shouldn't pass
+#     "masks" in ``target_keys``: if masks are present in the sample, they will
+#     be transformed, slowing down your transformations unnecessarily.
+
 
 # %%
 # As baseline, let's have a look at a sample without transformations:
 
-show(sample)
+plot([dataset[0], dataset[1]])
 
 
 # %%
-# With the dataset properly set up, we can now define the augmentation pipeline. This is done the same way it is done in
-# ``torchvision.transforms`` v1, but now handles bounding boxes and masks without any extra configuration.
+# Let's now define our pre-processing transforms. All the transforms know how
+# to handle images, bouding boxes and masks when relevant.
+#
+# Transforms are typically passed as the ``transforms`` parameter of the
+# dataset so that they can leverage multi-processing from the
+# :class:`torch.utils.data.DataLoader`.
 
-transform = transforms.Compose(
+transforms = v2.Compose(
     [
-        transforms.RandomPhotometricDistort(),
-        transforms.RandomZoomOut(fill={PIL.Image.Image: (123, 117, 104), "others": 0}),
-        transforms.RandomIoUCrop(),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToImage(),
-        transforms.ConvertImageDtype(torch.float32),
-        transforms.SanitizeBoundingBoxes(),
+        v2.ToImage(),
+        v2.RandomPhotometricDistort(),
+        v2.RandomZoomOut(fill={datapoints.Image: (123, 117, 104), "others": 0}),
+        v2.RandomIoUCrop(),
+        v2.RandomHorizontalFlip(),
+        v2.SanitizeBoundingBoxes(),
+        v2.ToDtype(torch.float32, scale=True),
+        v2.ToPureTensor(),
     ]
 )
 
+dataset = datasets.CocoDetection(IMAGES_PATH, ANNOTATIONS_PATH, transforms=transforms)
+dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys=["boxes", "labels", "masks"])
+
 # %%
-# .. note::
-#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
-#    should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
-#    the corresponding labels and optionally masks. It is particularly critical to add it if
-#    :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
+# A few things are worth noting here:
+#
+# - We're converting the PIL image into a
+#   :class:`~torchvision.transforms.v2.Image` object. This isn't strictly
+#   necessary, but relying on Tensors (here: a Tensor subclass) will
+#   :ref:`generally be faster <transforms_perf>`.
+# - Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
+#   should be placed at least once at the end of a detection pipeline to remove
+#   degenerate bounding boxes as well as the corresponding labels and optionally
+#   masks. It is particularly critical to add it if
+#   :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
 #
 # Let's look how the sample looks like with our augmentation pipeline in place:
 
-dataset = load_example_coco_detection_dataset(transforms=transform)
-dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
-
-torch.manual_seed(3141)
-sample = dataset[0]
 
 # sphinx_gallery_thumbnail_number = 2
-show(sample)
+plot([dataset[0], dataset[1]])
 
 
 # %%
@@ -139,8 +144,8 @@ data_loader = torch.utils.data.DataLoader(
 
 model = models.get_model("ssd300_vgg16", weights=None, weights_backbone=None).train()
 
-for images, targets in data_loader:
-    loss_dict = model(images, targets)
+for imgs, targets in data_loader:
+    loss_dict = model(imgs, targets)
     print(loss_dict)
     # Put your training logic here
     break

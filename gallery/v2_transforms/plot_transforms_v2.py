@@ -90,7 +90,7 @@ plot([img, out])
 
 from torchvision import datapoints  # we'll describe this a bit later, bare with us
 
-bboxes = datapoints.BoundingBoxes(
+boxes = datapoints.BoundingBoxes(
     [
         [15, 10, 370, 510],
         [275, 340, 510, 510],
@@ -104,9 +104,10 @@ transforms = v2.Compose([
     v2.RandomHorizontalFlip(p=0.5),
     v2.SanitizeBoundingBoxes(),
 ])
-out_img, out_bboxes = transforms(img, bboxes)
+out_img, out_boxes = transforms(img, boxes)
+print(type(boxes), type(out_boxes))
 
-plot([(img, bboxes), (out_img, out_bboxes)])
+plot([(img, boxes), (out_img, out_boxes)])
 
 # %%
 #
@@ -120,6 +121,9 @@ plot([(img, bboxes), (out_img, out_bboxes)])
 # answer these in the next sections.
 
 # %%
+#
+# .. _what_are_datapoints:
+#
 # What are Datapoints?
 # --------------------
 #
@@ -152,7 +156,7 @@ print(f"{img_dp.dtype = }, {img_dp.shape = }, {img_dp.sum() = }")
 #
 # Above, we've seen two examples: one where we passed a single image as input
 # i.e. ``out = transforms(img)``, and one where we passed both an image and
-# bounding boxes, i.e. ``out_img, out_bboxes = transforms(img, bboxes)``.
+# bounding boxes, i.e. ``out_img, out_boxes = transforms(img, boxes)``.
 #
 # In fact, transforms support **arbitrary input structures**. The input can be a
 # single image, a tuple, an arbitrarily nested dictionary... pretty much
@@ -161,15 +165,15 @@ print(f"{img_dp.dtype = }, {img_dp.shape = }, {img_dp.sum() = }")
 # we're getting the same structure as output:
 
 target = {
-    "bboxes": bboxes,
-    "labels": torch.arange(bboxes.shape[0]),
+    "boxes": boxes,
+    "labels": torch.arange(boxes.shape[0]),
     "this_is_ignored": ("arbitrary", {"structure": "!"})
 }
 
 # Re-using the transforms and definitions from above.
 out_img, out_target = transforms(img, target)
 
-plot([(img, target["bboxes"]), (out_img, out_target["bboxes"])])
+plot([(img, target["boxes"]), (out_img, out_target["boxes"])])
 print(f"{out_target['this_is_ignored']}")
 
 # %%

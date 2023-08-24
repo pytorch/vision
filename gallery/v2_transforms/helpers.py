@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
-from torchvision.utils import draw_bounding_boxes
+import torch
+from torchvision.utils import draw_bounding_boxes, draw_segmentation_masks
+from torchvision import datapoints
+from torchvision.transforms.v2 import functional as F
 
 
 def plot(imgs):
@@ -12,20 +15,30 @@ def plot(imgs):
     _, axs = plt.subplots(nrows=num_rows, ncols=num_cols, squeeze=False)
     for row_idx, row in enumerate(imgs):
         for col_idx, img in enumerate(row):
-            bboxes = None
+            boxes = None
+            masks = None
             if isinstance(img, tuple):
-                bboxes = img[1]
-                img = img[0]
-                if isinstance(bboxes, dict):
-                    bboxes = bboxes['bboxes']
+                img, target = img
+                if isinstance(target, dict):
+                    boxes = target.get("boxes")
+                    masks = target.get("masks")
+                elif isinstance(target, datapoints.BoundingBoxes):
+                    boxes = target
+                else:
+                    raise ValueError(f"Unexpected target type: {type(target)}")
+            img = F.to_image(img)
             if img.dtype.is_floating_point and img.min() < 0:
                 # Poor man's re-normalization for the colors to be OK-ish. This
                 # is useful for images coming out of Normalize()
                 img -= img.min()
                 img /= img.max()
 
-            if bboxes is not None:
-                img = draw_bounding_boxes(img, bboxes, colors="yellow", width=3)
+            img = F.to_dtype(img, torch.uint8, scale=True)
+            if boxes is not None:
+                img = draw_bounding_boxes(img, boxes, colors="yellow", width=3)
+            if masks is not None:
+                img = draw_segmentation_masks(img, masks.to(torch.bool), alpha=.65)
+
             ax = axs[row_idx, col_idx]
             ax.imshow(img.permute(1, 2, 0).numpy())
             ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
