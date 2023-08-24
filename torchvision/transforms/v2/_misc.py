@@ -425,5 +425,4 @@ class SanitizeBoundingBoxes(Transform):
         if is_label:
             return output
 
-        out = datapoints.wrap(output, like=inpt)
-        return out
+        return datapoints.wrap(output, like=inpt)
