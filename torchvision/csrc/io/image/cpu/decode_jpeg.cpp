@@ -232,7 +232,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
 #endif // #if !JPEG_FOUND
 
 int64_t _jpeg_version() {
-#ifdef JPEG_FOUND
+#if JPEG_FOUND
   return JPEG_LIB_VERSION;
 #else
   return -1;

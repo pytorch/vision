@@ -12,26 +12,23 @@ import pytest
 
 import torch
 import torchvision.transforms.v2 as v2_transforms
-from common_utils import (
-    ArgsKwargs,
-    assert_close,
-    assert_equal,
-    make_bounding_box,
-    make_detection_mask,
-    make_image,
-    make_images,
-    make_segmentation_mask,
-    set_rng_seed,
-)
+from common_utils import assert_close, assert_equal, set_rng_seed
 from torch import nn
 from torchvision import datapoints, transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
-from torchvision.transforms.v2._utils import _get_fill
+from torchvision.transforms.v2._utils import _get_fill, query_size
 from torchvision.transforms.v2.functional import to_pil_image
-from torchvision.transforms.v2.utils import query_size
+from transforms_v2_legacy_utils import (
+    ArgsKwargs,
+    make_bounding_boxes,
+    make_detection_mask,
+    make_image,
+    make_images,
+    make_segmentation_mask,
+)
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
@@ -602,7 +599,7 @@ def check_call_consistency(
             raise AssertionError(
                 f"Transforming a tensor image with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`is_simple_tensor` path in `_transform`."
+                f"`is_pure_tensor` path in `_transform`."
             ) from exc
 
         assert_close(
@@ -930,6 +927,29 @@ class TestAATransforms:
             assert_close(expected_output, output, atol=1, rtol=0.1)
 
     @pytest.mark.parametrize(
+        "interpolation",
+        [
+            v2_transforms.InterpolationMode.NEAREST,
+            v2_transforms.InterpolationMode.BILINEAR,
+        ],
+    )
+    def test_randaug_jit(self, interpolation):
+        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
+        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1)
+        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1)
+
+        tt_ref = torch.jit.script(t_ref)
+        tt = torch.jit.script(t)
+
+        torch.manual_seed(12)
+        expected_output = tt_ref(inpt)
+
+        torch.manual_seed(12)
+        scripted_output = tt(inpt)
+
+        assert_equal(scripted_output, expected_output)
+
+    @pytest.mark.parametrize(
         "inpt",
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
@@ -980,6 +1000,29 @@ class TestAATransforms:
             output = t(inpt)
 
             assert_close(expected_output, output, atol=1, rtol=0.1)
+
+    @pytest.mark.parametrize(
+        "interpolation",
+        [
+            v2_transforms.InterpolationMode.NEAREST,
+            v2_transforms.InterpolationMode.BILINEAR,
+        ],
+    )
+    def test_trivial_aug_jit(self, interpolation):
+        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
+        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation)
+        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation)
+
+        tt_ref = torch.jit.script(t_ref)
+        tt = torch.jit.script(t)
+
+        torch.manual_seed(12)
+        expected_output = tt_ref(inpt)
+
+        torch.manual_seed(12)
+        scripted_output = tt(inpt)
+
+        assert_equal(scripted_output, expected_output)
 
     @pytest.mark.parametrize(
         "inpt",
@@ -1035,6 +1078,30 @@ class TestAATransforms:
         assert_equal(expected_output, output)
 
     @pytest.mark.parametrize(
+        "interpolation",
+        [
+            v2_transforms.InterpolationMode.NEAREST,
+            v2_transforms.InterpolationMode.BILINEAR,
+        ],
+    )
+    def test_augmix_jit(self, interpolation):
+        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
+
+        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+
+        tt_ref = torch.jit.script(t_ref)
+        tt = torch.jit.script(t)
+
+        torch.manual_seed(12)
+        expected_output = tt_ref(inpt)
+
+        torch.manual_seed(12)
+        scripted_output = tt(inpt)
+
+        assert_equal(scripted_output, expected_output)
+
+    @pytest.mark.parametrize(
         "inpt",
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
@@ -1063,6 +1130,30 @@ class TestAATransforms:
 
         assert_equal(expected_output, output)
 
+    @pytest.mark.parametrize(
+        "interpolation",
+        [
+            v2_transforms.InterpolationMode.NEAREST,
+            v2_transforms.InterpolationMode.BILINEAR,
+        ],
+    )
+    def test_aa_jit(self, interpolation):
+        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
+        aa_policy = legacy_transforms.AutoAugmentPolicy("imagenet")
+        t_ref = legacy_transforms.AutoAugment(aa_policy, interpolation=interpolation)
+        t = v2_transforms.AutoAugment(aa_policy, interpolation=interpolation)
+
+        tt_ref = torch.jit.script(t_ref)
+        tt = torch.jit.script(t)
+
+        torch.manual_seed(12)
+        expected_output = tt_ref(inpt)
+
+        torch.manual_seed(12)
+        scripted_output = tt(inpt)
+
+        assert_equal(scripted_output, expected_output)
+
 
 def import_transforms_from_references(reference):
     HERE = Path(__file__).parent
@@ -1090,7 +1181,7 @@ class TestRefDetTransforms:
 
         pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1100,7 +1191,7 @@ class TestRefDetTransforms:
 
         tensor_image = torch.Tensor(make_image(size=size, color_space="RGB", dtype=torch.float32))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1110,7 +1201,7 @@ class TestRefDetTransforms:
 
         datapoint_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:

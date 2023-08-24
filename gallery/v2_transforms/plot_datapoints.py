@@ -3,6 +3,11 @@
 Datapoints FAQ
 ==============
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_datapoints.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_datapoints.py>` to download the full example code.
+
+
 Datapoints are Tensor subclasses introduced together with
 ``torchvision.transforms.v2``. This example showcases what these datapoints are
 and how they behave.
@@ -22,14 +27,7 @@ and how they behave.
 import PIL.Image
 
 import torch
-import torchvision
-
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
 from torchvision import datapoints
-from torchvision.transforms.v2 import functional as F
 
 
 # %%
@@ -90,7 +88,7 @@ print(float_image)
 # In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` can also take a
 # :class:`PIL.Image.Image` directly:
 
-image = datapoints.Image(PIL.Image.open("assets/astronaut.jpg"))
+image = datapoints.Image(PIL.Image.open("../assets/astronaut.jpg"))
 print(image.shape, image.dtype)
 
 # %%
@@ -120,82 +118,9 @@ new_bboxes = datapoints.wrap(new_bboxes, like=bboxes)
 assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 assert new_bboxes.canvas_size == bboxes.canvas_size
 
-
 # %%
 # The metadata of ``new_bboxes`` is the same as ``bboxes``, but you could pass
 # it as a parameter to override it.
-#
-# Do I have to wrap the output of the datasets myself?
-# ----------------------------------------------------
-#
-# TODO: Move this in another guide - this is user-facing, not dev-facing.
-#
-# Only if you are using custom datasets. For the built-in ones, you can use
-# :func:`torchvision.datasets.wrap_dataset_for_transforms_v2`. Note that the function also supports subclasses of the
-# built-in datasets. Meaning, if your custom dataset subclasses from a built-in one and the output type is the same, you
-# also don't have to wrap manually.
-#
-# If you have a custom dataset, for example the ``PennFudanDataset`` from
-# `this tutorial <https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html>`_, you have two options:
-#
-# 1. Perform the wrapping inside ``__getitem__``:
-
-class PennFudanDataset(torch.utils.data.Dataset):
-    ...
-
-    def __getitem__(self, item):
-        ...
-
-        target["bboxes"] = datapoints.BoundingBoxes(
-            bboxes,
-            format=datapoints.BoundingBoxFormat.XYXY,
-            canvas_size=F.get_size(img),
-        )
-        target["labels"] = labels
-        target["masks"] = datapoints.Mask(masks)
-
-        ...
-
-        if self.transforms is not None:
-            img, target = self.transforms(img, target)
-
-        ...
-
-# %%
-# 2. Perform the wrapping inside a custom transformation at the beginning of your pipeline:
-
-
-class WrapPennFudanDataset:
-    def __call__(self, img, target):
-        target["boxes"] = datapoints.BoundingBoxes(
-            target["boxes"],
-            format=datapoints.BoundingBoxFormat.XYXY,
-            canvas_size=F.get_size(img),
-        )
-        target["masks"] = datapoints.Mask(target["masks"])
-        return img, target
-
-
-...
-
-
-def get_transform(train):
-    transforms = []
-    transforms.append(WrapPennFudanDataset())
-    transforms.append(T.PILToTensor())
-    ...
-
-# %%
-# .. note::
-#
-#    If both :class:`~torchvision.datapoints.BoundingBoxes` and :class:`~torchvision.datapoints.Mask`'s are included in
-#    the sample, ``torchvision.transforms.v2`` will transform them both. Meaning, if you don't need both, dropping or
-#    at least not wrapping the obsolete parts, can lead to a significant performance boost.
-#
-#    For example, if you are using the ``PennFudanDataset`` for object detection, not wrapping the masks avoids
-#    transforming them over and over again in the pipeline just to ultimately ignoring them. In general, it would be
-#    even better to not load the masks at all, but this is not possible in this example, since the bounding boxes are
-#    generated from the masks.
 #
 # .. _datapoint_unwrapping_behaviour:
 #
@@ -236,7 +161,8 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 
 # %%
 # Alternatively, you can use the :func:`~torchvision.datapoints.set_return_type`
-# as a global config setting for the whole program, or as a context manager:
+# as a global config setting for the whole program, or as a context manager
+# (read its docs to learn more about caveats):
 
 with datapoints.set_return_type("datapoint"):
     new_bboxes = bboxes + 3
@@ -275,13 +201,13 @@ assert isinstance(new_bboxes, datapoints.BoundingBoxes)
 # ^^^^^^^^^^
 #
 # There are a few exceptions to this "unwrapping" rule:
+# :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
+# :meth:`torch.Tensor.detach`, and :meth:`~torch.Tensor.requires_grad_` retain
+# the datapoint type.
 #
-# 1. Operations like :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
-#    :meth:`torch.Tensor.detach` and :meth:`~torch.Tensor.requires_grad_` retain
-#    the datapoint type.
-# 2. Inplace operations on datapoints like ``.add_()`` preserve they type. However,
-#    the **returned** value of inplace operations will be unwrapped into a pure
-#    tensor:
+# Inplace operations on datapoints like ``obj.add_()`` will preserve the type of
+# ``obj``. However, the **returned** value of inplace operations will be a pure
+# tensor:
 
 image = datapoints.Image([[[0, 1], [1, 0]]])
 

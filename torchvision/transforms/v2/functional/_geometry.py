@@ -23,7 +23,7 @@ from torchvision.transforms.functional import (
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_format_bounding_boxes
+from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_box_format
 
 from ._utils import _FillTypeJIT, _get_kernel, _register_five_ten_crop_kernel_internal, _register_kernel_internal
 
@@ -40,6 +40,7 @@ def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> Interp
 
 
 def horizontal_flip(inpt: torch.Tensor) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomHorizontalFlip` for details."""
     if torch.jit.is_scripting():
         return horizontal_flip_image(inpt)
 
@@ -96,6 +97,7 @@ def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def vertical_flip(inpt: torch.Tensor) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomVerticalFlip` for details."""
     if torch.jit.is_scripting():
         return vertical_flip_image(inpt)
 
@@ -177,6 +179,7 @@ def resize(
     max_size: Optional[int] = None,
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.Resize` for details."""
     if torch.jit.is_scripting():
         return resize_image(inpt, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
@@ -373,6 +376,7 @@ def affine(
     fill: _FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomAffine` for details."""
     if torch.jit.is_scripting():
         return affine_image(
             inpt,
@@ -744,7 +748,7 @@ def _affine_bounding_boxes_with_expand(
     dtype = bounding_boxes.dtype
     device = bounding_boxes.device
     bounding_boxes = (
-        convert_format_bounding_boxes(
+        convert_bounding_box_format(
             bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
         )
     ).reshape(-1, 4)
@@ -805,7 +809,7 @@ def _affine_bounding_boxes_with_expand(
         canvas_size = (new_height, new_width)
 
     out_bboxes = clamp_bounding_boxes(out_bboxes, format=datapoints.BoundingBoxFormat.XYXY, canvas_size=canvas_size)
-    out_bboxes = convert_format_bounding_boxes(
+    out_bboxes = convert_bounding_box_format(
         out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
@@ -946,6 +950,7 @@ def rotate(
     center: Optional[List[float]] = None,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomRotation` for details."""
     if torch.jit.is_scripting():
         return rotate_image(inpt, angle=angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
@@ -1118,6 +1123,7 @@ def pad(
     fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.Pad` for details."""
     if torch.jit.is_scripting():
         return pad_image(inpt, padding=padding, fill=fill, padding_mode=padding_mode)
 
@@ -1333,6 +1339,7 @@ def pad_video(
 
 
 def crop(inpt: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
     if torch.jit.is_scripting():
         return crop_image(inpt, top=top, left=left, height=height, width=width)
 
@@ -1426,6 +1433,7 @@ def perspective(
     fill: _FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomPerspective` for details."""
     if torch.jit.is_scripting():
         return perspective_image(
             inpt,
@@ -1572,9 +1580,9 @@ def perspective_bounding_boxes(
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_boxes.shape
-    # TODO: first cast to float if bbox is int64 before convert_format_bounding_boxes
+    # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
     bounding_boxes = (
-        convert_format_bounding_boxes(bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
+        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     dtype = bounding_boxes.dtype if torch.is_floating_point(bounding_boxes) else torch.float32
@@ -1647,7 +1655,7 @@ def perspective_bounding_boxes(
 
     # out_bboxes should be of shape [N boxes, 4]
 
-    return convert_format_bounding_boxes(
+    return convert_bounding_box_format(
         out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
@@ -1733,6 +1741,7 @@ def elastic(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.ElasticTransform` for details."""
     if torch.jit.is_scripting():
         return elastic_image(inpt, displacement=displacement, interpolation=interpolation, fill=fill)
 
@@ -1853,9 +1862,9 @@ def elastic_bounding_boxes(
         displacement = displacement.to(dtype=dtype, device=device)
 
     original_shape = bounding_boxes.shape
-    # TODO: first cast to float if bbox is int64 before convert_format_bounding_boxes
+    # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
     bounding_boxes = (
-        convert_format_bounding_boxes(bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
+        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     id_grid = _create_identity_grid(canvas_size, device=device, dtype=dtype)
@@ -1882,7 +1891,7 @@ def elastic_bounding_boxes(
         canvas_size=canvas_size,
     )
 
-    return convert_format_bounding_boxes(
+    return convert_bounding_box_format(
         out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
@@ -1935,6 +1944,7 @@ def elastic_video(
 
 
 def center_crop(inpt: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
     if torch.jit.is_scripting():
         return center_crop_image(inpt, output_size=output_size)
 
@@ -2063,6 +2073,7 @@ def resized_crop(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomResizedCrop` for details."""
     if torch.jit.is_scripting():
         return resized_crop_image(
             inpt,
@@ -2207,6 +2218,7 @@ def resized_crop_video(
 def five_crop(
     inpt: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """[BETA] See :class:`~torchvision.transforms.v2.FiveCrop` for details."""
     if torch.jit.is_scripting():
         return five_crop_image(inpt, size=size)
 
@@ -2290,6 +2302,7 @@ def ten_crop(
     torch.Tensor,
     torch.Tensor,
 ]:
+    """[BETA] See :class:`~torchvision.transforms.v2.TenCrop` for details."""
     if torch.jit.is_scripting():
         return ten_crop_image(inpt, size=size, vertical_flip=vertical_flip)
 

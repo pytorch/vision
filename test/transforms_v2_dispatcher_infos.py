@@ -2,9 +2,9 @@ import collections.abc
 
 import pytest
 import torchvision.transforms.v2.functional as F
-from common_utils import InfoBase, TestMark
 from torchvision import datapoints
 from transforms_v2_kernel_infos import KERNEL_INFOS, pad_xfail_jit_fill_condition
+from transforms_v2_legacy_utils import InfoBase, TestMark
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 
@@ -107,7 +107,7 @@ multi_crop_skips = [
         ("TestDispatchers", test_name),
         pytest.mark.skip(reason="Multi-crop dispatchers return a sequence of items rather than a single one."),
     )
-    for test_name in ["test_simple_tensor_output_type", "test_pil_output_type", "test_datapoint_output_type"]
+    for test_name in ["test_pure_tensor_output_type", "test_pil_output_type", "test_datapoint_output_type"]
 ]
 multi_crop_skips.append(skip_dispatch_datapoint)
 
@@ -374,8 +374,8 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.convert_format_bounding_boxes,
-        kernels={datapoints.BoundingBoxes: F.convert_format_bounding_boxes},
+        F.convert_bounding_box_format,
+        kernels={datapoints.BoundingBoxes: F.convert_bounding_box_format},
         test_marks=[
             skip_dispatch_datapoint,
         ],
