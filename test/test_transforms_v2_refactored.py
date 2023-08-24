@@ -791,7 +791,8 @@ class TestResize:
         self._check_stride(output, memory_format=memory_format)
 
     def test_float16_no_rounding(self):
-        # See https://github.com/pytorch/vision/issues/7667
+        # Make sure Resize() doesn't round float16 images
+        # Non-regression test for https://github.com/pytorch/vision/issues/7667
 
         input = make_image_tensor(self.INPUT_SIZE, dtype=torch.float16)
         output = F.resize_image(input, size=self.OUTPUT_SIZES[0])
