@@ -78,6 +78,6 @@ class CocoDetectionToVOCSegmentation(v2.Transform):
     def forward(self, image, target):
         segmentation_mask = self._coco_detection_masks_to_voc_segmentation_mask(target)
         if segmentation_mask is None:
-            segmentation_mask = torch.zeros(v2.functional.get_spatial_size(image), dtype=torch.uint8)
+            segmentation_mask = torch.zeros(v2.functional.get_size(image), dtype=torch.uint8)
 
         return image, datapoints.Mask(segmentation_mask)
