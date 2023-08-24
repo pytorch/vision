@@ -9,8 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
-from .utils import get_bounding_boxes, has_any, is_pure_tensor
+from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
 
 
 # TODO: do we want/need to expose this?
@@ -234,7 +233,8 @@ class ToDtype(Transform):
             A dict can be passed to specify per-datapoint conversions, e.g.
             ``dtype={datapoints.Image: torch.float32, datapoints.Mask: torch.int64, "others":None}``. The "others"
             key can be used as a catch-all for any other datapoint type, and ``None`` means no conversion.
-        scale (bool, optional): Whether to scale the values for images or videos. Default: ``False``.
+        scale (bool, optional): Whether to scale the values for images or videos. See :ref:`range_and_dtype`.
+            Default: ``False``.
     """
 
     _transformed_types = (torch.Tensor,)
@@ -293,7 +293,9 @@ class ToDtype(Transform):
 
 
 class ConvertImageDtype(Transform):
-    """[BETA] Convert input image to the given ``dtype`` and scale the values accordingly.
+    """[BETA] [DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.
+
+    Convert input image to the given ``dtype`` and scale the values accordingly.
 
     .. v2betastatus:: ConvertImageDtype transform
 
@@ -388,7 +390,7 @@ class SanitizeBoundingBoxes(Transform):
 
         boxes = cast(
             datapoints.BoundingBoxes,
-            F.convert_format_bounding_boxes(
+            F.convert_bounding_box_format(
                 boxes,
                 new_format=datapoints.BoundingBoxFormat.XYXY,
             ),

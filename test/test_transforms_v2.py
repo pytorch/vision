@@ -17,7 +17,7 @@ from torchvision import datapoints
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.utils import check_type, is_pure_tensor, query_chw
+from torchvision.transforms.v2._utils import check_type, is_pure_tensor, query_chw
 from transforms_v2_legacy_utils import (
     make_bounding_boxes,
     make_detection_mask,

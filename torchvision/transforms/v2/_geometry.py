@@ -23,8 +23,12 @@ from ._utils import (
     _setup_fill_arg,
     _setup_float_or_seq,
     _setup_size,
+    get_bounding_boxes,
+    has_all,
+    has_any,
+    is_pure_tensor,
+    query_size,
 )
-from .utils import get_bounding_boxes, has_all, has_any, is_pure_tensor, query_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -1186,7 +1190,7 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_boxes(
+                xyxy_bboxes = F.convert_bounding_box_format(
                     bboxes.as_subclass(torch.Tensor),
                     bboxes.format,
                     datapoints.BoundingBoxFormat.XYXY,

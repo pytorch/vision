@@ -83,6 +83,7 @@ sphinx_gallery_conf = {
     "backreferences_dir": "gen_modules/backreferences",
     "doc_module": ("torchvision",),
     "remove_config_comments": True,
+    "ignore_pattern": "helpers.py",
 }
 
 napoleon_use_ivar = True

@@ -6,8 +6,16 @@ import torch
 from torchvision import datapoints
 from torchvision.prototype.datapoints import Label, OneHotLabel
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2._utils import _FillType, _get_fill, _setup_fill_arg, _setup_size
-from torchvision.transforms.v2.utils import get_bounding_boxes, has_any, is_pure_tensor, query_size
+from torchvision.transforms.v2._utils import (
+    _FillType,
+    _get_fill,
+    _setup_fill_arg,
+    _setup_size,
+    get_bounding_boxes,
+    has_any,
+    is_pure_tensor,
+    query_size,
+)
 
 
 class FixedSizeCrop(Transform):
@@ -76,7 +84,7 @@ class FixedSizeCrop(Transform):
                 width=new_width,
             )
             bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size)
-            height_and_width = F.convert_format_bounding_boxes(
+            height_and_width = F.convert_bounding_box_format(
                 bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
