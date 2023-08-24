@@ -162,6 +162,7 @@ class VisionDatasetDatapointWrapper:
                 raise TypeError(msg)
 
         self._dataset = dataset
+        self._target_keys = target_keys
         self._wrapper = wrapper_factory(dataset, target_keys)
 
         # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
@@ -196,6 +197,9 @@ class VisionDatasetDatapointWrapper:
 
     def __len__(self):
         return len(self._dataset)
+
+    def __reduce__(self):
+        return wrap_dataset_for_transforms_v2, (self._dataset, self._target_keys)
 
 
 def raise_not_supported(description):

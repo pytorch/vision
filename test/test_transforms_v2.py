@@ -1,5 +1,6 @@
 import itertools
 import pathlib
+import pickle
 import random
 import warnings
 
@@ -169,8 +170,11 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
         ],
     )
+    @pytest.mark.parametrize("de_serialize", [lambda t: t, lambda t: pickle.loads(pickle.dumps(t))])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_common(self, transform, adapter, container_type, image_or_video, device):
+    def test_common(self, transform, adapter, container_type, image_or_video, de_serialize, device):
+        transform = de_serialize(transform)
+
         canvas_size = F.get_size(image_or_video)
         input = dict(
             image_or_video=image_or_video,
@@ -1250,6 +1254,20 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         assert out_boxes.shape[0] == out_labels.shape[0] == out_masks.shape[0]
         # This works because we conveniently set labels to arange(num_boxes)
         assert out_labels.tolist() == valid_indices
+
+
+def test_sanitize_bounding_boxes_no_label():
+    # Non-regression test for https://github.com/pytorch/vision/issues/7878
+
+    img = make_image()
+    boxes = make_bounding_boxes()
+
+    with pytest.raises(ValueError, match="or a two-tuple whose second item is a dict"):
+        transforms.SanitizeBoundingBoxes()(img, boxes)
+
+    out_img, out_boxes = transforms.SanitizeBoundingBoxes(labels_getter=None)(img, boxes)
+    assert isinstance(out_img, datapoints.Image)
+    assert isinstance(out_boxes, datapoints.BoundingBoxes)
 
 
 def test_sanitize_bounding_boxes_errors():

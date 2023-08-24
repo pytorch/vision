@@ -5,6 +5,7 @@ import inspect
 import itertools
 import os
 import pathlib
+import platform
 import random
 import shutil
 import string
@@ -548,7 +549,7 @@ class DatasetTestCase(unittest.TestCase):
     @test_all_configs
     def test_num_examples(self, config):
         with self.create_dataset(config) as (dataset, info):
-            assert len(dataset) == info["num_examples"]
+            assert len(list(dataset)) == len(dataset) == info["num_examples"]
 
     @test_all_configs
     def test_transforms(self, config):
@@ -661,26 +662,38 @@ class VideoDatasetTestCase(DatasetTestCase):
     FEATURE_TYPES = (torch.Tensor, torch.Tensor, int)
     REQUIRED_PACKAGES = ("av",)
 
-    DEFAULT_FRAMES_PER_CLIP = 1
+    FRAMES_PER_CLIP = 1
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dataset_args = self._set_default_frames_per_clip(self.dataset_args)
 
-    def _set_default_frames_per_clip(self, inject_fake_data):
+    def _set_default_frames_per_clip(self, dataset_args):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
         args_without_default = argspec.args[1 : (-len(argspec.defaults) if argspec.defaults else None)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
 
-        @functools.wraps(inject_fake_data)
+        @functools.wraps(dataset_args)
         def wrapper(tmpdir, config):
-            args = inject_fake_data(tmpdir, config)
+            args = dataset_args(tmpdir, config)
             if frames_per_clip_last and len(args) == len(args_without_default) - 1:
-                args = (*args, self.DEFAULT_FRAMES_PER_CLIP)
+                args = (*args, self.FRAMES_PER_CLIP)
 
             return args
 
         return wrapper
+
+    def test_output_format(self):
+        for output_format in ["TCHW", "THWC"]:
+            with self.create_dataset(output_format=output_format) as (dataset, _):
+                for video, *_ in dataset:
+                    if output_format == "TCHW":
+                        num_frames, num_channels, *_ = video.shape
+                    else:  # output_format == "THWC":
+                        num_frames, *_, num_channels = video.shape
+
+                assert num_frames == self.FRAMES_PER_CLIP
+                assert num_channels == 3
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
@@ -690,6 +703,31 @@ class VideoDatasetTestCase(DatasetTestCase):
             return
 
         super().test_transforms_v2_wrapper.__wrapped__(self, config)
+
+
+def _no_collate(batch):
+    return batch
+
+
+def check_transforms_v2_wrapper_spawn(dataset):
+    # On Linux and Windows, the DataLoader forks the main process by default. This is not available on macOS, so new
+    # subprocesses are spawned. This requires the whole pipeline including the dataset to be pickleable, which is what
+    # we are enforcing here.
+    if platform.system() != "Darwin":
+        pytest.skip("Multiprocessing spawning is only checked on macOS.")
+
+    from torch.utils.data import DataLoader
+    from torchvision import datapoints
+    from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+
+    dataloader = DataLoader(wrapped_dataset, num_workers=2, multiprocessing_context="spawn", collate_fn=_no_collate)
+
+    for wrapped_sample in dataloader:
+        assert tree_any(
+            lambda item: isinstance(item, (datapoints.Image, datapoints.Video, PIL.Image.Image)), wrapped_sample
+        )
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:

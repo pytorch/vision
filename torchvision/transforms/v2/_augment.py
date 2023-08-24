@@ -229,7 +229,7 @@ class MixUp(_BaseMixUpCutMix):
         alpha (float, optional): hyperparameter of the Beta distribution used for mixup. Default is 1.
         num_classes (int): number of classes in the batch. Used for one-hot-encoding.
         labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
-            By default, this will pick the second parameter a the labels if it's a tensor. This covers the most
+            By default, this will pick the second parameter as the labels if it's a tensor. This covers the most
             common scenario where this transform is called as ``MixUp()(imgs_batch, labels_batch)``.
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
@@ -279,7 +279,7 @@ class CutMix(_BaseMixUpCutMix):
         alpha (float, optional): hyperparameter of the Beta distribution used for mixup. Default is 1.
         num_classes (int): number of classes in the batch. Used for one-hot-encoding.
         labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
-            By default, this will pick the second parameter a the labels if it's a tensor. This covers the most
+            By default, this will pick the second parameter as the labels if it's a tensor. This covers the most
             common scenario where this transform is called as ``CutMix()(imgs_batch, labels_batch)``.
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
