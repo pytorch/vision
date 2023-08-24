@@ -99,10 +99,9 @@ boxes = datapoints.BoundingBoxes(
     format="XYXY", canvas_size=img.shape[-2:])
 
 transforms = v2.Compose([
-    v2.RandomPhotometricDistort(),
-    v2.RandomIoUCrop(),
-    v2.RandomHorizontalFlip(p=0.5),
-    v2.SanitizeBoundingBoxes(),
+    v2.RandomResizedCrop(size=(224, 224), antialias=True),
+    v2.RandomPhotometricDistort(p=1),
+    v2.RandomHorizontalFlip(p=1),
 ])
 out_img, out_boxes = transforms(img, boxes)
 print(type(boxes), type(out_boxes))
