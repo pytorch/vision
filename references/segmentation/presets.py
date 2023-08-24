@@ -60,7 +60,7 @@ class SegmentationPresetTrain:
             ]
         else:
             # No need to explicitly convert masks as they're magically int64 already
-            transforms += [T.ConvertImageDtype(torch.float)]
+            transforms += [T.ToDtype(torch.float, scale=True)]
 
         transforms += [T.Normalize(mean=mean, std=std)]
         if use_v2:
@@ -97,7 +97,7 @@ class SegmentationPresetEval:
             transforms += [T.ToImage() if use_v2 else T.PILToTensor()]
 
         transforms += [
-            T.ConvertImageDtype(torch.float),
+            T.ToDtype(torch.float, scale=True),
             T.Normalize(mean=mean, std=std),
         ]
         if use_v2:
