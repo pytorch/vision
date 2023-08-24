@@ -82,9 +82,7 @@ print(f"{type(target['boxes']) = }\n{type(target['labels']) = }\n{type(target['m
 #     If you just want to do detection, you don't need and shouldn't pass
 #     "masks" in ``target_keys``: if masks are present in the sample, they will
 #     be transformed, slowing down your transformations unnecessarily.
-
-
-# %%
+#
 # As baseline, let's have a look at a sample without transformations:
 
 plot([dataset[0], dataset[1]])
