@@ -41,10 +41,9 @@ conda create \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \
-  openssl=3.0.9 \
   'ffmpeg<4.3'
 conda activate ci
-conda install --quiet --yes libjpeg-turbo -c pytorch
+conda install --quiet --yes libjpeg-turbo openssl=3.0.9 -c pytorch
 pip install --progress-bar=off --upgrade setuptools
 
 # See https://github.com/pytorch/vision/issues/6790
