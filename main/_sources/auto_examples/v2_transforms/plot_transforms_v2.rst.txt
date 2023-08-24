@@ -154,7 +154,7 @@ boxes, segmentation / detection masks, or videos.
 
 Let's briefly look at a detection example with bounding boxes.
 
-.. GENERATED FROM PYTHON SOURCE LINES 90-111
+.. GENERATED FROM PYTHON SOURCE LINES 90-110
 
 .. code-block:: default
 
@@ -170,10 +170,9 @@ Let's briefly look at a detection example with bounding boxes.
         format="XYXY", canvas_size=img.shape[-2:])
 
     transforms = v2.Compose([
-        v2.RandomPhotometricDistort(),
-        v2.RandomIoUCrop(),
-        v2.RandomHorizontalFlip(p=0.5),
-        v2.SanitizeBoundingBoxes(),
+        v2.RandomResizedCrop(size=(224, 224), antialias=True),
+        v2.RandomPhotometricDistort(p=1),
+        v2.RandomHorizontalFlip(p=1),
     ])
     out_img, out_bboxes = transforms(img, bboxes)
 
@@ -191,7 +190,7 @@ Let's briefly look at a detection example with bounding boxes.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 112-120
+.. GENERATED FROM PYTHON SOURCE LINES 111-119
 
 The example above focuses on object detection. But if we had masks
 (:class:`torchvision.datapoints.Mask`) for object segmentation or semantic
@@ -202,7 +201,7 @@ By now you likely have a few questions: what are these datapoints, how do we
 use them, and what is the expected input/output of those transforms? We'll
 answer these in the next sections.
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-135
+.. GENERATED FROM PYTHON SOURCE LINES 122-134
 
 What are Datapoints?
 --------------------
@@ -217,7 +216,7 @@ Datapoints look and feel just like regular tensors - they **are** tensors.
 Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()``
 or any ``torch.*`` operator will also work on a datapoint:
 
-.. GENERATED FROM PYTHON SOURCE LINES 135-141
+.. GENERATED FROM PYTHON SOURCE LINES 134-140
 
 .. code-block:: default
 
@@ -236,12 +235,12 @@ or any ``torch.*`` operator will also work on a datapoint:
  .. code-block:: none
 
     isinstance(img_dp, torch.Tensor) = True
-    img_dp.dtype = torch.uint8, img_dp.shape = torch.Size([3, 256, 256]), img_dp.sum() = tensor(25088295)
+    img_dp.dtype = torch.uint8, img_dp.shape = torch.Size([3, 256, 256]), img_dp.sum() = tensor(25087958)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 142-162
+.. GENERATED FROM PYTHON SOURCE LINES 141-161
 
 These Datapoint classes are at the core of the transforms: in order to
 transform a given input, the transforms first look at the **class** of the
@@ -264,7 +263,7 @@ anything. The same structure will be returned as output. Below, we use the
 same detection transforms, but pass a tuple (image, target_dict) as input and
 we're getting the same structure as output:
 
-.. GENERATED FROM PYTHON SOURCE LINES 162-175
+.. GENERATED FROM PYTHON SOURCE LINES 161-174
 
 .. code-block:: default
 
@@ -299,7 +298,7 @@ we're getting the same structure as output:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 176-261
+.. GENERATED FROM PYTHON SOURCE LINES 175-260
 
 We passed a tuple so we get a tuple back, and the second element is the
 tranformed target dict. Transforms don't really care about the structure of
@@ -390,7 +389,7 @@ Either way, the logic will depend on your specific dataset.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.831 seconds)
+   **Total running time of the script:** (0 minutes 0.823 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2.py:
