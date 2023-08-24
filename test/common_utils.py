@@ -380,7 +380,6 @@ def make_image(
     num_channels = NUM_CHANNELS_MAP[color_space]
     dtype = dtype or torch.uint8
     max_value = get_max_value(dtype)
-
     data = torch.testing.make_tensor(
         (*batch_dims, num_channels, *size),
         low=0,
