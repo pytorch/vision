@@ -746,6 +746,26 @@ class TestResize:
 
         assert image.stride() == expected_stride
 
+    def _make_image(self, *args, batch_dims=(), memory_format=torch.contiguous_format, **kwargs):
+        # torch.channels_last memory_format is only available for 4D tensors, i.e. (B, C, H, W). However, images coming
+        # from PIL or our own I/O functions do not have a batch dimensions and are thus 3D, i.e. (C, H, W). Still, the
+        # layout of the data in memory is channels last. To emulate this when a 3D input is requested here, we create
+        # the image as 4D and create a view with the right shape afterwards. With this the layout in memory is channels
+        # last although PyTorch doesn't recognizes it as such.
+        emulate_channels_last = memory_format is torch.channels_last or len(batch_dims) != 1
+
+        image = make_image(
+            *args,
+            batch_dims=(math.prod(batch_dims),) if emulate_channels_last else batch_dims,
+            memory_format=memory_format,
+            **kwargs,
+        )
+
+        if emulate_channels_last:
+            image = datapoints.wrap(image.view(*batch_dims, *image.shape[-3:]), like=image)
+
+        return image
+
     # TODO: We can remove this test and related torchvision workaround
     #  once we fixed related pytorch issue: https://github.com/pytorch/pytorch/issues/68430
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
@@ -761,7 +781,7 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
-        input = make_image(self.INPUT_SIZE, dtype=dtype, device=device, memory_format=memory_format)
+        input = self._make_image(self.INPUT_SIZE, dtype=dtype, device=device, memory_format=memory_format)
 
         # Smoke test to make sure we aren't starting with wrong assumptions
         self._check_stride(input, memory_format=memory_format)

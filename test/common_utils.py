@@ -1,7 +1,6 @@
 import contextlib
 import functools
 import itertools
-import math
 import os
 import pathlib
 import random
@@ -382,23 +381,14 @@ def make_image(
     dtype = dtype or torch.uint8
     max_value = get_max_value(dtype)
 
-    shape = make_tensor_shape = (*batch_dims, num_channels, *size)
-    # torch.channels_last memory_format is only available for 4D tensors, i.e. (B, C, H, W). However, images coming from
-    # PIL or our own I/O functions do not have a batch dimensions and are thus 3D, i.e. (C, H, W). Still, the layout of
-    # the data in memory is channels last. To emulate this when a 3D input is requested here, we create the image as 4D
-    # and create a view with the right shape afterwards. With this the layout in memory is channels last although
-    # PyTorch doesn't recognizes it as such.
-    if memory_format is torch.channels_last and len(batch_dims) != 1:
-        make_tensor_shape = (math.prod(shape[:-3]), *shape[-3:])
-
     data = torch.testing.make_tensor(
-        make_tensor_shape,
+        (*batch_dims, num_channels, *size),
         low=0,
         high=max_value,
         dtype=dtype,
         device=device,
         memory_format=memory_format,
-    ).view(shape)
+    )
     if color_space in {"GRAY_ALPHA", "RGBA"}:
         data[..., -1, :, :] = max_value
 
