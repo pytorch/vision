@@ -1256,6 +1256,20 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         assert out_labels.tolist() == valid_indices
 
 
+def test_sanitize_bounding_boxes_no_label():
+    # Non-regression test for https://github.com/pytorch/vision/issues/7878
+
+    img = make_image()
+    boxes = make_bounding_boxes()
+
+    with pytest.raises(ValueError, match="or a two-tuple whose second item is a dict"):
+        transforms.SanitizeBoundingBoxes()(img, boxes)
+
+    out_img, out_boxes = transforms.SanitizeBoundingBoxes(labels_getter=None)(img, boxes)
+    assert isinstance(out_img, datapoints.Image)
+    assert isinstance(out_boxes, datapoints.BoundingBoxes)
+
+
 def test_sanitize_bounding_boxes_errors():
 
     good_bbox = datapoints.BoundingBoxes(
