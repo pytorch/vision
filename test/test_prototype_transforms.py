@@ -10,8 +10,8 @@ from prototype_common_utils import make_label
 
 from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
+from torchvision.transforms.v2._utils import check_type, is_pure_tensor
 from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_pil_image
-from torchvision.transforms.v2.utils import check_type, is_pure_tensor
 from transforms_v2_legacy_utils import (
     DEFAULT_EXTRA_DIMS,
     make_bounding_boxes,

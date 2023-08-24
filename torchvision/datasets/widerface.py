@@ -137,13 +137,13 @@ class WIDERFace(VisionDataset):
                             {
                                 "img_path": img_path,
                                 "annotations": {
-                                    "bbox": labels_tensor[:, 0:4],  # x, y, width, height
-                                    "blur": labels_tensor[:, 4],
-                                    "expression": labels_tensor[:, 5],
-                                    "illumination": labels_tensor[:, 6],
-                                    "occlusion": labels_tensor[:, 7],
-                                    "pose": labels_tensor[:, 8],
-                                    "invalid": labels_tensor[:, 9],
+                                    "bbox": labels_tensor[:, 0:4].clone(),  # x, y, width, height
+                                    "blur": labels_tensor[:, 4].clone(),
+                                    "expression": labels_tensor[:, 5].clone(),
+                                    "illumination": labels_tensor[:, 6].clone(),
+                                    "occlusion": labels_tensor[:, 7].clone(),
+                                    "pose": labels_tensor[:, 8].clone(),
+                                    "invalid": labels_tensor[:, 9].clone(),
                                 },
                             }
                         )

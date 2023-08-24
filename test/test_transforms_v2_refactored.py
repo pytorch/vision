@@ -2,6 +2,7 @@ import contextlib
 import decimal
 import inspect
 import math
+import pickle
 import re
 from pathlib import Path
 from unittest import mock
@@ -247,6 +248,8 @@ def _check_transform_v1_compatibility(transform, input):
 def check_transform(transform_cls, input, *args, **kwargs):
     transform = transform_cls(*args, **kwargs)
 
+    pickle.loads(pickle.dumps(transform))
+
     output = transform(input)
     assert isinstance(output, type(input))
 
@@ -342,7 +345,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
         in_dtype = bbox.dtype
         if not torch.is_floating_point(bbox):
             bbox = bbox.float()
-        bbox_xyxy = F.convert_format_bounding_boxes(
+        bbox_xyxy = F.convert_bounding_box_format(
             bbox.as_subclass(torch.Tensor),
             old_format=format,
             new_format=datapoints.BoundingBoxFormat.XYXY,
@@ -366,7 +369,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
             ],
             dtype=bbox_xyxy.dtype,
         )
-        out_bbox = F.convert_format_bounding_boxes(
+        out_bbox = F.convert_bounding_box_format(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64

@@ -15,6 +15,7 @@ from ._utils import _get_kernel, _register_kernel_internal
 
 
 def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.Grayscale` for details."""
     if torch.jit.is_scripting():
         return rgb_to_grayscale_image(inpt, num_output_channels=num_output_channels)
 
@@ -69,6 +70,7 @@ def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Te
 
 
 def adjust_brightness(inpt: torch.Tensor, brightness_factor: float) -> torch.Tensor:
+    """Adjust brightness."""
 
     if torch.jit.is_scripting():
         return adjust_brightness_image(inpt, brightness_factor=brightness_factor)
@@ -106,6 +108,7 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
 
 
 def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Tensor:
+    """Adjust saturation."""
     if torch.jit.is_scripting():
         return adjust_saturation_image(inpt, saturation_factor=saturation_factor)
 
@@ -144,6 +147,7 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
 
 
 def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.RandomAutocontrast`"""
     if torch.jit.is_scripting():
         return adjust_contrast_image(inpt, contrast_factor=contrast_factor)
 
@@ -182,6 +186,7 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
 
 
 def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.RandomAdjustSharpness`"""
     if torch.jit.is_scripting():
         return adjust_sharpness_image(inpt, sharpness_factor=sharpness_factor)
 
@@ -254,6 +259,7 @@ def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torc
 
 
 def adjust_hue(inpt: torch.Tensor, hue_factor: float) -> torch.Tensor:
+    """Adjust hue"""
     if torch.jit.is_scripting():
         return adjust_hue_image(inpt, hue_factor=hue_factor)
 
@@ -371,6 +377,7 @@ def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
 
 
 def adjust_gamma(inpt: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
+    """Adjust gamma."""
     if torch.jit.is_scripting():
         return adjust_gamma_image(inpt, gamma=gamma, gain=gain)
 
@@ -410,6 +417,7 @@ def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> to
 
 
 def posterize(inpt: torch.Tensor, bits: int) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomPosterize` for details."""
     if torch.jit.is_scripting():
         return posterize_image(inpt, bits=bits)
 
@@ -443,6 +451,7 @@ def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
 
 
 def solarize(inpt: torch.Tensor, threshold: float) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomSolarize` for details."""
     if torch.jit.is_scripting():
         return solarize_image(inpt, threshold=threshold)
 
@@ -470,6 +479,7 @@ def solarize_video(video: torch.Tensor, threshold: float) -> torch.Tensor:
 
 
 def autocontrast(inpt: torch.Tensor) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomAutocontrast` for details."""
     if torch.jit.is_scripting():
         return autocontrast_image(inpt)
 
@@ -519,6 +529,7 @@ def autocontrast_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def equalize(inpt: torch.Tensor) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.RandomEqualize` for details."""
     if torch.jit.is_scripting():
         return equalize_image(inpt)
 
@@ -608,6 +619,7 @@ def equalize_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def invert(inpt: torch.Tensor) -> torch.Tensor:
+    """[BETA] See :func:`~torchvision.transforms.v2.RandomInvert`."""
     if torch.jit.is_scripting():
         return invert_image(inpt)
 
