@@ -5,6 +5,7 @@ import inspect
 import itertools
 import os
 import pathlib
+import platform
 import random
 import shutil
 import string
@@ -548,7 +549,7 @@ class DatasetTestCase(unittest.TestCase):
     @test_all_configs
     def test_num_examples(self, config):
         with self.create_dataset(config) as (dataset, info):
-            assert len(dataset) == info["num_examples"]
+            assert len(list(dataset)) == len(dataset) == info["num_examples"]
 
     @test_all_configs
     def test_transforms(self, config):
@@ -690,6 +691,31 @@ class VideoDatasetTestCase(DatasetTestCase):
             return
 
         super().test_transforms_v2_wrapper.__wrapped__(self, config)
+
+
+def _no_collate(batch):
+    return batch
+
+
+def check_transforms_v2_wrapper_spawn(dataset):
+    # On Linux and Windows, the DataLoader forks the main process by default. This is not available on macOS, so new
+    # subprocesses are spawned. This requires the whole pipeline including the dataset to be pickleable, which is what
+    # we are enforcing here.
+    if platform.system() != "Darwin":
+        pytest.skip("Multiprocessing spawning is only checked on macOS.")
+
+    from torch.utils.data import DataLoader
+    from torchvision import datapoints
+    from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+
+    dataloader = DataLoader(wrapped_dataset, num_workers=2, multiprocessing_context="spawn", collate_fn=_no_collate)
+
+    for wrapped_sample in dataloader:
+        assert tree_any(
+            lambda item: isinstance(item, (datapoints.Image, datapoints.Video, PIL.Image.Image)), wrapped_sample
+        )
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
