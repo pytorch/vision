@@ -69,6 +69,7 @@ img, target = sample
 print(f"{type(img) = }\n{type(target) = }\n{target.keys() = }")
 print(f"{type(target['boxes']) = }\n{type(target['labels']) = }\n{type(target['masks']) = }")
 
+# %%
 # We used the ``target_keys`` parameter to specify the kind of output we're
 # interested in. Our dataset now returns a target which is dict where the values
 # are :ref:`Datapoints <what_are_datapoints>` (all are :class:`torch.Tensor`
@@ -151,7 +152,7 @@ data_loader = torch.utils.data.DataLoader(
     batch_size=2,
     # We need a custom collation function here, since the object detection
     # models expect a sequence of images and target dictionaries. The default
-    # collation function tries to :func:`~torch.stack` the individual elements,
+    # collation function tries to torch.stack() the individual elements,
     # which fails in general for object detection, because the number of bouding
     # boxes varies between the images of a same batch.
     collate_fn=lambda batch: tuple(zip(*batch)),
