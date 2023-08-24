@@ -770,8 +770,7 @@ class TestResize:
 
         self._check_stride(output, memory_format=memory_format)
 
-    def test_no_regression_7667(self):
-        # Checks that float16 images are not rounded
+    def test_float16_no_rounding(self):
         # See https://github.com/pytorch/vision/issues/7667
 
         input = make_image_tensor(self.INPUT_SIZE, dtype=torch.float16)
