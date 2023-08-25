@@ -22,10 +22,6 @@ class Mask(Datapoint):
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 
-    @classmethod
-    def _wrap(cls, tensor: torch.Tensor) -> Mask:
-        return tensor.as_subclass(cls)
-
     def __new__(
         cls,
         data: Any,
@@ -40,12 +36,4 @@ class Mask(Datapoint):
             data = F.pil_to_tensor(data)
 
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return cls._wrap(tensor)
-
-    @classmethod
-    def wrap_like(
-        cls,
-        other: Mask,
-        tensor: torch.Tensor,
-    ) -> Mask:
         return cls._wrap(tensor)

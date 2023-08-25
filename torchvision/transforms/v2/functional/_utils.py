@@ -47,6 +47,11 @@ def _name_to_dispatcher(name):
 
 
 def register_kernel(dispatcher, datapoint_cls):
+    """Decorate a kernel to register it for a dispatcher and a (custom) datapoint type.
+
+    See :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for usage
+    details.
+    """
     if isinstance(dispatcher, str):
         dispatcher = _name_to_dispatcher(name=dispatcher)
     return _register_kernel_internal(dispatcher, datapoint_cls, datapoint_wrapper=False)
