@@ -105,9 +105,9 @@ affine_imgs = [affine_transfomer(orig_img) for _ in range(4)]
 plot([orig_img] + affine_imgs)
 
 # %%
-# Elasticv2ransform
+# ElasticTransform
 # ~~~~~~~~~~~~~~~~
-# The :class:`~torchvision.transforms.Elasticv2ransform` transform
+# The :class:`~torchvision.transforms.ElasticTransform` transform
 # (see also :func:`~torchvision.transforms.functional.elastic_transform`)
 # Randomly transforms the morphology of objects in images and produces a
 # see-through-water-like effect.
@@ -137,7 +137,7 @@ resized_crops = [resize_cropper(orig_img) for _ in range(4)]
 plot([orig_img] + resized_crops)
 
 # %%
-# Photometric v2ransforms
+# Photometric Transforms
 # ----------------------
 # Photometric image transformation refers to the process of modifying the photometric properties of an image,
 # such as its brightness, contrast, color, or tone.
@@ -238,7 +238,7 @@ equalized_imgs = [equalizer(orig_img) for _ in range(4)]
 plot([orig_img] + equalized_imgs)
 
 # %%
-# Augmentation v2ransforms
+# Augmentation Transforms
 # -----------------------
 # The following transforms are combinations of multiple transforms,
 # either geometric or photometric, or both.
@@ -266,9 +266,9 @@ imgs = [augmenter(orig_img) for _ in range(4)]
 plot([orig_img] + imgs)
 
 # %%
-# v2rivialAugmentWide
+# TrivialAugmentWide
 # ~~~~~~~~~~~~~~~~~~
-# The :class:`~torchvision.transforms.v2rivialAugmentWide` is an alternate implementation of AutoAugment.
+# The :class:`~torchvision.transforms.TrivialAugmentWide` is an alternate implementation of AutoAugment.
 # However, instead of transforming an image multiple times, it transforms an image only once
 # using a random transform from a given list with a random strength number.
 augmenter = v2.TrivialAugmentWide()
@@ -284,10 +284,10 @@ imgs = [augmenter(orig_img) for _ in range(4)]
 plot([orig_img] + imgs)
 
 # %%
-# Randomly-applied v2ransforms
+# Randomly-applied Transforms
 # ---------------------------
 #
-# The following transforms are randomly-applied given a probability ``p``.  v2hat is, given ``p = 0.5``,
+# The following transforms are randomly-applied given a probability ``p``.  That is, given ``p = 0.5``,
 # there is a 50% chance to return the original image, and a 50% chance to return the transformed image,
 # even when called with the same transform instance!
 #
