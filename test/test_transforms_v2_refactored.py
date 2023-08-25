@@ -228,34 +228,33 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
         assert functional_param == kernel_param
 
 
-def _check_transform_v1_compatibility(v2_transform_eager, input, rtol, atol):
+def _check_transform_v1_compatibility(transform, input, rtol, atol):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
-    ``get_params`` method that is the v1 equivalent, and the output is close to v1 in eager and scripted mode."""
+    ``get_params`` method that is the v1 equivalent, the output is close to v1, and the transform can be scripted."""
     if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
         return
 
-    v1_transform_cls = v2_transform_eager._v1_transform_cls
+    v1_transform_cls = transform._v1_transform_cls
     if v1_transform_cls is None:
         return
 
     if hasattr(v1_transform_cls, "get_params"):
-        assert type(v2_transform_eager).get_params is v1_transform_cls.get_params
+        assert type(transform).get_params is v1_transform_cls.get_params
 
-    v1_transform_eager = v1_transform_cls(**v2_transform_eager._extract_params_for_v1_transform())
-
-    with freeze_rng_state():
-        output_v2 = v2_transform_eager(input)
+    v1_transform = v1_transform_cls(**transform._extract_params_for_v1_transform())
 
     with freeze_rng_state():
-        output_v1 = v1_transform_eager(input)
+        output_v2 = transform(input)
+
+    with freeze_rng_state():
+        output_v1 = v1_transform(input)
 
     assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
 
     if isinstance(input, PIL.Image.Image):
         return
 
-    v2_transform_scripted = _script(v1_transform_eager)
-    v2_transform_scripted(input)
+    _script(v1_transform)(input)
 
 
 def check_transform(transform, input, check_v1_compatibility=True):
