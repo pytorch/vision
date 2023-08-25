@@ -88,6 +88,7 @@ class CustomGalleryExampleSortKey:
         "plot_transforms_e2e.py",
         "plot_cutmix_mixup.py",
         "plot_custom_transforms.py",
+        "plot_torchscript_support.py",
         "plot_datapoints.py",
         "plot_custom_datapoints.py",
     ]

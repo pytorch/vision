@@ -214,7 +214,8 @@ Torchscript support
 -------------------
 
 Most transform classes and functionals support torchscript. For composing
-transforms, use :class:`torch.nn.Sequential` instead of ``Compose``:
+transforms, use :class:`torch.nn.Sequential` instead of
+:class:`~torchvision.transforms.v2.Compose`:
 
 .. code:: python
 
@@ -232,7 +233,7 @@ transforms, use :class:`torch.nn.Sequential` instead of ``Compose``:
     scripted and eager executions due to implementation differences between v1
     and v2.
 
-    If you really need torchscript support for the v2 tranforms, we recommend
+    If you really need torchscript support for the v2 transforms, we recommend
     scripting the **functionals** from the
     ``torchvision.transforms.v2.functional`` namespace to avoid surprises.
 
@@ -242,7 +243,10 @@ are always treated as images. If you need torchscript support for other types
 like bounding boxes or masks, you can rely on the :ref:`low-level kernels
 <functional_transforms>`.
 
-For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
+For any custom transformations to be used with ``torch.jit.script``, they should
+be derived from ``torch.nn.Module``.
+
+See also: :ref:`sphx_glr_auto_examples_transforms_plot_torchscript_support.py`.
 
 V2 API reference - Recommended
 ------------------------------
