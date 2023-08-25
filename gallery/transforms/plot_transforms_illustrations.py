@@ -7,8 +7,8 @@ Illustration of transforms
     Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_illustrations.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_transforms_illustrations.py>` to download the full example code.
 
-This example illustrates the various transforms available in :ref:`the
-torchvision.transforms module <transforms>`.
+This example illustrates some of the various transforms available in :ref:`the
+torchvision.transforms.v2 module <transforms>`.
 """
 # %%
 
