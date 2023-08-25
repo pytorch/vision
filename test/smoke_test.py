@@ -78,8 +78,13 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
-    print(f"{torch.ops.image._jpeg_version() = }")
-    assert torch.ops.image._is_compiled_against_turbo()
+
+    # Turn 1.11.0aHASH into 1.11 (major.minor only)
+    version = ".".join(torchvision.__version__.split(".")[:2])
+    if version >= "0.16":
+        print(f"{torch.ops.image._jpeg_version() = }")
+        assert torch.ops.image._is_compiled_against_turbo()
+
     smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()
