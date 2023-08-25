@@ -44,6 +44,23 @@ Transforms
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the various transforms available in the torchvision.transforms...">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_illustrations_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Illustration of transforms</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Object detection and segmentation tasks are natively supported: torchvision.transforms.v2 enabl...">
 
 .. only:: html
@@ -189,23 +206,6 @@ Others
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Tensor transforms and JIT</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ...">
-
-.. only:: html
-
-  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_transforms_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_others_plot_transforms.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Illustration of transforms</div>
     </div>
 
 

@@ -103,7 +103,7 @@ Transforming images on GPU
 --------------------------
 Most transforms natively support tensors on top of PIL images (to visualize
 the effect of the transforms, you may refer to see
-:ref:`sphx_glr_auto_examples_others_plot_transforms.py`).
+:ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py`).
 Using tensor images, we can run the transforms on GPUs if cuda is available!
 
 .. GENERATED FROM PYTHON SOURCE LINES 67-83
@@ -279,7 +279,7 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 1.681 seconds)
+   **Total running time of the script:** (0 minutes 1.664 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py:

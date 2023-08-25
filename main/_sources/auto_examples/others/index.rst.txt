@@ -65,23 +65,6 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ...">
-
-.. only:: html
-
-  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_transforms_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_others_plot_transforms.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Illustration of transforms</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the APIs that torchvision offers for videos, together with the...">
 
 .. only:: html
@@ -125,7 +108,6 @@ Others
    /auto_examples/others/plot_optical_flow
    /auto_examples/others/plot_repurposing_annotations
    /auto_examples/others/plot_scripted_tensor_transforms
-   /auto_examples/others/plot_transforms
    /auto_examples/others/plot_video_api
    /auto_examples/others/plot_visualization_utils
 
