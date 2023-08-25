@@ -7,7 +7,7 @@ import torch
 from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F, Transform
 
-from torchvision.transforms.v2.utils import is_simple_tensor
+from torchvision.transforms.v2.utils import is_pure_tensor
 
 
 class PILToTensor(Transform):
@@ -35,7 +35,7 @@ class ToImage(Transform):
     This transform does not support torchscript.
     """
 
-    _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_pure_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
@@ -65,7 +65,7 @@ class ToPILImage(Transform):
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
 
-    _transformed_types = (is_simple_tensor, datapoints.Image, np.ndarray)
+    _transformed_types = (is_pure_tensor, datapoints.Image, np.ndarray)
 
     def __init__(self, mode: Optional[str] = None) -> None:
         super().__init__()
