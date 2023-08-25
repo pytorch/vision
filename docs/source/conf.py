@@ -84,6 +84,7 @@ class CustomGalleryExampleSortKey:
 
     transforms_subsection_order = [
         "plot_transforms_getting_started.py",
+        "plot_transforms_illustrations.py",
         "plot_transforms_e2e.py",
         "plot_cutmix_mixup.py",
         "plot_custom_transforms.py",
