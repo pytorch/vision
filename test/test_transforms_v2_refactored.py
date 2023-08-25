@@ -1,6 +1,5 @@
 import contextlib
 import decimal
-import functools
 import inspect
 import math
 import pickle
@@ -340,95 +339,70 @@ def assert_warns_antialias_default_value():
         yield
 
 
-def bounding_boxes_reference_handle_batching(reference_fn):
-    """Enable batching for single bounding box reference functions
+def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, expand=False):
+    def affine_bounding_boxes(bounding_boxes):
+        format = bounding_boxes.format
+        height, width = bounding_boxes.canvas_size
+        dtype = bounding_boxes.dtype
 
-    The wrapped function should take datapoints.BoundingBoxes of shape (1, 4) as first positional input and return
+        # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
+        input_xyxy = F.convert_bounding_box_format(
+            bounding_boxes.to(torch.float64, copy=True),
+            new_format=datapoints.BoundingBoxFormat.XYXY,
+            inplace=True,
+        )
+        x1, y1, x2, y2 = input_xyxy.squeeze(0).tolist()
 
-    1. a datapoints.BoundingBox of shape (1, 4) (reference for a dispatcher),
-    2. a torch.Tensor of shape (4,) or (1, 4) (reference for a kernel), or
-    3. a two-tuple of a torch.Tensor of shape (4,) or (1, 4)
-       and two-tuple of integers with the spatial size (height, width).
+        points = np.array(
+            [
+                [x1, y1, 1.0],
+                [x2, y1, 1.0],
+                [x1, y2, 1.0],
+                [x2, y2, 1.0],
+                # image frame
+                [0.0, 0.0, 1.0],
+                [0.0, height, 1.0],
+                [width, height, 1.0],
+                [width, 0.0, 1.0],
+            ]
+        )
+        transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
 
-    This wrapper accepts datapoints.BoundingBox'es of shape (*, 4) and returns the same.
-    """
-
-    @functools.wraps(reference_fn)
-    def wrapper(bounding_boxes, *args, **kwargs):
-        outputs = [
-            reference_fn(datapoints.wrap(b, like=bounding_boxes), *args, **kwargs)
-            for b in bounding_boxes.reshape(-1, 4).unbind()
+        output_xyxy = [
+            float(np.min(transformed_points[:4, 0])),
+            float(np.min(transformed_points[:4, 1])),
+            float(np.max(transformed_points[:4, 0])),
+            float(np.max(transformed_points[:4, 1])),
         ]
+        if expand:
+            x_translate = float(np.min(transformed_points[4:, 0]))
+            y_translate = float(np.min(transformed_points[4:, 1]))
 
-        if isinstance(outputs[0], datapoints.BoundingBoxes):
-            canvas_sizes = [o.canvas_size for o in outputs]
-        elif isinstance(outputs[0], tuple):
-            outputs, canvas_sizes = zip(*outputs)
-        else:
-            outputs = [o.unsqueeze(0) if o.ndim == 1 else o for o in outputs]
-            canvas_sizes = [bounding_boxes.canvas_size]
-        canvas_size = canvas_sizes[0]
-        assert all(s == canvas_size for s in canvas_sizes[1:])
+            output_xyxy[0] -= x_translate
+            output_xyxy[1] -= y_translate
+            output_xyxy[2] -= x_translate
+            output_xyxy[3] -= y_translate
 
-        return datapoints.wrap(
-            torch.cat(outputs, dim=0).reshape(bounding_boxes.shape), like=bounding_boxes, canvas_size=canvas_size
+            width = int(np.max(transformed_points[4:, 0]) - x_translate)
+            height = int(np.max(transformed_points[4:, 1]) - y_translate)
+        output_xyxy = datapoints.BoundingBoxes(
+            output_xyxy, format=datapoints.BoundingBoxFormat.XYXY, canvas_size=(height, width)
         )
 
-    return wrapper
+        # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+        return F.clamp_bounding_boxes(F.convert_bounding_box_format(output_xyxy, new_format=format)).to(dtype)
 
-
-@bounding_boxes_reference_handle_batching
-def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, expand=False):
-    format = bounding_boxes.format
-    height, width = bounding_boxes.canvas_size
-    dtype = bounding_boxes.dtype
-
-    # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
-    input_xyxy = F.convert_bounding_box_format(
-        bounding_boxes.to(torch.float64, copy=True),
-        new_format=datapoints.BoundingBoxFormat.XYXY,
-        inplace=True,
-    )
-    x1, y1, x2, y2 = input_xyxy.squeeze(0).tolist()
-
-    points = np.array(
-        [
-            [x1, y1, 1.0],
-            [x2, y1, 1.0],
-            [x1, y2, 1.0],
-            [x2, y2, 1.0],
-            # image frame
-            [0.0, 0.0, 1.0],
-            [0.0, height, 1.0],
-            [width, height, 1.0],
-            [width, 0.0, 1.0],
-        ]
-    )
-    transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
-
-    output_xyxy = [
-        float(np.min(transformed_points[:4, 0])),
-        float(np.min(transformed_points[:4, 1])),
-        float(np.max(transformed_points[:4, 0])),
-        float(np.max(transformed_points[:4, 1])),
+    outputs = [
+        affine_bounding_boxes(datapoints.wrap(b, like=bounding_boxes)) for b in bounding_boxes.reshape(-1, 4).unbind()
     ]
-    if expand:
-        x_translate = float(np.min(transformed_points[4:, 0]))
-        y_translate = float(np.min(transformed_points[4:, 1]))
 
-        output_xyxy[0] -= x_translate
-        output_xyxy[1] -= y_translate
-        output_xyxy[2] -= x_translate
-        output_xyxy[3] -= y_translate
+    canvas_sizes = [o.canvas_size for o in outputs]
+    canvas_size = canvas_sizes[0]
+    assert all(s == canvas_size for s in canvas_sizes[1:])
 
-        width = int(np.max(transformed_points[4:, 0]) - x_translate)
-        height = int(np.max(transformed_points[4:, 1]) - y_translate)
-    output_xyxy = datapoints.BoundingBoxes(
-        output_xyxy, format=datapoints.BoundingBoxFormat.XYXY, canvas_size=(height, width)
+    return datapoints.wrap(
+        torch.cat(outputs, dim=0).reshape(bounding_boxes.shape), like=bounding_boxes, canvas_size=canvas_size
     )
-
-    # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-    return F.clamp_bounding_boxes(F.convert_bounding_box_format(output_xyxy, new_format=format)).to(dtype)
 
 
 class TestResize:
