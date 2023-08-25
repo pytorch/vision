@@ -296,9 +296,12 @@ def _num_value_bits(dtype: torch.dtype) -> int:
         raise TypeError(f"Number of value bits is only defined for integer dtypes, but got {dtype}.")
 
 
-def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
+def to_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
+
     if image.dtype == dtype:
         return image
+    elif not scale:
+        return image.to(dtype)
 
     float_input = image.is_floating_point()
     if torch.jit.is_scripting():
@@ -345,30 +348,28 @@ def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.f
             return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
 
 
-# We changed the name to align it with the new naming scheme. Still, `convert_image_dtype` is
-# prevalent and well understood. Thus, we just alias it without deprecating the old name.
-convert_image_dtype = convert_dtype_image_tensor
+# We encourage users to use to_dtype() instead but we keep this for BC
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float32) -> torch.Tensor:
+    return to_dtype_image_tensor(image, dtype=dtype, scale=True)
 
 
-def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
-    return convert_dtype_image_tensor(video, dtype)
+def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
+    return to_dtype_image_tensor(video, dtype, scale=scale)
 
 
-def convert_dtype(
-    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], dtype: torch.dtype = torch.float
-) -> torch.Tensor:
+def to_dtype(inpt: datapoints._InputTypeJIT, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     if not torch.jit.is_scripting():
-        _log_api_usage_once(convert_dtype)
+        _log_api_usage_once(to_dtype)
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return convert_dtype_image_tensor(inpt, dtype)
+        return to_dtype_image_tensor(inpt, dtype, scale=scale)
     elif isinstance(inpt, datapoints.Image):
-        output = convert_dtype_image_tensor(inpt.as_subclass(torch.Tensor), dtype)
+        output = to_dtype_image_tensor(inpt.as_subclass(torch.Tensor), dtype, scale=scale)
         return datapoints.Image.wrap_like(inpt, output)
     elif isinstance(inpt, datapoints.Video):
-        output = convert_dtype_video(inpt.as_subclass(torch.Tensor), dtype)
+        output = to_dtype_video(inpt.as_subclass(torch.Tensor), dtype, scale=scale)
         return datapoints.Video.wrap_like(inpt, output)
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        return inpt.to(dtype)
     else:
-        raise TypeError(
-            f"Input can either be a plain tensor or an `Image` or `Video` datapoint, " f"but got {type(inpt)} instead."
-        )
+        raise TypeError(f"Input can either be a plain tensor or a datapoint, but got {type(inpt)} instead.")

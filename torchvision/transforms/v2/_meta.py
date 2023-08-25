@@ -31,10 +31,13 @@ class ConvertBoundingBoxFormat(Transform):
         return F.convert_format_bounding_box(inpt, new_format=self.format)  # type: ignore[return-value]
 
 
-class ConvertDtype(Transform):
-    """[BETA] Convert input image or video to the given ``dtype`` and scale the values accordingly.
+class ConvertImageDtype(Transform):
+    """[BETA] Convert input image to the given ``dtype`` and scale the values accordingly.
 
-    .. v2betastatus:: ConvertDtype transform
+    .. v2betastatus:: ConvertImageDtype transform
+
+    .. warning::
+        Consider using ``ToDtype(dtype, scale=True)`` instead. See :class:`~torchvision.transforms.v2.ToDtype`.
 
     This function does not support PIL Image.
 
@@ -55,21 +58,14 @@ class ConvertDtype(Transform):
 
     _v1_transform_cls = _transforms.ConvertImageDtype
 
-    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_simple_tensor, datapoints.Image)
 
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
-    def _transform(
-        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
-    ) -> Union[datapoints._TensorImageType, datapoints._TensorVideoType]:
-        return F.convert_dtype(inpt, self.dtype)
-
-
-# We changed the name to align it with the new naming scheme. Still, `ConvertImageDtype` is
-# prevalent and well understood. Thus, we just alias it without deprecating the old name.
-ConvertImageDtype = ConvertDtype
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.to_dtype(inpt, dtype=self.dtype, scale=True)
 
 
 class ClampBoundingBox(Transform):
