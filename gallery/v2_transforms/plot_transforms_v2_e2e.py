@@ -14,7 +14,7 @@ bounding boxes, and masks.
 This example showcases an end-to-end instance segmentation training case using
 Torchvision utils from ``torchvision.datasets``, ``torchvision.models`` and
 ``torchvision.transforms.v2``. Everything covered here can be applied similarly
-to instance detection or semantic segmentation tasks.
+to object detection or semantic segmentation tasks.
 """
 
 # %%
