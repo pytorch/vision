@@ -199,7 +199,7 @@ class GaussianBlur(Transform):
                 raise ValueError("Kernel size value should be an odd and positive number.")
 
         self.sigma = _setup_number_or_seq(sigma, "sigma", 2)
-        
+
         if not 0.0 < self.sigma[0] <= self.sigma[1]:
             raise ValueError(f"sigma values should be positive and of the form (min, max). Got {self.sigma}")
 
