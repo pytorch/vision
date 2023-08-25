@@ -15,8 +15,8 @@ Examples and tutorials
     </div>
 
 
-V2 transforms
--------------
+Transforms
+----------
 
 
 
@@ -27,18 +27,52 @@ V2 transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This guide is intended for advanced users and downstream library maintainers. We explain how to...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates all of what you need to know to get started with the new torchvision.t...">
 
 .. only:: html
 
-  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_custom_datapoints_thumb.png
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_getting_started_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py`
+  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">How to write your own Datapoint class</div>
+      <div class="sphx-glr-thumbnail-title">Getting started with transforms v2</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Object detection and segmentation tasks are natively supported: torchvision.transforms.v2 enabl...">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_e2e_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Transforms v2: End-to-end object detection/segmentation example</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="CutMix and MixUp are popular augmentation strategies that can improve classification accuracy.">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_cutmix_mixup_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">How to use CutMix and MixUp</div>
     </div>
 
 
@@ -48,10 +82,10 @@ V2 transforms
 
 .. only:: html
 
-  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_custom_transforms_thumb.png
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_custom_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_transforms.py`
+  :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`
 
 .. raw:: html
 
@@ -65,10 +99,10 @@ V2 transforms
 
 .. only:: html
 
-  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_datapoints_thumb.png
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_datapoints_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`
+  :ref:`sphx_glr_auto_examples_transforms_plot_datapoints.py`
 
 .. raw:: html
 
@@ -78,52 +112,18 @@ V2 transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates all of what you need to know to get started with the new torchvision.t...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This guide is intended for advanced users and downstream library maintainers. We explain how to...">
 
 .. only:: html
 
-  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_transforms_v2_thumb.png
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_custom_datapoints_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py`
+  :ref:`sphx_glr_auto_examples_transforms_plot_custom_datapoints.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Getting started with transforms v2</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="CutMix and MixUp are popular augmentation strategies that can improve classification accuracy.">
-
-.. only:: html
-
-  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_cutmix_mixup_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">How to use CutMix and MixUp</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Object detection and segmentation tasks are natively supported: torchvision.transforms.v2 enabl...">
-
-.. only:: html
-
-  .. image:: /auto_examples/v2_transforms/images/thumb/sphx_glr_plot_transforms_v2_e2e_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Transforms v2: End-to-end object detection/segmentation example</div>
+      <div class="sphx-glr-thumbnail-title">How to write your own Datapoint class</div>
     </div>
 
 
@@ -139,23 +139,6 @@ Others
 .. raw:: html
 
     <div class="sphx-glr-thumbnails">
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
-
-.. only:: html
-
-  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Tensor transforms and JIT</div>
-    </div>
 
 
 .. raw:: html
@@ -194,6 +177,23 @@ Others
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
+
+.. only:: html
+
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Tensor transforms and JIT</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ...">
 
 .. only:: html
@@ -206,23 +206,6 @@ Others
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Illustration of transforms</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ...">
-
-.. only:: html
-
-  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Visualization utilities</div>
     </div>
 
 
@@ -245,6 +228,23 @@ Others
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ...">
+
+.. only:: html
+
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Visualization utilities</div>
+    </div>
+
+
+.. raw:: html
+
     </div>
 
 
@@ -253,7 +253,7 @@ Others
    :includehidden:
 
 
-   /auto_examples/v2_transforms/index.rst
+   /auto_examples/transforms/index.rst
    /auto_examples/others/index.rst
 
 
