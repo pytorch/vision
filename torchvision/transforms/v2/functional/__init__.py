@@ -1,12 +1,13 @@
 from torchvision.transforms import InterpolationMode  # usort: skip
 
-from ._utils import is_simple_tensor  # usort: skip
+from ._utils import is_simple_tensor, register_kernel  # usort: skip
 
 from ._meta import (
     clamp_bounding_boxes,
     convert_format_bounding_boxes,
     get_dimensions_image_tensor,
     get_dimensions_image_pil,
+    get_dimensions_video,
     get_dimensions,
     get_num_frames_video,
     get_num_frames,

@@ -829,6 +829,10 @@ def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
     return datapoints.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
 
 
+def make_video_tensor(*args, **kwargs):
+    return make_video(*args, **kwargs).as_subclass(torch.Tensor)
+
+
 def make_video_loader(
     size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     *,
