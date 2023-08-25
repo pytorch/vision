@@ -112,7 +112,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
         inputs = inputs[1]
 
     # MixUp, CutMix
-    if isinstance(inputs, torch.Tensor):
+    if is_pure_tensor(inputs):
         return inputs
 
     if not isinstance(inputs, collections.abc.Mapping):
