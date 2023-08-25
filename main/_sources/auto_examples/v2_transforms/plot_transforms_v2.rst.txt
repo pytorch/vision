@@ -154,14 +154,14 @@ boxes, segmentation / detection masks, or videos.
 
 Let's briefly look at a detection example with bounding boxes.
 
-.. GENERATED FROM PYTHON SOURCE LINES 90-110
+.. GENERATED FROM PYTHON SOURCE LINES 90-111
 
 .. code-block:: default
 
 
     from torchvision import datapoints  # we'll describe this a bit later, bare with us
 
-    bboxes = datapoints.BoundingBoxes(
+    boxes = datapoints.BoundingBoxes(
         [
             [15, 10, 370, 510],
             [275, 340, 510, 510],
@@ -174,9 +174,10 @@ Let's briefly look at a detection example with bounding boxes.
         v2.RandomPhotometricDistort(p=1),
         v2.RandomHorizontalFlip(p=1),
     ])
-    out_img, out_bboxes = transforms(img, bboxes)
+    out_img, out_boxes = transforms(img, boxes)
+    print(type(boxes), type(out_boxes))
 
-    plot([(img, bboxes), (out_img, out_bboxes)])
+    plot([(img, boxes), (out_img, out_boxes)])
 
 
 
@@ -187,10 +188,16 @@ Let's briefly look at a detection example with bounding boxes.
    :class: sphx-glr-single-img
 
 
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    <class 'torchvision.datapoints._bounding_box.BoundingBoxes'> <class 'torchvision.datapoints._bounding_box.BoundingBoxes'>
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-119
+
+.. GENERATED FROM PYTHON SOURCE LINES 112-120
 
 The example above focuses on object detection. But if we had masks
 (:class:`torchvision.datapoints.Mask`) for object segmentation or semantic
@@ -201,7 +208,9 @@ By now you likely have a few questions: what are these datapoints, how do we
 use them, and what is the expected input/output of those transforms? We'll
 answer these in the next sections.
 
-.. GENERATED FROM PYTHON SOURCE LINES 122-134
+.. GENERATED FROM PYTHON SOURCE LINES 123-137
+
+.. _what_are_datapoints:
 
 What are Datapoints?
 --------------------
@@ -216,7 +225,7 @@ Datapoints look and feel just like regular tensors - they **are** tensors.
 Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()``
 or any ``torch.*`` operator will also work on a datapoint:
 
-.. GENERATED FROM PYTHON SOURCE LINES 134-140
+.. GENERATED FROM PYTHON SOURCE LINES 138-144
 
 .. code-block:: default
 
@@ -240,7 +249,7 @@ or any ``torch.*`` operator will also work on a datapoint:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 141-161
+.. GENERATED FROM PYTHON SOURCE LINES 145-165
 
 These Datapoint classes are at the core of the transforms: in order to
 transform a given input, the transforms first look at the **class** of the
@@ -255,7 +264,7 @@ What do I pass as input?
 
 Above, we've seen two examples: one where we passed a single image as input
 i.e. ``out = transforms(img)``, and one where we passed both an image and
-bounding boxes, i.e. ``out_img, out_bboxes = transforms(img, bboxes)``.
+bounding boxes, i.e. ``out_img, out_boxes = transforms(img, boxes)``.
 
 In fact, transforms support **arbitrary input structures**. The input can be a
 single image, a tuple, an arbitrarily nested dictionary... pretty much
@@ -263,21 +272,21 @@ anything. The same structure will be returned as output. Below, we use the
 same detection transforms, but pass a tuple (image, target_dict) as input and
 we're getting the same structure as output:
 
-.. GENERATED FROM PYTHON SOURCE LINES 161-174
+.. GENERATED FROM PYTHON SOURCE LINES 165-178
 
 .. code-block:: default
 
 
     target = {
-        "bboxes": bboxes,
-        "labels": torch.arange(bboxes.shape[0]),
+        "boxes": boxes,
+        "labels": torch.arange(boxes.shape[0]),
         "this_is_ignored": ("arbitrary", {"structure": "!"})
     }
 
     # Re-using the transforms and definitions from above.
     out_img, out_target = transforms(img, target)
 
-    plot([(img, target["bboxes"]), (out_img, out_target["bboxes"])])
+    plot([(img, target["boxes"]), (out_img, out_target["boxes"])])
     print(f"{out_target['this_is_ignored']}")
 
 
@@ -298,7 +307,7 @@ we're getting the same structure as output:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 175-260
+.. GENERATED FROM PYTHON SOURCE LINES 179-264
 
 We passed a tuple so we get a tuple back, and the second element is the
 tranformed target dict. Transforms don't really care about the structure of
@@ -389,7 +398,7 @@ Either way, the logic will depend on your specific dataset.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.780 seconds)
+   **Total running time of the script:** (0 minutes 0.762 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2.py:

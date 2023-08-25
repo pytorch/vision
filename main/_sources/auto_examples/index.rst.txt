@@ -112,7 +112,7 @@ V2 transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Object detection is not supported out of the box by torchvision.transforms v1, since it only su...">
+    <div class="sphx-glr-thumbcontainer" tooltip="Object detection and segmentation tasks are natively supported: torchvision.transforms.v2 enabl...">
 
 .. only:: html
 
@@ -123,7 +123,7 @@ V2 transforms
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Transforms v2: End-to-end object detection example</div>
+      <div class="sphx-glr-thumbnail-title">Transforms v2: End-to-end object detection/segmentation example</div>
     </div>
 
 

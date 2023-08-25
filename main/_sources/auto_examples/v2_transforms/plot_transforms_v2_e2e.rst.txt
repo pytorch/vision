@@ -10,53 +10,45 @@
 .. _sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py:
 
 
-==================================================
-Transforms v2: End-to-end object detection example
-==================================================
+===============================================================
+Transforms v2: End-to-end object detection/segmentation example
+===============================================================
 
 .. note::
     Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_v2_e2e.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2_e2e.py>` to download the full example code.
 
-Object detection is not supported out of the box by ``torchvision.transforms`` v1, since it only supports images.
-``torchvision.transforms.v2`` enables jointly transforming images, videos, bounding boxes, and masks. This example
-showcases an end-to-end object detection training using the stable ``torchvision.datasets`` and ``torchvision.models``
-as well as the new ``torchvision.transforms.v2`` v2 API.
+Object detection and segmentation tasks are natively supported:
+``torchvision.transforms.v2`` enables jointly transforming images, videos,
+bounding boxes, and masks.
 
-.. GENERATED FROM PYTHON SOURCE LINES 15-47
+This example showcases an end-to-end instance segmentation training case using
+Torchvision utils from ``torchvision.datasets``, ``torchvision.models`` and
+``torchvision.transforms.v2``. Everything covered here can be applied similarly
+to object detection or semantic segmentation tasks.
+
+.. GENERATED FROM PYTHON SOURCE LINES 21-41
 
 .. code-block:: default
 
-
     import pathlib
-
-    import PIL.Image
 
     import torch
     import torch.utils.data
 
-    from torchvision import models, datasets
-    import torchvision.transforms.v2 as transforms
+    from torchvision import models, datasets, datapoints
+    from torchvision.transforms import v2
 
+    torch.manual_seed(0)
 
-    def show(sample):
-        import matplotlib.pyplot as plt
-
-        from torchvision.transforms.v2 import functional as F
-        from torchvision.utils import draw_bounding_boxes
-
-        image, target = sample
-        if isinstance(image, PIL.Image.Image):
-            image = F.to_image(image)
-        image = F.to_dtype(image, torch.uint8, scale=True)
-        annotated_image = draw_bounding_boxes(image, target["boxes"], colors="yellow", width=3)
-
-        fig, ax = plt.subplots()
-        ax.imshow(annotated_image.permute(1, 2, 0).numpy())
-        ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-        fig.tight_layout()
-
-        fig.show()
+    # This loads fake data for illustration purposes of this example. In practice, you'll have
+    # to replace this with the proper data.
+    # If you're trying to run that on collab, you can download the assets and the
+    # helpers from https://github.com/pytorch/vision/tree/main/gallery/
+    ROOT = pathlib.Path("../assets") / "coco"
+    IMAGES_PATH = str(ROOT / "images")
+    ANNOTATIONS_PATH = str(ROOT / "instances.json")
+    from helpers import plot
 
 
 
@@ -66,29 +58,24 @@ as well as the new ``torchvision.transforms.v2`` v2 API.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-50
+.. GENERATED FROM PYTHON SOURCE LINES 42-47
+
+Dataset preparation
+-------------------
 
 We start off by loading the :class:`~torchvision.datasets.CocoDetection` dataset to have a look at what it currently
-returns, and we'll see how to convert it to a format that is compatible with our new transforms.
+returns.
 
-.. GENERATED FROM PYTHON SOURCE LINES 50-66
+.. GENERATED FROM PYTHON SOURCE LINES 47-55
 
 .. code-block:: default
 
 
-    def load_example_coco_detection_dataset(**kwargs):
-        # This loads fake data for illustration purposes of this example. In practice, you'll have
-        # to replace this with the proper data
-        root = pathlib.Path("../assets") / "coco"
-        return datasets.CocoDetection(str(root / "images"), str(root / "instances.json"), **kwargs)
-
-
-    dataset = load_example_coco_detection_dataset()
+    dataset = datasets.CocoDetection(IMAGES_PATH, ANNOTATIONS_PATH)
 
     sample = dataset[0]
-    image, target = sample
-    print(type(image))
-    print(type(target), type(target[0]), list(target[0].keys()))
+    img, target = sample
+    print(f"{type(img) = }\n{type(target) = }\n{type(target[0]) = }\n{target[0].keys() = }")
 
 
 
@@ -103,35 +90,36 @@ returns, and we'll see how to convert it to a format that is compatible with our
     Done (t=0.00s)
     creating index...
     index created!
-    <class 'PIL.Image.Image'>
-    <class 'list'> <class 'dict'> ['segmentation', 'iscrowd', 'image_id', 'bbox', 'category_id', 'id']
+    type(img) = <class 'PIL.Image.Image'>
+    type(target) = <class 'list'>
+    type(target[0]) = <class 'dict'>
+    target[0].keys() = dict_keys(['segmentation', 'iscrowd', 'image_id', 'bbox', 'category_id', 'id'])
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 67-75
+.. GENERATED FROM PYTHON SOURCE LINES 56-64
 
-The dataset returns a two-tuple with the first item being a :class:`PIL.Image.Image` and second one a list of
-dictionaries, which each containing the annotations for a single object instance. As is, this format is not compatible
-with the ``torchvision.transforms.v2``, nor with the models. To overcome that, we provide the
+Torchvision datasets preserve the data structure and types as it was intended
+by the datasets authors. So by default, the output structure may not always be
+compatible with the models or the transforms.
+
+To overcome that, we can use the
 :func:`~torchvision.datasets.wrap_dataset_for_transforms_v2` function. For
-:class:`~torchvision.datasets.CocoDetection`, this changes the target structure to a single dictionary of lists. It
-also adds the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` wrapped in the corresponding
-``torchvision.datapoints``. By default, it only returns ``"boxes"`` and ``"labels"`` to avoid transforming unnecessary
-items down the line, but you can pass the ``target_type`` parameter for fine-grained control.
+:class:`~torchvision.datasets.CocoDetection`, this changes the target
+structure to a single dictionary of lists:
 
-.. GENERATED FROM PYTHON SOURCE LINES 75-84
+.. GENERATED FROM PYTHON SOURCE LINES 64-72
 
 .. code-block:: default
 
 
-    dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
+    dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels", "masks"))
 
     sample = dataset[0]
-    image, target = sample
-    print(type(image))
-    print(type(target), list(target.keys()))
-    print(type(target["boxes"]), type(target["labels"]))
+    img, target = sample
+    print(f"{type(img) = }\n{type(target) = }\n{target.keys() = }")
+    print(f"{type(target['boxes']) = }\n{type(target['labels']) = }\n{type(target['masks']) = }")
 
 
 
@@ -141,23 +129,39 @@ items down the line, but you can pass the ``target_type`` parameter for fine-gra
 
  .. code-block:: none
 
-    <class 'PIL.Image.Image'>
-    <class 'dict'> ['image_id', 'boxes', 'labels']
-    <class 'torchvision.datapoints._bounding_box.BoundingBoxes'> <class 'torch.Tensor'>
+    type(img) = <class 'PIL.Image.Image'>
+    type(target) = <class 'dict'>
+    target.keys() = dict_keys(['boxes', 'masks', 'labels'])
+    type(target['boxes']) = <class 'torchvision.datapoints._bounding_box.BoundingBoxes'>
+    type(target['labels']) = <class 'torch.Tensor'>
+    type(target['masks']) = <class 'torchvision.datapoints._mask.Mask'>
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 85-86
+.. GENERATED FROM PYTHON SOURCE LINES 73-87
+
+We used the ``target_keys`` parameter to specify the kind of output we're
+interested in. Our dataset now returns a target which is dict where the values
+are :ref:`Datapoints <what_are_datapoints>` (all are :class:`torch.Tensor`
+subclasses). We're dropped all unncessary keys from the previous output, but
+if you need any of the original keys e.g. "image_id", you can still ask for
+it.
+
+.. note::
+
+    If you just want to do detection, you don't need and shouldn't pass
+    "masks" in ``target_keys``: if masks are present in the sample, they will
+    be transformed, slowing down your transformations unnecessarily.
 
 As baseline, let's have a look at a sample without transformations:
 
-.. GENERATED FROM PYTHON SOURCE LINES 86-90
+.. GENERATED FROM PYTHON SOURCE LINES 87-91
 
 .. code-block:: default
 
 
-    show(sample)
+    plot([dataset[0], dataset[1]])
 
 
 
@@ -172,66 +176,40 @@ As baseline, let's have a look at a sample without transformations:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 91-93
+.. GENERATED FROM PYTHON SOURCE LINES 92-101
 
-With the dataset properly set up, we can now define the augmentation pipeline. This is done the same way it is done in
-``torchvision.transforms`` v1, but now handles bounding boxes and masks without any extra configuration.
+Transforms
+----------
 
-.. GENERATED FROM PYTHON SOURCE LINES 93-106
+Let's now define our pre-processing transforms. All the transforms know how
+to handle images, bouding boxes and masks when relevant.
+
+Transforms are typically passed as the ``transforms`` parameter of the
+dataset so that they can leverage multi-processing from the
+:class:`torch.utils.data.DataLoader`.
+
+.. GENERATED FROM PYTHON SOURCE LINES 101-117
 
 .. code-block:: default
 
 
-    transform = transforms.Compose(
+    transforms = v2.Compose(
         [
-            transforms.RandomPhotometricDistort(),
-            transforms.RandomZoomOut(fill={PIL.Image.Image: (123, 117, 104), "others": 0}),
-            transforms.RandomIoUCrop(),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToImage(),
-            transforms.ConvertImageDtype(torch.float32),
-            transforms.SanitizeBoundingBoxes(),
+            v2.ToImage(),
+            v2.RandomPhotometricDistort(p=1),
+            v2.RandomZoomOut(fill={datapoints.Image: (123, 117, 104), "others": 0}),
+            v2.RandomIoUCrop(),
+            v2.RandomHorizontalFlip(p=1),
+            v2.SanitizeBoundingBoxes(),
+            v2.ToDtype(torch.float32, scale=True),
         ]
     )
 
+    dataset = datasets.CocoDetection(IMAGES_PATH, ANNOTATIONS_PATH, transforms=transforms)
+    dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys=["boxes", "labels", "masks"])
 
 
 
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 107-114
-
-.. note::
-   Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
-   should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
-   the corresponding labels and optionally masks. It is particularly critical to add it if
-   :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
-
-Let's look how the sample looks like with our augmentation pipeline in place:
-
-.. GENERATED FROM PYTHON SOURCE LINES 114-124
-
-.. code-block:: default
-
-
-    dataset = load_example_coco_detection_dataset(transforms=transform)
-    dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
-
-    torch.manual_seed(3141)
-    sample = dataset[0]
-
-    show(sample)
-
-
-
-
-
-.. image-sg:: /auto_examples/v2_transforms/images/sphx_glr_plot_transforms_v2_e2e_002.png
-   :alt: plot transforms v2 e2e
-   :srcset: /auto_examples/v2_transforms/images/sphx_glr_plot_transforms_v2_e2e_002.png
-   :class: sphx-glr-single-img
 
 
 .. rst-class:: sphx-glr-script-out
@@ -246,12 +224,56 @@ Let's look how the sample looks like with our augmentation pipeline in place:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 126-128
+.. GENERATED FROM PYTHON SOURCE LINES 118-132
 
-We can see that the color of the image was distorted, we zoomed out on it (off center) and flipped it horizontally.
-In all of this, the bounding box was transformed accordingly. And without any further ado, we can start training.
+A few things are worth noting here:
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-147
+- We're converting the PIL image into a
+  :class:`~torchvision.transforms.v2.Image` object. This isn't strictly
+  necessary, but relying on Tensors (here: a Tensor subclass) will
+  :ref:`generally be faster <transforms_perf>`.
+- We are calling :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` to
+  make sure we remove degenerate bounding boxes, as well as their
+  corresponding labels and masks.
+  :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` should be placed
+  at least once at the end of a detection pipeline; it is particularly
+  critical if :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
+
+Let's look how the sample looks like with our augmentation pipeline in place:
+
+.. GENERATED FROM PYTHON SOURCE LINES 132-136
+
+.. code-block:: default
+
+
+    plot([dataset[0], dataset[1]])
+
+
+
+
+
+.. image-sg:: /auto_examples/v2_transforms/images/sphx_glr_plot_transforms_v2_e2e_002.png
+   :alt: plot transforms v2 e2e
+   :srcset: /auto_examples/v2_transforms/images/sphx_glr_plot_transforms_v2_e2e_002.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 138-147
+
+We can see that the color of the images were distorted, zoomed in or out, and flipped.
+The bounding boxes and the masks were transformed accordingly. And without any further ado, we can start training.
+
+Data loading and training loop
+------------------------------
+
+Below we're using Mask-RCNN which is an instance segmentation model, but
+everything we've covered in this tutorial also applies to object detection and
+semantic segmentation tasks.
+
+.. GENERATED FROM PYTHON SOURCE LINES 147-169
 
 .. code-block:: default
 
@@ -259,21 +281,24 @@ In all of this, the bounding box was transformed accordingly. And without any fu
     data_loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=2,
-        # We need a custom collation function here, since the object detection models expect a
-        # sequence of images and target dictionaries. The default collation function tries to
-        # `torch.stack` the individual elements, which fails in general for object detection,
-        # because the number of object instances varies between the samples. This is the same for
-        # `torchvision.transforms` v1
+        # We need a custom collation function here, since the object detection
+        # models expect a sequence of images and target dictionaries. The default
+        # collation function tries to torch.stack() the individual elements,
+        # which fails in general for object detection, because the number of bouding
+        # boxes varies between the images of a same batch.
         collate_fn=lambda batch: tuple(zip(*batch)),
     )
 
-    model = models.get_model("ssd300_vgg16", weights=None, weights_backbone=None).train()
+    model = models.get_model("maskrcnn_resnet50_fpn_v2", weights=None, weights_backbone=None).train()
 
-    for images, targets in data_loader:
-        loss_dict = model(images, targets)
-        print(loss_dict)
+    for imgs, targets in data_loader:
+        loss_dict = model(imgs, targets)
         # Put your training logic here
-        break
+
+        print(f"{[img.shape for img in imgs] = }")
+        print(f"{[type(target) for target in targets] = }")
+        for name, loss_val in loss_dict.items():
+            print(f"{name:<20}{loss_val:.3f}")
 
 
 
@@ -282,7 +307,13 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
  .. code-block:: none
 
-    {'bbox_regression': tensor(4.0019, grad_fn=<DivBackward0>), 'classification': tensor(42.4939, grad_fn=<DivBackward0>)}
+    [img.shape for img in imgs] = [torch.Size([3, 512, 512]), torch.Size([3, 409, 493])]
+    [type(target) for target in targets] = [<class 'dict'>, <class 'dict'>]
+    loss_classifier     4.721
+    loss_box_reg        0.006
+    loss_mask           0.734
+    loss_objectness     0.691
+    loss_rpn_box_reg    0.036
 
 
 
@@ -290,7 +321,7 @@ In all of this, the bounding box was transformed accordingly. And without any fu
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.882 seconds)
+   **Total running time of the script:** (0 minutes 4.744 seconds)
 
 
 .. _sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2_e2e.py:
