@@ -11,7 +11,7 @@ from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, Interp
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._meta import get_size
 
-from ._utils import _setup_fill_arg
+from ._utils import _get_fill, _setup_fill_arg
 from .utils import check_type, is_simple_tensor
 
 
@@ -20,7 +20,7 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = None,
     ) -> None:
         super().__init__()
         self.interpolation = _check_interpolation(interpolation)
@@ -80,9 +80,9 @@ class _AutoAugmentBase(Transform):
         transform_id: str,
         magnitude: float,
         interpolation: Union[InterpolationMode, int],
-        fill: Dict[Type, datapoints._FillTypeJIT],
+        fill: Dict[Union[Type, str], datapoints._FillTypeJIT],
     ) -> Union[datapoints._ImageType, datapoints._VideoType]:
-        fill_ = fill[type(image)]
+        fill_ = _get_fill(fill, type(image))
 
         if transform_id == "Identity":
             return image
@@ -214,7 +214,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -394,7 +394,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -467,7 +467,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -550,7 +550,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = None,
+        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10
