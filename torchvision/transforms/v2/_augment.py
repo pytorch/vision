@@ -216,7 +216,7 @@ class MixUp(_BaseMixUpCutMix):
     .. note::
         This transform is meant to be used on **batches** of samples, not
         individual images. See
-        :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` for detailed usage
+        :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` for detailed usage
         examples.
         The sample pairing is deterministic and done by matching consecutive
         samples in the batch, so the batch needs to be shuffled (this is an
@@ -266,7 +266,7 @@ class CutMix(_BaseMixUpCutMix):
     .. note::
         This transform is meant to be used on **batches** of samples, not
         individual images. See
-        :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` for detailed usage
+        :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` for detailed usage
         examples.
         The sample pairing is deterministic and done by matching consecutive
         samples in the batch, so the batch needs to be shuffled (this is an

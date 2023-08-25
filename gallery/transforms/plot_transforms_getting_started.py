@@ -4,8 +4,8 @@ Getting started with transforms v2
 ==================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_v2.ipynb>`_
-    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2.py>` to download the full example code.
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_getting_started.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py>` to download the full example code.
 
 This example illustrates all of what you need to know to get started with the
 new :mod:`torchvision.transforms.v2` API. We'll cover simple tasks like
@@ -70,7 +70,7 @@ plot([img, out])
 # <transforms>` to learn more about recommended practices and conventions, or
 # explore more :ref:`examples <transforms_gallery>` e.g. how to use augmentation
 # transforms like :ref:`CutMix and MixUp
-# <sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py>`.
+# <sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py>`.
 #
 # .. note::
 #
@@ -148,7 +148,7 @@ print(f"{img_dp.dtype = }, {img_dp.shape = }, {img_dp.sum() = }")
 #
 # You don't need to know much more about datapoints at this point, but advanced
 # users who want to learn more can refer to
-# :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`.
+# :ref:`sphx_glr_auto_examples_transforms_plot_datapoints.py`.
 #
 # What do I pass as input?
 # ------------------------
@@ -243,7 +243,7 @@ print(f"{out_target['this_is_ignored']}")
 #
 #    from torchvision.datasets import CocoDetection, wrap_dataset_for_transforms_v2
 #
-#    dataset = CocoDetection(..., transforms=my_v2_transforms)
+#    dataset = CocoDetection(..., transforms=my_transforms)
 #    dataset = wrap_dataset_for_transforms_v2(dataset)
 #    # Now the dataset returns datapoints!
 #
