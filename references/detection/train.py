@@ -40,23 +40,26 @@ def copypaste_collate_fn(batch):
     return copypaste(*utils.collate_fn(batch))
 
 
-def get_dataset(name, image_set, transform, data_path):
-    paths = {"coco": (data_path, get_coco, 91), "coco_kp": (data_path, get_coco_kp, 2)}
-    p, ds_fn, num_classes = paths[name]
+def get_dataset(is_train, args):
+    image_set = "train" if is_train else "val"
+    paths = {"coco": (args.data_path, get_coco, 91), "coco_kp": (args.data_path, get_coco_kp, 2)}
+    p, ds_fn, num_classes = paths[args.dataset]
 
-    ds = ds_fn(p, image_set=image_set, transforms=transform)
+    ds = ds_fn(p, image_set=image_set, transforms=get_transform(is_train, args), use_v2=args.use_v2)
     return ds, num_classes
 
 
-def get_transform(train, args):
-    if train:
-        return presets.DetectionPresetTrain(data_augmentation=args.data_augmentation)
+def get_transform(is_train, args):
+    if is_train:
+        return presets.DetectionPresetTrain(
+            data_augmentation=args.data_augmentation, backend=args.backend, use_v2=args.use_v2
+        )
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
         return lambda img, target: (trans(img), target)
     else:
-        return presets.DetectionPresetEval()
+        return presets.DetectionPresetEval(backend=args.backend, use_v2=args.use_v2)
 
 
 def get_args_parser(add_help=True):
@@ -159,10 +162,16 @@ def get_args_parser(add_help=True):
         help="Use CopyPaste data augmentation. Works only with data-augmentation='lsj'.",
     )
 
+    parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
+    parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
+
     return parser
 
 
 def main(args):
+    if args.backend.lower() == "datapoint" and not args.use_v2:
+        raise ValueError("Use --use-v2 if you want to use the datapoint backend.")
+
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -177,8 +186,8 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
+    dataset, num_classes = get_dataset(is_train=True, args=args)
+    dataset_test, _ = get_dataset(is_train=False, args=args)
 
     print("Creating data loaders")
     if args.distributed:
