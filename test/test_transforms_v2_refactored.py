@@ -2535,10 +2535,6 @@ class TestCrop:
     def test_kernel_video(self):
         check_kernel(F.crop_video, make_video(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
 
-    @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
-    )
     def test_functional(self, make_input):
         check_functional(F.crop, make_input(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
 
@@ -2718,3 +2714,17 @@ class TestCrop:
 
         with pytest.raises(ValueError, match="Padding mode should be either"):
             transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
+
+
+class TestGaussianBlur:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )    
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, device):
+        check_transform(transforms.GaussianBlur, make_input(device=device), kernel_size=3, sigma=(0.5, 2.0))
+
+    def test_input_args(self):
+        t = transforms.GaussianBlur(3, sigma=(0.5, 2))
+        assert t.sigma == [0.5, 2.0]

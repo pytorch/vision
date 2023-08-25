@@ -145,6 +145,7 @@ class TestSmoke:
             (transforms.ConvertBoundingBoxFormat(tv_tensors.BoundingBoxFormat.CXCYWH), None),
             (transforms.ConvertImageDtype(), None),
             (transforms.GaussianBlur(kernel_size=3), None),
+            (transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 5)), None),
             (
                 transforms.LinearTransformation(
                     # These are just dummy values that will be filled by the adapter. We can't define them upfront,
