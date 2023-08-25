@@ -26,6 +26,12 @@ class BoundingBoxFormat(Enum):
 class BoundingBoxes(Datapoint):
     """[BETA] :class:`torch.Tensor` subclass for bounding boxes.
 
+    .. note::
+        There should be only one :class:`~torchvision.datapoints.BoundingBoxes`
+        instance per sample e.g. ``{"img": img, "bbox": BoundingBoxes(...)}``,
+        although one :class:`~torchvision.datapoints.BoundingBoxes` object can
+        contain multiple bounding boxes.
+
     Args:
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format (BoundingBoxFormat, str): Format of the bounding box.
@@ -43,6 +49,10 @@ class BoundingBoxes(Datapoint):
 
     @classmethod
     def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int]) -> BoundingBoxes:  # type: ignore[override]
+        if tensor.ndim == 1:
+            tensor = tensor.unsqueeze(0)
+        elif tensor.ndim != 2:
+            raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
         if isinstance(format, str):
             format = BoundingBoxFormat[format.upper()]
         bounding_boxes = tensor.as_subclass(cls)
