@@ -92,10 +92,17 @@ class CustomGalleryExampleSortKey:
     ]
 
     def __call__(self, filename):
-        if filename in self.transforms_subsection_order:
-            return self.transforms_subsection_order.index(filename)
+        if "gallery/transforms" in self.src_dir:
+            try:
+                return self.transforms_subsection_order.index(filename)
+            except ValueError as e:
+                raise ValueError(
+                    "Looks like you added an example in gallery/transforms? "
+                    "You need to specify its order in docs/source/conf.py. Look for CustomGalleryExampleSortKey."
+                ) from e
         else:
-            return filename  # will sort alphabetically by filename
+            # For other subsections we just sort alphabetically by filename
+            return filename
 
 
 sphinx_gallery_conf = {
