@@ -206,8 +206,8 @@ Miscellaneous
     v2.RandomErasing
     Lambda
     v2.Lambda
-    v2.SanitizeBoundingBox
-    v2.ClampBoundingBox
+    v2.SanitizeBoundingBoxes
+    v2.ClampBoundingBoxes
     v2.UniformTemporalSubsample
 
 .. _conversion_transforms:

@@ -20,7 +20,7 @@ from common_utils import (
 
 from prototype_common_utils import make_label, make_one_hot_labels
 
-from torchvision.datapoints import BoundingBox, BoundingBoxFormat, Image, Mask, Video
+from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
 from torchvision.transforms.v2._utils import _convert_fill_arg
 from torchvision.transforms.v2.functional import InterpolationMode, pil_to_tensor, to_image_pil
@@ -101,10 +101,10 @@ class TestSimpleCopyPaste:
             self.create_fake_image(mocker, Image),
             # labels, bboxes, masks
             mocker.MagicMock(spec=datapoints.Label),
-            mocker.MagicMock(spec=BoundingBox),
+            mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
             # labels, bboxes, masks
-            mocker.MagicMock(spec=BoundingBox),
+            mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
         ]
 
@@ -122,11 +122,11 @@ class TestSimpleCopyPaste:
             self.create_fake_image(mocker, image_type),
             # labels, bboxes, masks
             mocker.MagicMock(spec=label_type),
-            mocker.MagicMock(spec=BoundingBox),
+            mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
             # labels, bboxes, masks
             mocker.MagicMock(spec=label_type),
-            mocker.MagicMock(spec=BoundingBox),
+            mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
         ]
 
@@ -142,7 +142,7 @@ class TestSimpleCopyPaste:
 
         for target in targets:
             for key, type_ in [
-                ("boxes", BoundingBox),
+                ("boxes", BoundingBoxes),
                 ("masks", Mask),
                 ("labels", label_type),
             ]:
@@ -163,7 +163,7 @@ class TestSimpleCopyPaste:
         if label_type == datapoints.OneHotLabel:
             labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
-            "boxes": BoundingBox(
+            "boxes": BoundingBoxes(
                 torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", spatial_size=(32, 32)
             ),
             "masks": Mask(masks),
@@ -178,7 +178,7 @@ class TestSimpleCopyPaste:
         if label_type == datapoints.OneHotLabel:
             paste_labels = torch.nn.functional.one_hot(paste_labels, num_classes=5)
         paste_target = {
-            "boxes": BoundingBox(
+            "boxes": BoundingBoxes(
                 torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", spatial_size=(32, 32)
             ),
             "masks": Mask(paste_masks),
@@ -332,7 +332,7 @@ class TestFixedSizeCrop:
         assert_equal(output["masks"], masks[is_valid])
         assert_equal(output["labels"], labels[is_valid])
 
-    def test__transform_bounding_box_clamping(self, mocker):
+    def test__transform_bounding_boxes_clamping(self, mocker):
         batch_size = 3
         spatial_size = (10, 10)
 
@@ -349,15 +349,15 @@ class TestFixedSizeCrop:
             ),
         )
 
-        bounding_box = make_bounding_box(
+        bounding_boxes = make_bounding_box(
             format=BoundingBoxFormat.XYXY, spatial_size=spatial_size, batch_dims=(batch_size,)
         )
-        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_boxes")
 
         transform = transforms.FixedSizeCrop((-1, -1))
         mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
 
-        transform(bounding_box)
+        transform(bounding_boxes)
 
         mock.assert_called_once()
 
@@ -390,7 +390,7 @@ class TestPermuteDimensions:
     def test_call(self, dims, inverse_dims):
         sample = dict(
             image=make_image(),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            bounding_boxes=make_bounding_box(format=BoundingBoxFormat.XYXY),
             video=make_video(),
             str="str",
             int=0,
@@ -434,7 +434,7 @@ class TestTransposeDimensions:
     def test_call(self, dims):
         sample = dict(
             image=make_image(),
-            bounding_box=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            bounding_boxes=make_bounding_box(format=BoundingBoxFormat.XYXY),
             video=make_video(),
             str="str",
             int=0,
