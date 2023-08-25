@@ -23,15 +23,17 @@ def _kernel_datapoint_wrapper(kernel):
     return wrapper
 
 
-def _register_kernel_internal(dispatcher, datapoint_cls, *, datapoint_wrapper=True):
+def _register_kernel_internal(dispatcher, input_type, *, datapoint_wrapper=True):
     registry = _KERNEL_REGISTRY.setdefault(dispatcher, {})
-    if datapoint_cls in registry:
-        raise TypeError(
-            f"Dispatcher '{dispatcher.__name__}' already has a kernel registered for type '{datapoint_cls.__name__}'."
-        )
+    if input_type in registry:
+        raise ValueError(f"Dispatcher {dispatcher} already has a kernel registered for type {input_type}.")
 
     def decorator(kernel):
-        registry[datapoint_cls] = _kernel_datapoint_wrapper(kernel) if datapoint_wrapper else kernel
+        registry[input_type] = (
+            _kernel_datapoint_wrapper(kernel)
+            if issubclass(input_type, datapoints.Datapoint) and datapoint_wrapper
+            else kernel
+        )
         return kernel
 
     return decorator
@@ -43,7 +45,9 @@ def _name_to_dispatcher(name):
     try:
         return getattr(torchvision.transforms.v2.functional, name)
     except AttributeError:
-        raise ValueError(f"Could not find dispatcher with name '{name}'.") from None
+        raise ValueError(
+            f"Could not find dispatcher with name '{name}' in torchvision.transforms.v2.functional."
+        ) from None
 
 
 def register_kernel(dispatcher, datapoint_cls):
@@ -54,22 +58,57 @@ def register_kernel(dispatcher, datapoint_cls):
     """
     if isinstance(dispatcher, str):
         dispatcher = _name_to_dispatcher(name=dispatcher)
+    elif not (
+        callable(dispatcher)
+        and getattr(dispatcher, "__module__", "").startswith("torchvision.transforms.v2.functional")
+    ):
+        raise ValueError(
+            f"Kernels can only be registered on dispatchers from the torchvision.transforms.v2.functional namespace, "
+            f"but got {dispatcher}."
+        )
+
+    if not (
+        isinstance(datapoint_cls, type)
+        and issubclass(datapoint_cls, datapoints.Datapoint)
+        and datapoint_cls is not datapoints.Datapoint
+    ):
+        raise ValueError(
+            f"Kernels can only be registered for subclasses of torchvision.datapoints.Datapoint, "
+            f"but got {datapoint_cls}."
+        )
+
     return _register_kernel_internal(dispatcher, datapoint_cls, datapoint_wrapper=False)
 
 
-def _get_kernel(dispatcher, datapoint_cls):
+def _get_kernel(dispatcher, input_type):
     registry = _KERNEL_REGISTRY.get(dispatcher)
     if not registry:
-        raise ValueError(f"No kernel registered for dispatcher '{dispatcher.__name__}'.")
+        raise ValueError(f"No kernel registered for dispatcher {dispatcher.__name__}.")
 
-    if datapoint_cls in registry:
-        return registry[datapoint_cls]
+    # In case we have an exact type match, we take a shortcut.
+    if input_type in registry:
+        return registry[input_type]
 
-    for registered_cls, kernel in registry.items():
-        if issubclass(datapoint_cls, registered_cls):
-            return kernel
+    # In case of datapoints, we check if we have a kernel for a superclass registered
+    if issubclass(input_type, datapoints.Datapoint):
+        # Since we have already checked for an exact match above, we can start the traversal at the superclass.
+        for cls in input_type.__mro__[1:]:
+            if cls is datapoints.Datapoint:
+                # We don't want user-defined datapoints to dispatch to the pure Tensor kernels, so we explicit stop the
+                # MRO traversal before hitting torch.Tensor. We can even stop at datapoints.Datapoint, since we don't
+                # allow kernels to be registered for datapoints.Datapoint anyway.
+                break
+            elif cls in registry:
+                return registry[cls]
 
-    return _noop
+        # Note that in the future we are not going to return a noop here, but rather raise the error below
+        return _noop
+
+    raise TypeError(
+        f"Dispatcher {dispatcher} supports inputs of type torch.Tensor, PIL.Image.Image, "
+        f"and subclasses of torchvision.datapoints.Datapoint, "
+        f"but got {input_type} instead."
+    )
 
 
 # Everything below this block is stuff that we need right now, since it looks like we need to release in an intermediate
@@ -101,7 +140,9 @@ def _register_explicit_noop(*datapoints_classes, warn_passthrough=False):
                 f"F.{dispatcher.__name__} is currently passing through inputs of type datapoints.{cls.__name__}. "
                 f"This will likely change in the future."
             )
-            register_kernel(dispatcher, cls)(functools.partial(_noop, __msg__=msg if warn_passthrough else None))
+            _register_kernel_internal(dispatcher, cls, datapoint_wrapper=False)(
+                functools.partial(_noop, __msg__=msg if warn_passthrough else None)
+            )
         return dispatcher
 
     return decorator
@@ -115,13 +156,15 @@ def _noop(inpt, *args, __msg__=None, **kwargs):
 
 # TODO: we only need this, since our default behavior in case no kernel is found is passthrough. When we change that
 # to error later, this decorator can be removed, since the error will be raised by _get_kernel
-def _register_unsupported_type(*datapoints_classes):
+def _register_unsupported_type(*input_types):
     def kernel(inpt, *args, __dispatcher_name__, **kwargs):
         raise TypeError(f"F.{__dispatcher_name__} does not support inputs of type {type(inpt)}.")
 
     def decorator(dispatcher):
-        for cls in datapoints_classes:
-            register_kernel(dispatcher, cls)(functools.partial(kernel, __dispatcher_name__=dispatcher.__name__))
+        for input_type in input_types:
+            _register_kernel_internal(dispatcher, input_type, datapoint_wrapper=False)(
+                functools.partial(kernel, __dispatcher_name__=dispatcher.__name__)
+            )
         return dispatcher
 
     return decorator
@@ -129,13 +172,10 @@ def _register_unsupported_type(*datapoints_classes):
 
 # This basically replicates _register_kernel_internal, but with a specialized wrapper for five_crop / ten_crop
 # We could get rid of this by letting _register_kernel_internal take arbitrary dispatchers rather than wrap_kernel: bool
-# TODO: decide if we want that
-def _register_five_ten_crop_kernel(dispatcher, datapoint_cls):
+def _register_five_ten_crop_kernel(dispatcher, input_type):
     registry = _KERNEL_REGISTRY.setdefault(dispatcher, {})
-    if datapoint_cls in registry:
-        raise TypeError(
-            f"Dispatcher '{dispatcher.__name__}' already has a kernel registered for type '{datapoint_cls.__name__}'."
-        )
+    if input_type in registry:
+        raise TypeError(f"Dispatcher '{dispatcher}' already has a kernel registered for type '{input_type}'.")
 
     def wrap(kernel):
         @functools.wraps(kernel)
@@ -147,7 +187,7 @@ def _register_five_ten_crop_kernel(dispatcher, datapoint_cls):
         return wrapper
 
     def decorator(kernel):
-        registry[datapoint_cls] = wrap(kernel)
+        registry[input_type] = wrap(kernel) if issubclass(input_type, datapoints.Datapoint) else kernel
         return kernel
 
     return decorator
