@@ -11,6 +11,7 @@ from ._color import (
     Grayscale,
     RandomAdjustSharpness,
     RandomAutocontrast,
+    RandomChannelPermutation,
     RandomEqualize,
     RandomGrayscale,
     RandomInvert,

@@ -2280,3 +2280,61 @@ class TestGetKernel:
         _register_kernel_internal(F.resize, MyDatapoint, datapoint_wrapper=False)(resize_my_datapoint)
 
         assert _get_kernel(F.resize, MyDatapoint) is resize_my_datapoint
+
+
+class TestPermuteChannels:
+    _DEFAULT_PERMUTATION = [2, 0, 1]
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.permute_channels_image_tensor, make_image_tensor),
+            # FIXME
+            # check_kernel does not support PIL kernel, but it should
+            (F.permute_channels_image_tensor, make_image),
+            (F.permute_channels_video, make_video),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel(self, kernel, make_input, dtype, device):
+        check_kernel(kernel, make_input(dtype=dtype, device=device), permutation=self._DEFAULT_PERMUTATION)
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.permute_channels_image_tensor, make_image_tensor),
+            (F.permute_channels_image_pil, make_image_pil),
+            (F.permute_channels_image_tensor, make_image),
+            (F.permute_channels_video, make_video),
+        ],
+    )
+    def test_dispatcher(self, kernel, make_input):
+        check_dispatcher(F.permute_channels, kernel, make_input(), permutation=self._DEFAULT_PERMUTATION)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.permute_channels_image_tensor, torch.Tensor),
+            (F.permute_channels_image_pil, PIL.Image.Image),
+            (F.permute_channels_image_tensor, datapoints.Image),
+            (F.permute_channels_video, datapoints.Video),
+        ],
+    )
+    def test_dispatcher_signature(self, kernel, input_type):
+        check_dispatcher_kernel_signature_match(F.permute_channels, kernel=kernel, input_type=input_type)
+
+    def reference_image_correctness(self, image, permutation):
+        channel_images = image.split(1, dim=-3)
+        permuted_channel_images = [channel_images[channel_idx] for channel_idx in permutation]
+        return datapoints.Image(torch.concat(permuted_channel_images, dim=-3))
+
+    @pytest.mark.parametrize("permutation", [[2, 0, 1], [1, 2, 0], [2, 0, 1], [0, 1, 2]])
+    @pytest.mark.parametrize("batch_dims", [(), (2,), (2, 1)])
+    def test_image_correctness(self, permutation, batch_dims):
+        image = make_image(batch_dims=batch_dims)
+
+        actual = F.permute_channels(image, permutation=permutation)
+        expected = self.reference_image_correctness(image, permutation=permutation)
+
+        torch.testing.assert_close(actual, expected)
