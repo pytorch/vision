@@ -5,7 +5,7 @@ from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F
 
 
-def plot(imgs):
+def plot(imgs, row_title=None, **imshow_kwargs):
     if not isinstance(imgs[0], list):
         # Make a 2d grid even if there's just 1 row
         imgs = [imgs]
@@ -40,7 +40,11 @@ def plot(imgs):
                 img = draw_segmentation_masks(img, masks.to(torch.bool), colors=["green"] * masks.shape[0], alpha=.65)
 
             ax = axs[row_idx, col_idx]
-            ax.imshow(img.permute(1, 2, 0).numpy())
+            ax.imshow(img.permute(1, 2, 0).numpy(), **imshow_kwargs)
             ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+
+    if row_title is not None:
+        for row_idx in range(num_rows):
+            axs[row_idx, 0].set(ylabel=row_title[row_idx])
 
     plt.tight_layout()
