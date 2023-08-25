@@ -3,6 +3,8 @@
 Datapoints FAQ
 ==============
 
+https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/_generated_ipynb_notebooks/plot_datapoints.ipynb
+
 Datapoints are Tensor subclasses introduced together with
 ``torchvision.transforms.v2``. This example showcases what these datapoints are
 and how they behave.

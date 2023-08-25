@@ -55,6 +55,13 @@ jobs:
         # cores (`-j auto`). Thus, we limit to a single process (`-j 1`) here.
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
+
+        mkdir build/html/_generated_ipynb_notebooks
+        for file in `find build/html/_downloads`; do
+          if [[ $file == *.ipynb ]]; then
+            cp $file build/html/_generated_ipynb_notebooks/
+          fi
+        done
         
         cp -r build/html "${RUNNER_ARTIFACT_DIR}"
         
