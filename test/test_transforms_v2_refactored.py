@@ -228,9 +228,13 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
         assert functional_param == kernel_param
 
 
-def _check_transform_v1_compatibility(v2_transform_eager, input, *, rtol, atol):
+def _check_transform_v1_compatibility(v2_transform_eager, *inputs, rtol, atol):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
     ``get_params`` method that is the v1 equivalent, and the output is close to v1 in eager and scripted mode."""
+    if len(inputs) != 1:
+        return
+
+    input = inputs[0]
     if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
         return
 
@@ -260,7 +264,11 @@ def _check_transform_v1_compatibility(v2_transform_eager, input, *, rtol, atol):
     check_close(_script(v2_transform_eager), _script(v1_transform_eager))
 
 
-def check_transform(transform, input, *, check_v1_compatibility=True):
+def check_transform(transform, *inputs, check_v1_compatibility=True):
+    if len(inputs) != 1:
+        raise RuntimeError("Multiple inputs are not supported yet")
+    input = inputs[0]
+
     pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
@@ -270,7 +278,7 @@ def check_transform(transform, input, *, check_v1_compatibility=True):
         assert output.format == input.format
 
     if check_v1_compatibility:
-        _check_transform_v1_compatibility(transform, input, **_to_tolerances(check_v1_compatibility))
+        _check_transform_v1_compatibility(transform, *inputs, **_to_tolerances(check_v1_compatibility))
 
 
 def transform_cls_to_functional(transform_cls, **transform_specific_kwargs):
