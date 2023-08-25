@@ -10,10 +10,10 @@ Illustration of transforms
 This example illustrates the various transforms available in :ref:`the
 torchvision.transforms module <transforms>`.
 """
+# %%
 
 # sphinx_gallery_thumbnail_path = "../../gallery/assets/transforms_thumbnail.png"
 
-# %%
 from PIL import Image
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -23,14 +23,14 @@ from torchvision.transforms import v2
 
 plt.rcParams["savefig.bbox"] = 'tight'
 
+# if you change the seed, make sure that the randomly-applied transforms
+# properly show that the image can be both transformed and *not* transformed!
+torch.manual_seed(0)
+
 # If you're trying to run that on collab, you can download the assets and the
 # helpers from https://github.com/pytorch/vision/tree/main/gallery/
 from helpers import plot
 orig_img = Image.open(Path('../assets') / 'astronaut.jpg')
-
-# if you change the seed, make sure that the randomly-applied transforms
-# properly show that the image can be both transformed and *not* transformed!
-torch.manual_seed(0)
 
 # %%
 # Geometric Transforms
@@ -154,7 +154,7 @@ plot([orig_img] + resized_crops)
 # (see also :func:`~torchvision.transforms.functional.to_grayscale`)
 # converts an image to grayscale
 gray_img = v2.Grayscale()(orig_img)
-plot([orig_img] + [gray_img], cmap='gray')
+plot([orig_img, gray_img], cmap='gray')
 
 # %%
 # ColorJitter
@@ -162,8 +162,8 @@ plot([orig_img] + [gray_img], cmap='gray')
 # The :class:`~torchvision.transforms.ColorJitter` transform
 # randomly changes the brightness, contrast, saturation, hue, and other properties of an image.
 jitter = v2.ColorJitter(brightness=.5, hue=.3)
-jitted_imgs = [jitter(orig_img) for _ in range(4)]
-plot([orig_img] + jitted_imgs)
+jittered_imgs = [jitter(orig_img) for _ in range(4)]
+plot([orig_img] + jittered_imgs)
 
 # %%
 # GaussianBlur
