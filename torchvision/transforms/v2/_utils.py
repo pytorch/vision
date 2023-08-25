@@ -18,21 +18,23 @@ from torchvision.transforms.v2.functional import get_dimensions, get_size, is_pu
 from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
 
-def _setup_float_or_seq(arg: Union[float, Sequence[Union[int, float]]], name: str, req_size: int = 2) -> Sequence[float]:
-    if not isinstance(arg, (float, Sequence)):
-        raise TypeError(f"{name} should be float or a sequence of floats. Got {type(arg)}")
-    if isinstance(arg, Sequence) and len(arg) != req_size:
-        raise ValueError(f"If {name} is a sequence its length should be one of {req_size}. Got {len(arg)}")
+def _setup_number_or_seq(
+    arg: Union[int, float, Sequence[Union[int, float]]], name: str, req_size: int = 2
+) -> Sequence[float]:
+    if not isinstance(arg, (int, float, Sequence)):
+        raise TypeError(f"{name} should be a number or a sequence of numbers. Got {type(arg)}")
+    if isinstance(arg, Sequence) and len(arg) not in (1, req_size):
+        raise ValueError(f"If {name} is a sequence its length should be 1 or {req_size}. Got {len(arg)}")
     if isinstance(arg, Sequence):
         for element in arg:
             if not isinstance(element, (int, float)):
-                raise ValueError(f"{name} should be a sequence of ints/floats. Got {type(element)}")
+                raise ValueError(f"{name} should be a sequence of numbers. Got {type(element)}")
 
-    if isinstance(arg, float):
+    if isinstance(arg, (int, float)):
         arg = [float(arg), float(arg)]
     if isinstance(arg, (list, tuple)):
         if len(arg) == 1:
-            arg = [arg[0], arg[0]]
+            arg = [float(arg[0]), float(arg[0])]
         else:
             arg = [float(arg[0]), float(arg[1])]
     return arg

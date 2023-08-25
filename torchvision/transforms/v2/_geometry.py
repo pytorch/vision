@@ -21,7 +21,7 @@ from ._utils import (
     _get_fill,
     _setup_angle,
     _setup_fill_arg,
-    _setup_float_or_seq,
+    _setup_number_or_seq,
     _setup_size,
     get_bounding_boxes,
     has_all,
@@ -1060,8 +1060,8 @@ class ElasticTransform(Transform):
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
-        self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
-        self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
+        self.alpha = _setup_number_or_seq(alpha, "alpha", 2)
+        self.sigma = _setup_number_or_seq(sigma, "sigma", 2)
 
         self.interpolation = _check_interpolation(interpolation)
         self.fill = fill

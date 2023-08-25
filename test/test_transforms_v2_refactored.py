@@ -2722,9 +2722,38 @@ class TestGaussianBlur:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )    
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_transform(self, make_input, device):
-        check_transform(transforms.GaussianBlur, make_input(device=device), kernel_size=3, sigma=(0.5, 2.0))
+    @pytest.mark.parametrize("sigma", [5, (0.5, 2)])
+    def test_transform(self, make_input, device, sigma):
+        check_transform(transforms.GaussianBlur, make_input(device=device), kernel_size=3, sigma=sigma)
 
-    def test_input_args(self):
-        t = transforms.GaussianBlur(3, sigma=(0.5, 2))
-        assert t.sigma == [0.5, 2.0]
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur([10, 12, 14])
+
+        with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur(4)
+
+        with pytest.raises(ValueError, match="If sigma is a sequence its length should be 1 or 2. Got 3"):
+            transforms.GaussianBlur(3, sigma=[1, 2, 3])
+
+        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
+            transforms.GaussianBlur(3, sigma=-1.0)
+
+        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
+            transforms.GaussianBlur(3, sigma=[2.0, 1.0])
+
+        with pytest.raises(TypeError, match="sigma should be a number or a sequence of numbers"):
+            transforms.GaussianBlur(3, sigma={})
+
+    @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0], (10, 12.0), [10]])
+    def test__get_params(self, sigma):
+        transform = transforms.GaussianBlur(3, sigma=sigma)
+        params = transform._get_params([])
+
+        if isinstance(sigma, float):
+            assert params["sigma"][0] == params["sigma"][1] == sigma
+        elif isinstance(sigma, list) and len(sigma) == 1:
+            assert params["sigma"][0] == params["sigma"][1] == sigma[0]
+        else:
+            assert sigma[0] <= params["sigma"][0] <= sigma[1]
+            assert sigma[0] <= params["sigma"][1] <= sigma[1]
