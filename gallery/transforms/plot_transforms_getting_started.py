@@ -4,8 +4,8 @@ Getting started with transforms v2
 ==================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_v2.ipynb>`_
-    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2.py>` to download the full example code.
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_getting_started.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py>` to download the full example code.
 
 This example illustrates all of what you need to know to get started with the
 new :mod:`torchvision.transforms.v2` API. We'll cover simple tasks like
@@ -70,7 +70,7 @@ plot([img, out])
 # <transforms>` to learn more about recommended practices and conventions, or
 # explore more :ref:`examples <transforms_gallery>` e.g. how to use augmentation
 # transforms like :ref:`CutMix and MixUp
-# <sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py>`.
+# <sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py>`.
 #
 # .. note::
 #
@@ -90,7 +90,7 @@ plot([img, out])
 
 from torchvision import datapoints  # we'll describe this a bit later, bare with us
 
-bboxes = datapoints.BoundingBoxes(
+boxes = datapoints.BoundingBoxes(
     [
         [15, 10, 370, 510],
         [275, 340, 510, 510],
@@ -103,9 +103,10 @@ transforms = v2.Compose([
     v2.RandomPhotometricDistort(p=1),
     v2.RandomHorizontalFlip(p=1),
 ])
-out_img, out_bboxes = transforms(img, bboxes)
+out_img, out_boxes = transforms(img, boxes)
+print(type(boxes), type(out_boxes))
 
-plot([(img, bboxes), (out_img, out_bboxes)])
+plot([(img, boxes), (out_img, out_boxes)])
 
 # %%
 #
@@ -119,6 +120,9 @@ plot([(img, bboxes), (out_img, out_bboxes)])
 # answer these in the next sections.
 
 # %%
+#
+# .. _what_are_datapoints:
+#
 # What are Datapoints?
 # --------------------
 #
@@ -144,14 +148,14 @@ print(f"{img_dp.dtype = }, {img_dp.shape = }, {img_dp.sum() = }")
 #
 # You don't need to know much more about datapoints at this point, but advanced
 # users who want to learn more can refer to
-# :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`.
+# :ref:`sphx_glr_auto_examples_transforms_plot_datapoints.py`.
 #
 # What do I pass as input?
 # ------------------------
 #
 # Above, we've seen two examples: one where we passed a single image as input
 # i.e. ``out = transforms(img)``, and one where we passed both an image and
-# bounding boxes, i.e. ``out_img, out_bboxes = transforms(img, bboxes)``.
+# bounding boxes, i.e. ``out_img, out_boxes = transforms(img, boxes)``.
 #
 # In fact, transforms support **arbitrary input structures**. The input can be a
 # single image, a tuple, an arbitrarily nested dictionary... pretty much
@@ -160,15 +164,15 @@ print(f"{img_dp.dtype = }, {img_dp.shape = }, {img_dp.sum() = }")
 # we're getting the same structure as output:
 
 target = {
-    "bboxes": bboxes,
-    "labels": torch.arange(bboxes.shape[0]),
+    "boxes": boxes,
+    "labels": torch.arange(boxes.shape[0]),
     "this_is_ignored": ("arbitrary", {"structure": "!"})
 }
 
 # Re-using the transforms and definitions from above.
 out_img, out_target = transforms(img, target)
 
-plot([(img, target["bboxes"]), (out_img, out_target["bboxes"])])
+plot([(img, target["boxes"]), (out_img, out_target["boxes"])])
 print(f"{out_target['this_is_ignored']}")
 
 # %%
@@ -239,7 +243,7 @@ print(f"{out_target['this_is_ignored']}")
 #
 #    from torchvision.datasets import CocoDetection, wrap_dataset_for_transforms_v2
 #
-#    dataset = CocoDetection(..., transforms=my_v2_transforms)
+#    dataset = CocoDetection(..., transforms=my_transforms)
 #    dataset = wrap_dataset_for_transforms_v2(dataset)
 #    # Now the dataset returns datapoints!
 #
