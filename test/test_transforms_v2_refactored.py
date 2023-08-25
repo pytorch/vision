@@ -2353,3 +2353,24 @@ class TestElastic:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, size, device):
         check_transform(transforms.ElasticTransform, make_input(size, device=device))
+
+
+class TestToPureTensor:
+    def test_correctness(self):
+        input = {
+            "img": make_image(),
+            "img_tensor": make_image_tensor(),
+            "img_pil": make_image_pil(),
+            "mask": make_detection_mask(),
+            "video": make_video(),
+            "bbox": make_bounding_box(),
+            "str": "str",
+        }
+
+        out = transforms.ToPureTensor()(input)
+
+        for input_value, out_value in zip(input.values(), out.values()):
+            if isinstance(input_value, datapoints.Datapoint):
+                assert isinstance(out_value, torch.Tensor) and not isinstance(out_value, datapoints.Datapoint)
+            else:
+                assert isinstance(out_value, type(input_value))
