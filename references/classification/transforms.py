@@ -13,15 +13,15 @@ def get_mixup_cutmix(*, mixup_alpha, cutmix_alpha, num_categories, use_v2):
     mixup_cutmix = []
     if mixup_alpha > 0:
         mixup_cutmix.append(
-            transforms_module.Mixup(alpha=mixup_alpha, num_categories=num_categories)
+            transforms_module.MixUp(alpha=mixup_alpha, num_categories=num_categories)
             if use_v2
-            else RandomMixup(num_classes=num_categories, p=1.0, alpha=mixup_alpha)
+            else RandomMixUp(num_classes=num_categories, p=1.0, alpha=mixup_alpha)
         )
     if cutmix_alpha > 0:
         mixup_cutmix.append(
-            transforms_module.Cutmix(alpha=mixup_alpha, num_categories=num_categories)
+            transforms_module.CutMix(alpha=mixup_alpha, num_categories=num_categories)
             if use_v2
-            else RandomCutmix(num_classes=num_categories, p=1.0, alpha=mixup_alpha)
+            else RandomCutMix(num_classes=num_categories, p=1.0, alpha=mixup_alpha)
         )
     if not mixup_cutmix:
         return None
@@ -29,8 +29,8 @@ def get_mixup_cutmix(*, mixup_alpha, cutmix_alpha, num_categories, use_v2):
     return transforms_module.RandomChoice(mixup_cutmix)
 
 
-class RandomMixup(torch.nn.Module):
-    """Randomly apply Mixup to the provided batch and targets.
+class RandomMixUp(torch.nn.Module):
+    """Randomly apply MixUp to the provided batch and targets.
     The class implements the data augmentations as described in the paper
     `"mixup: Beyond Empirical Risk Minimization" <https://arxiv.org/abs/1710.09412>`_.
 
@@ -112,8 +112,8 @@ class RandomMixup(torch.nn.Module):
         return s
 
 
-class RandomCutmix(torch.nn.Module):
-    """Randomly apply Cutmix to the provided batch and targets.
+class RandomCutMix(torch.nn.Module):
+    """Randomly apply CutMix to the provided batch and targets.
     The class implements the data augmentations as described in the paper
     `"CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features"
     <https://arxiv.org/abs/1905.04899>`_.
