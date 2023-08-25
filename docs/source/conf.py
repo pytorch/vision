@@ -75,12 +75,13 @@ gen_rst.EXAMPLE_HEADER = """
 
 """
 
-from sphinx_gallery.sorting import _SortKey
 
-
-class CustomGalleryExampleSortKey(_SortKey):
+class CustomGalleryExampleSortKey:
     # See https://sphinx-gallery.github.io/stable/configuration.html#sorting-gallery-examples
     # and https://github.com/sphinx-gallery/sphinx-gallery/blob/master/sphinx_gallery/sorting.py
+    def __init__(self, src_dir):
+        self.src_dir = src_dir
+
     transforms_subsection_order = [
         "plot_transforms_getting_started.py",
         "plot_transforms_e2e.py",
