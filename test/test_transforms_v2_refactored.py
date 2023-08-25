@@ -230,7 +230,8 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
 
 def _check_transform_v1_compatibility(transform, input, rtol, atol):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
-    ``get_params`` method that is the v1 equivalent, the output is close to v1, and the transform can be scripted."""
+    ``get_params`` method that is the v1 equivalent, the output is close to v1, is scriptable, and the scripted version
+    can be called without error."""
     if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
         return
 
