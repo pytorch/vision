@@ -101,7 +101,8 @@ class FixedSizeCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_crop"]:
-            inpt = F.crop(
+            inpt = self._call_kernel(
+                F.crop,
                 inpt,
                 top=params["top"],
                 left=params["left"],
@@ -120,6 +121,6 @@ class FixedSizeCrop(Transform):
 
         if params["needs_pad"]:
             fill = _get_fill(self._fill, type(inpt))
-            inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
+            inpt = self._call_kernel(F.pad, inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt
