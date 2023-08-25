@@ -23,7 +23,7 @@ from torchvision import datapoints
 from torchvision.transforms.v2 import functional as F
 
 
-########################################################################################################################
+# %%
 # What are datapoints?
 # --------------------
 #
@@ -36,7 +36,7 @@ assert isinstance(image, torch.Tensor)
 assert image.data_ptr() == tensor.data_ptr()
 
 
-########################################################################################################################
+# %%
 # Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate function
 # for the input data.
 #
@@ -59,7 +59,7 @@ image = datapoints.Image([[[[0, 1], [1, 0]]]])
 print(image)
 
 
-########################################################################################################################
+# %%
 # Similar to other PyTorch creations ops, the constructor also takes the ``dtype``, ``device``, and ``requires_grad``
 # parameters.
 
@@ -67,14 +67,14 @@ float_image = datapoints.Image([[[0, 1], [1, 0]]], dtype=torch.float32, requires
 print(float_image)
 
 
-########################################################################################################################
+# %%
 # In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` also take a
 # :class:`PIL.Image.Image` directly:
 
 image = datapoints.Image(PIL.Image.open("assets/astronaut.jpg"))
 print(image.shape, image.dtype)
 
-########################################################################################################################
+# %%
 # In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
 # :class:`~torchvision.datapoints.BoundingBoxes` stores the coordinate format as well as the spatial size of the
 # corresponding image alongside the actual values:
@@ -85,7 +85,7 @@ bounding_box = datapoints.BoundingBoxes(
 print(bounding_box)
 
 
-########################################################################################################################
+# %%
 # Do I have to wrap the output of the datasets myself?
 # ----------------------------------------------------
 #
@@ -120,7 +120,7 @@ class PennFudanDataset(torch.utils.data.Dataset):
 
         ...
 
-########################################################################################################################
+# %%
 # 2. Perform the wrapping inside a custom transformation at the beginning of your pipeline:
 
 
@@ -144,7 +144,7 @@ def get_transform(train):
     transforms.append(T.PILToTensor())
     ...
 
-########################################################################################################################
+# %%
 # .. note::
 #
 #    If both :class:`~torchvision.datapoints.BoundingBoxes`'es and :class:`~torchvision.datapoints.Mask`'s are included in
@@ -171,7 +171,7 @@ new_image = image + 0
 
 assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
 
-########################################################################################################################
+# %%
 # .. note::
 #
 #    This "unwrapping" behaviour is something we're actively seeking feedback on. If you find this surprising or if you
