@@ -243,11 +243,11 @@ def _check_transform_v1_compatibility(v2_transform_eager, input, rtol, atol):
 
     v1_transform_eager = v1_transform_cls(**v2_transform_eager._extract_params_for_v1_transform())
 
-    torch.manual_seed(0)
-    output_v2 = v2_transform_eager(input)
+    with freeze_rng_state():
+        output_v2 = v2_transform_eager(input)
 
-    torch.manual_seed(0)
-    output_v1 = v1_transform_eager(input)
+    with freeze_rng_state():
+        output_v1 = v1_transform_eager(input)
 
     assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
 
