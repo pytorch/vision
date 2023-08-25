@@ -247,21 +247,19 @@ def _check_transform_v1_compatibility(v2_transform_eager, *inputs, rtol, atol):
 
     v1_transform_eager = v1_transform_cls(**v2_transform_eager._extract_params_for_v1_transform())
 
-    def check_close(transform_v2, transform_v1):
-        torch.manual_seed(0)
-        output_v2 = transform_v2(input)
+    torch.manual_seed(0)
+    output_v2 = v2_transform_eager(input)
 
-        torch.manual_seed(0)
-        output_v1 = transform_v1(input)
+    torch.manual_seed(0)
+    output_v1 = v1_transform_eager(input)
 
-        assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
-
-    check_close(v2_transform_eager, v1_transform_eager)
+    assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
 
     if isinstance(input, PIL.Image.Image):
         return
 
-    check_close(_script(v2_transform_eager), _script(v1_transform_eager))
+    v2_transform_scripted = _script(v1_transform_eager)
+    v2_transform_scripted(input)
 
 
 def check_transform(transform, *inputs, check_v1_compatibility=True):
