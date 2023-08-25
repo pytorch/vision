@@ -7,7 +7,7 @@ from torchvision import datapoints
 from torchvision.prototype.datapoints import Label, OneHotLabel
 from torchvision.transforms.v2 import functional as F, Transform
 from torchvision.transforms.v2._utils import _setup_fill_arg, _setup_size
-from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_bounding_boxes, query_spatial_size
+from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_bounding_boxes, query_size
 
 
 class FixedSizeCrop(Transform):
@@ -46,7 +46,7 @@ class FixedSizeCrop(Transform):
             )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
         new_height = min(height, self.crop_height)
         new_width = min(width, self.crop_width)
 
@@ -67,7 +67,7 @@ class FixedSizeCrop(Transform):
 
         if needs_crop and bounding_boxes is not None:
             format = bounding_boxes.format
-            bounding_boxes, spatial_size = F.crop_bounding_boxes(
+            bounding_boxes, canvas_size = F.crop_bounding_boxes(
                 bounding_boxes.as_subclass(torch.Tensor),
                 format=format,
                 top=top,
@@ -75,7 +75,7 @@ class FixedSizeCrop(Transform):
                 height=new_height,
                 width=new_width,
             )
-            bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, spatial_size=spatial_size)
+            bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size)
             height_and_width = F.convert_format_bounding_boxes(
                 bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
             )[..., 2:]
@@ -115,9 +115,7 @@ class FixedSizeCrop(Transform):
             elif isinstance(inpt, datapoints.BoundingBoxes):
                 inpt = datapoints.BoundingBoxes.wrap_like(
                     inpt,
-                    F.clamp_bounding_boxes(
-                        inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size
-                    ),
+                    F.clamp_bounding_boxes(inpt[params["is_valid"]], format=inpt.format, canvas_size=inpt.canvas_size),
                 )
 
         if params["needs_pad"]:

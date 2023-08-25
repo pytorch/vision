@@ -11,7 +11,7 @@ from torchvision.transforms.v2 import functional as F, InterpolationMode, Transf
 
 from torchvision.transforms.v2._transform import _RandomApplyTransform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_spatial_size
+from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_size
 
 
 class _BaseMixupCutmix(_RandomApplyTransform):
@@ -64,7 +64,7 @@ class RandomCutmix(_BaseMixupCutmix):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
-        H, W = query_spatial_size(flat_inputs)
+        H, W = query_size(flat_inputs)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())
