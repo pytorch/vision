@@ -6,16 +6,16 @@
 
 Computation times
 =================
-**00:03.801** total execution time for **auto_examples_v2_transforms** files:
+**00:03.830** total execution time for **auto_examples_v2_transforms** files:
 
 +-------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py` (``plot_transforms_v2_e2e.py``) | 00:02.842 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py` (``plot_transforms_v2_e2e.py``) | 00:02.882 | 0.0 MB |
 +-------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py` (``plot_transforms_v2.py``)         | 00:00.789 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py` (``plot_transforms_v2.py``)         | 00:00.780 | 0.0 MB |
 +-------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` (``plot_cutmix_mixup.py``)           | 00:00.130 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` (``plot_cutmix_mixup.py``)           | 00:00.127 | 0.0 MB |
 +-------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py` (``plot_custom_datapoints.py``) | 00:00.024 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py` (``plot_custom_datapoints.py``) | 00:00.027 | 0.0 MB |
 +-------------------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py` (``plot_datapoints.py``)               | 00:00.008 | 0.0 MB |
 +-------------------------------------------------------------------------------------------------------+-----------+--------+
