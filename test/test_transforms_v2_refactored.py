@@ -228,26 +228,37 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
         assert functional_param == kernel_param
 
 
-def _check_transform_v1_compatibility(transform, input):
+def _check_transform_v1_compatibility(transform, input, rtol, atol):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
-    ``get_params`` method, is scriptable, and the scripted version can be called without error."""
-    if transform._v1_transform_cls is None:
+    ``get_params`` method that is the v1 equivalent, the output is close to v1, is scriptable, and the scripted version
+    can be called without error."""
+    if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
         return
 
-    if type(input) is not torch.Tensor:
+    v1_transform_cls = transform._v1_transform_cls
+    if v1_transform_cls is None:
         return
 
-    if hasattr(transform._v1_transform_cls, "get_params"):
-        assert type(transform).get_params is transform._v1_transform_cls.get_params
+    if hasattr(v1_transform_cls, "get_params"):
+        assert type(transform).get_params is v1_transform_cls.get_params
 
-    scripted_transform = _script(transform)
-    with ignore_jit_no_profile_information_warning():
-        scripted_transform(input)
+    v1_transform = v1_transform_cls(**transform._extract_params_for_v1_transform())
+
+    with freeze_rng_state():
+        output_v2 = transform(input)
+
+    with freeze_rng_state():
+        output_v1 = v1_transform(input)
+
+    assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
+
+    if isinstance(input, PIL.Image.Image):
+        return
+
+    _script(v1_transform)(input)
 
 
-def check_transform(transform_cls, input, *args, **kwargs):
-    transform = transform_cls(*args, **kwargs)
-
+def check_transform(transform, input, check_v1_compatibility=True):
     pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
@@ -256,7 +267,8 @@ def check_transform(transform_cls, input, *args, **kwargs):
     if isinstance(input, datapoints.BoundingBoxes):
         assert output.format == input.format
 
-    _check_transform_v1_compatibility(transform, input)
+    if check_v1_compatibility:
+        _check_transform_v1_compatibility(transform, input, **_to_tolerances(check_v1_compatibility))
 
 
 def transform_cls_to_functional(transform_cls, **transform_specific_kwargs):
@@ -549,7 +561,12 @@ class TestResize:
         ],
     )
     def test_transform(self, size, device, make_input):
-        check_transform(transforms.Resize, make_input(self.INPUT_SIZE, device=device), size=size, antialias=True)
+        check_transform(
+            transforms.Resize(size=size, antialias=True),
+            make_input(self.INPUT_SIZE, device=device),
+            # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
+            check_v1_compatibility=dict(rtol=0, atol=1),
+        )
 
     def _check_output_size(self, input, output, *, size, max_size):
         assert tuple(F.get_size(output)) == self._compute_output_size(
@@ -870,7 +887,7 @@ class TestHorizontalFlip:
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
-        check_transform(transforms.RandomHorizontalFlip, make_input(device=device), p=1)
+        check_transform(transforms.RandomHorizontalFlip(p=1), make_input(device=device))
 
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
@@ -1040,7 +1057,7 @@ class TestAffine:
     def test_transform(self, make_input, device):
         input = make_input(device=device)
 
-        check_transform(transforms.RandomAffine, input, **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES)
+        check_transform(transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES), input)
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
@@ -1320,7 +1337,7 @@ class TestVerticalFlip:
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
-        check_transform(transforms.RandomVerticalFlip, make_input(device=device), p=1)
+        check_transform(transforms.RandomVerticalFlip(p=1), make_input(device=device))
 
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_image_correctness(self, fn):
@@ -1463,7 +1480,7 @@ class TestRotate:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
         check_transform(
-            transforms.RandomRotation, make_input(device=device), **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES
+            transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES), make_input(device=device)
         )
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
@@ -1713,7 +1730,7 @@ class TestToDtype:
         input = make_input(dtype=input_dtype, device=device)
         if as_dict:
             output_dtype = {type(input): output_dtype}
-        check_transform(transforms.ToDtype, input, dtype=output_dtype, scale=scale)
+        check_transform(transforms.ToDtype(dtype=output_dtype, scale=scale), input)
 
     def reference_convert_dtype_image_tensor(self, image, dtype=torch.float, scale=False):
         input_dtype = image.dtype
@@ -2402,7 +2419,12 @@ class TestElastic:
     @pytest.mark.parametrize("size", [(163, 163), (72, 333), (313, 95)])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, size, device):
-        check_transform(transforms.ElasticTransform, make_input(size, device=device))
+        check_transform(
+            transforms.ElasticTransform(),
+            make_input(size, device=device),
+            # We updated gaussian blur kernel generation with a faster and numerically more stable version
+            check_v1_compatibility=dict(rtol=0, atol=1),
+        )
 
 
 class TestToPureTensor:

@@ -17,7 +17,7 @@ class Datapoint(torch.Tensor):
 
     You probably don't want to use this class unless you're defining your own
     custom Datapoints. See
-    :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py` for details.
+    :ref:`sphx_glr_auto_examples_transforms_plot_custom_datapoints.py` for details.
     """
 
     @staticmethod
