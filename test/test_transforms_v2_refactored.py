@@ -2485,3 +2485,178 @@ class TestToPureTensor:
                 assert isinstance(out_value, torch.Tensor) and not isinstance(out_value, datapoints.Datapoint)
             else:
                 assert isinstance(out_value, type(input_value))
+
+
+class TestCrop:
+    INPUT_SIZE = (21, 11)
+
+    CORRECTNESS_CROP_KWARGS = [
+        # center
+        dict(top=5, left=5, height=10, width=5),
+        # larger than input, i.e. pad
+        dict(top=-5, left=-5, height=30, width=20),
+        # left, right, top, bottom side
+        dict(top=-5, left=-5, height=30, width=10),
+        dict(top=-5, left=5, height=30, width=10),
+        dict(top=-5, left=-5, height=20, width=20),
+        dict(top=5, left=-5, height=20, width=20),
+        # left, right, top, bottom corner
+        dict(top=-5, left=-5, height=20, width=10),
+        dict(top=-5, left=5, height=20, width=10),
+        dict(top=5, left=-5, height=20, width=10),
+        dict(top=5, left=5, height=20, width=10),
+    ]
+    MINIMAL_CROP_KWARGS = CORRECTNESS_CROP_KWARGS[0]
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, kwargs, dtype, device):
+        check_kernel(F.crop_image, make_image(self.INPUT_SIZE, dtype=dtype, device=device), **kwargs)
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_bounding_box(self, kwargs, format, dtype, device):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
+        check_kernel(F.crop_bounding_boxes, bounding_boxes, format=format, **kwargs)
+
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    def test_kernel_mask(self, make_mask):
+        check_kernel(F.crop_mask, make_mask(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
+
+    def test_kernel_video(self):
+        check_kernel(F.crop_video, make_video(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.crop, make_input(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.crop_image, torch.Tensor),
+            (F._crop_image_pil, PIL.Image.Image),
+            (F.crop_image, datapoints.Image),
+            (F.crop_bounding_boxes, datapoints.BoundingBoxes),
+            (F.crop_mask, datapoints.Mask),
+            (F.crop_video, datapoints.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.crop, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    def test_functional_image_correctness(self, kwargs):
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+
+        actual = F.crop(image, **kwargs)
+        expected = F.to_image(F.crop(F.to_pil_image(image), **kwargs))
+
+        assert_equal(actual, expected)
+
+    @pytest.mark.parametrize("output_size", [(kwargs["height"], kwargs["width"]) for kwargs in CORRECTNESS_CROP_KWARGS])
+    @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_image_correctness(self, output_size, fill, seed):
+        image = make_image([s * 2 for s in output_size], dtype=torch.uint8, device="cpu")
+
+        fill = adapt_fill(fill, dtype=torch.uint8)
+
+        transform = transforms.RandomCrop(output_size, fill=fill)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            actual = transform(image)
+
+            torch.manual_seed(seed)
+            expected = F.to_image(transform(F.to_pil_image(image)))
+
+        assert_equal(actual, expected)
+
+    def _reference_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width):
+        affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+            ],
+        )
+        return reference_affine_bounding_boxes_helper(
+            bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=(height, width)
+        )
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_functional_bounding_box_correctness(self, kwargs, format, dtype, device):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
+
+        actual = F.crop(bounding_boxes, **kwargs)
+        expected = self._reference_crop_bounding_boxes(bounding_boxes, **kwargs)
+
+        assert_equal(actual, expected, atol=1, rtol=0)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    @pytest.mark.parametrize("output_size", [(kwargs["height"], kwargs["width"]) for kwargs in CORRECTNESS_CROP_KWARGS])
+    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_bounding_boxes_correctness(self, output_size, format, dtype, device, seed):
+        bounding_boxes = make_bounding_boxes([s * 2 for s in output_size], format=format, dtype=dtype, device=device)
+
+        transform = transforms.RandomCrop(output_size)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            params = transform._get_params([bounding_boxes])
+            assert not params.pop("needs_pad")
+            del params["padding"]
+            assert params.pop("needs_crop")
+
+            torch.manual_seed(seed)
+            actual = transform(bounding_boxes)
+
+        expected = self._reference_crop_bounding_boxes(bounding_boxes, **params)
+
+        assert_equal(actual, expected)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    @pytest.mark.parametrize("padding", [1, (1, 1), (1, 1, 1, 1)])
+    def test_transform_padding(self, padding):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s + 2 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(output_size, padding=padding)
+
+        output = transform(inpt)
+
+        assert F.get_size(output) == output_size
+
+    @pytest.mark.parametrize("padding", [None, 1, (1, 1), (1, 1, 1, 1)])
+    def test_transform_insufficient_padding(self, padding):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s + 3 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(output_size, padding=padding)
+
+        with pytest.raises(ValueError, match="larger than (padded )?input image size"):
+            transform(inpt)
+
+    def test_transform_pad_if_needed(self):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s * 2 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(
+            output_size,
+            pad_if_needed=True,
+        )
+
+        output = transform(inpt)
+
+        assert F.get_size(output) == output_size
