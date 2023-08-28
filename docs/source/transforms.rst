@@ -113,7 +113,7 @@ do to is to update the import to ``torchvision.transforms.v2``. In terms of
 output, there might be negligible differences due to implementation differences.
 
 To learn more about the v2 transforms, check out
-:ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py`.
+:ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`.
 
 .. TODO: make sure link is still good!!
 
@@ -479,7 +479,7 @@ CutMix and MixUp are special transforms that
 are meant to be used on batches rather than on individual images, because they
 are combining pairs of images together. These can be used after the dataloader
 (once the samples are batched), or part of a collation function. See
-:ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` for detailed usage examples.
+:ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` for detailed usage examples.
 
 .. autosummary::
     :toctree: generated/
