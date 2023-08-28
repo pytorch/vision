@@ -577,63 +577,6 @@ def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize(
-    "format",
-    [datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH, datapoints.BoundingBoxFormat.CXCYWH],
-)
-@pytest.mark.parametrize(
-    "top, left, height, width, expected_bboxes",
-    [
-        [8, 12, 30, 40, [(-2.0, 7.0, 13.0, 27.0), (38.0, -3.0, 58.0, 14.0), (33.0, 38.0, 44.0, 54.0)]],
-        [-8, 12, 70, 40, [(-2.0, 23.0, 13.0, 43.0), (38.0, 13.0, 58.0, 30.0), (33.0, 54.0, 44.0, 70.0)]],
-    ],
-)
-def test_correctness_crop_bounding_boxes(device, format, top, left, height, width, expected_bboxes):
-
-    # Expected bboxes computed using Albumentations:
-    # import numpy as np
-    # from albumentations.augmentations.crops.functional import crop_bbox_by_coords, normalize_bbox, denormalize_bbox
-    # expected_bboxes = []
-    # for in_box in in_boxes:
-    #     n_in_box = normalize_bbox(in_box, *size)
-    #     n_out_box = crop_bbox_by_coords(
-    #         n_in_box, (left, top, left + width, top + height), height, width, *size
-    #     )
-    #     out_box = denormalize_bbox(n_out_box, height, width)
-    #     expected_bboxes.append(out_box)
-
-    format = datapoints.BoundingBoxFormat.XYXY
-    canvas_size = (64, 76)
-    in_boxes = [
-        [10.0, 15.0, 25.0, 35.0],
-        [50.0, 5.0, 70.0, 22.0],
-        [45.0, 46.0, 56.0, 62.0],
-    ]
-    in_boxes = torch.tensor(in_boxes, device=device)
-    if format != datapoints.BoundingBoxFormat.XYXY:
-        in_boxes = convert_bounding_box_format(in_boxes, datapoints.BoundingBoxFormat.XYXY, format)
-
-    expected_bboxes = clamp_bounding_boxes(
-        datapoints.BoundingBoxes(expected_bboxes, format="XYXY", canvas_size=canvas_size)
-    ).tolist()
-
-    output_boxes, output_canvas_size = F.crop_bounding_boxes(
-        in_boxes,
-        format,
-        top,
-        left,
-        canvas_size[0],
-        canvas_size[1],
-    )
-
-    if format != datapoints.BoundingBoxFormat.XYXY:
-        output_boxes = convert_bounding_box_format(output_boxes, format, datapoints.BoundingBoxFormat.XYXY)
-
-    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
-    torch.testing.assert_close(output_canvas_size, canvas_size)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
 def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
     mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
     mask[:, 0, :] = 1

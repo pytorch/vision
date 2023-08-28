@@ -2652,11 +2652,24 @@ class TestCrop:
         inpt = make_image(self.INPUT_SIZE)
 
         output_size = [s * 2 for s in F.get_size(inpt)]
-        transform = transforms.RandomCrop(
-            output_size,
-            pad_if_needed=True,
-        )
+        transform = transforms.RandomCrop(output_size, pad_if_needed=True)
 
         output = transform(inpt)
 
         assert F.get_size(output) == output_size
+
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="Please provide only two dimensions"):
+            transforms.RandomCrop([10, 12, 14])
+
+        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+            transforms.RandomCrop([10, 12], padding="abc")
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomCrop([10, 12], padding=1, fill="abc")
+
+        with pytest.raises(ValueError, match="Padding mode should be either"):
+            transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
