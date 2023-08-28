@@ -2724,7 +2724,7 @@ class TestGaussianBlur:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("sigma", [5, (0.5, 2)])
     def test_transform(self, make_input, device, sigma):
-        check_transform(transforms.GaussianBlur, make_input(device=device), kernel_size=3, sigma=sigma)
+        check_transform(transforms.GaussianBlur(kernel_size=3, sigma=sigma), make_input(device=device))
 
     def test_assertions(self):
         with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
