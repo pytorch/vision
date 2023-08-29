@@ -246,7 +246,7 @@ like bounding boxes or masks, you can rely on the :ref:`low-level kernels
 For any custom transformations to be used with ``torch.jit.script``, they should
 be derived from ``torch.nn.Module``.
 
-See also: :ref:`sphx_glr_auto_examples_transforms_plot_torchscript_support.py`.
+See also: :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`.
 
 V2 API reference - Recommended
 ------------------------------

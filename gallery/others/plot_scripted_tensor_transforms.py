@@ -4,8 +4,8 @@ Torchscript support
 ===================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_torchscript_support.ipynb>`_
-    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_torchscript_support.py>` to download the full example code.
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_scripted_tensor_transforms.py>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py>` to download the full example code.
 
 This example illustrates `torchscript
 <https://pytorch.org/docs/stable/jit.html>`_ support of the torchvision
@@ -28,6 +28,8 @@ torch.manual_seed(1)
 
 # If you're trying to run that on collab, you can download the assets and the
 # helpers from https://github.com/pytorch/vision/tree/main/gallery/
+import sys
+sys.path += ["../transforms"]
 from helpers import plot
 ASSETS_PATH = Path('../assets')
 
