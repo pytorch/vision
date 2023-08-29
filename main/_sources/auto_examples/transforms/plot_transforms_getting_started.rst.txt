@@ -307,7 +307,7 @@ we're getting the same structure as output:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 179-264
+.. GENERATED FROM PYTHON SOURCE LINES 180-265
 
 We passed a tuple so we get a tuple back, and the second element is the
 tranformed target dict. Transforms don't really care about the structure of
@@ -398,7 +398,7 @@ Either way, the logic will depend on your specific dataset.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.821 seconds)
+   **Total running time of the script:** (0 minutes 0.826 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py:

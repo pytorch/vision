@@ -48,7 +48,7 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates torchscript support of the torchvision transforms on Tensor images.">
 
 .. only:: html
 
@@ -59,7 +59,7 @@ Others
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Tensor transforms and JIT</div>
+      <div class="sphx-glr-thumbnail-title">Torchscript support</div>
     </div>
 
 
