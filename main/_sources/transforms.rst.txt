@@ -45,13 +45,17 @@ tasks (image classification, detection, segmentation, video classification).
 Transforms are typically passed as the ``transform`` or ``transforms`` argument
 to the :ref:`Datasets <datasets>`.
 
+.. TODO: Reader guide, i.e. what to read depending on what you're looking for
 .. TODO: add link to getting started guide here.
+
+.. _conventions:
 
 Supported input types and conventions
 -------------------------------------
 
 Most transformations accept both `PIL <https://pillow.readthedocs.io>`_ images
-and tensor images. The result of both backends (PIL or Tensors) should be very
+and tensor inputs. Both CPU and CUDA tensors are supported.
+The result of both backends (PIL or Tensors) should be very
 close. In general, we recommend relying on the tensor backend :ref:`for
 performance <transforms_perf>`.  The :ref:`conversion transforms
 <conversion_transforms>` may be used to convert to and from PIL images, or for
@@ -109,7 +113,7 @@ do to is to update the import to ``torchvision.transforms.v2``. In terms of
 output, there might be negligible differences due to implementation differences.
 
 To learn more about the v2 transforms, check out
-:ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py`.
+:ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`.
 
 .. TODO: make sure link is still good!!
 
@@ -152,13 +156,15 @@ The above should give you the best performance in a typical training environment
 that relies on the :class:`torch.utils.data.DataLoader` with ``num_workers >
 0``.
 
-Transforms tend to be sensitive to the input strides / memory layout. Some
+Transforms tend to be sensitive to the input strides / memory format. Some
 transforms will be faster with channels-first images while others prefer
-channels-last. You may want to experiment a bit if you're chasing the very
-best performance. Using :func:`torch.compile` on individual transforms may
-also help factoring out the memory layout variable (e.g. on
+channels-last. Like ``torch`` operators, most transforms will preserve the
+memory format of the input, but this may not always be respected due to
+implementation details. You may want to experiment a bit if you're chasing the
+very best performance.  Using :func:`torch.compile` on individual transforms may
+also help factoring out the memory format variable (e.g. on
 :class:`~torchvision.transforms.v2.Normalize`). Note that we're talking about
-**memory layout**, not tensor shape.
+**memory format**, not :ref:`tensor shape <conventions>`.
 
 Note that resize transforms like :class:`~torchvision.transforms.v2.Resize`
 and :class:`~torchvision.transforms.v2.RandomResizedCrop` typically prefer
@@ -208,7 +214,8 @@ Torchscript support
 -------------------
 
 Most transform classes and functionals support torchscript. For composing
-transforms, use :class:`torch.nn.Sequential` instead of ``Compose``:
+transforms, use :class:`torch.nn.Sequential` instead of
+:class:`~torchvision.transforms.v2.Compose`:
 
 .. code:: python
 
@@ -226,7 +233,7 @@ transforms, use :class:`torch.nn.Sequential` instead of ``Compose``:
     scripted and eager executions due to implementation differences between v1
     and v2.
 
-    If you really need torchscript support for the v2 tranforms, we recommend
+    If you really need torchscript support for the v2 transforms, we recommend
     scripting the **functionals** from the
     ``torchvision.transforms.v2.functional`` namespace to avoid surprises.
 
@@ -236,7 +243,10 @@ are always treated as images. If you need torchscript support for other types
 like bounding boxes or masks, you can rely on the :ref:`low-level kernels
 <functional_transforms>`.
 
-For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
+For any custom transformations to be used with ``torch.jit.script``, they should
+be derived from ``torch.nn.Module``.
+
+See also: :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`.
 
 V2 API reference - Recommended
 ------------------------------
@@ -473,7 +483,7 @@ CutMix and MixUp are special transforms that
 are meant to be used on batches rather than on individual images, because they
 are combining pairs of images together. These can be used after the dataloader
 (once the samples are batched), or part of a collation function. See
-:ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` for detailed usage examples.
+:ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` for detailed usage examples.
 
 .. autosummary::
     :toctree: generated/

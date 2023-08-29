@@ -14,23 +14,6 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
-
-.. only:: html
-
-  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Tensor transforms and JIT</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="Optical flow is the task of predicting movement between two images, usually two consecutive fra...">
 
 .. only:: html
@@ -65,35 +48,18 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates torchscript support of the torchvision transforms on Tensor images.">
 
 .. only:: html
 
-  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_transforms_thumb.png
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_transforms.py`
+  :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Illustration of transforms</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ...">
-
-.. only:: html
-
-  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Visualization utilities</div>
+      <div class="sphx-glr-thumbnail-title">Torchscript support</div>
     </div>
 
 
@@ -116,16 +82,32 @@ Others
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ...">
+
+.. only:: html
+
+  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Visualization utilities</div>
+    </div>
+
+
+.. raw:: html
+
     </div>
 
 
 .. toctree::
    :hidden:
 
-   /auto_examples/others/plot_scripted_tensor_transforms
    /auto_examples/others/plot_optical_flow
    /auto_examples/others/plot_repurposing_annotations
-   /auto_examples/others/plot_transforms
-   /auto_examples/others/plot_visualization_utils
+   /auto_examples/others/plot_scripted_tensor_transforms
    /auto_examples/others/plot_video_api
+   /auto_examples/others/plot_visualization_utils
 

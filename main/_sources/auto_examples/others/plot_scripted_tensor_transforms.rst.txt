@@ -10,59 +10,41 @@
 .. _sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py:
 
 
-=========================
-Tensor transforms and JIT
-=========================
+===================
+Torchscript support
+===================
 
 .. note::
     Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_scripted_tensor_transforms.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py>` to download the full example code.
 
-This example illustrates various features that are now supported by the
-:ref:`image transformations <transforms>` on Tensor images. In particular, we
-show how image transforms can be performed on GPU, and how one can also script
-them using JIT compilation.
+This example illustrates `torchscript
+<https://pytorch.org/docs/stable/jit.html>`_ support of the torchvision
+:ref:`transforms <transforms>` on Tensor images.
 
-Prior to v0.8.0, transforms in torchvision have traditionally been PIL-centric
-and presented multiple limitations due to that. Now, since v0.8.0, transforms
-implementations are Tensor and PIL compatible, and we can achieve the following
-new features:
-
-- transform multi-band torch tensor images (with more than 3-4 channels)
-- torchscript transforms together with your model for deployment
-- support for GPU acceleration
-- batched transformation such as for videos
-- read and decode data directly as torch tensor with torchscript support (for PNG and JPEG image formats)
-
-.. note::
-    These features are only possible with **Tensor** images.
-
-.. GENERATED FROM PYTHON SOURCE LINES 29-52
+.. GENERATED FROM PYTHON SOURCE LINES 16-37
 
 .. code-block:: default
-
 
     from pathlib import Path
 
     import matplotlib.pyplot as plt
-    import numpy as np
 
     import torch
-    import torchvision.transforms as T
-    from torchvision.io import read_image
+    import torch.nn as nn
 
+    import torchvision.transforms as v1
+    from torchvision.io import read_image
 
     plt.rcParams["savefig.bbox"] = 'tight'
     torch.manual_seed(1)
 
-
-    def show(imgs):
-        fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
-        for i, img in enumerate(imgs):
-            img = T.ToPILImage()(img.to('cpu'))
-            axs[0, i].imshow(np.asarray(img))
-            axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-
+    # If you're trying to run that on collab, you can download the assets and the
+    # helpers from https://github.com/pytorch/vision/tree/main/gallery/
+    import sys
+    sys.path += ["../transforms"]
+    from helpers import plot
+    ASSETS_PATH = Path('../assets')
 
 
 
@@ -71,19 +53,30 @@ new features:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 53-55
 
-The :func:`~torchvision.io.read_image` function allows to read an image and
-directly load it as a tensor
+.. GENERATED FROM PYTHON SOURCE LINES 38-41
 
-.. GENERATED FROM PYTHON SOURCE LINES 55-60
+Most transforms support torchscript. For composing transforms, we use
+:class:`torch.nn.Sequential` instead of
+:class:`~torchvision.transforms.v2.Compose`:
+
+.. GENERATED FROM PYTHON SOURCE LINES 41-55
 
 .. code-block:: default
 
 
-    dog1 = read_image(str(Path('../assets') / 'dog1.jpg'))
-    dog2 = read_image(str(Path('../assets') / 'dog2.jpg'))
-    show([dog1, dog2])
+    dog1 = read_image(str(ASSETS_PATH / 'dog1.jpg'))
+    dog2 = read_image(str(ASSETS_PATH / 'dog2.jpg'))
+
+    transforms = torch.nn.Sequential(
+        v1.RandomCrop(224),
+        v1.RandomHorizontalFlip(p=0.3),
+    )
+
+    scripted_transforms = torch.jit.script(transforms)
+
+    plot([dog1, scripted_transforms(dog1), dog2, scripted_transforms(dog2)])
+
 
 
 
@@ -97,58 +90,32 @@ directly load it as a tensor
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-67
+.. GENERATED FROM PYTHON SOURCE LINES 56-78
 
-Transforming images on GPU
---------------------------
-Most transforms natively support tensors on top of PIL images (to visualize
-the effect of the transforms, you may refer to see
-:ref:`sphx_glr_auto_examples_others_plot_transforms.py`).
-Using tensor images, we can run the transforms on GPUs if cuda is available!
+.. warning::
 
-.. GENERATED FROM PYTHON SOURCE LINES 67-83
+    Above we have used transforms from the ``torchvision.transforms``
+    namespace, i.e. the "v1" transforms. The v2 transforms from the
+    ``torchvision.transforms.v2`` namespace are the :ref:`recommended
+    <v1_or_v2>` way to use transforms in your code.
 
-.. code-block:: default
+    The v2 transforms also support torchscript, but if you call
+    ``torch.jit.script()`` on a v2 **class** transform, you'll actually end up
+    with its (scripted) v1 equivalent.  This may lead to slightly different
+    results between the scripted and eager executions due to implementation
+    differences between v1 and v2.
 
+    If you really need torchscript support for the v2 transforms, **we
+    recommend scripting the functionals** from the
+    ``torchvision.transforms.v2.functional`` namespace to avoid surprises.
 
-    import torch.nn as nn
-
-    transforms = torch.nn.Sequential(
-        T.RandomCrop(224),
-        T.RandomHorizontalFlip(p=0.3),
-    )
-
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    dog1 = dog1.to(device)
-    dog2 = dog2.to(device)
-
-    transformed_dog1 = transforms(dog1)
-    transformed_dog2 = transforms(dog2)
-    show([transformed_dog1, transformed_dog2])
-
-
-
-
-.. image-sg:: /auto_examples/others/images/sphx_glr_plot_scripted_tensor_transforms_002.png
-   :alt: plot scripted tensor transforms
-   :srcset: /auto_examples/others/images/sphx_glr_plot_scripted_tensor_transforms_002.png
-   :class: sphx-glr-single-img
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 84-91
-
-Scriptable transforms for easier deployment via torchscript
------------------------------------------------------------
-We now show how to combine image transformations and a model forward pass,
-while using ``torch.jit.script`` to obtain a single scripted module.
+Below we now show how to combine image transformations and a model forward
+pass, while using ``torch.jit.script`` to obtain a single scripted module.
 
 Let's define a ``Predictor`` module that transforms the input tensor and then
 applies an ImageNet model on it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 91-110
+.. GENERATED FROM PYTHON SOURCE LINES 78-97
 
 .. code-block:: default
 
@@ -162,7 +129,7 @@ applies an ImageNet model on it.
             super().__init__()
             weights = ResNet18_Weights.DEFAULT
             self.resnet18 = resnet18(weights=weights, progress=False).eval()
-            self.transforms = weights.transforms()
+            self.transforms = weights.transforms(antialias=True)
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
             with torch.no_grad():
@@ -178,15 +145,17 @@ applies an ImageNet model on it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-113
+.. GENERATED FROM PYTHON SOURCE LINES 98-100
 
 Now, let's define scripted and non-scripted instances of ``Predictor`` and
 apply it on multiple tensor images of the same size
 
-.. GENERATED FROM PYTHON SOURCE LINES 113-122
+.. GENERATED FROM PYTHON SOURCE LINES 100-111
 
 .. code-block:: default
 
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     predictor = Predictor().to(device)
     scripted_predictor = torch.jit.script(predictor).to(device)
@@ -205,20 +174,16 @@ apply it on multiple tensor images of the same size
  .. code-block:: none
 
     Downloading: "https://download.pytorch.org/models/resnet18-f37072fd.pth" to /root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth
-    /pytorch/vision/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
-      warnings.warn(
-    /pytorch/vision/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
-      warnings.warn(
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-125
+.. GENERATED FROM PYTHON SOURCE LINES 112-114
 
 We can verify that the prediction of the scripted and non-scripted models are
 the same:
 
-.. GENERATED FROM PYTHON SOURCE LINES 125-135
+.. GENERATED FROM PYTHON SOURCE LINES 114-124
 
 .. code-block:: default
 
@@ -246,11 +211,11 @@ the same:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 136-137
+.. GENERATED FROM PYTHON SOURCE LINES 125-126
 
 Since the model is scripted, it can be easily dumped on disk and re-used
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-146
+.. GENERATED FROM PYTHON SOURCE LINES 126-136
 
 .. code-block:: default
 
@@ -267,11 +232,6 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
 
 
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-    code/__torch__/torchvision/transforms/functional.py:188: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
 
 
 
@@ -279,7 +239,7 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 1.604 seconds)
+   **Total running time of the script:** (0 minutes 1.673 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py:

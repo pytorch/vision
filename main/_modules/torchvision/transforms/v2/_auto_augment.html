@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+37081ee) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+b9447fd) &#x25BC</a>
     </div>
     
 
@@ -357,8 +357,7 @@
 <span class="kn">from</span> <span class="nn">torchvision.transforms.v2.functional._meta</span> <span class="kn">import</span> <span class="n">get_size</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms.v2.functional._utils</span> <span class="kn">import</span> <span class="n">_FillType</span><span class="p">,</span> <span class="n">_FillTypeJIT</span>
 
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_get_fill</span><span class="p">,</span> <span class="n">_setup_fill_arg</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">check_type</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_get_fill</span><span class="p">,</span> <span class="n">_setup_fill_arg</span><span class="p">,</span> <span class="n">check_type</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
 
 
 <span class="n">ImageOrVideo</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">]</span>
@@ -373,7 +372,16 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">_check_interpolation</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">_setup_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fill</span> <span class="o">=</span> <span class="n">_setup_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_extract_params_for_v1_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_extract_params_for_v1_transform</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;fill&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;fill&quot;</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() can only be scripted for a scalar `fill`, but got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">params</span>
 
     <span class="k">def</span> <span class="nf">_get_random_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dct</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
         <span class="n">keys</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dct</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -680,7 +688,7 @@
                 <span class="n">magnitude</span> <span class="o">=</span> <span class="mf">0.0</span>
 
             <span class="n">image_or_video</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_image_or_video_transform</span><span class="p">(</span>
-                <span class="n">image_or_video</span><span class="p">,</span> <span class="n">transform_id</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span>
+                <span class="n">image_or_video</span><span class="p">,</span> <span class="n">transform_id</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fill</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unflatten_and_insert_image_or_video</span><span class="p">(</span><span class="n">flat_inputs_with_spec</span><span class="p">,</span> <span class="n">image_or_video</span><span class="p">)</span></div></div>
@@ -764,7 +772,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">magnitude</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="n">image_or_video</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_image_or_video_transform</span><span class="p">(</span>
-                <span class="n">image_or_video</span><span class="p">,</span> <span class="n">transform_id</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span>
+                <span class="n">image_or_video</span><span class="p">,</span> <span class="n">transform_id</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fill</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unflatten_and_insert_image_or_video</span><span class="p">(</span><span class="n">flat_inputs_with_spec</span><span class="p">,</span> <span class="n">image_or_video</span><span class="p">)</span></div></div>
@@ -836,7 +844,7 @@
             <span class="n">magnitude</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="n">image_or_video</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_image_or_video_transform</span><span class="p">(</span>
-            <span class="n">image_or_video</span><span class="p">,</span> <span class="n">transform_id</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span>
+            <span class="n">image_or_video</span><span class="p">,</span> <span class="n">transform_id</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fill</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unflatten_and_insert_image_or_video</span><span class="p">(</span><span class="n">flat_inputs_with_spec</span><span class="p">,</span> <span class="n">image_or_video</span><span class="p">)</span></div></div>
 
@@ -959,7 +967,7 @@
                     <span class="n">magnitude</span> <span class="o">=</span> <span class="mf">0.0</span>
 
                 <span class="n">aug</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_image_or_video_transform</span><span class="p">(</span>
-                    <span class="n">aug</span><span class="p">,</span> <span class="n">transform_id</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span>
+                    <span class="n">aug</span><span class="p">,</span> <span class="n">transform_id</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fill</span>
                 <span class="p">)</span>
             <span class="n">mix</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">combined_weights</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_dims</span><span class="p">)</span> <span class="o">*</span> <span class="n">aug</span><span class="p">)</span>
         <span class="n">mix</span> <span class="o">=</span> <span class="n">mix</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">orig_dims</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">image_or_video</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
