@@ -23,7 +23,7 @@ import pathlib
 import torch
 import torch.utils.data
 
-from torchvision import models, datasets, datapoints
+from torchvision import models, datasets, tv_tensors
 from torchvision.transforms import v2
 
 torch.manual_seed(0)
@@ -72,7 +72,7 @@ print(f"{type(target['boxes']) = }\n{type(target['labels']) = }\n{type(target['m
 # %%
 # We used the ``target_keys`` parameter to specify the kind of output we're
 # interested in. Our dataset now returns a target which is dict where the values
-# are :ref:`Datapoints <what_are_datapoints>` (all are :class:`torch.Tensor`
+# are :ref:`TVTensors <what_are_tv_tensors>` (all are :class:`torch.Tensor`
 # subclasses). We're dropped all unncessary keys from the previous output, but
 # if you need any of the original keys e.g. "image_id", you can still ask for
 # it.
@@ -103,7 +103,7 @@ transforms = v2.Compose(
     [
         v2.ToImage(),
         v2.RandomPhotometricDistort(p=1),
-        v2.RandomZoomOut(fill={datapoints.Image: (123, 117, 104), "others": 0}),
+        v2.RandomZoomOut(fill={tv_tensors.Image: (123, 117, 104), "others": 0}),
         v2.RandomIoUCrop(),
         v2.RandomHorizontalFlip(p=1),
         v2.SanitizeBoundingBoxes(),

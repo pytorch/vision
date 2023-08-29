@@ -5,13 +5,13 @@ from typing import Any, Optional, Sequence, Type, TypeVar, Union
 import torch
 from torch.utils._pytree import tree_map
 
-from torchvision.datapoints._datapoint import Datapoint
+from torchvision.tv_tensors._tv_tensor import TVTensor
 
 
 L = TypeVar("L", bound="_LabelBase")
 
 
-class _LabelBase(Datapoint):
+class _LabelBase(TVTensor):
     categories: Optional[Sequence[str]]
 
     @classmethod

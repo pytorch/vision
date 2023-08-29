@@ -7,7 +7,7 @@ import PIL.Image
 import torch
 from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import datapoints, transforms as _transforms
+from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F
 
 from ._transform import _RandomApplyTransform, Transform
@@ -91,10 +91,10 @@ class RandomErasing(_RandomApplyTransform):
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
-        if isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask)):
+        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
-                f"datapoints.{type(inpt).__name__}. This will likely change in the future."
+                f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
@@ -158,7 +158,7 @@ class _BaseMixUpCutMix(Transform):
         flat_inputs, spec = tree_flatten(inputs)
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
-        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBoxes, datapoints.Mask):
+        if has_any(flat_inputs, PIL.Image.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask):
             raise ValueError(f"{type(self).__name__}() does not support PIL images, bounding boxes and masks.")
 
         labels = self._labels_getter(inputs)
@@ -188,7 +188,7 @@ class _BaseMixUpCutMix(Transform):
         return tree_unflatten(flat_outputs, spec)
 
     def _check_image_or_video(self, inpt: torch.Tensor, *, batch_size: int):
-        expected_num_dims = 5 if isinstance(inpt, datapoints.Video) else 4
+        expected_num_dims = 5 if isinstance(inpt, tv_tensors.Video) else 4
         if inpt.ndim != expected_num_dims:
             raise ValueError(
                 f"Expected a batched input with {expected_num_dims} dims, but got {inpt.ndim} dimensions instead."
@@ -242,13 +242,13 @@ class MixUp(_BaseMixUpCutMix):
 
         if inpt is params["labels"]:
             return self._mixup_label(inpt, lam=lam)
-        elif isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_pure_tensor(inpt):
+        elif isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)) or is_pure_tensor(inpt):
             self._check_image_or_video(inpt, batch_size=params["batch_size"])
 
             output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
 
-            if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = datapoints.wrap(output, like=inpt)
+            if isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)):
+                output = tv_tensors.wrap(output, like=inpt)
 
             return output
         else:
@@ -309,7 +309,7 @@ class CutMix(_BaseMixUpCutMix):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if inpt is params["labels"]:
             return self._mixup_label(inpt, lam=params["lam_adjusted"])
-        elif isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_pure_tensor(inpt):
+        elif isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)) or is_pure_tensor(inpt):
             self._check_image_or_video(inpt, batch_size=params["batch_size"])
 
             x1, y1, x2, y2 = params["box"]
@@ -317,8 +317,8 @@ class CutMix(_BaseMixUpCutMix):
             output = inpt.clone()
             output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
-            if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-                output = datapoints.wrap(output, like=inpt)
+            if isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)):
+                output = tv_tensors.wrap(output, like=inpt)
 
             return output
         else:

@@ -67,7 +67,7 @@ class VisionDataset(data.Dataset):
 
     def __repr__(self) -> str:
         head = "Dataset " + self.__class__.__name__
-        body = [f"Number of datapoints: {self.__len__()}"]
+        body = [f"Number of tv_tensors: {self.__len__()}"]
         if self.root is not None:
             body.append(f"Root location: {self.root}")
         body += self.extra_repr().splitlines()

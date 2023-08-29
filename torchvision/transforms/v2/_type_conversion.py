@@ -4,7 +4,7 @@ import numpy as np
 import PIL.Image
 import torch
 
-from torchvision import datapoints
+from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
 from torchvision.transforms.v2._utils import is_pure_tensor
@@ -27,7 +27,7 @@ class PILToTensor(Transform):
 
 
 class ToImage(Transform):
-    """[BETA] Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.datapoints.Image`
+    """[BETA] Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.tv_tensors.Image`
     ; this does not scale values.
 
     .. v2betastatus:: ToImage transform
@@ -39,7 +39,7 @@ class ToImage(Transform):
 
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
-    ) -> datapoints.Image:
+    ) -> tv_tensors.Image:
         return F.to_image(inpt)
 
 
@@ -66,7 +66,7 @@ class ToPILImage(Transform):
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
 
-    _transformed_types = (is_pure_tensor, datapoints.Image, np.ndarray)
+    _transformed_types = (is_pure_tensor, tv_tensors.Image, np.ndarray)
 
     def __init__(self, mode: Optional[str] = None) -> None:
         super().__init__()
@@ -79,14 +79,14 @@ class ToPILImage(Transform):
 
 
 class ToPureTensor(Transform):
-    """[BETA] Convert all datapoints to pure tensors, removing associated metadata (if any).
+    """[BETA] Convert all tv_tensors to pure tensors, removing associated metadata (if any).
 
     .. v2betastatus:: ToPureTensor transform
 
     This doesn't scale or change the values, only the type.
     """
 
-    _transformed_types = (datapoints.Datapoint,)
+    _transformed_types = (tv_tensors.TVTensor,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)

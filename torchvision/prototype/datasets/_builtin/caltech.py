@@ -6,8 +6,6 @@ import numpy as np
 
 import torch
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper
-from torchvision.datapoints import BoundingBoxes
-from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
@@ -16,6 +14,8 @@ from torchvision.prototype.datasets.utils._internal import (
     read_categories_file,
     read_mat,
 )
+from torchvision.prototype.tv_tensors import Label
+from torchvision.tv_tensors import BoundingBoxes
 
 from .._api import register_dataset, register_info
 
