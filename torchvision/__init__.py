@@ -95,3 +95,9 @@ def get_video_backend():
 
 def _is_tracing():
     return torch._C._get_tracing_state()
+
+
+def disable_beta_transforms_warning():
+    # Noop, only exists to avoid breaking existing code.
+    # See https://github.com/pytorch/vision/issues/7896
+    pass
