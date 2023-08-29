@@ -172,6 +172,7 @@ target = {
 # Re-using the transforms and definitions from above.
 out_img, out_target = transforms(img, target)
 
+# sphinx_gallery_thumbnail_number = 4
 plot([(img, target["boxes"]), (out_img, out_target["boxes"])])
 print(f"{out_target['this_is_ignored']}")
 
