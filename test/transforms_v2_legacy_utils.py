@@ -27,7 +27,7 @@ import PIL.Image
 import pytest
 import torch
 
-from torchvision import datapoints
+from torchvision import vision_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import to_dtype_image, to_image, to_pil_image
 
@@ -82,7 +82,7 @@ def make_image(
     if color_space in {"GRAY_ALPHA", "RGBA"}:
         data[..., -1, :, :] = max_value
 
-    return datapoints.Image(data)
+    return vision_tensors.Image(data)
 
 
 def make_image_tensor(*args, **kwargs):
@@ -96,7 +96,7 @@ def make_image_pil(*args, **kwargs):
 def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
-    format=datapoints.BoundingBoxFormat.XYXY,
+    format=vision_tensors.BoundingBoxFormat.XYXY,
     batch_dims=(),
     dtype=None,
     device="cpu",
@@ -107,12 +107,12 @@ def make_bounding_boxes(
         return torch.stack([torch.randint(max_value - v, ()) for v in values.flatten().tolist()]).reshape(values.shape)
 
     if isinstance(format, str):
-        format = datapoints.BoundingBoxFormat[format]
+        format = vision_tensors.BoundingBoxFormat[format]
 
     dtype = dtype or torch.float32
 
     if any(dim == 0 for dim in batch_dims):
-        return datapoints.BoundingBoxes(
+        return vision_tensors.BoundingBoxes(
             torch.empty(*batch_dims, 4, dtype=dtype, device=device), format=format, canvas_size=canvas_size
         )
 
@@ -120,28 +120,28 @@ def make_bounding_boxes(
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
 
-    if format is datapoints.BoundingBoxFormat.XYWH:
+    if format is vision_tensors.BoundingBoxFormat.XYWH:
         parts = (x, y, w, h)
-    elif format is datapoints.BoundingBoxFormat.XYXY:
+    elif format is vision_tensors.BoundingBoxFormat.XYXY:
         x1, y1 = x, y
         x2 = x1 + w
         y2 = y1 + h
         parts = (x1, y1, x2, y2)
-    elif format is datapoints.BoundingBoxFormat.CXCYWH:
+    elif format is vision_tensors.BoundingBoxFormat.CXCYWH:
         cx = x + w / 2
         cy = y + h / 2
         parts = (cx, cy, w, h)
     else:
         raise ValueError(f"Format {format} is not supported")
 
-    return datapoints.BoundingBoxes(
+    return vision_tensors.BoundingBoxes(
         torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, canvas_size=canvas_size
     )
 
 
 def make_detection_mask(size=DEFAULT_SIZE, *, num_objects=5, batch_dims=(), dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
-    return datapoints.Mask(
+    return vision_tensors.Mask(
         torch.testing.make_tensor(
             (*batch_dims, num_objects, *size),
             low=0,
@@ -154,7 +154,7 @@ def make_detection_mask(size=DEFAULT_SIZE, *, num_objects=5, batch_dims=(), dtyp
 
 def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
     """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
-    return datapoints.Mask(
+    return vision_tensors.Mask(
         torch.testing.make_tensor(
             (*batch_dims, *size),
             low=0,
@@ -166,7 +166,7 @@ def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(
 
 
 def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
-    return datapoints.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
+    return vision_tensors.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
 
 
 def make_video_tensor(*args, **kwargs):
@@ -335,7 +335,7 @@ def make_image_loader_for_interpolation(
             image_tensor = image_tensor.to(device=device)
         image_tensor = to_dtype_image(image_tensor, dtype=dtype, scale=True)
 
-        return datapoints.Image(image_tensor)
+        return vision_tensors.Image(image_tensor)
 
     return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, memory_format=memory_format)
 
@@ -352,7 +352,7 @@ def make_image_loaders_for_interpolation(
 
 @dataclasses.dataclass
 class BoundingBoxesLoader(TensorLoader):
-    format: datapoints.BoundingBoxFormat
+    format: vision_tensors.BoundingBoxFormat
     spatial_size: Tuple[int, int]
     canvas_size: Tuple[int, int] = dataclasses.field(init=False)
 
@@ -362,7 +362,7 @@ class BoundingBoxesLoader(TensorLoader):
 
 def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE, dtype=torch.float32):
     if isinstance(format, str):
-        format = datapoints.BoundingBoxFormat[format]
+        format = vision_tensors.BoundingBoxFormat[format]
 
     spatial_size = _parse_size(spatial_size, name="spatial_size")
 
@@ -381,7 +381,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size=DEFAULT_PORT
 def make_bounding_box_loaders(
     *,
     extra_dims=tuple(d for d in DEFAULT_EXTRA_DIMS if len(d) < 2),
-    formats=tuple(datapoints.BoundingBoxFormat),
+    formats=tuple(vision_tensors.BoundingBoxFormat),
     spatial_size=DEFAULT_PORTRAIT_SPATIAL_SIZE,
     dtypes=(torch.float32, torch.float64, torch.int64),
 ):

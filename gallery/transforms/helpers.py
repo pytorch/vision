@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import torch
 from torchvision.utils import draw_bounding_boxes, draw_segmentation_masks
-from torchvision import datapoints
+from torchvision import vision_tensors
 from torchvision.transforms.v2 import functional as F
 
 
@@ -22,7 +22,7 @@ def plot(imgs, row_title=None, **imshow_kwargs):
                 if isinstance(target, dict):
                     boxes = target.get("boxes")
                     masks = target.get("masks")
-                elif isinstance(target, datapoints.BoundingBoxes):
+                elif isinstance(target, vision_tensors.BoundingBoxes):
                     boxes = target
                 else:
                     raise ValueError(f"Unexpected target type: {type(target)}")

@@ -1,13 +1,13 @@
-.. _datapoints:
+.. _vision_tensors:
 
-Datapoints
-==========
+VisionTensors
+=============
 
-.. currentmodule:: torchvision.datapoints
+.. currentmodule:: torchvision.vision_tensors
 
-Datapoints are tensor subclasses which the :mod:`~torchvision.transforms.v2` v2 transforms use under the hood to
+VisionTensors are tensor subclasses which the :mod:`~torchvision.transforms.v2` v2 transforms use under the hood to
 dispatch their inputs to the appropriate lower-level kernels. Most users do not
-need to manipulate datapoints directly and can simply rely on dataset wrapping -
+need to manipulate vision_tensors directly and can simply rely on dataset wrapping -
 see e.g. :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`.
 
 .. autosummary::
@@ -19,6 +19,6 @@ see e.g. :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`.
     BoundingBoxFormat
     BoundingBoxes
     Mask
-    Datapoint
+    VisionTensor
     set_return_type
     wrap

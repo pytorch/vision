@@ -180,8 +180,8 @@ def get_args_parser(add_help=True):
 
 
 def main(args):
-    if args.backend.lower() == "datapoint" and not args.use_v2:
-        raise ValueError("Use --use-v2 if you want to use the datapoint backend.")
+    if args.backend.lower() == "vision_tensor" and not args.use_v2:
+        raise ValueError("Use --use-v2 if you want to use the vision_tensor backend.")
     if args.dataset not in ("coco", "coco_kp"):
         raise ValueError(f"Dataset should be coco or coco_kp, got {args.dataset}")
     if "keypoint" in args.model and args.dataset != "coco_kp":

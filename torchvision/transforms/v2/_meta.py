@@ -1,6 +1,6 @@
 from typing import Any, Dict, Union
 
-from torchvision import datapoints
+from torchvision import vision_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
 
@@ -10,20 +10,20 @@ class ConvertBoundingBoxFormat(Transform):
     .. v2betastatus:: ConvertBoundingBoxFormat transform
 
     Args:
-        format (str or datapoints.BoundingBoxFormat): output bounding box format.
-            Possible values are defined by :class:`~torchvision.datapoints.BoundingBoxFormat` and
+        format (str or vision_tensors.BoundingBoxFormat): output bounding box format.
+            Possible values are defined by :class:`~torchvision.vision_tensors.BoundingBoxFormat` and
             string values match the enums, e.g. "XYXY" or "XYWH" etc.
     """
 
-    _transformed_types = (datapoints.BoundingBoxes,)
+    _transformed_types = (vision_tensors.BoundingBoxes,)
 
-    def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
+    def __init__(self, format: Union[str, vision_tensors.BoundingBoxFormat]) -> None:
         super().__init__()
         if isinstance(format, str):
-            format = datapoints.BoundingBoxFormat[format]
+            format = vision_tensors.BoundingBoxFormat[format]
         self.format = format
 
-    def _transform(self, inpt: datapoints.BoundingBoxes, params: Dict[str, Any]) -> datapoints.BoundingBoxes:
+    def _transform(self, inpt: vision_tensors.BoundingBoxes, params: Dict[str, Any]) -> vision_tensors.BoundingBoxes:
         return F.convert_bounding_box_format(inpt, new_format=self.format)  # type: ignore[return-value]
 
 
@@ -36,7 +36,7 @@ class ClampBoundingBoxes(Transform):
 
     """
 
-    _transformed_types = (datapoints.BoundingBoxes,)
+    _transformed_types = (vision_tensors.BoundingBoxes,)
 
-    def _transform(self, inpt: datapoints.BoundingBoxes, params: Dict[str, Any]) -> datapoints.BoundingBoxes:
+    def _transform(self, inpt: vision_tensors.BoundingBoxes, params: Dict[str, Any]) -> vision_tensors.BoundingBoxes:
         return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]

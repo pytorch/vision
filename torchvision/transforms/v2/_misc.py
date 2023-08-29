@@ -6,7 +6,7 @@ import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
-from torchvision import datapoints, transforms as _transforms
+from torchvision import transforms as _transforms, vision_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
@@ -74,7 +74,7 @@ class LinearTransformation(Transform):
 
     _v1_transform_cls = _transforms.LinearTransformation
 
-    _transformed_types = (is_pure_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_pure_tensor, vision_tensors.Image, vision_tensors.Video)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
@@ -129,8 +129,8 @@ class LinearTransformation(Transform):
         output = torch.mm(flat_inpt, transformation_matrix)
         output = output.reshape(shape)
 
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = datapoints.wrap(output, like=inpt)
+        if isinstance(inpt, (vision_tensors.Image, vision_tensors.Video)):
+            output = vision_tensors.wrap(output, like=inpt)
         return output
 
 
@@ -227,12 +227,12 @@ class ToDtype(Transform):
         ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.
 
     Args:
-        dtype (``torch.dtype`` or dict of ``Datapoint`` -> ``torch.dtype``): The dtype to convert to.
+        dtype (``torch.dtype`` or dict of ``VisionTensor`` -> ``torch.dtype``): The dtype to convert to.
             If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted
             to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.
-            A dict can be passed to specify per-datapoint conversions, e.g.
-            ``dtype={datapoints.Image: torch.float32, datapoints.Mask: torch.int64, "others":None}``. The "others"
-            key can be used as a catch-all for any other datapoint type, and ``None`` means no conversion.
+            A dict can be passed to specify per-vision_tensor conversions, e.g.
+            ``dtype={vision_tensors.Image: torch.float32, vision_tensors.Mask: torch.int64, "others":None}``. The "others"
+            key can be used as a catch-all for any other vision_tensor type, and ``None`` means no conversion.
         scale (bool, optional): Whether to scale the values for images or videos. See :ref:`range_and_dtype`.
             Default: ``False``.
     """
@@ -250,12 +250,12 @@ class ToDtype(Transform):
         if (
             isinstance(dtype, dict)
             and torch.Tensor in dtype
-            and any(cls in dtype for cls in [datapoints.Image, datapoints.Video])
+            and any(cls in dtype for cls in [vision_tensors.Image, vision_tensors.Video])
         ):
             warnings.warn(
-                "Got `dtype` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
+                "Got `dtype` values for `torch.Tensor` and either `vision_tensors.Image` or `vision_tensors.Video`. "
                 "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
-                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
+                "in case a `vision_tensors.Image` or `vision_tensors.Video` is present in the input."
             )
         self.dtype = dtype
         self.scale = scale
@@ -264,7 +264,7 @@ class ToDtype(Transform):
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
-            if not is_pure_tensor(inpt) and not isinstance(inpt, (datapoints.Image, datapoints.Video)):
+            if not is_pure_tensor(inpt) and not isinstance(inpt, (vision_tensors.Image, vision_tensors.Video)):
                 return inpt
 
             dtype: Optional[torch.dtype] = self.dtype
@@ -278,10 +278,10 @@ class ToDtype(Transform):
                 "If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. "
                 "If you're passing a dict as dtype, "
                 'you can use "others" as a catch-all key '
-                'e.g. dtype={datapoints.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
+                'e.g. dtype={vision_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
             )
 
-        supports_scaling = is_pure_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video))
+        supports_scaling = is_pure_tensor(inpt) or isinstance(inpt, (vision_tensors.Image, vision_tensors.Video))
         if dtype is None:
             if self.scale and supports_scaling:
                 warnings.warn(
@@ -389,10 +389,10 @@ class SanitizeBoundingBoxes(Transform):
             )
 
         boxes = cast(
-            datapoints.BoundingBoxes,
+            vision_tensors.BoundingBoxes,
             F.convert_bounding_box_format(
                 boxes,
-                new_format=datapoints.BoundingBoxFormat.XYXY,
+                new_format=vision_tensors.BoundingBoxFormat.XYXY,
             ),
         )
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
@@ -415,7 +415,7 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_boxes_or_mask = isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask))
+        is_bounding_boxes_or_mask = isinstance(inpt, (vision_tensors.BoundingBoxes, vision_tensors.Mask))
 
         if not (is_label or is_bounding_boxes_or_mask):
             return inpt
@@ -425,4 +425,4 @@ class SanitizeBoundingBoxes(Transform):
         if is_label:
             return output
 
-        return datapoints.wrap(output, like=inpt)
+        return vision_tensors.wrap(output, like=inpt)

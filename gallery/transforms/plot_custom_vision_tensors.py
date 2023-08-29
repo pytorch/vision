@@ -1,62 +1,62 @@
 """
-=====================================
-How to write your own Datapoint class
-=====================================
+========================================
+How to write your own VisionTensor class
+========================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_custom_datapoints.ipynb>`_
-    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_custom_datapoints.py>` to download the full example code.
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_custom_vision_tensors.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_custom_vision_tensors.py>` to download the full example code.
 
 This guide is intended for advanced users and downstream library maintainers. We explain how to
-write your own datapoint class, and how to make it compatible with the built-in
+write your own vision_tensor class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
-:ref:`sphx_glr_auto_examples_transforms_plot_datapoints.py`.
+:ref:`sphx_glr_auto_examples_transforms_plot_vision_tensors.py`.
 """
 
 # %%
 import torch
-from torchvision import datapoints
+from torchvision import vision_tensors
 from torchvision.transforms import v2
 
 # %%
 # We will create a very simple class that just inherits from the base
-# :class:`~torchvision.datapoints.Datapoint` class. It will be enough to cover
+# :class:`~torchvision.vision_tensors.VisionTensor` class. It will be enough to cover
 # what you need to know to implement your more elaborate uses-cases. If you need
 # to create a class that carries meta-data, take a look at how the
-# :class:`~torchvision.datapoints.BoundingBoxes` class is `implemented
-# <https://github.com/pytorch/vision/blob/main/torchvision/datapoints/_bounding_box.py>`_.
+# :class:`~torchvision.vision_tensors.BoundingBoxes` class is `implemented
+# <https://github.com/pytorch/vision/blob/main/torchvision/vision_tensors/_bounding_box.py>`_.
 
 
-class MyDatapoint(datapoints.Datapoint):
+class MyVisionTensor(vision_tensors.VisionTensor):
     pass
 
 
-my_dp = MyDatapoint([1, 2, 3])
+my_dp = MyVisionTensor([1, 2, 3])
 my_dp
 
 # %%
-# Now that we have defined our custom Datapoint class, we want it to be
+# Now that we have defined our custom VisionTensor class, we want it to be
 # compatible with the built-in torchvision transforms, and the functional API.
 # For that, we need to implement a kernel which performs the core of the
 # transformation, and then "hook" it to the functional that we want to support
 # via :func:`~torchvision.transforms.v2.functional.register_kernel`.
 #
 # We illustrate this process below: we create a kernel for the "horizontal flip"
-# operation of our MyDatapoint class, and register it to the functional API.
+# operation of our MyVisionTensor class, and register it to the functional API.
 
 from torchvision.transforms.v2 import functional as F
 
 
-@F.register_kernel(functional="hflip", datapoint_cls=MyDatapoint)
-def hflip_my_datapoint(my_dp, *args, **kwargs):
+@F.register_kernel(functional="hflip", vision_tensor_cls=MyVisionTensor)
+def hflip_my_vision_tensor(my_dp, *args, **kwargs):
     print("Flipping!")
     out = my_dp.flip(-1)
-    return datapoints.wrap(out, like=my_dp)
+    return vision_tensors.wrap(out, like=my_dp)
 
 
 # %%
-# To understand why :func:`~torchvision.datapoints.wrap` is used, see
-# :ref:`datapoint_unwrapping_behaviour`. Ignore the ``*args, **kwargs`` for now,
+# To understand why :func:`~torchvision.vision_tensors.wrap` is used, see
+# :ref:`vision_tensor_unwrapping_behaviour`. Ignore the ``*args, **kwargs`` for now,
 # we will explain it below in :ref:`param_forwarding`.
 #
 # .. note::
@@ -67,9 +67,9 @@ def hflip_my_datapoint(my_dp, *args, **kwargs):
 #     ``@register_kernel(functional=F.hflip, ...)``.
 #
 # Now that we have registered our kernel, we can call the functional API on a
-# ``MyDatapoint`` instance:
+# ``MyVisionTensor`` instance:
 
-my_dp = MyDatapoint(torch.rand(3, 256, 256))
+my_dp = MyVisionTensor(torch.rand(3, 256, 256))
 _ = F.hflip(my_dp)
 
 # %%
@@ -102,10 +102,10 @@ _ = t(my_dp)
 # to its :func:`~torchvision.transforms.v2.functional.hflip` functional. If you
 # already defined and registered your own kernel as
 
-def hflip_my_datapoint(my_dp):  # noqa
+def hflip_my_vision_tensor(my_dp):  # noqa
     print("Flipping!")
     out = my_dp.flip(-1)
-    return datapoints.wrap(out, like=my_dp)
+    return vision_tensors.wrap(out, like=my_dp)
 
 
 # %%

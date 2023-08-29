@@ -6,18 +6,18 @@ import torch
 from torch._C import DisableTorchFunctionSubclass
 from torch.types import _device, _dtype, _size
 
-from torchvision.datapoints._torch_function_helpers import _FORCE_TORCHFUNCTION_SUBCLASS, _must_return_subclass
+from torchvision.vision_tensors._torch_function_helpers import _FORCE_TORCHFUNCTION_SUBCLASS, _must_return_subclass
 
 
-D = TypeVar("D", bound="Datapoint")
+D = TypeVar("D", bound="VisionTensor")
 
 
-class Datapoint(torch.Tensor):
-    """[Beta] Base class for all datapoints.
+class VisionTensor(torch.Tensor):
+    """[Beta] Base class for all vision_tensors.
 
     You probably don't want to use this class unless you're defining your own
-    custom Datapoints. See
-    :ref:`sphx_glr_auto_examples_transforms_plot_custom_datapoints.py` for details.
+    custom VisionTensors. See
+    :ref:`sphx_glr_auto_examples_transforms_plot_custom_vision_tensors.py` for details.
     """
 
     @staticmethod
@@ -62,9 +62,9 @@ class Datapoint(torch.Tensor):
         ``__torch_function__`` method. If one is found, it is invoked with the operator as ``func`` as well as the
         ``args`` and ``kwargs`` of the original call.
 
-        Why do we override this? Because the base implementation in torch.Tensor would preserve the Datapoint type
+        Why do we override this? Because the base implementation in torch.Tensor would preserve the VisionTensor type
         of the output. In our case, we want to return pure tensors instead (with a few exceptions). Refer to the
-        "Datapoints FAQ" gallery example for a rationale of this behaviour (TL;DR: perf + no silver bullet).
+        "VisionTensors FAQ" gallery example for a rationale of this behaviour (TL;DR: perf + no silver bullet).
 
         Our implementation below is very similar to the base implementation in ``torch.Tensor`` - go check it out.
         """
@@ -79,7 +79,7 @@ class Datapoint(torch.Tensor):
         must_return_subclass = _must_return_subclass()
         if must_return_subclass or (func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)):
             # If you're wondering why we need the `isinstance(args[0], cls)` check, remove it and see what fails
-            # in test_to_datapoint_reference().
+            # in test_to_vision_tensor_reference().
             # The __torch_function__ protocol will invoke the __torch_function__ method on *all* types involved in
             # the computation by walking the MRO upwards. For example,
             # `out = a_pure_tensor.to(an_image)` will invoke `Image.__torch_function__` with
@@ -89,7 +89,7 @@ class Datapoint(torch.Tensor):
 
         if not must_return_subclass and isinstance(output, cls):
             # DisableTorchFunctionSubclass is ignored by inplace ops like `.add_(...)`,
-            # so for those, the output is still a Datapoint. Thus, we need to manually unwrap.
+            # so for those, the output is still a VisionTensor. Thus, we need to manually unwrap.
             return output.as_subclass(torch.Tensor)
 
         return output

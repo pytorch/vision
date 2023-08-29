@@ -7,7 +7,7 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import datapoints
+from torchvision import vision_tensors
 from torchvision.transforms.v2._utils import check_type, has_any, is_pure_tensor
 from torchvision.utils import _log_api_usage_once
 
@@ -56,8 +56,8 @@ class Transform(nn.Module):
 
     def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
         # Below is a heuristic on how to deal with pure tensor inputs:
-        # 1. Pure tensors, i.e. tensors that are not a datapoint, are passed through if there is an explicit image
-        #    (`datapoints.Image` or `PIL.Image.Image`) or video (`datapoints.Video`) in the sample.
+        # 1. Pure tensors, i.e. tensors that are not a vision_tensor, are passed through if there is an explicit image
+        #    (`vision_tensors.Image` or `PIL.Image.Image`) or video (`vision_tensors.Video`) in the sample.
         # 2. If there is no explicit image or video in the sample, only the first encountered pure tensor is
         #    transformed as image, while the rest is passed through. The order is defined by the returned `flat_inputs`
         #    of `tree_flatten`, which recurses depth-first through the input.
@@ -72,7 +72,7 @@ class Transform(nn.Module):
         # However, this case wasn't supported by transforms v1 either, so there is no BC concern.
 
         needs_transform_list = []
-        transform_pure_tensor = not has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
+        transform_pure_tensor = not has_any(flat_inputs, vision_tensors.Image, vision_tensors.Video, PIL.Image.Image)
         for inpt in flat_inputs:
             needs_transform = True
 

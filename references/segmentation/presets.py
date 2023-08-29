@@ -4,11 +4,11 @@ import torch
 def get_modules(use_v2):
     # We need a protected import to avoid the V2 warning in case just V1 is used
     if use_v2:
-        import torchvision.datapoints
         import torchvision.transforms.v2
+        import torchvision.vision_tensors
         import v2_extras
 
-        return torchvision.transforms.v2, torchvision.datapoints, v2_extras
+        return torchvision.transforms.v2, torchvision.vision_tensors, v2_extras
     else:
         import transforms
 
@@ -27,16 +27,16 @@ class SegmentationPresetTrain:
         backend="pil",
         use_v2=False,
     ):
-        T, datapoints, v2_extras = get_modules(use_v2)
+        T, vision_tensors, v2_extras = get_modules(use_v2)
 
         transforms = []
         backend = backend.lower()
-        if backend == "datapoint":
+        if backend == "vision_tensor":
             transforms.append(T.ToImage())
         elif backend == "tensor":
             transforms.append(T.PILToTensor())
         elif backend != "pil":
-            raise ValueError(f"backend can be 'datapoint', 'tensor' or 'pil', but got {backend}")
+            raise ValueError(f"backend can be 'vision_tensor', 'tensor' or 'pil', but got {backend}")
 
         transforms += [T.RandomResize(min_size=int(0.5 * base_size), max_size=int(2.0 * base_size))]
 
@@ -46,7 +46,7 @@ class SegmentationPresetTrain:
         if use_v2:
             # We need a custom pad transform here, since the padding we want to perform here is fundamentally
             # different from the padding in `RandomCrop` if `pad_if_needed=True`.
-            transforms += [v2_extras.PadIfSmaller(crop_size, fill={datapoints.Mask: 255, "others": 0})]
+            transforms += [v2_extras.PadIfSmaller(crop_size, fill={vision_tensors.Mask: 255, "others": 0})]
 
         transforms += [T.RandomCrop(crop_size)]
 
@@ -54,9 +54,9 @@ class SegmentationPresetTrain:
             transforms += [T.PILToTensor()]
 
         if use_v2:
-            img_type = datapoints.Image if backend == "datapoint" else torch.Tensor
+            img_type = vision_tensors.Image if backend == "vision_tensor" else torch.Tensor
             transforms += [
-                T.ToDtype(dtype={img_type: torch.float32, datapoints.Mask: torch.int64, "others": None}, scale=True)
+                T.ToDtype(dtype={img_type: torch.float32, vision_tensors.Mask: torch.int64, "others": None}, scale=True)
             ]
         else:
             # No need to explicitly convert masks as they're magically int64 already
@@ -82,10 +82,10 @@ class SegmentationPresetEval:
         backend = backend.lower()
         if backend == "tensor":
             transforms += [T.PILToTensor()]
-        elif backend == "datapoint":
+        elif backend == "vision_tensor":
             transforms += [T.ToImage()]
         elif backend != "pil":
-            raise ValueError(f"backend can be 'datapoint', 'tensor' or 'pil', but got {backend}")
+            raise ValueError(f"backend can be 'vision_tensor', 'tensor' or 'pil', but got {backend}")
 
         if use_v2:
             transforms += [T.Resize(size=(base_size, base_size))]

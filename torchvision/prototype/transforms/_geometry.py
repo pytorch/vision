@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional, Sequence, Type, Union
 import PIL.Image
 import torch
 
-from torchvision import datapoints
-from torchvision.prototype.datapoints import Label, OneHotLabel
+from torchvision import vision_tensors
+from torchvision.prototype.vision_tensors import Label, OneHotLabel
 from torchvision.transforms.v2 import functional as F, Transform
 from torchvision.transforms.v2._utils import (
     _FillType,
@@ -39,15 +39,15 @@ class FixedSizeCrop(Transform):
         if not has_any(
             flat_inputs,
             PIL.Image.Image,
-            datapoints.Image,
+            vision_tensors.Image,
             is_pure_tensor,
-            datapoints.Video,
+            vision_tensors.Video,
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
             )
 
-        if has_any(flat_inputs, datapoints.BoundingBoxes) and not has_any(flat_inputs, Label, OneHotLabel):
+        if has_any(flat_inputs, vision_tensors.BoundingBoxes) and not has_any(flat_inputs, Label, OneHotLabel):
             raise TypeError(
                 f"If a BoundingBoxes is contained in the input sample, "
                 f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
@@ -85,7 +85,7 @@ class FixedSizeCrop(Transform):
             )
             bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size)
             height_and_width = F.convert_bounding_box_format(
-                bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
+                bounding_boxes, old_format=format, new_format=vision_tensors.BoundingBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
         else:
@@ -119,10 +119,10 @@ class FixedSizeCrop(Transform):
             )
 
         if params["is_valid"] is not None:
-            if isinstance(inpt, (Label, OneHotLabel, datapoints.Mask)):
-                inpt = datapoints.wrap(inpt[params["is_valid"]], like=inpt)
-            elif isinstance(inpt, datapoints.BoundingBoxes):
-                inpt = datapoints.wrap(
+            if isinstance(inpt, (Label, OneHotLabel, vision_tensors.Mask)):
+                inpt = vision_tensors.wrap(inpt[params["is_valid"]], like=inpt)
+            elif isinstance(inpt, vision_tensors.BoundingBoxes):
+                inpt = vision_tensors.wrap(
                     F.clamp_bounding_boxes(inpt[params["is_valid"]], format=inpt.format, canvas_size=inpt.canvas_size),
                     like=inpt,
                 )

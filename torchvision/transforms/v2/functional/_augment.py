@@ -1,7 +1,7 @@
 import PIL.Image
 
 import torch
-from torchvision import datapoints
+from torchvision import vision_tensors
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 from torchvision.utils import _log_api_usage_once
 
@@ -28,7 +28,7 @@ def erase(
 
 
 @_register_kernel_internal(erase, torch.Tensor)
-@_register_kernel_internal(erase, datapoints.Image)
+@_register_kernel_internal(erase, vision_tensors.Image)
 def erase_image(
     image: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> torch.Tensor:
@@ -48,7 +48,7 @@ def _erase_image_pil(
     return to_pil_image(output, mode=image.mode)
 
 
-@_register_kernel_internal(erase, datapoints.Video)
+@_register_kernel_internal(erase, vision_tensors.Video)
 def erase_video(
     video: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> torch.Tensor:

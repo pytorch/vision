@@ -1,6 +1,6 @@
 import torch
 
-from torchvision import datapoints
+from torchvision import vision_tensors
 
 from torchvision.utils import _log_api_usage_once
 
@@ -19,7 +19,7 @@ def uniform_temporal_subsample(inpt: torch.Tensor, num_samples: int) -> torch.Te
 
 
 @_register_kernel_internal(uniform_temporal_subsample, torch.Tensor)
-@_register_kernel_internal(uniform_temporal_subsample, datapoints.Video)
+@_register_kernel_internal(uniform_temporal_subsample, vision_tensors.Video)
 def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int) -> torch.Tensor:
     # Reference: https://github.com/facebookresearch/pytorchvideo/blob/a0a131e/pytorchvideo/transforms/functional.py#L19
     t_max = video.shape[-4] - 1

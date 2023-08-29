@@ -1,6 +1,6 @@
 """This file only exists to be lazy-imported and avoid V2-related import warnings when just using V1."""
 import torch
-from torchvision import datapoints
+from torchvision import vision_tensors
 from torchvision.transforms import v2
 
 
@@ -80,4 +80,4 @@ class CocoDetectionToVOCSegmentation(v2.Transform):
         if segmentation_mask is None:
             segmentation_mask = torch.zeros(v2.functional.get_size(image), dtype=torch.uint8)
 
-        return image, datapoints.Mask(segmentation_mask)
+        return image, vision_tensors.Mask(segmentation_mask)

@@ -1,24 +1,24 @@
 import torch
 
 from ._bounding_box import BoundingBoxes, BoundingBoxFormat
-from ._datapoint import Datapoint
 from ._image import Image
 from ._mask import Mask
 from ._torch_function_helpers import set_return_type
 from ._video import Video
+from ._vision_tensor import VisionTensor
 
 
 def wrap(wrappee, *, like, **kwargs):
-    """[BETA] Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.datapoints.Datapoint` subclass as ``like``.
+    """[BETA] Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.vision_tensors.VisionTensor` subclass as ``like``.
 
-    If ``like`` is a :class:`~torchvision.datapoints.BoundingBoxes`, the ``format`` and ``canvas_size`` of
+    If ``like`` is a :class:`~torchvision.vision_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
     ``like`` are assigned to ``wrappee``, unless they are passed as ``kwargs``.
 
     Args:
         wrappee (Tensor): The tensor to convert.
-        like (:class:`~torchvision.datapoints.Datapoint`): The reference.
+        like (:class:`~torchvision.vision_tensors.VisionTensor`): The reference.
             ``wrappee`` will be converted into the same subclass as ``like``.
-        kwargs: Can contain "format" and "canvas_size" if ``like`` is a :class:`~torchvision.datapoint.BoundingBoxes`.
+        kwargs: Can contain "format" and "canvas_size" if ``like`` is a :class:`~torchvision.vision_tensor.BoundingBoxes`.
             Ignored otherwise.
     """
     if isinstance(like, BoundingBoxes):

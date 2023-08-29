@@ -13,7 +13,7 @@ import torch
 import torchvision.transforms.v2 as v2_transforms
 from common_utils import assert_close, assert_equal, set_rng_seed
 from torch import nn
-from torchvision import datapoints, transforms as legacy_transforms
+from torchvision import transforms as legacy_transforms, vision_tensors
 from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
@@ -478,15 +478,15 @@ def check_call_consistency(
             output_prototype_image = prototype_transform(image)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a image datapoint with shape {image_repr} failed in the prototype transform with "
+                f"Transforming a image vision_tensor with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`datapoints.Image` path in `_transform`."
+                f"`vision_tensors.Image` path in `_transform`."
             ) from exc
 
         assert_close(
             output_prototype_image,
             output_prototype_tensor,
-            msg=lambda msg: f"Output for datapoint and tensor images is not equal: \n\n{msg}",
+            msg=lambda msg: f"Output for vision_tensor and tensor images is not equal: \n\n{msg}",
             **closeness_kwargs,
         )
 
@@ -747,7 +747,7 @@ class TestAATransforms:
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
             PIL.Image.new("RGB", (256, 256), 123),
-            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+            vision_tensors.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
     @pytest.mark.parametrize(
@@ -812,7 +812,7 @@ class TestAATransforms:
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
             PIL.Image.new("RGB", (256, 256), 123),
-            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+            vision_tensors.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
     @pytest.mark.parametrize(
@@ -887,7 +887,7 @@ class TestAATransforms:
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
             PIL.Image.new("RGB", (256, 256), 123),
-            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+            vision_tensors.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
     @pytest.mark.parametrize(
@@ -964,7 +964,7 @@ class TestAATransforms:
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
             PIL.Image.new("RGB", (256, 256), 123),
-            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+            vision_tensors.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
     @pytest.mark.parametrize(
@@ -1030,7 +1030,7 @@ det_transforms = import_transforms_from_references("detection")
 
 
 class TestRefDetTransforms:
-    def make_datapoints(self, with_mask=True):
+    def make_vision_tensors(self, with_mask=True):
         size = (600, 800)
         num_objects = 22
 
@@ -1057,7 +1057,7 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        datapoint_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
+        vision_tensor_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
         target = {
             "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -1065,7 +1065,7 @@ class TestRefDetTransforms:
         if with_mask:
             target["masks"] = make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long)
 
-        yield (datapoint_image, target)
+        yield (vision_tensor_image, target)
 
     @pytest.mark.parametrize(
         "t_ref, t, data_kwargs",
@@ -1095,7 +1095,7 @@ class TestRefDetTransforms:
         ],
     )
     def test_transform(self, t_ref, t, data_kwargs):
-        for dp in self.make_datapoints(**data_kwargs):
+        for dp in self.make_vision_tensors(**data_kwargs):
 
             # We should use prototype transform first as reference transform performs inplace target update
             torch.manual_seed(12)
@@ -1135,7 +1135,7 @@ class PadIfSmaller(v2_transforms.Transform):
 
 
 class TestRefSegTransforms:
-    def make_datapoints(self, supports_pil=True, image_dtype=torch.uint8):
+    def make_vision_tensors(self, supports_pil=True, image_dtype=torch.uint8):
         size = (256, 460)
         num_categories = 21
 
@@ -1145,13 +1145,13 @@ class TestRefSegTransforms:
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
-            datapoint_image = make_image(size=size, color_space="RGB", dtype=image_dtype)
-            datapoint_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
+            vision_tensor_image = make_image(size=size, color_space="RGB", dtype=image_dtype)
+            vision_tensor_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
 
-            dp = (conv_fn(datapoint_image), datapoint_mask)
+            dp = (conv_fn(vision_tensor_image), vision_tensor_mask)
             dp_ref = (
-                to_pil_image(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
-                to_pil_image(datapoint_mask),
+                to_pil_image(vision_tensor_image) if supports_pil else vision_tensor_image.as_subclass(torch.Tensor),
+                to_pil_image(vision_tensor_mask),
             )
 
             yield dp, dp_ref
@@ -1161,7 +1161,7 @@ class TestRefSegTransforms:
         random.seed(seed)
 
     def check(self, t, t_ref, data_kwargs=None):
-        for dp, dp_ref in self.make_datapoints(**data_kwargs or dict()):
+        for dp, dp_ref in self.make_vision_tensors(**data_kwargs or dict()):
 
             self.set_seed()
             actual = actual_image, actual_mask = t(dp)
@@ -1192,7 +1192,7 @@ class TestRefSegTransforms:
                 seg_transforms.RandomCrop(size=480),
                 v2_transforms.Compose(
                     [
-                        PadIfSmaller(size=480, fill={datapoints.Mask: 255, "others": 0}),
+                        PadIfSmaller(size=480, fill={vision_tensors.Mask: 255, "others": 0}),
                         v2_transforms.RandomCrop(size=480),
                     ]
                 ),

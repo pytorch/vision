@@ -5,9 +5,7 @@ from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
 from xml.etree import ElementTree
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
-from torchvision.datapoints import BoundingBoxes
 from torchvision.datasets import VOCDetection
-from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
@@ -18,6 +16,8 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     read_categories_file,
 )
+from torchvision.prototype.vision_tensors import Label
+from torchvision.vision_tensors import BoundingBoxes
 
 from .._api import register_dataset, register_info
 

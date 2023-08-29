@@ -128,7 +128,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 def main(args):
     if args.backend.lower() != "pil" and not args.use_v2:
         # TODO: Support tensor backend in V1?
-        raise ValueError("Use --use-v2 if you want to use the datapoint or tensor backend.")
+        raise ValueError("Use --use-v2 if you want to use the vision_tensor or tensor backend.")
     if args.use_v2 and args.dataset != "coco":
         raise ValueError("v2 is only support supported for coco dataset for now.")
 

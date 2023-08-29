@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple
 import PIL.Image
 import torch
 
-from torchvision import datapoints
+from torchvision import vision_tensors
 
 from torchvision._utils import sequence_to_str
 
@@ -149,10 +149,10 @@ def _parse_labels_getter(
         raise ValueError(f"labels_getter should either be 'default', a callable, or None, but got {labels_getter}.")
 
 
-def get_bounding_boxes(flat_inputs: List[Any]) -> datapoints.BoundingBoxes:
+def get_bounding_boxes(flat_inputs: List[Any]) -> vision_tensors.BoundingBoxes:
     # This assumes there is only one bbox per sample as per the general convention
     try:
-        return next(inpt for inpt in flat_inputs if isinstance(inpt, datapoints.BoundingBoxes))
+        return next(inpt for inpt in flat_inputs if isinstance(inpt, vision_tensors.BoundingBoxes))
     except StopIteration:
         raise ValueError("No bounding boxes were found in the sample")
 
@@ -161,7 +161,7 @@ def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     chws = {
         tuple(get_dimensions(inpt))
         for inpt in flat_inputs
-        if check_type(inpt, (is_pure_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video))
+        if check_type(inpt, (is_pure_tensor, vision_tensors.Image, PIL.Image.Image, vision_tensors.Video))
     }
     if not chws:
         raise TypeError("No image or video was found in the sample")
@@ -179,11 +179,11 @@ def query_size(flat_inputs: List[Any]) -> Tuple[int, int]:
             inpt,
             (
                 is_pure_tensor,
-                datapoints.Image,
+                vision_tensors.Image,
                 PIL.Image.Image,
-                datapoints.Video,
-                datapoints.Mask,
-                datapoints.BoundingBoxes,
+                vision_tensors.Video,
+                vision_tensors.Mask,
+                vision_tensors.BoundingBoxes,
             ),
         )
     }

@@ -7,7 +7,7 @@ import PIL.Image
 import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
 
-from torchvision import datapoints
+from torchvision import vision_tensors
 from torchvision.transforms import _functional_pil as _FP
 from torchvision.transforms._functional_tensor import _pad_symmetric
 from torchvision.transforms.functional import (
@@ -51,7 +51,7 @@ def horizontal_flip(inpt: torch.Tensor) -> torch.Tensor:
 
 
 @_register_kernel_internal(horizontal_flip, torch.Tensor)
-@_register_kernel_internal(horizontal_flip, datapoints.Image)
+@_register_kernel_internal(horizontal_flip, vision_tensors.Image)
 def horizontal_flip_image(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-1)
 
@@ -61,37 +61,37 @@ def _horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.hflip(image)
 
 
-@_register_kernel_internal(horizontal_flip, datapoints.Mask)
+@_register_kernel_internal(horizontal_flip, vision_tensors.Mask)
 def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image(mask)
 
 
 def horizontal_flip_bounding_boxes(
-    bounding_boxes: torch.Tensor, format: datapoints.BoundingBoxFormat, canvas_size: Tuple[int, int]
+    bounding_boxes: torch.Tensor, format: vision_tensors.BoundingBoxFormat, canvas_size: Tuple[int, int]
 ) -> torch.Tensor:
     shape = bounding_boxes.shape
 
     bounding_boxes = bounding_boxes.clone().reshape(-1, 4)
 
-    if format == datapoints.BoundingBoxFormat.XYXY:
+    if format == vision_tensors.BoundingBoxFormat.XYXY:
         bounding_boxes[:, [2, 0]] = bounding_boxes[:, [0, 2]].sub_(canvas_size[1]).neg_()
-    elif format == datapoints.BoundingBoxFormat.XYWH:
+    elif format == vision_tensors.BoundingBoxFormat.XYWH:
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2]).sub_(canvas_size[1]).neg_()
-    else:  # format == datapoints.BoundingBoxFormat.CXCYWH:
+    else:  # format == vision_tensors.BoundingBoxFormat.CXCYWH:
         bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
 
     return bounding_boxes.reshape(shape)
 
 
-@_register_kernel_internal(horizontal_flip, datapoints.BoundingBoxes, datapoint_wrapper=False)
-def _horizontal_flip_bounding_boxes_dispatch(inpt: datapoints.BoundingBoxes) -> datapoints.BoundingBoxes:
+@_register_kernel_internal(horizontal_flip, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
+def _horizontal_flip_bounding_boxes_dispatch(inpt: vision_tensors.BoundingBoxes) -> vision_tensors.BoundingBoxes:
     output = horizontal_flip_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size
     )
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
-@_register_kernel_internal(horizontal_flip, datapoints.Video)
+@_register_kernel_internal(horizontal_flip, vision_tensors.Video)
 def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image(video)
 
@@ -108,7 +108,7 @@ def vertical_flip(inpt: torch.Tensor) -> torch.Tensor:
 
 
 @_register_kernel_internal(vertical_flip, torch.Tensor)
-@_register_kernel_internal(vertical_flip, datapoints.Image)
+@_register_kernel_internal(vertical_flip, vision_tensors.Image)
 def vertical_flip_image(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-2)
 
@@ -118,37 +118,37 @@ def _vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
     return _FP.vflip(image)
 
 
-@_register_kernel_internal(vertical_flip, datapoints.Mask)
+@_register_kernel_internal(vertical_flip, vision_tensors.Mask)
 def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image(mask)
 
 
 def vertical_flip_bounding_boxes(
-    bounding_boxes: torch.Tensor, format: datapoints.BoundingBoxFormat, canvas_size: Tuple[int, int]
+    bounding_boxes: torch.Tensor, format: vision_tensors.BoundingBoxFormat, canvas_size: Tuple[int, int]
 ) -> torch.Tensor:
     shape = bounding_boxes.shape
 
     bounding_boxes = bounding_boxes.clone().reshape(-1, 4)
 
-    if format == datapoints.BoundingBoxFormat.XYXY:
+    if format == vision_tensors.BoundingBoxFormat.XYXY:
         bounding_boxes[:, [1, 3]] = bounding_boxes[:, [3, 1]].sub_(canvas_size[0]).neg_()
-    elif format == datapoints.BoundingBoxFormat.XYWH:
+    elif format == vision_tensors.BoundingBoxFormat.XYWH:
         bounding_boxes[:, 1].add_(bounding_boxes[:, 3]).sub_(canvas_size[0]).neg_()
-    else:  # format == datapoints.BoundingBoxFormat.CXCYWH:
+    else:  # format == vision_tensors.BoundingBoxFormat.CXCYWH:
         bounding_boxes[:, 1].sub_(canvas_size[0]).neg_()
 
     return bounding_boxes.reshape(shape)
 
 
-@_register_kernel_internal(vertical_flip, datapoints.BoundingBoxes, datapoint_wrapper=False)
-def _vertical_flip_bounding_boxes_dispatch(inpt: datapoints.BoundingBoxes) -> datapoints.BoundingBoxes:
+@_register_kernel_internal(vertical_flip, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
+def _vertical_flip_bounding_boxes_dispatch(inpt: vision_tensors.BoundingBoxes) -> vision_tensors.BoundingBoxes:
     output = vertical_flip_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size
     )
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
-@_register_kernel_internal(vertical_flip, datapoints.Video)
+@_register_kernel_internal(vertical_flip, vision_tensors.Video)
 def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image(video)
 
@@ -190,7 +190,7 @@ def resize(
 
 
 @_register_kernel_internal(resize, torch.Tensor)
-@_register_kernel_internal(resize, datapoints.Image)
+@_register_kernel_internal(resize, vision_tensors.Image)
 def resize_image(
     image: torch.Tensor,
     size: List[int],
@@ -319,12 +319,12 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
     return output
 
 
-@_register_kernel_internal(resize, datapoints.Mask, datapoint_wrapper=False)
+@_register_kernel_internal(resize, vision_tensors.Mask, vision_tensor_wrapper=False)
 def _resize_mask_dispatch(
-    inpt: datapoints.Mask, size: List[int], max_size: Optional[int] = None, **kwargs: Any
-) -> datapoints.Mask:
+    inpt: vision_tensors.Mask, size: List[int], max_size: Optional[int] = None, **kwargs: Any
+) -> vision_tensors.Mask:
     output = resize_mask(inpt.as_subclass(torch.Tensor), size, max_size=max_size)
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
 def resize_bounding_boxes(
@@ -345,17 +345,17 @@ def resize_bounding_boxes(
     )
 
 
-@_register_kernel_internal(resize, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(resize, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _resize_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes, size: List[int], max_size: Optional[int] = None, **kwargs: Any
-) -> datapoints.BoundingBoxes:
+    inpt: vision_tensors.BoundingBoxes, size: List[int], max_size: Optional[int] = None, **kwargs: Any
+) -> vision_tensors.BoundingBoxes:
     output, canvas_size = resize_bounding_boxes(
         inpt.as_subclass(torch.Tensor), inpt.canvas_size, size, max_size=max_size
     )
-    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
+    return vision_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
-@_register_kernel_internal(resize, datapoints.Video)
+@_register_kernel_internal(resize, vision_tensors.Video)
 def resize_video(
     video: torch.Tensor,
     size: List[int],
@@ -651,7 +651,7 @@ def _affine_grid(
 
 
 @_register_kernel_internal(affine, torch.Tensor)
-@_register_kernel_internal(affine, datapoints.Image)
+@_register_kernel_internal(affine, vision_tensors.Image)
 def affine_image(
     image: torch.Tensor,
     angle: Union[int, float],
@@ -730,7 +730,7 @@ def _affine_image_pil(
 
 def _affine_bounding_boxes_with_expand(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     canvas_size: Tuple[int, int],
     angle: Union[int, float],
     translate: List[float],
@@ -749,7 +749,7 @@ def _affine_bounding_boxes_with_expand(
     device = bounding_boxes.device
     bounding_boxes = (
         convert_bounding_box_format(
-            bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+            bounding_boxes, old_format=format, new_format=vision_tensors.BoundingBoxFormat.XYXY, inplace=True
         )
     ).reshape(-1, 4)
 
@@ -808,9 +808,9 @@ def _affine_bounding_boxes_with_expand(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
-    out_bboxes = clamp_bounding_boxes(out_bboxes, format=datapoints.BoundingBoxFormat.XYXY, canvas_size=canvas_size)
+    out_bboxes = clamp_bounding_boxes(out_bboxes, format=vision_tensors.BoundingBoxFormat.XYXY, canvas_size=canvas_size)
     out_bboxes = convert_bounding_box_format(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        out_bboxes, old_format=vision_tensors.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
     out_bboxes = out_bboxes.to(original_dtype)
@@ -819,7 +819,7 @@ def _affine_bounding_boxes_with_expand(
 
 def affine_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     canvas_size: Tuple[int, int],
     angle: Union[int, float],
     translate: List[float],
@@ -841,16 +841,16 @@ def affine_bounding_boxes(
     return out_box
 
 
-@_register_kernel_internal(affine, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(affine, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _affine_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes,
+    inpt: vision_tensors.BoundingBoxes,
     angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
     center: Optional[List[float]] = None,
     **kwargs,
-) -> datapoints.BoundingBoxes:
+) -> vision_tensors.BoundingBoxes:
     output = affine_bounding_boxes(
         inpt.as_subclass(torch.Tensor),
         format=inpt.format,
@@ -861,7 +861,7 @@ def _affine_bounding_boxes_dispatch(
         shear=shear,
         center=center,
     )
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
 def affine_mask(
@@ -896,9 +896,9 @@ def affine_mask(
     return output
 
 
-@_register_kernel_internal(affine, datapoints.Mask, datapoint_wrapper=False)
+@_register_kernel_internal(affine, vision_tensors.Mask, vision_tensor_wrapper=False)
 def _affine_mask_dispatch(
-    inpt: datapoints.Mask,
+    inpt: vision_tensors.Mask,
     angle: Union[int, float],
     translate: List[float],
     scale: float,
@@ -906,7 +906,7 @@ def _affine_mask_dispatch(
     fill: _FillTypeJIT = None,
     center: Optional[List[float]] = None,
     **kwargs,
-) -> datapoints.Mask:
+) -> vision_tensors.Mask:
     output = affine_mask(
         inpt.as_subclass(torch.Tensor),
         angle=angle,
@@ -916,10 +916,10 @@ def _affine_mask_dispatch(
         fill=fill,
         center=center,
     )
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
-@_register_kernel_internal(affine, datapoints.Video)
+@_register_kernel_internal(affine, vision_tensors.Video)
 def affine_video(
     video: torch.Tensor,
     angle: Union[int, float],
@@ -961,7 +961,7 @@ def rotate(
 
 
 @_register_kernel_internal(rotate, torch.Tensor)
-@_register_kernel_internal(rotate, datapoints.Image)
+@_register_kernel_internal(rotate, vision_tensors.Image)
 def rotate_image(
     image: torch.Tensor,
     angle: float,
@@ -1027,7 +1027,7 @@ def _rotate_image_pil(
 
 def rotate_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     canvas_size: Tuple[int, int],
     angle: float,
     expand: bool = False,
@@ -1049,10 +1049,14 @@ def rotate_bounding_boxes(
     )
 
 
-@_register_kernel_internal(rotate, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(rotate, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _rotate_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes, angle: float, expand: bool = False, center: Optional[List[float]] = None, **kwargs
-) -> datapoints.BoundingBoxes:
+    inpt: vision_tensors.BoundingBoxes,
+    angle: float,
+    expand: bool = False,
+    center: Optional[List[float]] = None,
+    **kwargs,
+) -> vision_tensors.BoundingBoxes:
     output, canvas_size = rotate_bounding_boxes(
         inpt.as_subclass(torch.Tensor),
         format=inpt.format,
@@ -1061,7 +1065,7 @@ def _rotate_bounding_boxes_dispatch(
         expand=expand,
         center=center,
     )
-    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
+    return vision_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 def rotate_mask(
@@ -1092,20 +1096,20 @@ def rotate_mask(
     return output
 
 
-@_register_kernel_internal(rotate, datapoints.Mask, datapoint_wrapper=False)
+@_register_kernel_internal(rotate, vision_tensors.Mask, vision_tensor_wrapper=False)
 def _rotate_mask_dispatch(
-    inpt: datapoints.Mask,
+    inpt: vision_tensors.Mask,
     angle: float,
     expand: bool = False,
     center: Optional[List[float]] = None,
     fill: _FillTypeJIT = None,
     **kwargs,
-) -> datapoints.Mask:
+) -> vision_tensors.Mask:
     output = rotate_mask(inpt.as_subclass(torch.Tensor), angle=angle, expand=expand, fill=fill, center=center)
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
-@_register_kernel_internal(rotate, datapoints.Video)
+@_register_kernel_internal(rotate, vision_tensors.Video)
 def rotate_video(
     video: torch.Tensor,
     angle: float,
@@ -1158,7 +1162,7 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
 
 
 @_register_kernel_internal(pad, torch.Tensor)
-@_register_kernel_internal(pad, datapoints.Image)
+@_register_kernel_internal(pad, vision_tensors.Image)
 def pad_image(
     image: torch.Tensor,
     padding: List[int],
@@ -1260,7 +1264,7 @@ def _pad_with_vector_fill(
 _pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
 
 
-@_register_kernel_internal(pad, datapoints.Mask)
+@_register_kernel_internal(pad, vision_tensors.Mask)
 def pad_mask(
     mask: torch.Tensor,
     padding: List[int],
@@ -1289,7 +1293,7 @@ def pad_mask(
 
 def pad_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     canvas_size: Tuple[int, int],
     padding: List[int],
     padding_mode: str = "constant",
@@ -1300,7 +1304,7 @@ def pad_bounding_boxes(
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
-    if format == datapoints.BoundingBoxFormat.XYXY:
+    if format == vision_tensors.BoundingBoxFormat.XYXY:
         pad = [left, top, left, top]
     else:
         pad = [left, top, 0, 0]
@@ -1314,10 +1318,10 @@ def pad_bounding_boxes(
     return clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size), canvas_size
 
 
-@_register_kernel_internal(pad, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(pad, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _pad_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes, padding: List[int], padding_mode: str = "constant", **kwargs
-) -> datapoints.BoundingBoxes:
+    inpt: vision_tensors.BoundingBoxes, padding: List[int], padding_mode: str = "constant", **kwargs
+) -> vision_tensors.BoundingBoxes:
     output, canvas_size = pad_bounding_boxes(
         inpt.as_subclass(torch.Tensor),
         format=inpt.format,
@@ -1325,10 +1329,10 @@ def _pad_bounding_boxes_dispatch(
         padding=padding,
         padding_mode=padding_mode,
     )
-    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
+    return vision_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
-@_register_kernel_internal(pad, datapoints.Video)
+@_register_kernel_internal(pad, vision_tensors.Video)
 def pad_video(
     video: torch.Tensor,
     padding: List[int],
@@ -1350,7 +1354,7 @@ def crop(inpt: torch.Tensor, top: int, left: int, height: int, width: int) -> to
 
 
 @_register_kernel_internal(crop, torch.Tensor)
-@_register_kernel_internal(crop, datapoints.Image)
+@_register_kernel_internal(crop, vision_tensors.Image)
 def crop_image(image: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
     h, w = image.shape[-2:]
 
@@ -1375,7 +1379,7 @@ _register_kernel_internal(crop, PIL.Image.Image)(_crop_image_pil)
 
 def crop_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     top: int,
     left: int,
     height: int,
@@ -1383,7 +1387,7 @@ def crop_bounding_boxes(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
 
     # Crop or implicit pad if left and/or top have negative values:
-    if format == datapoints.BoundingBoxFormat.XYXY:
+    if format == vision_tensors.BoundingBoxFormat.XYXY:
         sub = [left, top, left, top]
     else:
         sub = [left, top, 0, 0]
@@ -1394,17 +1398,17 @@ def crop_bounding_boxes(
     return clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size), canvas_size
 
 
-@_register_kernel_internal(crop, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(crop, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _crop_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes, top: int, left: int, height: int, width: int
-) -> datapoints.BoundingBoxes:
+    inpt: vision_tensors.BoundingBoxes, top: int, left: int, height: int, width: int
+) -> vision_tensors.BoundingBoxes:
     output, canvas_size = crop_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width
     )
-    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
+    return vision_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
-@_register_kernel_internal(crop, datapoints.Mask)
+@_register_kernel_internal(crop, vision_tensors.Mask)
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -1420,7 +1424,7 @@ def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) 
     return output
 
 
-@_register_kernel_internal(crop, datapoints.Video)
+@_register_kernel_internal(crop, vision_tensors.Video)
 def crop_video(video: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
     return crop_image(video, top, left, height, width)
 
@@ -1505,7 +1509,7 @@ def _perspective_coefficients(
 
 
 @_register_kernel_internal(perspective, torch.Tensor)
-@_register_kernel_internal(perspective, datapoints.Image)
+@_register_kernel_internal(perspective, vision_tensors.Image)
 def perspective_image(
     image: torch.Tensor,
     startpoints: Optional[List[List[int]]],
@@ -1568,7 +1572,7 @@ def _perspective_image_pil(
 
 def perspective_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     canvas_size: Tuple[int, int],
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
@@ -1582,7 +1586,7 @@ def perspective_bounding_boxes(
     original_shape = bounding_boxes.shape
     # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
     bounding_boxes = (
-        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
+        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=vision_tensors.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     dtype = bounding_boxes.dtype if torch.is_floating_point(bounding_boxes) else torch.float32
@@ -1649,25 +1653,25 @@ def perspective_bounding_boxes(
 
     out_bboxes = clamp_bounding_boxes(
         torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype),
-        format=datapoints.BoundingBoxFormat.XYXY,
+        format=vision_tensors.BoundingBoxFormat.XYXY,
         canvas_size=canvas_size,
     )
 
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_bounding_box_format(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        out_bboxes, old_format=vision_tensors.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
-@_register_kernel_internal(perspective, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(perspective, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _perspective_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes,
+    inpt: vision_tensors.BoundingBoxes,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
     coefficients: Optional[List[float]] = None,
     **kwargs,
-) -> datapoints.BoundingBoxes:
+) -> vision_tensors.BoundingBoxes:
     output = perspective_bounding_boxes(
         inpt.as_subclass(torch.Tensor),
         format=inpt.format,
@@ -1676,7 +1680,7 @@ def _perspective_bounding_boxes_dispatch(
         endpoints=endpoints,
         coefficients=coefficients,
     )
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
 def perspective_mask(
@@ -1702,15 +1706,15 @@ def perspective_mask(
     return output
 
 
-@_register_kernel_internal(perspective, datapoints.Mask, datapoint_wrapper=False)
+@_register_kernel_internal(perspective, vision_tensors.Mask, vision_tensor_wrapper=False)
 def _perspective_mask_dispatch(
-    inpt: datapoints.Mask,
+    inpt: vision_tensors.Mask,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
     fill: _FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
     **kwargs,
-) -> datapoints.Mask:
+) -> vision_tensors.Mask:
     output = perspective_mask(
         inpt.as_subclass(torch.Tensor),
         startpoints=startpoints,
@@ -1718,10 +1722,10 @@ def _perspective_mask_dispatch(
         fill=fill,
         coefficients=coefficients,
     )
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
-@_register_kernel_internal(perspective, datapoints.Video)
+@_register_kernel_internal(perspective, vision_tensors.Video)
 def perspective_video(
     video: torch.Tensor,
     startpoints: Optional[List[List[int]]],
@@ -1755,7 +1759,7 @@ elastic_transform = elastic
 
 
 @_register_kernel_internal(elastic, torch.Tensor)
-@_register_kernel_internal(elastic, datapoints.Image)
+@_register_kernel_internal(elastic, vision_tensors.Image)
 def elastic_image(
     image: torch.Tensor,
     displacement: torch.Tensor,
@@ -1841,7 +1845,7 @@ def _create_identity_grid(size: Tuple[int, int], device: torch.device, dtype: to
 
 def elastic_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     canvas_size: Tuple[int, int],
     displacement: torch.Tensor,
 ) -> torch.Tensor:
@@ -1864,7 +1868,7 @@ def elastic_bounding_boxes(
     original_shape = bounding_boxes.shape
     # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
     bounding_boxes = (
-        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
+        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=vision_tensors.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     id_grid = _create_identity_grid(canvas_size, device=device, dtype=dtype)
@@ -1887,23 +1891,23 @@ def elastic_bounding_boxes(
     out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
     out_bboxes = clamp_bounding_boxes(
         torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype),
-        format=datapoints.BoundingBoxFormat.XYXY,
+        format=vision_tensors.BoundingBoxFormat.XYXY,
         canvas_size=canvas_size,
     )
 
     return convert_bounding_box_format(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        out_bboxes, old_format=vision_tensors.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
-@_register_kernel_internal(elastic, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(elastic, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _elastic_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes, displacement: torch.Tensor, **kwargs
-) -> datapoints.BoundingBoxes:
+    inpt: vision_tensors.BoundingBoxes, displacement: torch.Tensor, **kwargs
+) -> vision_tensors.BoundingBoxes:
     output = elastic_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, displacement=displacement
     )
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
 def elastic_mask(
@@ -1925,15 +1929,15 @@ def elastic_mask(
     return output
 
 
-@_register_kernel_internal(elastic, datapoints.Mask, datapoint_wrapper=False)
+@_register_kernel_internal(elastic, vision_tensors.Mask, vision_tensor_wrapper=False)
 def _elastic_mask_dispatch(
-    inpt: datapoints.Mask, displacement: torch.Tensor, fill: _FillTypeJIT = None, **kwargs
-) -> datapoints.Mask:
+    inpt: vision_tensors.Mask, displacement: torch.Tensor, fill: _FillTypeJIT = None, **kwargs
+) -> vision_tensors.Mask:
     output = elastic_mask(inpt.as_subclass(torch.Tensor), displacement=displacement, fill=fill)
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
-@_register_kernel_internal(elastic, datapoints.Video)
+@_register_kernel_internal(elastic, vision_tensors.Video)
 def elastic_video(
     video: torch.Tensor,
     displacement: torch.Tensor,
@@ -1982,7 +1986,7 @@ def _center_crop_compute_crop_anchor(
 
 
 @_register_kernel_internal(center_crop, torch.Tensor)
-@_register_kernel_internal(center_crop, datapoints.Image)
+@_register_kernel_internal(center_crop, vision_tensors.Image)
 def center_crop_image(image: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     shape = image.shape
@@ -2021,7 +2025,7 @@ def _center_crop_image_pil(image: PIL.Image.Image, output_size: List[int]) -> PI
 
 def center_crop_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     canvas_size: Tuple[int, int],
     output_size: List[int],
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
@@ -2032,17 +2036,17 @@ def center_crop_bounding_boxes(
     )
 
 
-@_register_kernel_internal(center_crop, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(center_crop, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _center_crop_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes, output_size: List[int]
-) -> datapoints.BoundingBoxes:
+    inpt: vision_tensors.BoundingBoxes, output_size: List[int]
+) -> vision_tensors.BoundingBoxes:
     output, canvas_size = center_crop_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, output_size=output_size
     )
-    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
+    return vision_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
-@_register_kernel_internal(center_crop, datapoints.Mask)
+@_register_kernel_internal(center_crop, vision_tensors.Mask)
 def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -2058,7 +2062,7 @@ def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor
     return output
 
 
-@_register_kernel_internal(center_crop, datapoints.Video)
+@_register_kernel_internal(center_crop, vision_tensors.Video)
 def center_crop_video(video: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     return center_crop_image(video, output_size)
 
@@ -2102,7 +2106,7 @@ def resized_crop(
 
 
 @_register_kernel_internal(resized_crop, torch.Tensor)
-@_register_kernel_internal(resized_crop, datapoints.Image)
+@_register_kernel_internal(resized_crop, vision_tensors.Image)
 def resized_crop_image(
     image: torch.Tensor,
     top: int,
@@ -2156,7 +2160,7 @@ def _resized_crop_image_pil_dispatch(
 
 def resized_crop_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
+    format: vision_tensors.BoundingBoxFormat,
     top: int,
     left: int,
     height: int,
@@ -2167,14 +2171,14 @@ def resized_crop_bounding_boxes(
     return resize_bounding_boxes(bounding_boxes, canvas_size=canvas_size, size=size)
 
 
-@_register_kernel_internal(resized_crop, datapoints.BoundingBoxes, datapoint_wrapper=False)
+@_register_kernel_internal(resized_crop, vision_tensors.BoundingBoxes, vision_tensor_wrapper=False)
 def _resized_crop_bounding_boxes_dispatch(
-    inpt: datapoints.BoundingBoxes, top: int, left: int, height: int, width: int, size: List[int], **kwargs
-) -> datapoints.BoundingBoxes:
+    inpt: vision_tensors.BoundingBoxes, top: int, left: int, height: int, width: int, size: List[int], **kwargs
+) -> vision_tensors.BoundingBoxes:
     output, canvas_size = resized_crop_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width, size=size
     )
-    return datapoints.wrap(output, like=inpt, canvas_size=canvas_size)
+    return vision_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 def resized_crop_mask(
@@ -2189,17 +2193,17 @@ def resized_crop_mask(
     return resize_mask(mask, size)
 
 
-@_register_kernel_internal(resized_crop, datapoints.Mask, datapoint_wrapper=False)
+@_register_kernel_internal(resized_crop, vision_tensors.Mask, vision_tensor_wrapper=False)
 def _resized_crop_mask_dispatch(
-    inpt: datapoints.Mask, top: int, left: int, height: int, width: int, size: List[int], **kwargs
-) -> datapoints.Mask:
+    inpt: vision_tensors.Mask, top: int, left: int, height: int, width: int, size: List[int], **kwargs
+) -> vision_tensors.Mask:
     output = resized_crop_mask(
         inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width, size=size
     )
-    return datapoints.wrap(output, like=inpt)
+    return vision_tensors.wrap(output, like=inpt)
 
 
-@_register_kernel_internal(resized_crop, datapoints.Video)
+@_register_kernel_internal(resized_crop, vision_tensors.Video)
 def resized_crop_video(
     video: torch.Tensor,
     top: int,
@@ -2243,7 +2247,7 @@ def _parse_five_crop_size(size: List[int]) -> List[int]:
 
 
 @_register_five_ten_crop_kernel_internal(five_crop, torch.Tensor)
-@_register_five_ten_crop_kernel_internal(five_crop, datapoints.Image)
+@_register_five_ten_crop_kernel_internal(five_crop, vision_tensors.Image)
 def five_crop_image(
     image: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -2281,7 +2285,7 @@ def _five_crop_image_pil(
     return tl, tr, bl, br, center
 
 
-@_register_five_ten_crop_kernel_internal(five_crop, datapoints.Video)
+@_register_five_ten_crop_kernel_internal(five_crop, vision_tensors.Video)
 def five_crop_video(
     video: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -2313,7 +2317,7 @@ def ten_crop(
 
 
 @_register_five_ten_crop_kernel_internal(ten_crop, torch.Tensor)
-@_register_five_ten_crop_kernel_internal(ten_crop, datapoints.Image)
+@_register_five_ten_crop_kernel_internal(ten_crop, vision_tensors.Image)
 def ten_crop_image(
     image: torch.Tensor, size: List[int], vertical_flip: bool = False
 ) -> Tuple[
@@ -2367,7 +2371,7 @@ def _ten_crop_image_pil(
     return non_flipped + flipped
 
 
-@_register_five_ten_crop_kernel_internal(ten_crop, datapoints.Video)
+@_register_five_ten_crop_kernel_internal(ten_crop, vision_tensors.Video)
 def ten_crop_video(
     video: torch.Tensor, size: List[int], vertical_flip: bool = False
 ) -> Tuple[

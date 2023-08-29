@@ -137,7 +137,7 @@ __all__ = (
 # Ref: https://peps.python.org/pep-0562/
 def __getattr__(name):
     if name in ("wrap_dataset_for_transforms_v2",):
-        from torchvision.datapoints._dataset_wrapper import wrap_dataset_for_transforms_v2
+        from torchvision.vision_tensors._dataset_wrapper import wrap_dataset_for_transforms_v2
 
         return wrap_dataset_for_transforms_v2
 

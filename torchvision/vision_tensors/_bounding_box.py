@@ -6,7 +6,7 @@ from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 import torch
 from torch.utils._pytree import tree_flatten
 
-from ._datapoint import Datapoint
+from ._vision_tensor import VisionTensor
 
 
 class BoundingBoxFormat(Enum):
@@ -24,13 +24,13 @@ class BoundingBoxFormat(Enum):
     CXCYWH = "CXCYWH"
 
 
-class BoundingBoxes(Datapoint):
+class BoundingBoxes(VisionTensor):
     """[BETA] :class:`torch.Tensor` subclass for bounding boxes.
 
     .. note::
-        There should be only one :class:`~torchvision.datapoints.BoundingBoxes`
+        There should be only one :class:`~torchvision.vision_tensors.BoundingBoxes`
         instance per sample e.g. ``{"img": img, "bbox": BoundingBoxes(...)}``,
-        although one :class:`~torchvision.datapoints.BoundingBoxes` object can
+        although one :class:`~torchvision.vision_tensors.BoundingBoxes` object can
         contain multiple bounding boxes.
 
     Args:
