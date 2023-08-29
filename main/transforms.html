@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+ec881a0) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+37081ee) &#x25BC</a>
     </div>
     
 
@@ -384,10 +384,9 @@ tasks (image classification, detection, segmentation, video classification).</p>
 <p>Transforms are typically passed as the <code class="docutils literal notranslate"><span class="pre">transform</span></code> or <code class="docutils literal notranslate"><span class="pre">transforms</span></code> argument
 to the <a class="reference internal" href="datasets.html#datasets"><span class="std std-ref">Datasets</span></a>.</p>
 <section id="supported-input-types-and-conventions">
-<span id="conventions"></span><h2>Supported input types and conventions<a class="headerlink" href="#supported-input-types-and-conventions" title="Permalink to this heading">¶</a></h2>
+<h2>Supported input types and conventions<a class="headerlink" href="#supported-input-types-and-conventions" title="Permalink to this heading">¶</a></h2>
 <p>Most transformations accept both <a class="reference external" href="https://pillow.readthedocs.io">PIL</a> images
-and tensor inputs. Both CPU and CUDA tensors are supported.
-The result of both backends (PIL or Tensors) should be very
+and tensor images. The result of both backends (PIL or Tensors) should be very
 close. In general, we recommend relying on the tensor backend <a class="reference internal" href="#transforms-perf"><span class="std std-ref">for
 performance</span></a>.  The <a class="reference internal" href="#conversion-transforms"><span class="std std-ref">conversion transforms</span></a> may be used to convert to and from PIL images, or for
 converting dtypes and ranges.</p>
@@ -432,7 +431,7 @@ you’re already using tranforms from <code class="docutils literal notranslate"
 do to is to update the import to <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code>. In terms of
 output, there might be negligible differences due to implementation differences.</p>
 <p>To learn more about the v2 transforms, check out
-<a class="reference internal" href="auto_examples/transforms/plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a>.</p>
+<a class="reference internal" href="auto_examples/v2_transforms/plot_transforms_v2.html#sphx-glr-auto-examples-v2-transforms-plot-transforms-v2-py"><span class="std std-ref">Getting started with transforms v2</span></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The v2 transforms are still BETA, but at this point we do not expect
@@ -467,15 +466,13 @@ transforms:</p>
 <p>The above should give you the best performance in a typical training environment
 that relies on the <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a> with <code class="docutils literal notranslate"><span class="pre">num_workers</span> <span class="pre">&gt;</span>
 <span class="pre">0</span></code>.</p>
-<p>Transforms tend to be sensitive to the input strides / memory format. Some
+<p>Transforms tend to be sensitive to the input strides / memory layout. Some
 transforms will be faster with channels-first images while others prefer
-channels-last. Like <code class="docutils literal notranslate"><span class="pre">torch</span></code> operators, most transforms will preserve the
-memory format of the input, but this may not always be respected due to
-implementation details. You may want to experiment a bit if you’re chasing the
-very best performance.  Using <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> on individual transforms may
-also help factoring out the memory format variable (e.g. on
+channels-last. You may want to experiment a bit if you’re chasing the very
+best performance. Using <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> on individual transforms may
+also help factoring out the memory layout variable (e.g. on
 <a class="reference internal" href="generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize" title="torchvision.transforms.v2.Normalize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normalize</span></code></a>). Note that we’re talking about
-<strong>memory format</strong>, not <a class="reference internal" href="#conventions"><span class="std std-ref">tensor shape</span></a>.</p>
+<strong>memory layout</strong>, not tensor shape.</p>
 <p>Note that resize transforms like <a class="reference internal" href="generated/torchvision.transforms.v2.Resize.html#torchvision.transforms.v2.Resize" title="torchvision.transforms.v2.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a>
 and <a class="reference internal" href="generated/torchvision.transforms.v2.RandomResizedCrop.html#torchvision.transforms.v2.RandomResizedCrop" title="torchvision.transforms.v2.RandomResizedCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a> typically prefer
 channels-last input and tend <strong>not</strong> to benefit from <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> at
@@ -513,8 +510,7 @@ boxes or masks.</p>
 <section id="torchscript-support">
 <span id="transforms-torchscript"></span><h2>Torchscript support<a class="headerlink" href="#torchscript-support" title="Permalink to this heading">¶</a></h2>
 <p>Most transform classes and functionals support torchscript. For composing
-transforms, use <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a> instead of
-<a class="reference internal" href="generated/torchvision.transforms.v2.Compose.html#torchvision.transforms.v2.Compose" title="torchvision.transforms.v2.Compose"><code class="xref py py-class docutils literal notranslate"><span class="pre">Compose</span></code></a>:</p>
+transforms, use <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a> instead of <code class="docutils literal notranslate"><span class="pre">Compose</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">transforms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
     <span class="n">CenterCrop</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span>
     <span class="n">Normalize</span><span class="p">((</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">)),</span>
@@ -529,16 +525,14 @@ a v2 <strong>class</strong> transform, you’ll actually end up with its (script
 equivalent.  This may lead to slightly different results between the
 scripted and eager executions due to implementation differences between v1
 and v2.</p>
-<p>If you really need torchscript support for the v2 transforms, we recommend
+<p>If you really need torchscript support for the v2 tranforms, we recommend
 scripting the <strong>functionals</strong> from the
 <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2.functional</span></code> namespace to avoid surprises.</p>
 </div>
 <p>Also note that the functionals only support torchscript for pure tensors, which
 are always treated as images. If you need torchscript support for other types
 like bounding boxes or masks, you can rely on the <a class="reference internal" href="#functional-transforms"><span class="std std-ref">low-level kernels</span></a>.</p>
-<p>For any custom transformations to be used with <code class="docutils literal notranslate"><span class="pre">torch.jit.script</span></code>, they should
-be derived from <code class="docutils literal notranslate"><span class="pre">torch.nn.Module</span></code>.</p>
-<p>See also: <a class="reference internal" href="auto_examples/others/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-others-plot-scripted-tensor-transforms-py"><span class="std std-ref">Torchscript support</span></a>.</p>
+<p>For any custom transformations to be used with <code class="docutils literal notranslate"><span class="pre">torch.jit.script</span></code>, they should be derived from <code class="docutils literal notranslate"><span class="pre">torch.nn.Module</span></code>.</p>
 </section>
 <section id="v2-api-reference-recommended">
 <h2>V2 API reference - Recommended<a class="headerlink" href="#v2-api-reference-recommended" title="Permalink to this heading">¶</a></h2>
@@ -853,7 +847,7 @@ scaling, we mean e.g. that a <code class="docutils literal notranslate"><span cl
 <td><p>[BETA] Convert a PIL Image to a tensor of the same type - this does not scale values.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToPILImage.html#torchvision.transforms.v2.ToPILImage" title="torchvision.transforms.v2.ToPILImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToPILImage</span></code></a>([mode])</p></td>
-<td><p>[BETA] Convert a tensor or an ndarray to PIL Image</p></td>
+<td><p>[BETA] Convert a tensor or an ndarray to PIL Image - this does not scale values.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype" title="torchvision.transforms.v2.ToDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToDtype</span></code></a>(dtype[, scale])</p></td>
 <td><p>[BETA] Converts the input to a specific dtype, optionally scaling the values for images or videos.</p></td>
@@ -931,7 +925,7 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 are meant to be used on batches rather than on individual images, because they
 are combining pairs of images together. These can be used after the dataloader
 (once the samples are batched), or part of a collation function. See
-<a class="reference internal" href="auto_examples/transforms/plot_cutmix_mixup.html#sphx-glr-auto-examples-transforms-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a> for detailed usage examples.</p>
+<a class="reference internal" href="auto_examples/v2_transforms/plot_cutmix_mixup.html#sphx-glr-auto-examples-v2-transforms-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a> for detailed usage examples.</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.CutMix.html#torchvision.transforms.v2.CutMix" title="torchvision.transforms.v2.CutMix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.CutMix</span></code></a>(*[, alpha, labels_getter])</p></td>

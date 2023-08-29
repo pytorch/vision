@@ -1,0 +1,23 @@
+
+:orphan:
+
+.. _sphx_glr_auto_examples_v2_transforms_sg_execution_times:
+
+
+Computation times
+=================
+**00:03.618** total execution time for **auto_examples_v2_transforms** files:
+
++-------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py` (``plot_transforms_v2_e2e.py``) | 00:03.063 | 0.0 MB |
++-------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` (``plot_cutmix_mixup.py``)           | 00:00.411 | 0.0 MB |
++-------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py` (``plot_transforms_v2.py``)         | 00:00.105 | 0.0 MB |
++-------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_datapoints.py` (``plot_custom_datapoints.py``) | 00:00.024 | 0.0 MB |
++-------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py` (``plot_datapoints.py``)               | 00:00.009 | 0.0 MB |
++-------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_v2_transforms_plot_custom_transforms.py` (``plot_custom_transforms.py``) | 00:00.006 | 0.0 MB |
++-------------------------------------------------------------------------------------------------------+-----------+--------+

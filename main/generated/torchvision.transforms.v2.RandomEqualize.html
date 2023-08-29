@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+ec881a0) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+37081ee) &#x25BC</a>
     </div>
     
 
@@ -353,9 +353,9 @@
 <dt class="sig sig-object py" id="torchvision.transforms.v2.RandomEqualize">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.transforms.v2.</span></span><span class="sig-name descname"><span class="pre">RandomEqualize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/transforms/v2/_color.html#RandomEqualize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.v2.RandomEqualize" title="Permalink to this definition">¶</a></dt>
 <dd><p>[BETA] Equalize the histogram of the given image or video with a given probability.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The RandomEqualize transform is in Beta stage, and while we do not expect disruptive breaking changes, some APIs may slightly change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The RandomEqualize transform is in Beta stage, and while we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes.</p>
 </div>
 <p>If the input is a <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>, it is expected
 to have […, 1 or 3, H, W] shape, where … means an arbitrary number of leading dimensions.
@@ -365,11 +365,7 @@ If img is PIL Image, it is expected to be in mode “P”, “L” or “RGB”.
 <dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – probability of the image being equalized. Default value is 0.5</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomEqualize</span></code>:</p>
-<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the various transforms available in the torchvision.transforms..."><img alt="" src="../_images/sphx_glr_plot_transforms_illustrations_thumb.png" />
-<p><a class="reference internal" href="../auto_examples/transforms/plot_transforms_illustrations.html#sphx-glr-auto-examples-transforms-plot-transforms-illustrations-py"><span class="std std-ref">Illustration of transforms</span></a></p>
-  <div class="sphx-glr-thumbnail-title">Illustration of transforms</div>
-</div></div></dd></dl>
+</dd></dl>
 
 </section>
 
