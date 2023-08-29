@@ -8,7 +8,7 @@ _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[List[float]]
 
 
-def is_simple_tensor(inpt: Any) -> bool:
+def is_pure_tensor(inpt: Any) -> bool:
     return isinstance(inpt, torch.Tensor) and not isinstance(inpt, datapoints.Datapoint)
 
 
@@ -19,10 +19,17 @@ _KERNEL_REGISTRY: Dict[Callable, Dict[Type, Callable]] = {}
 def _kernel_datapoint_wrapper(kernel):
     @functools.wraps(kernel)
     def wrapper(inpt, *args, **kwargs):
-        # We always pass datapoints as pure tensors to the kernels to avoid going through the
-        # Tensor.__torch_function__ logic, which is costly.
+        # If you're wondering whether we could / should get rid of this wrapper,
+        # the answer is no: we want to pass pure Tensors to avoid the overhead
+        # of the __torch_function__ machinery. Note that this is always valid,
+        # regardless of whether we override __torch_function__ in our base class
+        # or not.
+        # Also, even if we didn't call `as_subclass` here, we would still need
+        # this wrapper to call wrap(), because the Datapoint type would be
+        # lost after the first operation due to our own __torch_function__
+        # logic.
         output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
-        return type(inpt).wrap_like(inpt, output)
+        return datapoints.wrap(output, like=inpt)
 
     return wrapper
 
@@ -60,9 +67,9 @@ _BUILTIN_DATAPOINT_TYPES = {
 
 
 def register_kernel(functional, datapoint_cls):
-    """Decorate a kernel to register it for a functional and a (custom) datapoint type.
+    """[BETA] Decorate a kernel to register it for a functional and a (custom) datapoint type.
 
-    See :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for usage
+    See :ref:`sphx_glr_auto_examples_transforms_plot_custom_datapoints.py` for usage
     details.
     """
     if isinstance(functional, str):
@@ -93,21 +100,14 @@ def _get_kernel(functional, input_type, *, allow_passthrough=False):
     if not registry:
         raise ValueError(f"No kernel registered for functional {functional.__name__}.")
 
-    # In case we have an exact type match, we take a shortcut.
-    if input_type in registry:
-        return registry[input_type]
-
-    # In case of datapoints, we check if we have a kernel for a superclass registered
-    if issubclass(input_type, datapoints.Datapoint):
-        # Since we have already checked for an exact match above, we can start the traversal at the superclass.
-        for cls in input_type.__mro__[1:]:
-            if cls is datapoints.Datapoint:
-                # We don't want user-defined datapoints to dispatch to the pure Tensor kernels, so we explicit stop the
-                # MRO traversal before hitting torch.Tensor. We can even stop at datapoints.Datapoint, since we don't
-                # allow kernels to be registered for datapoints.Datapoint anyway.
-                break
-            elif cls in registry:
-                return registry[cls]
+    for cls in input_type.__mro__:
+        if cls in registry:
+            return registry[cls]
+        elif cls is datapoints.Datapoint:
+            # We don't want user-defined datapoints to dispatch to the pure Tensor kernels, so we explicit stop the
+            # MRO traversal before hitting torch.Tensor. We can even stop at datapoints.Datapoint, since we don't
+            # allow kernels to be registered for datapoints.Datapoint anyway.
+            break
 
     if allow_passthrough:
         return lambda inpt, *args, **kwargs: inpt
@@ -130,7 +130,7 @@ def _register_five_ten_crop_kernel_internal(functional, input_type):
         def wrapper(inpt, *args, **kwargs):
             output = kernel(inpt, *args, **kwargs)
             container_type = type(output)
-            return container_type(type(inpt).wrap_like(inpt, o) for o in output)
+            return container_type(datapoints.wrap(o, like=inpt) for o in output)
 
         return wrapper
 

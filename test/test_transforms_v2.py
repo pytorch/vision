@@ -1,7 +1,7 @@
 import itertools
 import pathlib
+import pickle
 import random
-import textwrap
 import warnings
 
 import numpy as np
@@ -11,25 +11,23 @@ import pytest
 import torch
 import torchvision.transforms.v2 as transforms
 
-from common_utils import (
-    assert_equal,
-    assert_run_python_script,
-    cpu_and_cuda,
-    make_bounding_box,
-    make_bounding_boxes,
-    make_detection_mask,
-    make_image,
-    make_images,
-    make_segmentation_mask,
-    make_video,
-    make_videos,
-)
+from common_utils import assert_equal, cpu_and_cuda
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
+from torchvision.transforms.v2._utils import check_type, is_pure_tensor, query_chw
+from transforms_v2_legacy_utils import (
+    make_bounding_boxes,
+    make_detection_mask,
+    make_image,
+    make_images,
+    make_multiple_bounding_boxes,
+    make_segmentation_mask,
+    make_video,
+    make_videos,
+)
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -45,7 +43,7 @@ def make_pil_images(*args, **kwargs):
 
 
 def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
-    for bounding_boxes in make_bounding_boxes(*args, **kwargs):
+    for bounding_boxes in make_multiple_bounding_boxes(*args, **kwargs):
         yield bounding_boxes.data
 
 
@@ -71,7 +69,7 @@ def auto_augment_adapter(transform, input, device):
         if isinstance(value, (datapoints.BoundingBoxes, datapoints.Mask)):
             # AA transforms don't support bounding boxes or masks
             continue
-        elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor, PIL.Image.Image)):
+        elif check_type(value, (datapoints.Image, datapoints.Video, is_pure_tensor, PIL.Image.Image)):
             if image_or_video_found:
                 # AA transforms only support a single image or video
                 continue
@@ -101,7 +99,7 @@ def normalize_adapter(transform, input, device):
         if isinstance(value, PIL.Image.Image):
             # normalize doesn't support PIL images
             continue
-        elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor)):
+        elif check_type(value, (datapoints.Image, datapoints.Video, is_pure_tensor)):
             # normalize doesn't support integer images
             value = F.to_dtype(value, torch.float32, scale=True)
         adapted_input[key] = value
@@ -172,21 +170,24 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
         ],
     )
+    @pytest.mark.parametrize("de_serialize", [lambda t: t, lambda t: pickle.loads(pickle.dumps(t))])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_common(self, transform, adapter, container_type, image_or_video, device):
+    def test_common(self, transform, adapter, container_type, image_or_video, de_serialize, device):
+        transform = de_serialize(transform)
+
         canvas_size = F.get_size(image_or_video)
         input = dict(
             image_or_video=image_or_video,
             image_datapoint=make_image(size=canvas_size),
             video_datapoint=make_video(size=canvas_size),
             image_pil=next(make_pil_images(sizes=[canvas_size], color_spaces=["RGB"])),
-            bounding_boxes_xyxy=make_bounding_box(
+            bounding_boxes_xyxy=make_bounding_boxes(
                 format=datapoints.BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(3,)
             ),
-            bounding_boxes_xywh=make_bounding_box(
+            bounding_boxes_xywh=make_bounding_boxes(
                 format=datapoints.BoundingBoxFormat.XYWH, canvas_size=canvas_size, batch_dims=(4,)
             ),
-            bounding_boxes_cxcywh=make_bounding_box(
+            bounding_boxes_cxcywh=make_bounding_boxes(
                 format=datapoints.BoundingBoxFormat.CXCYWH, canvas_size=canvas_size, batch_dims=(5,)
             ),
             bounding_boxes_degenerate_xyxy=datapoints.BoundingBoxes(
@@ -357,19 +358,19 @@ class TestSmoke:
         3,
     ),
 )
-def test_simple_tensor_heuristic(flat_inputs):
-    def split_on_simple_tensor(to_split):
+def test_pure_tensor_heuristic(flat_inputs):
+    def split_on_pure_tensor(to_split):
         # This takes a sequence that is structurally aligned with `flat_inputs` and splits its items into three parts:
-        # 1. The first simple tensor. If none is present, this will be `None`
-        # 2. A list of the remaining simple tensors
+        # 1. The first pure tensor. If none is present, this will be `None`
+        # 2. A list of the remaining pure tensors
         # 3. A list of all other items
-        simple_tensors = []
+        pure_tensors = []
         others = []
         # Splitting always happens on the original `flat_inputs` to avoid any erroneous type changes by the transform to
         # affect the splitting.
         for item, inpt in zip(to_split, flat_inputs):
-            (simple_tensors if is_simple_tensor(inpt) else others).append(item)
-        return simple_tensors[0] if simple_tensors else None, simple_tensors[1:], others
+            (pure_tensors if is_pure_tensor(inpt) else others).append(item)
+        return pure_tensors[0] if pure_tensors else None, pure_tensors[1:], others
 
     class CopyCloneTransform(transforms.Transform):
         def _transform(self, inpt, params):
@@ -385,20 +386,20 @@ def test_simple_tensor_heuristic(flat_inputs):
             assert_equal(output, inpt)
             return True
 
-    first_simple_tensor_input, other_simple_tensor_inputs, other_inputs = split_on_simple_tensor(flat_inputs)
+    first_pure_tensor_input, other_pure_tensor_inputs, other_inputs = split_on_pure_tensor(flat_inputs)
 
     transform = CopyCloneTransform()
     transformed_sample = transform(flat_inputs)
 
-    first_simple_tensor_output, other_simple_tensor_outputs, other_outputs = split_on_simple_tensor(transformed_sample)
+    first_pure_tensor_output, other_pure_tensor_outputs, other_outputs = split_on_pure_tensor(transformed_sample)
 
-    if first_simple_tensor_input is not None:
+    if first_pure_tensor_input is not None:
         if other_inputs:
-            assert not transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+            assert not transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
         else:
-            assert transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+            assert transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
 
-    for output, inpt in zip(other_simple_tensor_outputs, other_simple_tensor_inputs):
+    for output, inpt in zip(other_pure_tensor_outputs, other_pure_tensor_inputs):
         assert not transform.was_applied(output, inpt)
 
     for input, output in zip(other_inputs, other_outputs):
@@ -666,41 +667,24 @@ class TestTransform:
                 t(inpt)
 
 
-class TestToImageTensor:
+class TestToImage:
     @pytest.mark.parametrize(
         "inpt_type",
         [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
     )
     def test__transform(self, inpt_type, mocker):
         fn = mocker.patch(
-            "torchvision.transforms.v2.functional.to_image_tensor",
+            "torchvision.transforms.v2.functional.to_image",
             return_value=torch.rand(1, 3, 8, 8),
         )
 
         inpt = mocker.MagicMock(spec=inpt_type)
-        transform = transforms.ToImageTensor()
+        transform = transforms.ToImage()
         transform(inpt)
         if inpt_type in (datapoints.BoundingBoxes, datapoints.Image, str, int):
             assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt)
-
-
-class TestToImagePIL:
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
-    )
-    def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.v2.functional.to_image_pil")
-
-        inpt = mocker.MagicMock(spec=inpt_type)
-        transform = transforms.ToImagePIL()
-        transform(inpt)
-        if inpt_type in (datapoints.BoundingBoxes, PIL.Image.Image, str, int):
-            assert fn.call_count == 0
-        else:
-            fn.assert_called_once_with(inpt, mode=transform.mode)
 
 
 class TestToPILImage:
@@ -709,7 +693,7 @@ class TestToPILImage:
         [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
     )
     def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.v2.functional.to_image_pil")
+        fn = mocker.patch("torchvision.transforms.v2.functional.to_pil_image")
 
         inpt = mocker.MagicMock(spec=inpt_type)
         transform = transforms.ToPILImage()
@@ -830,7 +814,7 @@ class TestRandomIoUCrop:
 
         size = (32, 24)
         image = make_image(size)
-        bboxes = make_bounding_box(format="XYXY", canvas_size=size, batch_dims=(6,))
+        bboxes = make_bounding_boxes(format="XYXY", canvas_size=size, batch_dims=(6,))
         masks = make_detection_mask(size, num_objects=6)
 
         sample = [image, bboxes, masks]
@@ -1013,7 +997,7 @@ def test_antialias_warning():
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
 @pytest.mark.parametrize("label_type", (torch.Tensor, int))
 @pytest.mark.parametrize("dataset_return_type", (dict, tuple))
-@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImage))
 def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
 
     image = datapoints.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
@@ -1021,7 +1005,7 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
         image = to_pil_image(image[0])
     elif image_type is torch.Tensor:
         image = image.as_subclass(torch.Tensor)
-        assert is_simple_tensor(image)
+        assert is_pure_tensor(image)
 
     label = 1 if label_type is int else torch.tensor([1])
 
@@ -1074,7 +1058,7 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
 
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
 @pytest.mark.parametrize("data_augmentation", ("hflip", "lsj", "multiscale", "ssd", "ssdlite"))
-@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImage))
 @pytest.mark.parametrize("sanitize", (True, False))
 def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     torch.manual_seed(0)
@@ -1142,7 +1126,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
         image = to_pil_image(image[0])
     elif image_type is torch.Tensor:
         image = image.as_subclass(torch.Tensor)
-        assert is_simple_tensor(image)
+        assert is_pure_tensor(image)
 
     label = torch.randint(0, 10, size=(num_boxes,))
 
@@ -1163,7 +1147,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     out = t(sample)
 
     if isinstance(to_tensor, transforms.ToTensor) and image_type is not datapoints.Image:
-        assert is_simple_tensor(out["image"])
+        assert is_pure_tensor(out["image"])
     else:
         assert isinstance(out["image"], datapoints.Image)
     assert isinstance(out["label"], type(sample["label"]))
@@ -1272,6 +1256,20 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         assert out_labels.tolist() == valid_indices
 
 
+def test_sanitize_bounding_boxes_no_label():
+    # Non-regression test for https://github.com/pytorch/vision/issues/7878
+
+    img = make_image()
+    boxes = make_bounding_boxes()
+
+    with pytest.raises(ValueError, match="or a two-tuple whose second item is a dict"):
+        transforms.SanitizeBoundingBoxes()(img, boxes)
+
+    out_img, out_boxes = transforms.SanitizeBoundingBoxes(labels_getter=None)(img, boxes)
+    assert isinstance(out_img, datapoints.Image)
+    assert isinstance(out_boxes, datapoints.BoundingBoxes)
+
+
 def test_sanitize_bounding_boxes_errors():
 
     good_bbox = datapoints.BoundingBoxes(
@@ -1296,55 +1294,6 @@ def test_sanitize_bounding_boxes_errors():
     with pytest.raises(ValueError, match="Number of boxes"):
         different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
         transforms.SanitizeBoundingBoxes()(different_sizes)
-
-
-@pytest.mark.parametrize(
-    "import_statement",
-    (
-        "from torchvision.transforms import v2",
-        "import torchvision.transforms.v2",
-        "from torchvision.transforms.v2 import Resize",
-        "import torchvision.transforms.v2.functional",
-        "from torchvision.transforms.v2.functional import resize",
-        "from torchvision import datapoints",
-        "from torchvision.datapoints import Image",
-        "from torchvision.datasets import wrap_dataset_for_transforms_v2",
-    ),
-)
-@pytest.mark.parametrize("call_disable_warning", (True, False))
-def test_warnings_v2_namespaces(import_statement, call_disable_warning):
-    if call_disable_warning:
-        source = f"""
-        import warnings
-        import torchvision
-        torchvision.disable_beta_transforms_warning()
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            {import_statement}
-        """
-    else:
-        source = f"""
-        import pytest
-        with pytest.warns(UserWarning, match="v2 namespaces are still Beta"):
-            {import_statement}
-        """
-    assert_run_python_script(textwrap.dedent(source))
-
-
-def test_no_warnings_v1_namespace():
-    source = """
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        import torchvision.transforms
-        from torchvision import transforms
-        import torchvision.transforms.functional
-        from torchvision.transforms import Resize
-        from torchvision.transforms.functional import resize
-        from torchvision import datasets
-        from torchvision.datasets import ImageNet
-    """
-    assert_run_python_script(textwrap.dedent(source))
 
 
 class TestLambda:

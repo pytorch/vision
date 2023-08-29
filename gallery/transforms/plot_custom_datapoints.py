@@ -3,20 +3,18 @@
 How to write your own Datapoint class
 =====================================
 
-This guide is intended for downstream library maintainers. We explain how to
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_custom_datapoints.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_custom_datapoints.py>` to download the full example code.
+
+This guide is intended for advanced users and downstream library maintainers. We explain how to
 write your own datapoint class, and how to make it compatible with the built-in
 Torchvision v2 transforms. Before continuing, make sure you have read
-:ref:`sphx_glr_auto_examples_plot_datapoints.py`.
+:ref:`sphx_glr_auto_examples_transforms_plot_datapoints.py`.
 """
 
 # %%
 import torch
-import torchvision
-
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
 from torchvision import datapoints
 from torchvision.transforms import v2
 
@@ -53,11 +51,11 @@ from torchvision.transforms.v2 import functional as F
 def hflip_my_datapoint(my_dp, *args, **kwargs):
     print("Flipping!")
     out = my_dp.flip(-1)
-    return MyDatapoint.wrap_like(my_dp, out)
+    return datapoints.wrap(out, like=my_dp)
 
 
 # %%
-# To understand why ``wrap_like`` is used, see
+# To understand why :func:`~torchvision.datapoints.wrap` is used, see
 # :ref:`datapoint_unwrapping_behaviour`. Ignore the ``*args, **kwargs`` for now,
 # we will explain it below in :ref:`param_forwarding`.
 #
@@ -67,10 +65,6 @@ def hflip_my_datapoint(my_dp, *args, **kwargs):
 #     ``functional="hflip"`` to refer to the functional we want to hook into. We
 #     could also have used the  functional *itself*, i.e.
 #     ``@register_kernel(functional=F.hflip, ...)``.
-#
-#     The functionals that you can be hooked into are the ones in
-#     ``torchvision.transforms.v2.functional`` and they are documented in
-#     :ref:`functional_transforms`.
 #
 # Now that we have registered our kernel, we can call the functional API on a
 # ``MyDatapoint`` instance:
@@ -111,7 +105,7 @@ _ = t(my_dp)
 def hflip_my_datapoint(my_dp):  # noqa
     print("Flipping!")
     out = my_dp.flip(-1)
-    return MyDatapoint.wrap_like(my_dp, out)
+    return datapoints.wrap(out, like=my_dp)
 
 
 # %%

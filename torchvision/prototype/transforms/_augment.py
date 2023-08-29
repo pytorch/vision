@@ -7,9 +7,9 @@ from torchvision import datapoints
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import datapoints as proto_datapoints
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2._utils import is_pure_tensor
 
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 class SimpleCopyPaste(Transform):
@@ -36,11 +36,9 @@ class SimpleCopyPaste(Transform):
         antialias: Optional[bool],
     ) -> Tuple[torch.Tensor, Dict[str, Any]]:
 
-        paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
-        paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
-        paste_labels = paste_target["labels"].wrap_like(
-            paste_target["labels"], paste_target["labels"][random_selection]
-        )
+        paste_masks = datapoints.wrap(paste_target["masks"][random_selection], like=paste_target["masks"])
+        paste_boxes = datapoints.wrap(paste_target["boxes"][random_selection], like=paste_target["boxes"])
+        paste_labels = datapoints.wrap(paste_target["labels"][random_selection], like=paste_target["labels"])
 
         masks = target["masks"]
 
@@ -82,7 +80,7 @@ class SimpleCopyPaste(Transform):
         # There is a similar +1 in other reference implementations:
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
-        boxes = F.convert_format_bounding_boxes(
+        boxes = F.convert_bounding_box_format(
             xyxy_boxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
@@ -91,7 +89,7 @@ class SimpleCopyPaste(Transform):
         out_target["labels"] = torch.cat([labels, paste_labels])
 
         # Check for degenerated boxes and remove them
-        boxes = F.convert_format_bounding_boxes(
+        boxes = F.convert_bounding_box_format(
             out_target["boxes"], old_format=bbox_format, new_format=datapoints.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
@@ -111,10 +109,10 @@ class SimpleCopyPaste(Transform):
         # with List[image], List[BoundingBoxes], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, datapoints.Image) or is_simple_tensor(obj):
+            if isinstance(obj, datapoints.Image) or is_pure_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(F.to_image_tensor(obj))
+                images.append(F.to_image(obj))
             elif isinstance(obj, datapoints.BoundingBoxes):
                 bboxes.append(obj)
             elif isinstance(obj, datapoints.Mask):
@@ -143,22 +141,22 @@ class SimpleCopyPaste(Transform):
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):
             if isinstance(obj, datapoints.Image):
-                flat_sample[i] = datapoints.Image.wrap_like(obj, output_images[c0])
+                flat_sample[i] = datapoints.wrap(output_images[c0], like=obj)
                 c0 += 1
             elif isinstance(obj, PIL.Image.Image):
-                flat_sample[i] = F.to_image_pil(output_images[c0])
+                flat_sample[i] = F.to_pil_image(output_images[c0])
                 c0 += 1
-            elif is_simple_tensor(obj):
+            elif is_pure_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, datapoints.BoundingBoxes):
-                flat_sample[i] = datapoints.BoundingBoxes.wrap_like(obj, output_targets[c1]["boxes"])
+                flat_sample[i] = datapoints.wrap(output_targets[c1]["boxes"], like=obj)
                 c1 += 1
             elif isinstance(obj, datapoints.Mask):
-                flat_sample[i] = datapoints.Mask.wrap_like(obj, output_targets[c2]["masks"])
+                flat_sample[i] = datapoints.wrap(output_targets[c2]["masks"], like=obj)
                 c2 += 1
             elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
-                flat_sample[i] = obj.wrap_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
+                flat_sample[i] = datapoints.wrap(output_targets[c3]["labels"], like=obj)
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:

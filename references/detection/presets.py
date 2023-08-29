@@ -33,7 +33,7 @@ class DetectionPresetTrain:
         transforms = []
         backend = backend.lower()
         if backend == "datapoint":
-            transforms.append(T.ToImageTensor())
+            transforms.append(T.ToImage())
         elif backend == "tensor":
             transforms.append(T.PILToTensor())
         elif backend != "pil":
@@ -71,14 +71,15 @@ class DetectionPresetTrain:
 
         if backend == "pil":
             # Note: we could just convert to pure tensors even in v2.
-            transforms += [T.ToImageTensor() if use_v2 else T.PILToTensor()]
+            transforms += [T.ToImage() if use_v2 else T.PILToTensor()]
 
-        transforms += [T.ConvertImageDtype(torch.float)]
+        transforms += [T.ToDtype(torch.float, scale=True)]
 
         if use_v2:
             transforms += [
                 T.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.XYXY),
                 T.SanitizeBoundingBoxes(),
+                T.ToPureTensor(),
             ]
 
         self.transforms = T.Compose(transforms)
@@ -94,15 +95,19 @@ class DetectionPresetEval:
         backend = backend.lower()
         if backend == "pil":
             # Note: we could just convert to pure tensors even in v2?
-            transforms += [T.ToImageTensor() if use_v2 else T.PILToTensor()]
+            transforms += [T.ToImage() if use_v2 else T.PILToTensor()]
         elif backend == "tensor":
             transforms += [T.PILToTensor()]
         elif backend == "datapoint":
-            transforms += [T.ToImageTensor()]
+            transforms += [T.ToImage()]
         else:
             raise ValueError(f"backend can be 'datapoint', 'tensor' or 'pil', but got {backend}")
 
-        transforms += [T.ConvertImageDtype(torch.float)]
+        transforms += [T.ToDtype(torch.float, scale=True)]
+
+        if use_v2:
+            transforms += [T.ToPureTensor()]
+
         self.transforms = T.Compose(transforms)
 
     def __call__(self, img, target):

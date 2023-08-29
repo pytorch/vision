@@ -81,11 +81,14 @@ class PILToTensor:
         return image, target
 
 
-class ConvertImageDtype:
-    def __init__(self, dtype):
+class ToDtype:
+    def __init__(self, dtype, scale=False):
         self.dtype = dtype
+        self.scale = scale
 
     def __call__(self, image, target):
+        if not self.scale:
+            return image.to(dtype=self.dtype), target
         image = F.convert_image_dtype(image, self.dtype)
         return image, target
 

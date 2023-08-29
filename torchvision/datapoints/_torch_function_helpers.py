@@ -16,14 +16,27 @@ class _ReturnTypeCM:
 
 
 def set_return_type(return_type: str):
-    """Set the return type of torch operations on datapoints.
+    """[BETA] Set the return type of torch operations on datapoints.
+
+    This only affects the behaviour of torch operations. It has no effect on
+    ``torchvision`` transforms or functionals, which will always return as
+    output the same type that was passed as input.
+
+    .. warning::
+
+        We recommend using :class:`~torchvision.transforms.v2.ToPureTensor` at
+        the end of your transform pipelines if you use
+        ``set_return_type("dataptoint")``. This will avoid the
+        ``__torch_function__`` overhead in the models ``forward()``.
 
     Can be used as a global flag for the entire program:
 
     .. code:: python
 
-        set_return_type("datapoints")
         img = datapoints.Image(torch.rand(3, 5, 5))
+        img + 2  # This is a pure Tensor (default behaviour)
+
+        set_return_type("datapoints")
         img + 2  # This is an Image
 
     or as a context manager to restrict the scope:
@@ -31,6 +44,7 @@ def set_return_type(return_type: str):
     .. code:: python
 
         img = datapoints.Image(torch.rand(3, 5, 5))
+        img + 2  # This is a pure Tensor
         with set_return_type("datapoints"):
             img + 2  # This is an Image
         img + 2  # This is a pure Tensor

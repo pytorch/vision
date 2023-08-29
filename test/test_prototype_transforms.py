@@ -4,21 +4,21 @@ import PIL.Image
 import pytest
 import torch
 
-from common_utils import (
-    assert_equal,
-    DEFAULT_EXTRA_DIMS,
-    make_bounding_box,
-    make_detection_mask,
-    make_image,
-    make_video,
-)
+from common_utils import assert_equal
 
 from prototype_common_utils import make_label
 
 from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from torchvision.prototype import datapoints, transforms
-from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_image_pil
-from torchvision.transforms.v2.utils import check_type, is_simple_tensor
+from torchvision.transforms.v2._utils import check_type, is_pure_tensor
+from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_pil_image
+from transforms_v2_legacy_utils import (
+    DEFAULT_EXTRA_DIMS,
+    make_bounding_boxes,
+    make_detection_mask,
+    make_image,
+    make_video,
+)
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
 
@@ -167,7 +167,7 @@ class TestFixedSizeCrop:
 
         flat_inputs = [
             make_image(size=canvas_size, color_space="RGB"),
-            make_bounding_box(format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=batch_shape),
+            make_bounding_boxes(format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=batch_shape),
         ]
         params = transform._get_params(flat_inputs)
 
@@ -202,7 +202,7 @@ class TestFixedSizeCrop:
             ),
         )
 
-        bounding_boxes = make_bounding_box(
+        bounding_boxes = make_bounding_boxes(
             format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(batch_size,)
         )
         masks = make_detection_mask(size=canvas_size, batch_dims=(batch_size,))
@@ -240,7 +240,7 @@ class TestFixedSizeCrop:
             ),
         )
 
-        bounding_boxes = make_bounding_box(
+        bounding_boxes = make_bounding_boxes(
             format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(batch_size,)
         )
         mock = mocker.patch(
@@ -283,7 +283,7 @@ class TestPermuteDimensions:
     def test_call(self, dims, inverse_dims):
         sample = dict(
             image=make_image(),
-            bounding_boxes=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            bounding_boxes=make_bounding_boxes(format=BoundingBoxFormat.XYXY),
             video=make_video(),
             str="str",
             int=0,
@@ -296,7 +296,7 @@ class TestPermuteDimensions:
             value_type = type(value)
             transformed_value = transformed_sample[key]
 
-            if check_type(value, (Image, is_simple_tensor, Video)):
+            if check_type(value, (Image, is_pure_tensor, Video)):
                 if transform.dims.get(value_type) is not None:
                     assert transformed_value.permute(inverse_dims[value_type]).equal(value)
                 assert type(transformed_value) == torch.Tensor
@@ -327,7 +327,7 @@ class TestTransposeDimensions:
     def test_call(self, dims):
         sample = dict(
             image=make_image(),
-            bounding_boxes=make_bounding_box(format=BoundingBoxFormat.XYXY),
+            bounding_boxes=make_bounding_boxes(format=BoundingBoxFormat.XYXY),
             video=make_video(),
             str="str",
             int=0,
@@ -341,7 +341,7 @@ class TestTransposeDimensions:
             transformed_value = transformed_sample[key]
 
             transposed_dims = transform.dims.get(value_type)
-            if check_type(value, (Image, is_simple_tensor, Video)):
+            if check_type(value, (Image, is_pure_tensor, Video)):
                 if transposed_dims is not None:
                     assert transformed_value.transpose(*transposed_dims).equal(value)
                 assert type(transformed_value) == torch.Tensor
@@ -387,9 +387,9 @@ def test_fixed_sized_crop_against_detection_reference():
         size = (600, 800)
         num_objects = 22
 
-        pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
+        pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
@@ -398,7 +398,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         tensor_image = torch.Tensor(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
@@ -407,7 +407,7 @@ def test_fixed_sized_crop_against_detection_reference():
 
         datapoint_image = make_image(size=size, color_space="RGB")
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }

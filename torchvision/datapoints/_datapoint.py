@@ -17,7 +17,7 @@ class Datapoint(torch.Tensor):
 
     You probably don't want to use this class unless you're defining your own
     custom Datapoints. See
-    :ref:`sphx_glr_auto_examples_plot_custom_datapoints.py` for details.
+    :ref:`sphx_glr_auto_examples_transforms_plot_custom_datapoints.py` for details.
     """
 
     @staticmethod
@@ -30,10 +30,6 @@ class Datapoint(torch.Tensor):
         if requires_grad is None:
             requires_grad = data.requires_grad if isinstance(data, torch.Tensor) else False
         return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
-
-    @classmethod
-    def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
-        return tensor.as_subclass(cls)
 
     @classmethod
     def _wrap_output(
@@ -66,19 +62,12 @@ class Datapoint(torch.Tensor):
         ``__torch_function__`` method. If one is found, it is invoked with the operator as ``func`` as well as the
         ``args`` and ``kwargs`` of the original call.
 
-        The default behavior of :class:`~torch.Tensor`'s is to retain a custom tensor type. For the :class:`Datapoint`
-        use case, this has two downsides:
+        Why do we override this? Because the base implementation in torch.Tensor would preserve the Datapoint type
+        of the output. In our case, we want to return pure tensors instead (with a few exceptions). Refer to the
+        "Datapoints FAQ" gallery example for a rationale of this behaviour (TL;DR: perf + no silver bullet).
 
-        1. Since some :class:`Datapoint`'s require metadata to be constructed, the default wrapping, i.e.
-           ``return cls(func(*args, **kwargs))``, will fail for them.
-        2. For most operations, there is no way of knowing if the input type is still valid for the output.
-
-        For these reasons, the automatic output wrapping is turned off for most operators. The only exceptions are
-        listed in _FORCE_TORCHFUNCTION_SUBCLASS
+        Our implementation below is very similar to the base implementation in ``torch.Tensor`` - go check it out.
         """
-        # Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we
-        # need to reimplement the functionality.
-
         if not all(issubclass(cls, t) for t in types):
             return NotImplemented
 
@@ -89,12 +78,13 @@ class Datapoint(torch.Tensor):
 
         must_return_subclass = _must_return_subclass()
         if must_return_subclass or (func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)):
-            # We also require the primary operand, i.e. `args[0]`, to be
-            # an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will
-            # invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,
-            # `torch.Tensor(...).to(datapoints.Image(...))` will invoke `datapoints.Image.__torch_function__` with
-            # `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would
-            # be wrapped into a `datapoints.Image`.
+            # If you're wondering why we need the `isinstance(args[0], cls)` check, remove it and see what fails
+            # in test_to_datapoint_reference().
+            # The __torch_function__ protocol will invoke the __torch_function__ method on *all* types involved in
+            # the computation by walking the MRO upwards. For example,
+            # `out = a_pure_tensor.to(an_image)` will invoke `Image.__torch_function__` with
+            # `args = (a_pure_tensor, an_image)` first. Without this guard, `out` would
+            # be wrapped into an `Image`.
             return cls._wrap_output(output, args, kwargs)
 
         if not must_return_subclass and isinstance(output, cls):
