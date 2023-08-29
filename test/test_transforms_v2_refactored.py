@@ -357,10 +357,11 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
 
     def affine_bounding_boxes(bounding_boxes):
         dtype = bounding_boxes.dtype
+        device = bounding_boxes.device
 
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         input_xyxy = F.convert_bounding_box_format(
-            bounding_boxes.to(torch.float64, copy=True),
+            bounding_boxes.to(dtype=torch.float64, device="cpu", copy=True),
             old_format=format,
             new_format=datapoints.BoundingBoxFormat.XYXY,
             inplace=True,
@@ -396,9 +397,13 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
                 output,
                 format=format,
                 canvas_size=canvas_size,
-            ).to(dtype)
+            )
+        else:
+            # We leave the bounding box as float64 so the caller gets the full precision to perform any additional
+            # operation
+            dtype = output.dtype
 
-        return output
+        return output.to(dtype=dtype, device=device)
 
     return datapoints.BoundingBoxes(
         torch.cat([affine_bounding_boxes(b) for b in bounding_boxes.reshape(-1, 4).unbind()], dim=0).reshape(
