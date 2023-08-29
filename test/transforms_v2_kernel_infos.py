@@ -1222,36 +1222,6 @@ KERNEL_INFOS.extend(
 )
 
 
-def sample_inputs_erase_image_tensor():
-    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
-        # FIXME: make the parameters more diverse
-        h, w = 6, 7
-        v = torch.rand(image_loader.num_channels, h, w)
-        yield ArgsKwargs(image_loader, i=1, j=2, h=h, w=w, v=v)
-
-
-def sample_inputs_erase_video():
-    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
-        # FIXME: make the parameters more diverse
-        h, w = 6, 7
-        v = torch.rand(video_loader.num_channels, h, w)
-        yield ArgsKwargs(video_loader, i=1, j=2, h=h, w=w, v=v)
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.erase_image,
-            kernel_name="erase_image_tensor",
-            sample_inputs_fn=sample_inputs_erase_image_tensor,
-        ),
-        KernelInfo(
-            F.erase_video,
-            sample_inputs_fn=sample_inputs_erase_video,
-        ),
-    ]
-)
-
 _ADJUST_CONTRAST_FACTORS = [0.1, 0.5]
 
 

@@ -277,20 +277,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=0, atol=21),
     ),
     ConsistencyConfig(
-        v2_transforms.RandomErasing,
-        legacy_transforms.RandomErasing,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-            ArgsKwargs(p=1, scale=(0.3, 0.7)),
-            ArgsKwargs(p=1, ratio=(0.5, 1.5)),
-            ArgsKwargs(p=1, value=1),
-            ArgsKwargs(p=1, value=(1, 2, 3)),
-            ArgsKwargs(p=1, value="random"),
-        ],
-        supports_pil=False,
-    ),
-    ConsistencyConfig(
         v2_transforms.ColorJitter,
         legacy_transforms.ColorJitter,
         [
@@ -570,7 +556,6 @@ get_params_parametrization = pytest.mark.parametrize(
         )
         for transform_cls, get_params_args_kwargs in [
             (v2_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
-            (v2_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
             (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
             (v2_transforms.RandomCrop, ArgsKwargs(make_image(size=(61, 47)), output_size=(19, 25))),

@@ -602,53 +602,6 @@ class TestElasticTransform:
         assert (-alpha / h <= displacement[0, ..., 1]).all() and (displacement[0, ..., 1] <= alpha / h).all()
 
 
-class TestRandomErasing:
-    def test_assertions(self):
-        with pytest.raises(TypeError, match="Argument value should be either a number or str or a sequence"):
-            transforms.RandomErasing(value={})
-
-        with pytest.raises(ValueError, match="If value is str, it should be 'random'"):
-            transforms.RandomErasing(value="abc")
-
-        with pytest.raises(TypeError, match="Scale should be a sequence"):
-            transforms.RandomErasing(scale=123)
-
-        with pytest.raises(TypeError, match="Ratio should be a sequence"):
-            transforms.RandomErasing(ratio=123)
-
-        with pytest.raises(ValueError, match="Scale should be between 0 and 1"):
-            transforms.RandomErasing(scale=[-1, 2])
-
-        image = make_image((24, 32))
-
-        transform = transforms.RandomErasing(value=[1, 2, 3, 4])
-
-        with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
-            transform._get_params([image])
-
-    @pytest.mark.parametrize("value", [5.0, [1, 2, 3], "random"])
-    def test__get_params(self, value):
-        image = make_image((24, 32))
-        num_channels, height, width = F.get_dimensions(image)
-
-        transform = transforms.RandomErasing(value=value)
-        params = transform._get_params([image])
-
-        v = params["v"]
-        h, w = params["h"], params["w"]
-        i, j = params["i"], params["j"]
-        assert isinstance(v, torch.Tensor)
-        if value == "random":
-            assert v.shape == (num_channels, h, w)
-        elif isinstance(value, (int, float)):
-            assert v.shape == (1, 1, 1)
-        elif isinstance(value, (list, tuple)):
-            assert v.shape == (num_channels, 1, 1)
-
-        assert 0 <= i <= height - h
-        assert 0 <= j <= width - w
-
-
 class TestTransform:
     @pytest.mark.parametrize(
         "inpt_type",
