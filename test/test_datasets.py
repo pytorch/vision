@@ -112,9 +112,18 @@ class STL10TestCase(datasets_utils.ImageDatasetTestCase):
 
 class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Caltech101
-    FEATURE_TYPES = (PIL.Image.Image, (int, np.ndarray, tuple))
+    FEATURE_TYPES = (PIL.Image.Image, (int, np.ndarray, dict, tuple))
 
-    ADDITIONAL_CONFIGS = combinations_grid(target_type=("category", "annotation", ["category", "annotation"]))
+    ADDITIONAL_CONFIGS = combinations_grid(
+        target_type=(
+            "category",
+            "annotation",
+            "box_coord",
+            "obj_contour",
+            ["category", "annotation", "box_coord", "obj_contour"],
+            ["category", "box_coord"],
+        )
+    )
     REQUIRED_PACKAGES = ("scipy",)
 
     def inject_fake_data(self, tmpdir, config):
@@ -152,7 +161,10 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
             self._create_annotation_file(root, file_name_fn(idx))
 
     def _create_annotation_file(self, root, name):
-        mdict = dict(obj_contour=torch.rand((2, torch.randint(3, 6, size=())), dtype=torch.float64).numpy())
+        mdict = dict(
+            obj_contour=torch.rand((2, torch.randint(3, 6, size=()))).numpy().astype(np.float64),
+            box_coord=torch.randint(100, (1, 4)).numpy().astype(np.uint16),
+        )
         datasets_utils.lazy_importer.scipy.io.savemat(str(pathlib.Path(root) / name), mdict)
 
     def test_combined_targets(self):

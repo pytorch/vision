@@ -319,10 +319,27 @@ for dataset_cls in [
 
 @WRAPPER_FACTORIES.register(datasets.Caltech101)
 def caltech101_wrapper_factory(dataset, target_keys):
-    if "annotation" in dataset.target_type:
-        raise_not_supported("Caltech101 dataset with `target_type=['annotation', ...]`")
+    if any(target_type in dataset.target_type for target_type in ["annotation", "obj_contour"]):
+        raise_not_supported("`Caltech101` dataset with `target_type=['annotation', 'obj_contour', ...]`")
 
-    return classification_wrapper_factory(dataset, target_keys)
+    def wrapper(idx, sample):
+        image, target = sample
+
+        target = wrap_target_by_type(
+            target,
+            target_types=dataset.target_type,
+            type_wrappers={
+                "box_coord": lambda item: datapoints.BoundingBox(
+                    item,
+                    format=datapoints.BoundingBoxFormat.XYXY,
+                    spatial_size=(image.height, image.width),
+                ),
+            },
+        )
+
+        return image, target
+
+    return wrapper
 
 
 @WRAPPER_FACTORIES.register(datasets.CocoDetection)
