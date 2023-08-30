@@ -45,14 +45,21 @@ tasks (image classification, detection, segmentation, video classification).
 Transforms are typically passed as the ``transform`` or ``transforms`` argument
 to the :ref:`Datasets <datasets>`.
 
-Reader's guide
---------------
+Start here
+----------
 
-Whether you're new to Torchvision transforms, or you're already experienced
-encourage you to check out 
+Whether you're new to Torchvision transforms, or you're already experienced with
+them, we encourage you to start with
+:ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` in
+order to learn more about what can be done with the new v2 transforms.
 
-.. TODO: Reader guide, i.e. what to read depending on what you're looking for
-.. TODO: add link to getting started guide here.
+Then, browse the sections in below this page for general information and
+performance tips. The available transforms and functionals are listed in the
+:ref:`API reference <v2_api_ref>`.
+
+More information and tutorials can also be found in our :ref:`example gallery
+<gallery>`, e.g. :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`
+or :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`.
 
 .. _conventions:
 
@@ -249,6 +256,8 @@ For any custom transformations to be used with ``torch.jit.script``, they should
 be derived from ``torch.nn.Module``.
 
 See also: :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`.
+
+.. _v2_api_ref:
 
 V2 API reference - Recommended
 ------------------------------
