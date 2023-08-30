@@ -7,7 +7,7 @@ import pytest
 import torch.testing
 import torchvision.ops
 import torchvision.transforms.v2.functional as F
-from torchvision import datapoints
+from torchvision import tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value, _parse_pad_padding
 from transforms_v2_legacy_utils import (
     ArgsKwargs,
@@ -193,7 +193,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
         bbox_xyxy = F.convert_bounding_box_format(
             bbox.as_subclass(torch.Tensor),
             old_format=format_,
-            new_format=datapoints.BoundingBoxFormat.XYXY,
+            new_format=tv_tensors.BoundingBoxFormat.XYXY,
             inplace=True,
         )
         points = np.array(
@@ -215,7 +215,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
             dtype=bbox_xyxy.dtype,
         )
         out_bbox = F.convert_bounding_box_format(
-            out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
+            out_bbox, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
         )
         # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
         out_bbox = F.clamp_bounding_boxes(out_bbox, format=format_, canvas_size=canvas_size_)
@@ -228,7 +228,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
 
 
 def sample_inputs_convert_bounding_box_format():
-    formats = list(datapoints.BoundingBoxFormat)
+    formats = list(tv_tensors.BoundingBoxFormat)
     for bounding_boxes_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
         yield ArgsKwargs(bounding_boxes_loader, old_format=bounding_boxes_loader.format, new_format=new_format)
 
@@ -659,7 +659,7 @@ def sample_inputs_perspective_bounding_boxes():
             coefficients=_PERSPECTIVE_COEFFS[0],
         )
 
-    format = datapoints.BoundingBoxFormat.XYXY
+    format = tv_tensors.BoundingBoxFormat.XYXY
     loader = make_bounding_box_loader(format=format)
     yield ArgsKwargs(
         loader, format=format, canvas_size=loader.canvas_size, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS

@@ -30,12 +30,12 @@ tasks (image classification, detection, segmentation, video classification).
 .. code:: python
 
     # Detection (re-using imports and transforms from above)
-    from torchvision import datapoints
+    from torchvision import tv_tensors
 
     img = torch.randint(0, 256, size=(3, H, W), dtype=torch.uint8)
     bboxes = torch.randint(0, H // 2, size=(3, 4))
     bboxes[:, 2:] += bboxes[:, :2]
-    bboxes = datapoints.BoundingBoxes(bboxes, format="XYXY", canvas_size=(H, W))
+    bboxes = tv_tensors.BoundingBoxes(bboxes, format="XYXY", canvas_size=(H, W))
 
     # The same transforms can be used!
     img, bboxes = transforms(img, bboxes)
@@ -183,8 +183,8 @@ Transforms are available as classes like
 This is very much like the :mod:`torch.nn` package which defines both classes
 and functional equivalents in :mod:`torch.nn.functional`.
 
-The functionals support PIL images, pure tensors, or :ref:`datapoints
-<datapoints>`, e.g. both ``resize(image_tensor)`` and ``resize(bboxes)`` are
+The functionals support PIL images, pure tensors, or :ref:`tv_tensors
+<tv_tensors>`, e.g. both ``resize(image_tensor)`` and ``resize(bboxes)`` are
 valid.
 
 .. note::
