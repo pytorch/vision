@@ -16,7 +16,7 @@ class _ReturnTypeCM:
 
 
 def set_return_type(return_type: str):
-    """[BETA] Set the return type of torch operations on :class:`~torchvision.tv_tensors.TVTensors`.
+    """[BETA] Set the return type of torch operations on :class:`~torchvision.tv_tensors.TVTensor`.
 
     This only affects the behaviour of torch operations. It has no effect on
     ``torchvision`` transforms or functionals, which will always return as
