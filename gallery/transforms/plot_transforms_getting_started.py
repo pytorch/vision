@@ -217,6 +217,8 @@ print(f"{out_target['this_is_ignored']}")
 #     can still be transformed by some transforms like
 #     :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`!).
 #
+# .. _transforms_datasets_intercompatibility:
+#
 # Transforms and Datasets intercompatibility
 # ------------------------------------------
 #

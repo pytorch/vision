@@ -33,17 +33,23 @@ tasks (image classification, detection, segmentation, video classification).
     from torchvision import tv_tensors
 
     img = torch.randint(0, 256, size=(3, H, W), dtype=torch.uint8)
-    bboxes = torch.randint(0, H // 2, size=(3, 4))
-    bboxes[:, 2:] += bboxes[:, :2]
-    bboxes = tv_tensors.BoundingBoxes(bboxes, format="XYXY", canvas_size=(H, W))
+    boxes = torch.randint(0, H // 2, size=(3, 4))
+    boxes[:, 2:] += boxes[:, :2]
+    boxes = tv_tensors.BoundingBoxes(boxes, format="XYXY", canvas_size=(H, W))
 
     # The same transforms can be used!
-    img, bboxes = transforms(img, bboxes)
+    img, boxes = transforms(img, boxes)
     # And you can pass arbitrary input structures
-    output_dict = transforms({"image": img, "bboxes": bboxes})
+    output_dict = transforms({"image": img, "boxes": boxes})
 
 Transforms are typically passed as the ``transform`` or ``transforms`` argument
 to the :ref:`Datasets <datasets>`.
+
+Reader's guide
+--------------
+
+Whether you're new to Torchvision transforms, or you're already experienced
+encourage you to check out 
 
 .. TODO: Reader guide, i.e. what to read depending on what you're looking for
 .. TODO: add link to getting started guide here.
@@ -98,24 +104,20 @@ advantages compared to the v1 ones (in ``torchvision.transforms``):
 
 - They can transform images **but also** bounding boxes, masks, or videos. This
   provides support for tasks beyond image classification: detection, segmentation,
-  video classification, etc.
+  video classification, etc. See
+  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`
+  and :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`.
 - They support more transforms like :class:`~torchvision.transforms.v2.CutMix`
-  and :class:`~torchvision.transforms.v2.MixUp`.
+  and :class:`~torchvision.transforms.v2.MixUp`. See
+  :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py`.
 - They're :ref:`faster <transforms_perf>`.
 - They support arbitrary input structures (dicts, lists, tuples, etc.).
 - Future improvements and features will be added to the v2 transforms only.
-
-.. TODO: Add link to e2e example for first bullet point.
 
 These transforms are **fully backward compatible** with the v1 ones, so if
 you're already using tranforms from ``torchvision.transforms``, all you need to
 do to is to update the import to ``torchvision.transforms.v2``. In terms of
 output, there might be negligible differences due to implementation differences.
-
-To learn more about the v2 transforms, check out
-:ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`.
-
-.. TODO: make sure link is still good!!
 
 .. note::
 
@@ -184,7 +186,7 @@ This is very much like the :mod:`torch.nn` package which defines both classes
 and functional equivalents in :mod:`torch.nn.functional`.
 
 The functionals support PIL images, pure tensors, or :ref:`TVTensors
-<tv_tensors>`, e.g. both ``resize(image_tensor)`` and ``resize(bboxes)`` are
+<tv_tensors>`, e.g. both ``resize(image_tensor)`` and ``resize(boxes)`` are
 valid.
 
 .. note::
