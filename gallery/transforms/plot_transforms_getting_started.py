@@ -146,7 +146,7 @@ print(f"{img_dp.dtype = }, {img_dp.shape = }, {img_dp.sum() = }")
 # transform a given input, the transforms first look at the **class** of the
 # object, and dispatch to the appropriate implementation accordingly.
 #
-# You don't need to know much more about TVTensor at this point, but advanced
+# You don't need to know much more about TVTensors at this point, but advanced
 # users who want to learn more can refer to
 # :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py`.
 #
@@ -234,7 +234,7 @@ print(f"{out_target['this_is_ignored']}")
 # Torchvision also supports datasets for object detection or segmentation like
 # :class:`torchvision.datasets.CocoDetection`. Those datasets predate
 # the existence of the :mod:`torchvision.transforms.v2` module and of the
-# TVTensor, so they don't return TVTensors out of the box.
+# TVTensors, so they don't return TVTensors out of the box.
 #
 # An easy way to force those datasets to return TVTensors and to make them
 # compatible with v2 transforms is to use the
