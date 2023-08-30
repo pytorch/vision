@@ -5,10 +5,10 @@ from typing import Any, Optional, Union
 import PIL.Image
 import torch
 
-from ._datapoint import Datapoint
+from ._tv_tensor import TVTensor
 
 
-class Mask(Datapoint):
+class Mask(TVTensor):
     """[BETA] :class:`torch.Tensor` subclass for segmentation and detection masks.
 
     Args:

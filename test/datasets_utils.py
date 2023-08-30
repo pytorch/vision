@@ -568,7 +568,7 @@ class DatasetTestCase(unittest.TestCase):
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
-        from torchvision import datapoints
+        from torchvision import tv_tensors
         from torchvision.datasets import wrap_dataset_for_transforms_v2
 
         try:
@@ -590,7 +590,7 @@ class DatasetTestCase(unittest.TestCase):
 
                     wrapped_sample = wrapped_dataset[0]
                     assert tree_any(
-                        lambda item: isinstance(item, (datapoints.Datapoint, PIL.Image.Image)), wrapped_sample
+                        lambda item: isinstance(item, (tv_tensors.TVTensor, PIL.Image.Image)), wrapped_sample
                     )
         except TypeError as error:
             msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
@@ -717,7 +717,7 @@ def check_transforms_v2_wrapper_spawn(dataset):
         pytest.skip("Multiprocessing spawning is only checked on macOS.")
 
     from torch.utils.data import DataLoader
-    from torchvision import datapoints
+    from torchvision import tv_tensors
     from torchvision.datasets import wrap_dataset_for_transforms_v2
 
     wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
@@ -726,7 +726,7 @@ def check_transforms_v2_wrapper_spawn(dataset):
 
     for wrapped_sample in dataloader:
         assert tree_any(
-            lambda item: isinstance(item, (datapoints.Image, datapoints.Video, PIL.Image.Image)), wrapped_sample
+            lambda item: isinstance(item, (tv_tensors.Image, tv_tensors.Video, PIL.Image.Image)), wrapped_sample
         )
 
 
