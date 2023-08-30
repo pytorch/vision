@@ -223,6 +223,9 @@ def get_extensions():
             extra_compile_args["nvcc"] = [f for f in nvcc_flags if not ("-O" in f or "-g" in f)]
             extra_compile_args["nvcc"].append("-O0")
             extra_compile_args["nvcc"].append("-g")
+    else:
+        print("Compiling with debug mode OFF")
+        extra_compile_args["cxx"].append("-g0")
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
