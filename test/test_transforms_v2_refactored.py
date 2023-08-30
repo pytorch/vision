@@ -464,7 +464,7 @@ class TestResize:
     @pytest.mark.parametrize("antialias", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, size, interpolation, use_max_size, antialias, dtype, device):
+    def test_kernel_image(self, size, interpolation, use_max_size, antialias, dtype, device):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
@@ -826,7 +826,7 @@ class TestResize:
         # Non-regression test for https://github.com/pytorch/vision/issues/7667
 
         input = make_image_tensor(self.INPUT_SIZE, dtype=torch.float16)
-        output = F.resize_image(input, size=self.OUTPUT_SIZES[0])
+        output = F.resize_image(input, size=self.OUTPUT_SIZES[0], antialias=True)
 
         assert output.dtype is torch.float16
         assert (output.round() - output).abs().sum() > 0
@@ -835,7 +835,7 @@ class TestResize:
 class TestHorizontalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, dtype, device):
+    def test_kernel_image(self, dtype, device):
         check_kernel(F.horizontal_flip_image, make_image(dtype=dtype, device=device))
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
@@ -985,7 +985,7 @@ class TestAffine:
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, param, value, dtype, device):
+    def test_kernel_image(self, param, value, dtype, device):
         if param == "fill":
             value = adapt_fill(value, dtype=dtype)
         self._check_kernel(
@@ -1285,7 +1285,7 @@ class TestAffine:
 class TestVerticalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, dtype, device):
+    def test_kernel_image(self, dtype, device):
         check_kernel(F.vertical_flip_image, make_image(dtype=dtype, device=device))
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
@@ -1380,6 +1380,7 @@ class TestVerticalFlip:
         assert_equal(output, input)
 
 
+@pytest.mark.filterwarnings("ignore:The provided center argument has no effect")
 class TestRotate:
     _EXHAUSTIVE_TYPE_AFFINE_KWARGS = dict(
         # float, int
@@ -1408,7 +1409,7 @@ class TestRotate:
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, param, value, dtype, device):
+    def test_kernel_image(self, param, value, dtype, device):
         kwargs = {param: value}
         if param != "angle":
             kwargs["angle"] = self._MINIMAL_AFFINE_KWARGS["angle"]
@@ -2386,7 +2387,7 @@ class TestElastic:
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, param, value, dtype, device):
+    def test_kernel_image(self, param, value, dtype, device):
         image = make_image_tensor(dtype=dtype, device=device)
 
         check_kernel(
