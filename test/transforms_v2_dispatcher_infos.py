@@ -2,7 +2,7 @@ import collections.abc
 
 import pytest
 import torchvision.transforms.v2.functional as F
-from torchvision import datapoints
+from torchvision import tv_tensors
 from transforms_v2_kernel_infos import KERNEL_INFOS, pad_xfail_jit_fill_condition
 from transforms_v2_legacy_utils import InfoBase, TestMark
 
@@ -44,19 +44,19 @@ class DispatcherInfo(InfoBase):
         self.pil_kernel_info = pil_kernel_info
 
         kernel_infos = {}
-        for datapoint_type, kernel in self.kernels.items():
+        for tv_tensor_type, kernel in self.kernels.items():
             kernel_info = self._KERNEL_INFO_MAP.get(kernel)
             if not kernel_info:
                 raise pytest.UsageError(
-                    f"Can't register {kernel.__name__} for type {datapoint_type} since there is no `KernelInfo` for it. "
+                    f"Can't register {kernel.__name__} for type {tv_tensor_type} since there is no `KernelInfo` for it. "
                     f"Please add a `KernelInfo` for it in `transforms_v2_kernel_infos.py`."
                 )
-            kernel_infos[datapoint_type] = kernel_info
+            kernel_infos[tv_tensor_type] = kernel_info
         self.kernel_infos = kernel_infos
 
-    def sample_inputs(self, *datapoint_types, filter_metadata=True):
-        for datapoint_type in datapoint_types or self.kernel_infos.keys():
-            kernel_info = self.kernel_infos.get(datapoint_type)
+    def sample_inputs(self, *tv_tensor_types, filter_metadata=True):
+        for tv_tensor_type in tv_tensor_types or self.kernel_infos.keys():
+            kernel_info = self.kernel_infos.get(tv_tensor_type)
             if not kernel_info:
                 raise pytest.UsageError(f"There is no kernel registered for type {type.__name__}")
 
@@ -69,12 +69,12 @@ class DispatcherInfo(InfoBase):
             import itertools
 
             for args_kwargs in sample_inputs:
-                if hasattr(datapoint_type, "__annotations__"):
+                if hasattr(tv_tensor_type, "__annotations__"):
                     for name in itertools.chain(
-                        datapoint_type.__annotations__.keys(),
+                        tv_tensor_type.__annotations__.keys(),
                         # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
                         #  per-dispatcher level. However, so far there is no option for that.
-                        (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
+                        (f"old_{name}" for name in tv_tensor_type.__annotations__.keys()),
                     ):
                         if name in args_kwargs.kwargs:
                             del args_kwargs.kwargs[name]
@@ -97,9 +97,9 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
     )
 
 
-skip_dispatch_datapoint = TestMark(
-    ("TestDispatchers", "test_dispatch_datapoint"),
-    pytest.mark.skip(reason="Dispatcher doesn't support arbitrary datapoint dispatch."),
+skip_dispatch_tv_tensor = TestMark(
+    ("TestDispatchers", "test_dispatch_tv_tensor"),
+    pytest.mark.skip(reason="Dispatcher doesn't support arbitrary tv_tensor dispatch."),
 )
 
 multi_crop_skips = [
@@ -107,9 +107,9 @@ multi_crop_skips = [
         ("TestDispatchers", test_name),
         pytest.mark.skip(reason="Multi-crop dispatchers return a sequence of items rather than a single one."),
     )
-    for test_name in ["test_pure_tensor_output_type", "test_pil_output_type", "test_datapoint_output_type"]
+    for test_name in ["test_pure_tensor_output_type", "test_pil_output_type", "test_tv_tensor_output_type"]
 ]
-multi_crop_skips.append(skip_dispatch_datapoint)
+multi_crop_skips.append(skip_dispatch_tv_tensor)
 
 
 def xfails_pil(reason, *, condition=None):
@@ -142,20 +142,20 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.resized_crop,
         kernels={
-            datapoints.Image: F.resized_crop_image,
-            datapoints.Video: F.resized_crop_video,
-            datapoints.BoundingBoxes: F.resized_crop_bounding_boxes,
-            datapoints.Mask: F.resized_crop_mask,
+            tv_tensors.Image: F.resized_crop_image,
+            tv_tensors.Video: F.resized_crop_video,
+            tv_tensors.BoundingBoxes: F.resized_crop_bounding_boxes,
+            tv_tensors.Mask: F.resized_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F._resized_crop_image_pil),
     ),
     DispatcherInfo(
         F.pad,
         kernels={
-            datapoints.Image: F.pad_image,
-            datapoints.Video: F.pad_video,
-            datapoints.BoundingBoxes: F.pad_bounding_boxes,
-            datapoints.Mask: F.pad_mask,
+            tv_tensors.Image: F.pad_image,
+            tv_tensors.Video: F.pad_video,
+            tv_tensors.BoundingBoxes: F.pad_bounding_boxes,
+            tv_tensors.Mask: F.pad_mask,
         },
         pil_kernel_info=PILKernelInfo(F._pad_image_pil, kernel_name="pad_image_pil"),
         test_marks=[
@@ -174,10 +174,10 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.perspective,
         kernels={
-            datapoints.Image: F.perspective_image,
-            datapoints.Video: F.perspective_video,
-            datapoints.BoundingBoxes: F.perspective_bounding_boxes,
-            datapoints.Mask: F.perspective_mask,
+            tv_tensors.Image: F.perspective_image,
+            tv_tensors.Video: F.perspective_video,
+            tv_tensors.BoundingBoxes: F.perspective_bounding_boxes,
+            tv_tensors.Mask: F.perspective_mask,
         },
         pil_kernel_info=PILKernelInfo(F._perspective_image_pil),
         test_marks=[
@@ -188,10 +188,10 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.elastic,
         kernels={
-            datapoints.Image: F.elastic_image,
-            datapoints.Video: F.elastic_video,
-            datapoints.BoundingBoxes: F.elastic_bounding_boxes,
-            datapoints.Mask: F.elastic_mask,
+            tv_tensors.Image: F.elastic_image,
+            tv_tensors.Video: F.elastic_video,
+            tv_tensors.BoundingBoxes: F.elastic_bounding_boxes,
+            tv_tensors.Mask: F.elastic_mask,
         },
         pil_kernel_info=PILKernelInfo(F._elastic_image_pil),
         test_marks=[xfail_jit_python_scalar_arg("fill")],
@@ -199,10 +199,10 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.center_crop,
         kernels={
-            datapoints.Image: F.center_crop_image,
-            datapoints.Video: F.center_crop_video,
-            datapoints.BoundingBoxes: F.center_crop_bounding_boxes,
-            datapoints.Mask: F.center_crop_mask,
+            tv_tensors.Image: F.center_crop_image,
+            tv_tensors.Video: F.center_crop_video,
+            tv_tensors.BoundingBoxes: F.center_crop_bounding_boxes,
+            tv_tensors.Mask: F.center_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F._center_crop_image_pil),
         test_marks=[
@@ -212,8 +212,8 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.gaussian_blur,
         kernels={
-            datapoints.Image: F.gaussian_blur_image,
-            datapoints.Video: F.gaussian_blur_video,
+            tv_tensors.Image: F.gaussian_blur_image,
+            tv_tensors.Video: F.gaussian_blur_video,
         },
         pil_kernel_info=PILKernelInfo(F._gaussian_blur_image_pil),
         test_marks=[
@@ -224,99 +224,99 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.equalize,
         kernels={
-            datapoints.Image: F.equalize_image,
-            datapoints.Video: F.equalize_video,
+            tv_tensors.Image: F.equalize_image,
+            tv_tensors.Video: F.equalize_video,
         },
         pil_kernel_info=PILKernelInfo(F._equalize_image_pil, kernel_name="equalize_image_pil"),
     ),
     DispatcherInfo(
         F.invert,
         kernels={
-            datapoints.Image: F.invert_image,
-            datapoints.Video: F.invert_video,
+            tv_tensors.Image: F.invert_image,
+            tv_tensors.Video: F.invert_video,
         },
         pil_kernel_info=PILKernelInfo(F._invert_image_pil, kernel_name="invert_image_pil"),
     ),
     DispatcherInfo(
         F.posterize,
         kernels={
-            datapoints.Image: F.posterize_image,
-            datapoints.Video: F.posterize_video,
+            tv_tensors.Image: F.posterize_image,
+            tv_tensors.Video: F.posterize_video,
         },
         pil_kernel_info=PILKernelInfo(F._posterize_image_pil, kernel_name="posterize_image_pil"),
     ),
     DispatcherInfo(
         F.solarize,
         kernels={
-            datapoints.Image: F.solarize_image,
-            datapoints.Video: F.solarize_video,
+            tv_tensors.Image: F.solarize_image,
+            tv_tensors.Video: F.solarize_video,
         },
         pil_kernel_info=PILKernelInfo(F._solarize_image_pil, kernel_name="solarize_image_pil"),
     ),
     DispatcherInfo(
         F.autocontrast,
         kernels={
-            datapoints.Image: F.autocontrast_image,
-            datapoints.Video: F.autocontrast_video,
+            tv_tensors.Image: F.autocontrast_image,
+            tv_tensors.Video: F.autocontrast_video,
         },
         pil_kernel_info=PILKernelInfo(F._autocontrast_image_pil, kernel_name="autocontrast_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_sharpness,
         kernels={
-            datapoints.Image: F.adjust_sharpness_image,
-            datapoints.Video: F.adjust_sharpness_video,
+            tv_tensors.Image: F.adjust_sharpness_image,
+            tv_tensors.Video: F.adjust_sharpness_video,
         },
         pil_kernel_info=PILKernelInfo(F._adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
     ),
     DispatcherInfo(
         F.erase,
         kernels={
-            datapoints.Image: F.erase_image,
-            datapoints.Video: F.erase_video,
+            tv_tensors.Image: F.erase_image,
+            tv_tensors.Video: F.erase_video,
         },
         pil_kernel_info=PILKernelInfo(F._erase_image_pil),
         test_marks=[
-            skip_dispatch_datapoint,
+            skip_dispatch_tv_tensor,
         ],
     ),
     DispatcherInfo(
         F.adjust_contrast,
         kernels={
-            datapoints.Image: F.adjust_contrast_image,
-            datapoints.Video: F.adjust_contrast_video,
+            tv_tensors.Image: F.adjust_contrast_image,
+            tv_tensors.Video: F.adjust_contrast_video,
         },
         pil_kernel_info=PILKernelInfo(F._adjust_contrast_image_pil, kernel_name="adjust_contrast_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_gamma,
         kernels={
-            datapoints.Image: F.adjust_gamma_image,
-            datapoints.Video: F.adjust_gamma_video,
+            tv_tensors.Image: F.adjust_gamma_image,
+            tv_tensors.Video: F.adjust_gamma_video,
         },
         pil_kernel_info=PILKernelInfo(F._adjust_gamma_image_pil, kernel_name="adjust_gamma_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_hue,
         kernels={
-            datapoints.Image: F.adjust_hue_image,
-            datapoints.Video: F.adjust_hue_video,
+            tv_tensors.Image: F.adjust_hue_image,
+            tv_tensors.Video: F.adjust_hue_video,
         },
         pil_kernel_info=PILKernelInfo(F._adjust_hue_image_pil, kernel_name="adjust_hue_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_saturation,
         kernels={
-            datapoints.Image: F.adjust_saturation_image,
-            datapoints.Video: F.adjust_saturation_video,
+            tv_tensors.Image: F.adjust_saturation_image,
+            tv_tensors.Video: F.adjust_saturation_video,
         },
         pil_kernel_info=PILKernelInfo(F._adjust_saturation_image_pil, kernel_name="adjust_saturation_image_pil"),
     ),
     DispatcherInfo(
         F.five_crop,
         kernels={
-            datapoints.Image: F.five_crop_image,
-            datapoints.Video: F.five_crop_video,
+            tv_tensors.Image: F.five_crop_image,
+            tv_tensors.Video: F.five_crop_video,
         },
         pil_kernel_info=PILKernelInfo(F._five_crop_image_pil),
         test_marks=[
@@ -327,8 +327,8 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.ten_crop,
         kernels={
-            datapoints.Image: F.ten_crop_image,
-            datapoints.Video: F.ten_crop_video,
+            tv_tensors.Image: F.ten_crop_image,
+            tv_tensors.Video: F.ten_crop_video,
         },
         test_marks=[
             xfail_jit_python_scalar_arg("size"),
@@ -339,8 +339,8 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.normalize,
         kernels={
-            datapoints.Image: F.normalize_image,
-            datapoints.Video: F.normalize_video,
+            tv_tensors.Image: F.normalize_image,
+            tv_tensors.Video: F.normalize_video,
         },
         test_marks=[
             xfail_jit_python_scalar_arg("mean"),
@@ -350,24 +350,24 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.uniform_temporal_subsample,
         kernels={
-            datapoints.Video: F.uniform_temporal_subsample_video,
+            tv_tensors.Video: F.uniform_temporal_subsample_video,
         },
         test_marks=[
-            skip_dispatch_datapoint,
+            skip_dispatch_tv_tensor,
         ],
     ),
     DispatcherInfo(
         F.clamp_bounding_boxes,
-        kernels={datapoints.BoundingBoxes: F.clamp_bounding_boxes},
+        kernels={tv_tensors.BoundingBoxes: F.clamp_bounding_boxes},
         test_marks=[
-            skip_dispatch_datapoint,
+            skip_dispatch_tv_tensor,
         ],
     ),
     DispatcherInfo(
         F.convert_bounding_box_format,
-        kernels={datapoints.BoundingBoxes: F.convert_bounding_box_format},
+        kernels={tv_tensors.BoundingBoxes: F.convert_bounding_box_format},
         test_marks=[
-            skip_dispatch_datapoint,
+            skip_dispatch_tv_tensor,
         ],
     ),
 ]

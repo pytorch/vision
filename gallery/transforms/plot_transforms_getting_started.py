@@ -88,9 +88,9 @@ plot([img, out])
 #
 # Let's briefly look at a detection example with bounding boxes.
 
-from torchvision import datapoints  # we'll describe this a bit later, bare with us
+from torchvision import tv_tensors  # we'll describe this a bit later, bare with us
 
-boxes = datapoints.BoundingBoxes(
+boxes = tv_tensors.BoundingBoxes(
     [
         [15, 10, 370, 510],
         [275, 340, 510, 510],
@@ -111,44 +111,44 @@ plot([(img, boxes), (out_img, out_boxes)])
 # %%
 #
 # The example above focuses on object detection. But if we had masks
-# (:class:`torchvision.datapoints.Mask`) for object segmentation or semantic
-# segmentation, or videos (:class:`torchvision.datapoints.Video`), we could have
+# (:class:`torchvision.tv_tensors.Mask`) for object segmentation or semantic
+# segmentation, or videos (:class:`torchvision.tv_tensors.Video`), we could have
 # passed them to the transforms in exactly the same way.
 #
-# By now you likely have a few questions: what are these datapoints, how do we
+# By now you likely have a few questions: what are these tv_tensors, how do we
 # use them, and what is the expected input/output of those transforms? We'll
 # answer these in the next sections.
 
 # %%
 #
-# .. _what_are_datapoints:
+# .. _what_are_tv_tensors:
 #
-# What are Datapoints?
+# What are TVTensors?
 # --------------------
 #
-# Datapoints are :class:`torch.Tensor` subclasses. The available datapoints are
-# :class:`~torchvision.datapoints.Image`,
-# :class:`~torchvision.datapoints.BoundingBoxes`,
-# :class:`~torchvision.datapoints.Mask`, and
-# :class:`~torchvision.datapoints.Video`.
+# TVTensors are :class:`torch.Tensor` subclasses. The available tv_tensors are
+# :class:`~torchvision.tv_tensors.Image`,
+# :class:`~torchvision.tv_tensors.BoundingBoxes`,
+# :class:`~torchvision.tv_tensors.Mask`, and
+# :class:`~torchvision.tv_tensors.Video`.
 #
-# Datapoints look and feel just like regular tensors - they **are** tensors.
+# TVTensors look and feel just like regular tensors - they **are** tensors.
 # Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()``
-# or any ``torch.*`` operator will also work on a datapoint:
+# or any ``torch.*`` operator will also work on a tv_tensor:
 
-img_dp = datapoints.Image(torch.randint(0, 256, (3, 256, 256), dtype=torch.uint8))
+img_dp = tv_tensors.Image(torch.randint(0, 256, (3, 256, 256), dtype=torch.uint8))
 
 print(f"{isinstance(img_dp, torch.Tensor) = }")
 print(f"{img_dp.dtype = }, {img_dp.shape = }, {img_dp.sum() = }")
 
 # %%
-# These Datapoint classes are at the core of the transforms: in order to
+# These TVTensor classes are at the core of the transforms: in order to
 # transform a given input, the transforms first look at the **class** of the
 # object, and dispatch to the appropriate implementation accordingly.
 #
-# You don't need to know much more about datapoints at this point, but advanced
+# You don't need to know much more about tv_tensors at this point, but advanced
 # users who want to learn more can refer to
-# :ref:`sphx_glr_auto_examples_transforms_plot_datapoints.py`.
+# :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py`.
 #
 # What do I pass as input?
 # ------------------------
@@ -172,6 +172,7 @@ target = {
 # Re-using the transforms and definitions from above.
 out_img, out_target = transforms(img, target)
 
+# sphinx_gallery_thumbnail_number = 4
 plot([(img, target["boxes"]), (out_img, out_target["boxes"])])
 print(f"{out_target['this_is_ignored']}")
 
@@ -195,17 +196,17 @@ print(f"{out_target['this_is_ignored']}")
 #     Pure :class:`torch.Tensor` objects are, in general, treated as images (or
 #     as videos for video-specific transforms). Indeed, you may have noticed
 #     that in the code above we haven't used the
-#     :class:`~torchvision.datapoints.Image` class at all, and yet our images
+#     :class:`~torchvision.tv_tensors.Image` class at all, and yet our images
 #     got transformed properly. Transforms follow the following logic to
 #     determine whether a pure Tensor should be treated as an image (or video),
 #     or just ignored:
 #
-#     * If there is an :class:`~torchvision.datapoints.Image`,
-#       :class:`~torchvision.datapoints.Video`,
+#     * If there is an :class:`~torchvision.tv_tensors.Image`,
+#       :class:`~torchvision.tv_tensors.Video`,
 #       or :class:`PIL.Image.Image` instance in the input, all other pure
 #       tensors are passed-through.
-#     * If there is no :class:`~torchvision.datapoints.Image` or
-#       :class:`~torchvision.datapoints.Video` instance, only the first pure
+#     * If there is no :class:`~torchvision.tv_tensors.Image` or
+#       :class:`~torchvision.tv_tensors.Video` instance, only the first pure
 #       :class:`torch.Tensor` will be transformed as image or video, while all
 #       others will be passed-through. Here "first" means "first in a depth-wise
 #       traversal".
@@ -233,9 +234,9 @@ print(f"{out_target['this_is_ignored']}")
 # Torchvision also supports datasets for object detection or segmentation like
 # :class:`torchvision.datasets.CocoDetection`. Those datasets predate
 # the existence of the :mod:`torchvision.transforms.v2` module and of the
-# datapoints, so they don't return datapoints out of the box.
+# tv_tensors, so they don't return tv_tensors out of the box.
 #
-# An easy way to force those datasets to return datapoints and to make them
+# An easy way to force those datasets to return tv_tensors and to make them
 # compatible with v2 transforms is to use the
 # :func:`torchvision.datasets.wrap_dataset_for_transforms_v2` function:
 #
@@ -245,14 +246,14 @@ print(f"{out_target['this_is_ignored']}")
 #
 #    dataset = CocoDetection(..., transforms=my_transforms)
 #    dataset = wrap_dataset_for_transforms_v2(dataset)
-#    # Now the dataset returns datapoints!
+#    # Now the dataset returns tv_tensors!
 #
 # Using your own datasets
 # ^^^^^^^^^^^^^^^^^^^^^^^
 #
 # If you have a custom dataset, then you'll need to convert your objects into
-# the appropriate Datapoint classes. Creating Datapoint instances is very easy,
-# refer to :ref:`datapoint_creation` for more details.
+# the appropriate TVTensor classes. Creating TVTensor instances is very easy,
+# refer to :ref:`tv_tensor_creation` for more details.
 #
 # There are two main places where you can implement that conversion logic:
 #

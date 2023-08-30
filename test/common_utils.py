@@ -19,7 +19,7 @@ import torch.testing
 from PIL import Image
 
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
-from torchvision import datapoints, io
+from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import to_image, to_pil_image
 
@@ -391,7 +391,7 @@ def make_image(
     if color_space in {"GRAY_ALPHA", "RGBA"}:
         data[..., -1, :, :] = max_value
 
-    return datapoints.Image(data)
+    return tv_tensors.Image(data)
 
 
 def make_image_tensor(*args, **kwargs):
@@ -405,7 +405,7 @@ def make_image_pil(*args, **kwargs):
 def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
-    format=datapoints.BoundingBoxFormat.XYXY,
+    format=tv_tensors.BoundingBoxFormat.XYXY,
     dtype=None,
     device="cpu",
 ):
@@ -415,7 +415,7 @@ def make_bounding_boxes(
         return torch.stack([torch.randint(max_value - v, ()) for v in values.tolist()])
 
     if isinstance(format, str):
-        format = datapoints.BoundingBoxFormat[format]
+        format = tv_tensors.BoundingBoxFormat[format]
 
     dtype = dtype or torch.float32
 
@@ -424,21 +424,21 @@ def make_bounding_boxes(
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
 
-    if format is datapoints.BoundingBoxFormat.XYWH:
+    if format is tv_tensors.BoundingBoxFormat.XYWH:
         parts = (x, y, w, h)
-    elif format is datapoints.BoundingBoxFormat.XYXY:
+    elif format is tv_tensors.BoundingBoxFormat.XYXY:
         x1, y1 = x, y
         x2 = x1 + w
         y2 = y1 + h
         parts = (x1, y1, x2, y2)
-    elif format is datapoints.BoundingBoxFormat.CXCYWH:
+    elif format is tv_tensors.BoundingBoxFormat.CXCYWH:
         cx = x + w / 2
         cy = y + h / 2
         parts = (cx, cy, w, h)
     else:
         raise ValueError(f"Format {format} is not supported")
 
-    return datapoints.BoundingBoxes(
+    return tv_tensors.BoundingBoxes(
         torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, canvas_size=canvas_size
     )
 
@@ -446,7 +446,7 @@ def make_bounding_boxes(
 def make_detection_mask(size=DEFAULT_SIZE, *, dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
     num_objects = 1
-    return datapoints.Mask(
+    return tv_tensors.Mask(
         torch.testing.make_tensor(
             (num_objects, *size),
             low=0,
@@ -459,7 +459,7 @@ def make_detection_mask(size=DEFAULT_SIZE, *, dtype=None, device="cpu"):
 
 def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
     """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
-    return datapoints.Mask(
+    return tv_tensors.Mask(
         torch.testing.make_tensor(
             (*batch_dims, *size),
             low=0,
@@ -471,7 +471,7 @@ def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(
 
 
 def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
-    return datapoints.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
+    return tv_tensors.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
 
 
 def make_video_tensor(*args, **kwargs):
