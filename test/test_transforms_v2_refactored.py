@@ -2506,10 +2506,12 @@ class TestErase:
 
         output_out_of_place = F.erase_image(input, **self.FUNCTIONAL_KWARGS)
         assert output_out_of_place.data_ptr() != input.data_ptr()
+        assert output_out_of_place is not input
 
         output_inplace = F.erase_image(input, **self.FUNCTIONAL_KWARGS, inplace=True)
         assert output_inplace.data_ptr() == input.data_ptr()
         assert output_inplace._version > input_version
+        assert output_inplace is input
 
         assert_equal(output_inplace, output_out_of_place)
 
@@ -2613,10 +2615,7 @@ class TestErase:
         with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
             transform._get_params([make_image()])
 
-    @pytest.mark.parametrize(
-        "make_input",
-        [make_bounding_boxes, make_detection_mask, make_segmentation_mask],
-    )
+    @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_mask])
     def test_transform_passthrough(self, make_input):
         transform = transforms.RandomErasing(p=1)
 
