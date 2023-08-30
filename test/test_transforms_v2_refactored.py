@@ -821,7 +821,7 @@ class TestResize:
         # Non-regression test for https://github.com/pytorch/vision/issues/7667
 
         input = make_image_tensor(self.INPUT_SIZE, dtype=torch.float16)
-        output = F.resize_image(input, size=self.OUTPUT_SIZES[0])
+        output = F.resize_image(input, size=self.OUTPUT_SIZES[0], antialias=True)
 
         assert output.dtype is torch.float16
         assert (output.round() - output).abs().sum() > 0
@@ -1375,6 +1375,7 @@ class TestVerticalFlip:
         assert_equal(output, input)
 
 
+@pytest.mark.filterwarnings("ignore:The provided center argument has no effect")
 class TestRotate:
     _EXHAUSTIVE_TYPE_AFFINE_KWARGS = dict(
         # float, int
