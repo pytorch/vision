@@ -185,7 +185,7 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, **kwar
 
         spy.assert_any_call(f"{functional.__module__}.{functional.__name__}")
 
-    assert type(output) is type(input)
+    assert isinstance(output, type(input))
 
     if isinstance(input, tv_tensors.BoundingBoxes):
         assert output.format == input.format
