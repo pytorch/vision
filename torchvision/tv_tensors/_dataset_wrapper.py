@@ -49,11 +49,11 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
           in the corresponding ``torchvision.tv_tensors``. The original keys are preserved. If ``target_keys`` is
           omitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`~torchvision.datasets.OxfordIIITPet`: The target for ``target_type="segmentation"`` is wrapped into a
-          :class:`~torchvision.tv_tensors.Mask` tv_tensor.
+          :class:`~torchvision.tv_tensors.SegmentationMask` tv_tensor.
         * :class:`~torchvision.datasets.Cityscapes`: The target for ``target_type="semantic"`` is wrapped into a
-          :class:`~torchvision.tv_tensors.Mask` tv_tensor. The target for ``target_type="instance"`` is *replaced* by
-          a dictionary with the key-value-pairs ``"masks"`` (as :class:`~torchvision.tv_tensors.Mask` tv_tensor) and
-          ``"labels"``.
+          :class:`~torchvision.tv_tensors.SegmentationMask` tv_tensor. The target for ``target_type="instance"`` is
+          *replaced* by a dictionary with the key-value-pairs ``"masks"``
+          (as :class:`~torchvision.tv_tensors.DetectionMasks` tv_tensor) and ``"labels"``.
         * :class:`~torchvision.datasets.WIDERFace`: The value for key ``"bbox"`` in the target is converted to ``XYXY``
           coordinate format and wrapped into a :class:`~torchvision.tv_tensors.BoundingBoxes` tv_tensor.
 
@@ -66,7 +66,7 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
 
         Segmentation datasets, e.g. :class:`~torchvision.datasets.VOCSegmentation`, return a two-tuple of
         :class:`PIL.Image.Image`'s. This wrapper leaves the image as is (first item), while wrapping the
-        segmentation mask into a :class:`~torchvision.tv_tensors.Mask` (second item).
+        segmentation mask into a :class:`~torchvision.tv_tensors.SegmentationMask` (second item).
 
     Video classification datasets
 
@@ -220,10 +220,6 @@ def identity_wrapper_factory(dataset, target_keys):
     return wrapper
 
 
-def pil_image_to_mask(pil_image):
-    return tv_tensors.Mask(pil_image)
-
-
 def parse_target_keys(target_keys, *, available, default):
     if target_keys is None:
         target_keys = default
@@ -281,7 +277,7 @@ for dataset_cls in [
 def segmentation_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, mask = sample
-        return image, pil_image_to_mask(mask)
+        return image, tv_tensors.SegmentationMask(mask)
 
     return wrapper
 
@@ -382,7 +378,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             )
 
         if "masks" in target_keys:
-            target["masks"] = tv_tensors.Mask(
+            target["masks"] = tv_tensors.DetectionMasks(
                 torch.stack(
                     [
                         segmentation_to_mask(segmentation, canvas_size=canvas_size)
@@ -571,7 +567,7 @@ def oxford_iiit_pet_wrapper_factor(dataset, target_keys):
                 target,
                 target_types=dataset._target_types,
                 type_wrappers={
-                    "segmentation": pil_image_to_mask,
+                    "segmentation": tv_tensors.SegmentationMask,
                 },
             )
 
@@ -587,7 +583,7 @@ def cityscapes_wrapper_factory(dataset, target_keys):
 
     def instance_segmentation_wrapper(mask):
         # See https://github.com/mcordts/cityscapesScripts/blob/8da5dd00c9069058ccc134654116aac52d4f6fa2/cityscapesscripts/preparation/json2instanceImg.py#L7-L21
-        data = pil_image_to_mask(mask)
+        data = F.to_image(mask).as_subclass(torch.Tensor)
         masks = []
         labels = []
         for id in data.unique():
@@ -596,7 +592,7 @@ def cityscapes_wrapper_factory(dataset, target_keys):
             if label >= 1_000:
                 label //= 1_000
             labels.append(label)
-        return dict(masks=tv_tensors.Mask(torch.stack(masks)), labels=torch.stack(labels))
+        return dict(masks=tv_tensors.DetectionMasks(torch.stack(masks)), labels=torch.stack(labels))
 
     def wrapper(idx, sample):
         image, target = sample
@@ -606,7 +602,7 @@ def cityscapes_wrapper_factory(dataset, target_keys):
             target_types=dataset.target_type,
             type_wrappers={
                 "instance": instance_segmentation_wrapper,
-                "semantic": pil_image_to_mask,
+                "semantic": tv_tensors.SegmentationMask,
             },
         )
 
