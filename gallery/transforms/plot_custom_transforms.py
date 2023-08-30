@@ -74,7 +74,7 @@ out_img, out_bboxes, out_label = transforms(img, bboxes, label)
 print(f"Output image shape: {out_img.shape}\nout_bboxes = {out_bboxes}\n{out_label = }")
 # %%
 # .. note::
-#     While working with tv_tensor classes in your code, make sure to
+#     While working with TVTensor classes in your code, make sure to
 #     familiarize yourself with this section:
 #     :ref:`tv_tensor_unwrapping_behaviour`
 #
@@ -111,7 +111,7 @@ print(f"The transformed bboxes are:\n{structured_output['annotations'][0]}")
 # In brief, the core logic is to unpack the input into a flat list using `pytree
 # <https://github.com/pytorch/pytorch/blob/main/torch/utils/_pytree.py>`_, and
 # then transform only the entries that can be transformed (the decision is made
-# based on the **class** of the entries, as all tv_tensors are
+# based on the **class** of the entries, as all TVTensors are
 # tensor-subclasses) plus some custom logic that is out of score here - check the
 # code for details. The (potentially transformed) entries are then repacked and
 # returned, in the same structure as the input.

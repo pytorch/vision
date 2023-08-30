@@ -115,7 +115,7 @@ plot([(img, boxes), (out_img, out_boxes)])
 # segmentation, or videos (:class:`torchvision.tv_tensors.Video`), we could have
 # passed them to the transforms in exactly the same way.
 #
-# By now you likely have a few questions: what are these tv_tensors, how do we
+# By now you likely have a few questions: what are these TVTensors, how do we
 # use them, and what is the expected input/output of those transforms? We'll
 # answer these in the next sections.
 
@@ -126,7 +126,7 @@ plot([(img, boxes), (out_img, out_boxes)])
 # What are TVTensors?
 # --------------------
 #
-# TVTensors are :class:`torch.Tensor` subclasses. The available tv_tensors are
+# TVTensors are :class:`torch.Tensor` subclasses. The available TVTensors are
 # :class:`~torchvision.tv_tensors.Image`,
 # :class:`~torchvision.tv_tensors.BoundingBoxes`,
 # :class:`~torchvision.tv_tensors.Mask`, and
@@ -134,7 +134,7 @@ plot([(img, boxes), (out_img, out_boxes)])
 #
 # TVTensors look and feel just like regular tensors - they **are** tensors.
 # Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()``
-# or any ``torch.*`` operator will also work on a tv_tensor:
+# or any ``torch.*`` operator will also work on a TVTensor:
 
 img_dp = tv_tensors.Image(torch.randint(0, 256, (3, 256, 256), dtype=torch.uint8))
 
@@ -146,7 +146,7 @@ print(f"{img_dp.dtype = }, {img_dp.shape = }, {img_dp.sum() = }")
 # transform a given input, the transforms first look at the **class** of the
 # object, and dispatch to the appropriate implementation accordingly.
 #
-# You don't need to know much more about tv_tensors at this point, but advanced
+# You don't need to know much more about TVTensor at this point, but advanced
 # users who want to learn more can refer to
 # :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py`.
 #
@@ -234,9 +234,9 @@ print(f"{out_target['this_is_ignored']}")
 # Torchvision also supports datasets for object detection or segmentation like
 # :class:`torchvision.datasets.CocoDetection`. Those datasets predate
 # the existence of the :mod:`torchvision.transforms.v2` module and of the
-# tv_tensors, so they don't return tv_tensors out of the box.
+# TVTensor, so they don't return TVTensors out of the box.
 #
-# An easy way to force those datasets to return tv_tensors and to make them
+# An easy way to force those datasets to return TVTensors and to make them
 # compatible with v2 transforms is to use the
 # :func:`torchvision.datasets.wrap_dataset_for_transforms_v2` function:
 #
@@ -246,7 +246,7 @@ print(f"{out_target['this_is_ignored']}")
 #
 #    dataset = CocoDetection(..., transforms=my_transforms)
 #    dataset = wrap_dataset_for_transforms_v2(dataset)
-#    # Now the dataset returns tv_tensors!
+#    # Now the dataset returns TVTensors!
 #
 # Using your own datasets
 # ^^^^^^^^^^^^^^^^^^^^^^^
