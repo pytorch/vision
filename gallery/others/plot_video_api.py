@@ -86,7 +86,7 @@ for frame in video:
 print("PTS for first five frames ", ptss[:5])
 print("Total number of frames: ", len(frames))
 approx_nf = metadata['audio']['duration'][0] * metadata['audio']['framerate'][0]
-print("Approx total number of tv_tensors we can expect: ", approx_nf)
+print("Approx total number of datapoints we can expect: ", approx_nf)
 print("Read data size: ", frames[0].size(0) * len(frames))
 
 # %%
@@ -170,7 +170,7 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
     return video_frames, audio_frames, (video_pts, audio_pts), video_object.get_metadata()
 
 
-# Total number of frames should be 327 for video and 523264 tv_tensors for audio
+# Total number of frames should be 327 for video and 523264 datapoints for audio
 vf, af, info, meta = example_read_video(video)
 print(vf.size(), af.size())
 
