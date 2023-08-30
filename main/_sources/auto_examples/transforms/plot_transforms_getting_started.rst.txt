@@ -192,7 +192,7 @@ Let's briefly look at a detection example with bounding boxes.
 
  .. code-block:: none
 
-    <class 'torchvision.tv_tensors._bounding_box.BoundingBoxes'> <class 'torchvision.tv_tensors._bounding_box.BoundingBoxes'>
+    <class 'torchvision.tv_tensors._bounding_boxes.BoundingBoxes'> <class 'torchvision.tv_tensors._bounding_boxes.BoundingBoxes'>
 
 
 
@@ -400,7 +400,7 @@ Either way, the logic will depend on your specific dataset.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.790 seconds)
+   **Total running time of the script:** (0 minutes 0.807 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py:

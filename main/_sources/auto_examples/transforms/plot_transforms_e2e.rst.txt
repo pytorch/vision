@@ -132,7 +132,7 @@ structure to a single dictionary of lists:
     type(img) = <class 'PIL.Image.Image'>
     type(target) = <class 'dict'>
     target.keys() = dict_keys(['boxes', 'masks', 'labels'])
-    type(target['boxes']) = <class 'torchvision.tv_tensors._bounding_box.BoundingBoxes'>
+    type(target['boxes']) = <class 'torchvision.tv_tensors._bounding_boxes.BoundingBoxes'>
     type(target['labels']) = <class 'torch.Tensor'>
     type(target['masks']) = <class 'torchvision.tv_tensors._mask.Mask'>
 
@@ -336,7 +336,7 @@ v2). So don't be afraid to simplify and only keep what you need.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.799 seconds)
+   **Total running time of the script:** (0 minutes 4.874 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py:
