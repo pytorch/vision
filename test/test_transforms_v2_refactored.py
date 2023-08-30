@@ -255,8 +255,10 @@ def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
     if isinstance(input, PIL.Image.Image):
         return
 
+    _script(v1_transform)(input)
 
-def check_transform(transform, input, check_v1_compatibility=True, check_v1_scriptability=True):
+
+def check_transform(transform, input, check_v1_compatibility=True):
     pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
@@ -2503,7 +2505,7 @@ class TestCrop:
         dict(top=-5, left=5, height=30, width=10),
         dict(top=-5, left=-5, height=20, width=20),
         dict(top=5, left=-5, height=20, width=20),
-        # left, right, top, bottom corner
+        # top-left, top-right, bottom-left, bottom-right corner
         dict(top=-5, left=-5, height=20, width=10),
         dict(top=-5, left=5, height=20, width=10),
         dict(top=5, left=-5, height=20, width=10),
