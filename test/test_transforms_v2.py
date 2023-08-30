@@ -449,37 +449,6 @@ class TestRandomZoomOut:
         assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
 
 
-class TestGaussianBlur:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
-            transforms.GaussianBlur([10, 12, 14])
-
-        with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
-            transforms.GaussianBlur(4)
-
-        with pytest.raises(
-            TypeError, match="sigma should be a single int or float or a list/tuple with length 2 floats."
-        ):
-            transforms.GaussianBlur(3, sigma=[1, 2, 3])
-
-        with pytest.raises(ValueError, match="If sigma is a single number, it must be positive"):
-            transforms.GaussianBlur(3, sigma=-1.0)
-
-        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
-            transforms.GaussianBlur(3, sigma=[2.0, 1.0])
-
-    @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0]])
-    def test__get_params(self, sigma):
-        transform = transforms.GaussianBlur(3, sigma=sigma)
-        params = transform._get_params([])
-
-        if isinstance(sigma, float):
-            assert params["sigma"][0] == params["sigma"][1] == 10
-        else:
-            assert sigma[0] <= params["sigma"][0] <= sigma[1]
-            assert sigma[0] <= params["sigma"][1] <= sigma[1]
-
-
 class TestRandomPerspective:
     def test_assertions(self):
         with pytest.raises(ValueError, match="Argument distortion_scale value should be between 0 and 1"):
@@ -503,23 +472,17 @@ class TestRandomPerspective:
 class TestElasticTransform:
     def test_assertions(self):
 
-        with pytest.raises(TypeError, match="alpha should be float or a sequence of floats"):
+        with pytest.raises(TypeError, match="alpha should be a number or a sequence of numbers"):
             transforms.ElasticTransform({})
 
-        with pytest.raises(ValueError, match="alpha is a sequence its length should be one of 2"):
+        with pytest.raises(ValueError, match="alpha is a sequence its length should be 1 or 2"):
             transforms.ElasticTransform([1.0, 2.0, 3.0])
 
-        with pytest.raises(ValueError, match="alpha should be a sequence of floats"):
-            transforms.ElasticTransform([1, 2])
-
-        with pytest.raises(TypeError, match="sigma should be float or a sequence of floats"):
+        with pytest.raises(TypeError, match="sigma should be a number or a sequence of numbers"):
             transforms.ElasticTransform(1.0, {})
 
-        with pytest.raises(ValueError, match="sigma is a sequence its length should be one of 2"):
+        with pytest.raises(ValueError, match="sigma is a sequence its length should be 1 or 2"):
             transforms.ElasticTransform(1.0, [1.0, 2.0, 3.0])
-
-        with pytest.raises(ValueError, match="sigma should be a sequence of floats"):
-            transforms.ElasticTransform(1.0, [1, 2])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.ElasticTransform(1.0, 2.0, fill="abc")
