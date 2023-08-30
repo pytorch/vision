@@ -164,7 +164,7 @@ assert isinstance(new_bboxes, tv_tensors.BoundingBoxes)
 # as a global config setting for the whole program, or as a context manager
 # (read its docs to learn more about caveats):
 
-with tv_tensors.set_return_type("tv_tensor"):
+with tv_tensors.set_return_type("TVTensor"):
     new_bboxes = bboxes + 3
 assert isinstance(new_bboxes, tv_tensors.BoundingBoxes)
 
