@@ -166,3 +166,16 @@ for imgs, targets in data_loader:
     print(f"{[type(target) for target in targets] = }")
     for name, loss_val in loss_dict.items():
         print(f"{name:<20}{loss_val:.3f}")
+
+# %%
+# Training References
+# -------------------
+#
+# From there, you can check out the `torchvision references
+# <https://github.com/pytorch/vision/tree/main/references>`_ where you'll find
+# the actual training scripts we use to train our models.
+#
+# **Disclaimer** The code in our references is more complex than what you'll
+# need for your own use-cases: this is because we're supporting different
+# backends (PIL, tensors, TVTensors) and different transforms namespaces (v1 and
+# v2). So don't be afraid to simplify and only keep what you need.
