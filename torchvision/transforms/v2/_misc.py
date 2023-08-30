@@ -9,7 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
+from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
 
 
 # TODO: do we want/need to expose this?
@@ -198,17 +198,10 @@ class GaussianBlur(Transform):
             if ks <= 0 or ks % 2 == 0:
                 raise ValueError("Kernel size value should be an odd and positive number.")
 
-        if isinstance(sigma, (int, float)):
-            if sigma <= 0:
-                raise ValueError("If sigma is a single number, it must be positive.")
-            sigma = float(sigma)
-        elif isinstance(sigma, Sequence) and len(sigma) == 2:
-            if not 0.0 < sigma[0] <= sigma[1]:
-                raise ValueError("sigma values should be positive and of the form (min, max).")
-        else:
-            raise TypeError("sigma should be a single int or float or a list/tuple with length 2 floats.")
+        self.sigma = _setup_number_or_seq(sigma, "sigma")
 
-        self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
+        if not 0.0 < self.sigma[0] <= self.sigma[1]:
+            raise ValueError(f"sigma values should be positive and of the form (min, max). Got {self.sigma}")
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
