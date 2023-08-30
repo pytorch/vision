@@ -37,3 +37,34 @@ class Mask(TVTensor):
 
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return tensor.as_subclass(cls)
+
+
+class SegmentationMask(Mask):
+    def __new__(
+        cls,
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
+    ) -> Mask:
+        if isinstance(data, PIL.Image.Image):
+            from torchvision.transforms.v2 import functional as F
+
+            data = F.pil_to_tensor(data)
+
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return tensor.as_subclass(cls)
+
+
+class DetectionMasks(Mask):
+    def __new__(
+        cls,
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
+    ) -> Mask:
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return tensor.as_subclass(cls)

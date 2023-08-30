@@ -1,8 +1,6 @@
-import torch
-
 from ._bounding_box import BoundingBoxes, BoundingBoxFormat
 from ._image import Image
-from ._mask import Mask
+from ._mask import DetectionMasks, Mask, SegmentationMask
 from ._torch_function_helpers import set_return_type
 from ._tv_tensor import TVTensor
 from ._video import Video
