@@ -536,7 +536,8 @@ class TestResize:
             (F._resize_image_pil, PIL.Image.Image),
             (F.resize_image, tv_tensors.Image),
             (F.resize_bounding_boxes, tv_tensors.BoundingBoxes),
-            (F.resize_mask, tv_tensors.Mask),
+            (F.resize_mask, tv_tensors.SegmentationMask),
+            (F.resize_mask, tv_tensors.DetectionMasks),
             (F.resize_video, tv_tensors.Video),
         ],
     )
@@ -871,7 +872,8 @@ class TestHorizontalFlip:
             (F._horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image, tv_tensors.Image),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
-            (F.horizontal_flip_mask, tv_tensors.Mask),
+            (F.horizontal_flip_mask, tv_tensors.SegmentationMask),
+            (F.horizontal_flip_mask, tv_tensors.DetectionMasks),
             (F.horizontal_flip_video, tv_tensors.Video),
         ],
     )
@@ -1039,7 +1041,8 @@ class TestAffine:
             (F._affine_image_pil, PIL.Image.Image),
             (F.affine_image, tv_tensors.Image),
             (F.affine_bounding_boxes, tv_tensors.BoundingBoxes),
-            (F.affine_mask, tv_tensors.Mask),
+            (F.affine_mask, tv_tensors.SegmentationMask),
+            (F.affine_mask, tv_tensors.DetectionMasks),
             (F.affine_video, tv_tensors.Video),
         ],
     )
@@ -1321,7 +1324,8 @@ class TestVerticalFlip:
             (F._vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image, tv_tensors.Image),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
-            (F.vertical_flip_mask, tv_tensors.Mask),
+            (F.vertical_flip_mask, tv_tensors.SegmentationMask),
+            (F.vertical_flip_mask, tv_tensors.DetectionMasks),
             (F.vertical_flip_video, tv_tensors.Video),
         ],
     )
@@ -1464,7 +1468,8 @@ class TestRotate:
             (F._rotate_image_pil, PIL.Image.Image),
             (F.rotate_image, tv_tensors.Image),
             (F.rotate_bounding_boxes, tv_tensors.BoundingBoxes),
-            (F.rotate_mask, tv_tensors.Mask),
+            (F.rotate_mask, tv_tensors.SegmentationMask),
+            (F.rotate_mask, tv_tensors.DetectionMasks),
             (F.rotate_video, tv_tensors.Video),
         ],
     )
@@ -1867,7 +1872,7 @@ class TestToDtype:
         # make sure "others" works as a catch-all and that None means no conversion
 
         sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
-        out = transforms.ToDtype(dtype={tv_tensors.Mask: torch.int64, "others": None})(sample)
+        out = transforms.ToDtype(dtype={tv_tensors.DetectionMasks: torch.int64, "others": None})(sample)
         assert out["inpt"].dtype == inpt_dtype
         assert out["bbox"].dtype == bbox_dtype
         assert out["mask"].dtype != mask_dtype
@@ -1880,7 +1885,8 @@ class TestToDtype:
 
         sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
         out = transforms.ToDtype(
-            dtype={type(sample["inpt"]): torch.float32, tv_tensors.Mask: torch.int64, "others": None}, scale=True
+            dtype={type(sample["inpt"]): torch.float32, tv_tensors.DetectionMasks: torch.int64, "others": None},
+            scale=True,
         )(sample)
         assert out["inpt"].dtype != inpt_dtype
         assert out["inpt"].dtype == torch.float32
@@ -2034,8 +2040,8 @@ class TestCutMixMixUp:
 
         for input_with_bad_type in (
             F.to_pil_image(imgs[0]),
-            tv_tensors.Mask(torch.rand(12, 12)),
-            tv_tensors.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
+            tv_tensors.DetectionMasks(torch.rand(12, 12)),
+            tv_tensors.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=(12, 12)),
         ):
             with pytest.raises(ValueError, match="does not support PIL images, "):
                 cutmix_mixup(input_with_bad_type)
@@ -2233,6 +2239,8 @@ class TestGetKernel:
         PIL.Image.Image: F._resize_image_pil,
         tv_tensors.Image: F.resize_image,
         tv_tensors.BoundingBoxes: F.resize_bounding_boxes,
+        tv_tensors.SegmentationMask: F.resize_mask,
+        tv_tensors.DetectionMasks: F.resize_mask,
         tv_tensors.Mask: F.resize_mask,
         tv_tensors.Video: F.resize_video,
     }
@@ -2436,7 +2444,8 @@ class TestElastic:
             (F._elastic_image_pil, PIL.Image.Image),
             (F.elastic_image, tv_tensors.Image),
             (F.elastic_bounding_boxes, tv_tensors.BoundingBoxes),
-            (F.elastic_mask, tv_tensors.Mask),
+            (F.elastic_mask, tv_tensors.SegmentationMask),
+            (F.elastic_mask, tv_tensors.DetectionMasks),
             (F.elastic_video, tv_tensors.Video),
         ],
     )
@@ -2478,7 +2487,8 @@ class TestToPureTensor:
             "img": make_image(),
             "img_tensor": make_image_tensor(),
             "img_pil": make_image_pil(),
-            "mask": make_detection_mask(),
+            "segmentation_mask": make_segmentation_mask(),
+            "detection_masks": make_detection_mask(),
             "video": make_video(),
             "bbox": make_bounding_boxes(),
             "str": "str",
@@ -2549,7 +2559,8 @@ class TestCrop:
             (F._crop_image_pil, PIL.Image.Image),
             (F.crop_image, tv_tensors.Image),
             (F.crop_bounding_boxes, tv_tensors.BoundingBoxes),
-            (F.crop_mask, tv_tensors.Mask),
+            (F.crop_mask, tv_tensors.SegmentationMask),
+            (F.crop_mask, tv_tensors.DetectionMasks),
             (F.crop_video, tv_tensors.Video),
         ],
     )
@@ -2571,7 +2582,15 @@ class TestCrop:
     )
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
     )
     def test_transform(self, param, value, make_input):
         input = make_input(self.INPUT_SIZE)

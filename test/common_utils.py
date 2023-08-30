@@ -446,7 +446,7 @@ def make_bounding_boxes(
 def make_detection_mask(size=DEFAULT_SIZE, *, dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
     num_objects = 1
-    return tv_tensors.Mask(
+    return tv_tensors.DetectionMasks(
         torch.testing.make_tensor(
             (num_objects, *size),
             low=0,
@@ -459,7 +459,7 @@ def make_detection_mask(size=DEFAULT_SIZE, *, dtype=None, device="cpu"):
 
 def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
     """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
-    return tv_tensors.Mask(
+    return tv_tensors.SegmentationMask(
         torch.testing.make_tensor(
             (*batch_dims, *size),
             low=0,
