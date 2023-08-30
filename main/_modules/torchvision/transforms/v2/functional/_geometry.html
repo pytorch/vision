@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+b9447fd) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+25ec3f2) &#x25BC</a>
     </div>
     
 
@@ -244,7 +244,7 @@
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../transforms.html">Transforming and augmenting images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../datapoints.html">Datapoints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../tv_tensors.html">TVTensors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../utils.html">Utils</a></li>
@@ -352,7 +352,7 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">pad</span> <span class="k">as</span> <span class="n">torch_pad</span>
 
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">_functional_pil</span> <span class="k">as</span> <span class="n">_FP</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms._functional_tensor</span> <span class="kn">import</span> <span class="n">_pad_symmetric</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="p">(</span>
@@ -396,7 +396,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">horizontal_flip_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">image</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
@@ -406,37 +406,37 @@
     <span class="k">return</span> <span class="n">_FP</span><span class="o">.</span><span class="n">hflip</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">horizontal_flip_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">horizontal_flip_image</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">horizontal_flip_bounding_boxes</span><span class="p">(</span>
-    <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">:</span>
         <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">canvas_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">neg_</span><span class="p">()</span>
-    <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">:</span>
         <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">canvas_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">neg_</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>  <span class="c1"># format == datapoints.BoundingBoxFormat.CXCYWH:</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># format == tv_tensors.BoundingBoxFormat.CXCYWH:</span>
         <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">canvas_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">neg_</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_horizontal_flip_bounding_boxes_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_horizontal_flip_bounding_boxes_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">horizontal_flip_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">horizontal_flip_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">horizontal_flip_image</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
 
@@ -453,7 +453,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">vertical_flip_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">image</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
 
@@ -463,37 +463,37 @@
     <span class="k">return</span> <span class="n">_FP</span><span class="o">.</span><span class="n">vflip</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">vertical_flip_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">vertical_flip_image</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">vertical_flip_bounding_boxes</span><span class="p">(</span>
-    <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">:</span>
         <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]]</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">canvas_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">neg_</span><span class="p">()</span>
-    <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">:</span>
         <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">canvas_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">neg_</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>  <span class="c1"># format == datapoints.BoundingBoxFormat.CXCYWH:</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># format == tv_tensors.BoundingBoxFormat.CXCYWH:</span>
         <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">canvas_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">neg_</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_vertical_flip_bounding_boxes_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_vertical_flip_bounding_boxes_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">vertical_flip_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">vertical_flip_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">vertical_flip_image</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
 
@@ -535,7 +535,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">resize_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -664,12 +664,12 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_resize_mask_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">resize_mask</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">size</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">resize_bounding_boxes</span><span class="p">(</span>
@@ -690,17 +690,17 @@
     <span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_resize_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">resize_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">resize_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -996,7 +996,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">affine_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -1075,7 +1075,7 @@
 
 <span class="k">def</span> <span class="nf">_affine_bounding_boxes_with_expand</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1094,7 +1094,7 @@
     <span class="n">device</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">device</span>
     <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">convert_bounding_box_format</span><span class="p">(</span>
-            <span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+            <span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
     <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
@@ -1153,9 +1153,9 @@
         <span class="n">new_width</span><span class="p">,</span> <span class="n">new_height</span> <span class="o">=</span> <span class="n">_compute_affine_output_size</span><span class="p">(</span><span class="n">affine_vector</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
         <span class="n">canvas_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_height</span><span class="p">,</span> <span class="n">new_width</span><span class="p">)</span>
 
-    <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">out_bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">out_bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
     <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">convert_bounding_box_format</span><span class="p">(</span>
-        <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">original_shape</span><span class="p">)</span>
 
     <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">out_bboxes</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_dtype</span><span class="p">)</span>
@@ -1164,7 +1164,7 @@
 
 <span class="k">def</span> <span class="nf">affine_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1186,16 +1186,16 @@
     <span class="k">return</span> <span class="n">out_box</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_affine_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">shear</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">affine_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
         <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
@@ -1206,7 +1206,7 @@
         <span class="n">shear</span><span class="o">=</span><span class="n">shear</span><span class="p">,</span>
         <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">affine_mask</span><span class="p">(</span>
@@ -1241,9 +1241,9 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_affine_mask_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -1251,7 +1251,7 @@
     <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">affine_mask</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
         <span class="n">angle</span><span class="o">=</span><span class="n">angle</span><span class="p">,</span>
@@ -1261,10 +1261,10 @@
         <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span>
         <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">affine_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -1306,7 +1306,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">rotate_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -1372,7 +1372,7 @@
 
 <span class="k">def</span> <span class="nf">rotate_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1394,10 +1394,10 @@
     <span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_rotate_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">rotate_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
         <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
@@ -1406,7 +1406,7 @@
         <span class="n">expand</span><span class="o">=</span><span class="n">expand</span><span class="p">,</span>
         <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">rotate_mask</span><span class="p">(</span>
@@ -1437,20 +1437,20 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_rotate_mask_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">rotate_mask</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">angle</span><span class="o">=</span><span class="n">angle</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="n">expand</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">rotate_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -1503,7 +1503,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">pad_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -1605,7 +1605,7 @@
 <span class="n">_pad_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">pad</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">pad_mask</span><span class="p">(</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -1634,7 +1634,7 @@
 
 <span class="k">def</span> <span class="nf">pad_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
@@ -1645,7 +1645,7 @@
 
     <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">bottom</span> <span class="o">=</span> <span class="n">_parse_pad_padding</span><span class="p">(</span><span class="n">padding</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">:</span>
         <span class="n">pad</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">pad</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
@@ -1659,10 +1659,10 @@
     <span class="k">return</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">),</span> <span class="n">canvas_size</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_pad_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">pad_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
         <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
@@ -1670,10 +1670,10 @@
         <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span>
         <span class="n">padding_mode</span><span class="o">=</span><span class="n">padding_mode</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">pad_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -1695,7 +1695,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">crop_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
 
@@ -1720,7 +1720,7 @@
 
 <span class="k">def</span> <span class="nf">crop_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1728,7 +1728,7 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
 
     <span class="c1"># Crop or implicit pad if left and/or top have negative values:</span>
-    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">:</span>
         <span class="n">sub</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">sub</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
@@ -1739,17 +1739,17 @@
     <span class="k">return</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">),</span> <span class="n">canvas_size</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_crop_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">crop_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">crop_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -1765,7 +1765,7 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">crop_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">crop_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
 
@@ -1850,7 +1850,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">perspective_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -1913,7 +1913,7 @@
 
 <span class="k">def</span> <span class="nf">perspective_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -1927,7 +1927,7 @@
     <span class="n">original_shape</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span>
     <span class="c1"># TODO: first cast to float if bbox is int64 before convert_bounding_box_format</span>
     <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">convert_bounding_box_format</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">)</span>
+        <span class="n">convert_bounding_box_format</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">)</span>
     <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
     <span class="n">dtype</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">dtype</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">)</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
@@ -1994,25 +1994,25 @@
 
     <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out_bbox_mins</span><span class="p">,</span> <span class="n">out_bbox_maxs</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
-        <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
         <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># out_bboxes should be of shape [N boxes, 4]</span>
 
     <span class="k">return</span> <span class="n">convert_bounding_box_format</span><span class="p">(</span>
-        <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">original_shape</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_perspective_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">coefficients</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">perspective_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
         <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
@@ -2021,7 +2021,7 @@
         <span class="n">endpoints</span><span class="o">=</span><span class="n">endpoints</span><span class="p">,</span>
         <span class="n">coefficients</span><span class="o">=</span><span class="n">coefficients</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">perspective_mask</span><span class="p">(</span>
@@ -2047,15 +2047,15 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_perspective_mask_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">coefficients</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">perspective_mask</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
         <span class="n">startpoints</span><span class="o">=</span><span class="n">startpoints</span><span class="p">,</span>
@@ -2063,10 +2063,10 @@
         <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span>
         <span class="n">coefficients</span><span class="o">=</span><span class="n">coefficients</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">perspective_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -2100,7 +2100,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">elastic_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -2186,7 +2186,7 @@
 
 <span class="k">def</span> <span class="nf">elastic_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -2209,7 +2209,7 @@
     <span class="n">original_shape</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span>
     <span class="c1"># TODO: first cast to float if bbox is int64 before convert_bounding_box_format</span>
     <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">convert_bounding_box_format</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">)</span>
+        <span class="n">convert_bounding_box_format</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">)</span>
     <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
     <span class="n">id_grid</span> <span class="o">=</span> <span class="n">_create_identity_grid</span><span class="p">(</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
@@ -2232,23 +2232,23 @@
     <span class="n">out_bbox_mins</span><span class="p">,</span> <span class="n">out_bbox_maxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">aminmax</span><span class="p">(</span><span class="n">transformed_points</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out_bbox_mins</span><span class="p">,</span> <span class="n">out_bbox_maxs</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
-        <span class="nb">format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
         <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">convert_bounding_box_format</span><span class="p">(</span>
-        <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">original_shape</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_elastic_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">elastic_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">displacement</span><span class="o">=</span><span class="n">displacement</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">elastic_mask</span><span class="p">(</span>
@@ -2270,15 +2270,15 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_elastic_mask_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">elastic_mask</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">displacement</span><span class="o">=</span><span class="n">displacement</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">elastic_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -2327,7 +2327,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">center_crop_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">crop_height</span><span class="p">,</span> <span class="n">crop_width</span> <span class="o">=</span> <span class="n">_center_crop_parse_output_size</span><span class="p">(</span><span class="n">output_size</span><span class="p">)</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span>
@@ -2366,7 +2366,7 @@
 
 <span class="k">def</span> <span class="nf">center_crop_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
@@ -2377,17 +2377,17 @@
     <span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_center_crop_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">center_crop_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">output_size</span><span class="o">=</span><span class="n">output_size</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">center_crop_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -2403,7 +2403,7 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">center_crop_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">center_crop_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">output_size</span><span class="p">)</span>
 
@@ -2447,7 +2447,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">resized_crop_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2501,7 +2501,7 @@
 
 <span class="k">def</span> <span class="nf">resized_crop_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="nb">format</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2512,14 +2512,14 @@
     <span class="k">return</span> <span class="n">resize_bounding_boxes</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_resized_crop_bounding_boxes_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">resized_crop_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">resized_crop_mask</span><span class="p">(</span>
@@ -2534,17 +2534,17 @@
     <span class="k">return</span> <span class="n">resize_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">datapoint_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_resized_crop_mask_dispatch</span><span class="p">(</span>
-    <span class="n">inpt</span><span class="p">:</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
+    <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">resized_crop_mask</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">top</span><span class="o">=</span><span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">resized_crop_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2588,7 +2588,7 @@
 
 
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">five_crop_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
@@ -2626,7 +2626,7 @@
     <span class="k">return</span> <span class="n">tl</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">bl</span><span class="p">,</span> <span class="n">br</span><span class="p">,</span> <span class="n">center</span>
 
 
-<span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">five_crop_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
@@ -2658,7 +2658,7 @@
 
 
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">ten_crop_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
@@ -2712,7 +2712,7 @@
     <span class="k">return</span> <span class="n">non_flipped</span> <span class="o">+</span> <span class="n">flipped</span>
 
 
-<span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">ten_crop_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>

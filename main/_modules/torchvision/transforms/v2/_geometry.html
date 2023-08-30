@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+b9447fd) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+25ec3f2) &#x25BC</a>
     </div>
     
 
@@ -244,7 +244,7 @@
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../transforms.html">Transforming and augmenting images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../datapoints.html">Datapoints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tv_tensors.html">TVTensors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
@@ -351,7 +351,7 @@
 <span class="kn">import</span> <span class="nn">PIL.Image</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span><span class="p">,</span> <span class="n">transforms</span> <span class="k">as</span> <span class="n">_transforms</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">transforms</span> <span class="k">as</span> <span class="n">_transforms</span><span class="p">,</span> <span class="n">tv_tensors</span>
 <span class="kn">from</span> <span class="nn">torchvision.ops.boxes</span> <span class="kn">import</span> <span class="n">box_iou</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="n">_get_perspective_coeffs</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms.v2</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span><span class="p">,</span> <span class="n">InterpolationMode</span><span class="p">,</span> <span class="n">Transform</span>
@@ -381,8 +381,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomHorizontalFlip transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -401,8 +401,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomVerticalFlip transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -421,8 +421,8 @@
 
 <span class="sd">    .. v2betastatus:: Resize transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -516,8 +516,8 @@
 
 <span class="sd">    .. v2betastatus:: CenterCrop transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -544,8 +544,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomResizedCrop transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -667,8 +667,8 @@
 
 <span class="sd">    .. v2betastatus:: FiveCrop transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.datapoints.Image` or a</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video` it can have arbitrary number of leading batch dimensions.</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.Image` or a</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video` it can have arbitrary number of leading batch dimensions.</span>
 <span class="sd">    For example, the image can have ``[..., C, H, W]`` shape.</span>
 
 <span class="sd">    .. Note::</span>
@@ -683,15 +683,15 @@
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; class BatchMultiCrop(transforms.Transform):</span>
-<span class="sd">        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], int]):</span>
+<span class="sd">        ...     def forward(self, sample: Tuple[Tuple[Union[tv_tensors.Image, tv_tensors.Video], ...], int]):</span>
 <span class="sd">        ...         images_or_videos, labels = sample</span>
 <span class="sd">        ...         batch_size = len(images_or_videos)</span>
 <span class="sd">        ...         image_or_video = images_or_videos[0]</span>
-<span class="sd">        ...         images_or_videos = datapoints.wrap(torch.stack(images_or_videos), like=image_or_video)</span>
+<span class="sd">        ...         images_or_videos = tv_tensors.wrap(torch.stack(images_or_videos), like=image_or_video)</span>
 <span class="sd">        ...         labels = torch.full((batch_size,), label, device=images_or_videos.device)</span>
 <span class="sd">        ...         return images_or_videos, labels</span>
 <span class="sd">        ...</span>
-<span class="sd">        &gt;&gt;&gt; image = datapoints.Image(torch.rand(3, 256, 256))</span>
+<span class="sd">        &gt;&gt;&gt; image = tv_tensors.Image(torch.rand(3, 256, 256))</span>
 <span class="sd">        &gt;&gt;&gt; label = 3</span>
 <span class="sd">        &gt;&gt;&gt; transform = transforms.Compose([transforms.FiveCrop(224), BatchMultiCrop()])</span>
 <span class="sd">        &gt;&gt;&gt; images, labels = transform(image, label)</span>
@@ -708,10 +708,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">_setup_size</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Please provide only two dimensions (h, w) for size.&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_call_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">functional</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="p">(</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="p">(</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)):</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() is currently passing through inputs of type &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;datapoints.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. This will likely change in the future.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;tv_tensors.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. This will likely change in the future.&quot;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -719,7 +719,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;BoundingBoxes&#39;es and Mask&#39;s are not supported by </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span><span class="p">)</span></div>
 
 
@@ -729,8 +729,8 @@
 
 <span class="sd">    .. v2betastatus:: TenCrop transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.datapoints.Image` or a</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video` it can have arbitrary number of leading batch dimensions.</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.Image` or a</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video` it can have arbitrary number of leading batch dimensions.</span>
 <span class="sd">    For example, the image can have ``[..., C, H, W]`` shape.</span>
 
 <span class="sd">    See :class:`~torchvision.transforms.v2.FiveCrop` for an example.</span>
@@ -755,15 +755,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span> <span class="o">=</span> <span class="n">vertical_flip</span>
 
     <span class="k">def</span> <span class="nf">_call_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">functional</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="p">(</span><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="p">(</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)):</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() is currently passing through inputs of type &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;datapoints.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. This will likely change in the future.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;tv_tensors.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. This will likely change in the future.&quot;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Mask</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;BoundingBoxes&#39;es and Mask&#39;s are not supported by </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -775,8 +775,8 @@
 
 <span class="sd">    .. v2betastatus:: Pad transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -792,7 +792,7 @@
 <span class="sd">        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.</span>
 <span class="sd">            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            Fill value can be also a dictionary mapping data type to the fill value, e.g.</span>
-<span class="sd">            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
+<span class="sd">            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
 <span class="sd">            ``Mask`` will be filled with 0.</span>
 <span class="sd">        padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.</span>
 <span class="sd">            Default is &quot;constant&quot;.</span>
@@ -860,8 +860,8 @@
 <span class="sd">        output_width = input_width * r</span>
 <span class="sd">        output_height = input_height * r</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -869,7 +869,7 @@
 <span class="sd">        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.</span>
 <span class="sd">            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            Fill value can be also a dictionary mapping data type to the fill value, e.g.</span>
-<span class="sd">            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
+<span class="sd">            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
 <span class="sd">            ``Mask`` will be filled with 0.</span>
 <span class="sd">        side_range (sequence of floats, optional): tuple of two floats defines minimum and maximum factors to</span>
 <span class="sd">            scale the input size.</span>
@@ -919,8 +919,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomRotation transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -941,7 +941,7 @@
 <span class="sd">        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.</span>
 <span class="sd">            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            Fill value can be also a dictionary mapping data type to the fill value, e.g.</span>
-<span class="sd">            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
+<span class="sd">            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
 <span class="sd">            ``Mask`` will be filled with 0.</span>
 
 <span class="sd">    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters</span>
@@ -993,8 +993,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomAffine transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1021,7 +1021,7 @@
 <span class="sd">        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.</span>
 <span class="sd">            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            Fill value can be also a dictionary mapping data type to the fill value, e.g.</span>
-<span class="sd">            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
+<span class="sd">            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
 <span class="sd">            ``Mask`` will be filled with 0.</span>
 <span class="sd">        center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.</span>
 <span class="sd">            Default is the center of the image.</span>
@@ -1115,8 +1115,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomCrop transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1139,7 +1139,7 @@
 <span class="sd">        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.</span>
 <span class="sd">            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            Fill value can be also a dictionary mapping data type to the fill value, e.g.</span>
-<span class="sd">            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
+<span class="sd">            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
 <span class="sd">            ``Mask`` will be filled with 0.</span>
 <span class="sd">        padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.</span>
 <span class="sd">            Default is constant.</span>
@@ -1272,8 +1272,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomPerspective transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1288,7 +1288,7 @@
 <span class="sd">        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.</span>
 <span class="sd">            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            Fill value can be also a dictionary mapping data type to the fill value, e.g.</span>
-<span class="sd">            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
+<span class="sd">            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
 <span class="sd">            ``Mask`` will be filled with 0.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1359,8 +1359,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomPerspective transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1391,7 +1391,7 @@
 <span class="sd">        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.</span>
 <span class="sd">            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            Fill value can be also a dictionary mapping data type to the fill value, e.g.</span>
-<span class="sd">            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
+<span class="sd">            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and</span>
 <span class="sd">            ``Mask`` will be filled with 0.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1452,15 +1452,15 @@
 
 <span class="sd">    .. v2betastatus:: RandomIoUCrop transform</span>
 
-<span class="sd">    This transformation requires an image or video data and ``datapoints.BoundingBoxes`` in the input.</span>
+<span class="sd">    This transformation requires an image or video data and ``tv_tensors.BoundingBoxes`` in the input.</span>
 
 <span class="sd">    .. warning::</span>
 <span class="sd">        In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`</span>
 <span class="sd">        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately</span>
 <span class="sd">        after or later in the transforms pipeline.</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1497,8 +1497,8 @@
 
     <span class="k">def</span> <span class="nf">_check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-            <span class="n">has_all</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">is_pure_tensor</span><span class="p">)</span>
+            <span class="n">has_all</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">is_pure_tensor</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() requires input sample to contain tensor or PIL images &quot;</span>
@@ -1538,7 +1538,7 @@
                 <span class="n">xyxy_bboxes</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_bounding_box_format</span><span class="p">(</span>
                     <span class="n">bboxes</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
                     <span class="n">bboxes</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
-                    <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
+                    <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="n">cx</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">xyxy_bboxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">xyxy_bboxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
                 <span class="n">cy</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">xyxy_bboxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">xyxy_bboxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
@@ -1566,7 +1566,7 @@
             <span class="n">F</span><span class="o">.</span><span class="n">crop</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">],</span> <span class="n">left</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">],</span> <span class="n">height</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;height&quot;</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">]</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">):</span>
             <span class="c1"># We &quot;mark&quot; the invalid boxes as degenreate, and they can be</span>
             <span class="c1"># removed by a later call to SanitizeBoundingBoxes()</span>
             <span class="n">output</span><span class="p">[</span><span class="o">~</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;is_within_crop_area&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1580,8 +1580,8 @@
 
 <span class="sd">    .. v2betastatus:: ScaleJitter transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1648,8 +1648,8 @@
 
 <span class="sd">    .. v2betastatus:: RandomShortestSize transform</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
@@ -1729,8 +1729,8 @@
 <span class="sd">        output_width = size</span>
 <span class="sd">        output_height = size</span>
 
-<span class="sd">    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,</span>
-<span class="sd">    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)</span>
+<span class="sd">    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,</span>
+<span class="sd">    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)</span>
 <span class="sd">    it can have arbitrary number of leading batch dimensions. For example,</span>
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 

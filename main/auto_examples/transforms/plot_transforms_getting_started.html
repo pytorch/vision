@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+b9447fd) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+25ec3f2) &#x25BC</a>
     </div>
     
 
@@ -247,7 +247,7 @@
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../transforms.html">Transforming and augmenting images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../datapoints.html">Datapoints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tv_tensors.html">TVTensors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../utils.html">Utils</a></li>
@@ -428,9 +428,9 @@ only need to change the import!</p>
 support tasks beyond image classification: they can also transform bounding
 boxes, segmentation / detection masks, or videos.</p>
 <p>Let’s briefly look at a detection example with bounding boxes.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span>  <span class="c1"># we&#39;ll describe this a bit later, bare with us</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>  <span class="c1"># we&#39;ll describe this a bit later, bare with us</span>
 
-<span class="n">boxes</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span></a><span class="p">(</span>
+<span class="n">boxes</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span></a><span class="p">(</span>
     <span class="p">[</span>
         <span class="p">[</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">370</span><span class="p">,</span> <span class="mi">510</span><span class="p">],</span>
         <span class="p">[</span><span class="mi">275</span><span class="p">,</span> <span class="mi">340</span><span class="p">,</span> <span class="mi">510</span><span class="p">,</span> <span class="mi">510</span><span class="p">],</span>
@@ -449,28 +449,28 @@ boxes, segmentation / detection masks, or videos.</p>
 <span class="n">plot</span><span class="p">([(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img</span></a><span class="p">,</span> <span class="n">boxes</span><span class="p">),</span> <span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">out_img</span></a><span class="p">,</span> <span class="n">out_boxes</span><span class="p">)])</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_plot_transforms_getting_started_003.png" srcset="../../_images/sphx_glr_plot_transforms_getting_started_003.png" alt="plot transforms getting started" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;class &#39;torchvision.datapoints._bounding_box.BoundingBoxes&#39;&gt; &lt;class &#39;torchvision.datapoints._bounding_box.BoundingBoxes&#39;&gt;
+<img src="../../_images/sphx_glr_plot_transforms_getting_started_003.png" srcset="../../_images/sphx_glr_plot_transforms_getting_started_003.png" alt="plot transforms getting started" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;class &#39;torchvision.tv_tensors._bounding_box.BoundingBoxes&#39;&gt; &lt;class &#39;torchvision.tv_tensors._bounding_box.BoundingBoxes&#39;&gt;
 </pre></div>
 </div>
 <p>The example above focuses on object detection. But if we had masks
-(<a class="reference internal" href="../../generated/torchvision.datapoints.Mask.html#torchvision.datapoints.Mask" title="torchvision.datapoints.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.datapoints.Mask</span></code></a>) for object segmentation or semantic
-segmentation, or videos (<a class="reference internal" href="../../generated/torchvision.datapoints.Video.html#torchvision.datapoints.Video" title="torchvision.datapoints.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.datapoints.Video</span></code></a>), we could have
+(<a class="reference internal" href="../../generated/torchvision.tv_tensors.Mask.html#torchvision.tv_tensors.Mask" title="torchvision.tv_tensors.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.tv_tensors.Mask</span></code></a>) for object segmentation or semantic
+segmentation, or videos (<a class="reference internal" href="../../generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.tv_tensors.Video</span></code></a>), we could have
 passed them to the transforms in exactly the same way.</p>
-<p>By now you likely have a few questions: what are these datapoints, how do we
+<p>By now you likely have a few questions: what are these TVTensors, how do we
 use them, and what is the expected input/output of those transforms? We’ll
 answer these in the next sections.</p>
 </section>
-<section id="what-are-datapoints">
-<span id="id1"></span><h2>What are Datapoints?<a class="headerlink" href="#what-are-datapoints" title="Permalink to this heading">¶</a></h2>
-<p>Datapoints are <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> subclasses. The available datapoints are
-<a class="reference internal" href="../../generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image" title="torchvision.datapoints.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>,
-<a class="reference internal" href="../../generated/torchvision.datapoints.BoundingBoxes.html#torchvision.datapoints.BoundingBoxes" title="torchvision.datapoints.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a>,
-<a class="reference internal" href="../../generated/torchvision.datapoints.Mask.html#torchvision.datapoints.Mask" title="torchvision.datapoints.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a>, and
-<a class="reference internal" href="../../generated/torchvision.datapoints.Video.html#torchvision.datapoints.Video" title="torchvision.datapoints.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a>.</p>
-<p>Datapoints look and feel just like regular tensors - they <strong>are</strong> tensors.
+<section id="what-are-tvtensors">
+<span id="what-are-tv-tensors"></span><h2>What are TVTensors?<a class="headerlink" href="#what-are-tvtensors" title="Permalink to this heading">¶</a></h2>
+<p>TVTensors are <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> subclasses. The available TVTensors are
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>,
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a>,
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.Mask.html#torchvision.tv_tensors.Mask" title="torchvision.tv_tensors.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a>, and
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a>.</p>
+<p>TVTensors look and feel just like regular tensors - they <strong>are</strong> tensors.
 Everything that is supported on a plain <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> like <code class="docutils literal notranslate"><span class="pre">.sum()</span></code>
-or any <code class="docutils literal notranslate"><span class="pre">torch.*</span></code> operator will also work on a datapoint:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">img_dp</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span></a><span class="p">(</span><a href="https://pytorch.org/docs/stable/generated/torch.randint.html#torch.randint" title="torch.randint" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">randint</span></a><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span></a><span class="p">))</span>
+or any <code class="docutils literal notranslate"><span class="pre">torch.*</span></code> operator will also work on a TVTensor:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">img_dp</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span></a><span class="p">(</span><a href="https://pytorch.org/docs/stable/generated/torch.randint.html#torch.randint" title="torch.randint" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">randint</span></a><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span></a><span class="p">))</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">img_dp</span><span class="p">,</span><span class="w"> </span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></a><span class="p">)</span><span class="w"> </span><span class="si">= }</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">img_dp</span><span class="o">.</span><span class="n">dtype</span><span class="w"> </span><span class="si">= }</span><span class="s2">, </span><span class="si">{</span><span class="n">img_dp</span><span class="o">.</span><span class="n">shape</span><span class="w"> </span><span class="si">= }</span><span class="s2">, </span><span class="si">{</span><span class="n">img_dp</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="w"> </span><span class="si">= }</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -480,12 +480,12 @@ or any <code class="docutils literal notranslate"><span class="pre">torch.*</spa
 img_dp.dtype = torch.uint8, img_dp.shape = torch.Size([3, 256, 256]), img_dp.sum() = tensor(25087958)
 </pre></div>
 </div>
-<p>These Datapoint classes are at the core of the transforms: in order to
+<p>These TVTensor classes are at the core of the transforms: in order to
 transform a given input, the transforms first look at the <strong>class</strong> of the
 object, and dispatch to the appropriate implementation accordingly.</p>
-<p>You don’t need to know much more about datapoints at this point, but advanced
+<p>You don’t need to know much more about TVTensors at this point, but advanced
 users who want to learn more can refer to
-<a class="reference internal" href="plot_datapoints.html#sphx-glr-auto-examples-transforms-plot-datapoints-py"><span class="std std-ref">Datapoints FAQ</span></a>.</p>
+<a class="reference internal" href="plot_tv_tensors.html#sphx-glr-auto-examples-transforms-plot-tv-tensors-py"><span class="std std-ref">TVTensors FAQ</span></a>.</p>
 </section>
 <section id="what-do-i-pass-as-input">
 <h2>What do I pass as input?<a class="headerlink" href="#what-do-i-pass-as-input" title="Permalink to this heading">¶</a></h2>
@@ -527,17 +527,17 @@ a first read.</p>
 <p>Pure <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> objects are, in general, treated as images (or
 as videos for video-specific transforms). Indeed, you may have noticed
 that in the code above we haven’t used the
-<a class="reference internal" href="../../generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image" title="torchvision.datapoints.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> class at all, and yet our images
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> class at all, and yet our images
 got transformed properly. Transforms follow the following logic to
 determine whether a pure Tensor should be treated as an image (or video),
 or just ignored:</p>
 <ul class="simple">
-<li><p>If there is an <a class="reference internal" href="../../generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image" title="torchvision.datapoints.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>,
-<a class="reference internal" href="../../generated/torchvision.datapoints.Video.html#torchvision.datapoints.Video" title="torchvision.datapoints.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a>,
+<li><p>If there is an <a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>,
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a>,
 or <a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v10.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> instance in the input, all other pure
 tensors are passed-through.</p></li>
-<li><p>If there is no <a class="reference internal" href="../../generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image" title="torchvision.datapoints.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> or
-<a class="reference internal" href="../../generated/torchvision.datapoints.Video.html#torchvision.datapoints.Video" title="torchvision.datapoints.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> instance, only the first pure
+<li><p>If there is no <a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> or
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> instance, only the first pure
 <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> will be transformed as image or video, while all
 others will be passed-through. Here “first” means “first in a depth-wise
 traversal”.</p></li>
@@ -562,23 +562,23 @@ use <code class="docutils literal notranslate"><span class="pre">transform</span
 <p>Torchvision also supports datasets for object detection or segmentation like
 <a class="reference internal" href="../../generated/torchvision.datasets.CocoDetection.html#torchvision.datasets.CocoDetection" title="torchvision.datasets.CocoDetection"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.datasets.CocoDetection</span></code></a>. Those datasets predate
 the existence of the <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> module and of the
-datapoints, so they don’t return datapoints out of the box.</p>
-<p>An easy way to force those datasets to return datapoints and to make them
+TVTensors, so they don’t return TVTensors out of the box.</p>
+<p>An easy way to force those datasets to return TVTensors and to make them
 compatible with v2 transforms is to use the
 <a class="reference internal" href="../../generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2" title="torchvision.datasets.wrap_dataset_for_transforms_v2"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchvision.datasets.wrap_dataset_for_transforms_v2()</span></code></a> function:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.datasets</span> <span class="kn">import</span> <span class="n">CocoDetection</span><span class="p">,</span> <span class="n">wrap_dataset_for_transforms_v2</span>
 
 <span class="n">dataset</span> <span class="o">=</span> <span class="n">CocoDetection</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">my_transforms</span><span class="p">)</span>
 <span class="n">dataset</span> <span class="o">=</span> <span class="n">wrap_dataset_for_transforms_v2</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
-<span class="c1"># Now the dataset returns datapoints!</span>
+<span class="c1"># Now the dataset returns TVTensors!</span>
 </pre></div>
 </div>
 </section>
 <section id="using-your-own-datasets">
 <h3>Using your own datasets<a class="headerlink" href="#using-your-own-datasets" title="Permalink to this heading">¶</a></h3>
 <p>If you have a custom dataset, then you’ll need to convert your objects into
-the appropriate Datapoint classes. Creating Datapoint instances is very easy,
-refer to <a class="reference internal" href="plot_datapoints.html#datapoint-creation"><span class="std std-ref">How do I construct a datapoint?</span></a> for more details.</p>
+the appropriate TVTensor classes. Creating TVTensor instances is very easy,
+refer to <a class="reference internal" href="plot_tv_tensors.html#tv-tensor-creation"><span class="std std-ref">How do I construct a TVTensor?</span></a> for more details.</p>
 <p>There are two main places where you can implement that conversion logic:</p>
 <ul class="simple">
 <li><p>At the end of the datasets’s <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> method, before returning the
@@ -586,7 +586,7 @@ sample (or by sub-classing the dataset).</p></li>
 <li><p>As the very first step of your transforms pipeline</p></li>
 </ul>
 <p>Either way, the logic will depend on your specific dataset.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.848 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.835 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-transforms-getting-started-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/8faa1256268baabef0c4b947064f34f4/plot_transforms_getting_started.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_transforms_getting_started.py</span></code></a></p>
@@ -647,7 +647,7 @@ sample (or by sub-classing the dataset).</p></li>
 <li><a class="reference internal" href="#the-basics">The basics</a></li>
 <li><a class="reference internal" href="#i-just-want-to-do-image-classification">I just want to do image classification</a></li>
 <li><a class="reference internal" href="#detection-segmentation-videos">Detection, Segmentation, Videos</a></li>
-<li><a class="reference internal" href="#what-are-datapoints">What are Datapoints?</a></li>
+<li><a class="reference internal" href="#what-are-tvtensors">What are TVTensors?</a></li>
 <li><a class="reference internal" href="#what-do-i-pass-as-input">What do I pass as input?</a></li>
 <li><a class="reference internal" href="#transforms-and-datasets-intercompatibility">Transforms and Datasets intercompatibility</a><ul>
 <li><a class="reference internal" href="#using-built-in-datasets">Using built-in datasets</a></li>

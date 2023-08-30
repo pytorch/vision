@@ -112,18 +112,18 @@ Transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip=" Datapoints are Tensor subclasses introduced together with torchvision.transforms.v2. This exam...">
+    <div class="sphx-glr-thumbcontainer" tooltip=" TVTensors are Tensor subclasses introduced together with torchvision.transforms.v2. This examp...">
 
 .. only:: html
 
-  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_datapoints_thumb.png
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_tv_tensors_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_datapoints.py`
+  :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Datapoints FAQ</div>
+      <div class="sphx-glr-thumbnail-title">TVTensors FAQ</div>
     </div>
 
 
@@ -133,14 +133,14 @@ Transforms
 
 .. only:: html
 
-  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_custom_datapoints_thumb.png
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_custom_tv_tensors_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_custom_datapoints.py`
+  :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">How to write your own Datapoint class</div>
+      <div class="sphx-glr-thumbnail-title">How to write your own TVTensor class</div>
     </div>
 
 

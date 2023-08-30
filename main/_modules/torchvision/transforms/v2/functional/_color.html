@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+b9447fd) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+25ec3f2) &#x25BC</a>
     </div>
     
 
@@ -244,7 +244,7 @@
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../transforms.html">Transforming and augmenting images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../datapoints.html">Datapoints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../tv_tensors.html">TVTensors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../utils.html">Utils</a></li>
@@ -348,7 +348,7 @@
 <span class="kn">import</span> <span class="nn">PIL.Image</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">conv2d</span>
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">_functional_pil</span> <span class="k">as</span> <span class="n">_FP</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms._functional_tensor</span> <span class="kn">import</span> <span class="n">_max_value</span>
 
@@ -392,7 +392,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rgb_to_grayscale</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rgb_to_grayscale</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rgb_to_grayscale</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">rgb_to_grayscale_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">num_output_channels</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;num_output_channels must be 1 or 3, got </span><span class="si">{</span><span class="n">num_output_channels</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
@@ -427,7 +427,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_brightness</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_brightness</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_brightness</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_brightness_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">brightness_factor</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;brightness_factor (</span><span class="si">{</span><span class="n">brightness_factor</span><span class="si">}</span><span class="s2">) is not non-negative.&quot;</span><span class="p">)</span>
@@ -447,7 +447,7 @@
     <span class="k">return</span> <span class="n">_FP</span><span class="o">.</span><span class="n">adjust_brightness</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="o">=</span><span class="n">brightness_factor</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_brightness</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_brightness</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_brightness_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">adjust_brightness_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="o">=</span><span class="n">brightness_factor</span><span class="p">)</span>
 
@@ -464,7 +464,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_saturation</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_saturation</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_saturation</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_saturation_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">saturation_factor</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;saturation_factor (</span><span class="si">{</span><span class="n">saturation_factor</span><span class="si">}</span><span class="s2">) is not non-negative.&quot;</span><span class="p">)</span>
@@ -486,7 +486,7 @@
 <span class="n">_adjust_saturation_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_saturation</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">adjust_saturation</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_saturation</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_saturation</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_saturation_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">adjust_saturation_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="o">=</span><span class="n">saturation_factor</span><span class="p">)</span>
 
@@ -503,7 +503,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_contrast_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">contrast_factor</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;contrast_factor (</span><span class="si">{</span><span class="n">contrast_factor</span><span class="si">}</span><span class="s2">) is not non-negative.&quot;</span><span class="p">)</span>
@@ -525,7 +525,7 @@
 <span class="n">_adjust_contrast_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_contrast</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_contrast_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">adjust_contrast_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">contrast_factor</span><span class="p">)</span>
 
@@ -542,7 +542,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_sharpness</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_sharpness</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_sharpness</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_sharpness_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">num_channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span>
     <span class="k">if</span> <span class="n">num_channels</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
@@ -598,7 +598,7 @@
 <span class="n">_adjust_sharpness_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_sharpness</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">adjust_sharpness</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_sharpness</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_sharpness</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_sharpness_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">adjust_sharpness_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="o">=</span><span class="n">sharpness_factor</span><span class="p">)</span>
 
@@ -685,7 +685,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_hue</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_hue</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_hue</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_hue_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">hue_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">&lt;=</span> <span class="n">hue_factor</span> <span class="o">&lt;=</span> <span class="mf">0.5</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;hue_factor (</span><span class="si">{</span><span class="n">hue_factor</span><span class="si">}</span><span class="s2">) is not in [-0.5, 0.5].&quot;</span><span class="p">)</span>
@@ -716,7 +716,7 @@
 <span class="n">_adjust_hue_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_hue</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_hue</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_hue</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_hue_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">hue_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">adjust_hue_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">hue_factor</span><span class="o">=</span><span class="n">hue_factor</span><span class="p">)</span>
 
@@ -733,7 +733,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_gamma</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_gamma</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_gamma</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_gamma_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gain</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">gamma</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Gamma should be a non-negative real number&quot;</span><span class="p">)</span>
@@ -756,7 +756,7 @@
 <span class="n">_adjust_gamma_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_gamma</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">adjust_gamma</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_gamma</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">adjust_gamma</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">adjust_gamma_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gain</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">adjust_gamma_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span> <span class="n">gain</span><span class="o">=</span><span class="n">gain</span><span class="p">)</span>
 
@@ -773,7 +773,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">posterize</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">posterize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">posterize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">posterize_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">bits</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
         <span class="n">levels</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">bits</span>
@@ -790,7 +790,7 @@
 <span class="n">_posterize_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">posterize</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">posterize</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">posterize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">posterize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">posterize_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">bits</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">posterize_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="n">bits</span><span class="p">)</span>
 
@@ -807,7 +807,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">solarize</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">solarize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">solarize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">solarize_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="n">_max_value</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Threshold should be less or equal the maximum value of the dtype, but got </span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -818,7 +818,7 @@
 <span class="n">_solarize_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">solarize</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">solarize</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">solarize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">solarize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">solarize_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">solarize_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
 
@@ -835,7 +835,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">autocontrast</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">autocontrast</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">autocontrast</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">autocontrast_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">c</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]:</span>
@@ -868,7 +868,7 @@
 <span class="n">_autocontrast_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">autocontrast</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">autocontrast</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">autocontrast</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">autocontrast_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">autocontrast_image</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
 
@@ -885,7 +885,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">equalize</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">equalize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">equalize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">equalize_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">image</span>
@@ -958,7 +958,7 @@
 <span class="n">_equalize_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">equalize</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">equalize</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">equalize</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">equalize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">equalize_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">equalize_image</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
 
@@ -975,7 +975,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">invert</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">invert</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">invert</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">invert_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
         <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">image</span>
@@ -989,7 +989,7 @@
 <span class="n">_invert_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">invert</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">invert</span><span class="p">)</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">invert</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">invert</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">invert_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">invert_image</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
 
@@ -998,7 +998,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Permute the channels of the input according to the given permutation.</span>
 
 <span class="sd">    This function supports plain :class:`~torch.Tensor`&#39;s, :class:`PIL.Image.Image`&#39;s, and</span>
-<span class="sd">    :class:`torchvision.datapoints.Image` and :class:`torchvision.datapoints.Video`.</span>
+<span class="sd">    :class:`torchvision.tv_tensors.Image` and :class:`torchvision.tv_tensors.Video`.</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; rgb_image = torch.rand(3, 256, 256)</span>
@@ -1026,7 +1026,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">permute_channels</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">permute_channels</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">permute_channels</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">permute_channels_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">permutation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">num_channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span>
@@ -1049,7 +1049,7 @@
     <span class="k">return</span> <span class="n">to_pil_image</span><span class="p">(</span><span class="n">permute_channels_image</span><span class="p">(</span><span class="n">pil_to_tensor</span><span class="p">(</span><span class="n">image</span><span class="p">),</span> <span class="n">permutation</span><span class="o">=</span><span class="n">permutation</span><span class="p">))</span>
 
 
-<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">permute_channels</span><span class="p">,</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
+<span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">permute_channels</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">permute_channels_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">permutation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">permute_channels_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">permutation</span><span class="o">=</span><span class="n">permutation</span><span class="p">)</span>
 </pre></div>

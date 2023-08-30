@@ -36,7 +36,7 @@ to object detection or semantic segmentation tasks.
     import torch
     import torch.utils.data
 
-    from torchvision import models, datasets, datapoints
+    from torchvision import models, datasets, tv_tensors
     from torchvision.transforms import v2
 
     torch.manual_seed(0)
@@ -132,9 +132,9 @@ structure to a single dictionary of lists:
     type(img) = <class 'PIL.Image.Image'>
     type(target) = <class 'dict'>
     target.keys() = dict_keys(['boxes', 'masks', 'labels'])
-    type(target['boxes']) = <class 'torchvision.datapoints._bounding_box.BoundingBoxes'>
+    type(target['boxes']) = <class 'torchvision.tv_tensors._bounding_box.BoundingBoxes'>
     type(target['labels']) = <class 'torch.Tensor'>
-    type(target['masks']) = <class 'torchvision.datapoints._mask.Mask'>
+    type(target['masks']) = <class 'torchvision.tv_tensors._mask.Mask'>
 
 
 
@@ -143,7 +143,7 @@ structure to a single dictionary of lists:
 
 We used the ``target_keys`` parameter to specify the kind of output we're
 interested in. Our dataset now returns a target which is dict where the values
-are :ref:`Datapoints <what_are_datapoints>` (all are :class:`torch.Tensor`
+are :ref:`TVTensors <what_are_tv_tensors>` (all are :class:`torch.Tensor`
 subclasses). We're dropped all unncessary keys from the previous output, but
 if you need any of the original keys e.g. "image_id", you can still ask for
 it.
@@ -197,7 +197,7 @@ dataset so that they can leverage multi-processing from the
         [
             v2.ToImage(),
             v2.RandomPhotometricDistort(p=1),
-            v2.RandomZoomOut(fill={datapoints.Image: (123, 117, 104), "others": 0}),
+            v2.RandomZoomOut(fill={tv_tensors.Image: (123, 117, 104), "others": 0}),
             v2.RandomIoUCrop(),
             v2.RandomHorizontalFlip(p=1),
             v2.SanitizeBoundingBoxes(),
@@ -321,7 +321,7 @@ semantic segmentation tasks.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.939 seconds)
+   **Total running time of the script:** (0 minutes 4.854 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py:

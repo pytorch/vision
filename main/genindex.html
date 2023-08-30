@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+b9447fd) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+25ec3f2) &#x25BC</a>
     </div>
     
 
@@ -244,7 +244,7 @@
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="datapoints.html">Datapoints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tv_tensors.html">TVTensors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
@@ -588,9 +588,9 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.ops.batched_nms.html#torchvision.ops.batched_nms">batched_nms() (in module torchvision.ops)</a>
 </li>
-      <li><a href="generated/torchvision.datapoints.BoundingBoxes.html#torchvision.datapoints.BoundingBoxes">BoundingBoxes (class in torchvision.datapoints)</a>
+      <li><a href="generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes">BoundingBoxes (class in torchvision.tv_tensors)</a>
 </li>
-      <li><a href="generated/torchvision.datapoints.BoundingBoxFormat.html#torchvision.datapoints.BoundingBoxFormat">BoundingBoxFormat (class in torchvision.datapoints)</a>
+      <li><a href="generated/torchvision.tv_tensors.BoundingBoxFormat.html#torchvision.tv_tensors.BoundingBoxFormat">BoundingBoxFormat (class in torchvision.tv_tensors)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -716,8 +716,6 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/torchvision.datapoints.Datapoint.html#torchvision.datapoints.Datapoint">Datapoint (class in torchvision.datapoints)</a>
-</li>
       <li><a href="generated/torchvision.datasets.DatasetFolder.html#torchvision.datasets.DatasetFolder">DatasetFolder (class in torchvision.datasets)</a>
 </li>
       <li><a href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image">decode_image() (in module torchvision.io)</a>
@@ -760,7 +758,7 @@
 </li>
       <li><a href="models/generated/torchvision.models.densenet201.html#torchvision.models.DenseNet201_Weights">DenseNet201_Weights (class in torchvision.models)</a>
 </li>
-      <li><a href="generated/torchvision.datapoints.Datapoint.html#torchvision.datapoints.Datapoint.device">device (torchvision.datapoints.Datapoint property)</a>
+      <li><a href="generated/torchvision.tv_tensors.TVTensor.html#torchvision.tv_tensors.TVTensor.device">device (torchvision.tv_tensors.TVTensor property)</a>
 </li>
       <li><a href="generated/torchvision.ops.distance_box_iou.html#torchvision.ops.distance_box_iou">distance_box_iou() (in module torchvision.ops)</a>
 </li>
@@ -1186,7 +1184,7 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image">Image (class in torchvision.datapoints)</a>
+      <li><a href="generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image">Image (class in torchvision.tv_tensors)</a>
 </li>
       <li><a href="generated/torchvision.datasets.ImageFolder.html#torchvision.datasets.ImageFolder">ImageFolder (class in torchvision.datasets)</a>
 </li>
@@ -1282,7 +1280,7 @@
 </li>
       <li><a href="generated/torchvision.utils.make_grid.html#torchvision.utils.make_grid">make_grid() (in module torchvision.utils)</a>
 </li>
-      <li><a href="generated/torchvision.datapoints.Mask.html#torchvision.datapoints.Mask">Mask (class in torchvision.datapoints)</a>
+      <li><a href="generated/torchvision.tv_tensors.Mask.html#torchvision.tv_tensors.Mask">Mask (class in torchvision.tv_tensors)</a>
 </li>
       <li><a href="models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html#torchvision.models.detection.maskrcnn_resnet50_fpn">maskrcnn_resnet50_fpn() (in module torchvision.models.detection)</a>
 </li>
@@ -1377,7 +1375,7 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/torchvision.datapoints.Datapoint.html#torchvision.datapoints.Datapoint.ndim">ndim (torchvision.datapoints.Datapoint property)</a>
+      <li><a href="generated/torchvision.tv_tensors.TVTensor.html#torchvision.tv_tensors.TVTensor.ndim">ndim (torchvision.tv_tensors.TVTensor property)</a>
 </li>
       <li><a href="generated/torchvision.ops.nms.html#torchvision.ops.nms">nms() (in module torchvision.ops)</a>
 </li>
@@ -1833,11 +1831,11 @@
 </li>
       <li><a href="index.html#torchvision.set_image_backend">set_image_backend() (in module torchvision)</a>
 </li>
-      <li><a href="generated/torchvision.datapoints.set_return_type.html#torchvision.datapoints.set_return_type">set_return_type (class in torchvision.datapoints)</a>
+      <li><a href="generated/torchvision.tv_tensors.set_return_type.html#torchvision.tv_tensors.set_return_type">set_return_type (class in torchvision.tv_tensors)</a>
 </li>
       <li><a href="index.html#torchvision.set_video_backend">set_video_backend() (in module torchvision)</a>
 </li>
-      <li><a href="generated/torchvision.datapoints.Datapoint.html#torchvision.datapoints.Datapoint.shape">shape (torchvision.datapoints.Datapoint property)</a>
+      <li><a href="generated/torchvision.tv_tensors.TVTensor.html#torchvision.tv_tensors.TVTensor.shape">shape (torchvision.tv_tensors.TVTensor property)</a>
 </li>
       <li><a href="models/generated/torchvision.models.shufflenet_v2_x0_5.html#torchvision.models.shufflenet_v2_x0_5">shufflenet_v2_x0_5() (in module torchvision.models)</a>
 
@@ -1995,10 +1993,10 @@
       </ul></li>
       <li><a href="generated/torchvision.transforms.v2.functional.to_tensor.html#torchvision.transforms.v2.functional.to_tensor">to_tensor (class in torchvision.transforms.v2.functional)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.transforms.functional.to_tensor.html#torchvision.transforms.functional.to_tensor">to_tensor() (in module torchvision.transforms.functional)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype">ToDtype (class in torchvision.transforms.v2)</a>
 </li>
       <li><a href="generated/torchvision.transforms.v2.ToImage.html#torchvision.transforms.v2.ToImage">ToImage (class in torchvision.transforms.v2)</a>
@@ -2030,6 +2028,8 @@
         <li><a href="generated/torchvision.transforms.v2.TrivialAugmentWide.html#torchvision.transforms.v2.TrivialAugmentWide">(class in torchvision.transforms.v2)</a>
 </li>
       </ul></li>
+      <li><a href="generated/torchvision.tv_tensors.TVTensor.html#torchvision.tv_tensors.TVTensor">TVTensor (class in torchvision.tv_tensors)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -2090,7 +2090,7 @@
 </li>
       <li><a href="models/generated/torchvision.models.vgg19.html#torchvision.models.VGG19_Weights">VGG19_Weights (class in torchvision.models)</a>
 </li>
-      <li><a href="generated/torchvision.datapoints.Video.html#torchvision.datapoints.Video">Video (class in torchvision.datapoints)</a>
+      <li><a href="generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video">Video (class in torchvision.tv_tensors)</a>
 </li>
       <li><a href="generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader">VideoReader (class in torchvision.io)</a>
 </li>
@@ -2138,7 +2138,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/torchvision.datapoints.wrap.html#torchvision.datapoints.wrap">wrap (class in torchvision.datapoints)</a>
+      <li><a href="generated/torchvision.tv_tensors.wrap.html#torchvision.tv_tensors.wrap">wrap (class in torchvision.tv_tensors)</a>
 </li>
       <li><a href="generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2">wrap_dataset_for_transforms_v2() (in module torchvision.datasets)</a>
 </li>

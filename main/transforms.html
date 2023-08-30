@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+b9447fd) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+25ec3f2) &#x25BC</a>
     </div>
     
 
@@ -247,7 +247,7 @@
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Transforming and augmenting images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="datapoints.html">Datapoints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tv_tensors.html">TVTensors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
@@ -368,12 +368,12 @@ tasks (image classification, detection, segmentation, video classification).</p>
 </pre></div>
 </div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Detection (re-using imports and transforms from above)</span>
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datapoints</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
 
 <span class="n">img</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
 <span class="n">bboxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">H</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 <span class="n">bboxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">bboxes</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
-<span class="n">bboxes</span> <span class="o">=</span> <span class="n">datapoints</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span><span class="n">bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;XYXY&quot;</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span>
+<span class="n">bboxes</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span><span class="n">bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;XYXY&quot;</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span>
 
 <span class="c1"># The same transforms can be used!</span>
 <span class="n">img</span><span class="p">,</span> <span class="n">bboxes</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bboxes</span><span class="p">)</span>
@@ -489,7 +489,7 @@ this time.</p>
 <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2.functional</span></code> namespace.
 This is very much like the <a class="reference external" href="https://pytorch.org/docs/stable/nn.html#module-torch.nn" title="(in PyTorch v2.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn</span></code></a> package which defines both classes
 and functional equivalents in <code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn.functional</span></code>.</p>
-<p>The functionals support PIL images, pure tensors, or <a class="reference internal" href="datapoints.html#datapoints"><span class="std std-ref">datapoints</span></a>, e.g. both <code class="docutils literal notranslate"><span class="pre">resize(image_tensor)</span></code> and <code class="docutils literal notranslate"><span class="pre">resize(bboxes)</span></code> are
+<p>The functionals support PIL images, pure tensors, or <a class="reference internal" href="tv_tensors.html#tv-tensors"><span class="std std-ref">TVTensors</span></a>, e.g. both <code class="docutils literal notranslate"><span class="pre">resize(image_tensor)</span></code> and <code class="docutils literal notranslate"><span class="pre">resize(bboxes)</span></code> are
 valid.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -844,10 +844,10 @@ scaling, we mean e.g. that a <code class="docutils literal notranslate"><span cl
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToImage.html#torchvision.transforms.v2.ToImage" title="torchvision.transforms.v2.ToImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToImage</span></code></a>()</p></td>
-<td><p>[BETA] Convert a tensor, ndarray, or PIL Image to <a class="reference internal" href="generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image" title="torchvision.datapoints.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> ; this does not scale values.</p></td>
+<td><p>[BETA] Convert a tensor, ndarray, or PIL Image to <a class="reference internal" href="generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> ; this does not scale values.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToPureTensor.html#torchvision.transforms.v2.ToPureTensor" title="torchvision.transforms.v2.ToPureTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToPureTensor</span></code></a>()</p></td>
-<td><p>[BETA] Convert all datapoints to pure tensors, removing associated metadata (if any).</p></td>
+<td><p>[BETA] Convert all tv_tensors to pure tensors, removing associated metadata (if any).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.PILToTensor.html#torchvision.transforms.v2.PILToTensor" title="torchvision.transforms.v2.PILToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.PILToTensor</span></code></a>()</p></td>
 <td><p>[BETA] Convert a PIL Image to a tensor of the same type - this does not scale values.</p></td>
@@ -948,7 +948,7 @@ are combining pairs of images together. These can be used after the dataloader
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.register_kernel.html#torchvision.transforms.v2.functional.register_kernel" title="torchvision.transforms.v2.functional.register_kernel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.register_kernel</span></code></a>(functional, ...)</p></td>
-<td><p>[BETA] Decorate a kernel to register it for a functional and a (custom) datapoint type.</p></td>
+<td><p>[BETA] Decorate a kernel to register it for a functional and a (custom) tv_tensor type.</p></td>
 </tr>
 </tbody>
 </table>

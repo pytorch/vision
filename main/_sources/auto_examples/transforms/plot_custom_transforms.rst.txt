@@ -26,7 +26,7 @@ torchvision transforms V2 API.
 .. code-block:: default
 
     import torch
-    from torchvision import datapoints
+    from torchvision import tv_tensors
     from torchvision.transforms import v2
 
 
@@ -88,7 +88,7 @@ where our samples are just images, bounding boxes and labels:
 
     H, W = 256, 256
     img = torch.rand(3, H, W)
-    bboxes = datapoints.BoundingBoxes(
+    bboxes = tv_tensors.BoundingBoxes(
         torch.tensor([[0, 10, 10, 20], [50, 50, 70, 70]]),
         format="XYXY",
         canvas_size=(H, W)
@@ -135,9 +135,9 @@ where our samples are just images, bounding boxes and labels:
 .. GENERATED FROM PYTHON SOURCE LINES 76-93
 
 .. note::
-    While working with datapoint classes in your code, make sure to
+    While working with TVTensor classes in your code, make sure to
     familiarize yourself with this section:
-    :ref:`datapoint_unwrapping_behaviour`
+    :ref:`tv_tensor_unwrapping_behaviour`
 
 Supporting arbitrary input structures
 =====================================
@@ -193,7 +193,7 @@ and adapt it to your needs.
 In brief, the core logic is to unpack the input into a flat list using `pytree
 <https://github.com/pytorch/pytorch/blob/main/torch/utils/_pytree.py>`_, and
 then transform only the entries that can be transformed (the decision is made
-based on the **class** of the entries, as all datapoints are
+based on the **class** of the entries, as all TVTensors are
 tensor-subclasses) plus some custom logic that is out of score here - check the
 code for details. The (potentially transformed) entries are then repacked and
 returned, in the same structure as the input.
