@@ -13,7 +13,7 @@ D = TypeVar("D", bound="TVTensor")
 
 
 class TVTensor(torch.Tensor):
-    """[Beta] Base class for all tv_tensors.
+    """[Beta] Base class for all TVTensors.
 
     You probably don't want to use this class unless you're defining your own
     custom TVTensors. See
