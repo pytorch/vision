@@ -1219,7 +1219,7 @@ def test_rotate():
     x = np.zeros((100, 100, 3), dtype=np.uint8)
     x[40, 40] = [255, 255, 255]
 
-    with pytest.raises(TypeError, match=r"Input can either"):
+    with pytest.raises(TypeError, match=r"supports inputs of type"):
         F.rotate(x, 10)
 
     img = F.to_pil_image(x)
@@ -1863,7 +1863,7 @@ def test_random_rotation():
 
     t = transforms.RandomRotation(0, fill=None)
     # TODO: BC-break - do we care?
-    assert t.fill == defaultdict()
+    assert t.fill is None
 
     t = transforms.RandomRotation(10)
     angle = t.get_params(t.degrees)
@@ -1915,8 +1915,8 @@ def test_randomperspective_fill(mode, seed):
         transforms.RandomPerspective(fill="LOL")
 
     t = transforms.RandomPerspective(fill=None)
-    # TODO this is BC break - do we care??
-    assert t.fill == defaultdict()
+    # BC-breaking: Do we care?
+    assert t.fill is None
 
     height = 100
     width = 100
@@ -2192,7 +2192,7 @@ def test_random_affine():
 
     t = transforms.RandomAffine(0, fill=None)
     # TODO: do we care?
-    assert t.fill == defaultdict()
+    assert t.fill is None
 
     x = np.zeros((100, 100, 3), dtype=np.uint8)
     img = F.to_pil_image(x)

@@ -1253,7 +1253,7 @@ def test_elastic_transform_asserts():
     with pytest.raises(TypeError, match="Argument displacement should be a Tensor"):
         _ = F.elastic_transform(img_tensor, displacement=None)
 
-    with pytest.raises(TypeError, match="Input can either be"):
+    with pytest.raises(TypeError, match="supports inputs of type"):
         _ = F.elastic_transform("abc", displacement=torch.rand(1))
 
     with pytest.raises(ValueError, match="Argument displacement shape should"):
