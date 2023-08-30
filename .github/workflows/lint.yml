@@ -11,7 +11,7 @@ on:
 
 jobs:
   python-source-and-configs:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
       script: |
@@ -23,26 +23,26 @@ jobs:
         conda create --name ci --quiet --yes python=3.8 pip
         conda activate ci
         echo '::endgroup::'
-        
+
         echo '::group::Install lint tools'
         pip install --progress-bar=off pre-commit
         echo '::endgroup::'
-        
+
         set +e
         pre-commit run --all-files
-        
+
         if [ $? -ne 0 ]; then
           git --no-pager diff
           exit 1
         fi
 
   c-source:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
       script: |
         set -euo pipefail
-        
+
         echo '::group::Setup environment'
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
@@ -53,7 +53,7 @@ jobs:
         conda activate ci
         export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
         echo '::endgroup::'
-        
+
         echo '::group::Install lint tools'
         curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o ./clang-format
         chmod +x ./clang-format
@@ -62,35 +62,34 @@ jobs:
         echo '::group::Lint C source'
         set +e
         ./.github/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format
-        
+
         if [ $? -ne 0 ]; then
           git --no-pager diff
           exit 1
         fi
         echo '::endgroup::'
 
-
   python-types:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
       script: |
         set -euo pipefail
-        
+
         export PYTHON_VERSION=3.8
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
-        
+
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
-        
+
         echo '::group::Install lint tools'
         pip install --progress-bar=off mypy
         echo '::endgroup::'
-        
+
         echo '::group::Lint Python types'
         mypy --install-types --non-interactive --config-file mypy.ini
         echo '::endgroup::'
@@ -100,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run BC Lint Action
-        uses: pytorch/test-infra/.github/actions/bc-lint@main
+        uses: pytorch/test-infra/.github/actions/bc-lint@release/2.1
         with:
           repo: ${{ github.event.pull_request.head.repo.full_name }}
           base_sha: ${{ github.event.pull_request.base.sha }}
