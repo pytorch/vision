@@ -2500,12 +2500,12 @@ class TestCrop:
         dict(top=5, left=5, height=10, width=5),
         # larger than input, i.e. pad
         dict(top=-5, left=-5, height=30, width=20),
-        # left, right, top, bottom side
+        # sides: left, right, top, bottom
         dict(top=-5, left=-5, height=30, width=10),
         dict(top=-5, left=5, height=30, width=10),
         dict(top=-5, left=-5, height=20, width=20),
         dict(top=5, left=-5, height=20, width=20),
-        # top-left, top-right, bottom-left, bottom-right corner
+        # corners: top-left, top-right, bottom-left, bottom-right
         dict(top=-5, left=-5, height=20, width=10),
         dict(top=-5, left=5, height=20, width=10),
         dict(top=5, left=-5, height=20, width=10),
