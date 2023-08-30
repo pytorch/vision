@@ -1375,7 +1375,6 @@ class TestVerticalFlip:
         assert_equal(output, input)
 
 
-@pytest.mark.filterwarnings("ignore:The provided center argument has no effect")
 class TestRotate:
     _EXHAUSTIVE_TYPE_AFFINE_KWARGS = dict(
         # float, int

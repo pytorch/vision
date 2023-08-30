@@ -977,9 +977,6 @@ def rotate_image(
 
     center_f = [0.0, 0.0]
     if center is not None:
-        if expand:
-            # TODO: Do we actually want to warn, or just document this?
-            warnings.warn("The provided center argument has no effect on the result if expand is True")
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
 
@@ -1017,9 +1014,6 @@ def _rotate_image_pil(
 ) -> PIL.Image.Image:
     interpolation = _check_interpolation(interpolation)
 
-    if center is not None and expand:
-        warnings.warn("The provided center argument has no effect on the result if expand is True")
-
     return _FP.rotate(
         image, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
     )
@@ -1033,9 +1027,6 @@ def rotate_bounding_boxes(
     expand: bool = False,
     center: Optional[List[float]] = None,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
-    if center is not None and expand:
-        warnings.warn("The provided center argument has no effect on the result if expand is True")
-
     return _affine_bounding_boxes_with_expand(
         bounding_boxes,
         format=format,
