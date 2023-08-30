@@ -183,7 +183,7 @@ Transforms are available as classes like
 This is very much like the :mod:`torch.nn` package which defines both classes
 and functional equivalents in :mod:`torch.nn.functional`.
 
-The functionals support PIL images, pure tensors, or :ref:`tv_tensors
+The functionals support PIL images, pure tensors, or :ref:`TVTensors
 <tv_tensors>`, e.g. both ``resize(image_tensor)`` and ``resize(bboxes)`` are
 valid.
 
