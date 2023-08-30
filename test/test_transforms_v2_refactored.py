@@ -228,7 +228,7 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
         assert functional_param == kernel_param
 
 
-def _check_transform_v1_compatibility(transform, input, rtol, atol):
+def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
     ``get_params`` method that is the v1 equivalent, the output is close to v1, is scriptable, and the scripted version
     can be called without error."""
@@ -255,10 +255,8 @@ def _check_transform_v1_compatibility(transform, input, rtol, atol):
     if isinstance(input, PIL.Image.Image):
         return
 
-    _script(v1_transform)(input)
 
-
-def check_transform(transform, input, check_v1_compatibility=True):
+def check_transform(transform, input, check_v1_compatibility=True, check_v1_scriptability=True):
     pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
@@ -2564,15 +2562,84 @@ class TestCrop:
 
         assert_equal(actual, expected)
 
-    @pytest.mark.parametrize("output_size", [(kwargs["height"], kwargs["width"]) for kwargs in CORRECTNESS_CROP_KWARGS])
-    @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
+    @param_value_parametrization(
+        size=[(10, 5), (25, 15), (25, 5), (10, 15)],
+        fill=EXHAUSTIVE_TYPE_FILLS,
+    )
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_transform(self, param, value, make_input):
+        input = make_input(self.INPUT_SIZE)
+
+        kwargs = {param: value}
+        if param == "fill":
+            # 1. size is required
+            # 2. the fill parameter only has an affect if we need padding
+            kwargs["size"] = [s + 4 for s in self.INPUT_SIZE]
+
+            if isinstance(input, PIL.Image.Image) and isinstance(value, (tuple, list)) and len(value) == 1:
+                pytest.xfail("F._pad_image_pil does not support sequences of length 1 for fill.")
+
+            if isinstance(input, datapoints.Mask) and isinstance(value, (tuple, list)):
+                pytest.skip("F.pad_mask doesn't support non-scalar fill.")
+
+        check_transform(
+            transforms.RandomCrop(**kwargs, pad_if_needed=True),
+            input,
+            check_v1_compatibility=param != "fill" or isinstance(value, (int, float)),
+        )
+
+    @pytest.mark.parametrize("padding", [1, (1, 1), (1, 1, 1, 1)])
+    def test_transform_padding(self, padding):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s + 2 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(output_size, padding=padding)
+
+        output = transform(inpt)
+
+        assert F.get_size(output) == output_size
+
+    @pytest.mark.parametrize("padding", [None, 1, (1, 1), (1, 1, 1, 1)])
+    def test_transform_insufficient_padding(self, padding):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s + 3 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(output_size, padding=padding)
+
+        with pytest.raises(ValueError, match="larger than (padded )?input image size"):
+            transform(inpt)
+
+    def test_transform_pad_if_needed(self):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s * 2 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(output_size, pad_if_needed=True)
+
+        output = transform(inpt)
+
+        assert F.get_size(output) == output_size
+
+    @param_value_parametrization(
+        size=[(10, 5), (25, 15), (25, 5), (10, 15)],
+        fill=CORRECTNESS_FILLS,
+        padding_mode=["constant", "edge", "reflect", "symmetric"],
+    )
     @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_image_correctness(self, output_size, fill, seed):
-        image = make_image([s * 2 for s in output_size], dtype=torch.uint8, device="cpu")
+    def test_transform_image_correctness(self, param, value, seed):
+        kwargs = {param: value}
+        if param != "size":
+            # 1. size is required
+            # 2. the fill / padding_mode parameters only have an affect if we need padding
+            kwargs["size"] = [s + 4 for s in self.INPUT_SIZE]
+        if param == "fill":
+            kwargs["fill"] = adapt_fill(kwargs["fill"], dtype=torch.uint8)
 
-        fill = adapt_fill(fill, dtype=torch.uint8)
+        transform = transforms.RandomCrop(pad_if_needed=True, **kwargs)
 
-        transform = transforms.RandomCrop(output_size, fill=fill)
+        image = make_image(self.INPUT_SIZE)
 
         with freeze_rng_state():
             torch.manual_seed(seed)
@@ -2607,13 +2674,14 @@ class TestCrop:
         assert_equal(actual, expected, atol=1, rtol=0)
         assert_equal(F.get_size(actual), F.get_size(expected))
 
-    @pytest.mark.parametrize("output_size", [(kwargs["height"], kwargs["width"]) for kwargs in CORRECTNESS_CROP_KWARGS])
+    @pytest.mark.parametrize("output_size", [(17, 11), (11, 17), (11, 11)])
     @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, output_size, format, dtype, device, seed):
-        bounding_boxes = make_bounding_boxes([s * 2 for s in output_size], format=format, dtype=dtype, device=device)
+        input_size = [s * 2 for s in output_size]
+        bounding_boxes = make_bounding_boxes(input_size, format=format, dtype=dtype, device=device)
 
         transform = transforms.RandomCrop(output_size)
 
@@ -2632,38 +2700,7 @@ class TestCrop:
         assert_equal(actual, expected)
         assert_equal(F.get_size(actual), F.get_size(expected))
 
-    @pytest.mark.parametrize("padding", [1, (1, 1), (1, 1, 1, 1)])
-    def test_transform_padding(self, padding):
-        inpt = make_image(self.INPUT_SIZE)
-
-        output_size = [s + 2 for s in F.get_size(inpt)]
-        transform = transforms.RandomCrop(output_size, padding=padding)
-
-        output = transform(inpt)
-
-        assert F.get_size(output) == output_size
-
-    @pytest.mark.parametrize("padding", [None, 1, (1, 1), (1, 1, 1, 1)])
-    def test_transform_insufficient_padding(self, padding):
-        inpt = make_image(self.INPUT_SIZE)
-
-        output_size = [s + 3 for s in F.get_size(inpt)]
-        transform = transforms.RandomCrop(output_size, padding=padding)
-
-        with pytest.raises(ValueError, match="larger than (padded )?input image size"):
-            transform(inpt)
-
-    def test_transform_pad_if_needed(self):
-        inpt = make_image(self.INPUT_SIZE)
-
-        output_size = [s * 2 for s in F.get_size(inpt)]
-        transform = transforms.RandomCrop(output_size, pad_if_needed=True)
-
-        output = transform(inpt)
-
-        assert F.get_size(output) == output_size
-
-    def test_assertions(self):
+    def test_errors(self):
         with pytest.raises(ValueError, match="Please provide only two dimensions"):
             transforms.RandomCrop([10, 12, 14])
 

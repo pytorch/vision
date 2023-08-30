@@ -1165,7 +1165,7 @@ def pad_image(
     fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
-    # Be aware that while `padding` has order `[left, top, right, bottom]` has order, `torch_padding` uses
+    # Be aware that while `padding` has order `[left, top, right, bottom]`, `torch_padding` uses
     # `[left, right, top, bottom]`. This stems from the fact that we align our API with PIL, but need to use `torch_pad`
     # internally.
     torch_padding = _parse_pad_padding(padding)
