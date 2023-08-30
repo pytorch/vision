@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+ce441f6) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+58f834a) &#x25BC</a>
     </div>
     
 
@@ -371,18 +371,30 @@ tasks (image classification, detection, segmentation, video classification).</p>
 <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
 
 <span class="n">img</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
-<span class="n">bboxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">H</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">bboxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">bboxes</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
-<span class="n">bboxes</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span><span class="n">bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;XYXY&quot;</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">H</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span><span class="n">boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;XYXY&quot;</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span>
 
 <span class="c1"># The same transforms can be used!</span>
-<span class="n">img</span><span class="p">,</span> <span class="n">bboxes</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bboxes</span><span class="p">)</span>
+<span class="n">img</span><span class="p">,</span> <span class="n">boxes</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">boxes</span><span class="p">)</span>
 <span class="c1"># And you can pass arbitrary input structures</span>
-<span class="n">output_dict</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">({</span><span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">img</span><span class="p">,</span> <span class="s2">&quot;bboxes&quot;</span><span class="p">:</span> <span class="n">bboxes</span><span class="p">})</span>
+<span class="n">output_dict</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">({</span><span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">img</span><span class="p">,</span> <span class="s2">&quot;boxes&quot;</span><span class="p">:</span> <span class="n">boxes</span><span class="p">})</span>
 </pre></div>
 </div>
 <p>Transforms are typically passed as the <code class="docutils literal notranslate"><span class="pre">transform</span></code> or <code class="docutils literal notranslate"><span class="pre">transforms</span></code> argument
 to the <a class="reference internal" href="datasets.html#datasets"><span class="std std-ref">Datasets</span></a>.</p>
+<section id="start-here">
+<h2>Start here<a class="headerlink" href="#start-here" title="Permalink to this heading">¶</a></h2>
+<p>Whether you’re new to Torchvision transforms, or you’re already experienced with
+them, we encourage you to start with
+<a class="reference internal" href="auto_examples/transforms/plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a> in
+order to learn more about what can be done with the new v2 transforms.</p>
+<p>Then, browse the sections in below this page for general information and
+performance tips. The available transforms and functionals are listed in the
+<a class="reference internal" href="#v2-api-ref"><span class="std std-ref">API reference</span></a>.</p>
+<p>More information and tutorials can also be found in our <a class="reference internal" href="auto_examples/index.html#gallery"><span class="std std-ref">example gallery</span></a>, e.g. <a class="reference internal" href="auto_examples/transforms/plot_transforms_e2e.html#sphx-glr-auto-examples-transforms-plot-transforms-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection/segmentation example</span></a>
+or <a class="reference internal" href="auto_examples/transforms/plot_custom_transforms.html#sphx-glr-auto-examples-transforms-plot-custom-transforms-py"><span class="std std-ref">How to write your own v2 transforms</span></a>.</p>
+</section>
 <section id="supported-input-types-and-conventions">
 <span id="conventions"></span><h2>Supported input types and conventions<a class="headerlink" href="#supported-input-types-and-conventions" title="Permalink to this heading">¶</a></h2>
 <p>Most transformations accept both <a class="reference external" href="https://pillow.readthedocs.io">PIL</a> images
@@ -420,9 +432,12 @@ advantages compared to the v1 ones (in <code class="docutils literal notranslate
 <ul class="simple">
 <li><p>They can transform images <strong>but also</strong> bounding boxes, masks, or videos. This
 provides support for tasks beyond image classification: detection, segmentation,
-video classification, etc.</p></li>
+video classification, etc. See
+<a class="reference internal" href="auto_examples/transforms/plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a>
+and <a class="reference internal" href="auto_examples/transforms/plot_transforms_e2e.html#sphx-glr-auto-examples-transforms-plot-transforms-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection/segmentation example</span></a>.</p></li>
 <li><p>They support more transforms like <a class="reference internal" href="generated/torchvision.transforms.v2.CutMix.html#torchvision.transforms.v2.CutMix" title="torchvision.transforms.v2.CutMix"><code class="xref py py-class docutils literal notranslate"><span class="pre">CutMix</span></code></a>
-and <a class="reference internal" href="generated/torchvision.transforms.v2.MixUp.html#torchvision.transforms.v2.MixUp" title="torchvision.transforms.v2.MixUp"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixUp</span></code></a>.</p></li>
+and <a class="reference internal" href="generated/torchvision.transforms.v2.MixUp.html#torchvision.transforms.v2.MixUp" title="torchvision.transforms.v2.MixUp"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixUp</span></code></a>. See
+<a class="reference internal" href="auto_examples/transforms/plot_cutmix_mixup.html#sphx-glr-auto-examples-transforms-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a>.</p></li>
 <li><p>They’re <a class="reference internal" href="#transforms-perf"><span class="std std-ref">faster</span></a>.</p></li>
 <li><p>They support arbitrary input structures (dicts, lists, tuples, etc.).</p></li>
 <li><p>Future improvements and features will be added to the v2 transforms only.</p></li>
@@ -431,8 +446,6 @@ and <a class="reference internal" href="generated/torchvision.transforms.v2.MixU
 you’re already using tranforms from <code class="docutils literal notranslate"><span class="pre">torchvision.transforms</span></code>, all you need to
 do to is to update the import to <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code>. In terms of
 output, there might be negligible differences due to implementation differences.</p>
-<p>To learn more about the v2 transforms, check out
-<a class="reference internal" href="auto_examples/transforms/plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The v2 transforms are still BETA, but at this point we do not expect
@@ -489,7 +502,7 @@ this time.</p>
 <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2.functional</span></code> namespace.
 This is very much like the <a class="reference external" href="https://pytorch.org/docs/stable/nn.html#module-torch.nn" title="(in PyTorch v2.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn</span></code></a> package which defines both classes
 and functional equivalents in <code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn.functional</span></code>.</p>
-<p>The functionals support PIL images, pure tensors, or <a class="reference internal" href="tv_tensors.html#tv-tensors"><span class="std std-ref">TVTensors</span></a>, e.g. both <code class="docutils literal notranslate"><span class="pre">resize(image_tensor)</span></code> and <code class="docutils literal notranslate"><span class="pre">resize(bboxes)</span></code> are
+<p>The functionals support PIL images, pure tensors, or <a class="reference internal" href="tv_tensors.html#tv-tensors"><span class="std std-ref">TVTensors</span></a>, e.g. both <code class="docutils literal notranslate"><span class="pre">resize(image_tensor)</span></code> and <code class="docutils literal notranslate"><span class="pre">resize(boxes)</span></code> are
 valid.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -541,7 +554,7 @@ be derived from <code class="docutils literal notranslate"><span class="pre">tor
 <p>See also: <a class="reference internal" href="auto_examples/others/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-others-plot-scripted-tensor-transforms-py"><span class="std std-ref">Torchscript support</span></a>.</p>
 </section>
 <section id="v2-api-reference-recommended">
-<h2>V2 API reference - Recommended<a class="headerlink" href="#v2-api-reference-recommended" title="Permalink to this heading">¶</a></h2>
+<span id="v2-api-ref"></span><h2>V2 API reference - Recommended<a class="headerlink" href="#v2-api-reference-recommended" title="Permalink to this heading">¶</a></h2>
 <section id="geometry">
 <h3>Geometry<a class="headerlink" href="#geometry" title="Permalink to this heading">¶</a></h3>
 <section id="resizing">
@@ -1293,6 +1306,7 @@ The new transform can be used standalone or mixed-and-matched with existing tran
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">Transforming and augmenting images</a><ul>
+<li><a class="reference internal" href="#start-here">Start here</a></li>
 <li><a class="reference internal" href="#supported-input-types-and-conventions">Supported input types and conventions</a><ul>
 <li><a class="reference internal" href="#dtype-and-expected-value-range">Dtype and expected value range</a></li>
 </ul>

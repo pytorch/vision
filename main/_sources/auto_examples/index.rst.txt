@@ -1,5 +1,7 @@
 :orphan:
 
+.. _gallery:
+
 Examples and tutorials
 ======================
 

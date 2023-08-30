@@ -307,7 +307,7 @@ we're getting the same structure as output:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 180-265
+.. GENERATED FROM PYTHON SOURCE LINES 180-267
 
 We passed a tuple so we get a tuple back, and the second element is the
 tranformed target dict. Transforms don't really care about the structure of
@@ -348,6 +348,8 @@ debugging!
     tensor instances like the ``labels`` were passed-through (although labels
     can still be transformed by some transforms like
     :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`!).
+
+.. _transforms_datasets_intercompatibility:
 
 Transforms and Datasets intercompatibility
 ------------------------------------------
@@ -398,7 +400,7 @@ Either way, the logic will depend on your specific dataset.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.850 seconds)
+   **Total running time of the script:** (0 minutes 0.807 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py:
