@@ -22,7 +22,6 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: release/2.1
       with-cuda: disable
-      channel: test
   build:
     needs: generate-matrix
     strategy:

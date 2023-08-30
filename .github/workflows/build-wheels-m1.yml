@@ -21,7 +21,6 @@ jobs:
       os: macos-arm64
       test-infra-repository: pytorch/test-infra
       test-infra-ref: release/2.1
-      channel: test
   build:
     needs: generate-matrix
     strategy:
