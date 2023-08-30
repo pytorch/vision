@@ -4,10 +4,10 @@ from typing import Any, Optional, Union
 
 import torch
 
-from ._datapoint import Datapoint
+from ._tv_tensor import TVTensor
 
 
-class Video(Datapoint):
+class Video(TVTensor):
     """[BETA] :class:`torch.Tensor` subclass for videos.
 
     Args:
