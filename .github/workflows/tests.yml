@@ -26,7 +26,7 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -41,7 +41,7 @@ jobs:
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
         ./.github/scripts/unittest.sh
-        
+
   unittests-macos:
     strategy:
       matrix:
@@ -55,7 +55,7 @@ jobs:
           - python-version: "3.8"
             runner: macos-m1-12
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@release/2.1
     with:
       repository: pytorch/vision
       # We need an increased timeout here, since the macos-12 runner is the free one from GH
@@ -87,7 +87,7 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@release/2.1
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -102,11 +102,11 @@ jobs:
         export VSDEVCMD_ARGS=""
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-        
+
         ./.github/scripts/unittest.sh
 
   onnx:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
       script: |
@@ -117,26 +117,26 @@ jobs:
         export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
-        
+
         echo '::group::Install ONNX'
         pip install --progress-bar=off onnx onnxruntime
         echo '::endgroup::'
-        
+
         echo '::group::Install testing utilities'
         pip install --progress-bar=off pytest
         echo '::endgroup::'
-        
+
         echo '::group::Run ONNX tests'
         pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_onnx.py
         echo '::endgroup::'
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
       script: |
@@ -147,21 +147,21 @@ jobs:
         export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
-        
+
         echo '::group::Pre-download model weights'
         pip install --progress-bar=off aiohttp aiofiles tqdm
         python scripts/download_model_urls.py
         echo '::endgroup::'
-        
+
         echo '::group::Install testing utilities'
         pip install --progress-bar=off pytest
         echo '::endgroup::'
-        
+
         echo '::group::Run extended unittests'
         export PYTORCH_TEST_WITH_EXTENDED=1
         pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_extended_*.py
