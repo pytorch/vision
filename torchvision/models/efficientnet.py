@@ -463,7 +463,7 @@ class EfficientNet_B0_Weights(WeightsEnum):
 class EfficientNet_B1_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/rwightman/pytorch-image-models/
-        url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
+        url="https://download.pytorch.org/models/efficientnet_b1_rwightman-bac287d4.pth",
         transforms=partial(
             ImageClassification, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC
         ),

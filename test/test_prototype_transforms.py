@@ -7,11 +7,11 @@ import torch
 from common_utils import assert_equal
 
 from prototype_common_utils import make_label
-
-from torchvision.datapoints import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
-from torchvision.prototype import datapoints, transforms
+from torchvision.prototype import transforms, tv_tensors
 from torchvision.transforms.v2._utils import check_type, is_pure_tensor
 from torchvision.transforms.v2.functional import clamp_bounding_boxes, InterpolationMode, pil_to_tensor, to_pil_image
+
+from torchvision.tv_tensors import BoundingBoxes, BoundingBoxFormat, Image, Mask, Video
 from transforms_v2_legacy_utils import (
     DEFAULT_EXTRA_DIMS,
     make_bounding_boxes,
@@ -51,7 +51,7 @@ class TestSimpleCopyPaste:
             # images, batch size = 2
             self.create_fake_image(mocker, Image),
             # labels, bboxes, masks
-            mocker.MagicMock(spec=datapoints.Label),
+            mocker.MagicMock(spec=tv_tensors.Label),
             mocker.MagicMock(spec=BoundingBoxes),
             mocker.MagicMock(spec=Mask),
             # labels, bboxes, masks
@@ -63,7 +63,7 @@ class TestSimpleCopyPaste:
             transform._extract_image_targets(flat_sample)
 
     @pytest.mark.parametrize("image_type", [Image, PIL.Image.Image, torch.Tensor])
-    @pytest.mark.parametrize("label_type", [datapoints.Label, datapoints.OneHotLabel])
+    @pytest.mark.parametrize("label_type", [tv_tensors.Label, tv_tensors.OneHotLabel])
     def test__extract_image_targets(self, image_type, label_type, mocker):
         transform = transforms.SimpleCopyPaste()
 
@@ -101,7 +101,7 @@ class TestSimpleCopyPaste:
                 assert isinstance(target[key], type_)
                 assert target[key] in flat_sample
 
-    @pytest.mark.parametrize("label_type", [datapoints.Label, datapoints.OneHotLabel])
+    @pytest.mark.parametrize("label_type", [tv_tensors.Label, tv_tensors.OneHotLabel])
     def test__copy_paste(self, label_type):
         image = 2 * torch.ones(3, 32, 32)
         masks = torch.zeros(2, 32, 32)
@@ -111,7 +111,7 @@ class TestSimpleCopyPaste:
         blending = True
         resize_interpolation = InterpolationMode.BILINEAR
         antialias = None
-        if label_type == datapoints.OneHotLabel:
+        if label_type == tv_tensors.OneHotLabel:
             labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
             "boxes": BoundingBoxes(
@@ -126,7 +126,7 @@ class TestSimpleCopyPaste:
         paste_masks[0, 13:19, 12:18] = 1
         paste_masks[1, 15:19, 1:8] = 1
         paste_labels = torch.tensor([3, 4])
-        if label_type == datapoints.OneHotLabel:
+        if label_type == tv_tensors.OneHotLabel:
             paste_labels = torch.nn.functional.one_hot(paste_labels, num_classes=5)
         paste_target = {
             "boxes": BoundingBoxes(
@@ -148,7 +148,7 @@ class TestSimpleCopyPaste:
         torch.testing.assert_close(output_target["boxes"][2:, :], paste_target["boxes"])
 
         expected_labels = torch.tensor([1, 2, 3, 4])
-        if label_type == datapoints.OneHotLabel:
+        if label_type == tv_tensors.OneHotLabel:
             expected_labels = torch.nn.functional.one_hot(expected_labels, num_classes=5)
         torch.testing.assert_close(output_target["labels"], label_type(expected_labels))
 
@@ -258,10 +258,10 @@ class TestFixedSizeCrop:
 class TestLabelToOneHot:
     def test__transform(self):
         categories = ["apple", "pear", "pineapple"]
-        labels = datapoints.Label(torch.tensor([0, 1, 2, 1]), categories=categories)
+        labels = tv_tensors.Label(torch.tensor([0, 1, 2, 1]), categories=categories)
         transform = transforms.LabelToOneHot()
         ohe_labels = transform(labels)
-        assert isinstance(ohe_labels, datapoints.OneHotLabel)
+        assert isinstance(ohe_labels, tv_tensors.OneHotLabel)
         assert ohe_labels.shape == (4, 3)
         assert ohe_labels.categories == labels.categories == categories
 
@@ -383,7 +383,7 @@ det_transforms = import_transforms_from_references("detection")
 
 
 def test_fixed_sized_crop_against_detection_reference():
-    def make_datapoints():
+    def make_tv_tensors():
         size = (600, 800)
         num_objects = 22
 
@@ -405,19 +405,19 @@ def test_fixed_sized_crop_against_detection_reference():
 
         yield (tensor_image, target)
 
-        datapoint_image = make_image(size=size, color_space="RGB")
+        tv_tensor_image = make_image(size=size, color_space="RGB")
         target = {
             "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
             "masks": make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long),
         }
 
-        yield (datapoint_image, target)
+        yield (tv_tensor_image, target)
 
     t = transforms.FixedSizeCrop((1024, 1024), fill=0)
     t_ref = det_transforms.FixedSizeCrop((1024, 1024), fill=0)
 
-    for dp in make_datapoints():
+    for dp in make_tv_tensors():
         # We should use prototype transform first as reference transform performs inplace target update
         torch.manual_seed(12)
         output = t(dp)

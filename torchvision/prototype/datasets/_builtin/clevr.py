@@ -2,7 +2,6 @@ import pathlib
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, JsonParser, Mapper, UnBatcher
-from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
@@ -12,6 +11,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     path_comparator,
 )
+from torchvision.prototype.tv_tensors import Label
 
 from .._api import register_dataset, register_info
 

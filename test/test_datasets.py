@@ -3387,11 +3387,11 @@ class TestDatasetWrapper:
             datasets.wrap_dataset_for_transforms_v2(dataset)
 
     def test_subclass(self, mocker):
-        from torchvision import datapoints
+        from torchvision import tv_tensors
 
         sentinel = object()
         mocker.patch.dict(
-            datapoints._dataset_wrapper.WRAPPER_FACTORIES,
+            tv_tensors._dataset_wrapper.WRAPPER_FACTORIES,
             clear=False,
             values={datasets.FakeData: lambda dataset, target_keys: lambda idx, sample: sentinel},
         )
