@@ -270,17 +270,6 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F._adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
     ),
     DispatcherInfo(
-        F.erase,
-        kernels={
-            tv_tensors.Image: F.erase_image,
-            tv_tensors.Video: F.erase_video,
-        },
-        pil_kernel_info=PILKernelInfo(F._erase_image_pil),
-        test_marks=[
-            skip_dispatch_tv_tensor,
-        ],
-    ),
-    DispatcherInfo(
         F.adjust_contrast,
         kernels={
             tv_tensors.Image: F.adjust_contrast_image,
