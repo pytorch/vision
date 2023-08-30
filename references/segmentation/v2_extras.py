@@ -80,4 +80,4 @@ class CocoDetectionToVOCSegmentation(v2.Transform):
         if segmentation_mask is None:
             segmentation_mask = torch.zeros(v2.functional.get_size(image), dtype=torch.uint8)
 
-        return image, tv_tensors.Mask(segmentation_mask)
+        return image, tv_tensors.SegmentationMask(segmentation_mask)

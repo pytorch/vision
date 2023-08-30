@@ -46,7 +46,7 @@ class SegmentationPresetTrain:
         if use_v2:
             # We need a custom pad transform here, since the padding we want to perform here is fundamentally
             # different from the padding in `RandomCrop` if `pad_if_needed=True`.
-            transforms += [v2_extras.PadIfSmaller(crop_size, fill={tv_tensors.Mask: 255, "others": 0})]
+            transforms += [v2_extras.PadIfSmaller(crop_size, fill={tv_tensors.SegmentationMask: 255, "others": 0})]
 
         transforms += [T.RandomCrop(crop_size)]
 
@@ -56,7 +56,10 @@ class SegmentationPresetTrain:
         if use_v2:
             img_type = tv_tensors.Image if backend == "tv_tensor" else torch.Tensor
             transforms += [
-                T.ToDtype(dtype={img_type: torch.float32, tv_tensors.Mask: torch.int64, "others": None}, scale=True)
+                T.ToDtype(
+                    dtype={img_type: torch.float32, tv_tensors.SegmentationMask: torch.int64, "others": None},
+                    scale=True,
+                )
             ]
         else:
             # No need to explicitly convert masks as they're magically int64 already

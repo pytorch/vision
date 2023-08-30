@@ -54,7 +54,7 @@ class DetectionPresetTrain:
                 T.RandomHorizontalFlip(p=hflip_prob),
             ]
         elif data_augmentation == "ssd":
-            fill = defaultdict(lambda: mean, {tv_tensors.Mask: 0}) if use_v2 else list(mean)
+            fill = defaultdict(lambda: mean, {tv_tensors.DetectionMasks: 0}) if use_v2 else list(mean)
             transforms += [
                 T.RandomPhotometricDistort(),
                 T.RandomZoomOut(fill=fill),
