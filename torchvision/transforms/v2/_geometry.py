@@ -447,8 +447,8 @@ class Pad(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0.
+            ``fill={tv_tensors.Image: 127, tv_tensors.SegmentationMask: 0}`` where ``Image`` will be filled with 127 and
+            ``SegmentationMask`` will be filled with 0.
         padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is "constant".
 
@@ -524,8 +524,8 @@ class RandomZoomOut(_RandomApplyTransform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0.
+            ``fill={tv_tensors.Image: 127, tv_tensors.SegmentationMask: 0}`` where ``Image`` will be filled with 127 and
+            ``SegmentationMask`` will be filled with 0.
         side_range (sequence of floats, optional): tuple of two floats defines minimum and maximum factors to
             scale the input size.
         p (float, optional): probability that the zoom operation will be performed.
@@ -596,8 +596,8 @@ class RandomRotation(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0.
+            ``fill={tv_tensors.Image: 127, tv_tensors.SegmentationMask: 0}`` where ``Image`` will be filled with 127 and
+            ``SegmentationMask`` will be filled with 0.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -676,8 +676,8 @@ class RandomAffine(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0.
+            ``fill={tv_tensors.Image: 127, tv_tensors.SegmentationMask: 0}`` where ``Image`` will be filled with 127 and
+            ``SegmentationMask`` will be filled with 0.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
 
@@ -794,8 +794,8 @@ class RandomCrop(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0.
+            ``fill={tv_tensors.Image: 127, tv_tensors.SegmentationMask: 0}`` where ``Image`` will be filled with 127 and
+            ``SegmentationMask`` will be filled with 0.
         padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
@@ -943,8 +943,8 @@ class RandomPerspective(_RandomApplyTransform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0.
+            ``fill={tv_tensors.Image: 127, tv_tensors.SegmentationMask: 0}`` where ``Image`` will be filled with 127 and
+            ``SegmentationMask`` will be filled with 0.
     """
 
     _v1_transform_cls = _transforms.RandomPerspective
@@ -1046,8 +1046,8 @@ class ElasticTransform(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0.
+            ``fill={tv_tensors.Image: 127, tv_tensors.SegmentationMask: 0}`` where ``Image`` will be filled with 127 and
+            ``SegmentationMask`` will be filled with 0.
     """
 
     _v1_transform_cls = _transforms.ElasticTransform

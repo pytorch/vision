@@ -231,8 +231,8 @@ class ToDtype(Transform):
             If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted
             to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.
             A dict can be passed to specify per-tv_tensor conversions, e.g.
-            ``dtype={tv_tensors.Image: torch.float32, tv_tensors.Mask: torch.int64, "others":None}``. The "others"
-            key can be used as a catch-all for any other tv_tensor type, and ``None`` means no conversion.
+            ``dtype={tv_tensors.Image: torch.float32, tv_tensors.SegmentationMask: torch.int64, "others":None}``. The
+            "others" key can be used as a catch-all for any other tv_tensor type, and ``None`` means no conversion.
         scale (bool, optional): Whether to scale the values for images or videos. See :ref:`range_and_dtype`.
             Default: ``False``.
     """
@@ -277,8 +277,9 @@ class ToDtype(Transform):
                 f"No dtype was specified for type {type(inpt)}. "
                 "If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. "
                 "If you're passing a dict as dtype, "
-                'you can use "others" as a catch-all key '
-                'e.g. dtype={tv_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
+                'you can use "others" as a catch-all key, '
+                'e.g. dtype={tv_tensors.SegmentationMask: torch.int64, "others": None} '
+                "to pass-through the rest of the inputs."
             )
 
         supports_scaling = is_pure_tensor(inpt) or isinstance(inpt, (tv_tensors.Image, tv_tensors.Video))
