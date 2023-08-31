@@ -755,10 +755,11 @@ class TestAATransforms:
             v2_transforms.InterpolationMode.BILINEAR,
         ],
     )
-    def test_randaug_jit(self, interpolation):
+    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
+    def test_randaug_jit(self, interpolation, fill):
         inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1)
-        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1)
+        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1, fill=fill)
+        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1, fill=fill)
 
         tt_ref = torch.jit.script(t_ref)
         tt = torch.jit.script(t)
@@ -830,10 +831,11 @@ class TestAATransforms:
             v2_transforms.InterpolationMode.BILINEAR,
         ],
     )
-    def test_trivial_aug_jit(self, interpolation):
+    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
+    def test_trivial_aug_jit(self, interpolation, fill):
         inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation)
-        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation)
+        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation, fill=fill)
+        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation, fill=fill)
 
         tt_ref = torch.jit.script(t_ref)
         tt = torch.jit.script(t)
@@ -906,11 +908,12 @@ class TestAATransforms:
             v2_transforms.InterpolationMode.BILINEAR,
         ],
     )
-    def test_augmix_jit(self, interpolation):
+    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
+    def test_augmix_jit(self, interpolation, fill):
         inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
 
-        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
-        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1, fill=fill)
+        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1, fill=fill)
 
         tt_ref = torch.jit.script(t_ref)
         tt = torch.jit.script(t)
