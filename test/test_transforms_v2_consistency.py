@@ -277,20 +277,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=0, atol=21),
     ),
     ConsistencyConfig(
-        v2_transforms.RandomErasing,
-        legacy_transforms.RandomErasing,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-            ArgsKwargs(p=1, scale=(0.3, 0.7)),
-            ArgsKwargs(p=1, ratio=(0.5, 1.5)),
-            ArgsKwargs(p=1, value=1),
-            ArgsKwargs(p=1, value=(1, 2, 3)),
-            ArgsKwargs(p=1, value="random"),
-        ],
-        supports_pil=False,
-    ),
-    ConsistencyConfig(
         v2_transforms.ColorJitter,
         legacy_transforms.ColorJitter,
         [
@@ -317,26 +303,6 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(kernel_size=5, sigma=(0.3, 1.4)),
         ],
         closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomCrop,
-        legacy_transforms.RandomCrop,
-        [
-            ArgsKwargs(12),
-            ArgsKwargs((15, 17)),
-            NotScriptableArgsKwargs(11, padding=1),
-            ArgsKwargs(11, padding=[1]),
-            ArgsKwargs((8, 13), padding=(2, 3)),
-            ArgsKwargs((14, 9), padding=(0, 2, 1, 0)),
-            ArgsKwargs(36, pad_if_needed=True),
-            ArgsKwargs((7, 8), fill=1),
-            NotScriptableArgsKwargs(5, fill=(1, 2, 3)),
-            ArgsKwargs(12),
-            NotScriptableArgsKwargs(15, padding=2, padding_mode="edge"),
-            ArgsKwargs(17, padding=(1, 0), padding_mode="reflect"),
-            ArgsKwargs(8, padding=(3, 0, 0, 1), padding_mode="symmetric"),
-        ],
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(26, 26), (18, 33), (29, 22)]),
     ),
     ConsistencyConfig(
         v2_transforms.RandomPerspective,
@@ -570,10 +536,8 @@ get_params_parametrization = pytest.mark.parametrize(
         )
         for transform_cls, get_params_args_kwargs in [
             (v2_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
-            (v2_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
             (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
-            (v2_transforms.RandomCrop, ArgsKwargs(make_image(size=(61, 47)), output_size=(19, 25))),
             (v2_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
             (v2_transforms.AutoAugment, ArgsKwargs(5)),
         ]
@@ -791,10 +755,11 @@ class TestAATransforms:
             v2_transforms.InterpolationMode.BILINEAR,
         ],
     )
-    def test_randaug_jit(self, interpolation):
+    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
+    def test_randaug_jit(self, interpolation, fill):
         inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1)
-        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1)
+        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1, fill=fill)
+        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1, fill=fill)
 
         tt_ref = torch.jit.script(t_ref)
         tt = torch.jit.script(t)
@@ -866,10 +831,11 @@ class TestAATransforms:
             v2_transforms.InterpolationMode.BILINEAR,
         ],
     )
-    def test_trivial_aug_jit(self, interpolation):
+    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
+    def test_trivial_aug_jit(self, interpolation, fill):
         inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation)
-        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation)
+        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation, fill=fill)
+        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation, fill=fill)
 
         tt_ref = torch.jit.script(t_ref)
         tt = torch.jit.script(t)
@@ -942,11 +908,12 @@ class TestAATransforms:
             v2_transforms.InterpolationMode.BILINEAR,
         ],
     )
-    def test_augmix_jit(self, interpolation):
+    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
+    def test_augmix_jit(self, interpolation, fill):
         inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
 
-        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
-        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1, fill=fill)
+        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1, fill=fill)
 
         tt_ref = torch.jit.script(t_ref)
         tt = torch.jit.script(t)

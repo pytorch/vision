@@ -140,16 +140,6 @@ xfails_pil_if_fill_sequence_needs_broadcast = xfails_pil(
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.crop,
-        kernels={
-            tv_tensors.Image: F.crop_image,
-            tv_tensors.Video: F.crop_video,
-            tv_tensors.BoundingBoxes: F.crop_bounding_boxes,
-            tv_tensors.Mask: F.crop_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F._crop_image_pil, kernel_name="crop_image_pil"),
-    ),
-    DispatcherInfo(
         F.resized_crop,
         kernels={
             tv_tensors.Image: F.resized_crop_image,
@@ -278,17 +268,6 @@ DISPATCHER_INFOS = [
             tv_tensors.Video: F.adjust_sharpness_video,
         },
         pil_kernel_info=PILKernelInfo(F._adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
-    ),
-    DispatcherInfo(
-        F.erase,
-        kernels={
-            tv_tensors.Image: F.erase_image,
-            tv_tensors.Video: F.erase_video,
-        },
-        pil_kernel_info=PILKernelInfo(F._erase_image_pil),
-        test_marks=[
-            skip_dispatch_tv_tensor,
-        ],
     ),
     DispatcherInfo(
         F.adjust_contrast,
