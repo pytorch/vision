@@ -594,12 +594,12 @@ class RandomRotation(Transform):
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
 
-            ..note::
+            .. note::
 
-              In theory, setting ``center`` has no effect if ``expand=True``, since the image center will become the
-              center of rotation. In practice however, due to numerical precision, this can lead to off-by-one
-              differences of the resulting image size compared to using the image center in the first place. Thus, when
-              setting ``expand=True``, it's best to leave ``center=None`` (default).
+                In theory, setting ``center`` has no effect if ``expand=True``, since the image center will become the
+                center of rotation. In practice however, due to numerical precision, this can lead to off-by-one
+                differences of the resulting image size compared to using the image center in the first place. Thus, when
+                setting ``expand=True``, it's best to leave ``center=None`` (default).
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
