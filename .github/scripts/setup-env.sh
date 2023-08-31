@@ -95,7 +95,10 @@ python setup.py egg_info
 # The requires.txt cannot be used with `pip install -r` directly. The requirements are listed at the top and the
 # optional dependencies come in non-standard syntax after a blank line. Thus, we just extract the header.
 sed -e '/^$/,$d' *.egg-info/requires.txt | tee requirements.txt
-pip install --progress-bar=off -r requirements.txt
+ltt install --progress-bar=off \
+  --pytorch-computation-backend="${GPU_ARCH_TYPE}${GPU_ARCH_VERSION}" \
+  --pytorch-channel="${CHANNEL}" \
+  -r requirements.txt
 echo '::endgroup::'
 
 echo '::group::Install TorchVision'
