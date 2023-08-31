@@ -33,8 +33,8 @@ class _AutoAugmentBase(Transform):
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
         params = super()._extract_params_for_v1_transform()
 
-        if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
-            raise ValueError(f"{type(self).__name__}() can only be scripted for a scalar `fill`, but got {self.fill}.")
+        if isinstance(params["fill"], dict):
+            raise ValueError(f"{type(self).__name__}() can not be scripted for when `fill` is a dictionary.")
 
         return params
 
