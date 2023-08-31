@@ -449,99 +449,6 @@ class TestRandomZoomOut:
         assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
 
 
-class TestRandomCrop:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Please provide only two dimensions"):
-            transforms.RandomCrop([10, 12, 14])
-
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
-            transforms.RandomCrop([10, 12], padding="abc")
-
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
-            transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomCrop([10, 12], padding=1, fill="abc")
-
-        with pytest.raises(ValueError, match="Padding mode should be either"):
-            transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
-
-    @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
-    @pytest.mark.parametrize("size, pad_if_needed", [((10, 10), False), ((50, 25), True)])
-    def test__get_params(self, padding, pad_if_needed, size):
-        h, w = size = (24, 32)
-        image = make_image(size)
-
-        transform = transforms.RandomCrop(size, padding=padding, pad_if_needed=pad_if_needed)
-        params = transform._get_params([image])
-
-        if padding is not None:
-            if isinstance(padding, int):
-                pad_top = pad_bottom = pad_left = pad_right = padding
-            elif isinstance(padding, list) and len(padding) == 2:
-                pad_left = pad_right = padding[0]
-                pad_top = pad_bottom = padding[1]
-            elif isinstance(padding, list) and len(padding) == 4:
-                pad_left, pad_top, pad_right, pad_bottom = padding
-
-            h += pad_top + pad_bottom
-            w += pad_left + pad_right
-        else:
-            pad_left = pad_right = pad_top = pad_bottom = 0
-
-        if pad_if_needed:
-            if w < size[1]:
-                diff = size[1] - w
-                pad_left += diff
-                pad_right += diff
-                w += 2 * diff
-            if h < size[0]:
-                diff = size[0] - h
-                pad_top += diff
-                pad_bottom += diff
-                h += 2 * diff
-
-        padding = [pad_left, pad_top, pad_right, pad_bottom]
-
-        assert 0 <= params["top"] <= h - size[0] + 1
-        assert 0 <= params["left"] <= w - size[1] + 1
-        assert params["height"] == size[0]
-        assert params["width"] == size[1]
-        assert params["needs_pad"] is any(padding)
-        assert params["padding"] == padding
-
-
-class TestGaussianBlur:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
-            transforms.GaussianBlur([10, 12, 14])
-
-        with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
-            transforms.GaussianBlur(4)
-
-        with pytest.raises(
-            TypeError, match="sigma should be a single int or float or a list/tuple with length 2 floats."
-        ):
-            transforms.GaussianBlur(3, sigma=[1, 2, 3])
-
-        with pytest.raises(ValueError, match="If sigma is a single number, it must be positive"):
-            transforms.GaussianBlur(3, sigma=-1.0)
-
-        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
-            transforms.GaussianBlur(3, sigma=[2.0, 1.0])
-
-    @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0]])
-    def test__get_params(self, sigma):
-        transform = transforms.GaussianBlur(3, sigma=sigma)
-        params = transform._get_params([])
-
-        if isinstance(sigma, float):
-            assert params["sigma"][0] == params["sigma"][1] == 10
-        else:
-            assert sigma[0] <= params["sigma"][0] <= sigma[1]
-            assert sigma[0] <= params["sigma"][1] <= sigma[1]
-
-
 class TestRandomPerspective:
     def test_assertions(self):
         with pytest.raises(ValueError, match="Argument distortion_scale value should be between 0 and 1"):
@@ -565,23 +472,17 @@ class TestRandomPerspective:
 class TestElasticTransform:
     def test_assertions(self):
 
-        with pytest.raises(TypeError, match="alpha should be float or a sequence of floats"):
+        with pytest.raises(TypeError, match="alpha should be a number or a sequence of numbers"):
             transforms.ElasticTransform({})
 
-        with pytest.raises(ValueError, match="alpha is a sequence its length should be one of 2"):
+        with pytest.raises(ValueError, match="alpha is a sequence its length should be 1 or 2"):
             transforms.ElasticTransform([1.0, 2.0, 3.0])
 
-        with pytest.raises(ValueError, match="alpha should be a sequence of floats"):
-            transforms.ElasticTransform([1, 2])
-
-        with pytest.raises(TypeError, match="sigma should be float or a sequence of floats"):
+        with pytest.raises(TypeError, match="sigma should be a number or a sequence of numbers"):
             transforms.ElasticTransform(1.0, {})
 
-        with pytest.raises(ValueError, match="sigma is a sequence its length should be one of 2"):
+        with pytest.raises(ValueError, match="sigma is a sequence its length should be 1 or 2"):
             transforms.ElasticTransform(1.0, [1.0, 2.0, 3.0])
-
-        with pytest.raises(ValueError, match="sigma should be a sequence of floats"):
-            transforms.ElasticTransform(1.0, [1, 2])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.ElasticTransform(1.0, 2.0, fill="abc")
@@ -600,53 +501,6 @@ class TestElasticTransform:
         assert displacement.shape == (1, h, w, 2)
         assert (-alpha / w <= displacement[0, ..., 0]).all() and (displacement[0, ..., 0] <= alpha / w).all()
         assert (-alpha / h <= displacement[0, ..., 1]).all() and (displacement[0, ..., 1] <= alpha / h).all()
-
-
-class TestRandomErasing:
-    def test_assertions(self):
-        with pytest.raises(TypeError, match="Argument value should be either a number or str or a sequence"):
-            transforms.RandomErasing(value={})
-
-        with pytest.raises(ValueError, match="If value is str, it should be 'random'"):
-            transforms.RandomErasing(value="abc")
-
-        with pytest.raises(TypeError, match="Scale should be a sequence"):
-            transforms.RandomErasing(scale=123)
-
-        with pytest.raises(TypeError, match="Ratio should be a sequence"):
-            transforms.RandomErasing(ratio=123)
-
-        with pytest.raises(ValueError, match="Scale should be between 0 and 1"):
-            transforms.RandomErasing(scale=[-1, 2])
-
-        image = make_image((24, 32))
-
-        transform = transforms.RandomErasing(value=[1, 2, 3, 4])
-
-        with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
-            transform._get_params([image])
-
-    @pytest.mark.parametrize("value", [5.0, [1, 2, 3], "random"])
-    def test__get_params(self, value):
-        image = make_image((24, 32))
-        num_channels, height, width = F.get_dimensions(image)
-
-        transform = transforms.RandomErasing(value=value)
-        params = transform._get_params([image])
-
-        v = params["v"]
-        h, w = params["h"], params["w"]
-        i, j = params["i"], params["j"]
-        assert isinstance(v, torch.Tensor)
-        if value == "random":
-            assert v.shape == (num_channels, h, w)
-        elif isinstance(value, (int, float)):
-            assert v.shape == (1, 1, 1)
-        elif isinstance(value, (list, tuple)):
-            assert v.shape == (num_channels, 1, 1)
-
-        assert 0 <= i <= height - h
-        assert 0 <= j <= width - w
 
 
 class TestTransform:
