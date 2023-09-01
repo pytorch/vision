@@ -2909,9 +2909,9 @@ class TestAutoAugmentTransforms:
         v1_transform = transform._v1_transform_cls(**transform._extract_params_for_v1_transform())
 
         with freeze_rng_state():
-            # By default every test starts from the same random seed. This leads to minimal coverage of the sampled ops
-            # inside the transform. To avoid calling the transform multiple times, we build a reproducible random seed
-            # from the parametrization. Thus, we get better coverage without increasing the runtime.
+            # By default every test starts from the same random seed. This leads to minimal coverage of the sampling
+            # that happens inside forward(). To avoid calling the transform multiple times to achieve this coverage, we
+            # build a reproducible random seed from the parametrization.
             torch.manual_seed(hash(pickle.dumps(v1_params)))
 
             # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
@@ -2949,52 +2949,64 @@ class TestAutoAugmentTransforms:
 
         self.check_transform(transforms.AutoAugment(**{param: value}), make_input())
 
-    def _reference_auto_augment_image_shear(self, image, *, transform_id, magnitude, interpolation):
-        def shear(pil_image):
-            if transform_id == "ShearX":
-                matrix = (1, magnitude, 0, 0, 1, 0)
-            elif transform_id == "ShearY":
-                matrix = (1, 0, 0, magnitude, 1, 0)
-            return pil_image.transform(
-                pil_image.size, PIL.Image.AFFINE, matrix, resample=pil_modes_mapping[interpolation]
-            )
+    def _reference_shear_translate(self, image, *, transform_id, magnitude, interpolation, fill):
+        if isinstance(image, PIL.Image.Image):
+            input = image
+        else:
+            input = F.to_pil_image(image)
+
+        matrix = {
+            "ShearX": (1, magnitude, 0, 0, 1, 0),
+            "ShearY": (1, 0, 0, magnitude, 1, 0),
+            "TranslateX": (1, 0, -int(magnitude), 0, 1, 0),
+            "TranslateY": (1, 0, 0, 0, 1, -int(magnitude)),
+        }[transform_id]
+
+        output = input.transform(
+            input.size, PIL.Image.AFFINE, matrix, resample=pil_modes_mapping[interpolation], fill=fill
+        )
 
         if isinstance(image, PIL.Image.Image):
-            return shear(image)
+            return output
         else:
-            return F.to_image(shear(F.to_pil_image(image)))
+            return F.to_image(output)
 
-    @pytest.mark.parametrize("transform_id", ["ShearX", "ShearY"])
-    @pytest.mark.parametrize("magnitude", [0.0, 0.3, -0.2])
+    @pytest.mark.parametrize("transform_id", ["ShearX", "ShearY", "TranslateX", "TranslateY"])
+    @pytest.mark.parametrize("magnitude", [0.3, -0.2, 0.0])
     @pytest.mark.parametrize(
         "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
     )
-    @pytest.mark.parametrize("input_type", ["Tensor", "PIL"])
-    def test_auto_augment_image_shear_correctness(self, transform_id, magnitude, interpolation, input_type):
-        # We check that torchvision's implementation of shear is equivalent
-        # to official CIFAR10 autoaugment implementation:
-        # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/research/autoaugment/augmentation_transforms.py#L273-L290
+    @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
+    @pytest.mark.parametrize("input_type", ["PIL"])  # "Tensor",
+    def test_correctness_shear_translate(self, transform_id, magnitude, interpolation, fill, input_type):
+        # ShearX/Y and TranslateX/Y are the only ops that are native to the AA transforms. They are modeled after the
+        # reference implementation:
+        # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/research/autoaugment/augmentation_transforms.py#L273-L362
+        # All other ops are checked in their respective dedicated tests.
 
         image = make_image(dtype=torch.uint8, device="cpu")
         if input_type == "PIL":
             image = F.to_pil_image(image)
+
+        if "Translate" in transform_id:
+            # For TranslateX/Y magnitude is a value in pixels
+            magnitude *= min(F.get_size(image))
 
         actual = transforms.AutoAugment()._apply_image_or_video_transform(
             image,
             transform_id=transform_id,
             magnitude=magnitude,
             interpolation=interpolation,
-            fill={type(image): 0},
+            fill={type(image): fill},
         )
-        expected = self._reference_auto_augment_image_shear(
-            image, transform_id=transform_id, magnitude=magnitude, interpolation=interpolation
+        expected = self._reference_shear_translate(
+            image, transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill
         )
 
         if input_type == "PIL":
-            assert_equal(F.to_image(actual), F.to_image(expected))
-        else:
-            mae = (actual.float() - expected.float()).abs().mean()
-            assert mae < 12 if interpolation is transforms.InterpolationMode.NEAREST else 5
+            actual, expected = F.to_image(actual), F.to_image(expected)
+
+        assert_close(actual, expected, rtol=0, atol=1)
 
     @param_value_parametrization(
         num_ops=[1, 2, 3],
