@@ -749,30 +749,6 @@ class TestAATransforms:
             assert_close(expected_output, output, atol=1, rtol=0.1)
 
     @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-        ],
-    )
-    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
-    def test_randaug_jit(self, interpolation, fill):
-        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1, fill=fill)
-        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1, fill=fill)
-
-        tt_ref = torch.jit.script(t_ref)
-        tt = torch.jit.script(t)
-
-        torch.manual_seed(12)
-        expected_output = tt_ref(inpt)
-
-        torch.manual_seed(12)
-        scripted_output = tt(inpt)
-
-        assert_equal(scripted_output, expected_output)
-
-    @pytest.mark.parametrize(
         "inpt",
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
@@ -823,30 +799,6 @@ class TestAATransforms:
             output = t(inpt)
 
             assert_close(expected_output, output, atol=1, rtol=0.1)
-
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-        ],
-    )
-    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
-    def test_trivial_aug_jit(self, interpolation, fill):
-        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation, fill=fill)
-        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation, fill=fill)
-
-        tt_ref = torch.jit.script(t_ref)
-        tt = torch.jit.script(t)
-
-        torch.manual_seed(12)
-        expected_output = tt_ref(inpt)
-
-        torch.manual_seed(12)
-        scripted_output = tt(inpt)
-
-        assert_equal(scripted_output, expected_output)
 
     @pytest.mark.parametrize(
         "inpt",
@@ -902,31 +854,6 @@ class TestAATransforms:
         assert_equal(expected_output, output)
 
     @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-        ],
-    )
-    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
-    def test_augmix_jit(self, interpolation, fill):
-        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-
-        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1, fill=fill)
-        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1, fill=fill)
-
-        tt_ref = torch.jit.script(t_ref)
-        tt = torch.jit.script(t)
-
-        torch.manual_seed(12)
-        expected_output = tt_ref(inpt)
-
-        torch.manual_seed(12)
-        scripted_output = tt(inpt)
-
-        assert_equal(scripted_output, expected_output)
-
-    @pytest.mark.parametrize(
         "inpt",
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
@@ -954,30 +881,6 @@ class TestAATransforms:
         output = t(inpt)
 
         assert_equal(expected_output, output)
-
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-        ],
-    )
-    def test_aa_jit(self, interpolation):
-        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        aa_policy = legacy_transforms.AutoAugmentPolicy("imagenet")
-        t_ref = legacy_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-        t = v2_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-
-        tt_ref = torch.jit.script(t_ref)
-        tt = torch.jit.script(t)
-
-        torch.manual_seed(12)
-        expected_output = tt_ref(inpt)
-
-        torch.manual_seed(12)
-        scripted_output = tt(inpt)
-
-        assert_equal(scripted_output, expected_output)
 
 
 def import_transforms_from_references(reference):

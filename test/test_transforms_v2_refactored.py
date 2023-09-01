@@ -2901,3 +2901,152 @@ class TestGaussianBlur:
         else:
             assert sigma[0] <= params["sigma"][0] <= sigma[1]
             assert sigma[0] <= params["sigma"][1] <= sigma[1]
+
+
+class TestAutoAugmentTransforms:
+    def check_transform(self, transform, input):
+        # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1 and v2
+        # outputs without complicated and brittle mocking and monkeypatching. Thus, we only run smoke tests for the
+        # eager and scripted v1 transform here in addition to the non-v1 compatibility tests of check_transform
+        check_transform(transform, input, check_v1_compatibility=False)
+
+        if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
+            return
+
+        v1_transform = transform._v1_transform_cls(**transform._extract_params_for_v1_transform())
+
+        v1_transform(input)
+
+        if isinstance(input, PIL.Image.Image):
+            return
+
+        _script(v1_transform)(input)
+
+    @param_value_parametrization(
+        policy=list(transforms.AutoAugmentPolicy),
+        interpolation=[transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR],
+        fill=EXHAUSTIVE_TYPE_FILLS,
+    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_auto_augment(self, param, value, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        self.check_transform(transforms.AutoAugment(**{param: value}), make_input())
+
+    def _reference_auto_augment_image_shear(self, image, *, transform_id, magnitude, interpolation):
+        def shear(pil_image):
+            if transform_id == "ShearX":
+                matrix = (1, magnitude, 0, 0, 1, 0)
+            elif transform_id == "ShearY":
+                matrix = (1, 0, 0, magnitude, 1, 0)
+            return pil_image.transform(
+                pil_image.size, PIL.Image.AFFINE, matrix, resample=pil_modes_mapping[interpolation]
+            )
+
+        if isinstance(image, PIL.Image.Image):
+            return shear(image)
+        else:
+            return F.to_image(shear(F.to_pil_image(image)))
+
+    @pytest.mark.parametrize("transform_id", ["ShearX", "ShearY"])
+    @pytest.mark.parametrize("magnitude", [0.0, 0.3, -0.2])
+    @pytest.mark.parametrize(
+        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+    )
+    @pytest.mark.parametrize("input_type", ["Tensor", "PIL"])
+    def test_auto_augment_image_shear_correctness(self, transform_id, magnitude, interpolation, input_type):
+        # We check that torchvision's implementation of shear is equivalent
+        # to official CIFAR10 autoaugment implementation:
+        # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/research/autoaugment/augmentation_transforms.py#L273-L290
+
+        image = make_image(dtype=torch.uint8, device="cpu")
+        if input_type == "PIL":
+            image = F.to_pil_image(image)
+
+        actual = transforms.AutoAugment()._apply_image_or_video_transform(
+            image,
+            transform_id=transform_id,
+            magnitude=magnitude,
+            interpolation=interpolation,
+            fill={type(image): 0},
+        )
+        expected = self._reference_auto_augment_image_shear(
+            image, transform_id=transform_id, magnitude=magnitude, interpolation=interpolation
+        )
+
+        if input_type == "PIL":
+            assert_equal(F.to_image(actual), F.to_image(expected))
+        else:
+            mae = (actual.float() - expected.float()).abs().mean()
+            assert mae < 12 if interpolation is transforms.InterpolationMode.NEAREST else 5
+
+    @param_value_parametrization(
+        num_ops=[1, 2, 3],
+        magnitude=[1, 10, 30],
+        interpolation=[
+            transforms.InterpolationMode.NEAREST,
+            transforms.InterpolationMode.BILINEAR,
+        ],
+        fill=EXHAUSTIVE_TYPE_FILLS,
+    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_rand_augment(self, param, value, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        self.check_transform(transforms.RandAugment(**{param: value}), make_input())
+
+    @param_value_parametrization(
+        num_magnitude_bins=[1, 30, 50],
+        interpolation=[
+            transforms.InterpolationMode.NEAREST,
+            transforms.InterpolationMode.BILINEAR,
+        ],
+        fill=EXHAUSTIVE_TYPE_FILLS,
+    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_trivial_augment_wide(self, param, value, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        self.check_transform(transforms.TrivialAugmentWide(**{param: value}), make_input())
+
+    @param_value_parametrization(
+        severity=[1, 5, 10],
+        mixture_width=[1, 2, 3],
+        chain_depth=[-1, 1, 3],
+        alpha=[0.5, 1.0, 2.0],
+        all_ops=[True, False],
+        interpolation=[
+            transforms.InterpolationMode.NEAREST,
+            transforms.InterpolationMode.BILINEAR,
+        ],
+        fill=EXHAUSTIVE_TYPE_FILLS,
+    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_aug_mix(self, param, value, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        self.check_transform(transforms.AugMix(**{param: value}), make_input())
