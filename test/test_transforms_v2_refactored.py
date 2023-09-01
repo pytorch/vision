@@ -2905,22 +2905,29 @@ class TestGaussianBlur:
 
 class TestAutoAugmentTransforms:
     def check_transform(self, transform, input):
-        # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1 and v2
-        # outputs without complicated and brittle mocking and monkeypatching. Thus, we only run smoke tests for the
-        # eager and scripted v1 transform here in addition to the non-v1 compatibility tests of check_transform
-        check_transform(transform, input, check_v1_compatibility=False)
-
-        if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
-            return
-
+        v1_params = transform._extract_params_for_v1_transform()
         v1_transform = transform._v1_transform_cls(**transform._extract_params_for_v1_transform())
 
-        v1_transform(input)
+        with freeze_rng_state():
+            # By default every test starts from the same random seed. This leads to minimal coverage of the sampled ops
+            # inside the transform. To avoid calling the transform multiple times, we build a reproducible random seed
+            # from the parametrization. Thus, we get better coverage without increasing the runtime.
+            torch.manual_seed(hash(pickle.dumps(v1_params)))
 
-        if isinstance(input, PIL.Image.Image):
-            return
+            # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
+            # and v2 outputs without complicated mocking and monkeypatching. Thus, we skip the v1 compatibility checks
+            # here and run smoke tests below.
+            check_transform(transform, input, check_v1_compatibility=False)
 
-        _script(v1_transform)(input)
+            if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
+                return
+
+            v1_transform(input)
+
+            if isinstance(input, PIL.Image.Image):
+                return
+
+            _script(v1_transform)(input)
 
     @param_value_parametrization(
         policy=list(transforms.AutoAugmentPolicy),
@@ -3008,7 +3015,7 @@ class TestAutoAugmentTransforms:
         self.check_transform(transforms.RandAugment(**{param: value}), make_input())
 
     @param_value_parametrization(
-        num_magnitude_bins=[1, 30, 50],
+        num_magnitude_bins=[2, 30, 50],
         interpolation=[
             transforms.InterpolationMode.NEAREST,
             transforms.InterpolationMode.BILINEAR,
