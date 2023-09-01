@@ -2944,6 +2944,9 @@ class TestAutoAugmentTransforms:
                 "will degenerate to that anyway."
             )
 
+        if param == "fill":
+            value = adapt_fill(value, dtype=dtype)
+
         self.check_transform(transforms.AutoAugment(**{param: value}), make_input())
 
     def _reference_auto_augment_image_shear(self, image, *, transform_id, magnitude, interpolation):
@@ -3012,6 +3015,9 @@ class TestAutoAugmentTransforms:
                 "will degenerate to that anyway."
             )
 
+        if param == "fill":
+            value = adapt_fill(value, dtype=dtype)
+
         self.check_transform(transforms.RandAugment(**{param: value}), make_input())
 
     @param_value_parametrization(
@@ -3031,6 +3037,9 @@ class TestAutoAugmentTransforms:
                 "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
                 "will degenerate to that anyway."
             )
+
+        if param == "fill":
+            value = adapt_fill(value, dtype=dtype)
 
         self.check_transform(transforms.TrivialAugmentWide(**{param: value}), make_input())
 
@@ -3055,5 +3064,8 @@ class TestAutoAugmentTransforms:
                 "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
                 "will degenerate to that anyway."
             )
+
+        if param == "fill":
+            value = adapt_fill(value, dtype=dtype)
 
         self.check_transform(transforms.AugMix(**{param: value}), make_input())
