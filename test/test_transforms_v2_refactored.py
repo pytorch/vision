@@ -2910,8 +2910,8 @@ class TestAutoAugmentTransforms:
 
         with freeze_rng_state():
             # By default every test starts from the same random seed. This leads to minimal coverage of the sampling
-            # that happens inside forward(). To avoid calling the transform multiple times to achieve this coverage, we
-            # build a reproducible random seed from the parametrization.
+            # that happens inside forward(). To avoid calling the transform multiple times to achieve higher coverage,
+            # we build a reproducible random seed from the parametrization.
             torch.manual_seed(hash(pickle.dumps(v1_params)))
 
             # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
@@ -2977,7 +2977,7 @@ class TestAutoAugmentTransforms:
         "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
     )
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
-    @pytest.mark.parametrize("input_type", ["PIL"])  # "Tensor",
+    @pytest.mark.parametrize("input_type", ["Tensor", "PIL"])
     def test_correctness_shear_translate(self, transform_id, magnitude, interpolation, fill, input_type):
         # ShearX/Y and TranslateX/Y are the only ops that are native to the AA transforms. They are modeled after the
         # reference implementation:
@@ -3006,7 +3006,11 @@ class TestAutoAugmentTransforms:
         if input_type == "PIL":
             actual, expected = F.to_image(actual), F.to_image(expected)
 
-        assert_close(actual, expected, rtol=0, atol=1)
+        if "Shear" in transform_id and input_type == "Tensor":
+            mae = (actual.float() - expected.float()).abs().mean()
+            assert mae < (12 if interpolation is transforms.InterpolationMode.NEAREST else 5)
+        else:
+            assert_close(actual, expected, rtol=0, atol=1)
 
     @param_value_parametrization(
         num_ops=[1, 2, 3],
