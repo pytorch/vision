@@ -217,7 +217,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+a2f8f8e) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0a0+439c5e3) &#x25BC</a>
     </div>
     
 
@@ -1322,9 +1322,6 @@
 
     <span class="n">center_f</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">expand</span><span class="p">:</span>
-            <span class="c1"># TODO: Do we actually want to warn, or just document this?</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;The provided center argument has no effect on the result if expand is True&quot;</span><span class="p">)</span>
         <span class="c1"># Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.</span>
         <span class="n">center_f</span> <span class="o">=</span> <span class="p">[(</span><span class="n">c</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="p">[</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">])]</span>
 
@@ -1362,9 +1359,6 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
     <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_check_interpolation</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">expand</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;The provided center argument has no effect on the result if expand is True&quot;</span><span class="p">)</span>
-
     <span class="k">return</span> <span class="n">_FP</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span>
         <span class="n">image</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">pil_modes_mapping</span><span class="p">[</span><span class="n">interpolation</span><span class="p">],</span> <span class="n">expand</span><span class="o">=</span><span class="n">expand</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="n">center</span>
     <span class="p">)</span>
@@ -1378,9 +1372,6 @@
     <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
-    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">expand</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;The provided center argument has no effect on the result if expand is True&quot;</span><span class="p">)</span>
-
     <span class="k">return</span> <span class="n">_affine_bounding_boxes_with_expand</span><span class="p">(</span>
         <span class="n">bounding_boxes</span><span class="p">,</span>
         <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span>
