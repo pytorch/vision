@@ -678,9 +678,12 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
     # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #
     theta1 = torch.reshape(coeffs[:6], (1, 2, 3)).to(dtype=dtype, device=device)
-    theta2 = torch.reshape(torch.cat(
-        (coeffs[6:], torch.ones(1, device=coeffs.device))), (1, 1, 3)).expand(-1, 2, -1).to(dtype=dtype, device=device)
-    
+    theta2 = (
+        torch.reshape(torch.cat((coeffs[6:], torch.ones(1, device=coeffs.device))), (1, 1, 3))
+        .expand(-1, 2, -1)
+        .to(dtype=dtype, device=device)
+    )
+
     d = 0.5
     base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
     x_grid = torch.linspace(d, ow * 1.0 + d - 1.0, steps=ow, device=device)
