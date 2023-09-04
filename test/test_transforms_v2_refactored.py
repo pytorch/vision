@@ -2904,51 +2904,6 @@ class TestGaussianBlur:
 
 
 class TestAutoAugmentTransforms:
-    def check_transform(self, transform, input):
-        v1_params = transform._extract_params_for_v1_transform()
-        v1_transform = transform._v1_transform_cls(**transform._extract_params_for_v1_transform())
-
-        with freeze_rng_state():
-            # By default every test starts from the same random seed. This leads to minimal coverage of the sampling
-            # that happens inside forward(). To avoid calling the transform multiple times to achieve higher coverage,
-            # we build a reproducible random seed from the parametrization.
-            torch.manual_seed(hash(pickle.dumps(v1_params)))
-
-            # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
-            # and v2 outputs without complicated mocking and monkeypatching. Thus, we skip the v1 compatibility checks
-            # here and run smoke tests below.
-            check_transform(transform, input, check_v1_compatibility=False)
-
-            if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
-                return
-
-            v1_transform(input)
-
-            if isinstance(input, PIL.Image.Image):
-                return
-
-            _script(v1_transform)(input)
-
-    @param_value_parametrization(
-        policy=list(transforms.AutoAugmentPolicy),
-        interpolation=[transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR],
-        fill=EXHAUSTIVE_TYPE_FILLS,
-    )
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_transform_auto_augment(self, param, value, make_input, dtype, device):
-        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
-            pytest.skip(
-                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
-                "will degenerate to that anyway."
-            )
-
-        if param == "fill":
-            value = adapt_fill(value, dtype=dtype)
-
-        self.check_transform(transforms.AutoAugment(**{param: value}), make_input())
-
     def _reference_shear_translate(self, image, *, transform_id, magnitude, interpolation, fill):
         if isinstance(image, PIL.Image.Image):
             input = image
@@ -3011,6 +2966,51 @@ class TestAutoAugmentTransforms:
             assert mae < (12 if interpolation is transforms.InterpolationMode.NEAREST else 5)
         else:
             assert_close(actual, expected, rtol=0, atol=1)
+
+    def check_transform(self, transform, input):
+        v1_params = transform._extract_params_for_v1_transform()
+        v1_transform = transform._v1_transform_cls(**transform._extract_params_for_v1_transform())
+
+        with freeze_rng_state():
+            # By default every test starts from the same random seed. This leads to minimal coverage of the sampling
+            # that happens inside forward(). To avoid calling the transform multiple times to achieve higher coverage,
+            # we build a reproducible random seed from the parametrization.
+            torch.manual_seed(hash(pickle.dumps(v1_params)))
+
+            # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
+            # and v2 outputs without complicated mocking and monkeypatching. Thus, we skip the v1 compatibility checks
+            # here and run smoke tests below.
+            check_transform(transform, input, check_v1_compatibility=False)
+
+            if type(input) is not torch.Tensor or isinstance(input, PIL.Image.Image):
+                return
+
+            v1_transform(input)
+
+            if isinstance(input, PIL.Image.Image):
+                return
+
+            _script(v1_transform)(input)
+
+    @param_value_parametrization(
+        policy=list(transforms.AutoAugmentPolicy),
+        interpolation=[transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR],
+        fill=EXHAUSTIVE_TYPE_FILLS,
+    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_auto_augment(self, param, value, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        if param == "fill":
+            value = adapt_fill(value, dtype=dtype)
+
+        self.check_transform(transforms.AutoAugment(**{param: value}), make_input())
 
     @param_value_parametrization(
         num_ops=[1, 2, 3],
