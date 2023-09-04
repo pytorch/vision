@@ -250,10 +250,7 @@ def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
     with freeze_rng_state():
         output_v1 = v1_transform(input)
 
-    if all(isinstance(o, PIL.Image.Image) for o in [output_v2, output_v1]):
-        output_v2, output_v1 = [F.to_image(o) for o in [output_v2, output_v1]]
-
-    assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
+    assert_close(F.to_image(output_v2), F.to_image(output_v1), rtol=rtol, atol=atol)
 
     if isinstance(input, PIL.Image.Image):
         return
@@ -2907,6 +2904,11 @@ class TestGaussianBlur:
 
 
 class TestAutoAugmentTransforms:
+    # These transforms have a lot of branches in their `forward()` passes which are conditioned on random sampling.
+    # It's typically very hard to test the effect on some parameters without heavy mocking logic.
+    # This class adds correctness tests for the kernels that are specific to those transforms. The rest of kernels, e.g.
+    # rotate, are tested in their respective classes. The rest of the tests here are mostly smoke tests.
+
     def _reference_shear_translate(self, image, *, transform_id, magnitude, interpolation, fill):
         if isinstance(image, PIL.Image.Image):
             input = image
