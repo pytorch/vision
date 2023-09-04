@@ -2989,9 +2989,7 @@ class TestAutoAugmentTransforms:
             # By default every test starts from the same random seed. This leads to minimal coverage of the sampling
             # that happens inside forward(). To avoid calling the transform multiple times to achieve higher coverage,
             # we build a reproducible random seed from the input type, dtype, and device.
-            torch.manual_seed(
-                hash((make_input, dtype, device))
-            )
+            torch.manual_seed(hash((make_input, dtype, device)))
 
             # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
             # and v2 outputs without complicated mocking and monkeypatching. Thus, we skip the v1 compatibility checks
