@@ -250,6 +250,9 @@ def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
     with freeze_rng_state():
         output_v1 = v1_transform(input)
 
+    if all(isinstance(o, PIL.Image.Image) for o in [output_v2, output_v1]):
+        output_v2, output_v1 = [F.to_image(o) for o in [output_v2, output_v1]]
+
     assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
 
     if isinstance(input, PIL.Image.Image):
@@ -2772,7 +2775,10 @@ class TestErase:
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
-        check_transform(transforms.RandomErasing(p=1), make_input(device=device))
+        input = make_input(device=device)
+        check_transform(
+            transforms.RandomErasing(p=1), input, check_v1_compatibility=not isinstance(input, PIL.Image.Image)
+        )
 
     def _reference_erase_image(self, image, *, i, j, h, w, v):
         mask = torch.zeros_like(image, dtype=torch.bool)
