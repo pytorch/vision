@@ -2997,3 +2997,12 @@ class TestAutoAugmentTransforms:
 
             if type(input) is torch.Tensor and dtype is torch.uint8:
                 _script(transform)(input)
+
+    def test_auto_augment_policy_error(self):
+        with pytest.raises(ValueError, match="provided policy"):
+            transforms.AutoAugment(policy=None)
+
+    @pytest.mark.parametrize("severity", [0, 11])
+    def test_aug_mix_severity_error(self, severity):
+        with pytest.raises(ValueError, match="severity must be between"):
+            transforms.AugMix(severity=severity)
