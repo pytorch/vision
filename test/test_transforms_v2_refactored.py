@@ -1380,7 +1380,6 @@ class TestVerticalFlip:
         assert_equal(output, input)
 
 
-@pytest.mark.filterwarnings("ignore:The provided center argument has no effect")
 class TestRotate:
     _EXHAUSTIVE_TYPE_AFFINE_KWARGS = dict(
         # float, int
@@ -2581,9 +2580,6 @@ class TestCrop:
             # 1. size is required
             # 2. the fill parameter only has an affect if we need padding
             kwargs["size"] = [s + 4 for s in self.INPUT_SIZE]
-
-            if isinstance(input, PIL.Image.Image) and isinstance(value, (tuple, list)) and len(value) == 1:
-                pytest.xfail("F._pad_image_pil does not support sequences of length 1 for fill.")
 
             if isinstance(input, tv_tensors.Mask) and isinstance(value, (tuple, list)):
                 pytest.skip("F.pad_mask doesn't support non-scalar fill.")
