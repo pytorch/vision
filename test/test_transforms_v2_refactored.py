@@ -2990,7 +2990,7 @@ class TestAutoAugmentTransforms:
             # that happens inside forward(). To avoid calling the transform multiple times to achieve higher coverage,
             # we build a reproducible random seed from the input type, dtype, and device.
             torch.manual_seed(
-                hash((type(input), getattr(input, "dtype", torch.uint8), getattr(input, "device", "cpu")))
+                hash((make_input, dtype, device))
             )
 
             # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
