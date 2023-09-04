@@ -2977,7 +2977,7 @@ class TestAutoAugmentTransforms:
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_forward(self, transform, make_input, dtype, device):
+    def test_transform_smoke(self, transform, make_input, dtype, device):
         if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
             pytest.skip(
                 "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
