@@ -264,11 +264,13 @@ def _parse_fill(
     if isinstance(fill, (int, float)) and num_channels > 1:
         fill = tuple([fill] * num_channels)
     if isinstance(fill, (list, tuple)):
-        if len(fill) != num_channels:
+        if len(fill) == 1:
+            fill = fill * num_channels
+        elif len(fill) != num_channels:
             msg = "The number of elements in 'fill' does not match the number of channels of the image ({} != {})"
             raise ValueError(msg.format(len(fill), num_channels))
 
-        fill = tuple(fill)
+        fill = tuple(fill)  # type: ignore[arg-type]
 
     if img.mode != "F":
         if isinstance(fill, (list, tuple)):
