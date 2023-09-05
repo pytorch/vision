@@ -4,7 +4,7 @@ Utils
 =====
 
 The ``torchvision.utils`` module contains various utilities, mostly :ref:`for
-visualization <sphx_glr_auto_examples_plot_visualization_utils.py>`.
+visualization <sphx_glr_auto_examples_others_plot_visualization_utils.py>`.
 
 .. currentmodule:: torchvision.utils
 

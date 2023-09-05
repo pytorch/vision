@@ -92,7 +92,7 @@ print(float_image)
 # In addition, :class:`~torchvision.datapoints.Image` and :class:`~torchvision.datapoints.Mask` can also take a
 # :class:`PIL.Image.Image` directly:
 
-image = datapoints.Image(PIL.Image.open("assets/astronaut.jpg"))
+image = datapoints.Image(PIL.Image.open("../assets/astronaut.jpg"))
 print(image.shape, image.dtype)
 
 # %%

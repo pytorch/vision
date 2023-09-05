@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
 
 
-ASSETS_DIRECTORY = "assets"
+ASSETS_DIRECTORY = "../assets"
 
 plt.rcParams["savefig.bbox"] = "tight"
 

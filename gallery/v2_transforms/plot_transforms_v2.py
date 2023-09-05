@@ -19,7 +19,7 @@ def load_data():
     from torchvision import datapoints
     from torchvision.ops import masks_to_boxes
 
-    assets_directory = pathlib.Path("assets")
+    assets_directory = pathlib.Path("../assets")
 
     path = assets_directory / "FudanPed00054.png"
     image = datapoints.Image(read_image(str(path)))
@@ -72,9 +72,9 @@ new_image, new_target = transform((image, {"boxes": bounding_boxes, "labels": la
 
 # %%
 # Under the hood, :mod:`torchvision.transforms.v2` relies on :mod:`torchvision.datapoints` for the dispatch to the
-# appropriate function for the input data: :ref:`sphx_glr_auto_examples_plot_datapoints.py`. Note however, that as
+# appropriate function for the input data: :ref:`sphx_glr_auto_examples_v2_transforms_plot_datapoints.py`. Note however, that as
 # regular user, you likely don't have to touch this yourself. See
-# :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`.
+# :ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2_e2e.py`.
 #
 # All "foreign" types like :class:`str`'s or :class:`pathlib.Path`'s are passed through, allowing to store extra
 # information directly with the sample:
