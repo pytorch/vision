@@ -142,7 +142,6 @@ def check_kernel(
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
     check_batched_vs_unbatched=True,
-    expect_same_dtype=True,
     **kwargs,
 ):
     initial_input_version = input._version
@@ -155,7 +154,7 @@ def check_kernel(
     # check that no inplace operation happened
     assert input._version == initial_input_version
 
-    if expect_same_dtype:
+    if kernel not in {F.to_dtype_image, F.to_dtype_video}:
         assert output.dtype == input.dtype
     assert output.device == input.device
 
@@ -1747,7 +1746,6 @@ class TestToDtype:
         check_kernel(
             kernel,
             make_input(dtype=input_dtype, device=device),
-            expect_same_dtype=input_dtype is output_dtype,
             dtype=output_dtype,
             scale=scale,
         )
