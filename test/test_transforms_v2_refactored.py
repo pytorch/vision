@@ -3014,26 +3014,20 @@ class TestAutoAugmentTransforms:
 
 
 class TestConvertBoundingBoxFormat:
-    old_new_formats = pytest.mark.parametrize(
-        ("old_format", "new_format"), list(itertools.product(iter(tv_tensors.BoundingBoxFormat), repeat=2))
-    )
+    old_new_formats = list(itertools.product(iter(tv_tensors.BoundingBoxFormat), repeat=2))
 
-    @old_new_formats
-    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel(self, old_format, new_format, dtype, device):
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    def test_kernel(self, old_format, new_format):
         check_kernel(
             F.convert_bounding_box_format,
-            make_bounding_boxes(format=old_format, dtype=dtype, device=device),
+            make_bounding_boxes(format=old_format),
             new_format=new_format,
             old_format=old_format,
         )
 
-    @old_new_formats
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_inplace(self, old_format, new_format, dtype, device):
-        input = make_bounding_boxes(format=old_format, dtype=dtype, device=device).as_subclass(torch.Tensor)
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    def test_kernel_inplace(self, old_format, new_format):
+        input = make_bounding_boxes(format=old_format).as_subclass(torch.Tensor)
         input_version = input._version
 
         if old_format == new_format:
@@ -3057,11 +3051,11 @@ class TestConvertBoundingBoxFormat:
 
             assert_equal(output_inplace, output_out_of_place)
 
-    @old_new_formats
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_functional(self, old_format, new_format):
         check_functional(F.convert_bounding_box_format, make_bounding_boxes(format=old_format), new_format=new_format)
 
-    @old_new_formats
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     @pytest.mark.parametrize("format_type", ["enum", "str"])
     def test_transform(self, old_format, new_format, format_type):
         check_transform(
@@ -3080,7 +3074,7 @@ class TestConvertBoundingBoxFormat:
             format=new_format,
         )
 
-    @old_new_formats
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn_type", ["functional", "transform"])
