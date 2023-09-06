@@ -2970,38 +2970,40 @@ class TestGaussianBlur:
     )
 
     @pytest.mark.parametrize(
-        ("canvas_size", "kernel_size", "sigma"),
+        ("dimensions", "kernel_size", "sigma"),
         [
-            ("small", (3, 3), 0.8),
-            ("small", (3, 3), 0.5),
-            ("small", (3, 5), 0.8),
-            ("small", (3, 5), 0.5),
-            ("large", (23, 23), 1.7),
+            ((3, 10, 12), (3, 3), 0.8),
+            ((3, 10, 12), (3, 3), 0.5),
+            ((3, 10, 12), (3, 5), 0.8),
+            ((3, 10, 12), (3, 5), 0.5),
+            ((1, 26, 28), (23, 23), 1.7),
         ],
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.float16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_functional_image_correctness(self, kernel_size, sigma, canvas_size, dtype, device):
-        if dtype == torch.float16 and device == "cpu":
-            # skip float16 on CPU case
-            return
+    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, dtype, device):
+        if dtype is torch.float16 and device == "cpu":
+            pytest.skip("The CPU implementation of float16 on CPU differs from opencv")
 
-        if canvas_size == "small":
-            data = torch.from_numpy(np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))).permute(2, 0, 1)
-        else:
-            data = torch.from_numpy(np.arange(26 * 28, dtype="uint8").reshape((1, 26, 28)))
-        data = data.to(dtype=dtype, device=device)
+        num_channels, height, width = dimensions
 
-        num_channels, height, width = data.shape
         reference_results_key = f"{height}_{width}_{num_channels}__{kernel_size[0]}_{kernel_size[1]}_{sigma}"
         expected = (
             torch.tensor(self.REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS[reference_results_key])
             .reshape(height, width, num_channels)
             .permute(2, 0, 1)
-            .to(data)
+            .to(dtype=dtype, device=device)
         )
 
-        actual = F.gaussian_blur_image(tv_tensors.Image(data), kernel_size=kernel_size, sigma=sigma)
+        image = tv_tensors.Image(
+            torch.arange(num_channels * height * width, dtype=torch.uint8)
+            .reshape(height, width, num_channels)
+            .permute(2, 0, 1),
+            dtype=dtype,
+            device=device,
+        )
+
+        actual = F.gaussian_blur_image(image, kernel_size=kernel_size, sigma=sigma)
 
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
