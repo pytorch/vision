@@ -3216,10 +3216,18 @@ class TestResizedCrop:
         new_height, new_width = size
 
         crop_affine_matrix = np.array(
-            [[1, 0, -left], [0, 1, -top], [0, 0, 1]],
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+                [0, 0, 1],
+            ],
         )
         resize_affine_matrix = np.array(
-            [[new_width / width, 0, 0], [0, new_height / height, 0], [0, 0, 1]],
+            [
+                [new_width / width, 0, 0],
+                [0, new_height / height, 0],
+                [0, 0, 1],
+            ],
         )
         affine_matrix = (resize_affine_matrix @ crop_affine_matrix)[:2, :]
 
