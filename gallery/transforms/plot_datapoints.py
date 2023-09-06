@@ -5,7 +5,7 @@ Datapoints FAQ
 
 .. note::
     Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_datapoints.ipynb>`_
-    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_datapoints.py>` to download the full example code.
+    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_datapoints.py>` to download the full example code.
 
 
 Datapoints are Tensor subclasses introduced together with

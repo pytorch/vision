@@ -4,8 +4,8 @@ Transforms v2: End-to-end object detection/segmentation example
 ===============================================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_v2_e2e.ipynb>`_
-    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2_e2e.py>` to download the full example code.
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_e2e.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py>` to download the full example code.
 
 Object detection and segmentation tasks are natively supported:
 ``torchvision.transforms.v2`` enables jointly transforming images, videos,
