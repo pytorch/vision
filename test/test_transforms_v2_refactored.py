@@ -3262,3 +3262,17 @@ class TestResizedCrop:
 
         assert_close(actual, expected, rtol=0, atol=1)
         assert_equal(F.get_size(actual), F.get_size(expected))
+
+    def test_transform_errors_warnings(self):
+        with pytest.raises(ValueError, match="provide only two dimensions"):
+            transforms.RandomResizedCrop(size=(1, 2, 3))
+
+        with pytest.raises(TypeError, match="Scale should be a sequence"):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, scale=123)
+
+        with pytest.raises(TypeError, match="Ratio should be a sequence"):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, ratio=123)
+
+        for param in ["scale", "ratio"]:
+            with pytest.warns(match="Scale and ratio should be of kind"):
+                transforms.RandomResizedCrop(size=self.INPUT_SIZE, **{param: [1, 0]})
