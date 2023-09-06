@@ -233,7 +233,8 @@ class ToDtype(Transform):
             A dict can be passed to specify per-datapoint conversions, e.g.
             ``dtype={datapoints.Image: torch.float32, datapoints.Mask: torch.int64, "others":None}``. The "others"
             key can be used as a catch-all for any other datapoint type, and ``None`` means no conversion.
-        scale (bool, optional): Whether to scale the values for images or videos. Default: ``False``.
+        scale (bool, optional): Whether to scale the values for images or videos. See :ref:`range_and_dtype`.
+            Default: ``False``.
     """
 
     _transformed_types = (torch.Tensor,)
