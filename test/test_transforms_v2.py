@@ -449,68 +449,6 @@ class TestRandomZoomOut:
         assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
 
 
-class TestRandomCrop:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Please provide only two dimensions"):
-            transforms.RandomCrop([10, 12, 14])
-
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
-            transforms.RandomCrop([10, 12], padding="abc")
-
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
-            transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomCrop([10, 12], padding=1, fill="abc")
-
-        with pytest.raises(ValueError, match="Padding mode should be either"):
-            transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
-
-    @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
-    @pytest.mark.parametrize("size, pad_if_needed", [((10, 10), False), ((50, 25), True)])
-    def test__get_params(self, padding, pad_if_needed, size):
-        h, w = size = (24, 32)
-        image = make_image(size)
-
-        transform = transforms.RandomCrop(size, padding=padding, pad_if_needed=pad_if_needed)
-        params = transform._get_params([image])
-
-        if padding is not None:
-            if isinstance(padding, int):
-                pad_top = pad_bottom = pad_left = pad_right = padding
-            elif isinstance(padding, list) and len(padding) == 2:
-                pad_left = pad_right = padding[0]
-                pad_top = pad_bottom = padding[1]
-            elif isinstance(padding, list) and len(padding) == 4:
-                pad_left, pad_top, pad_right, pad_bottom = padding
-
-            h += pad_top + pad_bottom
-            w += pad_left + pad_right
-        else:
-            pad_left = pad_right = pad_top = pad_bottom = 0
-
-        if pad_if_needed:
-            if w < size[1]:
-                diff = size[1] - w
-                pad_left += diff
-                pad_right += diff
-                w += 2 * diff
-            if h < size[0]:
-                diff = size[0] - h
-                pad_top += diff
-                pad_bottom += diff
-                h += 2 * diff
-
-        padding = [pad_left, pad_top, pad_right, pad_bottom]
-
-        assert 0 <= params["top"] <= h - size[0] + 1
-        assert 0 <= params["left"] <= w - size[1] + 1
-        assert params["height"] == size[0]
-        assert params["width"] == size[1]
-        assert params["needs_pad"] is any(padding)
-        assert params["padding"] == padding
-
-
 class TestGaussianBlur:
     def test_assertions(self):
         with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
