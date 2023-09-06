@@ -315,11 +315,4 @@ DISPATCHER_INFOS = [
             skip_dispatch_tv_tensor,
         ],
     ),
-    DispatcherInfo(
-        F.convert_bounding_box_format,
-        kernels={tv_tensors.BoundingBoxes: F.convert_bounding_box_format},
-        test_marks=[
-            skip_dispatch_tv_tensor,
-        ],
-    ),
 ]

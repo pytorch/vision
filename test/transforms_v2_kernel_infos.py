@@ -5,7 +5,6 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch.testing
-import torchvision.ops
 import torchvision.transforms.v2.functional as F
 from torchvision import tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value, _parse_pad_padding
@@ -225,38 +224,6 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_siz
     return torch.stack(
         [transform(b, affine_matrix, format, canvas_size) for b in bounding_boxes.reshape(-1, 4).unbind()]
     ).reshape(bounding_boxes.shape)
-
-
-def sample_inputs_convert_bounding_box_format():
-    formats = list(tv_tensors.BoundingBoxFormat)
-    for bounding_boxes_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
-        yield ArgsKwargs(bounding_boxes_loader, old_format=bounding_boxes_loader.format, new_format=new_format)
-
-
-def reference_convert_bounding_box_format(bounding_boxes, old_format, new_format):
-    return torchvision.ops.box_convert(
-        bounding_boxes, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
-    ).to(bounding_boxes.dtype)
-
-
-def reference_inputs_convert_bounding_box_format():
-    for args_kwargs in sample_inputs_convert_bounding_box_format():
-        if len(args_kwargs.args[0].shape) == 2:
-            yield args_kwargs
-
-
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.convert_bounding_box_format,
-        sample_inputs_fn=sample_inputs_convert_bounding_box_format,
-        reference_fn=reference_convert_bounding_box_format,
-        reference_inputs_fn=reference_inputs_convert_bounding_box_format,
-        logs_usage=True,
-        closeness_kwargs={
-            (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
-        },
-    ),
-)
 
 
 _RESIZED_CROP_PARAMS = combinations_grid(top=[-8, 9], left=[-8, 9], height=[12], width=[12], size=[(16, 18)])

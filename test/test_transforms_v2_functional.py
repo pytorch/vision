@@ -522,33 +522,6 @@ class TestClampBoundingBoxes:
             F.clamp_bounding_boxes(tv_tensor, **metadata)
 
 
-class TestConvertFormatBoundingBoxes:
-    @pytest.mark.parametrize(
-        ("inpt", "old_format"),
-        [
-            (next(make_multiple_bounding_boxes()), None),
-            (next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor), tv_tensors.BoundingBoxFormat.XYXY),
-        ],
-    )
-    def test_missing_new_format(self, inpt, old_format):
-        with pytest.raises(TypeError, match=re.escape("missing 1 required argument: 'new_format'")):
-            F.convert_bounding_box_format(inpt, old_format)
-
-    def test_pure_tensor_insufficient_metadata(self):
-        pure_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
-
-        with pytest.raises(ValueError, match=re.escape("`old_format` has to be passed")):
-            F.convert_bounding_box_format(pure_tensor, new_format=tv_tensors.BoundingBoxFormat.CXCYWH)
-
-    def test_tv_tensor_explicit_metadata(self):
-        tv_tensor = next(make_multiple_bounding_boxes())
-
-        with pytest.raises(ValueError, match=re.escape("`old_format` must not be passed")):
-            F.convert_bounding_box_format(
-                tv_tensor, old_format=tv_tensor.format, new_format=tv_tensors.BoundingBoxFormat.CXCYWH
-            )
-
-
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
 #  `transforms_v2_kernel_infos.py`
 
