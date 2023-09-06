@@ -388,12 +388,12 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
 
         if not dist.is_initialized() or dist.get_rank() == 0:
             if writer is not None and step % args.tensorboard_log_frequency == 0:
-                # log.py the loss and metrics to tensorboard
+                # log the loss and metrics to tensorboard
 
                 writer.add_scalar("loss", loss, step)
                 for name, value in logger.meters.items():
                     writer.add_scalar(name, value.avg, step)
-                # log.py the images to tensorboard
+                # log the images to tensorboard
                 pred_grid = visualization.make_training_sample_grid(
                     image_left, image_right, disp_mask, valid_disp_mask, disp_predictions
                 )
@@ -753,8 +753,8 @@ def get_args_parser(add_help=True):
     parser.add_argument("--mixed-precision", action="store_true", help="use mixed precision training")
 
     # logging
-    parser.add_argument("--tensorboard-summaries", action="store_true", help="log.py to tensorboard")
-    parser.add_argument("--tensorboard-log.py-frequency", type=int, default=100, help="log.py frequency")
+    parser.add_argument("--tensorboard-summaries", action="store_true", help="log to tensorboard")
+    parser.add_argument("--tensorboard-log-frequency", type=int, default=100, help="log frequency")
     parser.add_argument("--save-frequency", type=int, default=1_000, help="save frequency")
     parser.add_argument("--valid-frequency", type=int, default=1_000, help="validation frequency")
     parser.add_argument(
@@ -762,7 +762,7 @@ def get_args_parser(add_help=True):
         type=str,
         nargs="+",
         default=["mae", "rmse", "1px", "3px", "5px", "relepe"],
-        help="metrics to log.py",
+        help="metrics to log",
         choices=AVAILABLE_METRICS,
     )
 
