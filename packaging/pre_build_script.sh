@@ -11,7 +11,7 @@ if [[ "$(uname)" == Darwin ]]; then
   conda install -yq wget
 fi
 
-if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" || "$ARCH" == "aarch64" ]]; then
+if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   # Install libpng from Anaconda (defaults)
   conda install libpng -yq
   conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch
@@ -22,8 +22,13 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" || "$ARCH" == "aarch64" ]]; th
       bin_path=$(dirname $python_exec)
       cp "$bin_path/Library/bin/libjpeg.dll" torchvision
   fi
-
 else
+
+  if [[ "$ARCH" == "aarch64" ]]; then
+    conda install libpng -yq
+    conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
+  fi
+
   # Install native CentOS libJPEG, freetype and GnuTLS
   yum install -y libjpeg-turbo-devel freetype gnutls
 
