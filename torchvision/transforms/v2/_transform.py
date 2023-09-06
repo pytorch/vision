@@ -8,7 +8,7 @@ import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import datapoints
-from torchvision.transforms.v2.utils import check_type, has_any, is_pure_tensor
+from torchvision.transforms.v2._utils import check_type, has_any, is_pure_tensor
 from torchvision.utils import _log_api_usage_once
 
 from .functional._utils import _get_kernel

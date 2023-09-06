@@ -6,8 +6,16 @@ import torch
 from torchvision import datapoints
 from torchvision.prototype.datapoints import Label, OneHotLabel
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2._utils import _FillType, _get_fill, _setup_fill_arg, _setup_size
-from torchvision.transforms.v2.utils import get_bounding_boxes, has_any, is_pure_tensor, query_size
+from torchvision.transforms.v2._utils import (
+    _FillType,
+    _get_fill,
+    _setup_fill_arg,
+    _setup_size,
+    get_bounding_boxes,
+    has_any,
+    is_pure_tensor,
+    query_size,
+)
 
 
 class FixedSizeCrop(Transform):
