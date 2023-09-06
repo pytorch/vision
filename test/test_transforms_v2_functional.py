@@ -1,5 +1,4 @@
 import inspect
-import os
 import re
 
 import numpy as np
@@ -738,63 +737,6 @@ def test_correctness_center_crop_mask(device, output_size):
 
     expected = _compute_expected_mask(mask, output_size)
     torch.testing.assert_close(expected, actual)
-
-
-# Copied from test/test_functional_tensor.py
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("canvas_size", ("small", "large"))
-@pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
-@pytest.mark.parametrize("ksize", [(3, 3), [3, 5], (23, 23)])
-@pytest.mark.parametrize("sigma", [[0.5, 0.5], (0.5, 0.5), (0.8, 0.8), (1.7, 1.7)])
-def test_correctness_gaussian_blur_image_tensor(device, canvas_size, dt, ksize, sigma):
-    fn = F.gaussian_blur_image
-
-    # true_cv2_results = {
-    #     # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8)
-    #     "3_3_0.8": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.5)
-    #     "3_3_0.5": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.8)
-    #     "3_5_0.8": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.5)
-    #     "3_5_0.5": ...
-    #     # np_img2 = np.arange(26 * 28, dtype="uint8").reshape((26, 28))
-    #     # cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7)
-    #     "23_23_1.7": ...
-    # }
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "gaussian_blur_opencv_results.pt")
-    true_cv2_results = torch.load(p)
-
-    if canvas_size == "small":
-        tensor = (
-            torch.from_numpy(np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))).permute(2, 0, 1).to(device)
-        )
-    else:
-        tensor = torch.from_numpy(np.arange(26 * 28, dtype="uint8").reshape((1, 26, 28))).to(device)
-
-    if dt == torch.float16 and device == "cpu":
-        # skip float16 on CPU case
-        return
-
-    if dt is not None:
-        tensor = tensor.to(dtype=dt)
-
-    _ksize = (ksize, ksize) if isinstance(ksize, int) else ksize
-    _sigma = sigma[0] if sigma is not None else None
-    shape = tensor.shape
-    gt_key = f"{shape[-2]}_{shape[-1]}_{shape[-3]}__{_ksize[0]}_{_ksize[1]}_{_sigma}"
-    if gt_key not in true_cv2_results:
-        return
-
-    true_out = (
-        torch.tensor(true_cv2_results[gt_key]).reshape(shape[-2], shape[-1], shape[-3]).permute(2, 0, 1).to(tensor)
-    )
-
-    image = tv_tensors.Image(tensor)
-
-    out = fn(image, kernel_size=ksize, sigma=sigma)
-    torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
 
 
 @pytest.mark.parametrize(
