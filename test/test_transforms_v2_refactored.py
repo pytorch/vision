@@ -3110,3 +3110,136 @@ class TestConvertBoundingBoxFormat:
             F.convert_bounding_box_format(
                 input_tv_tensor, old_format=input_tv_tensor.format, new_format=input_tv_tensor.format
             )
+
+
+class TestResizedCrop:
+    INPUT_SIZE = (17, 11)
+    CROP_KWARGS = dict(top=2, left=2, height=5, width=7)
+    OUTPUT_SIZE = (19, 32)
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.resized_crop_image, make_image),
+            (F.resized_crop_bounding_boxes, make_bounding_boxes),
+            (F.resized_crop_mask, make_segmentation_mask),
+            (F.resized_crop_mask, make_detection_mask),
+            (F.resized_crop_video, make_video),
+        ],
+    )
+    def test_kernel(self, kernel, make_input):
+        input = make_input(self.INPUT_SIZE)
+        if isinstance(input, tv_tensors.BoundingBoxes):
+            extra_kwargs = dict(format=input.format)
+        elif isinstance(input, tv_tensors.Mask):
+            extra_kwargs = dict()
+        else:
+            extra_kwargs = dict(antialias=True)
+
+        check_kernel(kernel, input, **self.CROP_KWARGS, size=self.OUTPUT_SIZE, **extra_kwargs)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(
+            F.resized_crop, make_input(self.INPUT_SIZE), **self.CROP_KWARGS, size=self.OUTPUT_SIZE, antialias=True
+        )
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.resized_crop_image, torch.Tensor),
+            (F._resized_crop_image_pil, PIL.Image.Image),
+            (F.resized_crop_image, tv_tensors.Image),
+            (F.resized_crop_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.resized_crop_mask, tv_tensors.Mask),
+            (F.resized_crop_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.resized_crop, kernel=kernel, input_type=input_type)
+
+    @param_value_parametrization(
+        scale=[(0.1, 0.2), [0.0, 1.0]],
+        ratio=[(0.3, 0.7), [0.1, 5.0]],
+    )
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_transform(self, param, value, make_input):
+        check_transform(
+            transforms.RandomResizedCrop(size=self.OUTPUT_SIZE, **{param: value}, antialias=True),
+            make_input(self.INPUT_SIZE),
+            check_v1_compatibility=dict(rtol=0, atol=1),
+        )
+
+    # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
+    # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
+    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
+    def test_functional_image_correctness(self, interpolation):
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8)
+
+        actual = F.resized_crop(
+            image, **self.CROP_KWARGS, size=self.OUTPUT_SIZE, interpolation=interpolation, antialias=True
+        )
+        expected = F.to_image(
+            F.resized_crop(
+                F.to_pil_image(image), **self.CROP_KWARGS, size=self.OUTPUT_SIZE, interpolation=interpolation
+            )
+        )
+
+        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
+
+    def _reference_resized_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width, size):
+        new_height, new_width = size
+
+        crop_affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+                [0, 0, 1],
+            ],
+        )
+        resize_affine_matrix = np.array(
+            [
+                [new_width / width, 0, 0],
+                [0, new_height / height, 0],
+                [0, 0, 1],
+            ],
+        )
+        affine_matrix = (resize_affine_matrix @ crop_affine_matrix)[:2, :]
+
+        return reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            affine_matrix=affine_matrix,
+            new_canvas_size=size,
+        )
+
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    def test_functional_bounding_boxes_correctness(self, format):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
+
+        actual = F.resized_crop(bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
+        expected = self._reference_resized_crop_bounding_boxes(
+            bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE
+        )
+
+        assert_equal(actual, expected)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    def test_transform_errors_warnings(self):
+        with pytest.raises(ValueError, match="provide only two dimensions"):
+            transforms.RandomResizedCrop(size=(1, 2, 3))
+
+        with pytest.raises(TypeError, match="Scale should be a sequence"):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, scale=123)
+
+        with pytest.raises(TypeError, match="Ratio should be a sequence"):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, ratio=123)
+
+        for param in ["scale", "ratio"]:
+            with pytest.warns(match="Scale and ratio should be of kind"):
+                transforms.RandomResizedCrop(size=self.INPUT_SIZE, **{param: [1, 0]})
