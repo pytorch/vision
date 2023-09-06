@@ -88,8 +88,8 @@ class CustomGalleryExampleSortKey:
         "plot_transforms_e2e.py",
         "plot_cutmix_mixup.py",
         "plot_custom_transforms.py",
-        "plot_datapoints.py",
-        "plot_custom_datapoints.py",
+        "plot_tv_tensors.py",
+        "plot_custom_tv_tensors.py",
     ]
 
     def __call__(self, filename):
