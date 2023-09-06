@@ -3014,7 +3014,7 @@ class TestAutoAugmentTransforms:
 
 
 class TestConvertBoundingBoxFormat:
-    old_new_formats = list(itertools.product(iter(tv_tensors.BoundingBoxFormat), repeat=2))
+    old_new_formats = list(itertools.permutations(iter(tv_tensors.BoundingBoxFormat), 2))
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_kernel(self, old_format, new_format):
@@ -3025,31 +3025,35 @@ class TestConvertBoundingBoxFormat:
             old_format=old_format,
         )
 
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("inplace", [False, True])
+    def test_kernel_noop(self, format, inplace):
+        input = make_bounding_boxes(format=format).as_subclass(torch.Tensor)
+        input_version = input._version
+
+        output = F.convert_bounding_box_format(input, old_format=format, new_format=format, inplace=inplace)
+
+        assert output is input
+        assert output.data_ptr() == input.data_ptr()
+        assert output._version == input_version
+
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_kernel_inplace(self, old_format, new_format):
         input = make_bounding_boxes(format=old_format).as_subclass(torch.Tensor)
         input_version = input._version
 
-        if old_format == new_format:
-            output_inplace = F.convert_bounding_box_format(
-                input, old_format=old_format, new_format=new_format, inplace=True
-            )
-            assert output_inplace.data_ptr() == input.data_ptr()
-            assert output_inplace._version == input_version
-            assert output_inplace is input
-        else:
-            output_out_of_place = F.convert_bounding_box_format(input, old_format=old_format, new_format=new_format)
-            assert output_out_of_place.data_ptr() != input.data_ptr()
-            assert output_out_of_place is not input
+        output_out_of_place = F.convert_bounding_box_format(input, old_format=old_format, new_format=new_format)
+        assert output_out_of_place.data_ptr() != input.data_ptr()
+        assert output_out_of_place is not input
 
-            output_inplace = F.convert_bounding_box_format(
-                input, old_format=old_format, new_format=new_format, inplace=True
-            )
-            assert output_inplace.data_ptr() == input.data_ptr()
-            assert output_inplace._version > input_version
-            assert output_inplace is input
+        output_inplace = F.convert_bounding_box_format(
+            input, old_format=old_format, new_format=new_format, inplace=True
+        )
+        assert output_inplace.data_ptr() == input.data_ptr()
+        assert output_inplace._version > input_version
+        assert output_inplace is input
 
-            assert_equal(output_inplace, output_out_of_place)
+        assert_equal(output_inplace, output_out_of_place)
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_functional(self, old_format, new_format):
