@@ -140,6 +140,12 @@ def conv_backward_flop(inputs: List[Any], outputs: List[Any]):
     return flop_count
 
 
+def scaled_dot_product_flash_attention_flop(inputs: List[Any], outputs: List[Any]):
+    # FIXME: this needs to count the flops of this kernel
+    # https://github.com/pytorch/pytorch/blob/207b06d099def9d9476176a1842e88636c1f714f/aten/src/ATen/native/cpu/FlashAttentionKernel.cpp#L52-L267
+    return 0
+
+
 flop_mapping = {
     aten.mm: matmul_flop,
     aten.matmul: matmul_flop,
@@ -150,6 +156,7 @@ flop_mapping = {
     aten.convolution_backward: conv_backward_flop,
     quantized.conv2d: quant_conv_flop,
     quantized.conv2d_relu: quant_conv_flop,
+    aten._scaled_dot_product_flash_attention: scaled_dot_product_flash_attention_flop,
 }
 
 unmapped_ops = set()
