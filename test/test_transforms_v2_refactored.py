@@ -2956,27 +2956,29 @@ class TestGaussianBlur:
             assert sigma[0] <= params["sigma"][0] <= sigma[1]
             assert sigma[0] <= params["sigma"][1] <= sigma[1]
 
+    # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
+    # np_img2 = np.arange(26 * 28, dtype="uint8").reshape((26, 28))
     # {
-    #     # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8)
-    #     "3_3_0.8": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.5)
-    #     "3_3_0.5": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.8)
-    #     "3_5_0.8": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.5)
-    #     "3_5_0.5": ...
-    #     # np_img2 = np.arange(26 * 28, dtype="uint8").reshape((26, 28))
-    #     # cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7)
-    #     "23_23_1.7": ...
+    #     "10_12_3__3_3_0.8": cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8),
+    #     "10_12_3__3_3_0.5": cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.5),
+    #     "10_12_3__3_5_0.8": cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.8),
+    #     "10_12_3__3_5_0.5": cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.5),
+    #     "26_28_1__23_23_1.7": cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7),
     # }
     REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS = torch.load(
         Path(__file__).parent / "assets" / "gaussian_blur_opencv_results.pt"
     )
 
-    @pytest.mark.parametrize("kernel_size", [(3, 3), [3, 5], (23, 23)])
-    @pytest.mark.parametrize("sigma", [0.5, 0.8, 1.7])
-    @pytest.mark.parametrize("canvas_size", ("small", "large"))
+    @pytest.mark.parametrize(
+        ("canvas_size", "kernel_size", "sigma"),
+        [
+            ("small", (3, 3), 0.8),
+            ("small", (3, 3), 0.5),
+            ("small", (3, 5), 0.8),
+            ("small", (3, 5), 0.5),
+            ("large", (23, 23), 1.7),
+        ],
+    )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.float16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_functional_image_correctness(self, kernel_size, sigma, canvas_size, dtype, device):
@@ -2990,18 +2992,14 @@ class TestGaussianBlur:
             data = torch.from_numpy(np.arange(26 * 28, dtype="uint8").reshape((1, 26, 28)))
         data = data.to(dtype=dtype, device=device)
 
-        shape = data.shape
-        reference_results_key = f"{shape[-2]}_{shape[-1]}_{shape[-3]}__{kernel_size[0]}_{kernel_size[1]}_{sigma}"
-
-        try:
-            expected = (
-                torch.tensor(self.REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS[reference_results_key])
-                .reshape(shape[-2], shape[-1], shape[-3])
-                .permute(2, 0, 1)
-                .to(data)
-            )
-        except KeyError:
-            return
+        num_channels, height, width = data.shape
+        reference_results_key = f"{height}_{width}_{num_channels}__{kernel_size[0]}_{kernel_size[1]}_{sigma}"
+        expected = (
+            torch.tensor(self.REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS[reference_results_key])
+            .reshape(height, width, num_channels)
+            .permute(2, 0, 1)
+            .to(data)
+        )
 
         actual = F.gaussian_blur_image(tv_tensors.Image(data), kernel_size=kernel_size, sigma=sigma)
 

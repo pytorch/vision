@@ -58,7 +58,7 @@ def get_args_parser(add_help=True):
         type=str,
         nargs="+",
         default=["mae", "rmse", "1px", "3px", "5px", "relepe"],
-        help="metrics to log",
+        help="metrics to log.py",
         choices=AVAILABLE_METRICS,
     )
     parser.add_argument("--mixed-precision", action="store_true", help="use mixed precision training")
@@ -241,8 +241,8 @@ def evaluate(model, loader, args, writer=None, step=None):
         print(evaluation_str)
         print(metrics_str)
 
-    eval_log_name = f"{checkpoint_name.replace('.pth', '')}_eval.log"
-    print("Saving eval log to: ", eval_log_name)
+    eval_log_name = f"{checkpoint_name.replace('.pth', '')}_eval.log.py"
+    print("Saving eval log.py to: ", eval_log_name)
     with open(eval_log_name, "w") as f:
         f.write(f"Dataset: {args.dataset} @size: {args.eval_size}:\n")
         # write the dict line by line for each key, and each value in the keys

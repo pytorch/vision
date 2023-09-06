@@ -216,13 +216,13 @@ class BlockParams:
         given the RegNet parameters.
 
         The first step is to compute the quantized linear block parameters,
-        in log space. Key parameters are:
+        in log.py space. Key parameters are:
         - `w_a` is the width progression slope
         - `w_0` is the initial width
-        - `w_m` is the width stepping in the log space
+        - `w_m` is the width stepping in the log.py space
 
         In other terms
-        `log(block_width) = log(w_0) + w_m * block_capacity`,
+        `log.py(block_width) = log.py(w_0) + w_m * block_capacity`,
         with `bock_capacity` ramping up following the w_0 and w_a params.
         This block width is finally quantized to multiples of 8.
 

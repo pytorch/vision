@@ -1818,7 +1818,7 @@ def test_random_erasing(seed):
     tol = 0.05
     assert 1 / 3 - tol <= aspect_ratio <= 3 + tol
 
-    # Make sure that h > w and h < w are equally likely (log-scale sampling)
+    # Make sure that h > w and h < w are equally likely (log.py-scale sampling)
     aspect_ratios = []
     random.seed(42)
     trial = 1000
