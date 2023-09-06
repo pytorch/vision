@@ -163,18 +163,6 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.gaussian_blur,
-        kernels={
-            tv_tensors.Image: F.gaussian_blur_image,
-            tv_tensors.Video: F.gaussian_blur_video,
-        },
-        pil_kernel_info=PILKernelInfo(F._gaussian_blur_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("kernel_size"),
-            xfail_jit_python_scalar_arg("sigma"),
-        ],
-    ),
-    DispatcherInfo(
         F.equalize,
         kernels={
             tv_tensors.Image: F.equalize_image,

@@ -686,43 +686,6 @@ KERNEL_INFOS.extend(
 )
 
 
-def sample_inputs_gaussian_blur_image_tensor():
-    make_gaussian_blur_image_loaders = functools.partial(make_image_loaders, sizes=[(7, 33)], color_spaces=["RGB"])
-
-    for image_loader, kernel_size in itertools.product(make_gaussian_blur_image_loaders(), [5, (3, 3), [3, 3]]):
-        yield ArgsKwargs(image_loader, kernel_size=kernel_size)
-
-    for image_loader, sigma in itertools.product(
-        make_gaussian_blur_image_loaders(), [None, (3.0, 3.0), [2.0, 2.0], 4.0, [1.5], (3.14,)]
-    ):
-        yield ArgsKwargs(image_loader, kernel_size=5, sigma=sigma)
-
-
-def sample_inputs_gaussian_blur_video():
-    for video_loader in make_video_loaders(sizes=[(7, 33)], num_frames=[5]):
-        yield ArgsKwargs(video_loader, kernel_size=[3, 3])
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.gaussian_blur_image,
-            sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
-            test_marks=[
-                xfail_jit_python_scalar_arg("kernel_size"),
-                xfail_jit_python_scalar_arg("sigma"),
-            ],
-        ),
-        KernelInfo(
-            F.gaussian_blur_video,
-            sample_inputs_fn=sample_inputs_gaussian_blur_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
-        ),
-    ]
-)
-
-
 def sample_inputs_equalize_image_tensor():
     for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
         yield ArgsKwargs(image_loader)

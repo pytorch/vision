@@ -270,17 +270,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
     ),
     ConsistencyConfig(
-        v2_transforms.GaussianBlur,
-        legacy_transforms.GaussianBlur,
-        [
-            ArgsKwargs(kernel_size=3),
-            ArgsKwargs(kernel_size=(1, 5)),
-            ArgsKwargs(kernel_size=3, sigma=0.7),
-            ArgsKwargs(kernel_size=5, sigma=(0.3, 1.4)),
-        ],
-        closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
-    ),
-    ConsistencyConfig(
         v2_transforms.RandomPerspective,
         legacy_transforms.RandomPerspective,
         [
@@ -512,7 +501,6 @@ get_params_parametrization = pytest.mark.parametrize(
         )
         for transform_cls, get_params_args_kwargs in [
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
-            (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
             (v2_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
             (v2_transforms.AutoAugment, ArgsKwargs(5)),
         ]
