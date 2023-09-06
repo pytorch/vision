@@ -328,22 +328,6 @@ class TestSmoke:
     def test_normalize(self, transform, input):
         transform(input)
 
-    @parametrize(
-        [
-            (
-                transforms.RandomResizedCrop([16, 16], antialias=True),
-                itertools.chain(
-                    make_images(extra_dims=[(4,)]),
-                    make_vanilla_tensor_images(),
-                    make_pil_images(),
-                    make_videos(extra_dims=[()]),
-                ),
-            )
-        ]
-    )
-    def test_random_resized_crop(self, transform, input):
-        transform(input)
-
 
 @pytest.mark.parametrize(
     "flat_inputs",
