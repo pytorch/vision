@@ -3161,13 +3161,17 @@ class TestResizedCrop:
     def test_functional_signature(self, kernel, input_type):
         check_functional_kernel_signature_match(F.resized_crop, kernel=kernel, input_type=input_type)
 
+    @param_value_parametrization(
+        scale=[(0.1, 0.2), [0.0, 1.0]],
+        ratio=[(0.3, 0.7), [0.1, 5.0]],
+    )
     @pytest.mark.parametrize(
         "make_input",
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
-    def test_transform(self, make_input):
+    def test_transform(self, param, value, make_input):
         check_transform(
-            transforms.RandomResizedCrop(size=self.OUTPUT_SIZE, antialias=True),
+            transforms.RandomResizedCrop(size=self.OUTPUT_SIZE, **{param: value}, antialias=True),
             make_input(self.INPUT_SIZE),
             check_v1_compatibility=dict(rtol=0, atol=1),
         )
@@ -3187,30 +3191,7 @@ class TestResizedCrop:
             )
         )
 
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
         torch.testing.assert_close(actual, expected, atol=1, rtol=0)
-
-    @param_value_parametrization(
-        scale=[(0.1, 0.2), [0.0, 1.0]],
-        ratio=[(0.3, 0.7), [0.1, 5.0]],
-    )
-    @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_image_correctness(self, param, value, seed):
-        transform = transforms.RandomResizedCrop(size=self.OUTPUT_SIZE, **{param: value}, antialias=True)
-
-        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
-
-        with freeze_rng_state():
-            torch.manual_seed(seed)
-            params = transform._get_params([image])
-
-            torch.manual_seed(seed)
-            actual = transform(image)
-
-        expected = F.to_image(F.resized_crop(F.to_pil_image(image), **params, size=self.OUTPUT_SIZE))
-
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        assert_close(actual, expected, rtol=0, atol=1)
 
     def _reference_resized_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width, size):
         new_height, new_width = size
@@ -3246,29 +3227,7 @@ class TestResizedCrop:
             bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE
         )
 
-        assert_equal(actual, expected, atol=1, rtol=0)
-        assert_equal(F.get_size(actual), F.get_size(expected))
-
-    @param_value_parametrization(
-        scale=[(0.1, 0.2), [0.0, 1.0]],
-        ratio=[(0.3, 0.7), [0.1, 5.0]],
-    )
-    @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_bounding_boxes_correctness(self, param, value, seed):
-        transform = transforms.RandomResizedCrop(size=self.OUTPUT_SIZE, **{param: value})
-
-        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE)
-
-        with freeze_rng_state():
-            torch.manual_seed(seed)
-            params = transform._get_params([bounding_boxes])
-
-            torch.manual_seed(seed)
-            actual = transform(bounding_boxes)
-
-        expected = self._reference_resized_crop_bounding_boxes(bounding_boxes, **params, size=self.OUTPUT_SIZE)
-
-        assert_close(actual, expected, rtol=0, atol=1)
+        assert_equal(actual, expected)
         assert_equal(F.get_size(actual), F.get_size(expected))
 
     def test_transform_errors_warnings(self):
