@@ -3,6 +3,10 @@
 Getting started with transforms v2
 ==================================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_v2.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_transforms_v2.py>` to download the full example code.
+
 Most computer vision tasks are not supported out of the box by ``torchvision.transforms`` v1, since it only supports
 images. ``torchvision.transforms.v2`` enables jointly transforming images, videos, bounding boxes, and masks. This
 example showcases the core functionality of the new ``torchvision.transforms.v2`` API.
