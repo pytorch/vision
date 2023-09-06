@@ -9,18 +9,18 @@ TVTensors FAQ
 
 
 TVTensors are Tensor subclasses introduced together with
-``torchvision.transforms.v2``. This example showcases what these tv_tensors are
+``torchvision.transforms.v2``. This example showcases what these TVTensors are
 and how they behave.
 
 .. warning::
 
-    **Intended Audience** Unless you're writing your own transforms or your own tv_tensors, you
+    **Intended Audience** Unless you're writing your own transforms or your own TVTensors, you
     probably do not need to read this guide. This is a fairly low-level topic
     that most users will not need to worry about: you do not need to understand
-    the internals of tv_tensors to efficiently rely on
+    the internals of TVTensors to efficiently rely on
     ``torchvision.transforms.v2``. It may however be useful for advanced users
     trying to implement their own datasets, transforms, or work directly with
-    the tv_tensors.
+    the TVTensors.
 """
 
 # %%
@@ -31,8 +31,8 @@ from torchvision import tv_tensors
 
 
 # %%
-# What are tv_tensors?
-# --------------------
+# What are TVTensors?
+# -------------------
 #
 # TVTensors are zero-copy tensor subclasses:
 
@@ -46,31 +46,31 @@ assert image.data_ptr() == tensor.data_ptr()
 # Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate function
 # for the input data.
 #
-# :mod:`torchvision.tv_tensors` supports four types of tv_tensors:
+# :mod:`torchvision.tv_tensors` supports four types of TVTensors:
 #
 # * :class:`~torchvision.tv_tensors.Image`
 # * :class:`~torchvision.tv_tensors.Video`
 # * :class:`~torchvision.tv_tensors.BoundingBoxes`
 # * :class:`~torchvision.tv_tensors.Mask`
 #
-# What can I do with a tv_tensor?
-# -------------------------------
+# What can I do with a TVTensor?
+# ------------------------------
 #
 # TVTensors look and feel just like regular tensors - they **are** tensors.
 # Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()`` or
-# any ``torch.*`` operator will also work on tv_tensors. See
+# any ``torch.*`` operator will also work on TVTensors. See
 # :ref:`tv_tensor_unwrapping_behaviour` for a few gotchas.
 
 # %%
 # .. _tv_tensor_creation:
 #
-# How do I construct a tv_tensor?
-# -------------------------------
+# How do I construct a TVTensor?
+# ------------------------------
 #
 # Using the constructor
 # ^^^^^^^^^^^^^^^^^^^^^
 #
-# Each tv_tensor class takes any tensor-like data that can be turned into a :class:`~torch.Tensor`
+# Each TVTensor class takes any tensor-like data that can be turned into a :class:`~torch.Tensor`
 
 image = tv_tensors.Image([[[[0, 1], [1, 0]]]])
 print(image)
@@ -92,7 +92,7 @@ image = tv_tensors.Image(PIL.Image.open("../assets/astronaut.jpg"))
 print(image.shape, image.dtype)
 
 # %%
-# Some tv_tensors require additional metadata to be passed in ordered to be constructed. For example,
+# Some TVTensors require additional metadata to be passed in ordered to be constructed. For example,
 # :class:`~torchvision.tv_tensors.BoundingBoxes` requires the coordinate format as well as the size of the
 # corresponding image (``canvas_size``) alongside the actual values. These
 # metadata are required to properly transform the bounding boxes.
@@ -109,7 +109,7 @@ print(bboxes)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # You can also use the :func:`~torchvision.tv_tensors.wrap` function to wrap a tensor object
-# into a tv_tensor. This is useful when you already have an object of the
+# into a TVTensor. This is useful when you already have an object of the
 # desired type, which typically happens when writing transforms: you just want
 # to wrap the output like the input.
 
@@ -125,7 +125,7 @@ assert new_bboxes.canvas_size == bboxes.canvas_size
 # .. _tv_tensor_unwrapping_behaviour:
 #
 # I had a TVTensor but now I have a Tensor. Help!
-# ------------------------------------------------
+# -----------------------------------------------
 #
 # By default, operations on :class:`~torchvision.tv_tensors.TVTensor` objects
 # will return a pure Tensor:
@@ -151,7 +151,7 @@ assert not isinstance(new_bboxes, tv_tensors.BoundingBoxes)
 # But I want a TVTensor back!
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# You can re-wrap a pure tensor into a tv_tensor by just calling the tv_tensor
+# You can re-wrap a pure tensor into a TVTensor by just calling the TVTensor
 # constructor, or by using the :func:`~torchvision.tv_tensors.wrap` function
 # (see more details above in :ref:`tv_tensor_creation`):
 
@@ -164,7 +164,7 @@ assert isinstance(new_bboxes, tv_tensors.BoundingBoxes)
 # as a global config setting for the whole program, or as a context manager
 # (read its docs to learn more about caveats):
 
-with tv_tensors.set_return_type("tv_tensor"):
+with tv_tensors.set_return_type("TVTensor"):
     new_bboxes = bboxes + 3
 assert isinstance(new_bboxes, tv_tensors.BoundingBoxes)
 
@@ -203,9 +203,9 @@ assert isinstance(new_bboxes, tv_tensors.BoundingBoxes)
 # There are a few exceptions to this "unwrapping" rule:
 # :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`,
 # :meth:`torch.Tensor.detach`, and :meth:`~torch.Tensor.requires_grad_` retain
-# the tv_tensor type.
+# the TVTensor type.
 #
-# Inplace operations on tv_tensors like ``obj.add_()`` will preserve the type of
+# Inplace operations on TVTensors like ``obj.add_()`` will preserve the type of
 # ``obj``. However, the **returned** value of inplace operations will be a pure
 # tensor:
 
@@ -213,7 +213,7 @@ image = tv_tensors.Image([[[0, 1], [1, 0]]])
 
 new_image = image.add_(1).mul_(2)
 
-# image got transformed in-place and is still an Image tv_tensor, but new_image
+# image got transformed in-place and is still a TVTensor Image, but new_image
 # is a Tensor. They share the same underlying data and they're equal, just
 # different classes.
 assert isinstance(image, tv_tensors.Image)
