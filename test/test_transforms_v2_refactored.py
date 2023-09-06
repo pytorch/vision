@@ -2,6 +2,7 @@ import contextlib
 import decimal
 import inspect
 import math
+import pickle
 import re
 from pathlib import Path
 from unittest import mock
@@ -246,6 +247,8 @@ def _check_transform_v1_compatibility(transform, input):
 
 def check_transform(transform_cls, input, *args, **kwargs):
     transform = transform_cls(*args, **kwargs)
+
+    pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
     assert isinstance(output, type(input))
