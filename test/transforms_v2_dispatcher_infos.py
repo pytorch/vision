@@ -112,16 +112,6 @@ multi_crop_skips.append(skip_dispatch_tv_tensor)
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.resized_crop,
-        kernels={
-            tv_tensors.Image: F.resized_crop_image,
-            tv_tensors.Video: F.resized_crop_video,
-            tv_tensors.BoundingBoxes: F.resized_crop_bounding_boxes,
-            tv_tensors.Mask: F.resized_crop_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F._resized_crop_image_pil),
-    ),
-    DispatcherInfo(
         F.pad,
         kernels={
             tv_tensors.Image: F.pad_image,
@@ -311,13 +301,6 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.clamp_bounding_boxes,
         kernels={tv_tensors.BoundingBoxes: F.clamp_bounding_boxes},
-        test_marks=[
-            skip_dispatch_tv_tensor,
-        ],
-    ),
-    DispatcherInfo(
-        F.convert_bounding_box_format,
-        kernels={tv_tensors.BoundingBoxes: F.convert_bounding_box_format},
         test_marks=[
             skip_dispatch_tv_tensor,
         ],

@@ -1,5 +1,4 @@
 import inspect
-import math
 import os
 import re
 
@@ -522,117 +521,8 @@ class TestClampBoundingBoxes:
             F.clamp_bounding_boxes(tv_tensor, **metadata)
 
 
-class TestConvertFormatBoundingBoxes:
-    @pytest.mark.parametrize(
-        ("inpt", "old_format"),
-        [
-            (next(make_multiple_bounding_boxes()), None),
-            (next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor), tv_tensors.BoundingBoxFormat.XYXY),
-        ],
-    )
-    def test_missing_new_format(self, inpt, old_format):
-        with pytest.raises(TypeError, match=re.escape("missing 1 required argument: 'new_format'")):
-            F.convert_bounding_box_format(inpt, old_format)
-
-    def test_pure_tensor_insufficient_metadata(self):
-        pure_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
-
-        with pytest.raises(ValueError, match=re.escape("`old_format` has to be passed")):
-            F.convert_bounding_box_format(pure_tensor, new_format=tv_tensors.BoundingBoxFormat.CXCYWH)
-
-    def test_tv_tensor_explicit_metadata(self):
-        tv_tensor = next(make_multiple_bounding_boxes())
-
-        with pytest.raises(ValueError, match=re.escape("`old_format` must not be passed")):
-            F.convert_bounding_box_format(
-                tv_tensor, old_format=tv_tensor.format, new_format=tv_tensors.BoundingBoxFormat.CXCYWH
-            )
-
-
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
 #  `transforms_v2_kernel_infos.py`
-
-
-def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
-    rot = math.radians(angle_)
-    cx, cy = center_
-    tx, ty = translate_
-    sx, sy = [math.radians(sh_) for sh_ in shear_]
-
-    c_matrix = np.array([[1, 0, cx], [0, 1, cy], [0, 0, 1]])
-    t_matrix = np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
-    c_matrix_inv = np.linalg.inv(c_matrix)
-    rs_matrix = np.array(
-        [
-            [scale_ * math.cos(rot), -scale_ * math.sin(rot), 0],
-            [scale_ * math.sin(rot), scale_ * math.cos(rot), 0],
-            [0, 0, 1],
-        ]
-    )
-    shear_x_matrix = np.array([[1, -math.tan(sx), 0], [0, 1, 0], [0, 0, 1]])
-    shear_y_matrix = np.array([[1, 0, 0], [-math.tan(sy), 1, 0], [0, 0, 1]])
-    rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
-    true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
-    return true_matrix
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
-    mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
-    mask[:, 0, :] = 1
-
-    out_mask = F.vertical_flip_mask(mask)
-
-    expected_mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
-    expected_mask[:, -1, :] = 1
-    torch.testing.assert_close(out_mask, expected_mask)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize(
-    "format",
-    [tv_tensors.BoundingBoxFormat.XYXY, tv_tensors.BoundingBoxFormat.XYWH, tv_tensors.BoundingBoxFormat.CXCYWH],
-)
-@pytest.mark.parametrize(
-    "top, left, height, width, size",
-    [
-        [0, 0, 30, 30, (60, 60)],
-        [-5, 5, 35, 45, (32, 34)],
-    ],
-)
-def test_correctness_resized_crop_bounding_boxes(device, format, top, left, height, width, size):
-    def _compute_expected_bbox(bbox, top_, left_, height_, width_, size_):
-        # bbox should be xyxy
-        bbox[0] = (bbox[0] - left_) * size_[1] / width_
-        bbox[1] = (bbox[1] - top_) * size_[0] / height_
-        bbox[2] = (bbox[2] - left_) * size_[1] / width_
-        bbox[3] = (bbox[3] - top_) * size_[0] / height_
-        return bbox
-
-    format = tv_tensors.BoundingBoxFormat.XYXY
-    canvas_size = (100, 100)
-    in_boxes = [
-        [10.0, 10.0, 20.0, 20.0],
-        [5.0, 10.0, 15.0, 20.0],
-    ]
-    expected_bboxes = []
-    for in_box in in_boxes:
-        expected_bboxes.append(_compute_expected_bbox(list(in_box), top, left, height, width, size))
-    expected_bboxes = torch.tensor(expected_bboxes, device=device)
-
-    in_boxes = tv_tensors.BoundingBoxes(
-        in_boxes, format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=canvas_size, device=device
-    )
-    if format != tv_tensors.BoundingBoxFormat.XYXY:
-        in_boxes = convert_bounding_box_format(in_boxes, tv_tensors.BoundingBoxFormat.XYXY, format)
-
-    output_boxes, output_canvas_size = F.resized_crop_bounding_boxes(in_boxes, format, top, left, height, width, size)
-
-    if format != tv_tensors.BoundingBoxFormat.XYXY:
-        output_boxes = convert_bounding_box_format(output_boxes, format, tv_tensors.BoundingBoxFormat.XYXY)
-
-    torch.testing.assert_close(output_boxes, expected_bboxes)
-    torch.testing.assert_close(output_canvas_size, size)
 
 
 def _parse_padding(padding):

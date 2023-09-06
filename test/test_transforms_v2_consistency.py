@@ -253,30 +253,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.RandomResizedCrop,
-        legacy_transforms.RandomResizedCrop,
-        [
-            ArgsKwargs(16),
-            ArgsKwargs(17, scale=(0.3, 0.7)),
-            ArgsKwargs(25, ratio=(0.5, 1.5)),
-            ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((31, 28), interpolation=PIL.Image.NEAREST),
-            ArgsKwargs((29, 32), antialias=False),
-            ArgsKwargs((28, 31), antialias=True),
-        ],
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        closeness_kwargs=dict(rtol=0, atol=1),
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomResizedCrop,
-        legacy_transforms.RandomResizedCrop,
-        [
-            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC, antialias=True),
-            ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC, antialias=True),
-        ],
-        closeness_kwargs=dict(rtol=0, atol=21),
-    ),
-    ConsistencyConfig(
         v2_transforms.ColorJitter,
         legacy_transforms.ColorJitter,
         [
@@ -535,7 +511,6 @@ get_params_parametrization = pytest.mark.parametrize(
             id=transform_cls.__name__,
         )
         for transform_cls, get_params_args_kwargs in [
-            (v2_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
             (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
             (v2_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
