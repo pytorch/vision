@@ -390,21 +390,6 @@ def test_pure_tensor_heuristic(flat_inputs):
         assert transform.was_applied(output, input)
 
 
-class TestPad:
-    def test_assertions(self):
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
-            transforms.Pad("abc")
-
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
-            transforms.Pad([-0.7, 0, 0.7])
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.Pad(12, fill="abc")
-
-        with pytest.raises(ValueError, match="Padding mode should be either"):
-            transforms.Pad(12, padding_mode="abc")
-
-
 class TestRandomZoomOut:
     def test_assertions(self):
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):

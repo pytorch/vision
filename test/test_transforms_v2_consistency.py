@@ -109,21 +109,6 @@ CONSISTENCY_CONFIGS = [
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
     ),
-    ConsistencyConfig(
-        v2_transforms.Pad,
-        legacy_transforms.Pad,
-        [
-            NotScriptableArgsKwargs(3),
-            ArgsKwargs([3]),
-            ArgsKwargs([2, 3]),
-            ArgsKwargs([3, 2, 1, 4]),
-            NotScriptableArgsKwargs(5, fill=1, padding_mode="constant"),
-            ArgsKwargs([5], fill=1, padding_mode="constant"),
-            NotScriptableArgsKwargs(5, padding_mode="edge"),
-            NotScriptableArgsKwargs(5, padding_mode="reflect"),
-            NotScriptableArgsKwargs(5, padding_mode="symmetric"),
-        ],
-    ),
     *[
         ConsistencyConfig(
             v2_transforms.LinearTransformation,
