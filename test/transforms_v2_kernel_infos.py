@@ -1,14 +1,13 @@
 import functools
 import itertools
 
-import numpy as np
 import PIL.Image
 import pytest
 import torch.testing
 import torchvision.transforms.v2.functional as F
 from torchvision import tv_tensors
-from torchvision.transforms._functional_tensor import _max_value as get_max_value, _parse_pad_padding
-from transforms_v2_legacy_utils import (
+from torchvision.transforms._functional_tensor import _max_value as get_max_value
+from transforms_v2_legacy_utils import (  # noqa: F401
     ArgsKwargs,
     combinations_grid,
     DEFAULT_PORTRAIT_SPATIAL_SIZE,
@@ -182,211 +181,6 @@ def float32_vs_uint8_fill_adapter(other_args, kwargs):
 
     return other_args, dict(kwargs, fill=fill)
 
-
-def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_size, affine_matrix):
-    def transform(bbox, affine_matrix_, format_, canvas_size_):
-        # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
-        in_dtype = bbox.dtype
-        if not torch.is_floating_point(bbox):
-            bbox = bbox.float()
-        bbox_xyxy = F.convert_bounding_box_format(
-            bbox.as_subclass(torch.Tensor),
-            old_format=format_,
-            new_format=tv_tensors.BoundingBoxFormat.XYXY,
-            inplace=True,
-        )
-        points = np.array(
-            [
-                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
-            ]
-        )
-        transformed_points = np.matmul(points, affine_matrix_.T)
-        out_bbox = torch.tensor(
-            [
-                np.min(transformed_points[:, 0]).item(),
-                np.min(transformed_points[:, 1]).item(),
-                np.max(transformed_points[:, 0]).item(),
-                np.max(transformed_points[:, 1]).item(),
-            ],
-            dtype=bbox_xyxy.dtype,
-        )
-        out_bbox = F.convert_bounding_box_format(
-            out_bbox, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
-        )
-        # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-        out_bbox = F.clamp_bounding_boxes(out_bbox, format=format_, canvas_size=canvas_size_)
-        out_bbox = out_bbox.to(dtype=in_dtype)
-        return out_bbox
-
-    return torch.stack(
-        [transform(b, affine_matrix, format, canvas_size) for b in bounding_boxes.reshape(-1, 4).unbind()]
-    ).reshape(bounding_boxes.shape)
-
-
-_PAD_PARAMS = combinations_grid(
-    padding=[[1], [1, 1], [1, 1, 2, 2]],
-    padding_mode=["constant", "symmetric", "edge", "reflect"],
-)
-
-
-def sample_inputs_pad_image_tensor():
-    make_pad_image_loaders = functools.partial(
-        make_image_loaders, sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=["RGB"], dtypes=[torch.float32]
-    )
-
-    for image_loader, padding in itertools.product(
-        make_pad_image_loaders(),
-        [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]],
-    ):
-        yield ArgsKwargs(image_loader, padding=padding)
-
-    for image_loader in make_pad_image_loaders():
-        for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
-            yield ArgsKwargs(image_loader, padding=[1], fill=fill)
-
-    for image_loader, padding_mode in itertools.product(
-        # We branch for non-constant padding and integer inputs
-        make_pad_image_loaders(dtypes=[torch.uint8]),
-        ["constant", "symmetric", "edge", "reflect"],
-    ):
-        yield ArgsKwargs(image_loader, padding=[1], padding_mode=padding_mode)
-
-    # `torch.nn.functional.pad` does not support symmetric padding, and thus we have a custom implementation. Besides
-    # negative padding, this is already handled by the inputs above.
-    for image_loader in make_pad_image_loaders():
-        yield ArgsKwargs(image_loader, padding=[-1], padding_mode="symmetric")
-
-
-def reference_inputs_pad_image_tensor():
-    for image_loader, params in itertools.product(
-        make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]), _PAD_PARAMS
-    ):
-        for fill in get_fills(
-            num_channels=image_loader.num_channels,
-            dtype=image_loader.dtype,
-        ):
-            # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
-            if isinstance(fill, (list, tuple)):
-                continue
-
-            yield ArgsKwargs(image_loader, fill=fill, **params)
-
-
-def sample_inputs_pad_bounding_boxes():
-    for bounding_boxes_loader, padding in itertools.product(
-        make_bounding_box_loaders(), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
-    ):
-        yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            canvas_size=bounding_boxes_loader.canvas_size,
-            padding=padding,
-            padding_mode="constant",
-        )
-
-
-def sample_inputs_pad_mask():
-    for mask_loader in make_mask_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_categories=[10], num_objects=[5]):
-        yield ArgsKwargs(mask_loader, padding=[1])
-
-
-def reference_inputs_pad_mask():
-    for mask_loader, fill, params in itertools.product(
-        make_mask_loaders(num_objects=[1], extra_dims=[()]), [None, 127], _PAD_PARAMS
-    ):
-        yield ArgsKwargs(mask_loader, fill=fill, **params)
-
-
-def sample_inputs_pad_video():
-    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
-        yield ArgsKwargs(video_loader, padding=[1])
-
-
-def reference_pad_bounding_boxes(bounding_boxes, *, format, canvas_size, padding, padding_mode):
-
-    left, right, top, bottom = _parse_pad_padding(padding)
-
-    affine_matrix = np.array(
-        [
-            [1, 0, left],
-            [0, 1, top],
-        ],
-        dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
-    )
-
-    height = canvas_size[0] + top + bottom
-    width = canvas_size[1] + left + right
-
-    expected_bboxes = reference_affine_bounding_boxes_helper(
-        bounding_boxes, format=format, canvas_size=(height, width), affine_matrix=affine_matrix
-    )
-    return expected_bboxes, (height, width)
-
-
-def reference_inputs_pad_bounding_boxes():
-    for bounding_boxes_loader, padding in itertools.product(
-        make_bounding_box_loaders(extra_dims=((), (4,))), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
-    ):
-        yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            canvas_size=bounding_boxes_loader.canvas_size,
-            padding=padding,
-            padding_mode="constant",
-        )
-
-
-def pad_xfail_jit_fill_condition(args_kwargs):
-    fill = args_kwargs.kwargs.get("fill")
-    if not isinstance(fill, (list, tuple)):
-        return False
-    elif isinstance(fill, tuple):
-        return True
-    else:  # isinstance(fill, list):
-        return all(isinstance(f, int) for f in fill)
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.pad_image,
-            sample_inputs_fn=sample_inputs_pad_image_tensor,
-            reference_fn=pil_reference_wrapper(F._pad_image_pil),
-            reference_inputs_fn=reference_inputs_pad_image_tensor,
-            float32_vs_uint8=float32_vs_uint8_fill_adapter,
-            closeness_kwargs=float32_vs_uint8_pixel_difference(),
-            test_marks=[
-                xfail_jit_python_scalar_arg("padding"),
-                xfail_jit(
-                    "F.pad only supports vector fills for list of floats", condition=pad_xfail_jit_fill_condition
-                ),
-            ],
-        ),
-        KernelInfo(
-            F.pad_bounding_boxes,
-            sample_inputs_fn=sample_inputs_pad_bounding_boxes,
-            reference_fn=reference_pad_bounding_boxes,
-            reference_inputs_fn=reference_inputs_pad_bounding_boxes,
-            test_marks=[
-                xfail_jit_python_scalar_arg("padding"),
-            ],
-        ),
-        KernelInfo(
-            F.pad_mask,
-            sample_inputs_fn=sample_inputs_pad_mask,
-            reference_fn=pil_reference_wrapper(F._pad_image_pil),
-            reference_inputs_fn=reference_inputs_pad_mask,
-            float32_vs_uint8=float32_vs_uint8_fill_adapter,
-        ),
-        KernelInfo(
-            F.pad_video,
-            sample_inputs_fn=sample_inputs_pad_video,
-        ),
-    ]
-)
 
 _PERSPECTIVE_COEFFS = [
     [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
@@ -681,43 +475,6 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.center_crop_video,
             sample_inputs_fn=sample_inputs_center_crop_video,
-        ),
-    ]
-)
-
-
-def sample_inputs_gaussian_blur_image_tensor():
-    make_gaussian_blur_image_loaders = functools.partial(make_image_loaders, sizes=[(7, 33)], color_spaces=["RGB"])
-
-    for image_loader, kernel_size in itertools.product(make_gaussian_blur_image_loaders(), [5, (3, 3), [3, 3]]):
-        yield ArgsKwargs(image_loader, kernel_size=kernel_size)
-
-    for image_loader, sigma in itertools.product(
-        make_gaussian_blur_image_loaders(), [None, (3.0, 3.0), [2.0, 2.0], 4.0, [1.5], (3.14,)]
-    ):
-        yield ArgsKwargs(image_loader, kernel_size=5, sigma=sigma)
-
-
-def sample_inputs_gaussian_blur_video():
-    for video_loader in make_video_loaders(sizes=[(7, 33)], num_frames=[5]):
-        yield ArgsKwargs(video_loader, kernel_size=[3, 3])
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.gaussian_blur_image,
-            sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
-            test_marks=[
-                xfail_jit_python_scalar_arg("kernel_size"),
-                xfail_jit_python_scalar_arg("sigma"),
-            ],
-        ),
-        KernelInfo(
-            F.gaussian_blur_video,
-            sample_inputs_fn=sample_inputs_gaussian_blur_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
         ),
     ]
 )

@@ -1,5 +1,4 @@
 import inspect
-import os
 import re
 
 import numpy as np
@@ -525,75 +524,6 @@ class TestClampBoundingBoxes:
 #  `transforms_v2_kernel_infos.py`
 
 
-def _parse_padding(padding):
-    if isinstance(padding, int):
-        return [padding] * 4
-    if isinstance(padding, list):
-        if len(padding) == 1:
-            return padding * 4
-        if len(padding) == 2:
-            return padding * 2  # [left, up, right, down]
-
-    return padding
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("padding", [[1], [1, 1], [1, 1, 2, 2]])
-def test_correctness_pad_bounding_boxes(device, padding):
-    def _compute_expected_bbox(bbox, format, padding_):
-        pad_left, pad_up, _, _ = _parse_padding(padding_)
-
-        dtype = bbox.dtype
-        bbox = (
-            bbox.clone()
-            if format == tv_tensors.BoundingBoxFormat.XYXY
-            else convert_bounding_box_format(bbox, old_format=format, new_format=tv_tensors.BoundingBoxFormat.XYXY)
-        )
-
-        bbox[0::2] += pad_left
-        bbox[1::2] += pad_up
-
-        bbox = convert_bounding_box_format(bbox, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format)
-        if bbox.dtype != dtype:
-            # Temporary cast to original dtype
-            # e.g. float32 -> int
-            bbox = bbox.to(dtype)
-        return bbox
-
-    def _compute_expected_canvas_size(bbox, padding_):
-        pad_left, pad_up, pad_right, pad_down = _parse_padding(padding_)
-        height, width = bbox.canvas_size
-        return height + pad_up + pad_down, width + pad_left + pad_right
-
-    for bboxes in make_multiple_bounding_boxes(extra_dims=((4,),)):
-        bboxes = bboxes.to(device)
-        bboxes_format = bboxes.format
-        bboxes_canvas_size = bboxes.canvas_size
-
-        output_boxes, output_canvas_size = F.pad_bounding_boxes(
-            bboxes, format=bboxes_format, canvas_size=bboxes_canvas_size, padding=padding
-        )
-
-        torch.testing.assert_close(output_canvas_size, _compute_expected_canvas_size(bboxes, padding))
-
-        expected_bboxes = torch.stack(
-            [_compute_expected_bbox(b, bboxes_format, padding) for b in bboxes.reshape(-1, 4).unbind()]
-        ).reshape(bboxes.shape)
-
-        torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_correctness_pad_segmentation_mask_on_fixed_input(device):
-    mask = torch.ones((1, 3, 3), dtype=torch.long, device=device)
-
-    out_mask = F.pad_mask(mask, padding=[1, 1, 1, 1])
-
-    expected_mask = torch.zeros((1, 5, 5), dtype=torch.long, device=device)
-    expected_mask[:, 1:-1, 1:-1] = 1
-    torch.testing.assert_close(out_mask, expected_mask)
-
-
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize(
     "startpoints, endpoints",
@@ -738,63 +668,6 @@ def test_correctness_center_crop_mask(device, output_size):
 
     expected = _compute_expected_mask(mask, output_size)
     torch.testing.assert_close(expected, actual)
-
-
-# Copied from test/test_functional_tensor.py
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("canvas_size", ("small", "large"))
-@pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
-@pytest.mark.parametrize("ksize", [(3, 3), [3, 5], (23, 23)])
-@pytest.mark.parametrize("sigma", [[0.5, 0.5], (0.5, 0.5), (0.8, 0.8), (1.7, 1.7)])
-def test_correctness_gaussian_blur_image_tensor(device, canvas_size, dt, ksize, sigma):
-    fn = F.gaussian_blur_image
-
-    # true_cv2_results = {
-    #     # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8)
-    #     "3_3_0.8": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.5)
-    #     "3_3_0.5": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.8)
-    #     "3_5_0.8": ...
-    #     # cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.5)
-    #     "3_5_0.5": ...
-    #     # np_img2 = np.arange(26 * 28, dtype="uint8").reshape((26, 28))
-    #     # cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7)
-    #     "23_23_1.7": ...
-    # }
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "gaussian_blur_opencv_results.pt")
-    true_cv2_results = torch.load(p)
-
-    if canvas_size == "small":
-        tensor = (
-            torch.from_numpy(np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))).permute(2, 0, 1).to(device)
-        )
-    else:
-        tensor = torch.from_numpy(np.arange(26 * 28, dtype="uint8").reshape((1, 26, 28))).to(device)
-
-    if dt == torch.float16 and device == "cpu":
-        # skip float16 on CPU case
-        return
-
-    if dt is not None:
-        tensor = tensor.to(dtype=dt)
-
-    _ksize = (ksize, ksize) if isinstance(ksize, int) else ksize
-    _sigma = sigma[0] if sigma is not None else None
-    shape = tensor.shape
-    gt_key = f"{shape[-2]}_{shape[-1]}_{shape[-3]}__{_ksize[0]}_{_ksize[1]}_{_sigma}"
-    if gt_key not in true_cv2_results:
-        return
-
-    true_out = (
-        torch.tensor(true_cv2_results[gt_key]).reshape(shape[-2], shape[-1], shape[-3]).permute(2, 0, 1).to(tensor)
-    )
-
-    image = tv_tensors.Image(tensor)
-
-    out = fn(image, kernel_size=ksize, sigma=sigma)
-    torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
 
 
 @pytest.mark.parametrize(

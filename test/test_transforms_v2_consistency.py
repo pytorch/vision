@@ -109,21 +109,6 @@ CONSISTENCY_CONFIGS = [
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
     ),
-    ConsistencyConfig(
-        v2_transforms.Pad,
-        legacy_transforms.Pad,
-        [
-            NotScriptableArgsKwargs(3),
-            ArgsKwargs([3]),
-            ArgsKwargs([2, 3]),
-            ArgsKwargs([3, 2, 1, 4]),
-            NotScriptableArgsKwargs(5, fill=1, padding_mode="constant"),
-            ArgsKwargs([5], fill=1, padding_mode="constant"),
-            NotScriptableArgsKwargs(5, padding_mode="edge"),
-            NotScriptableArgsKwargs(5, padding_mode="reflect"),
-            NotScriptableArgsKwargs(5, padding_mode="symmetric"),
-        ],
-    ),
     *[
         ConsistencyConfig(
             v2_transforms.LinearTransformation,
@@ -268,17 +253,6 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.3),
         ],
         closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
-    ),
-    ConsistencyConfig(
-        v2_transforms.GaussianBlur,
-        legacy_transforms.GaussianBlur,
-        [
-            ArgsKwargs(kernel_size=3),
-            ArgsKwargs(kernel_size=(1, 5)),
-            ArgsKwargs(kernel_size=3, sigma=0.7),
-            ArgsKwargs(kernel_size=5, sigma=(0.3, 1.4)),
-        ],
-        closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
     ),
     ConsistencyConfig(
         v2_transforms.RandomPerspective,
@@ -512,7 +486,6 @@ get_params_parametrization = pytest.mark.parametrize(
         )
         for transform_cls, get_params_args_kwargs in [
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
-            (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
             (v2_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
             (v2_transforms.AutoAugment, ArgsKwargs(5)),
         ]

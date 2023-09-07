@@ -1,7 +1,7 @@
 import pytest
 import torchvision.transforms.v2.functional as F
 from torchvision import tv_tensors
-from transforms_v2_kernel_infos import KERNEL_INFOS, pad_xfail_jit_fill_condition
+from transforms_v2_kernel_infos import KERNEL_INFOS
 from transforms_v2_legacy_utils import InfoBase, TestMark
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
@@ -112,20 +112,6 @@ multi_crop_skips.append(skip_dispatch_tv_tensor)
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.pad,
-        kernels={
-            tv_tensors.Image: F.pad_image,
-            tv_tensors.Video: F.pad_video,
-            tv_tensors.BoundingBoxes: F.pad_bounding_boxes,
-            tv_tensors.Mask: F.pad_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F._pad_image_pil, kernel_name="pad_image_pil"),
-        test_marks=[
-            xfail_jit("F.pad only supports vector fills for list of floats", condition=pad_xfail_jit_fill_condition),
-            xfail_jit_python_scalar_arg("padding"),
-        ],
-    ),
-    DispatcherInfo(
         F.perspective,
         kernels={
             tv_tensors.Image: F.perspective_image,
@@ -160,18 +146,6 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F._center_crop_image_pil),
         test_marks=[
             xfail_jit_python_scalar_arg("output_size"),
-        ],
-    ),
-    DispatcherInfo(
-        F.gaussian_blur,
-        kernels={
-            tv_tensors.Image: F.gaussian_blur_image,
-            tv_tensors.Video: F.gaussian_blur_video,
-        },
-        pil_kernel_info=PILKernelInfo(F._gaussian_blur_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("kernel_size"),
-            xfail_jit_python_scalar_arg("sigma"),
         ],
     ),
     DispatcherInfo(
