@@ -1964,6 +1964,7 @@ class TestCutMixMixUp:
 
     @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_supported_input_structure(self, T):
+
         batch_size = 32
         num_classes = 100
 
@@ -2025,6 +2026,7 @@ class TestCutMixMixUp:
 
     @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_error(self, T):
+
         num_classes = 10
         batch_size = 9
 
@@ -3381,7 +3383,7 @@ class TestPad:
                 or (
                     param == "fill"
                     and (
-                        isinstance(value, tuple) or (isinstance(value, list) and all(isinstance(v, int) for v in value))
+                        isinstance(value, tuple) or (isinstance(value, list) and any(isinstance(v, int) for v in value))
                     )
                 )
             ),
@@ -3430,8 +3432,10 @@ class TestPad:
         ("kernel", "input_type"),
         [
             (F.pad_image, torch.Tensor),
-            # FIXME: The PIL kernel uses fill=0 as default rather than fill=None as all others
-            #  See https://github.com/pytorch/vision/issues/6623 for a discussion
+            # The PIL kernel uses fill=0 as default rather than fill=None as all others.
+            # Since the whole fill story is already really inconsistent, we won't introduce yet another case to allow
+            # for this test to pass.
+            # See https://github.com/pytorch/vision/issues/6623 for a discussion.
             # (F._pad_image_pil, PIL.Image.Image),
             (F.pad_image, tv_tensors.Image),
             (F.pad_bounding_boxes, tv_tensors.BoundingBoxes),
