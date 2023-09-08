@@ -1,5 +1,3 @@
-import collections.abc
-
 import pytest
 import torchvision.transforms.v2.functional as F
 from torchvision import tv_tensors
@@ -112,32 +110,6 @@ multi_crop_skips = [
 multi_crop_skips.append(skip_dispatch_tv_tensor)
 
 
-def xfails_pil(reason, *, condition=None):
-    return [
-        TestMark(("TestDispatchers", test_name), pytest.mark.xfail(reason=reason), condition=condition)
-        for test_name in ["test_dispatch_pil", "test_pil_output_type"]
-    ]
-
-
-def fill_sequence_needs_broadcast(args_kwargs):
-    (image_loader, *_), kwargs = args_kwargs
-    try:
-        fill = kwargs["fill"]
-    except KeyError:
-        return False
-
-    if not isinstance(fill, collections.abc.Sequence) or len(fill) > 1:
-        return False
-
-    return image_loader.num_channels > 1
-
-
-xfails_pil_if_fill_sequence_needs_broadcast = xfails_pil(
-    "PIL kernel doesn't support sequences of length 1 for `fill` if the number of color channels is larger.",
-    condition=fill_sequence_needs_broadcast,
-)
-
-
 DISPATCHER_INFOS = [
     DispatcherInfo(
         F.resized_crop,
@@ -159,14 +131,6 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F._pad_image_pil, kernel_name="pad_image_pil"),
         test_marks=[
-            *xfails_pil(
-                reason=(
-                    "PIL kernel doesn't support sequences of length 1 for argument `fill` and "
-                    "`padding_mode='constant'`, if the number of color channels is larger."
-                ),
-                condition=lambda args_kwargs: fill_sequence_needs_broadcast(args_kwargs)
-                and args_kwargs.kwargs.get("padding_mode", "constant") == "constant",
-            ),
             xfail_jit("F.pad only supports vector fills for list of floats", condition=pad_xfail_jit_fill_condition),
             xfail_jit_python_scalar_arg("padding"),
         ],
@@ -181,7 +145,6 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F._perspective_image_pil),
         test_marks=[
-            *xfails_pil_if_fill_sequence_needs_broadcast,
             xfail_jit_python_scalar_arg("fill"),
         ],
     ),
