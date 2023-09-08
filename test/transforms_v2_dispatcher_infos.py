@@ -123,19 +123,6 @@ DISPATCHER_INFOS = [
         test_marks=[xfail_jit_python_scalar_arg("fill")],
     ),
     DispatcherInfo(
-        F.center_crop,
-        kernels={
-            tv_tensors.Image: F.center_crop_image,
-            tv_tensors.Video: F.center_crop_video,
-            tv_tensors.BoundingBoxes: F.center_crop_bounding_boxes,
-            tv_tensors.Mask: F.center_crop_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F._center_crop_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("output_size"),
-        ],
-    ),
-    DispatcherInfo(
         F.equalize,
         kernels={
             tv_tensors.Image: F.equalize_image,

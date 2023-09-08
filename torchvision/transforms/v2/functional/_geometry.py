@@ -1235,7 +1235,11 @@ def _pad_with_vector_fill(
 
     output = _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
     left, right, top, bottom = torch_padding
-    fill = torch.tensor(fill, dtype=image.dtype, device=image.device).reshape(-1, 1, 1)
+
+    # We are creating the tensor in the autodetected dtype first and convert to the right one after to avoid an implicit
+    # float -> int conversion. That happens for example for the valid input of a uint8 image with floating point fill
+    # value.
+    fill = torch.tensor(fill, device=image.device).to(dtype=image.dtype).reshape(-1, 1, 1)
 
     if top > 0:
         output[..., :top, :] = fill

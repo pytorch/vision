@@ -313,11 +313,12 @@ def adapt_fill(value, *, dtype):
         return value
 
     max_value = get_max_value(dtype)
+    value_type = float if dtype.is_floating_point else int
 
     if isinstance(value, (int, float)):
-        return type(value)(value * max_value)
+        return value_type(value * max_value)
     elif isinstance(value, (list, tuple)):
-        return type(value)(type(v)(v * max_value) for v in value)
+        return type(value)(value_type(v * max_value) for v in value)
     else:
         raise ValueError(f"fill should be an int or float, or a list or tuple of the former, but got '{value}'.")
 
@@ -416,6 +417,10 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
         format=format,
         canvas_size=canvas_size,
     )
+
+
+# turns all warnings into errors for this module
+pytestmark = pytest.mark.filterwarnings("error")
 
 
 class TestResize:
@@ -2578,14 +2583,18 @@ class TestCrop:
     def test_transform(self, param, value, make_input):
         input = make_input(self.INPUT_SIZE)
 
-        kwargs = {param: value}
         if param == "fill":
-            # 1. size is required
-            # 2. the fill parameter only has an affect if we need padding
-            kwargs["size"] = [s + 4 for s in self.INPUT_SIZE]
-
             if isinstance(input, tv_tensors.Mask) and isinstance(value, (tuple, list)):
                 pytest.skip("F.pad_mask doesn't support non-scalar fill.")
+
+            kwargs = dict(
+                # 1. size is required
+                # 2. the fill parameter only has an affect if we need padding
+                size=[s + 4 for s in self.INPUT_SIZE],
+                fill=adapt_fill(value, dtype=input.dtype if isinstance(input, torch.Tensor) else torch.uint8),
+            )
+        else:
+            kwargs = {param: value}
 
         check_transform(
             transforms.RandomCrop(**kwargs, pad_if_needed=True),
@@ -3482,6 +3491,8 @@ class TestPad:
     def test_image_correctness(self, padding, padding_mode, fill, fn):
         image = make_image(dtype=torch.uint8, device="cpu")
 
+        fill = adapt_fill(fill, dtype=torch.uint8)
+
         actual = fn(image, padding=padding, padding_mode=padding_mode, fill=fill)
         expected = F.to_image(F.pad(F.to_pil_image(image), padding=padding, padding_mode=padding_mode, fill=fill))
 
@@ -3516,6 +3527,114 @@ class TestPad:
 
         actual = fn(bounding_boxes, padding=padding)
         expected = self._reference_pad_bounding_boxes(bounding_boxes, padding=padding)
+
+        assert_equal(actual, expected)
+
+
+class TestCenterCrop:
+    INPUT_SIZE = (17, 11)
+    OUTPUT_SIZES = [(3, 5), (5, 3), (4, 4), (21, 9), (13, 15), (19, 14), 3, (4,), [5], INPUT_SIZE]
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, output_size, dtype, device):
+        check_kernel(
+            F.center_crop_image,
+            make_image(self.INPUT_SIZE, dtype=dtype, device=device),
+            output_size=output_size,
+            check_scripted_vs_eager=not isinstance(output_size, int),
+        )
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    def test_kernel_bounding_boxes(self, output_size, format):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
+        check_kernel(
+            F.center_crop_bounding_boxes,
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
+            output_size=output_size,
+            check_scripted_vs_eager=not isinstance(output_size, int),
+        )
+
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    def test_kernel_mask(self, make_mask):
+        check_kernel(F.center_crop_mask, make_mask(), output_size=self.OUTPUT_SIZES[0])
+
+    def test_kernel_video(self):
+        check_kernel(F.center_crop_video, make_video(self.INPUT_SIZE), output_size=self.OUTPUT_SIZES[0])
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.center_crop, make_input(self.INPUT_SIZE), output_size=self.OUTPUT_SIZES[0])
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.center_crop_image, torch.Tensor),
+            (F._center_crop_image_pil, PIL.Image.Image),
+            (F.center_crop_image, tv_tensors.Image),
+            (F.center_crop_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.center_crop_mask, tv_tensors.Mask),
+            (F.center_crop_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.center_crop, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.CenterCrop(self.OUTPUT_SIZES[0]), make_input(self.INPUT_SIZE))
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
+    def test_image_correctness(self, output_size, fn):
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, output_size)
+        expected = F.to_image(F.center_crop(F.to_pil_image(image), output_size=output_size))
+
+        assert_equal(actual, expected)
+
+    def _reference_center_crop_bounding_boxes(self, bounding_boxes, output_size):
+        image_height, image_width = bounding_boxes.canvas_size
+        if isinstance(output_size, int):
+            output_size = (output_size, output_size)
+        elif len(output_size) == 1:
+            output_size *= 2
+        crop_height, crop_width = output_size
+
+        top = int(round((image_height - crop_height) / 2))
+        left = int(round((image_width - crop_width) / 2))
+
+        affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+            ],
+        )
+        return reference_affine_bounding_boxes_helper(
+            bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=output_size
+        )
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
+    def test_bounding_boxes_correctness(self, output_size, format, dtype, device, fn):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
+
+        actual = fn(bounding_boxes, output_size)
+        expected = self._reference_center_crop_bounding_boxes(bounding_boxes, output_size)
 
         assert_equal(actual, expected)
 
