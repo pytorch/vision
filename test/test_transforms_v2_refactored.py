@@ -2582,18 +2582,18 @@ class TestCrop:
     def test_transform(self, param, value, make_input):
         input = make_input(self.INPUT_SIZE)
 
-        kwargs = {param: value}
-        if param != "size":
-            # 1. size is required
-            # 2. the fill parameter only has an affect if we need padding
-            kwargs["size"] = [s + 4 for s in self.INPUT_SIZE]
         if param == "fill":
             if isinstance(input, tv_tensors.Mask) and isinstance(value, (tuple, list)):
                 pytest.skip("F.pad_mask doesn't support non-scalar fill.")
 
-            kwargs["fill"] = adapt_fill(
-                kwargs["fill"], dtype=input.dtype if isinstance(input, torch.Tensor) else torch.uint8
+            kwargs = dict(
+                # 1. size is required
+                # 2. the fill parameter only has an affect if we need padding
+                size=[s + 4 for s in self.INPUT_SIZE],
+                fill=adapt_fill(value, dtype=input.dtype if isinstance(input, torch.Tensor) else torch.uint8),
             )
+        else:
+            kwargs = {param: value}
 
         check_transform(
             transforms.RandomCrop(**kwargs, pad_if_needed=True),
