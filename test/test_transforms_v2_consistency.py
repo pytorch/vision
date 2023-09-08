@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 
 import numpy as np
-import PIL.Image
 import pytest
 
 import torch
@@ -247,20 +246,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
     ),
     ConsistencyConfig(
-        v2_transforms.RandomPerspective,
-        legacy_transforms.RandomPerspective,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-            ArgsKwargs(p=1, distortion_scale=0.3),
-            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=PIL.Image.NEAREST),
-            ArgsKwargs(p=1, distortion_scale=0.1, fill=1),
-            ArgsKwargs(p=1, distortion_scale=0.4, fill=(1, 2, 3)),
-        ],
-        closeness_kwargs={"atol": None, "rtol": None},
-    ),
-    ConsistencyConfig(
         v2_transforms.PILToTensor,
         legacy_transforms.PILToTensor,
     ),
@@ -478,7 +463,6 @@ get_params_parametrization = pytest.mark.parametrize(
         )
         for transform_cls, get_params_args_kwargs in [
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
-            (v2_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
             (v2_transforms.AutoAugment, ArgsKwargs(5)),
         ]
     ],

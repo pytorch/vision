@@ -9,10 +9,8 @@ import torch
 from common_utils import assert_close, cache, cpu_and_cuda, needs_cuda, set_rng_seed
 from torch.utils._pytree import tree_map
 from torchvision import tv_tensors
-from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import is_pure_tensor
-from torchvision.transforms.v2.functional._meta import clamp_bounding_boxes, convert_bounding_box_format
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
 from transforms_v2_legacy_utils import (
@@ -521,83 +519,6 @@ class TestClampBoundingBoxes:
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
 #  `transforms_v2_kernel_infos.py`
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize(
-    "startpoints, endpoints",
-    [
-        [[[0, 0], [33, 0], [33, 25], [0, 25]], [[3, 2], [32, 3], [30, 24], [2, 25]]],
-        [[[3, 2], [32, 3], [30, 24], [2, 25]], [[0, 0], [33, 0], [33, 25], [0, 25]]],
-        [[[3, 2], [32, 3], [30, 24], [2, 25]], [[5, 5], [30, 3], [33, 19], [4, 25]]],
-    ],
-)
-def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
-    def _compute_expected_bbox(bbox, format_, canvas_size_, pcoeffs_):
-        m1 = np.array(
-            [
-                [pcoeffs_[0], pcoeffs_[1], pcoeffs_[2]],
-                [pcoeffs_[3], pcoeffs_[4], pcoeffs_[5]],
-            ]
-        )
-        m2 = np.array(
-            [
-                [pcoeffs_[6], pcoeffs_[7], 1.0],
-                [pcoeffs_[6], pcoeffs_[7], 1.0],
-            ]
-        )
-
-        bbox_xyxy = convert_bounding_box_format(bbox, old_format=format_, new_format=tv_tensors.BoundingBoxFormat.XYXY)
-        points = np.array(
-            [
-                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
-            ]
-        )
-        numer = np.matmul(points, m1.T)
-        denom = np.matmul(points, m2.T)
-        transformed_points = numer / denom
-        out_bbox = np.array(
-            [
-                np.min(transformed_points[:, 0]),
-                np.min(transformed_points[:, 1]),
-                np.max(transformed_points[:, 0]),
-                np.max(transformed_points[:, 1]),
-            ]
-        )
-        out_bbox = torch.from_numpy(out_bbox)
-        out_bbox = convert_bounding_box_format(
-            out_bbox, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format_
-        )
-        return clamp_bounding_boxes(out_bbox, format=format_, canvas_size=canvas_size_).to(bbox)
-
-    canvas_size = (32, 38)
-
-    pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
-    inv_pcoeffs = _get_perspective_coeffs(endpoints, startpoints)
-
-    for bboxes in make_multiple_bounding_boxes(spatial_size=canvas_size, extra_dims=((4,),)):
-        bboxes = bboxes.to(device)
-
-        output_bboxes = F.perspective_bounding_boxes(
-            bboxes.as_subclass(torch.Tensor),
-            format=bboxes.format,
-            canvas_size=bboxes.canvas_size,
-            startpoints=None,
-            endpoints=None,
-            coefficients=pcoeffs,
-        )
-
-        expected_bboxes = torch.stack(
-            [
-                _compute_expected_bbox(b, bboxes.format, bboxes.canvas_size, inv_pcoeffs)
-                for b in bboxes.reshape(-1, 4).unbind()
-            ]
-        ).reshape(bboxes.shape)
-
-        torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=0, atol=1)
 
 
 @pytest.mark.parametrize(

@@ -1008,8 +1008,8 @@ class RandomPerspective(_RandomApplyTransform):
         return self._call_kernel(
             F.perspective,
             inpt,
-            None,
-            None,
+            startpoints=None,
+            endpoints=None,
             fill=fill,
             interpolation=self.interpolation,
             **params,
