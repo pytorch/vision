@@ -569,23 +569,6 @@ def test_resize_antialias(device, dt, size, interpolation):
     assert_equal(resized_tensor, resize_result)
 
 
-def test_resize_antialias_default_warning():
-
-    img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
-
-    match = "The default value of the antialias"
-    with pytest.warns(UserWarning, match=match):
-        F.resize(img, size=(20, 20))
-    with pytest.warns(UserWarning, match=match):
-        F.resized_crop(img, 0, 0, 10, 10, size=(20, 20))
-
-    # For modes that aren't bicubic or bilinear, don't throw a warning
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        F.resize(img, size=(20, 20), interpolation=NEAREST)
-        F.resized_crop(img, 0, 0, 10, 10, size=(20, 20), interpolation=NEAREST)
-
-
 def check_functional_vs_PIL_vs_scripted(
     fn, fn_pil, fn_t, config, device, dtype, channels=3, tol=2.0 + 1e-10, agg_method="max"
 ):

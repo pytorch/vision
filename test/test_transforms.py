@@ -440,16 +440,6 @@ def test_resize_antialias_error():
         t(img)
 
 
-def test_resize_antialias_default_warning():
-
-    img = Image.new("RGB", size=(10, 10), color=127)
-    # We make sure we don't warn for PIL images since the default behaviour doesn't change
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        transforms.Resize((20, 20))(img)
-        transforms.RandomResizedCrop((20, 20))(img)
-
-
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
 def test_resize_size_equals_small_edge_size(height, width):
     # Non-regression test for https://github.com/pytorch/vision/issues/5405

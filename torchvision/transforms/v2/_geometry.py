@@ -10,7 +10,6 @@ from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._utils import _FillType
 
 from ._transform import _RandomApplyTransform
@@ -81,13 +80,6 @@ class Resize(Transform):
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
-    .. warning::
-        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
-        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
-        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
-        closer.
-
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
             (h, w), output size will be matched to this. If size is an int,
@@ -117,7 +109,7 @@ class Resize(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -126,8 +118,8 @@ class Resize(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     _v1_transform_cls = _transforms.Resize
@@ -137,7 +129,7 @@ class Resize(Transform):
         size: Union[int, Sequence[int]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
 
@@ -151,7 +143,7 @@ class Resize(Transform):
             )
         self.size = size
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
 
@@ -231,7 +223,7 @@ class RandomResizedCrop(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -240,8 +232,8 @@ class RandomResizedCrop(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     _v1_transform_cls = _transforms.RandomResizedCrop
@@ -252,7 +244,7 @@ class RandomResizedCrop(Transform):
         scale: Tuple[float, float] = (0.08, 1.0),
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -268,7 +260,7 @@ class RandomResizedCrop(Transform):
 
         self.scale = scale
         self.ratio = ratio
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
@@ -622,7 +614,7 @@ class RandomRotation(Transform):
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.expand = expand
 
         self.fill = fill
@@ -724,7 +716,7 @@ class RandomAffine(Transform):
         else:
             self.shear = shear
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -969,7 +961,7 @@ class RandomPerspective(_RandomApplyTransform):
             raise ValueError("Argument distortion_scale value should be between 0 and 1")
 
         self.distortion_scale = distortion_scale
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -1070,7 +1062,7 @@ class ElasticTransform(Transform):
         self.alpha = _setup_number_or_seq(alpha, "alpha")
         self.sigma = _setup_number_or_seq(sigma, "sigma")
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -1263,7 +1255,7 @@ class ScaleJitter(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -1272,8 +1264,8 @@ class ScaleJitter(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -1281,12 +1273,12 @@ class ScaleJitter(Transform):
         target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ):
         super().__init__()
         self.target_size = target_size
         self.scale_range = scale_range
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -1330,7 +1322,7 @@ class RandomShortestSize(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -1339,8 +1331,8 @@ class RandomShortestSize(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -1348,12 +1340,12 @@ class RandomShortestSize(Transform):
         min_size: Union[List[int], Tuple[int], int],
         max_size: Optional[int] = None,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ):
         super().__init__()
         self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
         self.max_size = max_size
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -1411,7 +1403,7 @@ class RandomResize(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -1420,8 +1412,8 @@ class RandomResize(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -1429,12 +1421,12 @@ class RandomResize(Transform):
         min_size: int,
         max_size: int,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
         self.min_size = min_size
         self.max_size = max_size
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:

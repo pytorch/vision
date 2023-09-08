@@ -777,46 +777,6 @@ class TestUniformTemporalSubsample:
         assert output.dtype == inpt.dtype
 
 
-# TODO: remove this test in 0.17 when the default of antialias changes to True
-def test_antialias_warning():
-    pil_img = PIL.Image.new("RGB", size=(10, 10), color=127)
-    tensor_img = torch.randint(0, 256, size=(3, 10, 10), dtype=torch.uint8)
-    tensor_video = torch.randint(0, 256, size=(2, 3, 10, 10), dtype=torch.uint8)
-
-    match = "The default value of the antialias parameter"
-    with pytest.warns(UserWarning, match=match):
-        transforms.RandomResizedCrop((20, 20))(tensor_img)
-    with pytest.warns(UserWarning, match=match):
-        transforms.ScaleJitter((20, 20))(tensor_img)
-    with pytest.warns(UserWarning, match=match):
-        transforms.RandomShortestSize((20, 20))(tensor_img)
-    with pytest.warns(UserWarning, match=match):
-        transforms.RandomResize(10, 20)(tensor_img)
-
-    with pytest.warns(UserWarning, match=match):
-        F.resized_crop(tv_tensors.Image(tensor_img), 0, 0, 10, 10, (20, 20))
-
-    with pytest.warns(UserWarning, match=match):
-        F.resize(tv_tensors.Video(tensor_video), (20, 20))
-    with pytest.warns(UserWarning, match=match):
-        F.resized_crop(tv_tensors.Video(tensor_video), 0, 0, 10, 10, (20, 20))
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        transforms.RandomResizedCrop((20, 20))(pil_img)
-        transforms.ScaleJitter((20, 20))(pil_img)
-        transforms.RandomShortestSize((20, 20))(pil_img)
-        transforms.RandomResize(10, 20)(pil_img)
-
-        transforms.RandomResizedCrop((20, 20), antialias=True)(tensor_img)
-        transforms.ScaleJitter((20, 20), antialias=True)(tensor_img)
-        transforms.RandomShortestSize((20, 20), antialias=True)(tensor_img)
-        transforms.RandomResize(10, 20, antialias=True)(tensor_img)
-
-        F.resized_crop(tv_tensors.Image(tensor_img), 0, 0, 10, 10, (20, 20), antialias=True)
-        F.resized_crop(tv_tensors.Video(tensor_video), 0, 0, 10, 10, (20, 20), antialias=True)
-
-
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, tv_tensors.Image))
 @pytest.mark.parametrize("label_type", (torch.Tensor, int))
 @pytest.mark.parametrize("dataset_return_type", (dict, tuple))

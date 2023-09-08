@@ -348,12 +348,6 @@ INTERPOLATION_MODES = [
 ]
 
 
-@contextlib.contextmanager
-def assert_warns_antialias_default_value():
-    with pytest.warns(UserWarning, match="The default value of the antialias parameter of all the resizing transforms"):
-        yield
-
-
 def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
     format = bounding_boxes.format
     canvas_size = new_canvas_size or bounding_boxes.canvas_size
@@ -677,23 +671,6 @@ class TestResize:
 
         with pytest.raises(ValueError, match=match):
             F.resize(make_input(self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
-
-    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
-    @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image, make_video],
-    )
-    def test_antialias_warning(self, interpolation, make_input):
-        with (
-            assert_warns_antialias_default_value()
-            if interpolation in {transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC}
-            else assert_no_warnings()
-        ):
-            F.resize(
-                make_input(self.INPUT_SIZE),
-                size=self.OUTPUT_SIZES[0],
-                interpolation=interpolation,
-            )
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
