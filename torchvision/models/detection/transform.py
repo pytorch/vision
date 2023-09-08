@@ -31,8 +31,10 @@ def _resize_image_and_masks(
 ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
     if torchvision._is_tracing():
         im_shape = _get_shape_onnx(image)
-    else:
+    elif torch.jit.is_scripting():
         im_shape = torch.tensor(image.shape[-2:])
+    else:
+        im_shape = image.shape[-2:]
 
     size: Optional[List[int]] = None
     scale_factor: Optional[float] = None
