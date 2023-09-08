@@ -3789,7 +3789,9 @@ class TestPerspective:
         )
 
         if interpolation is transforms.InterpolationMode.BILINEAR:
-            mae = (actual.float() - expected.float()).abs().mean()
+            abs_diff = (actual.float() - expected.float()).abs()
+            assert (abs_diff > 1).float().mean() < 7e-2
+            mae = abs_diff.mean()
             assert mae < 3
         else:
             assert_equal(actual, expected)
