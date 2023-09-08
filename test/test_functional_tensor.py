@@ -2,7 +2,6 @@ import colorsys
 import itertools
 import math
 import os
-import warnings
 from functools import partial
 from typing import Sequence
 

@@ -19,7 +19,6 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 from common_utils import (
     assert_equal,
-    assert_no_warnings,
     cache,
     cpu_and_cuda,
     freeze_rng_state,

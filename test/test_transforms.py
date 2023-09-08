@@ -3,7 +3,6 @@ import os
 import random
 import re
 import textwrap
-import warnings
 from functools import partial
 
 import numpy as np

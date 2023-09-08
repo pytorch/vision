@@ -2,7 +2,6 @@ import itertools
 import pathlib
 import pickle
 import random
-import warnings
 
 import numpy as np
 
