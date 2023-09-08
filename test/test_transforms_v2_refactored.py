@@ -3597,8 +3597,8 @@ class TestCenterCrop:
             output_size *= 2
         crop_height, crop_width = output_size
 
-        top = int(round((image_height - crop_height) / 2.0))
-        left = int(round((image_width - crop_width) / 2.0))
+        top = int(round((image_height - crop_height) / 2))
+        left = int(round((image_width - crop_width) / 2))
 
         affine_matrix = np.array(
             [
