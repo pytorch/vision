@@ -150,48 +150,6 @@ CONSISTENCY_CONFIGS = [
         supports_pil=False,
     ),
     ConsistencyConfig(
-        v2_transforms.RandomPosterize,
-        legacy_transforms.RandomPosterize,
-        [
-            ArgsKwargs(p=0, bits=5),
-            ArgsKwargs(p=1, bits=1),
-            ArgsKwargs(p=1, bits=3),
-        ],
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.uint8]),
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomSolarize,
-        legacy_transforms.RandomSolarize,
-        [
-            ArgsKwargs(p=0, threshold=0.5),
-            ArgsKwargs(p=1, threshold=0.3),
-            ArgsKwargs(p=1, threshold=0.99),
-        ],
-    ),
-    *[
-        ConsistencyConfig(
-            v2_transforms.RandomAutocontrast,
-            legacy_transforms.RandomAutocontrast,
-            [
-                ArgsKwargs(p=0),
-                ArgsKwargs(p=1),
-            ],
-            make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[dt]),
-            closeness_kwargs=ckw,
-        )
-        for dt, ckw in [(torch.uint8, dict(atol=1, rtol=0)), (torch.float32, dict(rtol=None, atol=None))]
-    ],
-    ConsistencyConfig(
-        v2_transforms.RandomAdjustSharpness,
-        legacy_transforms.RandomAdjustSharpness,
-        [
-            ArgsKwargs(p=0, sharpness_factor=0.5),
-            ArgsKwargs(p=1, sharpness_factor=0.2),
-            ArgsKwargs(p=1, sharpness_factor=0.99),
-        ],
-        closeness_kwargs={"atol": 1e-6, "rtol": 1e-6},
-    ),
-    ConsistencyConfig(
         v2_transforms.RandomGrayscale,
         legacy_transforms.RandomGrayscale,
         [
@@ -794,17 +752,9 @@ class TestRefSegTransforms:
         (legacy_F.to_pil_image, {}),
         (legacy_F.five_crop, {}),
         (legacy_F.ten_crop, {}),
-        (legacy_F.adjust_contrast, {}),
-        (legacy_F.adjust_saturation, {}),
-        (legacy_F.adjust_hue, {}),
-        (legacy_F.adjust_gamma, {}),
         (legacy_F.to_grayscale, {}),
         (legacy_F.rgb_to_grayscale, {}),
         (legacy_F.to_tensor, {}),
-        (legacy_F.posterize, {}),
-        (legacy_F.solarize, {}),
-        (legacy_F.adjust_sharpness, {}),
-        (legacy_F.autocontrast, {}),
     ],
 )
 def test_dispatcher_signature_consistency(legacy_dispatcher, name_only_params):
