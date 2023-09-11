@@ -4045,12 +4045,28 @@ class TestNormalize:
     def test_kernel_image(self, mean, std, device):
         check_kernel(F.normalize_image, make_image(dtype=torch.float32, device=device), mean=self.MEAN, std=self.STD)
 
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image_inplace(self, device):
+        input = make_image_tensor(dtype=torch.float32, device=device)
+        input_version = input._version
+
+        output_out_of_place = F.normalize_image(input, mean=self.MEAN, std=self.STD)
+        assert output_out_of_place.data_ptr() != input.data_ptr()
+        assert output_out_of_place is not input
+
+        output_inplace = F.normalize_image(input, mean=self.MEAN, std=self.STD, inplace=True)
+        assert output_inplace.data_ptr() == input.data_ptr()
+        assert output_inplace._version > input_version
+        assert output_inplace is input
+
+        assert_equal(output_inplace, output_out_of_place)
+
     def test_kernel_video(self):
         check_kernel(F.normalize_video, make_video(dtype=torch.float32), mean=self.MEAN, std=self.STD)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
     def test_functional(self, make_input):
-        check_functional(F.equalize, make_input(dtype=torch.float32))
+        check_functional(F.normalize, make_input(dtype=torch.float32))
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -4074,10 +4090,7 @@ class TestNormalize:
             with pytest.raises(ValueError, match="std evaluated to zero, leading to division by zero"):
                 F.normalize_image(make_image(dtype=torch.float32), mean=self.MEAN, std=std)
 
-    @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image, make_video],
-    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
     def test_transform(self, make_input):
         check_transform(transforms.Normalize(mean=self.MEAN, std=self.STD), make_input(dtype=torch.float32))
 
