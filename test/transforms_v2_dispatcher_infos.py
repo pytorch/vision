@@ -112,14 +112,6 @@ multi_crop_skips.append(skip_dispatch_tv_tensor)
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.invert,
-        kernels={
-            tv_tensors.Image: F.invert_image,
-            tv_tensors.Video: F.invert_video,
-        },
-        pil_kernel_info=PILKernelInfo(F._invert_image_pil, kernel_name="invert_image_pil"),
-    ),
-    DispatcherInfo(
         F.posterize,
         kernels={
             tv_tensors.Image: F.posterize_image,

@@ -150,14 +150,6 @@ CONSISTENCY_CONFIGS = [
         supports_pil=False,
     ),
     ConsistencyConfig(
-        v2_transforms.RandomInvert,
-        legacy_transforms.RandomInvert,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-        ],
-    ),
-    ConsistencyConfig(
         v2_transforms.RandomPosterize,
         legacy_transforms.RandomPosterize,
         [
@@ -809,7 +801,6 @@ class TestRefSegTransforms:
         (legacy_F.to_grayscale, {}),
         (legacy_F.rgb_to_grayscale, {}),
         (legacy_F.to_tensor, {}),
-        (legacy_F.invert, {}),
         (legacy_F.posterize, {}),
         (legacy_F.solarize, {}),
         (legacy_F.adjust_sharpness, {}),

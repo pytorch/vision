@@ -135,39 +135,6 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
 KERNEL_INFOS = []
 
 
-def sample_inputs_invert_image_tensor():
-    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
-        yield ArgsKwargs(image_loader)
-
-
-def reference_inputs_invert_image_tensor():
-    for image_loader in make_image_loaders(color_spaces=("GRAY", "RGB"), extra_dims=[()], dtypes=[torch.uint8]):
-        yield ArgsKwargs(image_loader)
-
-
-def sample_inputs_invert_video():
-    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
-        yield ArgsKwargs(video_loader)
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.invert_image,
-            kernel_name="invert_image_tensor",
-            sample_inputs_fn=sample_inputs_invert_image_tensor,
-            reference_fn=pil_reference_wrapper(F._invert_image_pil),
-            reference_inputs_fn=reference_inputs_invert_image_tensor,
-            float32_vs_uint8=True,
-        ),
-        KernelInfo(
-            F.invert_video,
-            sample_inputs_fn=sample_inputs_invert_video,
-        ),
-    ]
-)
-
-
 _POSTERIZE_BITS = [1, 4, 8]
 
 

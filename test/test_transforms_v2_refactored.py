@@ -4148,3 +4148,42 @@ class TestClampBoundingBoxes:
 
     def test_transform(self):
         check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
+
+
+class TestInvert:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.int16, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.invert_image, make_image(dtype=dtype, device=device))
+
+    def test_kernel_video(self):
+        check_kernel(F.invert_video, make_video())
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.invert, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.invert_image, torch.Tensor),
+            (F._invert_image_pil, PIL.Image.Image),
+            (F.invert_image, tv_tensors.Image),
+            (F.invert_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.invert, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomInvert(p=1), make_input())
+
+    @pytest.mark.parametrize("fn", [F.invert, transform_cls_to_functional(transforms.RandomInvert, p=1)])
+    def test_correctness_image(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image)
+        expected = F.to_image(F.invert(F.to_pil_image(image)))
+
+        assert_equal(actual, expected)
