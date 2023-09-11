@@ -551,17 +551,6 @@ def test_to_pil_image(inpt, mode):
     assert np.asarray(inpt).sum() == np.asarray(output).sum()
 
 
-def test_equalize_image_tensor_edge_cases():
-    inpt = torch.zeros(3, 200, 200, dtype=torch.uint8)
-    output = F.equalize_image(inpt)
-    torch.testing.assert_close(inpt, output)
-
-    inpt = torch.zeros(5, 3, 200, 200, dtype=torch.uint8)
-    inpt[..., 100:, 100:] = 1
-    output = F.equalize_image(inpt)
-    assert output.unique().tolist() == [0, 255]
-
-
 @pytest.mark.parametrize("device", cpu_and_cuda())
 def test_correctness_uniform_temporal_subsample(device):
     video = torch.arange(10, device=device)[:, None, None, None].expand(-1, 3, 8, 8)

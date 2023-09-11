@@ -123,14 +123,6 @@ DISPATCHER_INFOS = [
         test_marks=[xfail_jit_python_scalar_arg("fill")],
     ),
     DispatcherInfo(
-        F.equalize,
-        kernels={
-            tv_tensors.Image: F.equalize_image,
-            tv_tensors.Video: F.equalize_video,
-        },
-        pil_kernel_info=PILKernelInfo(F._equalize_image_pil, kernel_name="equalize_image_pil"),
-    ),
-    DispatcherInfo(
         F.invert,
         kernels={
             tv_tensors.Image: F.invert_image,

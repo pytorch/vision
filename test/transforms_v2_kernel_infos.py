@@ -9,8 +9,6 @@ from torchvision.transforms._functional_tensor import _max_value as get_max_valu
 from transforms_v2_legacy_utils import (
     ArgsKwargs,
     DEFAULT_PORTRAIT_SPATIAL_SIZE,
-    get_num_channels,
-    ImageLoader,
     InfoBase,
     make_bounding_box_loaders,
     make_image_loader,
@@ -250,90 +248,6 @@ KERNEL_INFOS.extend(
             F.elastic_video,
             sample_inputs_fn=sample_inputs_elastic_video,
             closeness_kwargs=cuda_vs_cpu_pixel_difference(),
-        ),
-    ]
-)
-
-
-def sample_inputs_equalize_image_tensor():
-    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=("GRAY", "RGB")):
-        yield ArgsKwargs(image_loader)
-
-
-def reference_inputs_equalize_image_tensor():
-    # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
-    # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
-    # the information gain is low if we already provide something really close to the expected value.
-    def make_uniform_band_image(shape, dtype, device, *, low_factor, high_factor, memory_format):
-        if dtype.is_floating_point:
-            low = low_factor
-            high = high_factor
-        else:
-            max_value = torch.iinfo(dtype).max
-            low = int(low_factor * max_value)
-            high = int(high_factor * max_value)
-        return torch.testing.make_tensor(shape, dtype=dtype, device=device, low=low, high=high).to(
-            memory_format=memory_format, copy=True
-        )
-
-    def make_beta_distributed_image(shape, dtype, device, *, alpha, beta, memory_format):
-        image = torch.distributions.Beta(alpha, beta).sample(shape)
-        if not dtype.is_floating_point:
-            image.mul_(torch.iinfo(dtype).max).round_()
-        return image.to(dtype=dtype, device=device, memory_format=memory_format, copy=True)
-
-    canvas_size = (256, 256)
-    for dtype, color_space, fn in itertools.product(
-        [torch.uint8],
-        ["GRAY", "RGB"],
-        [
-            lambda shape, dtype, device, memory_format: torch.zeros(shape, dtype=dtype, device=device).to(
-                memory_format=memory_format, copy=True
-            ),
-            lambda shape, dtype, device, memory_format: torch.full(
-                shape, 1.0 if dtype.is_floating_point else torch.iinfo(dtype).max, dtype=dtype, device=device
-            ).to(memory_format=memory_format, copy=True),
-            *[
-                functools.partial(make_uniform_band_image, low_factor=low_factor, high_factor=high_factor)
-                for low_factor, high_factor in [
-                    (0.0, 0.25),
-                    (0.25, 0.75),
-                    (0.75, 1.0),
-                ]
-            ],
-            *[
-                functools.partial(make_beta_distributed_image, alpha=alpha, beta=beta)
-                for alpha, beta in [
-                    (0.5, 0.5),
-                    (2, 2),
-                    (2, 5),
-                    (5, 2),
-                ]
-            ],
-        ],
-    ):
-        image_loader = ImageLoader(fn, shape=(get_num_channels(color_space), *canvas_size), dtype=dtype)
-        yield ArgsKwargs(image_loader)
-
-
-def sample_inputs_equalize_video():
-    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
-        yield ArgsKwargs(video_loader)
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.equalize_image,
-            kernel_name="equalize_image_tensor",
-            sample_inputs_fn=sample_inputs_equalize_image_tensor,
-            reference_fn=pil_reference_wrapper(F._equalize_image_pil),
-            float32_vs_uint8=True,
-            reference_inputs_fn=reference_inputs_equalize_image_tensor,
-        ),
-        KernelInfo(
-            F.equalize_video,
-            sample_inputs_fn=sample_inputs_equalize_video,
         ),
     ]
 )

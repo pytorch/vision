@@ -159,15 +159,6 @@ CONSISTENCY_CONFIGS = [
         supports_pil=False,
     ),
     ConsistencyConfig(
-        v2_transforms.RandomEqualize,
-        legacy_transforms.RandomEqualize,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-        ],
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.uint8]),
-    ),
-    ConsistencyConfig(
         v2_transforms.RandomInvert,
         legacy_transforms.RandomInvert,
         [

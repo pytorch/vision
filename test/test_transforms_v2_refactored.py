@@ -3881,3 +3881,98 @@ class TestPerspective:
         )
 
         assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestEqualize:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.equalize_image, make_image(dtype=dtype, device=device))
+
+    def test_kernel_video(self):
+        check_kernel(F.equalize_image, make_video())
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.equalize, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.equalize_image, torch.Tensor),
+            (F._equalize_image_pil, PIL.Image.Image),
+            (F.equalize_image, tv_tensors.Image),
+            (F.equalize_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.equalize, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomEqualize(p=1), make_input())
+
+    # We are not using the default `make_image` here since that uniformly samples the values over the whole value range.
+    # Since the whole point of F.equalize is to transform an arbitrary distribution of values into a uniform one,
+    # the information gain is low if we already provide something really close to the expected value.
+    def _make_correctness_image(self, *, type, **kwargs):
+        shape = (3, 117, 253)
+        dtype = torch.uint8
+        device = "cpu"
+
+        max_value = get_max_value(dtype)
+
+        def make_constant_image(*, value_factor=0.0):
+            return torch.full(shape, value_factor * max_value, dtype=dtype, device=device)
+
+        def make_uniform_band_distributed_image(*, low_factor=0.1, high_factor=0.9):
+            return torch.testing.make_tensor(
+                shape, dtype=dtype, device=device, low=low_factor * max_value, high=high_factor * max_value
+            )
+
+        def make_beta_distributed_image(*, alpha=2.0, beta=5.0):
+            image = torch.distributions.Beta(alpha, beta).sample(shape)
+            image.mul_(get_max_value(dtype)).round_()
+            return image.to(dtype=dtype, device=device)
+
+        make_fn = {
+            "constant": make_constant_image,
+            "uniform_band_distributed": make_uniform_band_distributed_image,
+            "beta_distributed": make_beta_distributed_image,
+        }[type]
+        return tv_tensors.Image(make_fn(**kwargs))
+
+    @pytest.mark.parametrize(
+        "make_correctness_image_kwargs",
+        [
+            *[dict(type="constant", value_factor=value_factor) for value_factor in [0.0, 0.5, 1.0]],
+            *[
+                dict(type="uniform_band_distributed", low_factor=low_factor, high_factor=high_factor)
+                for low_factor, high_factor in [
+                    (0.0, 0.25),
+                    (0.25, 0.75),
+                    (0.75, 1.0),
+                ]
+            ],
+            *[
+                dict(type="beta_distributed", alpha=alpha, beta=beta)
+                for alpha, beta in [
+                    (0.5, 0.5),
+                    (2.0, 2.0),
+                    (2.0, 5.0),
+                    (5.0, 2.0),
+                ]
+            ],
+        ],
+    )
+    @pytest.mark.parametrize("fn", [F.equalize, transform_cls_to_functional(transforms.RandomEqualize, p=1)])
+    def test_image_correctness(self, make_correctness_image_kwargs, fn):
+        image = self._make_correctness_image(**make_correctness_image_kwargs)
+
+        actual = fn(image)
+        expected = F.to_image(F.equalize(F.to_pil_image(image)))
+
+        assert_equal(actual, expected)
