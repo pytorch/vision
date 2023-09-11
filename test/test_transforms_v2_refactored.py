@@ -4187,3 +4187,43 @@ class TestInvert:
         expected = F.to_image(F.invert(F.to_pil_image(image)))
 
         assert_equal(actual, expected)
+
+
+class TestPosterize:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.posterize_image, make_image(dtype=dtype, device=device), bits=1)
+
+    def test_kernel_video(self):
+        check_kernel(F.posterize_video, make_video(), bits=1)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.posterize, make_input(), bits=1)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.posterize_image, torch.Tensor),
+            (F._posterize_image_pil, PIL.Image.Image),
+            (F.posterize_image, tv_tensors.Image),
+            (F.posterize_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.posterize, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomPosterize(bits=1, p=1), make_input())
+
+    @pytest.mark.parametrize("bits", [1, 4, 8])
+    @pytest.mark.parametrize("fn", [F.posterize, transform_cls_to_functional(transforms.RandomPosterize, p=1)])
+    def test_correctness_image(self, bits, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, bits=bits)
+        expected = F.to_image(F.posterize(F.to_pil_image(image), bits=bits))
+
+        assert_equal(actual, expected)
