@@ -10,10 +10,10 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
-import torchvision.transforms as T
 import torchvision.transforms._functional_pil as F_pil
 import torchvision.transforms._functional_tensor as F_t
-import torchvision.transforms.functional as F
+import torchvision.transforms.v2 as T
+import torchvision.transforms.v2.functional as F
 from common_utils import (
     _assert_approx_equal_tensor_to_pil,
     _assert_equal_tensor_to_pil,
@@ -1249,13 +1249,13 @@ def test_ten_crop(device):
 
 
 def test_elastic_transform_asserts():
+    img_tensor = torch.rand(1, 3, 32, 24)
     with pytest.raises(TypeError, match="Argument displacement should be a Tensor"):
-        _ = F.elastic_transform("abc", displacement=None)
+        _ = F.elastic_transform(img_tensor, displacement=None)
 
-    with pytest.raises(TypeError, match="img should be PIL Image or Tensor"):
+    with pytest.raises(TypeError, match="supports inputs of type"):
         _ = F.elastic_transform("abc", displacement=torch.rand(1))
 
-    img_tensor = torch.rand(1, 3, 32, 24)
     with pytest.raises(ValueError, match="Argument displacement shape should"):
         _ = F.elastic_transform(img_tensor, displacement=torch.rand(1, 2))
 
