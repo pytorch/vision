@@ -4280,3 +4280,42 @@ class TestSolarize:
         expected = F.to_image(F.solarize(F.to_pil_image(image), threshold=threshold))
 
         assert_equal(actual, expected)
+
+
+class TestAutocontrast:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.int16, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.autocontrast_image, make_image(dtype=dtype, device=device))
+
+    def test_kernel_video(self):
+        check_kernel(F.autocontrast_video, make_video())
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.autocontrast, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.autocontrast_image, torch.Tensor),
+            (F._autocontrast_image_pil, PIL.Image.Image),
+            (F.autocontrast_image, tv_tensors.Image),
+            (F.autocontrast_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.autocontrast, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomAutocontrast(p=1), make_input(), check_v1_compatibility=dict(rtol=0, atol=1))
+
+    @pytest.mark.parametrize("fn", [F.autocontrast, transform_cls_to_functional(transforms.RandomAutocontrast, p=1)])
+    def test_correctness_image(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image)
+        expected = F.to_image(F.autocontrast(F.to_pil_image(image)))
+
+        assert_close(actual, expected, rtol=0, atol=1)
