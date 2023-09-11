@@ -310,24 +310,6 @@ class TestSmoke:
     def test_auto_augment(self, transform, input):
         transform(input)
 
-    @parametrize(
-        [
-            (
-                transforms.Normalize(mean=[0.0, 0.0, 0.0], std=[1.0, 1.0, 1.0]),
-                itertools.chain.from_iterable(
-                    fn(color_spaces=["RGB"], dtypes=[torch.float32])
-                    for fn in [
-                        make_images,
-                        make_vanilla_tensor_images,
-                        make_videos,
-                    ]
-                ),
-            ),
-        ]
-    )
-    def test_normalize(self, transform, input):
-        transform(input)
-
 
 @pytest.mark.parametrize(
     "flat_inputs",

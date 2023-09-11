@@ -11,7 +11,6 @@ from transforms_v2_legacy_utils import (
     DEFAULT_PORTRAIT_SPATIAL_SIZE,
     InfoBase,
     make_bounding_box_loaders,
-    make_image_loader,
     make_image_loaders,
     make_image_loaders_for_interpolation,
     make_mask_loaders,
@@ -751,65 +750,6 @@ KERNEL_INFOS.extend(
             F.ten_crop_video,
             sample_inputs_fn=sample_inputs_ten_crop_video,
             test_marks=_common_five_ten_crop_marks,
-        ),
-    ]
-)
-
-_NORMALIZE_MEANS_STDS = [
-    ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-    ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
-    (0.5, 2.0),
-]
-
-
-def sample_inputs_normalize_image_tensor():
-    for image_loader, (mean, std) in itertools.product(
-        make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=["RGB"], dtypes=[torch.float32]),
-        _NORMALIZE_MEANS_STDS,
-    ):
-        yield ArgsKwargs(image_loader, mean=mean, std=std)
-
-
-def reference_normalize_image_tensor(image, mean, std, inplace=False):
-    mean = torch.tensor(mean).view(-1, 1, 1)
-    std = torch.tensor(std).view(-1, 1, 1)
-
-    sub = torch.Tensor.sub_ if inplace else torch.Tensor.sub
-    return sub(image, mean).div_(std)
-
-
-def reference_inputs_normalize_image_tensor():
-    yield ArgsKwargs(
-        make_image_loader(size=(32, 32), color_space="RGB", extra_dims=[1]),
-        mean=[0.5, 0.5, 0.5],
-        std=[1.0, 1.0, 1.0],
-    )
-
-
-def sample_inputs_normalize_video():
-    mean, std = _NORMALIZE_MEANS_STDS[0]
-    for video_loader in make_video_loaders(
-        sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], color_spaces=["RGB"], num_frames=[3], dtypes=[torch.float32]
-    ):
-        yield ArgsKwargs(video_loader, mean=mean, std=std)
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.normalize_image,
-            kernel_name="normalize_image_tensor",
-            sample_inputs_fn=sample_inputs_normalize_image_tensor,
-            reference_fn=reference_normalize_image_tensor,
-            reference_inputs_fn=reference_inputs_normalize_image_tensor,
-            test_marks=[
-                xfail_jit_python_scalar_arg("mean"),
-                xfail_jit_python_scalar_arg("std"),
-            ],
-        ),
-        KernelInfo(
-            F.normalize_video,
-            sample_inputs_fn=sample_inputs_normalize_video,
         ),
     ]
 )

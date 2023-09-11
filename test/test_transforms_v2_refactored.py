@@ -48,6 +48,11 @@ from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
+try:
+    import scipy.stats
+except ModuleNotFoundError:
+    scipy = None
+
 
 @pytest.fixture(autouse=True)
 def fix_rng_seed():
@@ -4025,3 +4030,70 @@ class TestUniformTemporalSubsample:
         expected = self._reference_uniform_temporal_subsample_video(video, num_samples=num_samples)
 
         assert_equal(actual, expected)
+
+
+class TestNormalize:
+    MEANS_STDS = [
+        ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
+        (0.5, 2.0),
+    ]
+    MEAN, STD = MEANS_STDS[0]
+
+    @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, mean, std, device):
+        check_kernel(F.normalize_image, make_image(dtype=torch.float32, device=device), mean=self.MEAN, std=self.STD)
+
+    def test_kernel_video(self):
+        check_kernel(F.normalize_video, make_video(dtype=torch.float32), mean=self.MEAN, std=self.STD)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.equalize, make_input(dtype=torch.float32))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.normalize_image, torch.Tensor),
+            (F.normalize_image, tv_tensors.Image),
+            (F.normalize_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.normalize, kernel=kernel, input_type=input_type)
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="should be a float tensor"):
+            F.normalize_image(make_image(dtype=torch.uint8), mean=self.MEAN, std=self.STD)
+
+        with pytest.raises(ValueError, match="tensor image of size"):
+            F.normalize_image(torch.rand(16, 16, dtype=torch.float32), mean=self.MEAN, std=self.STD)
+
+        for std in [0, [0, 0, 0], [0, 1, 1]]:
+            with pytest.raises(ValueError, match="std evaluated to zero, leading to division by zero"):
+                F.normalize_image(make_image(dtype=torch.float32), mean=self.MEAN, std=std)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.Normalize(mean=self.MEAN, std=self.STD), make_input(dtype=torch.float32))
+
+    def _assert_is_standard_normal_distributed(self, tensor):
+        result = scipy.stats.kstest(tensor.flatten().cpu(), cdf="norm", args=(0, 1))
+        assert result.pvalue > 1e-4
+
+    @pytest.mark.skipif(scipy is None, reason="SciPy is not available")
+    @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
+    def test_correctness_image(self, dtype, device, fn):
+        input = tv_tensors.Image(torch.rand(3, 10, 10, dtype=dtype, device=device))
+        mean = input.mean(dim=(-2, -1)).tolist()
+        std = input.std(dim=(-2, -1)).tolist()
+
+        output = fn(input, mean=mean, std=std)
+
+        self._assert_is_standard_normal_distributed(output)

@@ -13,11 +13,7 @@ from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import is_pure_tensor
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
-from transforms_v2_legacy_utils import (
-    DEFAULT_SQUARE_SPATIAL_SIZE,
-    make_multiple_bounding_boxes,
-    parametrized_error_message,
-)
+from transforms_v2_legacy_utils import make_multiple_bounding_boxes, parametrized_error_message
 
 
 KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
@@ -469,22 +465,6 @@ class TestDispatchers:
 )
 def test_alias(alias, target):
     assert alias is target
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("num_channels", [1, 3])
-def test_normalize_image_tensor_stats(device, num_channels):
-    stats = pytest.importorskip("scipy.stats", reason="SciPy is not available")
-
-    def assert_samples_from_standard_normal(t):
-        p_value = stats.kstest(t.flatten(), cdf="norm", args=(0, 1)).pvalue
-        return p_value > 1e-4
-
-    image = torch.rand(num_channels, DEFAULT_SQUARE_SPATIAL_SIZE, DEFAULT_SQUARE_SPATIAL_SIZE)
-    mean = image.mean(dim=(1, 2)).tolist()
-    std = image.std(dim=(1, 2)).tolist()
-
-    assert_samples_from_standard_normal(F.normalize_image(image, mean, std))
 
 
 class TestClampBoundingBoxes:

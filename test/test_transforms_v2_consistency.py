@@ -73,15 +73,6 @@ LINEAR_TRANSFORMATION_MATRIX = torch.rand([LINEAR_TRANSFORMATION_MEAN.numel()] *
 
 CONSISTENCY_CONFIGS = [
     ConsistencyConfig(
-        v2_transforms.Normalize,
-        legacy_transforms.Normalize,
-        [
-            ArgsKwargs(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-        ],
-        supports_pil=False,
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.float]),
-    ),
-    ConsistencyConfig(
         v2_transforms.FiveCrop,
         legacy_transforms.FiveCrop,
         [

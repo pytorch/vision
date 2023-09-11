@@ -219,17 +219,6 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F._ten_crop_image_pil),
     ),
     DispatcherInfo(
-        F.normalize,
-        kernels={
-            tv_tensors.Image: F.normalize_image,
-            tv_tensors.Video: F.normalize_video,
-        },
-        test_marks=[
-            xfail_jit_python_scalar_arg("mean"),
-            xfail_jit_python_scalar_arg("std"),
-        ],
-    ),
-    DispatcherInfo(
         F.clamp_bounding_boxes,
         kernels={tv_tensors.BoundingBoxes: F.clamp_bounding_boxes},
         test_marks=[
