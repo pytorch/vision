@@ -3976,3 +3976,52 @@ class TestEqualize:
         expected = F.to_image(F.equalize(F.to_pil_image(image)))
 
         assert_equal(actual, expected)
+
+
+class TestUniformTemporalSubsample:
+    def test_kernel_video(self):
+        check_kernel(F.uniform_temporal_subsample_video, make_video(), num_samples=2)
+
+    @pytest.mark.parametrize("make_input", [make_video_tensor, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.uniform_temporal_subsample, make_input(), num_samples=2)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.uniform_temporal_subsample_video, torch.Tensor),
+            (F.uniform_temporal_subsample_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.uniform_temporal_subsample, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_video_tensor, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.UniformTemporalSubsample(num_samples=2), make_input())
+
+    def _reference_uniform_temporal_subsample_video(self, video, *, num_samples):
+        # Adapted from
+        # https://github.com/facebookresearch/pytorchvideo/blob/c8d23d8b7e597586a9e2d18f6ed31ad8aa379a7a/pytorchvideo/transforms/functional.py#L19
+        t = video.shape[-4]
+        assert num_samples > 0 and t > 0
+        # Sample by nearest neighbor interpolation if num_samples > t.
+        indices = torch.linspace(0, t - 1, num_samples, device=video.device)
+        indices = torch.clamp(indices, 0, t - 1).long()
+        return tv_tensors.Video(torch.index_select(video, -4, indices))
+
+    CORRECTNESS_NUM_FRAMES = 5
+
+    @pytest.mark.parametrize("num_samples", list(range(1, CORRECTNESS_NUM_FRAMES + 1)))
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize(
+        "fn", [F.uniform_temporal_subsample, transform_cls_to_functional(transforms.UniformTemporalSubsample)]
+    )
+    def test_video_correctness(self, num_samples, dtype, device, fn):
+        video = make_video(num_frames=self.CORRECTNESS_NUM_FRAMES, dtype=dtype, device=device)
+
+        actual = fn(video, num_samples=num_samples)
+        expected = self._reference_uniform_temporal_subsample_video(video, num_samples=num_samples)
+
+        assert_equal(actual, expected)

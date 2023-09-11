@@ -230,15 +230,6 @@ DISPATCHER_INFOS = [
         ],
     ),
     DispatcherInfo(
-        F.uniform_temporal_subsample,
-        kernels={
-            tv_tensors.Video: F.uniform_temporal_subsample_video,
-        },
-        test_marks=[
-            skip_dispatch_tv_tensor,
-        ],
-    ),
-    DispatcherInfo(
         F.clamp_bounding_boxes,
         kernels={tv_tensors.BoundingBoxes: F.clamp_bounding_boxes},
         test_marks=[

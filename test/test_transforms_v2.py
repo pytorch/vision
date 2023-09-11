@@ -738,25 +738,6 @@ class TestRandomResize:
             assert min_size <= size < max_size
 
 
-class TestUniformTemporalSubsample:
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.zeros(10, 3, 8, 8),
-            torch.zeros(1, 10, 3, 8, 8),
-            tv_tensors.Video(torch.zeros(1, 10, 3, 8, 8)),
-        ],
-    )
-    def test__transform(self, inpt):
-        num_samples = 5
-        transform = transforms.UniformTemporalSubsample(num_samples)
-
-        output = transform(inpt)
-        assert type(output) is type(inpt)
-        assert output.shape[-4] == num_samples
-        assert output.dtype == inpt.dtype
-
-
 # TODO: remove this test in 0.17 when the default of antialias changes to True
 def test_antialias_warning():
     pil_img = PIL.Image.new("RGB", size=(10, 10), color=127)

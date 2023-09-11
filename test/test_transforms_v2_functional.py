@@ -549,13 +549,3 @@ def test_to_pil_image(inpt, mode):
     assert isinstance(output, PIL.Image.Image)
 
     assert np.asarray(inpt).sum() == np.asarray(output).sum()
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_correctness_uniform_temporal_subsample(device):
-    video = torch.arange(10, device=device)[:, None, None, None].expand(-1, 3, 8, 8)
-    out_video = F.uniform_temporal_subsample(video, 5)
-    assert out_video.unique().tolist() == [0, 2, 4, 6, 9]
-
-    out_video = F.uniform_temporal_subsample(video, 8)
-    assert out_video.unique().tolist() == [0, 1, 2, 3, 5, 6, 7, 9]
