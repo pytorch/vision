@@ -4410,3 +4410,43 @@ class TestAdjustContrast:
         expected = F.to_image(F.adjust_contrast(F.to_pil_image(image), contrast_factor=contrast_factor))
 
         assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestAdjustGamma:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.adjust_gamma_image, make_image(dtype=dtype, device=device), gamma=0.5)
+
+    def test_kernel_video(self):
+        check_kernel(F.adjust_gamma_video, make_video(), gamma=0.5)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.adjust_gamma, make_input(), gamma=0.5)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_gamma_image, torch.Tensor),
+            (F._adjust_gamma_image_pil, PIL.Image.Image),
+            (F.adjust_gamma_image, tv_tensors.Image),
+            (F.adjust_gamma_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.adjust_gamma, kernel=kernel, input_type=input_type)
+
+    def test_functional_error(self):
+        with pytest.raises(ValueError, match="Gamma should be a non-negative real number"):
+            F.adjust_gamma(make_image(), gamma=-1)
+
+    @pytest.mark.parametrize("gamma", [0.1, 0.5, 1.0])
+    @pytest.mark.parametrize("gain", [0.1, 1.0, 2.0])
+    def test_correctness_image(self, gamma, gain):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.adjust_gamma(image, gamma=gamma, gain=gain)
+        expected = F.to_image(F.adjust_gamma(F.to_pil_image(image), gamma=gamma, gain=gain))
+
+        assert_equal(actual, expected)
