@@ -4319,3 +4319,52 @@ class TestAutocontrast:
         expected = F.to_image(F.autocontrast(F.to_pil_image(image)))
 
         assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestAdjustSharpness:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.adjust_sharpness_image, make_image(dtype=dtype, device=device), sharpness_factor=0.5)
+
+    def test_kernel_video(self):
+        check_kernel(F.adjust_sharpness_video, make_video(), sharpness_factor=0.5)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.adjust_sharpness, make_input(), sharpness_factor=0.5)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_sharpness_image, torch.Tensor),
+            (F._adjust_sharpness_image_pil, PIL.Image.Image),
+            (F.adjust_sharpness_image, tv_tensors.Image),
+            (F.adjust_sharpness_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.adjust_sharpness, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1), make_input())
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="can have 1 or 3 channels"):
+            F.adjust_sharpness(make_image(color_space="RGBA"), sharpness_factor=0.5)
+
+        with pytest.raises(ValueError, match="is not non-negative"):
+            F.adjust_sharpness(make_image(), sharpness_factor=-1)
+
+    @pytest.mark.parametrize("sharpness_factor", [0.1, 0.5, 1.0])
+    @pytest.mark.parametrize(
+        "fn", [F.adjust_sharpness, transform_cls_to_functional(transforms.RandomAdjustSharpness, p=1)]
+    )
+    def test_correctness_image(self, sharpness_factor, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, sharpness_factor=sharpness_factor)
+        expected = F.to_image(F.adjust_sharpness(F.to_pil_image(image), sharpness_factor=sharpness_factor))
+
+        assert_equal(actual, expected)
