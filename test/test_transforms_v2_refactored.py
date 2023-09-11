@@ -4227,3 +4227,56 @@ class TestPosterize:
         expected = F.to_image(F.posterize(F.to_pil_image(image), bits=bits))
 
         assert_equal(actual, expected)
+
+
+class TestSolarize:
+    def _make_threshold(self, input, *, factor=0.5):
+        dtype = input.dtype if isinstance(input, torch.Tensor) else torch.uint8
+        return (float if dtype.is_floating_point else int)(get_max_value(dtype) * factor)
+
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        image = make_image(dtype=dtype, device=device)
+        check_kernel(F.solarize_image, image, threshold=self._make_threshold(image))
+
+    def test_kernel_video(self):
+        video = make_video()
+        check_kernel(F.solarize_video, video, threshold=self._make_threshold(video))
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        input = make_input()
+        check_functional(F.solarize, input, threshold=self._make_threshold(input))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.solarize_image, torch.Tensor),
+            (F._solarize_image_pil, PIL.Image.Image),
+            (F.solarize_image, tv_tensors.Image),
+            (F.solarize_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.solarize, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(("dtype", "threshold"), [(torch.uint8, 256), (torch.float, 1.5)])
+    def test_functional_error(self, dtype, threshold):
+        with pytest.raises(TypeError, match="Threshold should be less or equal the maximum value of the dtype"):
+            F.solarize(make_image(dtype=dtype), threshold=threshold)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        input = make_input()
+        check_transform(transforms.RandomSolarize(threshold=self._make_threshold(input), p=1), input)
+
+    @pytest.mark.parametrize("threshold", [0.0, 0.1, 0.5, 0.9, 1.0])
+    @pytest.mark.parametrize("fn", [F.solarize, transform_cls_to_functional(transforms.RandomSolarize, p=1)])
+    def test_correctness_image(self, threshold, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, threshold=threshold)
+        expected = F.to_image(F.solarize(F.to_pil_image(image), threshold=threshold))
+
+        assert_equal(actual, expected)
