@@ -251,22 +251,6 @@ CONSISTENCY_CONFIGS = [
         v2_transforms.RandomOrder,
         legacy_transforms.RandomOrder,
     ),
-    ConsistencyConfig(
-        v2_transforms.AugMix,
-        legacy_transforms.AugMix,
-    ),
-    ConsistencyConfig(
-        v2_transforms.AutoAugment,
-        legacy_transforms.AutoAugment,
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandAugment,
-        legacy_transforms.RandAugment,
-    ),
-    ConsistencyConfig(
-        v2_transforms.TrivialAugmentWide,
-        legacy_transforms.TrivialAugmentWide,
-    ),
 ]
 
 
@@ -445,7 +429,6 @@ get_params_parametrization = pytest.mark.parametrize(
         )
         for transform_cls, get_params_args_kwargs in [
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
-            (v2_transforms.AutoAugment, ArgsKwargs(5)),
         ]
     ],
 )
@@ -817,36 +800,20 @@ class TestRefSegTransforms:
         (legacy_F.pil_to_tensor, {}),
         (legacy_F.convert_image_dtype, {}),
         (legacy_F.to_pil_image, {}),
-        (legacy_F.normalize, {}),
-        (legacy_F.resize, {"interpolation"}),
-        (legacy_F.pad, {"padding", "fill"}),
-        (legacy_F.crop, {}),
-        (legacy_F.center_crop, {}),
-        (legacy_F.resized_crop, {"interpolation"}),
-        (legacy_F.hflip, {}),
-        (legacy_F.perspective, {"startpoints", "endpoints", "fill", "interpolation"}),
-        (legacy_F.vflip, {}),
         (legacy_F.five_crop, {}),
         (legacy_F.ten_crop, {}),
-        (legacy_F.adjust_brightness, {}),
         (legacy_F.adjust_contrast, {}),
         (legacy_F.adjust_saturation, {}),
         (legacy_F.adjust_hue, {}),
         (legacy_F.adjust_gamma, {}),
-        (legacy_F.rotate, {"center", "fill", "interpolation"}),
-        (legacy_F.affine, {"angle", "translate", "center", "fill", "interpolation"}),
         (legacy_F.to_grayscale, {}),
         (legacy_F.rgb_to_grayscale, {}),
         (legacy_F.to_tensor, {}),
-        (legacy_F.erase, {}),
-        (legacy_F.gaussian_blur, {}),
         (legacy_F.invert, {}),
         (legacy_F.posterize, {}),
         (legacy_F.solarize, {}),
         (legacy_F.adjust_sharpness, {}),
         (legacy_F.autocontrast, {}),
-        (legacy_F.equalize, {}),
-        (legacy_F.elastic_transform, {"fill", "interpolation"}),
     ],
 )
 def test_dispatcher_signature_consistency(legacy_dispatcher, name_only_params):

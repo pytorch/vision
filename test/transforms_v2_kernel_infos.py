@@ -12,8 +12,6 @@ from transforms_v2_legacy_utils import (
     InfoBase,
     make_bounding_box_loaders,
     make_image_loaders,
-    make_image_loaders_for_interpolation,
-    make_mask_loaders,
     make_video_loaders,
     mark_framework_limitation,
     TestMark,
@@ -96,12 +94,6 @@ def float32_vs_uint8_pixel_difference(atol=1, mae=False):
     }
 
 
-def scripted_vs_eager_float64_tolerances(device, atol=1e-6, rtol=1e-6):
-    return {
-        (("TestKernels", "test_scripted_vs_eager"), torch.float64, device): {"atol": atol, "rtol": rtol, "mae": False},
-    }
-
-
 def pil_reference_wrapper(pil_kernel):
     @functools.wraps(pil_kernel)
     def wrapper(input_tensor, *other_args, **kwargs):
@@ -142,114 +134,6 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
 
 
 KERNEL_INFOS = []
-
-
-def get_fills(*, num_channels, dtype):
-    yield None
-
-    int_value = get_max_value(dtype)
-    float_value = int_value / 2
-    yield int_value
-    yield float_value
-
-    for vector_type in [list, tuple]:
-        yield vector_type([int_value])
-        yield vector_type([float_value])
-
-        if num_channels > 1:
-            yield vector_type(float_value * c / 10 for c in range(num_channels))
-            yield vector_type(int_value if c % 2 == 0 else 0 for c in range(num_channels))
-
-
-def float32_vs_uint8_fill_adapter(other_args, kwargs):
-    fill = kwargs.get("fill")
-    if fill is None:
-        return other_args, kwargs
-
-    if isinstance(fill, (int, float)):
-        fill /= 255
-    else:
-        fill = type(fill)(fill_ / 255 for fill_ in fill)
-
-    return other_args, dict(kwargs, fill=fill)
-
-
-def _get_elastic_displacement(canvas_size):
-    return torch.rand(1, *canvas_size, 2)
-
-
-def sample_inputs_elastic_image_tensor():
-    for image_loader in make_image_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
-        displacement = _get_elastic_displacement(image_loader.canvas_size)
-        for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
-            yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
-
-
-def reference_inputs_elastic_image_tensor():
-    for image_loader, interpolation in itertools.product(
-        make_image_loaders_for_interpolation(),
-        [
-            F.InterpolationMode.NEAREST,
-            F.InterpolationMode.BILINEAR,
-            F.InterpolationMode.BICUBIC,
-        ],
-    ):
-        displacement = _get_elastic_displacement(image_loader.canvas_size)
-        for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
-            yield ArgsKwargs(image_loader, interpolation=interpolation, displacement=displacement, fill=fill)
-
-
-def sample_inputs_elastic_bounding_boxes():
-    for bounding_boxes_loader in make_bounding_box_loaders():
-        displacement = _get_elastic_displacement(bounding_boxes_loader.canvas_size)
-        yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            canvas_size=bounding_boxes_loader.canvas_size,
-            displacement=displacement,
-        )
-
-
-def sample_inputs_elastic_mask():
-    for mask_loader in make_mask_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE]):
-        displacement = _get_elastic_displacement(mask_loader.shape[-2:])
-        yield ArgsKwargs(mask_loader, displacement=displacement)
-
-
-def sample_inputs_elastic_video():
-    for video_loader in make_video_loaders(sizes=[DEFAULT_PORTRAIT_SPATIAL_SIZE], num_frames=[3]):
-        displacement = _get_elastic_displacement(video_loader.shape[-2:])
-        yield ArgsKwargs(video_loader, displacement=displacement)
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.elastic_image,
-            sample_inputs_fn=sample_inputs_elastic_image_tensor,
-            reference_inputs_fn=reference_inputs_elastic_image_tensor,
-            float32_vs_uint8=float32_vs_uint8_fill_adapter,
-            closeness_kwargs={
-                **float32_vs_uint8_pixel_difference(6, mae=True),
-                **cuda_vs_cpu_pixel_difference(),
-            },
-            test_marks=[xfail_jit_python_scalar_arg("fill")],
-        ),
-        KernelInfo(
-            F.elastic_bounding_boxes,
-            sample_inputs_fn=sample_inputs_elastic_bounding_boxes,
-        ),
-        KernelInfo(
-            F.elastic_mask,
-            sample_inputs_fn=sample_inputs_elastic_mask,
-        ),
-        KernelInfo(
-            F.elastic_video,
-            sample_inputs_fn=sample_inputs_elastic_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
-        ),
-    ]
-)
 
 
 def sample_inputs_invert_image_tensor():

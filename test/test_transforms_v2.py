@@ -277,39 +277,6 @@ class TestSmoke:
             )
             assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
 
-    @parametrize(
-        [
-            (
-                transform,
-                itertools.chain.from_iterable(
-                    fn(
-                        color_spaces=[
-                            "GRAY",
-                            "RGB",
-                        ],
-                        dtypes=[torch.uint8],
-                        extra_dims=[(), (4,)],
-                        **(dict(num_frames=[3]) if fn is make_videos else dict()),
-                    )
-                    for fn in [
-                        make_images,
-                        make_vanilla_tensor_images,
-                        make_pil_images,
-                        make_videos,
-                    ]
-                ),
-            )
-            for transform in (
-                transforms.RandAugment(),
-                transforms.TrivialAugmentWide(),
-                transforms.AutoAugment(),
-                transforms.AugMix(),
-            )
-        ]
-    )
-    def test_auto_augment(self, transform, input):
-        transform(input)
-
 
 @pytest.mark.parametrize(
     "flat_inputs",
@@ -398,40 +365,6 @@ class TestRandomZoomOut:
         assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
         assert 0 <= params["padding"][2] <= (side_range[1] - 1) * w
         assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
-
-
-class TestElasticTransform:
-    def test_assertions(self):
-
-        with pytest.raises(TypeError, match="alpha should be a number or a sequence of numbers"):
-            transforms.ElasticTransform({})
-
-        with pytest.raises(ValueError, match="alpha is a sequence its length should be 1 or 2"):
-            transforms.ElasticTransform([1.0, 2.0, 3.0])
-
-        with pytest.raises(TypeError, match="sigma should be a number or a sequence of numbers"):
-            transforms.ElasticTransform(1.0, {})
-
-        with pytest.raises(ValueError, match="sigma is a sequence its length should be 1 or 2"):
-            transforms.ElasticTransform(1.0, [1.0, 2.0, 3.0])
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.ElasticTransform(1.0, 2.0, fill="abc")
-
-    def test__get_params(self):
-        alpha = 2.0
-        sigma = 3.0
-        transform = transforms.ElasticTransform(alpha, sigma)
-
-        h, w = size = (24, 32)
-        image = make_image(size)
-
-        params = transform._get_params([image])
-
-        displacement = params["displacement"]
-        assert displacement.shape == (1, h, w, 2)
-        assert (-alpha / w <= displacement[0, ..., 0]).all() and (displacement[0, ..., 0] <= alpha / w).all()
-        assert (-alpha / h <= displacement[0, ..., 1]).all() and (displacement[0, ..., 1] <= alpha / h).all()
 
 
 class TestTransform:
