@@ -4450,3 +4450,47 @@ class TestAdjustGamma:
         expected = F.to_image(F.adjust_gamma(F.to_pil_image(image), gamma=gamma, gain=gain))
 
         assert_equal(actual, expected)
+
+
+class TestAdjustHue:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.adjust_hue_image, make_image(dtype=dtype, device=device), hue_factor=0.25)
+
+    def test_kernel_video(self):
+        check_kernel(F.adjust_hue_video, make_video(), hue_factor=0.25)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.adjust_hue, make_input(), hue_factor=0.25)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_hue_image, torch.Tensor),
+            (F._adjust_hue_image_pil, PIL.Image.Image),
+            (F.adjust_hue_image, tv_tensors.Image),
+            (F.adjust_hue_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.adjust_hue, kernel=kernel, input_type=input_type)
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="permitted channel values are 1 or 3"):
+            F.adjust_hue(make_image(color_space="RGBA"), hue_factor=0.25)
+
+        for hue_factor in [-1, 1]:
+            with pytest.raises(ValueError, match=re.escape("is not in [-0.5, 0.5]")):
+                F.adjust_hue(make_image(), hue_factor=hue_factor)
+
+    @pytest.mark.parametrize("hue_factor", [-0.5, -0.3, 0.0, 0.2, 0.5])
+    def test_correctness_image(self, hue_factor):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.adjust_hue(image, hue_factor=hue_factor)
+        expected = F.to_image(F.adjust_hue(F.to_pil_image(image), hue_factor=hue_factor))
+
+        mae = (actual.float() - expected.float()).abs().mean()
+        assert mae < 2
