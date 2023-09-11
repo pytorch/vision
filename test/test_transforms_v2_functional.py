@@ -13,7 +13,7 @@ from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import is_pure_tensor
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
-from transforms_v2_legacy_utils import make_multiple_bounding_boxes, parametrized_error_message
+from transforms_v2_legacy_utils import parametrized_error_message
 
 
 KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
@@ -465,40 +465,6 @@ class TestDispatchers:
 )
 def test_alias(alias, target):
     assert alias is target
-
-
-class TestClampBoundingBoxes:
-    @pytest.mark.parametrize(
-        "metadata",
-        [
-            dict(),
-            dict(format=tv_tensors.BoundingBoxFormat.XYXY),
-            dict(canvas_size=(1, 1)),
-        ],
-    )
-    def test_pure_tensor_insufficient_metadata(self, metadata):
-        pure_tensor = next(make_multiple_bounding_boxes()).as_subclass(torch.Tensor)
-
-        with pytest.raises(ValueError, match=re.escape("`format` and `canvas_size` has to be passed")):
-            F.clamp_bounding_boxes(pure_tensor, **metadata)
-
-    @pytest.mark.parametrize(
-        "metadata",
-        [
-            dict(format=tv_tensors.BoundingBoxFormat.XYXY),
-            dict(canvas_size=(1, 1)),
-            dict(format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=(1, 1)),
-        ],
-    )
-    def test_tv_tensor_explicit_metadata(self, metadata):
-        tv_tensor = next(make_multiple_bounding_boxes())
-
-        with pytest.raises(ValueError, match=re.escape("`format` and `canvas_size` must not be passed")):
-            F.clamp_bounding_boxes(tv_tensor, **metadata)
-
-
-# TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
-#  `transforms_v2_kernel_infos.py`
 
 
 @pytest.mark.parametrize(

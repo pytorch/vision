@@ -207,11 +207,4 @@ DISPATCHER_INFOS = [
         ],
         pil_kernel_info=PILKernelInfo(F._ten_crop_image_pil),
     ),
-    DispatcherInfo(
-        F.clamp_bounding_boxes,
-        kernels={tv_tensors.BoundingBoxes: F.clamp_bounding_boxes},
-        test_marks=[
-            skip_dispatch_tv_tensor,
-        ],
-    ),
 ]

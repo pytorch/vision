@@ -10,7 +10,6 @@ from transforms_v2_legacy_utils import (
     ArgsKwargs,
     DEFAULT_PORTRAIT_SPATIAL_SIZE,
     InfoBase,
-    make_bounding_box_loaders,
     make_image_loaders,
     make_video_loaders,
     mark_framework_limitation,
@@ -515,23 +514,6 @@ KERNEL_INFOS.extend(
     ]
 )
 
-
-def sample_inputs_clamp_bounding_boxes():
-    for bounding_boxes_loader in make_bounding_box_loaders():
-        yield ArgsKwargs(
-            bounding_boxes_loader,
-            format=bounding_boxes_loader.format,
-            canvas_size=bounding_boxes_loader.canvas_size,
-        )
-
-
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.clamp_bounding_boxes,
-        sample_inputs_fn=sample_inputs_clamp_bounding_boxes,
-        logs_usage=True,
-    )
-)
 
 _FIVE_TEN_CROP_SIZES = [7, (6,), [5], (6, 5), [7, 6]]
 

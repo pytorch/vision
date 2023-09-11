@@ -4097,3 +4097,41 @@ class TestNormalize:
         output = fn(input, mean=mean, std=std)
 
         self._assert_is_standard_normal_distributed(output)
+
+
+class TestClampBoundingBoxes:
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel(self, format, dtype, device):
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
+        check_kernel(
+            F.clamp_bounding_boxes,
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
+        )
+
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    def test_functional(self, format):
+        check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format))
+
+    def test_errors(self):
+        input_tv_tensor = make_bounding_boxes()
+        input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
+        format, canvas_size = input_tv_tensor.format, input_tv_tensor.canvas_size
+
+        for format_, canvas_size_ in [(None, None), (format, None), (None, canvas_size)]:
+            with pytest.raises(
+                ValueError, match="For pure tensor inputs, `format` and `canvas_size` have to be passed."
+            ):
+                F.clamp_bounding_boxes(input_pure_tensor, format=format_, canvas_size=canvas_size_)
+
+        for format_, canvas_size_ in [(format, canvas_size), (format, None), (None, canvas_size)]:
+            with pytest.raises(
+                ValueError, match="For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed."
+            ):
+                F.clamp_bounding_boxes(input_tv_tensor, format=format_, canvas_size=canvas_size_)
+
+    def test_transform(self):
+        check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
