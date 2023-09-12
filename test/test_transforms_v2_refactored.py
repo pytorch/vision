@@ -4066,7 +4066,7 @@ class TestNormalize:
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
     def test_functional(self, make_input):
-        check_functional(F.normalize, make_input(dtype=torch.float32))
+        check_functional(F.normalize, make_input(dtype=torch.float32), mean=self.MEAN, std=self.STD)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
