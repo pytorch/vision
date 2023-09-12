@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 
 import numpy as np
-import PIL.Image
 import pytest
 
 import torch
@@ -83,14 +82,6 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.float]),
     ),
     ConsistencyConfig(
-        v2_transforms.CenterCrop,
-        legacy_transforms.CenterCrop,
-        [
-            ArgsKwargs(18),
-            ArgsKwargs((18, 13)),
-        ],
-    ),
-    ConsistencyConfig(
         v2_transforms.FiveCrop,
         legacy_transforms.FiveCrop,
         [
@@ -108,21 +99,6 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(18, vertical_flip=True),
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
-    ),
-    ConsistencyConfig(
-        v2_transforms.Pad,
-        legacy_transforms.Pad,
-        [
-            NotScriptableArgsKwargs(3),
-            ArgsKwargs([3]),
-            ArgsKwargs([2, 3]),
-            ArgsKwargs([3, 2, 1, 4]),
-            NotScriptableArgsKwargs(5, fill=1, padding_mode="constant"),
-            ArgsKwargs([5], fill=1, padding_mode="constant"),
-            NotScriptableArgsKwargs(5, padding_mode="edge"),
-            NotScriptableArgsKwargs(5, padding_mode="reflect"),
-            NotScriptableArgsKwargs(5, padding_mode="symmetric"),
-        ],
     ),
     *[
         ConsistencyConfig(
@@ -253,30 +229,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.RandomResizedCrop,
-        legacy_transforms.RandomResizedCrop,
-        [
-            ArgsKwargs(16),
-            ArgsKwargs(17, scale=(0.3, 0.7)),
-            ArgsKwargs(25, ratio=(0.5, 1.5)),
-            ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((31, 28), interpolation=PIL.Image.NEAREST),
-            ArgsKwargs((29, 32), antialias=False),
-            ArgsKwargs((28, 31), antialias=True),
-        ],
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        closeness_kwargs=dict(rtol=0, atol=1),
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomResizedCrop,
-        legacy_transforms.RandomResizedCrop,
-        [
-            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC, antialias=True),
-            ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC, antialias=True),
-        ],
-        closeness_kwargs=dict(rtol=0, atol=21),
-    ),
-    ConsistencyConfig(
         v2_transforms.ColorJitter,
         legacy_transforms.ColorJitter,
         [
@@ -292,31 +244,6 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.3),
         ],
         closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
-    ),
-    ConsistencyConfig(
-        v2_transforms.GaussianBlur,
-        legacy_transforms.GaussianBlur,
-        [
-            ArgsKwargs(kernel_size=3),
-            ArgsKwargs(kernel_size=(1, 5)),
-            ArgsKwargs(kernel_size=3, sigma=0.7),
-            ArgsKwargs(kernel_size=5, sigma=(0.3, 1.4)),
-        ],
-        closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomPerspective,
-        legacy_transforms.RandomPerspective,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-            ArgsKwargs(p=1, distortion_scale=0.3),
-            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=PIL.Image.NEAREST),
-            ArgsKwargs(p=1, distortion_scale=0.1, fill=1),
-            ArgsKwargs(p=1, distortion_scale=0.4, fill=(1, 2, 3)),
-        ],
-        closeness_kwargs={"atol": None, "rtol": None},
     ),
     ConsistencyConfig(
         v2_transforms.PILToTensor,
@@ -535,10 +462,7 @@ get_params_parametrization = pytest.mark.parametrize(
             id=transform_cls.__name__,
         )
         for transform_cls, get_params_args_kwargs in [
-            (v2_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
             (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
-            (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
-            (v2_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
             (v2_transforms.AutoAugment, ArgsKwargs(5)),
         ]
     ],
@@ -703,281 +627,6 @@ class TestToTensorTransforms:
 
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
             assert_equal(prototype_transform(image_numpy), legacy_transform(image_numpy))
-
-
-class TestAATransforms:
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
-            PIL.Image.new("RGB", (256, 256), 123),
-            tv_tensors.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-            PIL.Image.NEAREST,
-        ],
-    )
-    def test_randaug(self, inpt, interpolation, mocker):
-        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1)
-        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1)
-
-        le = len(t._AUGMENTATION_SPACE)
-        keys = list(t._AUGMENTATION_SPACE.keys())
-        randint_values = []
-        for i in range(le):
-            # Stable API, op_index random call
-            randint_values.append(i)
-            # Stable API, if signed there is another random call
-            if t._AUGMENTATION_SPACE[keys[i]][1]:
-                randint_values.append(0)
-            # New API, _get_random_item
-            randint_values.append(i)
-        randint_values = iter(randint_values)
-
-        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
-        mocker.patch("torch.rand", return_value=1.0)
-
-        for i in range(le):
-            expected_output = t_ref(inpt)
-            output = t(inpt)
-
-            assert_close(expected_output, output, atol=1, rtol=0.1)
-
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-        ],
-    )
-    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
-    def test_randaug_jit(self, interpolation, fill):
-        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1, fill=fill)
-        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1, fill=fill)
-
-        tt_ref = torch.jit.script(t_ref)
-        tt = torch.jit.script(t)
-
-        torch.manual_seed(12)
-        expected_output = tt_ref(inpt)
-
-        torch.manual_seed(12)
-        scripted_output = tt(inpt)
-
-        assert_equal(scripted_output, expected_output)
-
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
-            PIL.Image.new("RGB", (256, 256), 123),
-            tv_tensors.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-            PIL.Image.NEAREST,
-        ],
-    )
-    def test_trivial_aug(self, inpt, interpolation, mocker):
-        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation)
-        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation)
-
-        le = len(t._AUGMENTATION_SPACE)
-        keys = list(t._AUGMENTATION_SPACE.keys())
-        randint_values = []
-        for i in range(le):
-            # Stable API, op_index random call
-            randint_values.append(i)
-            key = keys[i]
-            # Stable API, random magnitude
-            aug_op = t._AUGMENTATION_SPACE[key]
-            magnitudes = aug_op[0](2, 0, 0)
-            if magnitudes is not None:
-                randint_values.append(5)
-            # Stable API, if signed there is another random call
-            if aug_op[1]:
-                randint_values.append(0)
-            # New API, _get_random_item
-            randint_values.append(i)
-            # New API, random magnitude
-            if magnitudes is not None:
-                randint_values.append(5)
-
-        randint_values = iter(randint_values)
-
-        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
-        mocker.patch("torch.rand", return_value=1.0)
-
-        for _ in range(le):
-            expected_output = t_ref(inpt)
-            output = t(inpt)
-
-            assert_close(expected_output, output, atol=1, rtol=0.1)
-
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-        ],
-    )
-    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
-    def test_trivial_aug_jit(self, interpolation, fill):
-        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation, fill=fill)
-        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation, fill=fill)
-
-        tt_ref = torch.jit.script(t_ref)
-        tt = torch.jit.script(t)
-
-        torch.manual_seed(12)
-        expected_output = tt_ref(inpt)
-
-        torch.manual_seed(12)
-        scripted_output = tt(inpt)
-
-        assert_equal(scripted_output, expected_output)
-
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
-            PIL.Image.new("RGB", (256, 256), 123),
-            tv_tensors.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-            PIL.Image.NEAREST,
-        ],
-    )
-    def test_augmix(self, inpt, interpolation, mocker):
-        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
-        t_ref._sample_dirichlet = lambda t: t.softmax(dim=-1)
-        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
-        t._sample_dirichlet = lambda t: t.softmax(dim=-1)
-
-        le = len(t._AUGMENTATION_SPACE)
-        keys = list(t._AUGMENTATION_SPACE.keys())
-        randint_values = []
-        for i in range(le):
-            # Stable API, op_index random call
-            randint_values.append(i)
-            key = keys[i]
-            # Stable API, random magnitude
-            aug_op = t._AUGMENTATION_SPACE[key]
-            magnitudes = aug_op[0](2, 0, 0)
-            if magnitudes is not None:
-                randint_values.append(5)
-            # Stable API, if signed there is another random call
-            if aug_op[1]:
-                randint_values.append(0)
-            # New API, _get_random_item
-            randint_values.append(i)
-            # New API, random magnitude
-            if magnitudes is not None:
-                randint_values.append(5)
-
-        randint_values = iter(randint_values)
-
-        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
-        mocker.patch("torch.rand", return_value=1.0)
-
-        expected_output = t_ref(inpt)
-        output = t(inpt)
-
-        assert_equal(expected_output, output)
-
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-        ],
-    )
-    @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
-    def test_augmix_jit(self, interpolation, fill):
-        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-
-        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1, fill=fill)
-        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1, fill=fill)
-
-        tt_ref = torch.jit.script(t_ref)
-        tt = torch.jit.script(t)
-
-        torch.manual_seed(12)
-        expected_output = tt_ref(inpt)
-
-        torch.manual_seed(12)
-        scripted_output = tt(inpt)
-
-        assert_equal(scripted_output, expected_output)
-
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
-            PIL.Image.new("RGB", (256, 256), 123),
-            tv_tensors.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-            PIL.Image.NEAREST,
-        ],
-    )
-    def test_aa(self, inpt, interpolation):
-        aa_policy = legacy_transforms.AutoAugmentPolicy("imagenet")
-        t_ref = legacy_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-        t = v2_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-
-        torch.manual_seed(12)
-        expected_output = t_ref(inpt)
-
-        torch.manual_seed(12)
-        output = t(inpt)
-
-        assert_equal(expected_output, output)
-
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-        ],
-    )
-    def test_aa_jit(self, interpolation):
-        inpt = torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)
-        aa_policy = legacy_transforms.AutoAugmentPolicy("imagenet")
-        t_ref = legacy_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-        t = v2_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-
-        tt_ref = torch.jit.script(t_ref)
-        tt = torch.jit.script(t)
-
-        torch.manual_seed(12)
-        expected_output = tt_ref(inpt)
-
-        torch.manual_seed(12)
-        scripted_output = tt(inpt)
-
-        assert_equal(scripted_output, expected_output)
 
 
 def import_transforms_from_references(reference):

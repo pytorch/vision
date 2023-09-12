@@ -328,22 +328,6 @@ class TestSmoke:
     def test_normalize(self, transform, input):
         transform(input)
 
-    @parametrize(
-        [
-            (
-                transforms.RandomResizedCrop([16, 16], antialias=True),
-                itertools.chain(
-                    make_images(extra_dims=[(4,)]),
-                    make_vanilla_tensor_images(),
-                    make_pil_images(),
-                    make_videos(extra_dims=[()]),
-                ),
-            )
-        ]
-    )
-    def test_random_resized_crop(self, transform, input):
-        transform(input)
-
 
 @pytest.mark.parametrize(
     "flat_inputs",
@@ -406,21 +390,6 @@ def test_pure_tensor_heuristic(flat_inputs):
         assert transform.was_applied(output, input)
 
 
-class TestPad:
-    def test_assertions(self):
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
-            transforms.Pad("abc")
-
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
-            transforms.Pad([-0.7, 0, 0.7])
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.Pad(12, fill="abc")
-
-        with pytest.raises(ValueError, match="Padding mode should be either"):
-            transforms.Pad(12, padding_mode="abc")
-
-
 class TestRandomZoomOut:
     def test_assertions(self):
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
@@ -447,26 +416,6 @@ class TestRandomZoomOut:
         assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
         assert 0 <= params["padding"][2] <= (side_range[1] - 1) * w
         assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
-
-
-class TestRandomPerspective:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Argument distortion_scale value should be between 0 and 1"):
-            transforms.RandomPerspective(distortion_scale=-1.0)
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomPerspective(0.5, fill="abc")
-
-    def test__get_params(self):
-        dscale = 0.5
-        transform = transforms.RandomPerspective(dscale)
-
-        image = make_image((24, 32))
-
-        params = transform._get_params([image])
-
-        assert "coefficients" in params
-        assert len(params["coefficients"]) == 8
 
 
 class TestElasticTransform:
