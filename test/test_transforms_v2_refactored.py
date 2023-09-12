@@ -194,7 +194,10 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, **kwar
 
         spy.assert_any_call(f"{functional.__module__}.{functional.__name__}")
 
-    assert isinstance(output, type(input))
+    if functional in {F.five_crop, F.ten_crop}:
+        assert all(isinstance(o, type(input)) for o in output)
+    else:
+        assert isinstance(output, type(input))
 
     if isinstance(input, tv_tensors.BoundingBoxes) and functional is not F.convert_bounding_box_format:
         assert output.format == input.format
@@ -259,7 +262,13 @@ def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
     with freeze_rng_state():
         output_v1 = v1_transform(input)
 
-    assert_close(F.to_image(output_v2), F.to_image(output_v1), rtol=rtol, atol=atol)
+    output_v2, output_v1 = [
+        type(output)(F.to_image(o) for o in output)
+        if isinstance(transform, (transforms.FiveCrop, transforms.TenCrop))
+        else F.to_image(output)
+        for output in [output_v2, output_v1]
+    ]
+    assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
 
     if isinstance(input, PIL.Image.Image):
         return
@@ -271,7 +280,11 @@ def check_transform(transform, input, check_v1_compatibility=True):
     pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
-    assert isinstance(output, type(input))
+
+    if isinstance(transform, (transforms.FiveCrop, transforms.TenCrop)):
+        assert all(isinstance(o, type(input)) for o in output)
+    else:
+        assert isinstance(output, type(input))
 
     if isinstance(input, tv_tensors.BoundingBoxes) and not isinstance(transform, transforms.ConvertBoundingBoxFormat):
         assert output.format == input.format
@@ -4536,3 +4549,91 @@ class TestAdjustSaturation:
         expected = F.to_image(F.adjust_saturation(F.to_pil_image(image), saturation_factor=saturation_factor))
 
         assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestFiveTenCrop:
+    INPUT_SIZE = (17, 11)
+    OUTPUT_SIZE = (3, 5)
+
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("kernel", [F.five_crop_image, F.ten_crop])
+    def test_kernel_image(self, dtype, device, kernel):
+        check_kernel(
+            kernel,
+            make_image(self.INPUT_SIZE, dtype=dtype, device=device),
+            size=self.OUTPUT_SIZE,
+            check_batched_vs_unbatched=False,
+        )
+
+    @pytest.mark.parametrize("kernel", [F.five_crop_video, F.ten_crop_video])
+    def test_kernel_video(self, kernel):
+        check_kernel(kernel, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZE, check_batched_vs_unbatched=False)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("functional", [F.five_crop, F.ten_crop])
+    def test_functional(self, make_input, functional):
+        check_functional(functional, make_input(self.INPUT_SIZE), size=self.OUTPUT_SIZE)
+
+    @pytest.mark.parametrize(
+        ("functional", "kernel", "input_type"),
+        [
+            (F.five_crop, F.five_crop_image, torch.Tensor),
+            (F.five_crop, F._five_crop_image_pil, PIL.Image.Image),
+            (F.five_crop, F.five_crop_image, tv_tensors.Image),
+            (F.five_crop, F.five_crop_video, tv_tensors.Video),
+            (F.ten_crop, F.ten_crop_image, torch.Tensor),
+            (F.ten_crop, F._ten_crop_image_pil, PIL.Image.Image),
+            (F.ten_crop, F.ten_crop_image, tv_tensors.Image),
+            (F.ten_crop, F.ten_crop_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, functional, kernel, input_type):
+        check_functional_kernel_signature_match(functional, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
+    def test_transform(self, make_input, transform_cls):
+        check_transform(transform_cls(size=self.OUTPUT_SIZE), make_input(self.INPUT_SIZE))
+
+    @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_mask])
+    @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
+    def test_transform_error(self, make_input, transform_cls):
+        transform = transform_cls(size=self.OUTPUT_SIZE)
+
+        with pytest.raises(TypeError, match="not supported"):
+            transform(make_input(self.INPUT_SIZE))
+
+    @pytest.mark.parametrize("fn", [F.five_crop, transform_cls_to_functional(transforms.FiveCrop)])
+    def test_correctness_image_five_crop(self, fn):
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, size=self.OUTPUT_SIZE)
+        expected = F.five_crop(F.to_pil_image(image), size=self.OUTPUT_SIZE)
+
+        assert isinstance(actual, tuple)
+        assert_equal(actual, [F.to_image(e) for e in expected])
+
+    @pytest.mark.parametrize("fn_or_class", [F.ten_crop, transforms.TenCrop])
+    @pytest.mark.parametrize("vertical_flip", [False, True])
+    def test_correctness_image_ten_crop(self, fn_or_class, vertical_flip):
+        if fn_or_class is transforms.TenCrop:
+            fn = transform_cls_to_functional(fn_or_class, size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
+            kwargs = dict()
+        else:
+            fn = fn_or_class
+            kwargs = dict(size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
+
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, **kwargs)
+        expected = F.ten_crop(F.to_pil_image(image), size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
+
+        assert isinstance(actual, tuple)
+        assert_equal(actual, [F.to_image(e) for e in expected])
