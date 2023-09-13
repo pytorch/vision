@@ -72,25 +72,6 @@ LINEAR_TRANSFORMATION_MEAN = torch.rand(36)
 LINEAR_TRANSFORMATION_MATRIX = torch.rand([LINEAR_TRANSFORMATION_MEAN.numel()] * 2)
 
 CONSISTENCY_CONFIGS = [
-    ConsistencyConfig(
-        v2_transforms.FiveCrop,
-        legacy_transforms.FiveCrop,
-        [
-            ArgsKwargs(18),
-            ArgsKwargs((18, 13)),
-        ],
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
-    ),
-    ConsistencyConfig(
-        v2_transforms.TenCrop,
-        legacy_transforms.TenCrop,
-        [
-            ArgsKwargs(18),
-            ArgsKwargs((18, 13)),
-            ArgsKwargs(18, vertical_flip=True),
-        ],
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
-    ),
     *[
         ConsistencyConfig(
             v2_transforms.LinearTransformation,
@@ -750,8 +731,6 @@ class TestRefSegTransforms:
         (legacy_F.pil_to_tensor, {}),
         (legacy_F.convert_image_dtype, {}),
         (legacy_F.to_pil_image, {}),
-        (legacy_F.five_crop, {}),
-        (legacy_F.ten_crop, {}),
         (legacy_F.to_grayscale, {}),
         (legacy_F.rgb_to_grayscale, {}),
         (legacy_F.to_tensor, {}),
