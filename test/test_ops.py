@@ -4,12 +4,14 @@ from abc import ABC, abstractmethod
 from functools import lru_cache
 from itertools import product
 from typing import Callable, List, Tuple
+import unittest
 
 import numpy as np
 import pytest
 import torch
 import torch.fx
 import torch.nn.functional as F
+import torch.testing._internal.optests as optests
 from common_utils import assert_equal, cpu_and_cuda, cpu_and_cuda_and_mps, needs_cuda, needs_mps
 from PIL import Image
 from torch import nn, Tensor
@@ -712,6 +714,7 @@ class TestNMS:
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.opcheck_only_one()
     def test_nms_ref(self, iou, seed):
         torch.random.manual_seed(seed)
         err_msg = "NMS incompatible between CPU and reference implementation for IoU={}"
@@ -732,6 +735,7 @@ class TestNMS:
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("scale, zero_point", ((1, 0), (2, 50), (3, 10)))
+    @pytest.mark.opcheck_only_one()
     def test_qnms(self, iou, scale, zero_point):
         # Note: we compare qnms vs nms instead of qnms vs reference implementation.
         # This is because with the int conversion, the trick used in _create_tensors_with_iou
@@ -759,6 +763,7 @@ class TestNMS:
         ),
     )
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    @pytest.mark.opcheck_only_one()
     def test_nms_gpu(self, iou, device, dtype=torch.float64):
         dtype = torch.float32 if device == "mps" else dtype
         tol = 1e-3 if dtype is torch.half else 1e-5
@@ -778,6 +783,7 @@ class TestNMS:
     @needs_cuda
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("dtype", (torch.float, torch.half))
+    @pytest.mark.opcheck_only_one()
     def test_autocast(self, iou, dtype):
         with torch.cuda.amp.autocast():
             self.test_nms_gpu(iou=iou, dtype=dtype, device="cuda")
@@ -789,6 +795,7 @@ class TestNMS:
             pytest.param("mps", marks=pytest.mark.needs_mps),
         ),
     )
+    @pytest.mark.opcheck_only_one()
     def test_nms_float16(self, device):
         boxes = torch.tensor(
             [
@@ -805,6 +812,7 @@ class TestNMS:
         assert_equal(keep32, keep16)
 
     @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.opcheck_only_one()
     def test_batched_nms_implementations(self, seed):
         """Make sure that both implementations of batched_nms yield identical results"""
         torch.random.manual_seed(seed)
@@ -828,6 +836,22 @@ class TestNMS:
         # Also make sure an empty tensor is returned if boxes is empty
         empty = torch.empty((0,), dtype=torch.int64)
         torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
+
+data_dependent_torchvision_test_checks = [
+    "test_schema",
+    "test_autograd_registration",
+    "test_faketensor",
+    "test_aot_dispatch_dynamic",
+]
+
+optests.generate_opcheck_tests(
+    TestNMS,
+    ["torchvision"],
+    {},
+    "test/test_ops.py",
+    [],
+    data_dependent_torchvision_test_checks,
+)
 
 
 class TestDeformConv:
