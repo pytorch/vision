@@ -28,34 +28,44 @@ import torchvision
 import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
 import utils
-from coco_utils import get_coco, get_coco_kp
-from engine import train_one_epoch, evaluate
-from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from coco_utils import get_coco
+from engine import evaluate, train_one_epoch
+from group_by_aspect_ratio import create_aspect_ratio_groups, GroupedBatchSampler
+from torchvision.transforms import InterpolationMode
+from transforms import SimpleCopyPaste
 
 
-try:
-    from torchvision.prototype import models as PM
-except ImportError:
-    PM = None
+def copypaste_collate_fn(batch):
+    copypaste = SimpleCopyPaste(blending=True, resize_interpolation=InterpolationMode.BILINEAR)
+    return copypaste(*utils.collate_fn(batch))
 
 
-def get_dataset(name, image_set, transform, data_path):
-    paths = {"coco": (data_path, get_coco, 91), "coco_kp": (data_path, get_coco_kp, 2)}
-    p, ds_fn, num_classes = paths[name]
-
-    ds = ds_fn(p, image_set=image_set, transforms=transform)
+def get_dataset(is_train, args):
+    image_set = "train" if is_train else "val"
+    num_classes, mode = {"coco": (91, "instances"), "coco_kp": (2, "person_keypoints")}[args.dataset]
+    with_masks = "mask" in args.model
+    ds = get_coco(
+        root=args.data_path,
+        image_set=image_set,
+        transforms=get_transform(is_train, args),
+        mode=mode,
+        use_v2=args.use_v2,
+        with_masks=with_masks,
+    )
     return ds, num_classes
 
 
-def get_transform(train, args):
-    if train:
-        return presets.DetectionPresetTrain(args.data_augmentation)
-    elif not args.weights:
-        return presets.DetectionPresetEval()
+def get_transform(is_train, args):
+    if is_train:
+        return presets.DetectionPresetTrain(
+            data_augmentation=args.data_augmentation, backend=args.backend, use_v2=args.use_v2
+        )
+    elif args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        trans = weights.transforms()
+        return lambda img, target: (trans(img), target)
     else:
-        fn = PM.detection.__dict__[args.model]
-        weights = PM._api.get_weight(fn, args.weights)
-        return weights.transforms()
+        return presets.DetectionPresetEval(backend=args.backend, use_v2=args.use_v2)
 
 
 def get_args_parser(add_help=True):
@@ -64,7 +74,12 @@ def get_args_parser(add_help=True):
     parser = argparse.ArgumentParser(description="PyTorch Detection Training", add_help=add_help)
 
     parser.add_argument("--data-path", default="/datasets01/COCO/022719/", type=str, help="dataset path")
-    parser.add_argument("--dataset", default="coco", type=str, help="dataset name")
+    parser.add_argument(
+        "--dataset",
+        default="coco",
+        type=str,
+        help="dataset name. Use coco for object detection and instance segmentation and coco_kp for Keypoint detection",
+    )
     parser.add_argument("--model", default="maskrcnn_resnet50_fpn", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
@@ -74,6 +89,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "-j", "--workers", default=4, type=int, metavar="N", help="number of data loading workers (default: 4)"
     )
+    parser.add_argument("--opt", default="sgd", type=str, help="optimizer")
     parser.add_argument(
         "--lr",
         default=0.02,
@@ -89,6 +105,12 @@ def get_args_parser(add_help=True):
         metavar="W",
         help="weight decay (default: 1e-4)",
         dest="weight_decay",
+    )
+    parser.add_argument(
+        "--norm-weight-decay",
+        default=None,
+        type=float,
+        help="weight decay for Normalization layers (default: None, same value as --wd)",
     )
     parser.add_argument(
         "--lr-scheduler", default="multisteplr", type=str, help="name of lr scheduler (default: multisteplr)"
@@ -130,29 +152,43 @@ def get_args_parser(add_help=True):
         help="Only test the model",
         action="store_true",
     )
+
     parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
-
-    # Prototype models only
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--weights-backbone", default=None, type=str, help="the backbone weights enum name to load")
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
+
+    # Use CopyPaste augmentation training parameter
+    parser.add_argument(
+        "--use-copypaste",
+        action="store_true",
+        help="Use CopyPaste data augmentation. Works only with data-augmentation='lsj'.",
+    )
+
+    parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
+    parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
 
     return parser
 
 
 def main(args):
-    if args.weights and PM is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+    if args.backend.lower() == "tv_tensor" and not args.use_v2:
+        raise ValueError("Use --use-v2 if you want to use the tv_tensor backend.")
+    if args.dataset not in ("coco", "coco_kp"):
+        raise ValueError(f"Dataset should be coco or coco_kp, got {args.dataset}")
+    if "keypoint" in args.model and args.dataset != "coco_kp":
+        raise ValueError("Oops, if you want Keypoint detection, set --dataset coco_kp")
+    if args.dataset == "coco_kp" and args.use_v2:
+        raise ValueError("KeyPoint detection doesn't support V2 transforms yet")
+
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -161,16 +197,19 @@ def main(args):
 
     device = torch.device(args.device)
 
+    if args.use_deterministic_algorithms:
+        torch.use_deterministic_algorithms(True)
+
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
+    dataset, num_classes = get_dataset(is_train=True, args=args)
+    dataset_test, _ = get_dataset(is_train=False, args=args)
 
     print("Creating data loaders")
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
@@ -181,8 +220,15 @@ def main(args):
     else:
         train_batch_sampler = torch.utils.data.BatchSampler(train_sampler, args.batch_size, drop_last=True)
 
+    train_collate_fn = utils.collate_fn
+    if args.use_copypaste:
+        if args.data_augmentation != "lsj":
+            raise RuntimeError("SimpleCopyPaste algorithm currently only supports the 'lsj' data augmentation policies")
+
+        train_collate_fn = copypaste_collate_fn
+
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
+        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers, collate_fn=train_collate_fn
     )
 
     data_loader_test = torch.utils.data.DataLoader(
@@ -191,15 +237,14 @@ def main(args):
 
     print("Creating model")
     kwargs = {"trainable_backbone_layers": args.trainable_backbone_layers}
+    if args.data_augmentation in ["multiscale", "lsj"]:
+        kwargs["_skip_resize"] = True
     if "rcnn" in args.model:
         if args.rpn_score_thresh is not None:
             kwargs["rpn_score_thresh"] = args.rpn_score_thresh
-    if not args.weights:
-        model = torchvision.models.detection.__dict__[args.model](
-            pretrained=args.pretrained, num_classes=num_classes, **kwargs
-        )
-    else:
-        model = PM.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
+    model = torchvision.models.get_model(
+        args.model, weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
+    )
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -209,8 +254,26 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
-    params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    if args.norm_weight_decay is None:
+        parameters = [p for p in model.parameters() if p.requires_grad]
+    else:
+        param_groups = torchvision.ops._utils.split_normalization_params(model)
+        wd_groups = [args.norm_weight_decay, args.weight_decay]
+        parameters = [{"params": p, "weight_decay": w} for p, w in zip(param_groups, wd_groups) if p]
+
+    opt_name = args.opt.lower()
+    if opt_name.startswith("sgd"):
+        optimizer = torch.optim.SGD(
+            parameters,
+            lr=args.lr,
+            momentum=args.momentum,
+            weight_decay=args.weight_decay,
+            nesterov="nesterov" in opt_name,
+        )
+    elif opt_name == "adamw":
+        optimizer = torch.optim.AdamW(parameters, lr=args.lr, weight_decay=args.weight_decay)
+    else:
+        raise RuntimeError(f"Invalid optimizer {args.opt}. Only SGD and AdamW are supported.")
 
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
@@ -234,6 +297,7 @@ def main(args):
             scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        torch.backends.cudnn.deterministic = True
         evaluate(model, data_loader_test, device=device)
         return
 

@@ -3,7 +3,10 @@ import warnings
 import torch
 
 
-warnings.warn("The _functional_video module is deprecated. Please use the functional module instead.")
+warnings.warn(
+    "The 'torchvision.transforms._functional_video' module is deprecated since 0.12 and will be removed in the future. "
+    "Please use the 'torchvision.transforms.functional' module instead."
+)
 
 
 def _is_tensor_video_clip(clip):
@@ -21,12 +24,14 @@ def crop(clip, i, j, h, w):
     Args:
         clip (torch.tensor): Video clip to be cropped. Size is (C, T, H, W)
     """
-    assert len(clip.size()) == 4, "clip should be a 4D tensor"
+    if len(clip.size()) != 4:
+        raise ValueError("clip should be a 4D tensor")
     return clip[..., i : i + h, j : j + w]
 
 
 def resize(clip, target_size, interpolation_mode):
-    assert len(target_size) == 2, "target size should be tuple (height, width)"
+    if len(target_size) != 2:
+        raise ValueError(f"target size should be tuple (height, width), instead got {target_size}")
     return torch.nn.functional.interpolate(clip, size=target_size, mode=interpolation_mode, align_corners=False)
 
 
@@ -43,17 +48,20 @@ def resized_crop(clip, i, j, h, w, size, interpolation_mode="bilinear"):
     Returns:
         clip (torch.tensor): Resized and cropped clip. Size is (C, T, H, W)
     """
-    assert _is_tensor_video_clip(clip), "clip should be a 4D torch.tensor"
+    if not _is_tensor_video_clip(clip):
+        raise ValueError("clip should be a 4D torch.tensor")
     clip = crop(clip, i, j, h, w)
     clip = resize(clip, size, interpolation_mode)
     return clip
 
 
 def center_crop(clip, crop_size):
-    assert _is_tensor_video_clip(clip), "clip should be a 4D torch.tensor"
+    if not _is_tensor_video_clip(clip):
+        raise ValueError("clip should be a 4D torch.tensor")
     h, w = clip.size(-2), clip.size(-1)
     th, tw = crop_size
-    assert h >= th and w >= tw, "height and width must be no smaller than crop_size"
+    if h < th or w < tw:
+        raise ValueError("height and width must be no smaller than crop_size")
 
     i = int(round((h - th) / 2.0))
     j = int(round((w - tw) / 2.0))
@@ -84,7 +92,8 @@ def normalize(clip, mean, std, inplace=False):
     Returns:
         normalized clip (torch.tensor): Size is (C, T, H, W)
     """
-    assert _is_tensor_video_clip(clip), "clip should be a 4D torch.tensor"
+    if not _is_tensor_video_clip(clip):
+        raise ValueError("clip should be a 4D torch.tensor")
     if not inplace:
         clip = clip.clone()
     mean = torch.as_tensor(mean, dtype=clip.dtype, device=clip.device)
@@ -100,5 +109,6 @@ def hflip(clip):
     Returns:
         flipped clip (torch.tensor): Size is (C, T, H, W)
     """
-    assert _is_tensor_video_clip(clip), "clip should be a 4D torch.tensor"
+    if not _is_tensor_video_clip(clip):
+        raise ValueError("clip should be a 4D torch.tensor")
     return clip.flip(-1)

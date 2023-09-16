@@ -1,15 +1,21 @@
 from enum import Enum
+from warnings import warn
 
 import torch
 
-from .._internally_replaced_utils import _get_extension_path
+from ..extension import _load_library
+from ..utils import _log_api_usage_once
 
 
 try:
-    lib_path = _get_extension_path("image")
-    torch.ops.load_library(lib_path)
-except (ImportError, OSError):
-    pass
+    _load_library("image")
+except (ImportError, OSError) as e:
+    warn(
+        f"Failed to load image Python extension: '{e}'"
+        f"If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. "
+        f"Otherwise, there might be something wrong with your environment. "
+        f"Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?"
+    )
 
 
 class ImageReadMode(Enum):
@@ -41,19 +47,23 @@ def read_file(path: str) -> torch.Tensor:
     Returns:
         data (Tensor)
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_file)
     data = torch.ops.image.read_file(path)
     return data
 
 
 def write_file(filename: str, data: torch.Tensor) -> None:
     """
-    Writes the contents of a uint8 tensor with one dimension to a
+    Writes the contents of an uint8 tensor with one dimension to a
     file.
 
     Args:
         filename (str): the path to the file to be written
         data (Tensor): the contents to be written to the output file
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_file)
     torch.ops.image.write_file(filename, data)
 
 
@@ -74,6 +84,8 @@ def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGE
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_png)
     output = torch.ops.image.decode_png(input, mode.value, False)
     return output
 
@@ -93,6 +105,8 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
         Tensor[1]: A one dimensional int8 tensor that contains the raw bytes of the
             PNG file.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(encode_png)
     output = torch.ops.image.encode_png(input, compression_level)
     return output
 
@@ -109,6 +123,8 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
         compression_level (int): Compression factor for the resulting file, it must be a number
             between 0 and 9. Default: 6
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_png)
     output = encode_png(input, compression_level)
     write_file(filename, output)
 
@@ -126,7 +142,9 @@ def decode_jpeg(
             the raw bytes of the JPEG image. This tensor must be on CPU,
             regardless of the ``device`` parameter.
         mode (ImageReadMode): the read mode used for optionally
-            converting the image. Default: ``ImageReadMode.UNCHANGED``.
+            converting the image. The supported modes are: ``ImageReadMode.UNCHANGED``,
+            ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``
+            Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
             available modes.
         device (str or torch.device): The device on which the decoded image will
@@ -134,9 +152,17 @@ def decode_jpeg(
             with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
             supported for CUDA version >= 10.1
 
+            .. betastatus:: device parameter
+
+            .. warning::
+                There is a memory leak in the nvjpeg library for CUDA versions < 11.6.
+                Make sure to rely on CUDA 11.6 or above before using ``device="cuda"``.
+
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_jpeg)
     device = torch.device(device)
     if device.type == "cuda":
         output = torch.ops.image.decode_jpeg_cuda(input, mode.value, device)
@@ -160,6 +186,8 @@ def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
         output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the
             JPEG file.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(encode_jpeg)
     if quality < 1 or quality > 100:
         raise ValueError("Image quality should be a positive number between 1 and 100")
 
@@ -178,6 +206,8 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
         quality (int): Quality of the resulting JPEG file, it must be a number
             between 1 and 100. Default: 75
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_jpeg)
     output = encode_jpeg(input, quality)
     write_file(filename, output)
 
@@ -201,6 +231,8 @@ def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_image)
     output = torch.ops.image.decode_image(input, mode.value)
     return output
 
@@ -221,6 +253,8 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torc
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_image)
     data = read_file(path)
     return decode_image(data, mode)
 

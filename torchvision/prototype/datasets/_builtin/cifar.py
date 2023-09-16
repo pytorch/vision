@@ -1,35 +1,22 @@
 import abc
-import functools
 import io
 import pathlib
 import pickle
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Iterator, cast
+from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
-import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Filter,
-    Mapper,
-    TarArchiveReader,
-    Shuffler,
-)
-from torchvision.prototype.datasets.decoder import raw
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
-    DatasetInfo,
-    HttpResource,
-    OnlineResource,
-    DatasetType,
-)
+from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
-    image_buffer_from_array,
+    hint_sharding,
+    hint_shuffling,
     path_comparator,
+    read_categories_file,
 )
+from torchvision.prototype.tv_tensors import Label
+from torchvision.tv_tensors import Image
 
-__all__ = ["Cifar10", "Cifar100"]
+from .._api import register_dataset, register_info
 
 
 class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):
@@ -45,109 +32,111 @@ class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):
 
 
 class _CifarBase(Dataset):
+    _FILE_NAME: str
+    _SHA256: str
     _LABELS_KEY: str
     _META_FILE_NAME: str
     _CATEGORIES_KEY: str
+    _categories: List[str]
+
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        split: str = "train",
+        skip_integrity_check: bool = False,
+    ) -> None:
+        self._split = self._verify_str_arg(split, "split", ("train", "test"))
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
 
     @abc.abstractmethod
-    def _is_data_file(self, data: Tuple[str, io.IOBase], *, config: DatasetConfig) -> Optional[int]:
+    def _is_data_file(self, data: Tuple[str, BinaryIO]) -> Optional[int]:
         pass
+
+    def _resources(self) -> List[OnlineResource]:
+        return [
+            HttpResource(
+                f"https://www.cs.toronto.edu/~kriz/{self._FILE_NAME}",
+                sha256=self._SHA256,
+            )
+        ]
 
     def _unpickle(self, data: Tuple[str, io.BytesIO]) -> Dict[str, Any]:
         _, file = data
-        return cast(Dict[str, Any], pickle.load(file, encoding="latin1"))
+        content = cast(Dict[str, Any], pickle.load(file, encoding="latin1"))
+        file.close()
+        return content
 
-    def _collate_and_decode(
-        self,
-        data: Tuple[np.ndarray, int],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[np.ndarray, int]) -> Dict[str, Any]:
         image_array, category_idx = data
+        return dict(
+            image=Image(image_array),
+            label=Label(category_idx, categories=self._categories),
+        )
 
-        category = self.categories[category_idx]
-        label = torch.tensor(category_idx)
-
-        image: Union[torch.Tensor, io.BytesIO]
-        if decoder is raw:
-            image = torch.from_numpy(image_array)
-        else:
-            image_buffer = image_buffer_from_array(image_array.transpose((1, 2, 0)))
-            image = decoder(image_buffer) if decoder else image_buffer
-
-        return dict(label=label, category=category, image=image)
-
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
-        dp = TarArchiveReader(dp)
-        dp = Filter(dp, functools.partial(self._is_data_file, config=config))
+        dp = Filter(dp, self._is_data_file)
         dp = Mapper(dp, self._unpickle)
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
-        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
+        dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
+        return Mapper(dp, self._prepare_sample)
 
-    def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
-        dp = TarArchiveReader(dp)
+    def __len__(self) -> int:
+        return 50_000 if self._split == "train" else 10_000
+
+    def _generate_categories(self) -> List[str]:
+        resources = self._resources()
+
+        dp = resources[0].load(self._root)
         dp = Filter(dp, path_comparator("name", self._META_FILE_NAME))
         dp = Mapper(dp, self._unpickle)
+
         return cast(List[str], next(iter(dp))[self._CATEGORIES_KEY])
 
 
+@register_info("cifar10")
+def _cifar10_info() -> Dict[str, Any]:
+    return dict(categories=read_categories_file("cifar10"))
+
+
+@register_dataset("cifar10")
 class Cifar10(_CifarBase):
+    """
+    - **homepage**: https://www.cs.toronto.edu/~kriz/cifar.html
+    """
+
+    _FILE_NAME = "cifar-10-python.tar.gz"
+    _SHA256 = "6d958be074577803d12ecdefd02955f39262c83c16fe9348329d7fe0b5c001ce"
     _LABELS_KEY = "labels"
     _META_FILE_NAME = "batches.meta"
     _CATEGORIES_KEY = "label_names"
+    _categories = _cifar10_info()["categories"]
 
-    def _is_data_file(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
+    def _is_data_file(self, data: Tuple[str, Any]) -> bool:
         path = pathlib.Path(data[0])
-        return path.name.startswith("data" if config.split == "train" else "test")
-
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "cifar10",
-            type=DatasetType.RAW,
-            homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
-        )
-
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        return [
-            HttpResource(
-                "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz",
-                sha256="6d958be074577803d12ecdefd02955f39262c83c16fe9348329d7fe0b5c001ce",
-            )
-        ]
+        return path.name.startswith("data" if self._split == "train" else "test")
 
 
+@register_info("cifar100")
+def _cifar100_info() -> Dict[str, Any]:
+    return dict(categories=read_categories_file("cifar100"))
+
+
+@register_dataset("cifar100")
 class Cifar100(_CifarBase):
+    """
+    - **homepage**: https://www.cs.toronto.edu/~kriz/cifar.html
+    """
+
+    _FILE_NAME = "cifar-100-python.tar.gz"
+    _SHA256 = "85cd44d02ba6437773c5bbd22e183051d648de2e7d6b014e1ef29b855ba677a7"
     _LABELS_KEY = "fine_labels"
     _META_FILE_NAME = "meta"
     _CATEGORIES_KEY = "fine_label_names"
+    _categories = _cifar100_info()["categories"]
 
-    def _is_data_file(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
+    def _is_data_file(self, data: Tuple[str, Any]) -> bool:
         path = pathlib.Path(data[0])
-        return path.name == cast(str, config.split)
-
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "cifar100",
-            type=DatasetType.RAW,
-            homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
-            valid_options=dict(
-                split=("train", "test"),
-            ),
-        )
-
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        return [
-            HttpResource(
-                "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz",
-                sha256="85cd44d02ba6437773c5bbd22e183051d648de2e7d6b014e1ef29b855ba677a7",
-            )
-        ]
+        return path.name == self._split

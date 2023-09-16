@@ -1,18 +1,17 @@
 import io
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import pytest
 import torch
-from common_utils import set_rng_seed, assert_equal
-from torchvision import models
-from torchvision import ops
+from common_utils import assert_equal, set_rng_seed
+from torchvision import models, ops
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.roi_heads import RoIHeads
-from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from torchvision.models.detection.rpn import AnchorGenerator, RegionProposalNetwork, RPNHead
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
-from torchvision.ops._register_onnx_ops import _onnx_opset_version
+from torchvision.ops import _register_onnx_ops
 
 # In environments without onnxruntime we prefer to
 # invoke all tests in the repo and have this one skipped rather than fail.
@@ -28,12 +27,15 @@ class TestONNXExporter:
         self,
         model,
         inputs_list,
-        tolerate_small_mismatch=False,
         do_constant_folding=True,
         dynamic_axes=None,
         output_names=None,
         input_names=None,
+        opset_version: Optional[int] = None,
     ):
+        if opset_version is None:
+            opset_version = _register_onnx_ops.BASE_ONNX_OPSET_VERSION
+
         model.eval()
 
         onnx_io = io.BytesIO()
@@ -47,10 +49,11 @@ class TestONNXExporter:
             torch_onnx_input,
             onnx_io,
             do_constant_folding=do_constant_folding,
-            opset_version=_onnx_opset_version,
+            opset_version=opset_version,
             dynamic_axes=dynamic_axes,
             input_names=input_names,
             output_names=output_names,
+            verbose=True,
         )
         # validate the exported model with onnx runtime
         for test_inputs in inputs_list:
@@ -60,9 +63,9 @@ class TestONNXExporter:
                 test_ouputs = model(*test_inputs)
                 if isinstance(test_ouputs, torch.Tensor):
                     test_ouputs = (test_ouputs,)
-            self.ort_validate(onnx_io, test_inputs, test_ouputs, tolerate_small_mismatch)
+            self.ort_validate(onnx_io, test_inputs, test_ouputs)
 
-    def ort_validate(self, onnx_io, inputs, outputs, tolerate_small_mismatch=False):
+    def ort_validate(self, onnx_io, inputs, outputs):
 
         inputs, _ = torch.jit._flatten(inputs)
         outputs, _ = torch.jit._flatten(outputs)
@@ -82,13 +85,7 @@ class TestONNXExporter:
         ort_outs = ort_session.run(None, ort_inputs)
 
         for i in range(0, len(outputs)):
-            try:
-                torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
-            except AssertionError as error:
-                if tolerate_small_mismatch:
-                    assert "(0.00%)" in str(error), str(error)
-                else:
-                    raise
+            torch.testing.assert_close(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
 
     def test_nms(self):
         num_boxes = 100
@@ -142,37 +139,38 @@ class TestONNXExporter:
         self.run_model(model, [(x, single_roi)])
 
     def test_roi_align_aligned(self):
+        supported_onnx_version = _register_onnx_ops._ONNX_OPSET_VERSION_16
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 1.5, 1.5, 3, 3]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 0.5, 3, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1.8, 2, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((2, 2), 2.5, 0, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((2, 2), 2.5, -1, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
-    @pytest.mark.skip(reason="Issue in exporting ROIAlign with aligned = True for malformed boxes")
     def test_roi_align_malformed_boxes(self):
+        supported_onnx_version = _register_onnx_ops._ONNX_OPSET_VERSION_16
         x = torch.randn(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 2, 0.3, 1.5, 1.5]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 1, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
     def test_roi_pool(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
@@ -264,7 +262,7 @@ class TestONNXExporter:
 
         resolution = box_roi_pool.output_size[0]
         representation_size = 1024
-        box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
+        box_head = TwoMLPHead(out_channels * resolution**2, representation_size)
 
         representation_size = 1024
         box_predictor = FastRCNNPredictor(representation_size, num_classes)
@@ -320,7 +318,6 @@ class TestONNXExporter:
         self.run_model(
             model,
             [(images, features), (images2, test_features)],
-            tolerate_small_mismatch=True,
             input_names=["input1", "input2", "input3", "input4", "input5", "input6"],
             dynamic_axes={
                 "input1": [0, 1, 2, 3],
@@ -396,7 +393,6 @@ class TestONNXExporter:
         self.run_model(
             model,
             [(images, features), (images2, test_features)],
-            tolerate_small_mismatch=True,
             input_names=["input1", "input2", "input3", "input4", "input5", "input6"],
             dynamic_axes={
                 "input1": [0, 1, 2, 3],
@@ -412,13 +408,13 @@ class TestONNXExporter:
         import os
 
         from PIL import Image
-        from torchvision import transforms
+        from torchvision.transforms import functional as F
 
         data_dir = os.path.join(os.path.dirname(__file__), "assets")
         path = os.path.join(data_dir, *rel_path.split("/"))
         image = Image.open(path).convert("RGB").resize(size, Image.BILINEAR)
 
-        return transforms.ToTensor()(image)
+        return F.convert_image_dtype(F.pil_to_tensor(image))
 
     def get_test_images(self) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
         return (
@@ -429,7 +425,9 @@ class TestONNXExporter:
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(
+            weights=models.detection.faster_rcnn.FasterRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         # Test exported model on images of different size, or dummy input
@@ -439,7 +437,6 @@ class TestONNXExporter:
             input_names=["images_tensors"],
             output_names=["outputs"],
             dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
-            tolerate_small_mismatch=True,
         )
         # Test exported model for an image with no detections on other images
         self.run_model(
@@ -448,7 +445,6 @@ class TestONNXExporter:
             input_names=["images_tensors"],
             output_names=["outputs"],
             dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
-            tolerate_small_mismatch=True,
         )
 
     # Verify that paste_mask_in_image beahves the same in tracing.
@@ -485,7 +481,9 @@ class TestONNXExporter:
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(
+            weights=models.detection.mask_rcnn.MaskRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         # Test exported model on images of different size, or dummy input
@@ -501,7 +499,6 @@ class TestONNXExporter:
                 "scores": [0],
                 "masks": [0, 1, 2],
             },
-            tolerate_small_mismatch=True,
         )
         # Test exported model for an image with no detections on other images
         self.run_model(
@@ -516,7 +513,6 @@ class TestONNXExporter:
                 "scores": [0],
                 "masks": [0, 1, 2],
             },
-            tolerate_small_mismatch=True,
         )
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
@@ -547,7 +543,9 @@ class TestONNXExporter:
     def test_keypoint_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_images = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
+            weights=models.detection.keypoint_rcnn.KeypointRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         self.run_model(
@@ -556,7 +554,6 @@ class TestONNXExporter:
             input_names=["images_tensors"],
             output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
             dynamic_axes={"images_tensors": [0, 1, 2]},
-            tolerate_small_mismatch=True,
         )
 
         self.run_model(
@@ -565,11 +562,10 @@ class TestONNXExporter:
             input_names=["images_tensors"],
             output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
             dynamic_axes={"images_tensors": [0, 1, 2]},
-            tolerate_small_mismatch=True,
         )
 
     def test_shufflenet_v2_dynamic_axes(self):
-        model = models.shufflenet_v2_x0_5(pretrained=True)
+        model = models.shufflenet_v2_x0_5(weights=models.ShuffleNet_V2_X0_5_Weights.DEFAULT)
         dummy_input = torch.randn(1, 3, 224, 224, requires_grad=True)
         test_inputs = torch.cat([dummy_input, dummy_input, dummy_input], 0)
 
@@ -579,7 +575,6 @@ class TestONNXExporter:
             input_names=["input_images"],
             output_names=["output"],
             dynamic_axes={"input_images": {0: "batch_size"}, "output": {0: "batch_size"}},
-            tolerate_small_mismatch=True,
         )
 
 

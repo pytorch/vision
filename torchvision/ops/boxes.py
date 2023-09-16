@@ -6,7 +6,8 @@ from torch import Tensor
 from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once
-from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
+from ._box_convert import _box_cxcywh_to_xyxy, _box_xywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xyxy_to_xywh
+from ._utils import _upcast
 
 
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
@@ -34,7 +35,8 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
         Tensor: int64 tensor with the indices of the elements that have been kept
         by NMS, sorted in decreasing order of scores
     """
-    _log_api_usage_once("torchvision.ops.nms")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(nms)
     _assert_has_ops()
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
@@ -63,11 +65,11 @@ def batched_nms(
         Tensor: int64 tensor with the indices of the elements that have been kept by NMS, sorted
         in decreasing order of scores
     """
-    _log_api_usage_once("torchvision.ops.batched_nms")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(batched_nms)
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
-    # Ideally for GPU we'd use a higher threshold
-    if boxes.numel() > 4_000 and not torchvision._is_tracing():
+    if boxes.numel() > (4000 if boxes.device.type == "cpu" else 20000) and not torchvision._is_tracing():
         return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
     else:
         return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
@@ -123,7 +125,8 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
         Tensor[K]: indices of the boxes that have both sides
         larger than min_size
     """
-    _log_api_usage_once("torchvision.ops.remove_small_boxes")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(remove_small_boxes)
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
     keep = torch.where(keep)[0]
@@ -142,7 +145,8 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     Returns:
         Tensor[N, 4]: clipped boxes
     """
-    _log_api_usage_once("torchvision.ops.clip_boxes_to_image")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(clip_boxes_to_image)
     dim = boxes.dim()
     boxes_x = boxes[..., 0::2]
     boxes_y = boxes[..., 1::2]
@@ -182,8 +186,8 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     Returns:
         Tensor[N, 4]: Boxes into converted format.
     """
-
-    _log_api_usage_once("torchvision.ops.box_convert")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(box_convert)
     allowed_fmts = ("xyxy", "xywh", "cxcywh")
     if in_fmt not in allowed_fmts or out_fmt not in allowed_fmts:
         raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
@@ -212,14 +216,6 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     return boxes
 
 
-def _upcast(t: Tensor) -> Tensor:
-    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
-    if t.is_floating_point():
-        return t if t.dtype in (torch.float32, torch.float64) else t.float()
-    else:
-        return t if t.dtype in (torch.int32, torch.int64) else t.int()
-
-
 def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by their
@@ -233,7 +229,8 @@ def box_area(boxes: Tensor) -> Tensor:
     Returns:
         Tensor[N]: the area for each box
     """
-    _log_api_usage_once("torchvision.ops.box_area")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(box_area)
     boxes = _upcast(boxes)
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
@@ -269,7 +266,8 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     Returns:
         Tensor[N, M]: the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
-    _log_api_usage_once("torchvision.ops.box_iou")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(box_iou)
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
     return iou
@@ -291,12 +289,8 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         Tensor[N, M]: the NxM matrix containing the pairwise generalized IoU values
         for every element in boxes1 and boxes2
     """
-
-    _log_api_usage_once("torchvision.ops.generalized_box_iou")
-    # degenerate boxes gives inf / nan results
-    # so do an early check
-    assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
-    assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(generalized_box_iou)
 
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
@@ -308,6 +302,85 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     areai = whi[:, :, 0] * whi[:, :, 1]
 
     return iou - (areai - union) / areai
+
+
+def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tensor:
+    """
+    Return complete intersection-over-union (Jaccard index) between two sets of boxes.
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+    Args:
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
+        eps (float, optional): small number to prevent division by zero. Default: 1e-7
+    Returns:
+        Tensor[N, M]: the NxM matrix containing the pairwise complete IoU values
+        for every element in boxes1 and boxes2
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(complete_box_iou)
+
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
+
+    diou, iou = _box_diou_iou(boxes1, boxes2, eps)
+
+    w_pred = boxes1[:, None, 2] - boxes1[:, None, 0]
+    h_pred = boxes1[:, None, 3] - boxes1[:, None, 1]
+
+    w_gt = boxes2[:, 2] - boxes2[:, 0]
+    h_gt = boxes2[:, 3] - boxes2[:, 1]
+
+    v = (4 / (torch.pi**2)) * torch.pow(torch.atan(w_pred / h_pred) - torch.atan(w_gt / h_gt), 2)
+    with torch.no_grad():
+        alpha = v / (1 - iou + v + eps)
+    return diou - alpha * v
+
+
+def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tensor:
+    """
+    Return distance intersection-over-union (Jaccard index) between two sets of boxes.
+
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+
+    Args:
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
+        eps (float, optional): small number to prevent division by zero. Default: 1e-7
+
+    Returns:
+        Tensor[N, M]: the NxM matrix containing the pairwise distance IoU values
+        for every element in boxes1 and boxes2
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(distance_box_iou)
+
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
+    diou, _ = _box_diou_iou(boxes1, boxes2, eps=eps)
+    return diou
+
+
+def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Tensor, Tensor]:
+
+    iou = box_iou(boxes1, boxes2)
+    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+    whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
+    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
+    # centers of boxes
+    x_p = (boxes1[:, 0] + boxes1[:, 2]) / 2
+    y_p = (boxes1[:, 1] + boxes1[:, 3]) / 2
+    x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
+    y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
+    # The distance between boxes' centers squared.
+    centers_distance_squared = (_upcast((x_p[:, None] - x_g[None, :])) ** 2) + (
+        _upcast((y_p[:, None] - y_g[None, :])) ** 2
+    )
+    # The distance IoU is the IoU penalized by a normalized
+    # distance between boxes' centers squared.
+    return iou - (centers_distance_squared / diagonal_distance_squared), iou
 
 
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
@@ -324,7 +397,8 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     Returns:
         Tensor[N, 4]: bounding boxes
     """
-    _log_api_usage_once("torchvision.ops.masks_to_boxes")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(masks_to_boxes)
     if masks.numel() == 0:
         return torch.zeros((0, 4), device=masks.device, dtype=torch.float)
 

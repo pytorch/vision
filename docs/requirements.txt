@@ -1,6 +1,8 @@
 matplotlib
 numpy
 sphinx-copybutton>=0.3.1
-sphinx-gallery>=0.9.0
-sphinx==3.5.4
+sphinx-gallery>=0.11.1
+sphinx==5.0.0
+tabulate
 -e git+https://github.com/pytorch/pytorch_sphinx_theme.git#egg=pytorch_sphinx_theme
+pycocotools

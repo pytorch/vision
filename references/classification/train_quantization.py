@@ -4,23 +4,15 @@ import os
 import time
 
 import torch
-import torch.quantization
+import torch.ao.quantization
 import torch.utils.data
 import torchvision
 import utils
 from torch import nn
-from train import train_one_epoch, evaluate, load_data
-
-
-try:
-    from torchvision.prototype import models as PM
-except ImportError:
-    PM = None
+from train import evaluate, load_data, train_one_epoch
 
 
 def main(args):
-    if args.weights and PM is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -54,16 +46,17 @@ def main(args):
 
     print("Creating model", args.model)
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    if not args.weights:
-        model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
-    else:
-        model = PM.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
+    prefix = "quantized_"
+    model_name = args.model
+    if not model_name.startswith(prefix):
+        model_name = prefix + model_name
+    model = torchvision.models.get_model(model_name, weights=args.weights, quantize=args.test_only)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
-        model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qat_qconfig(args.backend)
-        torch.quantization.prepare_qat(model, inplace=True)
+        model.fuse_model(is_qat=True)
+        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
+        torch.ao.quantization.prepare_qat(model, inplace=True)
 
         if args.distributed and args.sync_bn:
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -95,13 +88,13 @@ def main(args):
             ds, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True
         )
         model.eval()
-        model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qconfig(args.backend)
-        torch.quantization.prepare(model, inplace=True)
+        model.fuse_model(is_qat=False)
+        model.qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
+        torch.ao.quantization.prepare(model, inplace=True)
         # Calibrate first
         print("Calibrating")
         evaluate(model, criterion, data_loader_calibration, device=device, print_freq=1)
-        torch.quantization.convert(model, inplace=True)
+        torch.ao.quantization.convert(model, inplace=True)
         if args.output_dir:
             print("Saving quantized model")
             if utils.is_main_process():
@@ -114,29 +107,29 @@ def main(args):
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
-    model.apply(torch.quantization.enable_observer)
-    model.apply(torch.quantization.enable_fake_quant)
+    model.apply(torch.ao.quantization.enable_observer)
+    model.apply(torch.ao.quantization.enable_fake_quant)
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         print("Starting training for epoch", epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
+        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args)
         lr_scheduler.step()
         with torch.inference_mode():
             if epoch >= args.num_observer_update_epochs:
                 print("Disabling observer for subseq epochs, epoch = ", epoch)
-                model.apply(torch.quantization.disable_observer)
+                model.apply(torch.ao.quantization.disable_observer)
             if epoch >= args.num_batch_norm_update_epochs:
                 print("Freezing BN for subseq epochs, epoch = ", epoch)
                 model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
             print("Evaluate QAT model")
 
-            evaluate(model, criterion, data_loader_test, device=device)
+            evaluate(model, criterion, data_loader_test, device=device, log_suffix="QAT")
             quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device("cpu"))
-            torch.quantization.convert(quantized_eval_model, inplace=True)
+            torch.ao.quantization.convert(quantized_eval_model, inplace=True)
 
             print("Evaluate Quantized model")
             evaluate(quantized_eval_model, criterion, data_loader_test, device=torch.device("cpu"))
@@ -261,8 +254,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
-
-    # Prototype models only
+    parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser

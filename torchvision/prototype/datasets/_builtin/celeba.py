@@ -1,27 +1,21 @@
 import csv
-import io
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence
+import pathlib
+from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Shuffler,
-    Filter,
-    ZipArchiveReader,
-    Zipper,
-    IterKeyZipper,
+from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import (
+    getitem,
+    hint_sharding,
+    hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_accessor,
 )
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
-    DatasetInfo,
-    GDriveResource,
-    OnlineResource,
-    DatasetType,
-)
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, getitem, path_accessor
+from torchvision.prototype.tv_tensors import Label
+from torchvision.tv_tensors import BoundingBoxes
 
+from .._api import register_dataset, register_info
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 
@@ -29,7 +23,7 @@ csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
     def __init__(
         self,
-        datapipe: IterDataPipe[Tuple[Any, io.IOBase]],
+        datapipe: IterDataPipe[Tuple[Any, BinaryIO]],
         *,
         fieldnames: Optional[Sequence[str]] = None,
     ) -> None:
@@ -38,34 +32,54 @@ class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
 
     def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
         for _, file in self.datapipe:
-            file = (line.decode() for line in file)
+            try:
+                lines = (line.decode() for line in file)
 
-            if self.fieldnames:
-                fieldnames = self.fieldnames
-            else:
-                # The first row is skipped, because it only contains the number of samples
-                next(file)
+                if self.fieldnames:
+                    fieldnames = self.fieldnames
+                else:
+                    # The first row is skipped, because it only contains the number of samples
+                    next(lines)
 
-                # Empty field names are filtered out, because some files have an extra white space after the header
-                # line, which is recognized as extra column
-                fieldnames = [name for name in next(csv.reader([next(file)], dialect="celeba")) if name]
-                # Some files do not include a label for the image ID column
-                if fieldnames[0] != "image_id":
-                    fieldnames.insert(0, "image_id")
+                    # Empty field names are filtered out, because some files have an extra white space after the header
+                    # line, which is recognized as extra column
+                    fieldnames = [name for name in next(csv.reader([next(lines)], dialect="celeba")) if name]
+                    # Some files do not include a label for the image ID column
+                    if fieldnames[0] != "image_id":
+                        fieldnames.insert(0, "image_id")
 
-            for line in csv.DictReader(file, fieldnames=fieldnames, dialect="celeba"):
-                yield line.pop("image_id"), line
+                for line in csv.DictReader(lines, fieldnames=fieldnames, dialect="celeba"):
+                    yield line.pop("image_id"), line
+            finally:
+                file.close()
 
 
+NAME = "celeba"
+
+
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    return dict()
+
+
+@register_dataset(NAME)
 class CelebA(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "celeba",
-            type=DatasetType.IMAGE,
-            homepage="https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html",
-        )
+    """
+    - **homepage**: https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
+    """
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        split: str = "train",
+        skip_integrity_check: bool = False,
+    ) -> None:
+        self._split = self._verify_str_arg(split, "split", ("train", "val", "test"))
+
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
+
+    def _resources(self) -> List[OnlineResource]:
         splits = GDriveResource(
             "0B7EVK8r0v71pY0NSMzRuSXJEVkk",
             sha256="fc955bcb3ef8fbdf7d5640d9a8693a8431b5f2ee291a5c1449a1549e7e073fe7",
@@ -86,7 +100,7 @@ class CelebA(Dataset):
             sha256="f0e5da289d5ccf75ffe8811132694922b60f2af59256ed362afa03fefba324d0",
             file_name="list_attr_celeba.txt",
         )
-        bboxes = GDriveResource(
+        bounding_boxes = GDriveResource(
             "0B7EVK8r0v71pbThiMVRxWXZ4dU0",
             sha256="7487a82e57c4bb956c5445ae2df4a91ffa717e903c5fa22874ede0820c8ec41b",
             file_name="list_bbox_celeba.txt",
@@ -96,65 +110,58 @@ class CelebA(Dataset):
             sha256="6c02a87569907f6db2ba99019085697596730e8129f67a3d61659f198c48d43b",
             file_name="list_landmarks_align_celeba.txt",
         )
-        return [splits, images, identities, attributes, bboxes, landmarks]
+        return [splits, images, identities, attributes, bounding_boxes, landmarks]
 
-    _SPLIT_ID_TO_NAME = {
-        "0": "train",
-        "1": "valid",
-        "2": "test",
-    }
+    def _filter_split(self, data: Tuple[str, Dict[str, str]]) -> bool:
+        split_id = {
+            "train": "0",
+            "val": "1",
+            "test": "2",
+        }[self._split]
+        return data[1]["split_id"] == split_id
 
-    def _filter_split(self, data: Tuple[str, Dict[str, str]], *, split: str) -> bool:
-        return self._SPLIT_ID_TO_NAME[data[1]["split_id"]] == split
-
-    def _collate_anns(self, data: Tuple[Tuple[str, Dict[str, str]], ...]) -> Tuple[str, Dict[str, Dict[str, str]]]:
-        (image_id, identity), (_, attributes), (_, bbox), (_, landmarks) = data
-        return image_id, dict(identity=identity, attributes=attributes, bbox=bbox, landmarks=landmarks)
-
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self,
-        data: Tuple[Tuple[str, Tuple[str, List[str]], Tuple[str, io.IOBase]], Tuple[str, Dict[str, Any]]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        data: Tuple[
+            Tuple[str, Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]],
+            Tuple[
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+            ],
+        ],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
-        _, _, image_data = split_and_image_data
+        _, (_, image_data) = split_and_image_data
         path, buffer = image_data
-        _, ann = ann_data
 
-        image = decoder(buffer) if decoder else buffer
-
-        identity = int(ann["identity"]["identity"])
-        attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
-        bbox = torch.tensor([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
-        landmarks = {
-            landmark: torch.tensor((int(ann["landmarks"][f"{landmark}_x"]), int(ann["landmarks"][f"{landmark}_y"])))
-            for landmark in {key[:-2] for key in ann["landmarks"].keys()}
-        }
+        image = EncodedImage.from_file(buffer)
+        (_, identity), (_, attributes), (_, bounding_boxes), (_, landmarks) = ann_data
 
         return dict(
             path=path,
             image=image,
-            identity=identity,
-            attributes=attributes,
-            bbox=bbox,
-            landmarks=landmarks,
+            identity=Label(int(identity["identity"])),
+            attributes={attr: value == "1" for attr, value in attributes.items()},
+            bounding_boxes=BoundingBoxes(
+                [int(bounding_boxes[key]) for key in ("x_1", "y_1", "width", "height")],
+                format="xywh",
+                spatial_size=image.spatial_size,
+            ),
+            landmarks={
+                landmark: torch.tensor((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
+                for landmark in {key[:-2] for key in landmarks.keys()}
+            },
         )
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> IterDataPipe[Dict[str, Any]]:
-        splits_dp, images_dp, identities_dp, attributes_dp, bboxes_dp, landmarks_dp = resource_dps
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+        splits_dp, images_dp, identities_dp, attributes_dp, bounding_boxes_dp, landmarks_dp = resource_dps
 
         splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))
-        splits_dp = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
-        splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
-
-        images_dp = ZipArchiveReader(images_dp)
+        splits_dp = Filter(splits_dp, self._filter_split)
+        splits_dp = hint_shuffling(splits_dp)
+        splits_dp = hint_sharding(splits_dp)
 
         anns_dp = Zipper(
             *[
@@ -162,12 +169,11 @@ class CelebA(Dataset):
                 for dp, fieldnames in (
                     (identities_dp, ("image_id", "identity")),
                     (attributes_dp, None),
-                    (bboxes_dp, None),
+                    (bounding_boxes_dp, None),
                     (landmarks_dp, None),
                 )
             ]
         )
-        anns_dp = Mapper(anns_dp, self._collate_anns)
 
         dp = IterKeyZipper(
             splits_dp,
@@ -177,5 +183,18 @@ class CelebA(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )
-        dp = IterKeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        dp = IterKeyZipper(
+            dp,
+            anns_dp,
+            key_fn=getitem(0),
+            ref_key_fn=getitem(0, 0),
+            buffer_size=INFINITE_BUFFER_SIZE,
+        )
+        return Mapper(dp, self._prepare_sample)
+
+    def __len__(self) -> int:
+        return {
+            "train": 162_770,
+            "val": 19_867,
+            "test": 19_962,
+        }[self._split]

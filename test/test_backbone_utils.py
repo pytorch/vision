@@ -1,26 +1,44 @@
 import random
 from itertools import chain
+from typing import Mapping, Sequence
 
 import pytest
 import torch
 from common_utils import set_rng_seed
 from torchvision import models
 from torchvision.models._utils import IntermediateLayerGetter
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-from torchvision.models.feature_extraction import create_feature_extractor
-from torchvision.models.feature_extraction import get_graph_node_names
-
-
-def get_available_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+from torchvision.models.detection.backbone_utils import BackboneWithFPN, mobilenet_backbone, resnet_fpn_backbone
+from torchvision.models.feature_extraction import create_feature_extractor, get_graph_node_names
 
 
 @pytest.mark.parametrize("backbone_name", ("resnet18", "resnet50"))
 def test_resnet_fpn_backbone(backbone_name):
     x = torch.rand(1, 3, 300, 300, dtype=torch.float32, device="cpu")
-    y = resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False)(x)
+    model = resnet_fpn_backbone(backbone_name=backbone_name, weights=None)
+    assert isinstance(model, BackboneWithFPN)
+    y = model(x)
     assert list(y.keys()) == ["0", "1", "2", "3", "pool"]
+
+    with pytest.raises(ValueError, match=r"Trainable layers should be in the range"):
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, trainable_layers=6)
+    with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, returned_layers=[0, 1, 2, 3])
+    with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, returned_layers=[2, 3, 4, 5])
+
+
+@pytest.mark.parametrize("backbone_name", ("mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"))
+def test_mobilenet_backbone(backbone_name):
+    with pytest.raises(ValueError, match=r"Trainable layers should be in the range"):
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=False, trainable_layers=-1)
+    with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True, returned_layers=[-1, 0, 1, 2])
+    with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True, returned_layers=[3, 4, 5, 6])
+    model_fpn = mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True)
+    assert isinstance(model_fpn, BackboneWithFPN)
+    model = mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=False)
+    assert isinstance(model, torch.nn.Sequential)
 
 
 # Needed by TestFxFeatureExtraction.test_leaf_module_and_function
@@ -73,7 +91,7 @@ test_module_nodes = [
 
 class TestFxFeatureExtraction:
     inp = torch.rand(1, 3, 224, 224, dtype=torch.float32, device="cpu")
-    model_defaults = {"num_classes": 1, "pretrained": False}
+    model_defaults = {"num_classes": 1}
     leaf_modules = []
 
     def _create_feature_extractor(self, *args, **kwargs):
@@ -89,7 +107,16 @@ class TestFxFeatureExtraction:
 
     def _get_return_nodes(self, model):
         set_rng_seed(0)
-        exclude_nodes_filter = ["getitem", "floordiv", "size", "chunk"]
+        exclude_nodes_filter = [
+            "getitem",
+            "floordiv",
+            "size",
+            "chunk",
+            "_assert",
+            "eq",
+            "dim",
+            "getattr",
+        ]
         train_nodes, eval_nodes = get_graph_node_names(
             model, tracer_kwargs={"leaf_modules": self.leaf_modules}, suppress_diff_warning=True
         )
@@ -99,10 +126,10 @@ class TestFxFeatureExtraction:
         eval_nodes = [n for n in eval_nodes if not any(x in n for x in exclude_nodes_filter)]
         return random.sample(train_nodes, 10), random.sample(eval_nodes, 10)
 
-    @pytest.mark.parametrize("model_name", get_available_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_build_fx_feature_extractor(self, model_name):
         set_rng_seed(0)
-        model = models.__dict__[model_name](**self.model_defaults).eval()
+        model = models.get_model(model_name, **self.model_defaults).eval()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
         # Check that it works with both a list and dict for return nodes
         self._create_feature_extractor(
@@ -112,16 +139,16 @@ class TestFxFeatureExtraction:
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
         # Check must specify return nodes
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             self._create_feature_extractor(model)
         # Check return_nodes and train_return_nodes / eval_return nodes
         # mutual exclusivity
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             self._create_feature_extractor(
                 model, return_nodes=train_return_nodes, train_return_nodes=train_return_nodes
             )
         # Check train_return_nodes / eval_return nodes must both be specified
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             self._create_feature_extractor(model, train_return_nodes=train_return_nodes)
         # Check invalid node name raises ValueError
         with pytest.raises(ValueError):
@@ -136,15 +163,24 @@ class TestFxFeatureExtraction:
         train_nodes, _ = get_graph_node_names(model)
         assert all(a == b for a, b in zip(train_nodes, test_module_nodes))
 
-    @pytest.mark.parametrize("model_name", get_available_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_forward_backward(self, model_name):
-        model = models.__dict__[model_name](**self.model_defaults).train()
+        model = models.get_model(model_name, **self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
         model = self._create_feature_extractor(
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
         out = model(self.inp)
-        sum(o.mean() for o in out.values()).backward()
+        out_agg = 0
+        for node_out in out.values():
+            if isinstance(node_out, Sequence):
+                out_agg += sum(o.float().mean() for o in node_out if o is not None)
+            elif isinstance(node_out, Mapping):
+                out_agg += sum(o.float().mean() for o in node_out.values() if o is not None)
+            else:
+                # Assume that the only other alternative at this point is a Tensor
+                out_agg += node_out.float().mean()
+        out_agg.backward()
 
     def test_feature_extraction_methods_equivalence(self):
         model = models.resnet18(**self.model_defaults).eval()
@@ -158,7 +194,7 @@ class TestFxFeatureExtraction:
             assert n1 == n2
             assert p1.equal(p2)
 
-        # And that ouputs match
+        # And that outputs match
         with torch.no_grad():
             ilg_out = ilg_model(self.inp)
             fgn_out = fx_model(self.inp)
@@ -166,17 +202,26 @@ class TestFxFeatureExtraction:
         for k in ilg_out.keys():
             assert ilg_out[k].equal(fgn_out[k])
 
-    @pytest.mark.parametrize("model_name", get_available_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_jit_forward_backward(self, model_name):
         set_rng_seed(0)
-        model = models.__dict__[model_name](**self.model_defaults).train()
+        model = models.get_model(model_name, **self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
         model = self._create_feature_extractor(
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
         model = torch.jit.script(model)
         fgn_out = model(self.inp)
-        sum(o.mean() for o in fgn_out.values()).backward()
+        out_agg = 0
+        for node_out in fgn_out.values():
+            if isinstance(node_out, Sequence):
+                out_agg += sum(o.float().mean() for o in node_out if o is not None)
+            elif isinstance(node_out, Mapping):
+                out_agg += sum(o.float().mean() for o in node_out.values() if o is not None)
+            else:
+                # Assume that the only other alternative at this point is a Tensor
+                out_agg += node_out.float().mean()
+        out_agg.backward()
 
     def test_train_eval(self):
         class TestModel(torch.nn.Module):
@@ -185,7 +230,7 @@ class TestFxFeatureExtraction:
                 self.dropout = torch.nn.Dropout(p=1.0)
 
             def forward(self, x):
-                x = x.mean()
+                x = x.float().mean()
                 x = self.dropout(x)  # dropout
                 if self.training:
                     x += 100  # add
@@ -276,4 +321,4 @@ class TestFxFeatureExtraction:
         # Check forward
         out = model(self.inp)
         # And backward
-        out["leaf_module"].mean().backward()
+        out["leaf_module"].float().mean().backward()

@@ -1,16 +1,11 @@
 import os
 from os.path import abspath, expanduser
-from typing import Any, Callable, List, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 from PIL import Image
 
-from .utils import (
-    download_file_from_google_drive,
-    download_and_extract_archive,
-    extract_archive,
-    verify_str_arg,
-)
+from .utils import download_and_extract_archive, download_file_from_google_drive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -142,13 +137,13 @@ class WIDERFace(VisionDataset):
                             {
                                 "img_path": img_path,
                                 "annotations": {
-                                    "bbox": labels_tensor[:, 0:4],  # x, y, width, height
-                                    "blur": labels_tensor[:, 4],
-                                    "expression": labels_tensor[:, 5],
-                                    "illumination": labels_tensor[:, 6],
-                                    "occlusion": labels_tensor[:, 7],
-                                    "pose": labels_tensor[:, 8],
-                                    "invalid": labels_tensor[:, 9],
+                                    "bbox": labels_tensor[:, 0:4].clone(),  # x, y, width, height
+                                    "blur": labels_tensor[:, 4].clone(),
+                                    "expression": labels_tensor[:, 5].clone(),
+                                    "illumination": labels_tensor[:, 6].clone(),
+                                    "occlusion": labels_tensor[:, 7].clone(),
+                                    "pose": labels_tensor[:, 8].clone(),
+                                    "invalid": labels_tensor[:, 9].clone(),
                                 },
                             }
                         )

@@ -1,22 +1,21 @@
 import warnings
 from collections import namedtuple
-from typing import Callable, Any, Optional, Tuple, List
+from functools import partial
+from typing import Any, Callable, List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from .._internally_replaced_utils import load_state_dict_from_url
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
+from ._api import register_model, Weights, WeightsEnum
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
-__all__ = ["Inception3", "inception_v3", "InceptionOutputs", "_InceptionOutputs"]
+__all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "Inception_V3_Weights", "inception_v3"]
 
-
-model_urls = {
-    # Inception v3 ported from TensorFlow
-    "inception_v3_google": "https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
-}
 
 InceptionOutputs = namedtuple("InceptionOutputs", ["logits", "aux_logits"])
 InceptionOutputs.__annotations__ = {"logits": Tensor, "aux_logits": Optional[Tensor]}
@@ -48,7 +47,8 @@ class Inception3(nn.Module):
                 FutureWarning,
             )
             init_weights = True
-        assert len(inception_blocks) == 7
+        if len(inception_blocks) != 7:
+            raise ValueError(f"length of inception_blocks should be 7 instead of {len(inception_blocks)}")
         conv_block = inception_blocks[0]
         inception_a = inception_blocks[1]
         inception_b = inception_blocks[2]
@@ -407,38 +407,72 @@ class BasicConv2d(nn.Module):
         return F.relu(x, inplace=True)
 
 
-def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> Inception3:
-    r"""Inception v3 model architecture from
-    `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
-    The required minimum input size of the model is 75x75.
+class Inception_V3_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
+        transforms=partial(ImageClassification, crop_size=299, resize_size=342),
+        meta={
+            "num_params": 27161264,
+            "min_size": (75, 75),
+            "categories": _IMAGENET_CATEGORIES,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#inception-v3",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.294,
+                    "acc@5": 93.450,
+                }
+            },
+            "_ops": 5.713,
+            "_file_size": 103.903,
+            "_docs": """These weights are ported from the original paper.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+@register_model()
+@handle_legacy_interface(weights=("pretrained", Inception_V3_Weights.IMAGENET1K_V1))
+def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
+    """
+    Inception v3 model architecture from
+    `Rethinking the Inception Architecture for Computer Vision <http://arxiv.org/abs/1512.00567>`_.
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
         N x 3 x 299 x 299, so ensure your images are sized accordingly.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        aux_logits (bool): If True, add an auxiliary branch that can improve training.
-            Default: *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *False*
+        weights (:class:`~torchvision.models.Inception_V3_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.Inception_V3_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.Inception3``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/inception.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Inception_V3_Weights
+        :members:
     """
-    if pretrained:
+    weights = Inception_V3_Weights.verify(weights)
+
+    original_aux_logits = kwargs.get("aux_logits", True)
+    if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" in kwargs:
-            original_aux_logits = kwargs["aux_logits"]
-            kwargs["aux_logits"] = True
-        else:
-            original_aux_logits = True
-        kwargs["init_weights"] = False  # we are loading weights from a pretrained model
-        model = Inception3(**kwargs)
-        state_dict = load_state_dict_from_url(model_urls["inception_v3_google"], progress=progress)
-        model.load_state_dict(state_dict)
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "init_weights", False)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
+    model = Inception3(**kwargs)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
         if not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None
-        return model
 
-    return Inception3(**kwargs)
+    return model

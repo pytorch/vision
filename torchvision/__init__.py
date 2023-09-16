@@ -1,13 +1,9 @@
 import os
 import warnings
+from modulefinder import Module
 
 import torch
-from torchvision import datasets
-from torchvision import io
-from torchvision import models
-from torchvision import ops
-from torchvision import transforms
-from torchvision import utils
+from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils
 
 from .extension import _HAS_OPS
 
@@ -15,6 +11,7 @@ try:
     from .version import __version__  # noqa: F401
 except ImportError:
     pass
+
 
 # Check if torchvision is being imported within the root folder
 if not _HAS_OPS and os.path.dirname(os.path.realpath(__file__)) == os.path.join(
@@ -71,11 +68,16 @@ def set_video_backend(backend):
         backend, please compile torchvision from source.
     """
     global _video_backend
-    if backend not in ["pyav", "video_reader"]:
-        raise ValueError("Invalid video backend '%s'. Options are 'pyav' and 'video_reader'" % backend)
+    if backend not in ["pyav", "video_reader", "cuda"]:
+        raise ValueError("Invalid video backend '%s'. Options are 'pyav', 'video_reader' and 'cuda'" % backend)
     if backend == "video_reader" and not io._HAS_VIDEO_OPT:
+        # TODO: better messages
         message = "video_reader video backend is not available. Please compile torchvision from source and try again"
-        warnings.warn(message)
+        raise RuntimeError(message)
+    elif backend == "cuda" and not io._HAS_GPU_VIDEO_DECODER:
+        # TODO: better messages
+        message = "cuda video backend is not available."
+        raise RuntimeError(message)
     else:
         _video_backend = backend
 
@@ -93,3 +95,9 @@ def get_video_backend():
 
 def _is_tracing():
     return torch._C._get_tracing_state()
+
+
+def disable_beta_transforms_warning():
+    # Noop, only exists to avoid breaking existing code.
+    # See https://github.com/pytorch/vision/issues/7896
+    pass

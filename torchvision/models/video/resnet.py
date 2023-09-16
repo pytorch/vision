@@ -1,18 +1,25 @@
-from typing import Tuple, Optional, Callable, List, Sequence, Type, Any, Union
+from functools import partial
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
 import torch.nn as nn
 from torch import Tensor
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
+from .._api import register_model, Weights, WeightsEnum
+from .._meta import _KINETICS400_CATEGORIES
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 
-__all__ = ["r3d_18", "mc3_18", "r2plus1d_18"]
 
-model_urls = {
-    "r3d_18": "https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
-    "mc3_18": "https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
-    "r2plus1d_18": "https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
-}
+__all__ = [
+    "VideoResNet",
+    "R3D_18_Weights",
+    "MC3_18_Weights",
+    "R2Plus1D_18_Weights",
+    "r3d_18",
+    "mc3_18",
+    "r2plus1d_18",
+]
 
 
 class Conv3DSimple(nn.Conv3d):
@@ -223,7 +230,17 @@ class VideoResNet(nn.Module):
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         # init weights
-        self._initialize_weights()
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm3d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
 
         if zero_init_residual:
             for m in self.modules():
@@ -270,94 +287,217 @@ class VideoResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _initialize_weights(self) -> None:
-        for m in self.modules():
-            if isinstance(m, nn.Conv3d):
-                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm3d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
-                nn.init.constant_(m.bias, 0)
 
+def _video_resnet(
+    block: Type[Union[BasicBlock, Bottleneck]],
+    conv_makers: Sequence[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
+    layers: List[int],
+    stem: Callable[..., nn.Module],
+    weights: Optional[WeightsEnum],
+    progress: bool,
+    **kwargs: Any,
+) -> VideoResNet:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
-def _video_resnet(arch: str, pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:
-    model = VideoResNet(**kwargs)
+    model = VideoResNet(block, conv_makers, layers, stem, **kwargs)
 
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
-        model.load_state_dict(state_dict)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
+
     return model
 
 
-def r3d_18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:
-    """Construct 18 layer Resnet3D model as in
-    https://arxiv.org/abs/1711.11248
+_COMMON_META = {
+    "min_size": (1, 1),
+    "categories": _KINETICS400_CATEGORIES,
+    "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
+    "_docs": (
+        "The weights reproduce closely the accuracy of the paper. The accuracies are estimated on video-level "
+        "with parameters `frame_rate=15`, `clips_per_video=5`, and `clip_len=16`."
+    ),
+}
+
+
+class R3D_18_Weights(WeightsEnum):
+    KINETICS400_V1 = Weights(
+        url="https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
+        transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
+        meta={
+            **_COMMON_META,
+            "num_params": 33371472,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 63.200,
+                    "acc@5": 83.479,
+                }
+            },
+            "_ops": 40.697,
+            "_file_size": 127.359,
+        },
+    )
+    DEFAULT = KINETICS400_V1
+
+
+class MC3_18_Weights(WeightsEnum):
+    KINETICS400_V1 = Weights(
+        url="https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
+        transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
+        meta={
+            **_COMMON_META,
+            "num_params": 11695440,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 63.960,
+                    "acc@5": 84.130,
+                }
+            },
+            "_ops": 43.343,
+            "_file_size": 44.672,
+        },
+    )
+    DEFAULT = KINETICS400_V1
+
+
+class R2Plus1D_18_Weights(WeightsEnum):
+    KINETICS400_V1 = Weights(
+        url="https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
+        transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
+        meta={
+            **_COMMON_META,
+            "num_params": 31505325,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 67.463,
+                    "acc@5": 86.175,
+                }
+            },
+            "_ops": 40.519,
+            "_file_size": 120.318,
+        },
+    )
+    DEFAULT = KINETICS400_V1
+
+
+@register_model()
+@handle_legacy_interface(weights=("pretrained", R3D_18_Weights.KINETICS400_V1))
+def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
+    """Construct 18 layer Resnet3D model.
+
+    .. betastatus:: video module
+
+    Reference: `A Closer Look at Spatiotemporal Convolutions for Action Recognition <https://arxiv.org/abs/1711.11248>`__.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on Kinetics-400
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.video.R3D_18_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.R3D_18_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.resnet.VideoResNet`` base class.
+            Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/resnet.py>`_
+            for more details about this class.
 
-    Returns:
-        nn.Module: R3D-18 network
+    .. autoclass:: torchvision.models.video.R3D_18_Weights
+        :members:
     """
+    weights = R3D_18_Weights.verify(weights)
 
     return _video_resnet(
-        "r3d_18",
-        pretrained,
+        BasicBlock,
+        [Conv3DSimple] * 4,
+        [2, 2, 2, 2],
+        BasicStem,
+        weights,
         progress,
-        block=BasicBlock,
-        conv_makers=[Conv3DSimple] * 4,
-        layers=[2, 2, 2, 2],
-        stem=BasicStem,
         **kwargs,
     )
 
 
-def mc3_18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:
-    """Constructor for 18 layer Mixed Convolution network as in
-    https://arxiv.org/abs/1711.11248
+@register_model()
+@handle_legacy_interface(weights=("pretrained", MC3_18_Weights.KINETICS400_V1))
+def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
+    """Construct 18 layer Mixed Convolution network as in
+
+    .. betastatus:: video module
+
+    Reference: `A Closer Look at Spatiotemporal Convolutions for Action Recognition <https://arxiv.org/abs/1711.11248>`__.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on Kinetics-400
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.video.MC3_18_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.MC3_18_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.resnet.VideoResNet`` base class.
+            Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/resnet.py>`_
+            for more details about this class.
 
-    Returns:
-        nn.Module: MC3 Network definition
+    .. autoclass:: torchvision.models.video.MC3_18_Weights
+        :members:
     """
+    weights = MC3_18_Weights.verify(weights)
+
     return _video_resnet(
-        "mc3_18",
-        pretrained,
+        BasicBlock,
+        [Conv3DSimple] + [Conv3DNoTemporal] * 3,  # type: ignore[list-item]
+        [2, 2, 2, 2],
+        BasicStem,
+        weights,
         progress,
-        block=BasicBlock,
-        conv_makers=[Conv3DSimple] + [Conv3DNoTemporal] * 3,  # type: ignore[list-item]
-        layers=[2, 2, 2, 2],
-        stem=BasicStem,
         **kwargs,
     )
 
 
-def r2plus1d_18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:
-    """Constructor for the 18 layer deep R(2+1)D network as in
-    https://arxiv.org/abs/1711.11248
+@register_model()
+@handle_legacy_interface(weights=("pretrained", R2Plus1D_18_Weights.KINETICS400_V1))
+def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
+    """Construct 18 layer deep R(2+1)D network as in
+
+    .. betastatus:: video module
+
+    Reference: `A Closer Look at Spatiotemporal Convolutions for Action Recognition <https://arxiv.org/abs/1711.11248>`__.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on Kinetics-400
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.video.R2Plus1D_18_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.R2Plus1D_18_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.resnet.VideoResNet`` base class.
+            Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/resnet.py>`_
+            for more details about this class.
 
-    Returns:
-        nn.Module: R(2+1)D-18 network
+    .. autoclass:: torchvision.models.video.R2Plus1D_18_Weights
+        :members:
     """
+    weights = R2Plus1D_18_Weights.verify(weights)
+
     return _video_resnet(
-        "r2plus1d_18",
-        pretrained,
+        BasicBlock,
+        [Conv2Plus1D] * 4,
+        [2, 2, 2, 2],
+        R2Plus1dStem,
+        weights,
         progress,
-        block=BasicBlock,
-        conv_makers=[Conv2Plus1D] * 4,
-        layers=[2, 2, 2, 2],
-        stem=R2Plus1dStem,
         **kwargs,
     )
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "r3d_18": R3D_18_Weights.KINETICS400_V1.url,
+        "mc3_18": MC3_18_Weights.KINETICS400_V1.url,
+        "r2plus1d_18": R2Plus1D_18_Weights.KINETICS400_V1.url,
+    }
+)

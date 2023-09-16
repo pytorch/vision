@@ -1,9 +1,8 @@
 import os
 import shutil
 import tempfile
-import warnings
 from contextlib import contextmanager
-from typing import Any, Dict, List, Iterator, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import torch
 
@@ -21,6 +20,12 @@ META_FILE = "meta.bin"
 
 class ImageNet(ImageFolder):
     """`ImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
+
+    .. note::
+        Before using this class, it is required to download ImageNet 2012 dataset from
+        `here <https://image-net.org/challenges/LSVRC/2012/2012-downloads.php>`_ and
+        place the files ``ILSVRC2012_devkit_t12.tar.gz`` and ``ILSVRC2012_img_train.tar``
+        or ``ILSVRC2012_img_val.tar`` based on ``split`` in the root directory.
 
     Args:
         root (string): Root directory of the ImageNet Dataset.
@@ -40,18 +45,7 @@ class ImageNet(ImageFolder):
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root: str, split: str = "train", download: Optional[str] = None, **kwargs: Any) -> None:
-        if download is True:
-            msg = (
-                "The dataset is no longer publicly accessible. You need to "
-                "download the archives externally and place them in the root "
-                "directory."
-            )
-            raise RuntimeError(msg)
-        elif download is False:
-            msg = "The use of the download flag is deprecated, since the dataset is no longer publicly accessible."
-            warnings.warn(msg, RuntimeWarning)
-
+    def __init__(self, root: str, split: str = "train", **kwargs: Any) -> None:
         root = self.root = os.path.expanduser(root)
         self.split = verify_str_arg(split, "split", ("train", "val"))
 

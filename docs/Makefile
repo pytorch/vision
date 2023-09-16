@@ -24,7 +24,7 @@ docset: html
 	convert $(SPHINXPROJ).docset/icon@2x.png -resize 16x16 $(SPHINXPROJ).docset/icon.png
 
 html-noplot:  # Avoids running the gallery examples, which may take time
-	$(SPHINXBUILD) -D plot_gallery=0 -b html $(ASPHINXOPTS) "${SOURCEDIR}" "$(BUILDDIR)"/html
+	$(SPHINXBUILD) -D plot_gallery=0 -b html "${SOURCEDIR}" "$(BUILDDIR)"/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
@@ -33,6 +33,7 @@ clean:
 	rm -rf $(SOURCEDIR)/auto_examples/  # sphinx-gallery
 	rm -rf $(SOURCEDIR)/gen_modules/  # sphinx-gallery
 	rm -rf $(SOURCEDIR)/generated/  # autosummary
+	rm -rf $(SOURCEDIR)/models/generated  # autosummary
 
 .PHONY: help Makefile docset
 

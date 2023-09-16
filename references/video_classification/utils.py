@@ -30,11 +30,7 @@ class SmoothedValue:
         """
         Warning: does not synchronize the deque!
         """
-        if not is_dist_avail_and_initialized():
-            return
-        t = torch.tensor([self.count, self.total], dtype=torch.float64, device="cuda")
-        dist.barrier()
-        dist.all_reduce(t)
+        t = reduce_across_processes([self.count, self.total])
         t = t.tolist()
         self.count = int(t[0])
         self.total = t[1]
@@ -76,7 +72,10 @@ class MetricLogger:
         for k, v in kwargs.items():
             if isinstance(v, torch.Tensor):
                 v = v.item()
-            assert isinstance(v, (float, int))
+            if not isinstance(v, (float, int)):
+                raise TypeError(
+                    f"This method expects the value of the input arguments to be of type float or int, instead  got {type(v)}"
+                )
             self.meters[k].update(v)
 
     def __getattr__(self, attr):
@@ -250,4 +249,16 @@ def init_distributed_mode(args):
     torch.distributed.init_process_group(
         backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank
     )
+    torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
+
+
+def reduce_across_processes(val, op=dist.ReduceOp.SUM):
+    if not is_dist_avail_and_initialized():
+        # nothing to sync, but we still convert to tensor for consistency with the distributed case.
+        return torch.tensor(val)
+
+    t = torch.tensor(val, device="cuda")
+    dist.barrier()
+    dist.all_reduce(t, op=op)
+    return t

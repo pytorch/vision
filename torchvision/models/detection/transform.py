@@ -1,5 +1,5 @@
 import math
-from typing import List, Tuple, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torchvision
@@ -24,15 +24,17 @@ def _fake_cast_onnx(v: Tensor) -> float:
 
 def _resize_image_and_masks(
     image: Tensor,
-    self_min_size: float,
-    self_max_size: float,
+    self_min_size: int,
+    self_max_size: int,
     target: Optional[Dict[str, Tensor]] = None,
     fixed_size: Optional[Tuple[int, int]] = None,
 ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
     if torchvision._is_tracing():
         im_shape = _get_shape_onnx(image)
-    else:
+    elif torch.jit.is_scripting():
         im_shape = torch.tensor(image.shape[-2:])
+    else:
+        im_shape = image.shape[-2:]
 
     size: Optional[List[int]] = None
     scale_factor: Optional[float] = None
@@ -40,14 +42,24 @@ def _resize_image_and_masks(
     if fixed_size is not None:
         size = [fixed_size[1], fixed_size[0]]
     else:
-        min_size = torch.min(im_shape).to(dtype=torch.float32)
-        max_size = torch.max(im_shape).to(dtype=torch.float32)
-        scale = torch.min(self_min_size / min_size, self_max_size / max_size)
+        if torch.jit.is_scripting() or torchvision._is_tracing():
+            min_size = torch.min(im_shape).to(dtype=torch.float32)
+            max_size = torch.max(im_shape).to(dtype=torch.float32)
+            self_min_size_f = float(self_min_size)
+            self_max_size_f = float(self_max_size)
+            scale = torch.min(self_min_size_f / min_size, self_max_size_f / max_size)
 
-        if torchvision._is_tracing():
-            scale_factor = _fake_cast_onnx(scale)
+            if torchvision._is_tracing():
+                scale_factor = _fake_cast_onnx(scale)
+            else:
+                scale_factor = scale.item()
+
         else:
-            scale_factor = scale.item()
+            # Do it the normal way
+            min_size = min(im_shape)
+            max_size = max(im_shape)
+            scale_factor = min(self_min_size / min_size, self_max_size / max_size)
+
         recompute_scale_factor = True
 
     image = torch.nn.functional.interpolate(
@@ -76,7 +88,7 @@ class GeneralizedRCNNTransform(nn.Module):
     Performs input / target transformation before feeding the data to a GeneralizedRCNN
     model.
 
-    The transformations it perform are:
+    The transformations it performs are:
         - input normalization (mean subtraction and std division)
         - input / target resizing to match min_size / max_size
 
@@ -91,6 +103,7 @@ class GeneralizedRCNNTransform(nn.Module):
         image_std: List[float],
         size_divisible: int = 32,
         fixed_size: Optional[Tuple[int, int]] = None,
+        **kwargs: Any,
     ):
         super().__init__()
         if not isinstance(min_size, (list, tuple)):
@@ -101,6 +114,7 @@ class GeneralizedRCNNTransform(nn.Module):
         self.image_std = image_std
         self.size_divisible = size_divisible
         self.fixed_size = fixed_size
+        self._skip_resize = kwargs.pop("_skip_resize", False)
 
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
@@ -134,7 +148,10 @@ class GeneralizedRCNNTransform(nn.Module):
         images = self.batch_images(images, size_divisible=self.size_divisible)
         image_sizes_list: List[Tuple[int, int]] = []
         for image_size in image_sizes:
-            assert len(image_size) == 2
+            torch._assert(
+                len(image_size) == 2,
+                f"Input tensors expected to have in the last two elements H and W, instead got {image_size}",
+            )
             image_sizes_list.append((image_size[0], image_size[1]))
 
         image_list = ImageList(images, image_sizes_list)
@@ -153,9 +170,8 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def torch_choice(self, k: List[int]) -> int:
         """
-        Implements `random.choice` via torch ops so it can be compiled with
-        TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
-        is fixed.
+        Implements `random.choice` via torch ops, so it can be compiled with
+        TorchScript and we use PyTorch's RNG (not native RNG)
         """
         index = int(torch.empty(1).uniform_(0.0, float(len(k))).item())
         return k[index]
@@ -167,11 +183,12 @@ class GeneralizedRCNNTransform(nn.Module):
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         h, w = image.shape[-2:]
         if self.training:
-            size = float(self.torch_choice(self.min_size))
+            if self._skip_resize:
+                return image, target
+            size = self.torch_choice(self.min_size)
         else:
-            # FIXME assume for now that testing uses the largest scale
-            size = float(self.min_size[-1])
-        image, target = _resize_image_and_masks(image, size, float(self.max_size), target, self.fixed_size)
+            size = self.min_size[-1]
+        image, target = _resize_image_and_masks(image, size, self.max_size, target, self.fixed_size)
 
         if target is None:
             return image, target
@@ -260,7 +277,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return result
 
     def __repr__(self) -> str:
-        format_string = self.__class__.__name__ + "("
+        format_string = f"{self.__class__.__name__}("
         _indent = "\n    "
         format_string += f"{_indent}Normalize(mean={self.image_mean}, std={self.image_std})"
         format_string += f"{_indent}Resize(min_size={self.min_size}, max_size={self.max_size}, mode='bilinear')"

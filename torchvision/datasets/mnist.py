@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from .utils import download_and_extract_archive, extract_archive, verify_str_arg, check_integrity
+from .utils import _flip_byte_order, check_integrity, download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -366,7 +366,7 @@ class QMNIST(MNIST):
             that takes in the target and transforms it.
         train (bool,optional,compatibility): When argument 'what' is
             not specified, this boolean decides whether to load the
-            training set ot the testing set.  Default: True.
+            training set or the testing set.  Default: True.
     """
 
     subsets = {"train": "train", "test": "test", "test10k": "test", "test50k": "test", "nist": "nist"}
@@ -442,11 +442,14 @@ class QMNIST(MNIST):
 
     def _load_data(self):
         data = read_sn3_pascalvincent_tensor(self.images_file)
-        assert data.dtype == torch.uint8
-        assert data.ndimension() == 3
+        if data.dtype != torch.uint8:
+            raise TypeError(f"data should be of dtype torch.uint8 instead of {data.dtype}")
+        if data.ndimension() != 3:
+            raise ValueError("data should have 3 dimensions instead of {data.ndimension()}")
 
         targets = read_sn3_pascalvincent_tensor(self.labels_file).long()
-        assert targets.ndimension() == 2
+        if targets.ndimension() != 2:
+            raise ValueError(f"targets should have 2 dimensions instead of {targets.ndimension()}")
 
         if self.what == "test10k":
             data = data[0:10000, :, :].clone()
@@ -516,13 +519,12 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     torch_type = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
 
-    num_bytes_per_value = torch.iinfo(torch_type).bits // 8
-    # The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,
-    # we need to reverse the bytes before we can read them with torch.frombuffer().
-    needs_byte_reversal = sys.byteorder == "little" and num_bytes_per_value > 1
     parsed = torch.frombuffer(bytearray(data), dtype=torch_type, offset=(4 * (nd + 1)))
-    if needs_byte_reversal:
-        parsed = parsed.flip(0)
+
+    # The MNIST format uses the big endian byte order, while `torch.frombuffer` uses whatever the system uses. In case
+    # that is little endian and the dtype has more than one byte, we need to flip them.
+    if sys.byteorder == "little" and parsed.element_size() > 1:
+        parsed = _flip_byte_order(parsed)
 
     assert parsed.shape[0] == np.prod(s) or not strict
     return parsed.view(*s)
@@ -530,13 +532,17 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
 
 def read_label_file(path: str) -> torch.Tensor:
     x = read_sn3_pascalvincent_tensor(path, strict=False)
-    assert x.dtype == torch.uint8
-    assert x.ndimension() == 1
+    if x.dtype != torch.uint8:
+        raise TypeError(f"x should be of dtype torch.uint8 instead of {x.dtype}")
+    if x.ndimension() != 1:
+        raise ValueError(f"x should have 1 dimension instead of {x.ndimension()}")
     return x.long()
 
 
 def read_image_file(path: str) -> torch.Tensor:
     x = read_sn3_pascalvincent_tensor(path, strict=False)
-    assert x.dtype == torch.uint8
-    assert x.ndimension() == 3
+    if x.dtype != torch.uint8:
+        raise TypeError(f"x should be of dtype torch.uint8 instead of {x.dtype}")
+    if x.ndimension() != 3:
+        raise ValueError(f"x should have 3 dimension instead of {x.ndimension()}")
     return x

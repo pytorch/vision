@@ -2,12 +2,35 @@ import math
 from typing import Tuple
 
 import torch
+from presets import get_module
 from torch import Tensor
 from torchvision.transforms import functional as F
 
 
-class RandomMixup(torch.nn.Module):
-    """Randomly apply Mixup to the provided batch and targets.
+def get_mixup_cutmix(*, mixup_alpha, cutmix_alpha, num_categories, use_v2):
+    transforms_module = get_module(use_v2)
+
+    mixup_cutmix = []
+    if mixup_alpha > 0:
+        mixup_cutmix.append(
+            transforms_module.MixUp(alpha=mixup_alpha, num_categories=num_categories)
+            if use_v2
+            else RandomMixUp(num_classes=num_categories, p=1.0, alpha=mixup_alpha)
+        )
+    if cutmix_alpha > 0:
+        mixup_cutmix.append(
+            transforms_module.CutMix(alpha=mixup_alpha, num_categories=num_categories)
+            if use_v2
+            else RandomCutMix(num_classes=num_categories, p=1.0, alpha=mixup_alpha)
+        )
+    if not mixup_cutmix:
+        return None
+
+    return transforms_module.RandomChoice(mixup_cutmix)
+
+
+class RandomMixUp(torch.nn.Module):
+    """Randomly apply MixUp to the provided batch and targets.
     The class implements the data augmentations as described in the paper
     `"mixup: Beyond Empirical Risk Minimization" <https://arxiv.org/abs/1710.09412>`_.
 
@@ -21,8 +44,14 @@ class RandomMixup(torch.nn.Module):
 
     def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False) -> None:
         super().__init__()
-        assert num_classes > 0, "Please provide a valid positive value for the num_classes."
-        assert alpha > 0, "Alpha param can't be zero."
+
+        if num_classes < 1:
+            raise ValueError(
+                f"Please provide a valid positive value for the num_classes. Got num_classes={num_classes}"
+            )
+
+        if alpha <= 0:
+            raise ValueError("Alpha param can't be zero.")
 
         self.num_classes = num_classes
         self.p = p
@@ -72,17 +101,19 @@ class RandomMixup(torch.nn.Module):
         return batch, target
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "num_classes={num_classes}"
-        s += ", p={p}"
-        s += ", alpha={alpha}"
-        s += ", inplace={inplace}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"num_classes={self.num_classes}"
+            f", p={self.p}"
+            f", alpha={self.alpha}"
+            f", inplace={self.inplace}"
+            f")"
+        )
+        return s
 
 
-class RandomCutmix(torch.nn.Module):
-    """Randomly apply Cutmix to the provided batch and targets.
+class RandomCutMix(torch.nn.Module):
+    """Randomly apply CutMix to the provided batch and targets.
     The class implements the data augmentations as described in the paper
     `"CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features"
     <https://arxiv.org/abs/1905.04899>`_.
@@ -97,8 +128,10 @@ class RandomCutmix(torch.nn.Module):
 
     def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False) -> None:
         super().__init__()
-        assert num_classes > 0, "Please provide a valid positive value for the num_classes."
-        assert alpha > 0, "Alpha param can't be zero."
+        if num_classes < 1:
+            raise ValueError("Please provide a valid positive value for the num_classes.")
+        if alpha <= 0:
+            raise ValueError("Alpha param can't be zero.")
 
         self.num_classes = num_classes
         self.p = p
@@ -139,7 +172,7 @@ class RandomCutmix(torch.nn.Module):
 
         # Implemented as on cutmix paper, page 12 (with minor corrections on typos).
         lambda_param = float(torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha]))[0])
-        W, H = F.get_image_size(batch)
+        _, H, W = F.get_dimensions(batch)
 
         r_x = torch.randint(W, (1,))
         r_y = torch.randint(H, (1,))
@@ -162,10 +195,12 @@ class RandomCutmix(torch.nn.Module):
         return batch, target
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "num_classes={num_classes}"
-        s += ", p={p}"
-        s += ", alpha={alpha}"
-        s += ", inplace={inplace}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"num_classes={self.num_classes}"
+            f", p={self.p}"
+            f", alpha={self.alpha}"
+            f", inplace={self.inplace}"
+            f")"
+        )
+        return s

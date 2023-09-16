@@ -1,6 +1,7 @@
 #include "../ps_roi_align.h"
 
 #include <ATen/autocast_mode.h>
+#include <torch/library.h>
 #include <torch/types.h>
 
 namespace vision {

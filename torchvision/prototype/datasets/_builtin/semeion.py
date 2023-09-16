@@ -1,69 +1,55 @@
-import io
-from typing import Any, Callable, Dict, List, Optional, Tuple
+import pathlib
+from typing import Any, Dict, List, Tuple, Union
 
 import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Shuffler,
-    CSVParser,
-)
-from torchvision.prototype.datasets.decoder import raw
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
-    DatasetInfo,
-    HttpResource,
-    OnlineResource,
-    DatasetType,
-)
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, image_buffer_from_array
+from torchdata.datapipes.iter import CSVParser, IterDataPipe, Mapper
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
+from torchvision.prototype.tv_tensors import OneHotLabel
+from torchvision.tv_tensors import Image
+
+from .._api import register_dataset, register_info
+
+NAME = "semeion"
 
 
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    return dict(categories=[str(i) for i in range(10)])
+
+
+@register_dataset(NAME)
 class SEMEION(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "semeion",
-            type=DatasetType.RAW,
-            categories=10,
-            homepage="https://archive.ics.uci.edu/ml/datasets/Semeion+Handwritten+Digit",
-        )
+    """Semeion dataset
+    homepage="https://archive.ics.uci.edu/ml/datasets/Semeion+Handwritten+Digit",
+    """
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        archive = HttpResource(
+    def __init__(self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False) -> None:
+
+        self._categories = _info()["categories"]
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
+
+    def _resources(self) -> List[OnlineResource]:
+        data = HttpResource(
             "http://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data",
             sha256="f43228ae3da5ea6a3c95069d53450b86166770e3b719dcc333182128fe08d4b1",
         )
-        return [archive]
+        return [data]
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[str, ...],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
-        image_data = torch.tensor([float(pixel) for pixel in data[:256]], dtype=torch.uint8).reshape(16, 16)
-        label_data = [int(label) for label in data[256:] if label]
+    def _prepare_sample(self, data: Tuple[str, ...]) -> Dict[str, Any]:
+        image_data, label_data = data[:256], data[256:-1]
 
-        if decoder is raw:
-            image = image_data.unsqueeze(0)
-        else:
-            image_buffer = image_buffer_from_array(image_data.numpy())
-            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
+        return dict(
+            image=Image(torch.tensor([float(pixel) for pixel in image_data], dtype=torch.float).reshape(16, 16)),
+            label=OneHotLabel([int(label) for label in label_data], categories=self._categories),
+        )
 
-        label = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
-        category = self.info.categories[label]
-        return dict(image=image, label=label, category=category)
-
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = CSVParser(dp, delimiter=" ")
-        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        dp = Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
-        return dp
+        dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
+        return Mapper(dp, self._prepare_sample)
+
+    def __len__(self) -> int:
+        return 1_593

@@ -24,28 +24,35 @@ Except otherwise noted, all models have been trained on 8x V100 GPUs.
 ```
 torchrun --nproc_per_node=8 train.py\
     --dataset coco --model fasterrcnn_resnet50_fpn --epochs 26\
-    --lr-steps 16 22 --aspect-ratio-group-factor 3
+    --lr-steps 16 22 --aspect-ratio-group-factor 3 --weights-backbone ResNet50_Weights.IMAGENET1K_V1
 ```
 
 ### Faster R-CNN MobileNetV3-Large FPN
 ```
 torchrun --nproc_per_node=8 train.py\
     --dataset coco --model fasterrcnn_mobilenet_v3_large_fpn --epochs 26\
-    --lr-steps 16 22 --aspect-ratio-group-factor 3
+    --lr-steps 16 22 --aspect-ratio-group-factor 3 --weights-backbone MobileNet_V3_Large_Weights.IMAGENET1K_V1
 ```
 
 ### Faster R-CNN MobileNetV3-Large 320 FPN
 ```
 torchrun --nproc_per_node=8 train.py\
     --dataset coco --model fasterrcnn_mobilenet_v3_large_320_fpn --epochs 26\
-    --lr-steps 16 22 --aspect-ratio-group-factor 3
+    --lr-steps 16 22 --aspect-ratio-group-factor 3 --weights-backbone MobileNet_V3_Large_Weights.IMAGENET1K_V1
+```
+
+### FCOS ResNet-50 FPN
+```
+torchrun --nproc_per_node=8 train.py\
+    --dataset coco --model fcos_resnet50_fpn --epochs 26\
+    --lr-steps 16 22 --aspect-ratio-group-factor 3  --lr 0.01 --amp --weights-backbone ResNet50_Weights.IMAGENET1K_V1
 ```
 
 ### RetinaNet
 ```
 torchrun --nproc_per_node=8 train.py\
     --dataset coco --model retinanet_resnet50_fpn --epochs 26\
-    --lr-steps 16 22 --aspect-ratio-group-factor 3 --lr 0.01
+    --lr-steps 16 22 --aspect-ratio-group-factor 3 --lr 0.01 --weights-backbone ResNet50_Weights.IMAGENET1K_V1
 ```
 
 ### SSD300 VGG16
@@ -53,7 +60,7 @@ torchrun --nproc_per_node=8 train.py\
 torchrun --nproc_per_node=8 train.py\
     --dataset coco --model ssd300_vgg16 --epochs 120\
     --lr-steps 80 110 --aspect-ratio-group-factor 3 --lr 0.002 --batch-size 4\
-    --weight-decay 0.0005 --data-augmentation ssd
+    --weight-decay 0.0005 --data-augmentation ssd --weights-backbone VGG16_Weights.IMAGENET1K_FEATURES
 ```
 
 ### SSDlite320 MobileNetV3-Large
@@ -69,7 +76,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 torchrun --nproc_per_node=8 train.py\
     --dataset coco --model maskrcnn_resnet50_fpn --epochs 26\
-    --lr-steps 16 22 --aspect-ratio-group-factor 3
+    --lr-steps 16 22 --aspect-ratio-group-factor 3 --weights-backbone ResNet50_Weights.IMAGENET1K_V1
 ```
 
 
@@ -77,5 +84,5 @@ torchrun --nproc_per_node=8 train.py\
 ```
 torchrun --nproc_per_node=8 train.py\
     --dataset coco_kp --model keypointrcnn_resnet50_fpn --epochs 46\
-    --lr-steps 36 43 --aspect-ratio-group-factor 3
+    --lr-steps 36 43 --aspect-ratio-group-factor 3 --weights-backbone ResNet50_Weights.IMAGENET1K_V1
 ```

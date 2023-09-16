@@ -63,6 +63,7 @@ void torch_png_write_data(
 } // namespace
 
 torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.encode_png.encode_png");
   // Define compression structures and error handling
   png_structp png_write;
   png_infop info_ptr;

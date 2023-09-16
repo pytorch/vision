@@ -5,6 +5,7 @@ import inspect
 import itertools
 import os
 import pathlib
+import platform
 import random
 import shutil
 import string
@@ -16,13 +17,17 @@ import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
+
 import PIL
 import PIL.Image
 import pytest
 import torch
 import torchvision.datasets
 import torchvision.io
-from common_utils import get_tmp_dir, disable_console_output
+from common_utils import disable_console_output, get_tmp_dir
+from torch.utils._pytree import tree_any
+from torchvision.transforms.functional import get_dimensions
 
 
 __all__ = [
@@ -61,6 +66,7 @@ class LazyImporter:
         "requests",
         "scipy.io",
         "scipy.sparse",
+        "h5py",
     )
 
     def __init__(self):
@@ -133,7 +139,7 @@ def test_all_configs(test):
 
     .. note::
 
-        This will try to remove duplicate configurations. During this process it will not not preserve a potential
+        This will try to remove duplicate configurations. During this process it will not preserve a potential
         ordering of the configurations or an inner ordering of a configuration.
     """
 
@@ -142,7 +148,7 @@ def test_all_configs(test):
             return [dict(config_) for config_ in {tuple(sorted(config.items())) for config in configs}]
         except TypeError:
             # A TypeError will be raised if a value of any config is not hashable, e.g. a list. In that case duplicate
-            # removal would be a lot more elaborate and we simply bail out.
+            # removal would be a lot more elaborate, and we simply bail out.
             return configs
 
     @functools.wraps(test)
@@ -163,23 +169,6 @@ def test_all_configs(test):
                 test(self, config)
 
     return wrapper
-
-
-def combinations_grid(**kwargs):
-    """Creates a grid of input combinations.
-
-    Each element in the returned sequence is a dictionary containing one possible combination as values.
-
-    Example:
-        >>> combinations_grid(foo=("bar", "baz"), spam=("eggs", "ham"))
-        [
-            {'foo': 'bar', 'spam': 'eggs'},
-            {'foo': 'bar', 'spam': 'ham'},
-            {'foo': 'baz', 'spam': 'eggs'},
-            {'foo': 'baz', 'spam': 'ham'}
-        ]
-    """
-    return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
 
 
 class DatasetTestCase(unittest.TestCase):
@@ -293,7 +282,7 @@ class DatasetTestCase(unittest.TestCase):
         .. note::
 
             The default behavior is only valid if the dataset to be tested has ``root`` as the only required parameter.
-            Otherwise you need to overwrite this method.
+            Otherwise, you need to overwrite this method.
 
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
@@ -560,7 +549,7 @@ class DatasetTestCase(unittest.TestCase):
     @test_all_configs
     def test_num_examples(self, config):
         with self.create_dataset(config) as (dataset, info):
-            assert len(dataset) == info["num_examples"]
+            assert len(list(dataset)) == len(dataset) == info["num_examples"]
 
     @test_all_configs
     def test_transforms(self, config):
@@ -576,6 +565,42 @@ class DatasetTestCase(unittest.TestCase):
                     dataset[0]
 
                 mock.assert_called()
+
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        from torchvision import tv_tensors
+        from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+        try:
+            with self.create_dataset(config) as (dataset, info):
+                for target_keys in [None, "all"]:
+                    if target_keys is not None and self.DATASET_CLASS not in {
+                        torchvision.datasets.CocoDetection,
+                        torchvision.datasets.VOCDetection,
+                        torchvision.datasets.Kitti,
+                        torchvision.datasets.WIDERFace,
+                    }:
+                        with self.assertRaisesRegex(ValueError, "`target_keys` is currently only supported for"):
+                            wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                        continue
+
+                    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
+                    assert isinstance(wrapped_dataset, self.DATASET_CLASS)
+                    assert len(wrapped_dataset) == info["num_examples"]
+
+                    wrapped_sample = wrapped_dataset[0]
+                    assert tree_any(
+                        lambda item: isinstance(item, (tv_tensors.TVTensor, PIL.Image.Image)), wrapped_sample
+                    )
+        except TypeError as error:
+            msg = f"No wrapper exists for dataset class {type(dataset).__name__}"
+            if str(error).startswith(msg):
+                pytest.skip(msg)
+            raise error
+        except RuntimeError as error:
+            if "currently not supported by this wrapper" in str(error):
+                pytest.skip("Config is currently not supported by this wrapper")
+            raise error
 
 
 class ImageDatasetTestCase(DatasetTestCase):
@@ -600,7 +625,7 @@ class ImageDatasetTestCase(DatasetTestCase):
             patch_checks=patch_checks,
             **kwargs,
         ) as (dataset, info):
-            # PIL.Image.open() only loads the image meta data upfront and keeps the file open until the first access
+            # PIL.Image.open() only loads the image metadata upfront and keeps the file open until the first access
             # to the pixel data occurs. Trying to delete such a file results in an PermissionError on Windows. Thus, we
             # force-load opened images.
             # This problem only occurs during testing since some tests, e.g. DatasetTestCase.test_feature_types open an
@@ -637,26 +662,72 @@ class VideoDatasetTestCase(DatasetTestCase):
     FEATURE_TYPES = (torch.Tensor, torch.Tensor, int)
     REQUIRED_PACKAGES = ("av",)
 
-    DEFAULT_FRAMES_PER_CLIP = 1
+    FRAMES_PER_CLIP = 1
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dataset_args = self._set_default_frames_per_clip(self.dataset_args)
 
-    def _set_default_frames_per_clip(self, inject_fake_data):
+    def _set_default_frames_per_clip(self, dataset_args):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
         args_without_default = argspec.args[1 : (-len(argspec.defaults) if argspec.defaults else None)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
 
-        @functools.wraps(inject_fake_data)
+        @functools.wraps(dataset_args)
         def wrapper(tmpdir, config):
-            args = inject_fake_data(tmpdir, config)
+            args = dataset_args(tmpdir, config)
             if frames_per_clip_last and len(args) == len(args_without_default) - 1:
-                args = (*args, self.DEFAULT_FRAMES_PER_CLIP)
+                args = (*args, self.FRAMES_PER_CLIP)
 
             return args
 
         return wrapper
+
+    def test_output_format(self):
+        for output_format in ["TCHW", "THWC"]:
+            with self.create_dataset(output_format=output_format) as (dataset, _):
+                for video, *_ in dataset:
+                    if output_format == "TCHW":
+                        num_frames, num_channels, *_ = video.shape
+                    else:  # output_format == "THWC":
+                        num_frames, *_, num_channels = video.shape
+
+                assert num_frames == self.FRAMES_PER_CLIP
+                assert num_channels == 3
+
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        # `output_format == "THWC"` is not supported by the wrapper. Thus, we skip the `config` if it is set explicitly
+        # or use the supported `"TCHW"`
+        if config.setdefault("output_format", "TCHW") == "THWC":
+            return
+
+        super().test_transforms_v2_wrapper.__wrapped__(self, config)
+
+
+def _no_collate(batch):
+    return batch
+
+
+def check_transforms_v2_wrapper_spawn(dataset):
+    # On Linux and Windows, the DataLoader forks the main process by default. This is not available on macOS, so new
+    # subprocesses are spawned. This requires the whole pipeline including the dataset to be pickleable, which is what
+    # we are enforcing here.
+    if platform.system() != "Darwin":
+        pytest.skip("Multiprocessing spawning is only checked on macOS.")
+
+    from torch.utils.data import DataLoader
+    from torchvision import tv_tensors
+    from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+    wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+
+    dataloader = DataLoader(wrapped_dataset, num_workers=2, multiprocessing_context="spawn", collate_fn=_no_collate)
+
+    for wrapped_sample in dataloader:
+        assert tree_any(
+            lambda item: isinstance(item, (tv_tensors.Image, tv_tensors.Video, PIL.Image.Image)), wrapped_sample
+        )
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
@@ -747,6 +818,33 @@ def create_image_folder(
     ]
 
 
+def shape_test_for_stereo(
+    left: PIL.Image.Image,
+    right: PIL.Image.Image,
+    disparity: Optional[np.ndarray] = None,
+    valid_mask: Optional[np.ndarray] = None,
+):
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, h, w = left_dims
+    # check that left and right are the same size
+    assert left_dims == right_dims
+    assert c == 3
+
+    # check that the disparity has the same spatial dimensions
+    # as the input
+    if disparity is not None:
+        assert disparity.ndim == 3
+        assert disparity.shape == (1, h, w)
+
+    if valid_mask is not None:
+        # check that valid mask is the same size as the disparity
+        _, dh, dw = disparity.shape
+        mh, mw = valid_mask.shape
+        assert dh == mh
+        assert dw == mw
+
+
 @requires_lazy_imports("av")
 def create_video_file(
     root: Union[pathlib.Path, str],
@@ -755,7 +853,7 @@ def create_video_file(
     fps: float = 25,
     **kwargs: Any,
 ) -> pathlib.Path:
-    """Create an video file from random data.
+    """Create a video file from random data.
 
     Args:
         root (Union[str, pathlib.Path]): Root directory the video file will be placed in.
@@ -866,10 +964,21 @@ def _split_files_or_dirs(root, *files_or_dirs):
 
 def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
     archive = pathlib.Path(root) / name
+    if not files_or_dirs:
+        # We need to invoke `Path.with_suffix("")`, since call only applies to the last suffix if multiple suffixes are
+        # present. For example, `pathlib.Path("foo.tar.gz").with_suffix("")` results in `foo.tar`.
+        file_or_dir = archive
+        for _ in range(len(archive.suffixes)):
+            file_or_dir = file_or_dir.with_suffix("")
+        if file_or_dir.exists():
+            files_or_dirs = (file_or_dir,)
+        else:
+            raise ValueError("No file or dir provided.")
+
     files, dirs = _split_files_or_dirs(root, *files_or_dirs)
 
     with opener(archive) as fh:
-        for file in files:
+        for file in sorted(files):
             adder(fh, file, file.relative_to(root))
 
     if remove:
@@ -909,7 +1018,7 @@ def create_random_string(length: int, *digits: str) -> str:
 
     Args:
         length (int): Number of characters in the generated string.
-        *characters (str): Characters to sample from. If omitted defaults to :attr:`string.ascii_lowercase`.
+        *digits (str): Characters to sample from. If omitted defaults to :attr:`string.ascii_lowercase`.
     """
     if not digits:
         digits = string.ascii_lowercase

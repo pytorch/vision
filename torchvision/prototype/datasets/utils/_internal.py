@@ -1,47 +1,27 @@
-import enum
-import gzip
-import io
-import lzma
-import os
-import os.path
+import csv
+import functools
 import pathlib
 import pickle
-from typing import (
-    Sequence,
-    Callable,
-    Union,
-    Any,
-    Tuple,
-    TypeVar,
-    Iterator,
-    Dict,
-    Optional,
-    IO,
-    Sized,
-)
-from typing import cast
+from typing import Any, BinaryIO, Callable, Dict, IO, Iterator, List, Sequence, Sized, Tuple, TypeVar, Union
 
-import numpy as np
-import PIL.Image
+import torch
 import torch.distributed as dist
 import torch.utils.data
-from torch.utils.data import IterDataPipe
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
-from torchdata.datapipes.utils import StreamWrapper
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
+from torchvision.prototype.utils._internal import fromfile
 
 
 __all__ = [
     "INFINITE_BUFFER_SIZE",
     "BUILTIN_DIR",
     "read_mat",
-    "image_buffer_from_array",
-    "SequenceIterator",
     "MappingIterator",
-    "Enumerator",
     "getitem",
     "path_accessor",
     "path_comparator",
-    "Decompressor",
+    "read_flo",
+    "hint_sharding",
+    "hint_shuffling",
 ]
 
 K = TypeVar("K")
@@ -53,33 +33,15 @@ INFINITE_BUFFER_SIZE = 1_000_000_000
 BUILTIN_DIR = pathlib.Path(__file__).parent.parent / "_builtin"
 
 
-def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
+def read_mat(buffer: BinaryIO, **kwargs: Any) -> Any:
     try:
         import scipy.io as sio
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
 
-    if isinstance(buffer, StreamWrapper):
-        buffer = buffer.file_obj
-
-    return sio.loadmat(buffer, **kwargs)
-
-
-def image_buffer_from_array(array: np.ndarray, *, format: str = "png") -> io.BytesIO:
-    image = PIL.Image.fromarray(array)
-    buffer = io.BytesIO()
-    image.save(buffer, format=format)
-    buffer.seek(0)
-    return buffer
-
-
-class SequenceIterator(IterDataPipe[D]):
-    def __init__(self, datapipe: IterDataPipe[Sequence[D]]):
-        self.datapipe = datapipe
-
-    def __iter__(self) -> Iterator[D]:
-        for sequence in self.datapipe:
-            yield from iter(sequence)
+    data = sio.loadmat(buffer, **kwargs)
+    buffer.close()
+    return data
 
 
 class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
@@ -89,91 +51,46 @@ class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
 
     def __iter__(self) -> Iterator[Union[Tuple[K, D], D]]:
         for mapping in self.datapipe:
-            yield from iter(mapping.values() if self.drop_key else mapping.items())  # type: ignore[call-overload]
+            yield from iter(mapping.values() if self.drop_key else mapping.items())
 
 
-class Enumerator(IterDataPipe[Tuple[int, D]]):
-    def __init__(self, datapipe: IterDataPipe[D], start: int = 0) -> None:
-        self.datapipe = datapipe
-        self.start = start
-
-    def __iter__(self) -> Iterator[Tuple[int, D]]:
-        yield from enumerate(self.datapipe, self.start)
+def _getitem_closure(obj: Any, *, items: Sequence[Any]) -> Any:
+    for item in items:
+        obj = obj[item]
+    return obj
 
 
 def getitem(*items: Any) -> Callable[[Any], Any]:
-    def wrapper(obj: Any) -> Any:
-        for item in items:
-            obj = obj[item]
-        return obj
+    return functools.partial(_getitem_closure, items=items)
 
-    return wrapper
+
+def _getattr_closure(obj: Any, *, attrs: Sequence[str]) -> Any:
+    for attr in attrs:
+        obj = getattr(obj, attr)
+    return obj
+
+
+def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> Any:
+    return _getattr_closure(path, attrs=name.split("."))
+
+
+def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
+    return getter(pathlib.Path(data[0]))
 
 
 def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[Tuple[str, Any]], D]:
     if isinstance(getter, str):
-        name = getter
+        getter = functools.partial(_path_attribute_accessor, name=getter)
 
-        def getter(path: pathlib.Path) -> D:
-            return cast(D, getattr(path, name))
+    return functools.partial(_path_accessor_closure, getter=getter)
 
-    def wrapper(data: Tuple[str, Any]) -> D:
-        return getter(pathlib.Path(data[0]))  # type: ignore[operator]
 
-    return wrapper
+def _path_comparator_closure(data: Tuple[str, Any], *, accessor: Callable[[Tuple[str, Any]], D], value: D) -> bool:
+    return accessor(data) == value
 
 
 def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
-    accessor = path_accessor(getter)
-
-    def wrapper(data: Tuple[str, Any]) -> bool:
-        return accessor(data) == value
-
-    return wrapper
-
-
-class CompressionType(enum.Enum):
-    GZIP = "gzip"
-    LZMA = "lzma"
-
-
-class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
-    types = CompressionType
-
-    _DECOMPRESSORS = {
-        types.GZIP: lambda file: gzip.GzipFile(fileobj=file),
-        types.LZMA: lambda file: lzma.LZMAFile(file),
-    }
-
-    def __init__(
-        self,
-        datapipe: IterDataPipe[Tuple[str, io.IOBase]],
-        *,
-        type: Optional[Union[str, CompressionType]] = None,
-    ) -> None:
-        self.datapipe = datapipe
-        if isinstance(type, str):
-            type = self.types(type.upper())
-        self.type = type
-
-    def _detect_compression_type(self, path: str) -> CompressionType:
-        if self.type:
-            return self.type
-
-        # TODO: this needs to be more elaborate
-        ext = os.path.splitext(path)[1]
-        if ext == ".gz":
-            return self.types.GZIP
-        elif ext == ".xz":
-            return self.types.LZMA
-        else:
-            raise RuntimeError("FIXME")
-
-    def __iter__(self) -> Iterator[Tuple[str, io.IOBase]]:
-        for path, file in self.datapipe:
-            type = self._detect_compression_type(path)
-            decompressor = self._DECOMPRESSORS[type]
-            yield path, decompressor(file)
+    return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
 
 
 class PicklerDataPipe(IterDataPipe):
@@ -187,7 +104,7 @@ class PicklerDataPipe(IterDataPipe):
                 yield d
 
 
-class SharderDataPipe(torch.utils.data.datapipes.iter.grouping.ShardingFilterIterDataPipe):
+class SharderDataPipe(ShardingFilter):
     def __init__(self, source_datapipe: IterDataPipe) -> None:
         super().__init__(source_datapipe)
         self.rank = 0
@@ -241,12 +158,37 @@ class TakerDataPipe(IterDataPipe):
         return num_take
 
 
-def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
+def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[str, Any]]:
     dp = IoPathFileLister(root=root)
     dp = SharderDataPipe(dp)
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
-    dp = IoPathFileLoader(dp, mode="rb")
+    dp = IoPathFileOpener(dp, mode="rb")
     dp = PicklerDataPipe(dp)
     # dp = dp.cycle(2)
     dp = TakerDataPipe(dp, dataset_size)
     return dp
+
+
+def read_flo(file: BinaryIO) -> torch.Tensor:
+    if file.read(4) != b"PIEH":
+        raise ValueError("Magic number incorrect. Invalid .flo file")
+
+    width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
+    flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
+    return flow.reshape((height, width, 2)).permute((2, 0, 1))
+
+
+def hint_sharding(datapipe: IterDataPipe) -> ShardingFilter:
+    return ShardingFilter(datapipe)
+
+
+def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
+    return Shuffler(datapipe, buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False)
+
+
+def read_categories_file(name: str) -> List[Union[str, Sequence[str]]]:
+    path = BUILTIN_DIR / f"{name}.categories"
+    with open(path, newline="") as file:
+        rows = list(csv.reader(file))
+        rows = [row[0] if len(row) == 1 else row for row in rows]
+        return rows

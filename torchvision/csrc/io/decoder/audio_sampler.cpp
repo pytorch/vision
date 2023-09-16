@@ -121,7 +121,7 @@ int AudioSampler::sample(
       return result;
     }
 
-    CHECK_LE(result, outNumSamples);
+    TORCH_CHECK_LE(result, outNumSamples);
 
     if (result) {
       if ((result = av_samples_get_buffer_size(
@@ -166,7 +166,7 @@ int AudioSampler::sample(
 
     av_free(tmpBuffer);
 
-    CHECK_LE(result, outNumSamples);
+    TORCH_CHECK_LE(result, outNumSamples);
 
     if (result) {
       result = av_samples_get_buffer_size(

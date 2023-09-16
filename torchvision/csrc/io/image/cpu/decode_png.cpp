@@ -23,6 +23,7 @@ torch::Tensor decode_png(
     const torch::Tensor& data,
     ImageReadMode mode,
     bool allow_16_bits) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.decode_png.decode_png");
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -40,26 +41,36 @@ torch::Tensor decode_png(
     TORCH_CHECK(info_ptr, "libpng info structure allocation failed!")
   }
 
-  auto datap = data.accessor<unsigned char, 1>().data();
+  auto accessor = data.accessor<unsigned char, 1>();
+  auto datap = accessor.data();
+  auto datap_len = accessor.size(0);
 
   if (setjmp(png_jmpbuf(png_ptr)) != 0) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     TORCH_CHECK(false, "Internal error.");
   }
+  TORCH_CHECK(datap_len >= 8, "Content is too small for png!")
   auto is_png = !png_sig_cmp(datap, 0, 8);
   TORCH_CHECK(is_png, "Content is not png!")
 
   struct Reader {
     png_const_bytep ptr;
+    png_size_t count;
   } reader;
   reader.ptr = png_const_bytep(datap) + 8;
+  reader.count = datap_len - 8;
 
-  auto read_callback =
-      [](png_structp png_ptr, png_bytep output, png_size_t bytes) {
-        auto reader = static_cast<Reader*>(png_get_io_ptr(png_ptr));
-        std::copy(reader->ptr, reader->ptr + bytes, output);
-        reader->ptr += bytes;
-      };
+  auto read_callback = [](png_structp png_ptr,
+                          png_bytep output,
+                          png_size_t bytes) {
+    auto reader = static_cast<Reader*>(png_get_io_ptr(png_ptr));
+    TORCH_CHECK(
+        reader->count >= bytes,
+        "Out of bound read in decode_png. Probably, the input image is corrupted");
+    std::copy(reader->ptr, reader->ptr + bytes, output);
+    reader->ptr += bytes;
+    reader->count -= bytes;
+  };
   png_set_sig_bytes(png_ptr, 8);
   png_set_read_fn(png_ptr, &reader, read_callback);
   png_read_info(png_ptr, info_ptr);

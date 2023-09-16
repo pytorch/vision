@@ -4,22 +4,22 @@ We want to make contributing to this project as easy and transparent as possible
 
 ## TL;DR
 
-We appreciate all contributions. If you are interested in contributing to Torchvision, there are many ways to help out. 
+We appreciate all contributions. If you are interested in contributing to Torchvision, there are many ways to help out.
 Your contributions may fall into the following categories:
 
-- It helps the project if you could 
+- It helps the project if you could
     - Report issues you're facing
-    - Give a :+1: on issues that others reported and that are relevant to you 
+    - Give a :+1: on issues that others reported and that are relevant to you
 
 - Answering queries on the issue tracker, investigating bugs are very valuable contributions to the project.
 
-- You would like to improve the documentation. This is no less important than improving the library itself! 
+- You would like to improve the documentation. This is no less important than improving the library itself!
 If you find a typo in the documentation, do not hesitate to submit a GitHub pull request.
 
 - If you would like to fix a bug
     - please pick one from the [list of open issues labelled as "help wanted"](https://github.com/pytorch/vision/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
     - comment on the issue that you want to work on this issue
-    - send a PR with your fix, see below. 
+    - send a PR with your fix, see below.
 
 - If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
 
@@ -30,30 +30,49 @@ clear and has sufficient instructions to be able to reproduce the issue.
 
 ## Development installation
 
-### Install PyTorch Nightly 
+
+### Dependencies
+
+Start by installing the **nightly** build of PyTorch following the [official
+instructions](https://pytorch.org/get-started/locally/).
+
+**Optionally**, install `libpng` and `libjpeg-turbo` if you want to enable
+support for
+native encoding / decoding of PNG and JPEG formats in
+[torchvision.io](https://pytorch.org/vision/stable/io.html#image):
 
 ```bash
-conda install pytorch -c pytorch-nightly
-# or with pip (see https://pytorch.org/get-started/locally/)
-# pip install numpy
-# pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
+conda install libpng libjpeg-turbo -c pytorch
 ```
 
-### Install Torchvision
+Note: you can use the `TORCHVISION_INCLUDE` and `TORCHVISION_LIBRARY`
+environment variables to tell the build system where to find those libraries if
+they are in specific locations. Take a look at
+[setup.py](https://github.com/pytorch/vision/blob/main/setup.py) for more
+details.
+
+### Clone and install torchvision
 
 ```bash
 git clone https://github.com/pytorch/vision.git
 cd vision
-python setup.py develop
+python setup.py develop  # use install instead of develop if you don't care about development.
 # or, for OSX
 # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py develop
-# for C++ debugging, please use DEBUG=1
+# for C++ debugging, use DEBUG=1
 # DEBUG=1 python setup.py develop
-pip install flake8 typing mypy pytest pytest-mock scipy
 ```
-You may also have to install `libpng-dev` and `libjpeg-turbo8-dev` libraries:
-```bash
-conda install libpng jpeg
+
+By default, GPU support is built if CUDA is found and `torch.cuda.is_available()` is true. It's possible to force
+building GPU support by setting `FORCE_CUDA=1` environment variable, which is useful when building a docker image.
+
+We don't officially support building from source using `pip`, but _if_ you do, you'll need to use the
+`--no-build-isolation` flag.
+
+Other development dependencies include:
+
+```
+pip install flake8 typing mypy pytest pytest-mock scipy
 ```
 
 ## Development Process
@@ -66,12 +85,12 @@ If you plan to modify the code or documentation, please follow the steps below:
 4. Ensure the test suite passes.
 5. Make sure your code passes the formatting checks (see below).
 
-For more details about pull requests, 
-please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request). 
+For more details about pull requests,
+please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
 
-If you would like to contribute a new model, please see [here](#New-model).
+If you would like to contribute a new model, please see [here](#New-architecture-or-improved-model-weights).
 
-If you would like to contribute a new dataset, please see [here](#New-dataset). 
+If you would like to contribute a new dataset, please see [here](#New-dataset).
 
 ### Code formatting and typing
 
@@ -83,7 +102,7 @@ Instead of relying directly on `black` however, we rely on
 [ufmt](https://github.com/omnilib/ufmt), for compatibility reasons with Facebook
 internal infrastructure.
 
-To format your code, install `ufmt` with `pip install ufmt` and use e.g.:
+To format your code, install `ufmt` with `pip install ufmt==1.3.3 black==22.3.0 usort==1.0.2` and use e.g.:
 
 ```bash
 ufmt format torchvision
@@ -126,8 +145,8 @@ mypy --config-file mypy.ini
 
 ### Unit tests
 
-If you have modified the code by adding a new feature or a bug-fix, please add unit tests for that. To run a specific 
-test: 
+If you have modified the code by adding a new feature or a bug-fix, please add unit tests for that. To run a specific
+test:
 ```bash
 pytest test/<test-module.py> -vvv -k <test_myfunc>
 # e.g. pytest test/test_transforms.py -vvv -k test_center_crop
@@ -136,7 +155,7 @@ pytest test/<test-module.py> -vvv -k <test_myfunc>
 If you would like to run all tests:
 ```bash
 pytest test -vvv
-``` 
+```
 
 Tests that require internet access should be in
 `test/test_internet.py`.
@@ -159,7 +178,7 @@ pip install -r requirements.txt
 
 ```bash
 cd docs
-make html
+make html-noplot
 ```
 
 Then open `docs/build/html/index.html` in your favorite browser.
@@ -173,35 +192,34 @@ clean``.
 
 #### Building the example gallery - or not
 
-When you run ``make html`` for the first time, all the examples in the gallery
-will be built. Subsequent builds should be faster, and will only build the
-examples that have been modified.
+In most cases, running `make html-noplot` is enough to build the docs for your
+specific use-case. The `noplot` part tells sphinx **not** to build the examples
+in the [gallery](https://pytorch.org/vision/stable/auto_examples/index.html),
+which saves a lot of building time.
 
-You can run ``make html-noplot`` to not build the examples at all. This is
-useful after a ``make clean`` to do some quick checks that are not related to
-the examples.
+If you need to build all the examples in the gallery, then you can use `make
+html`.
 
 You can also choose to only build a subset of the examples by using the
 ``EXAMPLES_PATTERN`` env variable, which accepts a regular expression. For
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
 with "transforms" in their name.
 
-### New model
+### New architecture or improved model weights
 
-More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
-it in an issue as, most likely, it will not be accepted.
- 
+Please refer to the guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
+
 ### New dataset
 
-More details on how to add a new dataset will be provided later. Please, do not send any PR with a new dataset without discussing 
+Please, do not send any PR with a new dataset without discussing
 it in an issue as, most likely, it will not be accepted.
 
 ### Pull Request
 
-If all previous checks (flake8, mypy, unit tests) are passing, please send a PR. Submitted PR will pass other tests on 
-different operation systems, python versions and hardwares.
+If all previous checks (flake8, mypy, unit tests) are passing, please send a PR. Submitted PR will pass other tests on
+different operating systems, python versions and hardware.
 
-For more details about pull requests workflow, 
+For more details about pull requests workflow,
 please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
 
 ## License

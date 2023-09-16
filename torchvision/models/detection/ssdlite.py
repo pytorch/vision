@@ -6,21 +6,24 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import torch
 from torch import nn, Tensor
 
-from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops.misc import ConvNormActivation
+from ...ops.misc import Conv2dNormActivation
+from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
 from .. import mobilenet
+from .._api import register_model, Weights, WeightsEnum
+from .._meta import _COCO_CATEGORIES
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .ssd import SSD, SSDScoringHead
 
 
-__all__ = ["ssdlite320_mobilenet_v3_large"]
-
-model_urls = {
-    "ssdlite320_mobilenet_v3_large_coco": "https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth"
-}
+__all__ = [
+    "SSDLite320_MobileNet_V3_Large_Weights",
+    "ssdlite320_mobilenet_v3_large",
+]
 
 
 # Building blocks of SSDlite as described in section 6.2 of MobileNetV2 paper
@@ -29,7 +32,7 @@ def _prediction_block(
 ) -> nn.Sequential:
     return nn.Sequential(
         # 3x3 depthwise with stride 1 and padding 1
-        ConvNormActivation(
+        Conv2dNormActivation(
             in_channels,
             in_channels,
             kernel_size=kernel_size,
@@ -47,11 +50,11 @@ def _extra_block(in_channels: int, out_channels: int, norm_layer: Callable[..., 
     intermediate_channels = out_channels // 2
     return nn.Sequential(
         # 1x1 projection to half output channels
-        ConvNormActivation(
+        Conv2dNormActivation(
             in_channels, intermediate_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=activation
         ),
         # 3x3 depthwise with stride 2 and padding 1
-        ConvNormActivation(
+        Conv2dNormActivation(
             intermediate_channels,
             intermediate_channels,
             kernel_size=3,
@@ -61,7 +64,7 @@ def _extra_block(in_channels: int, out_channels: int, norm_layer: Callable[..., 
             activation_layer=activation,
         ),
         # 1x1 projetion to output channels
-        ConvNormActivation(
+        Conv2dNormActivation(
             intermediate_channels, out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=activation
         ),
     )
@@ -122,7 +125,9 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
-        assert not backbone[c4_pos].use_res_connect
+        if backbone[c4_pos].use_res_connect:
+            raise ValueError("backbone[c4_pos].use_res_connect should be False")
+
         self.features = nn.Sequential(
             # As described in section 6.3 of MobileNetV3 paper
             nn.Sequential(*backbone[:c4_pos], backbone[c4_pos].block[0]),  # from start until C4 expansion layer
@@ -167,8 +172,9 @@ def _mobilenet_extractor(
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
-    assert 0 <= trainable_layers <= num_stages
+    # find the index of the layer from which we won't freeze
+    if not 0 <= trainable_layers <= num_stages:
+        raise ValueError("trainable_layers should be in the range [0, {num_stages}], instead got {trainable_layers}")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
@@ -178,60 +184,110 @@ def _mobilenet_extractor(
     return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer)
 
 
+class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
+        transforms=ObjectDetection,
+        meta={
+            "num_params": 3440060,
+            "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 21.3,
+                }
+            },
+            "_ops": 0.583,
+            "_file_size": 13.418,
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
+        },
+    )
+    DEFAULT = COCO_V1
+
+
+@register_model()
+@handle_legacy_interface(
+    weights=("pretrained", SSDLite320_MobileNet_V3_Large_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
+)
 def ssdlite320_mobilenet_v3_large(
-    pretrained: bool = False,
+    *,
+    weights: Optional[SSDLite320_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
-    pretrained_backbone: bool = False,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = MobileNet_V3_Large_Weights.IMAGENET1K_V1,
     trainable_backbone_layers: Optional[int] = None,
     norm_layer: Optional[Callable[..., nn.Module]] = None,
     **kwargs: Any,
-):
-    """Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at
-    `"Searching for MobileNetV3"
-    <https://arxiv.org/abs/1905.02244>`_ and
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
-    <https://arxiv.org/abs/1801.04381>`_.
+) -> SSD:
+    """SSDlite model architecture with input size 320x320 and a MobileNetV3 Large backbone, as
+    described at `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__ and
+    `MobileNetV2: Inverted Residuals and Linear Bottlenecks <https://arxiv.org/abs/1801.04381>`__.
+
+    .. betastatus:: detection module
 
     See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
     Example:
 
-        >>> model = torchvision.models.detection.ssdlite320_mobilenet_v3_large(pretrained=True)
+        >>> model = torchvision.models.detection.ssdlite320_mobilenet_v3_large(weights=SSDLite320_MobileNet_V3_Large_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 320, 320), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
-            passed (the default) this value is set to 6.
+        weights (:class:`~torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model
+            (including the background).
+        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The pretrained
+            weights for the backbone.
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers
+            starting from final block. Valid values are between 0 and 6, with 6 meaning all
+            backbone layers are trainable. If ``None`` is passed (the default) this value is
+            set to 6.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
+        **kwargs: parameters passed to the ``torchvision.models.detection.ssd.SSD``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights
+        :members:
     """
+
+    weights = SSDLite320_MobileNet_V3_Large_Weights.verify(weights)
+    weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
+
     if "size" in kwargs:
-        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+        warnings.warn("The size of the model is already fixed; ignoring the parameter.")
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 6
+        weights is not None or weights_backbone is not None, trainable_backbone_layers, 6, 6
     )
 
-    if pretrained:
-        pretrained_backbone = False
-
     # Enable reduced tail if no pretrained backbone is selected. See Table 6 of MobileNetV3 paper.
-    reduce_tail = not pretrained_backbone
+    reduce_tail = weights_backbone is None
 
     if norm_layer is None:
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
-    backbone = mobilenet.mobilenet_v3_large(
-        pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer, reduced_tail=reduce_tail, **kwargs
+    backbone = mobilenet_v3_large(
+        weights=weights_backbone, progress=progress, norm_layer=norm_layer, reduced_tail=reduce_tail, **kwargs
     )
-    if not pretrained_backbone:
+    if weights_backbone is None:
         # Change the default initialization scheme if not pretrained
         _normal_init(backbone)
     backbone = _mobilenet_extractor(
@@ -244,7 +300,10 @@ def ssdlite320_mobilenet_v3_large(
     anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
     out_channels = det_utils.retrieve_out_channels(backbone, size)
     num_anchors = anchor_generator.num_anchors_per_location()
-    assert len(out_channels) == len(anchor_generator.aspect_ratios)
+    if len(out_channels) != len(anchor_generator.aspect_ratios):
+        raise ValueError(
+            f"The length of the output channels from the backbone {len(out_channels)} do not match the length of the anchor generator aspect ratios {len(anchor_generator.aspect_ratios)}"
+        )
 
     defaults = {
         "score_thresh": 0.001,
@@ -252,11 +311,11 @@ def ssdlite320_mobilenet_v3_large(
         "detections_per_img": 300,
         "topk_candidates": 300,
         # Rescale the input in a way compatible to the backbone:
-        # The following mean/std rescale the data from [0, 1] to [-1, -1]
+        # The following mean/std rescale the data from [0, 1] to [-1, 1]
         "image_mean": [0.5, 0.5, 0.5],
         "image_std": [0.5, 0.5, 0.5],
     }
-    kwargs = {**defaults, **kwargs}
+    kwargs: Any = {**defaults, **kwargs}
     model = SSD(
         backbone,
         anchor_generator,
@@ -266,10 +325,7 @@ def ssdlite320_mobilenet_v3_large(
         **kwargs,
     )
 
-    if pretrained:
-        weights_name = "ssdlite320_mobilenet_v3_large_coco"
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError(f"No checkpoint is available for model {weights_name}")
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
-        model.load_state_dict(state_dict)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
+
     return model

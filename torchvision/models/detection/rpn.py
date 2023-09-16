@@ -1,27 +1,15 @@
-from typing import List, Optional, Dict, Tuple, cast
+from typing import Dict, List, Optional, Tuple
 
 import torch
-import torchvision
 from torch import nn, Tensor
 from torch.nn import functional as F
-from torchvision.ops import boxes as box_ops
+from torchvision.ops import boxes as box_ops, Conv2dNormActivation
 
 from . import _utils as det_utils
 
 # Import AnchorGenerator to keep compatibility.
 from .anchor_utils import AnchorGenerator  # noqa: 401
 from .image_list import ImageList
-
-
-@torch.jit.unused
-def _onnx_get_num_anchors_and_pre_nms_top_n(ob: Tensor, orig_pre_nms_top_n: int) -> Tuple[int, int]:
-    from torch.onnx import operators
-
-    num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
-    pre_nms_top_n = torch.min(torch.cat((torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype), num_anchors), 0))
-
-    # for mypy we cast at runtime
-    return cast(int, num_anchors), cast(int, pre_nms_top_n)
 
 
 class RPNHead(nn.Module):
@@ -31,23 +19,60 @@ class RPNHead(nn.Module):
     Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
+        conv_depth (int, optional): number of convolutions
     """
 
-    def __init__(self, in_channels: int, num_anchors: int) -> None:
+    _version = 2
+
+    def __init__(self, in_channels: int, num_anchors: int, conv_depth=1) -> None:
         super().__init__()
-        self.conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
+        convs = []
+        for _ in range(conv_depth):
+            convs.append(Conv2dNormActivation(in_channels, in_channels, kernel_size=3, norm_layer=None))
+        self.conv = nn.Sequential(*convs)
         self.cls_logits = nn.Conv2d(in_channels, num_anchors, kernel_size=1, stride=1)
         self.bbox_pred = nn.Conv2d(in_channels, num_anchors * 4, kernel_size=1, stride=1)
 
-        for layer in self.children():
-            torch.nn.init.normal_(layer.weight, std=0.01)  # type: ignore[arg-type]
-            torch.nn.init.constant_(layer.bias, 0)  # type: ignore[arg-type]
+        for layer in self.modules():
+            if isinstance(layer, nn.Conv2d):
+                torch.nn.init.normal_(layer.weight, std=0.01)  # type: ignore[arg-type]
+                if layer.bias is not None:
+                    torch.nn.init.constant_(layer.bias, 0)  # type: ignore[arg-type]
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        version = local_metadata.get("version", None)
+
+        if version is None or version < 2:
+            for type in ["weight", "bias"]:
+                old_key = f"{prefix}conv.{type}"
+                new_key = f"{prefix}conv.0.0.{type}"
+                if old_key in state_dict:
+                    state_dict[new_key] = state_dict.pop(old_key)
+
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
 
     def forward(self, x: List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
         logits = []
         bbox_reg = []
         for feature in x:
-            t = F.relu(self.conv(feature))
+            t = self.conv(feature)
             logits.append(self.cls_logits(t))
             bbox_reg.append(self.bbox_pred(t))
         return logits, bbox_reg
@@ -206,11 +231,8 @@ class RegionProposalNetwork(torch.nn.Module):
         r = []
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
-            if torchvision._is_tracing():
-                num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n())
-            else:
-                num_anchors = ob.shape[1]
-                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)
+            num_anchors = ob.shape[1]
+            pre_nms_top_n = det_utils._topk_min(ob, self.pre_nms_top_n(), 1)
             _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
             r.append(top_n_idx + offset)
             offset += num_anchors
@@ -299,15 +321,12 @@ class RegionProposalNetwork(torch.nn.Module):
         labels = torch.cat(labels, dim=0)
         regression_targets = torch.cat(regression_targets, dim=0)
 
-        box_loss = (
-            F.smooth_l1_loss(
-                pred_bbox_deltas[sampled_pos_inds],
-                regression_targets[sampled_pos_inds],
-                beta=1 / 9,
-                reduction="sum",
-            )
-            / (sampled_inds.numel())
-        )
+        box_loss = F.smooth_l1_loss(
+            pred_bbox_deltas[sampled_pos_inds],
+            regression_targets[sampled_pos_inds],
+            beta=1 / 9,
+            reduction="sum",
+        ) / (sampled_inds.numel())
 
         objectness_loss = F.binary_cross_entropy_with_logits(objectness[sampled_inds], labels[sampled_inds])
 
@@ -354,7 +373,8 @@ class RegionProposalNetwork(torch.nn.Module):
 
         losses = {}
         if self.training:
-            assert targets is not None
+            if targets is None:
+                raise ValueError("targets should not be None")
             labels, matched_gt_boxes = self.assign_targets_to_anchors(anchors, targets)
             regression_targets = self.box_coder.encode(matched_gt_boxes, anchors)
             loss_objectness, loss_rpn_box_reg = self.compute_loss(

@@ -18,10 +18,13 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.8
 
       - name: Upgrade system packages
         run: python -m pip install --upgrade pip setuptools wheel
+
+      - name: SSL
+        run: python -c 'import ssl; print(ssl.OPENSSL_VERSION)'
 
       - name: Checkout repository
         uses: actions/checkout@v2

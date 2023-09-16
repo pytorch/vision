@@ -61,7 +61,7 @@ DecoderInCallback MemoryBuffer::getCallback(
         }
         // seek mode
         if (!timeoutMs) {
-          // seek capabilty, yes - supported
+          // seek capability, yes - supported
           return 0;
         }
         return object.seek(size, whence);

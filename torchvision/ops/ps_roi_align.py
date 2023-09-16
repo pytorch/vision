@@ -1,12 +1,14 @@
 import torch
+import torch.fx
 from torch import nn, Tensor
 from torch.nn.modules.utils import _pair
 from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once
-from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
+from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
+@torch.fx.wrap
 def ps_roi_align(
     input: Tensor,
     boxes: Tensor,
@@ -43,7 +45,8 @@ def ps_roi_align(
     Returns:
         Tensor[K, C / (output_size[0] * output_size[1]), output_size[0], output_size[1]]: The pooled RoIs
     """
-    _log_api_usage_once("torchvision.ops.ps_roi_align")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(ps_roi_align)
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
@@ -68,6 +71,7 @@ class PSRoIAlign(nn.Module):
         sampling_ratio: int,
     ):
         super().__init__()
+        _log_api_usage_once(self)
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio
@@ -76,9 +80,11 @@ class PSRoIAlign(nn.Module):
         return ps_roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio)
 
     def __repr__(self) -> str:
-        tmpstr = self.__class__.__name__ + "("
-        tmpstr += "output_size=" + str(self.output_size)
-        tmpstr += ", spatial_scale=" + str(self.spatial_scale)
-        tmpstr += ", sampling_ratio=" + str(self.sampling_ratio)
-        tmpstr += ")"
-        return tmpstr
+        s = (
+            f"{self.__class__.__name__}("
+            f"output_size={self.output_size}"
+            f", spatial_scale={self.spatial_scale}"
+            f", sampling_ratio={self.sampling_ratio}"
+            f")"
+        )
+        return s

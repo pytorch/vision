@@ -1,76 +1,65 @@
-import io
-import os
-from typing import Any, Callable, Dict, List, Optional
+import pathlib
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
-import torch
-from torch.utils.data import IterDataPipe
 from torchvision.prototype.datasets import home
-from torchvision.prototype.datasets.decoder import raw, pil
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetType
+from torchvision.prototype.datasets.utils import Dataset
 from torchvision.prototype.utils._internal import add_suggestion
 
-from . import _builtin
 
-DATASETS: Dict[str, Dataset] = {}
+T = TypeVar("T")
+D = TypeVar("D", bound=Type[Dataset])
 
-
-def register(dataset: Dataset) -> None:
-    DATASETS[dataset.name] = dataset
+BUILTIN_INFOS: Dict[str, Dict[str, Any]] = {}
 
 
-for name, obj in _builtin.__dict__.items():
-    if not name.startswith("_") and isinstance(obj, type) and issubclass(obj, Dataset) and obj is not Dataset:
-        register(obj())
+def register_info(name: str) -> Callable[[Callable[[], Dict[str, Any]]], Callable[[], Dict[str, Any]]]:
+    def wrapper(fn: Callable[[], Dict[str, Any]]) -> Callable[[], Dict[str, Any]]:
+        BUILTIN_INFOS[name] = fn()
+        return fn
+
+    return wrapper
 
 
-# This is exposed as 'list', but we avoid that here to not shadow the built-in 'list'
-def _list() -> List[str]:
-    return sorted(DATASETS.keys())
+BUILTIN_DATASETS = {}
 
 
-def find(name: str) -> Dataset:
+def register_dataset(name: str) -> Callable[[D], D]:
+    def wrapper(dataset_cls: D) -> D:
+        BUILTIN_DATASETS[name] = dataset_cls
+        return dataset_cls
+
+    return wrapper
+
+
+def list_datasets() -> List[str]:
+    return sorted(BUILTIN_DATASETS.keys())
+
+
+def find(dct: Dict[str, T], name: str) -> T:
     name = name.lower()
     try:
-        return DATASETS[name]
+        return dct[name]
     except KeyError as error:
         raise ValueError(
             add_suggestion(
                 f"Unknown dataset '{name}'.",
                 word=name,
-                possibilities=DATASETS.keys(),
+                possibilities=dct.keys(),
                 alternative_hint=lambda _: (
-                    "You can use torchvision.datasets.list() to get a list of all available datasets."
+                    "You can use torchvision.datasets.list_datasets() to get a list of all available datasets."
                 ),
             )
         ) from error
 
 
-def info(name: str) -> DatasetInfo:
-    return find(name).info
+def info(name: str) -> Dict[str, Any]:
+    return find(BUILTIN_INFOS, name)
 
 
-default = object()
+def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **config: Any) -> Dataset:
+    dataset_cls = find(BUILTIN_DATASETS, name)
 
-DEFAULT_DECODER: Dict[DatasetType, Callable[[io.IOBase], torch.Tensor]] = {
-    DatasetType.RAW: raw,
-    DatasetType.IMAGE: pil,
-}
+    if root is None:
+        root = pathlib.Path(home()) / name
 
-
-def load(
-    name: str,
-    *,
-    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = default,  # type: ignore[assignment]
-    split: str = "train",
-    **options: Any,
-) -> IterDataPipe[Dict[str, Any]]:
-    name = name.lower()
-    dataset = find(name)
-
-    if decoder is default:
-        decoder = DEFAULT_DECODER.get(dataset.info.type)
-
-    config = dataset.info.make_config(split=split, **options)
-    root = os.path.join(home(), name)
-
-    return dataset.to_datapipe(root, config=config, decoder=decoder)
+    return dataset_cls(root, **config)

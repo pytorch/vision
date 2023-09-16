@@ -1,39 +1,68 @@
-from typing import Any, Dict, Sequence
+import functools
+import warnings
+from collections import defaultdict
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import torch
-from torchvision.prototype.features import Image, BoundingBox, Label
-from torchvision.prototype.transforms import Transform
+
+from torchvision import tv_tensors
+from torchvision.transforms.v2 import Transform
+
+from torchvision.transforms.v2._utils import is_pure_tensor
 
 
-class Identity(Transform):
-    """Identity transform that supports all built-in :class:`~torchvision.prototype.features.Feature`'s."""
+T = TypeVar("T")
 
-    def __init__(self):
+
+def _default_arg(value: T) -> T:
+    return value
+
+
+def _get_defaultdict(default: T) -> Dict[Any, T]:
+    # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
+    # If it were possible, we could replace this with `defaultdict(lambda: default)`
+    return defaultdict(functools.partial(_default_arg, default))
+
+
+class PermuteDimensions(Transform):
+    _transformed_types = (is_pure_tensor, tv_tensors.Image, tv_tensors.Video)
+
+    def __init__(self, dims: Union[Sequence[int], Dict[Type, Optional[Sequence[int]]]]) -> None:
         super().__init__()
-        for feature_type in self._BUILTIN_FEATURE_TYPES:
-            self.register_feature_transform(feature_type, lambda input, **params: input)
+        if not isinstance(dims, dict):
+            dims = _get_defaultdict(dims)
+        if torch.Tensor in dims and any(cls in dims for cls in [tv_tensors.Image, tv_tensors.Video]):
+            warnings.warn(
+                "Got `dims` values for `torch.Tensor` and either `tv_tensors.Image` or `tv_tensors.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `tv_tensors.Image` or `tv_tensors.Video` is present in the input."
+            )
+        self.dims = dims
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+        dims = self.dims[type(inpt)]
+        if dims is None:
+            return inpt.as_subclass(torch.Tensor)
+        return inpt.permute(*dims)
 
 
-class Normalize(Transform):
-    NO_OP_FEATURE_TYPES = {BoundingBox, Label}
+class TransposeDimensions(Transform):
+    _transformed_types = (is_pure_tensor, tv_tensors.Image, tv_tensors.Video)
 
-    def __init__(self, mean: Sequence[float], std: Sequence[float]):
+    def __init__(self, dims: Union[Tuple[int, int], Dict[Type, Optional[Tuple[int, int]]]]) -> None:
         super().__init__()
-        self.mean = mean
-        self.std = std
+        if not isinstance(dims, dict):
+            dims = _get_defaultdict(dims)
+        if torch.Tensor in dims and any(cls in dims for cls in [tv_tensors.Image, tv_tensors.Video]):
+            warnings.warn(
+                "Got `dims` values for `torch.Tensor` and either `tv_tensors.Image` or `tv_tensors.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `tv_tensors.Image` or `tv_tensors.Video` is present in the input."
+            )
+        self.dims = dims
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(mean=self.mean, std=self.std)
-
-    @staticmethod
-    def _channel_stats_to_tensor(stats: Sequence[float], *, like: torch.Tensor) -> torch.Tensor:
-        return torch.as_tensor(stats, device=like.device, dtype=like.dtype).view(-1, 1, 1)
-
-    @staticmethod
-    def image(input: Image, *, mean: Sequence[float], std: Sequence[float]) -> Image:
-        mean_t = Normalize._channel_stats_to_tensor(mean, like=input)
-        std_t = Normalize._channel_stats_to_tensor(std, like=input)
-        return Image((input - mean_t) / std_t, like=input)
-
-    def extra_repr(self) -> str:
-        return f"mean={tuple(self.mean)}, std={tuple(self.std)}"
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+        dims = self.dims[type(inpt)]
+        if dims is None:
+            return inpt.as_subclass(torch.Tensor)
+        return inpt.transpose(*dims)

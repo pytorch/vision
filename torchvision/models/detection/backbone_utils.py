@@ -1,13 +1,13 @@
 import warnings
-from typing import Callable, Dict, Optional, List, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
-from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool, ExtraFPNBlock
+from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
 
-from .. import mobilenet
-from .. import resnet
-from .._utils import IntermediateLayerGetter
+from .. import mobilenet, resnet
+from .._api import _get_enum_from_fn, WeightsEnum
+from .._utils import handle_legacy_interface, IntermediateLayerGetter
 
 
 class BackboneWithFPN(nn.Module):
@@ -25,6 +25,7 @@ class BackboneWithFPN(nn.Module):
         in_channels_list (List[int]): number of channels for each feature map
             that is returned, in the order they are present in the OrderedDict
         out_channels (int): number of channels in the FPN.
+        norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
     Attributes:
         out_channels (int): the number of channels in the FPN
     """
@@ -36,6 +37,7 @@ class BackboneWithFPN(nn.Module):
         in_channels_list: List[int],
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
 
@@ -47,6 +49,7 @@ class BackboneWithFPN(nn.Module):
             in_channels_list=in_channels_list,
             out_channels=out_channels,
             extra_blocks=extra_blocks,
+            norm_layer=norm_layer,
         )
         self.out_channels = out_channels
 
@@ -56,9 +59,16 @@ class BackboneWithFPN(nn.Module):
         return x
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: _get_enum_from_fn(resnet.__dict__[kwargs["backbone_name"]])["IMAGENET1K_V1"],
+    ),
+)
 def resnet_fpn_backbone(
+    *,
     backbone_name: str,
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 3,
     returned_layers: Optional[List[int]] = None,
@@ -69,8 +79,10 @@ def resnet_fpn_backbone(
 
     Examples::
 
+        >>> import torch
+        >>> from torchvision.models import ResNet50_Weights
         >>> from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-        >>> backbone = resnet_fpn_backbone('resnet50', pretrained=True, trainable_layers=3)
+        >>> backbone = resnet_fpn_backbone(backbone_name='resnet50', weights=ResNet50_Weights.DEFAULT, trainable_layers=3)
         >>> # get some dummy image
         >>> x = torch.rand(1,3,64,64)
         >>> # compute the output
@@ -84,22 +96,22 @@ def resnet_fpn_backbone(
         >>>    ('pool', torch.Size([1, 256, 1, 1]))]
 
     Args:
-        backbone_name (string): resnet architecture. Possible values are 'ResNet', 'resnet18', 'resnet34', 'resnet50',
+        backbone_name (string): resnet architecture. Possible values are 'resnet18', 'resnet34', 'resnet50',
              'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
-        pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
+        weights (WeightsEnum, optional): The pretrained weights for the model
         norm_layer (callable): it is recommended to use the default value. For details visit:
             (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
-        trainable_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        trainable_layers (int): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
         returned_layers (list of int): The layers of the network to return. Each entry must be in ``[1, 4]``.
-            By default all layers are returned.
+            By default, all layers are returned.
         extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
             be performed. It is expected to take the fpn features, the original
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names. By
-            default a ``LastLevelMaxPool`` is used.
+            default, a ``LastLevelMaxPool`` is used.
     """
-    backbone = resnet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
+    backbone = resnet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
     return _resnet_fpn_extractor(backbone, trainable_layers, returned_layers, extra_blocks)
 
 
@@ -108,10 +120,12 @@ def _resnet_fpn_extractor(
     trainable_layers: int,
     returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
+    norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> BackboneWithFPN:
 
-    # select layers that wont be frozen
-    assert 0 <= trainable_layers <= 5
+    # select layers that won't be frozen
+    if trainable_layers < 0 or trainable_layers > 5:
+        raise ValueError(f"Trainable layers should be in the range [0,5], got {trainable_layers}")
     layers_to_train = ["layer4", "layer3", "layer2", "layer1", "conv1"][:trainable_layers]
     if trainable_layers == 5:
         layers_to_train.append("bn1")
@@ -124,26 +138,29 @@ def _resnet_fpn_extractor(
 
     if returned_layers is None:
         returned_layers = [1, 2, 3, 4]
-    assert min(returned_layers) > 0 and max(returned_layers) < 5
+    if min(returned_layers) <= 0 or max(returned_layers) >= 5:
+        raise ValueError(f"Each returned layer should be in the range [1,4]. Got {returned_layers}")
     return_layers = {f"layer{k}": str(v) for v, k in enumerate(returned_layers)}
 
     in_channels_stage2 = backbone.inplanes // 8
     in_channels_list = [in_channels_stage2 * 2 ** (i - 1) for i in returned_layers]
     out_channels = 256
-    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
+    return BackboneWithFPN(
+        backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks, norm_layer=norm_layer
+    )
 
 
 def _validate_trainable_layers(
-    pretrained: bool,
+    is_trained: bool,
     trainable_backbone_layers: Optional[int],
     max_value: int,
     default_value: int,
 ) -> int:
     # don't freeze any layers if pretrained model or backbone is not used
-    if not pretrained:
+    if not is_trained:
         if trainable_backbone_layers is not None:
             warnings.warn(
-                "Changing trainable_backbone_layers has not effect if "
+                "Changing trainable_backbone_layers has no effect if "
                 "neither pretrained nor pretrained_backbone have been set to True, "
                 f"falling back to trainable_backbone_layers={max_value} so that all layers are trainable"
             )
@@ -152,29 +169,40 @@ def _validate_trainable_layers(
     # by default freeze first blocks
     if trainable_backbone_layers is None:
         trainable_backbone_layers = default_value
-    assert 0 <= trainable_backbone_layers <= max_value
+    if trainable_backbone_layers < 0 or trainable_backbone_layers > max_value:
+        raise ValueError(
+            f"Trainable backbone layers should be in the range [0,{max_value}], got {trainable_backbone_layers} "
+        )
     return trainable_backbone_layers
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: _get_enum_from_fn(mobilenet.__dict__[kwargs["backbone_name"]])["IMAGENET1K_V1"],
+    ),
+)
 def mobilenet_backbone(
+    *,
     backbone_name: str,
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     fpn: bool,
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 2,
     returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> nn.Module:
-    backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
+    backbone = mobilenet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
     return _mobilenet_extractor(backbone, fpn, trainable_layers, returned_layers, extra_blocks)
 
 
 def _mobilenet_extractor(
     backbone: Union[mobilenet.MobileNetV2, mobilenet.MobileNetV3],
     fpn: bool,
-    trainable_layers,
+    trainable_layers: int,
     returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
+    norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> nn.Module:
     backbone = backbone.features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
@@ -182,8 +210,9 @@ def _mobilenet_extractor(
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
-    assert 0 <= trainable_layers <= num_stages
+    # find the index of the layer from which we won't freeze
+    if trainable_layers < 0 or trainable_layers > num_stages:
+        raise ValueError(f"Trainable layers should be in the range [0,{num_stages}], got {trainable_layers} ")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
@@ -197,11 +226,14 @@ def _mobilenet_extractor(
 
         if returned_layers is None:
             returned_layers = [num_stages - 2, num_stages - 1]
-        assert min(returned_layers) >= 0 and max(returned_layers) < num_stages
+        if min(returned_layers) < 0 or max(returned_layers) >= num_stages:
+            raise ValueError(f"Each returned layer should be in the range [0,{num_stages - 1}], got {returned_layers} ")
         return_layers = {f"{stage_indices[k]}": str(v) for v, k in enumerate(returned_layers)}
 
         in_channels_list = [backbone[stage_indices[i]].out_channels for i in returned_layers]
-        return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
+        return BackboneWithFPN(
+            backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks, norm_layer=norm_layer
+        )
     else:
         m = nn.Sequential(
             backbone,

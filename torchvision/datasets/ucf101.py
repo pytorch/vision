@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Tuple, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from torch import Tensor
 
@@ -17,7 +17,7 @@ class UCF101(VisionDataset):
     by ``frames_per_clip``, where the step in frames between each clip is given by
     ``step_between_clips``. The dataset itself can be downloaded from the dataset website;
     annotations that ``annotation_path`` should be pointing to can be downloaded from `here
-    <https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip>`.
+    <https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip>`_.
 
     To give an example, for 2 videos with 10 and 15 frames respectively, if ``frames_per_clip=5``
     and ``step_between_clips=5``, the dataset size will be (2 + 3) = 5, where the first two
@@ -38,11 +38,13 @@ class UCF101(VisionDataset):
             otherwise from the ``test`` split.
         transform (callable, optional): A function/transform that  takes in a TxHxWxC video
             and returns a transformed version.
+        output_format (str, optional): The format of the output video tensors (before transforms).
+            Can be either "THWC" (default) or "TCHW".
 
     Returns:
         tuple: A 3-tuple with the following entries:
 
-            - video (Tensor[T, H, W, C]): the `T` video frames
+            - video (Tensor[T, H, W, C] or Tensor[T, C, H, W]): The `T` video frames
             -  audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
                and `L` is the number of points
             - label (int): class of the video clip
@@ -64,6 +66,7 @@ class UCF101(VisionDataset):
         _video_height: int = 0,
         _video_min_dimension: int = 0,
         _audio_samples: int = 0,
+        output_format: str = "THWC",
     ) -> None:
         super().__init__(root)
         if not 1 <= fold <= 3:
@@ -87,9 +90,10 @@ class UCF101(VisionDataset):
             _video_height=_video_height,
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
+            output_format=output_format,
         )
         # we bookkeep the full version of video clips because we want to be able
-        # to return the meta data of full version rather than the subset version of
+        # to return the metadata of full version rather than the subset version of
         # video clips
         self.full_video_clips = video_clips
         self.indices = self._select_fold(video_list, annotation_path, fold, train)
@@ -108,7 +112,7 @@ class UCF101(VisionDataset):
         with open(f) as fid:
             data = fid.readlines()
             data = [x.strip().split(" ")[0] for x in data]
-            data = [os.path.join(self.root, x) for x in data]
+            data = [os.path.join(self.root, *x.split("/")) for x in data]
             selected_files.update(data)
         indices = [i for i in range(len(video_list)) if video_list[i] in selected_files]
         return indices

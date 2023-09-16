@@ -1,20 +1,23 @@
-from typing import Any
+from functools import partial
+from typing import Any, Optional, Union
 
-from torch import Tensor
-from torch import nn
-from torch.quantization import QuantStub, DeQuantStub, fuse_modules
-from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, model_urls
+from torch import nn, Tensor
+from torch.ao.quantization import DeQuantStub, QuantStub
+from torchvision.models.mobilenetv2 import InvertedResidual, MobileNet_V2_Weights, MobileNetV2
 
-from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops.misc import ConvNormActivation
-from .utils import _replace_relu, quantize_model
+from ...ops.misc import Conv2dNormActivation
+from ...transforms._presets import ImageClassification
+from .._api import register_model, Weights, WeightsEnum
+from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _ovewrite_named_param, handle_legacy_interface
+from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
-__all__ = ["QuantizableMobileNetV2", "mobilenet_v2"]
-
-quant_model_urls = {
-    "mobilenet_v2_qnnpack": "https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth"
-}
+__all__ = [
+    "QuantizableMobileNetV2",
+    "MobileNet_V2_QuantizedWeights",
+    "mobilenet_v2",
+]
 
 
 class QuantizableInvertedResidual(InvertedResidual):
@@ -28,10 +31,10 @@ class QuantizableInvertedResidual(InvertedResidual):
         else:
             return self.conv(x)
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         for idx in range(len(self.conv)):
             if type(self.conv[idx]) is nn.Conv2d:
-                fuse_modules(self.conv, [str(idx), str(idx + 1)], inplace=True)
+                _fuse_modules(self.conv, [str(idx), str(idx + 1)], is_qat, inplace=True)
 
 
 class QuantizableMobileNetV2(MobileNetV2):
@@ -52,51 +55,100 @@ class QuantizableMobileNetV2(MobileNetV2):
         x = self.dequant(x)
         return x
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         for m in self.modules():
-            if type(m) is ConvNormActivation:
-                fuse_modules(m, ["0", "1", "2"], inplace=True)
+            if type(m) is Conv2dNormActivation:
+                _fuse_modules(m, ["0", "1", "2"], is_qat, inplace=True)
             if type(m) is QuantizableInvertedResidual:
-                m.fuse_model()
+                m.fuse_model(is_qat)
 
 
+class MobileNet_V2_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_QNNPACK_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            "num_params": 3504872,
+            "min_size": (1, 1),
+            "categories": _IMAGENET_CATEGORIES,
+            "backend": "qnnpack",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv2",
+            "unquantized": MobileNet_V2_Weights.IMAGENET1K_V1,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.658,
+                    "acc@5": 90.150,
+                }
+            },
+            "_ops": 0.301,
+            "_file_size": 3.423,
+            "_docs": """
+                These weights were produced by doing Quantization Aware Training (eager mode) on top of the unquantized
+                weights listed below.
+            """,
+        },
+    )
+    DEFAULT = IMAGENET1K_QNNPACK_V1
+
+
+@register_model(name="quantized_mobilenet_v2")
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1
+        if kwargs.get("quantize", False)
+        else MobileNet_V2_Weights.IMAGENET1K_V1,
+    )
+)
 def mobilenet_v2(
-    pretrained: bool = False,
+    *,
+    weights: Optional[Union[MobileNet_V2_QuantizedWeights, MobileNet_V2_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableMobileNetV2:
     """
     Constructs a MobileNetV2 architecture from
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
+    `MobileNetV2: Inverted Residuals and Linear Bottlenecks
     <https://arxiv.org/abs/1801.04381>`_.
 
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-     pretrained (bool): If True, returns a model pre-trained on ImageNet.
-     progress (bool): If True, displays a progress bar of the download to stderr
-     quantize(bool): If True, returns a quantized model, else returns a float model
+        weights (:class:`~torchvision.models.quantization.MobileNet_V2_QuantizedWeights` or :class:`~torchvision.models.MobileNet_V2_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.MobileNet_V2_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        quantize (bool, optional): If True, returns a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableMobileNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/mobilenetv2.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.quantization.MobileNet_V2_QuantizedWeights
+        :members:
+    .. autoclass:: torchvision.models.MobileNet_V2_Weights
+        :members:
+        :noindex:
     """
+    weights = (MobileNet_V2_QuantizedWeights if quantize else MobileNet_V2_Weights).verify(weights)
+
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if "backend" in weights.meta:
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
+    backend = kwargs.pop("backend", "qnnpack")
+
     model = QuantizableMobileNetV2(block=QuantizableInvertedResidual, **kwargs)
     _replace_relu(model)
-
     if quantize:
-        # TODO use pretrained as a string to specify the backend
-        backend = "qnnpack"
         quantize_model(model, backend)
-    else:
-        assert pretrained in [True, False]
 
-    if pretrained:
-        if quantize:
-            model_url = quant_model_urls["mobilenet_v2_" + backend]
-        else:
-            model_url = model_urls["mobilenet_v2"]
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
 
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-
-        model.load_state_dict(state_dict)
     return model

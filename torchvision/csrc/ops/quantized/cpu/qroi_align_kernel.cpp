@@ -164,7 +164,7 @@ void qroi_align_forward_kernel_impl(
     const float count =
         std::max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
 
-    // we want to precalculate indices and weights shared by all chanels,
+    // we want to precalculate indices and weights shared by all channels,
     // this is the key point of optimization
     std::vector<detail::PreCalc<float>> pre_calc(
         roi_bin_grid_h * roi_bin_grid_w * pooled_width * pooled_height);

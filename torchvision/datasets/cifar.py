@@ -126,10 +126,8 @@ class CIFAR10(VisionDataset):
         return len(self.data)
 
     def _check_integrity(self) -> bool:
-        root = self.root
-        for fentry in self.train_list + self.test_list:
-            filename, md5 = fentry[0], fentry[1]
-            fpath = os.path.join(root, self.base_folder, filename)
+        for filename, md5 in self.train_list + self.test_list:
+            fpath = os.path.join(self.root, self.base_folder, filename)
             if not check_integrity(fpath, md5):
                 return False
         return True

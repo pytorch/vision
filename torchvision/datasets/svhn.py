@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Tuple
 import numpy as np
 from PIL import Image
 
-from .utils import download_url, check_integrity, verify_str_arg
+from .utils import check_integrity, download_url, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -19,8 +19,7 @@ class SVHN(VisionDataset):
         This class needs `scipy <https://docs.scipy.org/doc/>`_ to load data from `.mat` format.
 
     Args:
-        root (string): Root directory of dataset where directory
-            ``SVHN`` exists.
+        root (string): Root directory of the dataset where the data is stored.
         split (string): One of {'train', 'test', 'extra'}.
             Accordingly dataset is selected. 'extra' is Extra training set.
         transform (callable, optional): A function/transform that  takes in an PIL image
@@ -79,7 +78,7 @@ class SVHN(VisionDataset):
         loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
 
         self.data = loaded_mat["X"]
-        # loading from the .mat file gives an np array of type np.uint8
+        # loading from the .mat file gives an np.ndarray of type np.uint8
         # converting to np.int64, so that we have a LongTensor after
         # the conversion from the numpy array
         # the squeeze is needed to obtain a 1D tensor

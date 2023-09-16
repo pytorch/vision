@@ -1,15 +1,17 @@
 from typing import List, Union
 
 import torch
+import torch.fx
 from torch import nn, Tensor
 from torch.jit.annotations import BroadcastingList2
 from torch.nn.modules.utils import _pair
 from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once
-from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
+from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
+@torch.fx.wrap
 def roi_pool(
     input: Tensor,
     boxes: Union[Tensor, List[Tensor]],
@@ -39,7 +41,8 @@ def roi_pool(
     Returns:
         Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs.
     """
-    _log_api_usage_once("torchvision.ops.roi_pool")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(roi_pool)
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
@@ -57,15 +60,13 @@ class RoIPool(nn.Module):
 
     def __init__(self, output_size: BroadcastingList2[int], spatial_scale: float):
         super().__init__()
+        _log_api_usage_once(self)
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
-    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
+    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
         return roi_pool(input, rois, self.output_size, self.spatial_scale)
 
     def __repr__(self) -> str:
-        tmpstr = self.__class__.__name__ + "("
-        tmpstr += "output_size=" + str(self.output_size)
-        tmpstr += ", spatial_scale=" + str(self.spatial_scale)
-        tmpstr += ")"
-        return tmpstr
+        s = f"{self.__class__.__name__}(output_size={self.output_size}, spatial_scale={self.spatial_scale})"
+        return s

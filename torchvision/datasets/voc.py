@@ -8,8 +8,7 @@ try:
     from defusedxml.ElementTree import parse as ET_parse
 except ImportError:
     from xml.etree.ElementTree import parse as ET_parse
-import warnings
-from typing import Any, Callable, Dict, Optional, Tuple, List
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from PIL import Image
 
@@ -37,7 +36,7 @@ DATASET_YEAR_DICT = {
     "2009": {
         "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2009/VOCtrainval_11-May-2009.tar",
         "filename": "VOCtrainval_11-May-2009.tar",
-        "md5": "59065e4b188729180974ef6572f6a212",
+        "md5": "a3e00b113cfcfebf17e343f59da3caa1",
         "base_dir": os.path.join("VOCdevkit", "VOC2009"),
     },
     "2008": {
@@ -77,19 +76,8 @@ class _VOCBase(VisionDataset):
         transforms: Optional[Callable] = None,
     ):
         super().__init__(root, transforms, transform, target_transform)
-        if year == "2007-test":
-            if image_set == "test":
-                warnings.warn(
-                    "Acessing the test image set of the year 2007 with year='2007-test' is deprecated. "
-                    "Please use the combination year='2007' and image_set='test' instead."
-                )
-                year = "2007"
-            else:
-                raise ValueError(
-                    "In the test image set of the year 2007 only image_set='test' is allowed. "
-                    "For all other image sets use year='2007' instead."
-                )
-        self.year = year
+
+        self.year = verify_str_arg(year, "year", valid_values=[str(yr) for yr in range(2007, 2013)])
 
         valid_image_sets = ["train", "trainval", "val"]
         if year == "2007":

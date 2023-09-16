@@ -1,122 +1,84 @@
-import importlib
-import os
-
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu
+from common_utils import cpu_and_cuda, set_rng_seed
 from torchvision.prototype import models
 
 
-def _get_original_model(model_fn):
-    original_module_name = model_fn.__module__.replace(".prototype", "")
-    module = importlib.import_module(original_module_name)
-    return module.__dict__[model_fn.__name__]
+@pytest.mark.parametrize("model_fn", (models.depth.stereo.raft_stereo_base,))
+@pytest.mark.parametrize("model_mode", ("standard", "scripted"))
+@pytest.mark.parametrize("dev", cpu_and_cuda())
+def test_raft_stereo(model_fn, model_mode, dev):
+    # A simple test to make sure the model can do forward pass and jit scriptable
+    set_rng_seed(0)
+
+    # Use corr_pyramid and corr_block with smaller num_levels and radius to prevent nan output
+    # get the idea from test_models.test_raft
+    corr_pyramid = models.depth.stereo.raft_stereo.CorrPyramid1d(num_levels=2)
+    corr_block = models.depth.stereo.raft_stereo.CorrBlock1d(num_levels=2, radius=2)
+    model = model_fn(corr_pyramid=corr_pyramid, corr_block=corr_block).eval().to(dev)
+
+    if model_mode == "scripted":
+        model = torch.jit.script(model)
+
+    img1 = torch.rand(1, 3, 64, 64).to(dev)
+    img2 = torch.rand(1, 3, 64, 64).to(dev)
+    num_iters = 3
+
+    preds = model(img1, img2, num_iters=num_iters)
+    depth_pred = preds[-1]
+
+    assert len(preds) == num_iters, "Number of predictions should be the same as model.num_iters"
+
+    assert depth_pred.shape == torch.Size(
+        [1, 1, 64, 64]
+    ), f"The output shape of depth_pred should be [1, 1, 64, 64] but instead it is {preds[0].shape}"
+
+    # Test against expected file output
+    TM._assert_expected(depth_pred, name=model_fn.__name__, atol=1e-2, rtol=1e-2)
 
 
-def _build_model(fn, **kwargs):
+@pytest.mark.parametrize("model_fn", (models.depth.stereo.crestereo_base,))
+@pytest.mark.parametrize("model_mode", ("standard", "scripted"))
+@pytest.mark.parametrize("dev", cpu_and_cuda())
+def test_crestereo(model_fn, model_mode, dev):
+    set_rng_seed(0)
+
+    model = model_fn().eval().to(dev)
+
+    if model_mode == "scripted":
+        model = torch.jit.script(model)
+
+    img1 = torch.rand(1, 3, 64, 64).to(dev)
+    img2 = torch.rand(1, 3, 64, 64).to(dev)
+    iterations = 3
+
+    preds = model(img1, img2, flow_init=None, num_iters=iterations)
+    disparity_pred = preds[-1]
+
+    # all the pyramid levels except the highest res make only half the number of iterations
+    expected_iterations = (iterations // 2) * (len(model.resolutions) - 1)
+    expected_iterations += iterations
+    assert (
+        len(preds) == expected_iterations
+    ), "Number of predictions should be the number of iterations multiplied by the number of pyramid levels"
+
+    assert disparity_pred.shape == torch.Size(
+        [1, 2, 64, 64]
+    ), f"Predicted disparity should have the same spatial shape as the input. Inputs shape {img1.shape[2:]}, Prediction shape {disparity_pred.shape[2:]}"
+
+    assert all(
+        d.shape == torch.Size([1, 2, 64, 64]) for d in preds
+    ), "All predicted disparities are expected to have the same shape"
+
+    # test a backward pass with a dummy loss as well
+    preds = torch.stack(preds, dim=0)
+    targets = torch.ones_like(preds, requires_grad=False)
+    loss = torch.nn.functional.mse_loss(preds, targets)
+
     try:
-        model = fn(**kwargs)
-    except ValueError as e:
-        msg = str(e)
-        if "No checkpoint is available" in msg:
-            pytest.skip(msg)
-        raise e
-    return model.eval()
+        loss.backward()
+    except Exception as e:
+        assert False, f"Backward pass failed with an unexpected exception: {e.__class__.__name__} {e}"
 
-
-def get_models_with_module_names(module):
-    module_name = module.__name__.split(".")[-1]
-    return [(fn, module_name) for fn in TM.get_models_from_module(module)]
-
-
-@pytest.mark.parametrize(
-    "model_fn, weight",
-    [
-        (models.resnet50, models.ResNet50Weights.ImageNet1K_RefV2),
-        (models.quantization.resnet50, models.quantization.QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1),
-    ],
-)
-def test_get_weight(model_fn, weight):
-    assert models._api.get_weight(model_fn, weight.name) == weight
-
-
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
-def test_classification_model(model_fn, dev):
-    TM.test_classification_model(model_fn, dev)
-
-
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.detection))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
-def test_detection_model(model_fn, dev):
-    TM.test_detection_model(model_fn, dev)
-
-
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.quantization))
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
-def test_quantized_classification_model(model_fn):
-    TM.test_quantized_classification_model(model_fn)
-
-
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.segmentation))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
-def test_segmentation_model(model_fn, dev):
-    TM.test_segmentation_model(model_fn, dev)
-
-
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.video))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
-def test_video_model(model_fn, dev):
-    TM.test_video_model(model_fn, dev)
-
-
-@pytest.mark.parametrize(
-    "model_fn, module_name",
-    get_models_with_module_names(models)
-    + get_models_with_module_names(models.detection)
-    + get_models_with_module_names(models.quantization)
-    + get_models_with_module_names(models.segmentation)
-    + get_models_with_module_names(models.video),
-)
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
-def test_old_vs_new_factory(model_fn, module_name, dev):
-    defaults = {
-        "models": {
-            "input_shape": (1, 3, 224, 224),
-        },
-        "detection": {
-            "input_shape": (3, 300, 300),
-        },
-        "quantization": {
-            "input_shape": (1, 3, 224, 224),
-            "quantize": True,
-        },
-        "segmentation": {
-            "input_shape": (1, 3, 520, 520),
-        },
-        "video": {
-            "input_shape": (1, 3, 4, 112, 112),
-        },
-    }
-    model_name = model_fn.__name__
-    kwargs = {"pretrained": True, **defaults[module_name], **TM._model_params.get(model_name, {})}
-    input_shape = kwargs.pop("input_shape")
-    kwargs.pop("num_classes", None)  # ignore this as it's an incompatible speed optimization for pre-trained models
-    x = torch.rand(input_shape).to(device=dev)
-    if module_name == "detection":
-        x = [x]
-
-    # compare with new model builder parameterized in the old fashion way
-    model_old = _build_model(_get_original_model(model_fn), **kwargs).to(device=dev)
-    model_new = _build_model(model_fn, **kwargs).to(device=dev)
-    torch.testing.assert_close(model_new(x), model_old(x), rtol=0.0, atol=0.0, check_dtype=False)
-
-
-def test_smoke():
-    import torchvision.prototype.models  # noqa: F401
+    TM._assert_expected(disparity_pred, name=model_fn.__name__, atol=1e-2, rtol=1e-2)

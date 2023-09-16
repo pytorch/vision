@@ -11,8 +11,8 @@ at::Tensor nms_kernel_impl(
     const at::Tensor& dets,
     const at::Tensor& scores,
     double iou_threshold) {
-  TORCH_CHECK(!dets.is_cuda(), "dets must be a CPU tensor");
-  TORCH_CHECK(!scores.is_cuda(), "scores must be a CPU tensor");
+  TORCH_CHECK(dets.is_cpu(), "dets must be a CPU tensor");
+  TORCH_CHECK(scores.is_cpu(), "scores must be a CPU tensor");
   TORCH_CHECK(
       dets.scalar_type() == scores.scalar_type(),
       "dets should have the same type as scores");
@@ -27,7 +27,8 @@ at::Tensor nms_kernel_impl(
 
   at::Tensor areas_t = (x2_t - x1_t) * (y2_t - y1_t);
 
-  auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
+  auto order_t = std::get<1>(
+      scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
 
   auto ndets = dets.size(0);
   at::Tensor suppressed_t = at::zeros({ndets}, dets.options().dtype(at::kByte));

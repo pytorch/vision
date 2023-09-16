@@ -6,27 +6,45 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
+from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .. import vgg
+from .._api import register_model, Weights, WeightsEnum
+from .._meta import _COCO_CATEGORIES
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..vgg import VGG, vgg16, VGG16_Weights
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 
-__all__ = ["SSD", "ssd300_vgg16"]
 
-model_urls = {
-    "ssd300_vgg16_coco": "https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
-}
+__all__ = [
+    "SSD300_VGG16_Weights",
+    "ssd300_vgg16",
+]
 
-backbone_urls = {
-    # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
-    # same input standardization method as the paper. Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-    # Only the `features` weights have proper values, those on the `classifier` module are filled with nans.
-    "vgg16_features": "https://download.pytorch.org/models/vgg16_features-amdegroot-88682ab5.pth"
-}
+
+class SSD300_VGG16_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
+        transforms=ObjectDetection,
+        meta={
+            "num_params": 35641826,
+            "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 25.1,
+                }
+            },
+            "_ops": 34.858,
+            "_file_size": 135.988,
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
+        },
+    )
+    DEFAULT = COCO_V1
 
 
 def _xavier_init(conv: nn.Module):
@@ -110,12 +128,12 @@ class SSD(nn.Module):
     Implements SSD architecture from `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
-    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    image, and should be in 0-1 range. Different images can have different sizes, but they will be resized
     to a fixed size before passing it to the backbone.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
@@ -180,6 +198,7 @@ class SSD(nn.Module):
         iou_thresh: float = 0.5,
         topk_candidates: int = 400,
         positive_fraction: float = 0.25,
+        **kwargs: Any,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -196,7 +215,10 @@ class SSD(nn.Module):
             else:
                 out_channels = det_utils.retrieve_out_channels(backbone, size)
 
-            assert len(out_channels) == len(anchor_generator.aspect_ratios)
+            if len(out_channels) != len(anchor_generator.aspect_ratios):
+                raise ValueError(
+                    f"The length of the output channels from the backbone ({len(out_channels)}) do not match the length of the anchor generator aspect ratios ({len(anchor_generator.aspect_ratios)})"
+                )
 
             num_anchors = self.anchor_generator.num_anchors_per_location()
             head = SSDHead(out_channels, num_anchors, num_classes)
@@ -209,7 +231,7 @@ class SSD(nn.Module):
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
         self.transform = GeneralizedRCNNTransform(
-            min(size), max(size), image_mean, image_std, size_divisible=1, fixed_size=size
+            min(size), max(size), image_mean, image_std, size_divisible=1, fixed_size=size, **kwargs
         )
 
         self.score_thresh = score_thresh
@@ -304,24 +326,28 @@ class SSD(nn.Module):
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
     ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
-        if self.training and targets is None:
-            raise ValueError("In training mode, targets should be passed")
-
         if self.training:
-            assert targets is not None
-            for target in targets:
-                boxes = target["boxes"]
-                if isinstance(boxes, torch.Tensor):
-                    if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
-                else:
-                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    if isinstance(boxes, torch.Tensor):
+                        torch._assert(
+                            len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                            f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                        )
+                    else:
+                        torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            torch._assert(
+                len(val) == 2,
+                f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}",
+            )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -335,9 +361,10 @@ class SSD(nn.Module):
                 if degenerate_boxes.any():
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
-                    raise ValueError(
+                    torch._assert(
+                        False,
                         "All bounding boxes should have positive height and width."
-                        f" Found invalid box {degen_bb} for target at index {target_idx}."
+                        f" Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
         # get the features from the backbone
@@ -356,20 +383,23 @@ class SSD(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
-
             matched_idxs = []
-            for anchors_per_image, targets_per_image in zip(anchors, targets):
-                if targets_per_image["boxes"].numel() == 0:
-                    matched_idxs.append(
-                        torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device)
-                    )
-                    continue
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for anchors_per_image, targets_per_image in zip(anchors, targets):
+                    if targets_per_image["boxes"].numel() == 0:
+                        matched_idxs.append(
+                            torch.full(
+                                (anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device
+                            )
+                        )
+                        continue
 
-                match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
-                matched_idxs.append(self.proposal_matcher(match_quality_matrix))
+                    match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
+                    matched_idxs.append(self.proposal_matcher(match_quality_matrix))
 
-            losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
+                losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
         else:
             detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
             detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
@@ -407,7 +437,7 @@ class SSD(nn.Module):
                 box = boxes[keep_idxs]
 
                 # keep only topk scoring predictions
-                num_topk = min(self.topk_candidates, score.size(0))
+                num_topk = det_utils._topk_min(score, self.topk_candidates, 0)
                 score, idxs = score.topk(num_topk)
                 box = box[idxs]
 
@@ -520,14 +550,17 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
+def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     backbone = backbone.features
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
-    assert 0 <= trainable_layers <= num_stages
+    # find the index of the layer from which we won't freeze
+    torch._assert(
+        0 <= trainable_layers <= num_stages,
+        f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}",
+    )
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
@@ -537,25 +570,32 @@ def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
     return SSDFeatureExtractorVGG(backbone, highres)
 
 
+@register_model()
+@handle_legacy_interface(
+    weights=("pretrained", SSD300_VGG16_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", VGG16_Weights.IMAGENET1K_FEATURES),
+)
 def ssd300_vgg16(
-    pretrained: bool = False,
+    *,
+    weights: Optional[SSD300_VGG16_Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
-    pretrained_backbone: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[VGG16_Weights] = VGG16_Weights.IMAGENET1K_FEATURES,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
-):
-    """Constructs an SSD model with input size 300x300 and a VGG16 backbone.
+) -> SSD:
+    """The SSD300 model is based on the `SSD: Single Shot MultiBox Detector
+    <https://arxiv.org/abs/1512.02325>`_ paper.
 
-    Reference: `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
+    .. betastatus:: detection module
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
-    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    image, and should be in 0-1 range. Different images can have different sizes, but they will be resized
     to a fixed size before passing it to the backbone.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -576,37 +616,51 @@ def ssd300_vgg16(
 
     Example:
 
-        >>> model = torchvision.models.detection.ssd300_vgg16(pretrained=True)
+        >>> model = torchvision.models.detection.ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 300), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        weights (:class:`~torchvision.models.detection.SSD300_VGG16_Weights`, optional): The pretrained
+                weights to use. See
+                :class:`~torchvision.models.detection.SSD300_VGG16_Weights`
+                below for more details, and possible values. By default, no
+                pre-trained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr
+            Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (:class:`~torchvision.models.VGG16_Weights`, optional): The pretrained weights for the
+            backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 4.
+        **kwargs: parameters passed to the ``torchvision.models.detection.SSD``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.SSD300_VGG16_Weights
+        :members:
     """
+    weights = SSD300_VGG16_Weights.verify(weights)
+    weights_backbone = VGG16_Weights.verify(weights_backbone)
+
     if "size" in kwargs:
-        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+        warnings.warn("The size of the model is already fixed; ignoring the parameter.")
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 4
+        weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 4
     )
 
-    if pretrained:
-        # no need to download the backbone if pretrained is set
-        pretrained_backbone = False
-
     # Use custom backbones more appropriate for SSD
-    backbone = vgg.vgg16(pretrained=False, progress=progress)
-    if pretrained_backbone:
-        state_dict = load_state_dict_from_url(backbone_urls["vgg16_features"], progress=progress)
-        backbone.load_state_dict(state_dict)
-
+    backbone = vgg16(weights=weights_backbone, progress=progress)
     backbone = _vgg_extractor(backbone, False, trainable_backbone_layers)
     anchor_generator = DefaultBoxGenerator(
         [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
@@ -619,12 +673,10 @@ def ssd300_vgg16(
         "image_mean": [0.48235, 0.45882, 0.40784],
         "image_std": [1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0],  # undo the 0-1 scaling of toTensor
     }
-    kwargs = {**defaults, **kwargs}
+    kwargs: Any = {**defaults, **kwargs}
     model = SSD(backbone, anchor_generator, (300, 300), num_classes, **kwargs)
-    if pretrained:
-        weights_name = "ssd300_vgg16_coco"
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError(f"No checkpoint is available for model {weights_name}")
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
+
     return model

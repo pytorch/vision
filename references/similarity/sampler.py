@@ -47,7 +47,8 @@ class PKSampler(Sampler):
         self.groups = create_groups(groups, self.k)
 
         # Ensures there are enough classes to sample from
-        assert len(self.groups) >= p
+        if len(self.groups) < p:
+            raise ValueError("There are not enough classes to sample from")
 
     def __iter__(self):
         # Shuffle samples within groups

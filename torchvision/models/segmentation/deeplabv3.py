@@ -1,29 +1,29 @@
-from typing import List, Optional
+from functools import partial
+from typing import Any, List, Optional
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .. import mobilenetv3
-from .. import resnet
-from ..feature_extraction import create_feature_extractor
-from ._utils import _SimpleSegmentationModel, _load_weights
+from ...transforms._presets import SemanticSegmentation
+from .._api import register_model, Weights, WeightsEnum
+from .._meta import _VOC_CATEGORIES
+from .._utils import _ovewrite_value_param, handle_legacy_interface, IntermediateLayerGetter
+from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights, MobileNetV3
+from ..resnet import ResNet, resnet101, ResNet101_Weights, resnet50, ResNet50_Weights
+from ._utils import _SimpleSegmentationModel
 from .fcn import FCNHead
 
 
 __all__ = [
     "DeepLabV3",
+    "DeepLabV3_ResNet50_Weights",
+    "DeepLabV3_ResNet101_Weights",
+    "DeepLabV3_MobileNet_V3_Large_Weights",
+    "deeplabv3_mobilenet_v3_large",
     "deeplabv3_resnet50",
     "deeplabv3_resnet101",
-    "deeplabv3_mobilenet_v3_large",
 ]
-
-
-model_urls = {
-    "deeplabv3_resnet50_coco": "https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth",
-    "deeplabv3_resnet101_coco": "https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth",
-    "deeplabv3_mobilenet_v3_large_coco": "https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth",
-}
 
 
 class DeepLabV3(_SimpleSegmentationModel):
@@ -114,22 +114,95 @@ class ASPP(nn.Module):
 
 
 def _deeplabv3_resnet(
-    backbone: resnet.ResNet,
+    backbone: ResNet,
     num_classes: int,
     aux: Optional[bool],
 ) -> DeepLabV3:
     return_layers = {"layer4": "out"}
     if aux:
         return_layers["layer3"] = "aux"
-    backbone = create_feature_extractor(backbone, return_layers)
+    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = FCNHead(1024, num_classes) if aux else None
     classifier = DeepLabHead(2048, num_classes)
     return DeepLabV3(backbone, classifier, aux_classifier)
 
 
+_COMMON_META = {
+    "categories": _VOC_CATEGORIES,
+    "min_size": (1, 1),
+    "_docs": """
+        These weights were trained on a subset of COCO, using only the 20 categories that are present in the Pascal VOC
+        dataset.
+    """,
+}
+
+
+class DeepLabV3_ResNet50_Weights(WeightsEnum):
+    COCO_WITH_VOC_LABELS_V1 = Weights(
+        url="https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth",
+        transforms=partial(SemanticSegmentation, resize_size=520),
+        meta={
+            **_COMMON_META,
+            "num_params": 42004074,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50",
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 66.4,
+                    "pixel_acc": 92.4,
+                }
+            },
+            "_ops": 178.722,
+            "_file_size": 160.515,
+        },
+    )
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
+
+
+class DeepLabV3_ResNet101_Weights(WeightsEnum):
+    COCO_WITH_VOC_LABELS_V1 = Weights(
+        url="https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth",
+        transforms=partial(SemanticSegmentation, resize_size=520),
+        meta={
+            **_COMMON_META,
+            "num_params": 60996202,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101",
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 67.4,
+                    "pixel_acc": 92.4,
+                }
+            },
+            "_ops": 258.743,
+            "_file_size": 233.217,
+        },
+    )
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
+
+
+class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
+    COCO_WITH_VOC_LABELS_V1 = Weights(
+        url="https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth",
+        transforms=partial(SemanticSegmentation, resize_size=520),
+        meta={
+            **_COMMON_META,
+            "num_params": 11029328,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large",
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 60.3,
+                    "pixel_acc": 91.2,
+                }
+            },
+            "_ops": 10.452,
+            "_file_size": 42.301,
+        },
+    )
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
+
+
 def _deeplabv3_mobilenetv3(
-    backbone: mobilenetv3.MobileNetV3,
+    backbone: MobileNetV3,
     num_classes: int,
     aux: Optional[bool],
 ) -> DeepLabV3:
@@ -144,98 +217,174 @@ def _deeplabv3_mobilenetv3(
     return_layers = {str(out_pos): "out"}
     if aux:
         return_layers[str(aux_pos)] = "aux"
-    backbone = create_feature_extractor(backbone, return_layers)
+    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = FCNHead(aux_inplanes, num_classes) if aux else None
     classifier = DeepLabHead(out_inplanes, num_classes)
     return DeepLabV3(backbone, classifier, aux_classifier)
 
 
+@register_model()
+@handle_legacy_interface(
+    weights=("pretrained", DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def deeplabv3_resnet50(
-    pretrained: bool = False,
+    *,
+    weights: Optional[DeepLabV3_ResNet50_Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    pretrained_backbone: bool = True,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
+    **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool, optional): If True, it uses an auxiliary loss
-        pretrained_backbone (bool): If True, the backbone will be pre-trained.
-    """
-    if pretrained:
-        aux_loss = True
-        pretrained_backbone = False
+    .. betastatus:: segmentation module
 
-    backbone = resnet.resnet50(pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True])
+    Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
+
+    Args:
+        weights (:class:`~torchvision.models.segmentation.DeepLabV3_ResNet50_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.DeepLabV3_ResNet50_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        aux_loss (bool, optional): If True, it uses an auxiliary loss
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The pretrained weights for the
+            backbone
+        **kwargs: unused
+
+    .. autoclass:: torchvision.models.segmentation.DeepLabV3_ResNet50_Weights
+        :members:
+    """
+    weights = DeepLabV3_ResNet50_Weights.verify(weights)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param("aux_loss", aux_loss, True)
+    elif num_classes is None:
+        num_classes = 21
+
+    backbone = resnet50(weights=weights_backbone, replace_stride_with_dilation=[False, True, True])
     model = _deeplabv3_resnet(backbone, num_classes, aux_loss)
 
-    if pretrained:
-        arch = "deeplabv3_resnet50_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
+
     return model
 
 
+@register_model()
+@handle_legacy_interface(
+    weights=("pretrained", DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
+)
 def deeplabv3_resnet101(
-    pretrained: bool = False,
+    *,
+    weights: Optional[DeepLabV3_ResNet101_Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    pretrained_backbone: bool = True,
+    weights_backbone: Optional[ResNet101_Weights] = ResNet101_Weights.IMAGENET1K_V1,
+    **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): The number of classes
-        aux_loss (bool, optional): If True, include an auxiliary classifier
-        pretrained_backbone (bool): If True, the backbone will be pre-trained.
-    """
-    if pretrained:
-        aux_loss = True
-        pretrained_backbone = False
+    .. betastatus:: segmentation module
 
-    backbone = resnet.resnet101(pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True])
+    Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
+
+    Args:
+        weights (:class:`~torchvision.models.segmentation.DeepLabV3_ResNet101_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.DeepLabV3_ResNet101_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        aux_loss (bool, optional): If True, it uses an auxiliary loss
+        weights_backbone (:class:`~torchvision.models.ResNet101_Weights`, optional): The pretrained weights for the
+            backbone
+        **kwargs: unused
+
+    .. autoclass:: torchvision.models.segmentation.DeepLabV3_ResNet101_Weights
+        :members:
+    """
+    weights = DeepLabV3_ResNet101_Weights.verify(weights)
+    weights_backbone = ResNet101_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param("aux_loss", aux_loss, True)
+    elif num_classes is None:
+        num_classes = 21
+
+    backbone = resnet101(weights=weights_backbone, replace_stride_with_dilation=[False, True, True])
     model = _deeplabv3_resnet(backbone, num_classes, aux_loss)
 
-    if pretrained:
-        arch = "deeplabv3_resnet101_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
+
     return model
 
 
+@register_model()
+@handle_legacy_interface(
+    weights=("pretrained", DeepLabV3_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
+)
 def deeplabv3_mobilenet_v3_large(
-    pretrained: bool = False,
+    *,
+    weights: Optional[DeepLabV3_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    pretrained_backbone: bool = True,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = MobileNet_V3_Large_Weights.IMAGENET1K_V1,
+    **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool, optional): If True, it uses an auxiliary loss
-        pretrained_backbone (bool): If True, the backbone will be pre-trained.
-    """
-    if pretrained:
-        aux_loss = True
-        pretrained_backbone = False
+    Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
 
-    backbone = mobilenetv3.mobilenet_v3_large(pretrained=pretrained_backbone, dilated=True)
+    Args:
+        weights (:class:`~torchvision.models.segmentation.DeepLabV3_MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.DeepLabV3_MobileNet_V3_Large_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        aux_loss (bool, optional): If True, it uses an auxiliary loss
+        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The pretrained weights
+            for the backbone
+        **kwargs: unused
+
+    .. autoclass:: torchvision.models.segmentation.DeepLabV3_MobileNet_V3_Large_Weights
+        :members:
+    """
+    weights = DeepLabV3_MobileNet_V3_Large_Weights.verify(weights)
+    weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param("aux_loss", aux_loss, True)
+    elif num_classes is None:
+        num_classes = 21
+
+    backbone = mobilenet_v3_large(weights=weights_backbone, dilated=True)
     model = _deeplabv3_mobilenetv3(backbone, num_classes, aux_loss)
 
-    if pretrained:
-        arch = "deeplabv3_mobilenet_v3_large_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
+
     return model

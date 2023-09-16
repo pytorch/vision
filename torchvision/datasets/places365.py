@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 from .folder import default_loader
-from .utils import verify_str_arg, check_integrity, download_and_extract_archive
+from .utils import check_integrity, download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -15,7 +15,7 @@ class Places365(VisionDataset):
         root (string): Root directory of the Places365 dataset.
         split (string, optional): The dataset split. Can be one of ``train-standard`` (default), ``train-challenge``,
             ``val``.
-        small (bool, optional): If ``True``, uses the small images, i. e. resized to 256 x 256 pixels, instead of the
+        small (bool, optional): If ``True``, uses the small images, i.e. resized to 256 x 256 pixels, instead of the
             high resolution ones.
         download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already
             downloaded archives are not downloaded again.
@@ -32,7 +32,7 @@ class Places365(VisionDataset):
         targets (list): The class_index value for each image in the dataset
 
     Raises:
-        RuntimeError: If ``download is False`` and the meta files, i. e. the devkit, are not present or corrupted.
+        RuntimeError: If ``download is False`` and the meta files, i.e. the devkit, are not present or corrupted.
         RuntimeError: If ``download is True`` and the image archive is already extracted.
     """
     _SPLITS = ("train-standard", "train-challenge", "val")

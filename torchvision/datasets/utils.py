@@ -1,4 +1,5 @@
 import bz2
+import contextlib
 import gzip
 import hashlib
 import itertools
@@ -7,53 +8,56 @@ import os
 import os.path
 import pathlib
 import re
+import sys
 import tarfile
 import urllib
 import urllib.error
 import urllib.request
+import warnings
 import zipfile
-from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
+from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
 from urllib.parse import urlparse
 
+import numpy as np
+import requests
 import torch
 from torch.utils.model_zoo import tqdm
 
-from .._internally_replaced_utils import (
-    _download_file_from_remote_location,
-    _is_remote_location_available,
-)
-
+from .._internally_replaced_utils import _download_file_from_remote_location, _is_remote_location_available
 
 USER_AGENT = "pytorch/vision"
 
 
-def _urlretrieve(url: str, filename: str, chunk_size: int = 1024) -> None:
-    with open(filename, "wb") as fh:
-        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
-            with tqdm(total=response.length) as pbar:
-                for chunk in iter(lambda: response.read(chunk_size), ""):
-                    if not chunk:
-                        break
-                    pbar.update(chunk_size)
-                    fh.write(chunk)
+def _save_response_content(
+    content: Iterator[bytes],
+    destination: str,
+    length: Optional[int] = None,
+) -> None:
+    with open(destination, "wb") as fh, tqdm(total=length) as pbar:
+        for chunk in content:
+            # filter out keep-alive new chunks
+            if not chunk:
+                continue
+
+            fh.write(chunk)
+            pbar.update(len(chunk))
 
 
-def gen_bar_updater() -> Callable[[int, int, int], None]:
-    pbar = tqdm(total=None)
-
-    def bar_update(count, block_size, total_size):
-        if pbar.total is None and total_size:
-            pbar.total = total_size
-        progress_bytes = count * block_size
-        pbar.update(progress_bytes - pbar.n)
-
-    return bar_update
+def _urlretrieve(url: str, filename: str, chunk_size: int = 1024 * 32) -> None:
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
+        _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
 
 
 def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
-    md5 = hashlib.md5()
+    # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
+    # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
+    # it torchvision.datasets is unusable in these environments since we perform a MD5 check everywhere.
+    if sys.version_info >= (3, 9):
+        md5 = hashlib.md5(usedforsecurity=False)
+    else:
+        md5 = hashlib.md5()
     with open(fpath, "rb") as f:
-        for chunk in iter(lambda: f.read(chunk_size), b""):
+        while chunk := f.read(chunk_size):
             md5.update(chunk)
     return md5.hexdigest()
 
@@ -183,11 +187,20 @@ def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
     return files
 
 
-def _quota_exceeded(first_chunk: bytes) -> bool:  # type: ignore[name-defined]
+def _extract_gdrive_api_response(response, chunk_size: int = 32 * 1024) -> Tuple[bytes, Iterator[bytes]]:
+    content = response.iter_content(chunk_size)
+    first_chunk = None
+    # filter out keep-alive new chunks
+    while not first_chunk:
+        first_chunk = next(content)
+    content = itertools.chain([first_chunk], content)
+
     try:
-        return "Google Drive - Quota exceeded" in first_chunk.decode()
+        match = re.search("<title>Google Drive - (?P<api_response>.+?)</title>", first_chunk.decode())
+        api_response = match["api_response"] if match is not None else None
     except UnicodeDecodeError:
-        return False
+        api_response = None
+    return api_response, content
 
 
 def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):
@@ -200,9 +213,6 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         md5 (str, optional): MD5 checksum of the download. If None, do not check
     """
     # Based on https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
-    import requests
-
-    url = "https://docs.google.com/uc?export=download"
 
     root = os.path.expanduser(root)
     if not filename:
@@ -211,61 +221,55 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
 
     os.makedirs(root, exist_ok=True)
 
-    if os.path.isfile(fpath) and check_integrity(fpath, md5):
-        print("Using downloaded and verified file: " + fpath)
-    else:
-        session = requests.Session()
+    if check_integrity(fpath, md5):
+        print(f"Using downloaded {'and verified ' if md5 else ''}file: {fpath}")
+        return
 
-        response = session.get(url, params={"id": file_id}, stream=True)
-        token = _get_confirm_token(response)
+    url = "https://drive.google.com/uc"
+    params = dict(id=file_id, export="download")
+    with requests.Session() as session:
+        response = session.get(url, params=params, stream=True)
 
-        if token:
-            params = {"id": file_id, "confirm": token}
-            response = session.get(url, params=params, stream=True)
+        for key, value in response.cookies.items():
+            if key.startswith("download_warning"):
+                token = value
+                break
+        else:
+            api_response, content = _extract_gdrive_api_response(response)
+            token = "t" if api_response == "Virus scan warning" else None
 
-        # Ideally, one would use response.status_code to check for quota limits, but google drive is not consistent
-        # with their own API, refer https://github.com/pytorch/vision/issues/2992#issuecomment-730614517.
-        # Should this be fixed at some place in future, one could refactor the following to no longer rely on decoding
-        # the first_chunk of the payload
-        response_content_generator = response.iter_content(32768)
-        first_chunk = None
-        while not first_chunk:  # filter out keep-alive new chunks
-            first_chunk = next(response_content_generator)
+        if token is not None:
+            response = session.get(url, params=dict(params, confirm=token), stream=True)
+            api_response, content = _extract_gdrive_api_response(response)
 
-        if _quota_exceeded(first_chunk):
-            msg = (
+        if api_response == "Quota exceeded":
+            raise RuntimeError(
                 f"The daily quota of the file {filename} is exceeded and it "
                 f"can't be downloaded. This is a limitation of Google Drive "
                 f"and can only be overcome by trying again later."
             )
-            raise RuntimeError(msg)
 
-        _save_response_content(itertools.chain((first_chunk,), response_content_generator), fpath)
-        response.close()
+        _save_response_content(content, fpath)
 
+    # In case we deal with an unhandled GDrive API response, the file should be smaller than 10kB and contain only text
+    if os.stat(fpath).st_size < 10 * 1024:
+        with contextlib.suppress(UnicodeDecodeError), open(fpath) as fh:
+            text = fh.read()
+            # Regular expression to detect HTML. Copied from https://stackoverflow.com/a/70585604
+            if re.search(r"</?\s*[a-z-][^>]*\s*>|(&(?:[\w\d]+|#\d+|#x[a-f\d]+);)", text):
+                warnings.warn(
+                    f"We detected some HTML elements in the downloaded file. "
+                    f"This most likely means that the download triggered an unhandled API response by GDrive. "
+                    f"Please report this to torchvision at https://github.com/pytorch/vision/issues including "
+                    f"the response:\n\n{text}"
+                )
 
-def _get_confirm_token(response: "requests.models.Response") -> Optional[str]:  # type: ignore[name-defined]
-    for key, value in response.cookies.items():
-        if key.startswith("download_warning"):
-            return value
-
-    return None
-
-
-def _save_response_content(
-    response_gen: Iterator[bytes],
-    destination: str,  # type: ignore[name-defined]
-) -> None:
-    with open(destination, "wb") as f:
-        pbar = tqdm(total=None)
-        progress = 0
-
-        for chunk in response_gen:
-            if chunk:  # filter out keep-alive new chunks
-                f.write(chunk)
-                progress += len(chunk)
-                pbar.update(progress - pbar.n)
-        pbar.close()
+    if md5 and not check_md5(fpath, md5):
+        raise RuntimeError(
+            f"The MD5 checksum of the download file {fpath} does not match the one on record."
+            f"Please delete the file and try again. "
+            f"If the issue persists, please report this to torchvision at https://github.com/pytorch/vision/issues."
+        )
 
 
 def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> None:
@@ -407,6 +411,8 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
     extractor = _ARCHIVE_EXTRACTORS[archive_type]
 
     extractor(from_path, to_path, compression)
+    if remove_finished:
+        os.remove(from_path)
 
     return to_path
 
@@ -442,10 +448,10 @@ T = TypeVar("T", str, bytes)
 def verify_str_arg(
     value: T,
     arg: Optional[str] = None,
-    valid_values: Iterable[T] = None,
+    valid_values: Optional[Iterable[T]] = None,
     custom_msg: Optional[str] = None,
 ) -> T:
-    if not isinstance(value, torch._six.string_classes):
+    if not isinstance(value, str):
         if arg is None:
             msg = "Expected type str, but got type {type}."
         else:
@@ -465,3 +471,45 @@ def verify_str_arg(
         raise ValueError(msg)
 
     return value
+
+
+def _read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
+    """Read file in .pfm format. Might contain either 1 or 3 channels of data.
+
+    Args:
+        file_name (str): Path to the file.
+        slice_channels (int): Number of channels to slice out of the file.
+            Useful for reading different data formats stored in .pfm files: Optical Flows, Stereo Disparity Maps, etc.
+    """
+
+    with open(file_name, "rb") as f:
+        header = f.readline().rstrip()
+        if header not in [b"PF", b"Pf"]:
+            raise ValueError("Invalid PFM file")
+
+        dim_match = re.match(rb"^(\d+)\s(\d+)\s$", f.readline())
+        if not dim_match:
+            raise Exception("Malformed PFM header.")
+        w, h = (int(dim) for dim in dim_match.groups())
+
+        scale = float(f.readline().rstrip())
+        if scale < 0:  # little-endian
+            endian = "<"
+            scale = -scale
+        else:
+            endian = ">"  # big-endian
+
+        data = np.fromfile(f, dtype=endian + "f")
+
+    pfm_channels = 3 if header == b"PF" else 1
+
+    data = data.reshape(h, w, pfm_channels).transpose(2, 0, 1)
+    data = np.flip(data, axis=1)  # flip on h dimension
+    data = data[:slice_channels, :, :]
+    return data.astype(np.float32)
+
+
+def _flip_byte_order(t: torch.Tensor) -> torch.Tensor:
+    return (
+        t.contiguous().view(torch.uint8).view(*t.shape, t.element_size()).flip(-1).view(*t.shape[:-1], -1).view(t.dtype)
+    )

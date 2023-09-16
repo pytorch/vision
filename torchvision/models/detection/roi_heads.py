@@ -1,11 +1,10 @@
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
 import torchvision
 from torch import nn, Tensor
-from torchvision.ops import boxes as box_ops
-from torchvision.ops import roi_align
+from torchvision.ops import boxes as box_ops, roi_align
 
 from . import _utils as det_utils
 
@@ -299,7 +298,10 @@ def heatmaps_to_keypoints(maps, rois):
 def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched_idxs):
     # type: (Tensor, List[Tensor], List[Tensor], List[Tensor]) -> Tensor
     N, K, H, W = keypoint_logits.shape
-    assert H == W
+    if H != W:
+        raise ValueError(
+            f"keypoint_logits height and width (last two elements of shape) should be equal. Instead got H = {H} and W = {W}"
+        )
     discretization_size = H
     heatmaps = []
     valid = []
@@ -313,7 +315,7 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
     valid = torch.cat(valid, dim=0).to(dtype=torch.uint8)
     valid = torch.where(valid)[0]
 
-    # torch.mean (in binary_cross_entropy_with_logits) does'nt
+    # torch.mean (in binary_cross_entropy_with_logits) doesn't
     # accept empty tensors, so handle it sepaartely
     if keypoint_targets.numel() == 0 or len(valid) == 0:
         return keypoint_logits.sum() * 0
@@ -615,11 +617,15 @@ class RoIHeads(nn.Module):
 
     def check_targets(self, targets):
         # type: (Optional[List[Dict[str, Tensor]]]) -> None
-        assert targets is not None
-        assert all(["boxes" in t for t in targets])
-        assert all(["labels" in t for t in targets])
+        if targets is None:
+            raise ValueError("targets should not be None")
+        if not all(["boxes" in t for t in targets]):
+            raise ValueError("Every element of targets should have a boxes key")
+        if not all(["labels" in t for t in targets]):
+            raise ValueError("Every element of targets should have a labels key")
         if self.has_mask():
-            assert all(["masks" in t for t in targets])
+            if not all(["masks" in t for t in targets]):
+                raise ValueError("Every element of targets should have a masks key")
 
     def select_training_samples(
         self,
@@ -628,7 +634,8 @@ class RoIHeads(nn.Module):
     ):
         # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]
         self.check_targets(targets)
-        assert targets is not None
+        if targets is None:
+            raise ValueError("targets should not be None")
         dtype = proposals[0].dtype
         device = proposals[0].device
 
@@ -736,10 +743,13 @@ class RoIHeads(nn.Module):
             for t in targets:
                 # TODO: https://github.com/pytorch/pytorch/issues/26731
                 floating_point_types = (torch.float, torch.double, torch.half)
-                assert t["boxes"].dtype in floating_point_types, "target boxes must of float type"
-                assert t["labels"].dtype == torch.int64, "target labels must of int64 type"
+                if not t["boxes"].dtype in floating_point_types:
+                    raise TypeError(f"target boxes must of float type, instead got {t['boxes'].dtype}")
+                if not t["labels"].dtype == torch.int64:
+                    raise TypeError(f"target labels must of int64 type, instead got {t['labels'].dtype}")
                 if self.has_keypoint():
-                    assert t["keypoints"].dtype == torch.float32, "target keypoints must of float type"
+                    if not t["keypoints"].dtype == torch.float32:
+                        raise TypeError(f"target keypoints must of float type, instead got {t['keypoints'].dtype}")
 
         if self.training:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
@@ -755,7 +765,10 @@ class RoIHeads(nn.Module):
         result: List[Dict[str, torch.Tensor]] = []
         losses = {}
         if self.training:
-            assert labels is not None and regression_targets is not None
+            if labels is None:
+                raise ValueError("labels cannot be None")
+            if regression_targets is None:
+                raise ValueError("regression_targets cannot be None")
             loss_classifier, loss_box_reg = fastrcnn_loss(class_logits, box_regression, labels, regression_targets)
             losses = {"loss_classifier": loss_classifier, "loss_box_reg": loss_box_reg}
         else:
@@ -773,7 +786,9 @@ class RoIHeads(nn.Module):
         if self.has_mask():
             mask_proposals = [p["boxes"] for p in result]
             if self.training:
-                assert matched_idxs is not None
+                if matched_idxs is None:
+                    raise ValueError("if in training, matched_idxs should not be None")
+
                 # during training, only focus on positive boxes
                 num_images = len(proposals)
                 mask_proposals = []
@@ -794,9 +809,8 @@ class RoIHeads(nn.Module):
 
             loss_mask = {}
             if self.training:
-                assert targets is not None
-                assert pos_matched_idxs is not None
-                assert mask_logits is not None
+                if targets is None or pos_matched_idxs is None or mask_logits is None:
+                    raise ValueError("targets, pos_matched_idxs, mask_logits cannot be None when training")
 
                 gt_masks = [t["masks"] for t in targets]
                 gt_labels = [t["labels"] for t in targets]
@@ -823,7 +837,9 @@ class RoIHeads(nn.Module):
                 num_images = len(proposals)
                 keypoint_proposals = []
                 pos_matched_idxs = []
-                assert matched_idxs is not None
+                if matched_idxs is None:
+                    raise ValueError("if in trainning, matched_idxs should not be None")
+
                 for img_id in range(num_images):
                     pos = torch.where(labels[img_id] > 0)[0]
                     keypoint_proposals.append(proposals[img_id][pos])
@@ -837,8 +853,8 @@ class RoIHeads(nn.Module):
 
             loss_keypoint = {}
             if self.training:
-                assert targets is not None
-                assert pos_matched_idxs is not None
+                if targets is None or pos_matched_idxs is None:
+                    raise ValueError("both targets and pos_matched_idxs should not be None when in training mode")
 
                 gt_keypoints = [t["keypoints"] for t in targets]
                 rcnn_loss_keypoint = keypointrcnn_loss(
@@ -846,14 +862,15 @@ class RoIHeads(nn.Module):
                 )
                 loss_keypoint = {"loss_keypoint": rcnn_loss_keypoint}
             else:
-                assert keypoint_logits is not None
-                assert keypoint_proposals is not None
+                if keypoint_logits is None or keypoint_proposals is None:
+                    raise ValueError(
+                        "both keypoint_logits and keypoint_proposals should not be None when not in training mode"
+                    )
 
                 keypoints_probs, kp_scores = keypointrcnn_inference(keypoint_logits, keypoint_proposals)
                 for keypoint_prob, kps, r in zip(keypoints_probs, kp_scores, result):
                     r["keypoints"] = keypoint_prob
                     r["keypoints_scores"] = kps
-
             losses.update(loss_keypoint)
 
         return result, losses

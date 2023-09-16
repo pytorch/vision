@@ -1,9 +1,10 @@
 from collections import OrderedDict
-from typing import Tuple, List, Dict, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import torch.nn.functional as F
 from torch import nn, Tensor
 
+from ..ops.misc import Conv2dNormActivation
 from ..utils import _log_api_usage_once
 
 
@@ -51,6 +52,7 @@ class FeaturePyramidNetwork(nn.Module):
             be performed. It is expected to take the fpn features, the original
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names
+        norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
 
     Examples::
 
@@ -70,11 +72,14 @@ class FeaturePyramidNetwork(nn.Module):
 
     """
 
+    _version = 2
+
     def __init__(
         self,
         in_channels_list: List[int],
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -83,8 +88,12 @@ class FeaturePyramidNetwork(nn.Module):
         for in_channels in in_channels_list:
             if in_channels == 0:
                 raise ValueError("in_channels=0 is currently not supported")
-            inner_block_module = nn.Conv2d(in_channels, out_channels, 1)
-            layer_block_module = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+            inner_block_module = Conv2dNormActivation(
+                in_channels, out_channels, kernel_size=1, padding=0, norm_layer=norm_layer, activation_layer=None
+            )
+            layer_block_module = Conv2dNormActivation(
+                out_channels, out_channels, kernel_size=3, norm_layer=norm_layer, activation_layer=None
+            )
             self.inner_blocks.append(inner_block_module)
             self.layer_blocks.append(layer_block_module)
 
@@ -92,11 +101,45 @@ class FeaturePyramidNetwork(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_uniform_(m.weight, a=1)
-                nn.init.constant_(m.bias, 0)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
         if extra_blocks is not None:
-            assert isinstance(extra_blocks, ExtraFPNBlock)
+            if not isinstance(extra_blocks, ExtraFPNBlock):
+                raise TypeError(f"extra_blocks should be of type ExtraFPNBlock not {type(extra_blocks)}")
         self.extra_blocks = extra_blocks
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        version = local_metadata.get("version", None)
+
+        if version is None or version < 2:
+            num_blocks = len(self.inner_blocks)
+            for block in ["inner_blocks", "layer_blocks"]:
+                for i in range(num_blocks):
+                    for type in ["weight", "bias"]:
+                        old_key = f"{prefix}{block}.{i}.{type}"
+                        new_key = f"{prefix}{block}.{i}.0.{type}"
+                        if old_key in state_dict:
+                            state_dict[new_key] = state_dict.pop(old_key)
+
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
 
     def get_result_from_inner_blocks(self, x: Tensor, idx: int) -> Tensor:
         """
@@ -135,7 +178,7 @@ class FeaturePyramidNetwork(nn.Module):
 
         Returns:
             results (OrderedDict[Tensor]): feature maps after FPN layers.
-                They are ordered from highest resolution first.
+                They are ordered from the highest resolution first.
         """
         # unpack OrderedDict into two lists for easier handling
         names = list(x.keys())
@@ -163,7 +206,7 @@ class FeaturePyramidNetwork(nn.Module):
 
 class LastLevelMaxPool(ExtraFPNBlock):
     """
-    Applies a max_pool2d on top of the last feature map
+    Applies a max_pool2d (not actual max_pool2d, we just subsample) on top of the last feature map
     """
 
     def forward(
@@ -173,7 +216,8 @@ class LastLevelMaxPool(ExtraFPNBlock):
         names: List[str],
     ) -> Tuple[List[Tensor], List[str]]:
         names.append("pool")
-        x.append(F.max_pool2d(x[-1], 1, 2, 0))
+        # Use max pooling to simulate stride 2 subsampling
+        x.append(F.max_pool2d(x[-1], kernel_size=1, stride=2, padding=0))
         return x, names
 
 

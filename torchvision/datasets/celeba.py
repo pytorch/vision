@@ -1,12 +1,12 @@
 import csv
 import os
 from collections import namedtuple
-from typing import Any, Callable, List, Optional, Union, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import PIL
 import torch
 
-from .utils import download_file_from_google_drive, check_integrity, verify_str_arg, extract_archive
+from .utils import check_integrity, download_file_from_google_drive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 CSV = namedtuple("CSV", ["header", "index", "data"])
@@ -23,16 +23,16 @@ class CelebA(VisionDataset):
             or ``landmarks``. Can also be a list to output a tuple with all specified target types.
             The targets represent:
 
-                - ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes
+                - ``attr`` (Tensor shape=(40,) dtype=int): binary (0, 1) labels for attributes
                 - ``identity`` (int): label for each person (data points with the same identity are the same person)
-                - ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
-                - ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
+                - ``bbox`` (Tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
+                - ``landmarks`` (Tensor shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
                   righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
 
             Defaults to ``attr``. If empty, ``None`` will be returned as target.
 
         transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -41,7 +41,7 @@ class CelebA(VisionDataset):
     """
 
     base_folder = "celeba"
-    # There currently does not appear to be a easy way to extract 7z in python (without introducing additional
+    # There currently does not appear to be an easy way to extract 7z in python (without introducing additional
     # dependencies). The "in-the-wild" (not aligned+cropped) images are only in 7z, so they are not available
     # right now.
     file_list = [
