@@ -1,7 +1,7 @@
 import re
 from collections import OrderedDict
 from functools import partial
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import torch
 import torch.nn as nn
@@ -67,13 +67,13 @@ class _DenseLayer(nn.Module):
     def forward(self, input: List[Tensor]) -> Tensor:  # noqa: F811
         pass
 
-    @torch.jit._overload_method  # noqa: F811 # type: ignore[no-redef]
+    @torch.jit._overload_method  # noqa: F811
     def forward(self, input: Tensor) -> Tensor:  # noqa: F811
         pass
 
     # torchscript does not yet support *args, so we overload method
     # allowing it to take either a List[Tensor] or single Tensor
-    def forward(self, input: Tensor) -> Tensor:  # noqa: F811 # type: ignore[no-redef]
+    def forward(self, input: Tensor) -> Tensor:  # noqa: F811
         if isinstance(input, Tensor):
             prev_features = [input]
         else:
@@ -227,7 +227,7 @@ def _load_state_dict(model: nn.Module, weights: WeightsEnum, progress: bool) -> 
         r"^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$"
     )
 
-    state_dict = weights.get_state_dict(progress=progress, check_hash=True)
+    state_dict = cast(Dict[str, Tensor], weights.get_state_dict(progress=progress, check_hash=True))
     for key in list(state_dict.keys()):
         res = pattern.match(key)
         if res:
