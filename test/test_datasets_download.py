@@ -368,7 +368,6 @@ def url_parametrization(*dataset_urls_and_ids_fns):
     kinetics,
     kitti,
     places365,
-    sbu,
 )
 def test_url_is_accessible(url):
     """
@@ -380,6 +379,7 @@ def test_url_is_accessible(url):
 
 @url_parametrization(
     stanford_cars,  # https://github.com/pytorch/vision/issues/7545
+    sbu,  # https://github.com/pytorch/vision/issues/7964
 )
 @pytest.mark.xfail
 def test_url_is_not_accessible(url):
@@ -391,4 +391,4 @@ def test_url_is_not_accessible(url):
     If you see this test failing, find the offending dataset in the parametrization and move it to
     ``test_url_is_accessible``.
     """
-    retry(lambda: assert_url_is_accessible(url))
+    assert_url_is_accessible(url)
