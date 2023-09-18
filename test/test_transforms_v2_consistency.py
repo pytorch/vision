@@ -229,23 +229,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.ColorJitter,
-        legacy_transforms.ColorJitter,
-        [
-            ArgsKwargs(),
-            ArgsKwargs(brightness=0.1),
-            ArgsKwargs(brightness=(0.2, 0.3)),
-            ArgsKwargs(contrast=0.4),
-            ArgsKwargs(contrast=(0.5, 0.6)),
-            ArgsKwargs(saturation=0.7),
-            ArgsKwargs(saturation=(0.8, 0.9)),
-            ArgsKwargs(hue=0.3),
-            ArgsKwargs(hue=(-0.1, 0.2)),
-            ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.3),
-        ],
-        closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
-    ),
-    ConsistencyConfig(
         v2_transforms.PILToTensor,
         legacy_transforms.PILToTensor,
     ),
@@ -451,49 +434,6 @@ def test_call_consistency(config, args_kwargs):
         supports_pil=config.supports_pil,
         closeness_kwargs=config.closeness_kwargs,
     )
-
-
-get_params_parametrization = pytest.mark.parametrize(
-    ("config", "get_params_args_kwargs"),
-    [
-        pytest.param(
-            next(config for config in CONSISTENCY_CONFIGS if config.prototype_cls is transform_cls),
-            get_params_args_kwargs,
-            id=transform_cls.__name__,
-        )
-        for transform_cls, get_params_args_kwargs in [
-            (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
-            (v2_transforms.AutoAugment, ArgsKwargs(5)),
-        ]
-    ],
-)
-
-
-@get_params_parametrization
-def test_get_params_alias(config, get_params_args_kwargs):
-    assert config.prototype_cls.get_params is config.legacy_cls.get_params
-
-    if not config.args_kwargs:
-        return
-    args, kwargs = config.args_kwargs[0]
-    legacy_transform = config.legacy_cls(*args, **kwargs)
-    prototype_transform = config.prototype_cls(*args, **kwargs)
-
-    assert prototype_transform.get_params is legacy_transform.get_params
-
-
-@get_params_parametrization
-def test_get_params_jit(config, get_params_args_kwargs):
-    get_params_args, get_params_kwargs = get_params_args_kwargs
-
-    torch.jit.script(config.prototype_cls.get_params)(*get_params_args, **get_params_kwargs)
-
-    if not config.args_kwargs:
-        return
-    args, kwargs = config.args_kwargs[0]
-    transform = config.prototype_cls(*args, **kwargs)
-
-    torch.jit.script(transform.get_params)(*get_params_args, **get_params_kwargs)
 
 
 @pytest.mark.parametrize(
