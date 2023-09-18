@@ -3927,21 +3927,20 @@ class TestColorJitter:
         with pytest.raises(ValueError, match="values should be between"):
             transforms.ColorJitter(hue=1)
 
-    @pytest.mark.parametrize("brightness", [None, 0.5])
-    @pytest.mark.parametrize("contrast", [None, 0.5])
-    @pytest.mark.parametrize("saturation", [None, 0.5])
-    @pytest.mark.parametrize("hue", [None, 0.25])
-    @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_correctness(self, brightness, contrast, saturation, hue, seed):
+    @pytest.mark.parametrize("brightness", [None, 0.1, (0.2, 0.3)])
+    @pytest.mark.parametrize("contrast", [None, 0.4, (0.5, 0.6)])
+    @pytest.mark.parametrize("saturation", [None, 0.7, (0.8, 0.9)])
+    @pytest.mark.parametrize("hue", [None, 0.3, (-0.1, 0.2)])
+    def test_transform_correctness(self, brightness, contrast, saturation, hue):
         image = make_image(dtype=torch.uint8, device="cpu")
 
         transform = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
 
         with freeze_rng_state():
-            torch.manual_seed(seed)
+            torch.manual_seed(0)
             actual = transform(image)
 
-            torch.manual_seed(seed)
+            torch.manual_seed(0)
             expected = F.to_image(transform(F.to_pil_image(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
