@@ -17,7 +17,7 @@ from torchvision import tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2._utils import is_pure_tensor, query_chw
+from torchvision.transforms.v2._utils import is_pure_tensor
 from transforms_v2_legacy_utils import (
     make_bounding_boxes,
     make_detection_mask,
@@ -62,21 +62,6 @@ def parametrize(transforms_with_inputs):
     )
 
 
-def linear_transformation_adapter(transform, input, device):
-    flat_inputs = list(input.values())
-    c, h, w = query_chw(
-        [
-            item
-            for item, needs_transform in zip(flat_inputs, transforms.Transform()._needs_transform_list(flat_inputs))
-            if needs_transform
-        ]
-    )
-    num_elements = c * h * w
-    transform.transformation_matrix = torch.randn((num_elements, num_elements), device=device)
-    transform.mean_vector = torch.randn((num_elements,), device=device)
-    return {key: value for key, value in input.items() if not isinstance(value, PIL.Image.Image)}
-
-
 class TestSmoke:
     @pytest.mark.parametrize(
         ("transform", "adapter"),
@@ -84,21 +69,10 @@ class TestSmoke:
             (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
             (transforms.Grayscale(), None),
             (transforms.RandomGrayscale(p=1.0), None),
-            (transforms.RandomChannelPermutation(), None),
             (transforms.RandomPhotometricDistort(p=1.0), None),
             (transforms.RandomShortestSize(min_size=10, antialias=True), None),
             (transforms.RandomZoomOut(p=1.0), None),
             (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
-            (transforms.ConvertImageDtype(), None),
-            (
-                transforms.LinearTransformation(
-                    # These are just dummy values that will be filled by the adapter. We can't define them upfront,
-                    # because for we neither know the spatial size nor the device at this point
-                    transformation_matrix=torch.empty((1, 1)),
-                    mean_vector=torch.empty((1,)),
-                ),
-                linear_transformation_adapter,
-            ),
         ],
         ids=lambda transform: type(transform).__name__,
     )
@@ -544,39 +518,6 @@ class TestRandomShortestSize:
             assert shorter <= max_size
         else:
             assert shorter in min_size
-
-
-class TestLinearTransformation:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="transformation_matrix should be square"):
-            transforms.LinearTransformation(torch.rand(2, 3), torch.rand(5))
-
-        with pytest.raises(ValueError, match="mean_vector should have the same length"):
-            transforms.LinearTransformation(torch.rand(3, 3), torch.rand(5))
-
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            122 * torch.ones(1, 3, 8, 8),
-            122.0 * torch.ones(1, 3, 8, 8),
-            tv_tensors.Image(122 * torch.ones(1, 3, 8, 8)),
-            PIL.Image.new("RGB", (8, 8), (122, 122, 122)),
-        ],
-    )
-    def test__transform(self, inpt):
-
-        v = 121 * torch.ones(3 * 8 * 8)
-        m = torch.ones(3 * 8 * 8, 3 * 8 * 8)
-        transform = transforms.LinearTransformation(m, v)
-
-        if isinstance(inpt, PIL.Image.Image):
-            with pytest.raises(TypeError, match="does not support PIL images"):
-                transform(inpt)
-        else:
-            output = transform(inpt)
-            assert isinstance(output, torch.Tensor)
-            assert output.unique() == 3 * 8 * 8
-            assert output.dtype == inpt.dtype
 
 
 class TestRandomResize:

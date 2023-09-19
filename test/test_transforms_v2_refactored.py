@@ -4787,3 +4787,66 @@ class TestFiveTenCrop:
 
         assert isinstance(actual, tuple)
         assert_equal(actual, [F.to_image(e) for e in expected])
+
+
+class TestLinearTransform:
+    def _make_matrix_and_vector(self, input, *, device=None):
+        device = device or input.device
+        numel = math.prod(F.get_dimensions(input))
+        transformation_matrix = torch.randn((numel, numel), device=device)
+        mean_vector = torch.randn((numel,), device=device)
+        return transformation_matrix, mean_vector
+
+    def _sample_input_adapter(self, transform, input, device):
+        return {key: value for key, value in input.items() if not isinstance(value, PIL.Image.Image)}
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, dtype, device):
+        input = make_input(dtype=dtype, device=device)
+        check_transform(
+            transforms.LinearTransformation(*self._make_matrix_and_vector(input)),
+            input,
+            check_sample_input=self._sample_input_adapter,
+        )
+
+    def test_transform_error(self):
+        with pytest.raises(ValueError, match="transformation_matrix should be square"):
+            transforms.LinearTransformation(transformation_matrix=torch.rand(2, 3), mean_vector=torch.rand(2))
+
+        with pytest.raises(ValueError, match="mean_vector should have the same length"):
+            transforms.LinearTransformation(transformation_matrix=torch.rand(2, 2), mean_vector=torch.rand(1))
+
+        for matrix_dtype, vector_dtype in [(torch.float32, torch.float64), (torch.float64, torch.float32)]:
+            with pytest.raises(ValueError, match="Input tensors should have the same dtype"):
+                transforms.LinearTransformation(
+                    transformation_matrix=torch.rand(2, 2, dtype=matrix_dtype),
+                    mean_vector=torch.rand(2, dtype=vector_dtype),
+                )
+
+        image = make_image()
+        transform = transforms.LinearTransformation(transformation_matrix=torch.rand(2, 2), mean_vector=torch.rand(2))
+        with pytest.raises(ValueError, match="Input tensor and transformation matrix have incompatible shape"):
+            transform(image)
+
+        transform = transforms.LinearTransformation(*self._make_matrix_and_vector(image))
+        with pytest.raises(TypeError, match="does not support PIL images"):
+            transform(F.to_pil_image(image))
+
+    @needs_cuda
+    def test_transform_error_cuda(self):
+        for matrix_device, vector_device in [("cuda", "cpu"), ("cpu", "cuda")]:
+            with pytest.raises(ValueError, match="Input tensors should be on the same device"):
+                transforms.LinearTransformation(
+                    transformation_matrix=torch.rand(2, 2, device=matrix_device),
+                    mean_vector=torch.rand(2, device=vector_device),
+                )
+
+        for input_device, param_device in [("cuda", "cpu"), ("cpu", "cuda")]:
+            input = make_image(device=input_device)
+            transform = transforms.LinearTransformation(*self._make_matrix_and_vector(input, device=param_device))
+            with pytest.raises(
+                ValueError, match="Input tensor should be on the same device as transformation matrix and mean vector"
+            ):
+                transform(input)
