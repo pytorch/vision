@@ -3945,3 +3945,25 @@ class TestColorJitter:
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 2
+
+
+class TestRandomPhotometricDistort:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        check_transform(
+            transforms.RandomPhotometricDistort(
+                brightness=(0.3, 0.4), contrast=(0.5, 0.6), saturation=(0.7, 0.8), hue=(-0.1, 0.2), p=1
+            ),
+            make_input(dtype=dtype, device=device),
+        )
