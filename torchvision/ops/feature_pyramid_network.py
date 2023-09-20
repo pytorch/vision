@@ -203,6 +203,29 @@ class FeaturePyramidNetwork(nn.Module):
 
         return out
 
+# TODO: Remove this? The pytorch version MUST have channels as last dimension..
+class LayerNorm(torch.nn.Module):
+    """
+    A LayerNorm variant, popularized by Transformers, that performs point-wise mean and
+    variance normalization over the channel dimension for inputs that have shape
+    (batch_size, channels, height, width).
+    https://github.com/facebookresearch/ConvNeXt/blob/d1fa8f6fef0a165b27399986cc2bdacc92777e40/models/convnext.py#L119  # noqa B950
+    """
+
+    def __init__(self, normalized_shape, eps=1e-6):
+        super().__init__()
+        self.weight = torch.nn.Parameter(torch.ones(normalized_shape))
+        self.bias = torch.nn.Parameter(torch.zeros(normalized_shape))
+        self.eps = eps
+        self.normalized_shape = (normalized_shape,)
+
+    def forward(self, x):
+        u = x.mean(1, keepdim=True)
+        s = (x - u).pow(2).mean(1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.eps)
+        x = self.weight[:, None, None] * x + self.bias[:, None, None]
+        return x
+
 
 class SimpleFeaturePyramidNetwork(nn.Module):
     """
@@ -220,7 +243,7 @@ class SimpleFeaturePyramidNetwork(nn.Module):
             be performed. It is expected to take the fpn features, the original
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names
-        norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
+        norm_layer (callable, optional): Module specifying the normalization layer to use. Default: LayerNorm
 
     Examples::
 
@@ -244,7 +267,7 @@ class SimpleFeaturePyramidNetwork(nn.Module):
         in_channels: int,
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
-        norm_layer: Optional[Callable[..., nn.Module]] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = LayerNorm,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -257,16 +280,6 @@ class SimpleFeaturePyramidNetwork(nn.Module):
 
             current_in_channels = in_channels
             if block_index == 0:
-                # This class and its uses is required because of:
-                #    https://github.com/pytorch/pytorch/issues/71465
-                class Permute(nn.Module):
-                    def __init__(self, *dims):
-                        super().__init__()
-                        self.dims = dims
-
-                    def forward(self, x: Tensor) -> Tensor:
-                        return x.permute(self.dims)
-
                 layers.extend([
                     nn.ConvTranspose2d(
                         in_channels,
@@ -274,9 +287,7 @@ class SimpleFeaturePyramidNetwork(nn.Module):
                         kernel_size=2,
                         stride=2,
                     ),
-                    Permute(0, 2, 3, 1),
-                    nn.LayerNorm(in_channels // 2),
-                    Permute(0, 3, 1, 2),
+                    LayerNorm(in_channels // 2),
                     nn.GELU(),
                     nn.ConvTranspose2d(
                         in_channels // 2,
