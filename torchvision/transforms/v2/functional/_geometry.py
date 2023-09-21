@@ -210,64 +210,73 @@ def resize_image(
         # error if other interpolation modes are used. This is documented.
         antialias = False
 
-    shape = image.shape
-    numel = image.numel()
-    num_channels, old_height, old_width = shape[-3:]
+    old_height, old_width = image.shape[-2:]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
 
     if (new_height, new_width) == (old_height, old_width):
         return image
-    elif numel > 0:
-        image = image.reshape(-1, num_channels, old_height, old_width)
 
-        dtype = image.dtype
-        acceptable_dtypes = [torch.float32, torch.float64]
-        if interpolation == InterpolationMode.NEAREST or interpolation == InterpolationMode.NEAREST_EXACT:
-            # uint8 dtype can be included for cpu and cuda input if nearest mode
+    if image.ndim > 2:
+        num_channels = image.shape[-3]
+        output_shape = image.shape[:-3] + (num_channels, new_height, new_width)
+    else:
+        num_channels = 1
+        output_shape = [new_height, new_width]
+
+    numel = image.numel()
+    if numel == 0:
+        return image.reshape(output_shape)
+
+    image = image.reshape(-1, num_channels, old_height, old_width)
+
+    dtype = image.dtype
+    acceptable_dtypes = [torch.float32, torch.float64]
+    if interpolation == InterpolationMode.NEAREST or interpolation == InterpolationMode.NEAREST_EXACT:
+        # uint8 dtype can be included for cpu and cuda input if nearest mode
+        acceptable_dtypes.append(torch.uint8)
+    elif image.device.type == "cpu":
+        # uint8 dtype support for bilinear and bicubic is limited to cpu and
+        # according to our benchmarks, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
+        if (interpolation == InterpolationMode.BILINEAR and "AVX2" in torch.backends.cpu.get_cpu_capability()) or (
+            interpolation == InterpolationMode.BICUBIC
+        ):
             acceptable_dtypes.append(torch.uint8)
-        elif image.device.type == "cpu":
-            # uint8 dtype support for bilinear and bicubic is limited to cpu and
-            # according to our benchmarks, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
-            if (interpolation == InterpolationMode.BILINEAR and "AVX2" in torch.backends.cpu.get_cpu_capability()) or (
-                interpolation == InterpolationMode.BICUBIC
-            ):
-                acceptable_dtypes.append(torch.uint8)
 
-        strides = image.stride()
-        if image.is_contiguous(memory_format=torch.channels_last) and image.shape[0] == 1 and numel != strides[0]:
-            # There is a weird behaviour in torch core where the output tensor of `interpolate()` can be allocated as
-            # contiguous even though the input is un-ambiguously channels_last (https://github.com/pytorch/pytorch/issues/68430).
-            # In particular this happens for the typical torchvision use-case of single CHW images where we fake the batch dim
-            # to become 1CHW. Below, we restride those tensors to trick torch core into properly allocating the output as
-            # channels_last, thus preserving the memory format of the input. This is not just for format consistency:
-            # for uint8 bilinear images, this also avoids an extra copy (re-packing) of the output and saves time.
-            # TODO: when https://github.com/pytorch/pytorch/issues/68430 is fixed (possibly by https://github.com/pytorch/pytorch/pull/100373),
-            # we should be able to remove this hack.
-            new_strides = list(strides)
-            new_strides[0] = numel
-            image = image.as_strided((1, num_channels, old_height, old_width), new_strides)
+    strides = image.stride()
+    if image.is_contiguous(memory_format=torch.channels_last) and image.shape[0] == 1 and numel != strides[0]:
+        # There is a weird behaviour in torch core where the output tensor of `interpolate()` can be allocated as
+        # contiguous even though the input is un-ambiguously channels_last (https://github.com/pytorch/pytorch/issues/68430).
+        # In particular this happens for the typical torchvision use-case of single CHW images where we fake the batch dim
+        # to become 1CHW. Below, we restride those tensors to trick torch core into properly allocating the output as
+        # channels_last, thus preserving the memory format of the input. This is not just for format consistency:
+        # for uint8 bilinear images, this also avoids an extra copy (re-packing) of the output and saves time.
+        # TODO: when https://github.com/pytorch/pytorch/issues/68430 is fixed (possibly by https://github.com/pytorch/pytorch/pull/100373),
+        # we should be able to remove this hack.
+        new_strides = list(strides)
+        new_strides[0] = numel
+        image = image.as_strided((1, num_channels, old_height, old_width), new_strides)
 
-        need_cast = dtype not in acceptable_dtypes
-        if need_cast:
-            image = image.to(dtype=torch.float32)
+    need_cast = dtype not in acceptable_dtypes
+    if need_cast:
+        image = image.to(dtype=torch.float32)
 
-        image = interpolate(
-            image,
-            size=[new_height, new_width],
-            mode=interpolation.value,
-            align_corners=align_corners,
-            antialias=antialias,
-        )
+    image = interpolate(
+        image,
+        size=[new_height, new_width],
+        mode=interpolation.value,
+        align_corners=align_corners,
+        antialias=antialias,
+    )
 
-        if need_cast:
-            if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
-                # This path is hit on non-AVX archs, or on GPU.
-                image = image.clamp_(min=0, max=255)
-            if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
-                image = image.round_()
-            image = image.to(dtype=dtype)
+    if need_cast:
+        if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+            # This path is hit on non-AVX archs, or on GPU.
+            image = image.clamp_(min=0, max=255)
+        if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+            image = image.round_()
+        image = image.to(dtype=dtype)
 
-    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
+    return image.reshape(output_shape)
 
 
 def _resize_image_pil(
@@ -305,18 +314,7 @@ def __resize_image_pil_dispatch(
 
 
 def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
-    if mask.ndim < 3:
-        mask = mask.unsqueeze(0)
-        needs_squeeze = True
-    else:
-        needs_squeeze = False
-
-    output = resize_image(mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
-
-    if needs_squeeze:
-        output = output.squeeze(0)
-
-    return output
+    return resize_image(mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
 
 
 @_register_kernel_internal(resize, tv_tensors.Mask, tv_tensor_wrapper=False)
@@ -554,19 +552,36 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
 
 
 def _apply_grid_transform(img: torch.Tensor, grid: torch.Tensor, mode: str, fill: _FillTypeJIT) -> torch.Tensor:
+    input_shape = img.shape
+    output_height, output_width = grid.shape[1], grid.shape[2]
+
+    if len(input_shape) > 2:
+        num_channels, input_height, input_width = input_shape[-3:]
+        output_shape = input_shape[:-3] + (num_channels, output_height, output_width)
+    else:
+        num_channels = 1
+        input_height, input_width = input_shape
+        output_shape = [output_height, output_width]
+
+    if img.numel() == 0:
+        return img.reshape(output_shape)
+
+    img = img.reshape(-1, num_channels, input_height, input_width)
+    squashed_batch_size = img.shape[0]
 
     # We are using context knowledge that grid should have float dtype
     fp = img.dtype == grid.dtype
     float_img = img if fp else img.to(grid.dtype)
 
-    shape = float_img.shape
-    if shape[0] > 1:
+    if squashed_batch_size > 1:
         # Apply same grid to a batch of images
-        grid = grid.expand(shape[0], -1, -1, -1)
+        grid = grid.expand(squashed_batch_size, -1, -1, -1)
 
     # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
     if fill is not None:
-        mask = torch.ones((shape[0], 1, shape[2], shape[3]), dtype=float_img.dtype, device=float_img.device)
+        mask = torch.ones(
+            (squashed_batch_size, 1, input_height, input_width), dtype=float_img.dtype, device=float_img.device
+        )
         float_img = torch.cat((float_img, mask), dim=1)
 
     float_img = grid_sample(float_img, grid, mode=mode, padding_mode="zeros", align_corners=False)
@@ -587,7 +602,7 @@ def _apply_grid_transform(img: torch.Tensor, grid: torch.Tensor, mode: str, fill
 
     img = float_img.round_().to(img.dtype) if not fp else float_img
 
-    return img
+    return img.reshape(output_shape)
 
 
 def _assert_grid_transform_inputs(
@@ -625,10 +640,10 @@ def _assert_grid_transform_inputs(
 
 def _affine_grid(
     theta: torch.Tensor,
-    w: int,
-    h: int,
-    ow: int,
-    oh: int,
+    input_width: int,
+    input_height: int,
+    output_width: int,
+    output_height: int,
 ) -> torch.Tensor:
     # https://github.com/pytorch/pytorch/blob/74b65c32be68b15dc7c9e8bb62459efbfbde33d8/aten/src/ATen/native/
     # AffineGridGenerator.cpp#L18
@@ -638,16 +653,20 @@ def _affine_grid(
     dtype = theta.dtype
     device = theta.device
 
-    base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
-    x_grid = torch.linspace((1.0 - ow) * 0.5, (ow - 1.0) * 0.5, steps=ow, device=device)
+    base_grid = torch.empty(1, output_height, output_width, 3, dtype=dtype, device=device)
+    x_grid = torch.linspace((1.0 - output_width) * 0.5, (output_width - 1.0) * 0.5, steps=output_width, device=device)
     base_grid[..., 0].copy_(x_grid)
-    y_grid = torch.linspace((1.0 - oh) * 0.5, (oh - 1.0) * 0.5, steps=oh, device=device).unsqueeze_(-1)
+    y_grid = torch.linspace(
+        (1.0 - output_height) * 0.5, (output_height - 1.0) * 0.5, steps=output_height, device=device
+    ).unsqueeze_(-1)
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta = theta.transpose(1, 2).div_(torch.tensor([0.5 * w, 0.5 * h], dtype=dtype, device=device))
-    output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
-    return output_grid.view(1, oh, ow, 2)
+    rescaled_theta = theta.transpose(1, 2).div_(
+        torch.tensor([0.5 * input_width, 0.5 * input_height], dtype=dtype, device=device)
+    )
+    output_grid = base_grid.view(1, output_height * output_width, 3).bmm(rescaled_theta)
+    return output_grid.view(1, output_height, output_width, 2)
 
 
 @_register_kernel_internal(affine, torch.Tensor)
@@ -664,23 +683,9 @@ def affine_image(
 ) -> torch.Tensor:
     interpolation = _check_interpolation(interpolation)
 
-    if image.numel() == 0:
-        return image
-
-    shape = image.shape
-    ndim = image.ndim
-
-    if ndim > 4:
-        image = image.reshape((-1,) + shape[-3:])
-        needs_unsquash = True
-    elif ndim == 3:
-        image = image.unsqueeze(0)
-        needs_unsquash = True
-    else:
-        needs_unsquash = False
-
-    height, width = shape[-2:]
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
+
+    height, width = image.shape[-2:]
 
     center_f = [0.0, 0.0]
     if center is not None:
@@ -694,13 +699,8 @@ def affine_image(
 
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
-    grid = _affine_grid(theta, w=width, h=height, ow=width, oh=height)
-    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
-
-    if needs_unsquash:
-        output = output.reshape(shape)
-
-    return output
+    grid = _affine_grid(theta, input_width=width, input_height=height, output_width=width, output_height=height)
+    return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
 
 @_register_kernel_internal(affine, PIL.Image.Image)
@@ -873,13 +873,7 @@ def affine_mask(
     fill: _FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    if mask.ndim < 3:
-        mask = mask.unsqueeze(0)
-        needs_squeeze = True
-    else:
-        needs_squeeze = False
-
-    output = affine_image(
+    return affine_image(
         mask,
         angle=angle,
         translate=translate,
@@ -889,11 +883,6 @@ def affine_mask(
         fill=fill,
         center=center,
     )
-
-    if needs_squeeze:
-        output = output.squeeze(0)
-
-    return output
 
 
 @_register_kernel_internal(affine, tv_tensors.Mask, tv_tensor_wrapper=False)
@@ -972,35 +961,33 @@ def rotate_image(
 ) -> torch.Tensor:
     interpolation = _check_interpolation(interpolation)
 
-    shape = image.shape
-    num_channels, height, width = shape[-3:]
+    input_height, input_width = image.shape[-2:]
 
     center_f = [0.0, 0.0]
     if center is not None:
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
+        center_f = [(c - s * 0.5) for c, s in zip(center, [input_width, input_height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
 
-    if image.numel() > 0:
-        image = image.reshape(-1, num_channels, height, width)
+    _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
-        _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
+    output_width, output_height = (
+        _compute_affine_output_size(matrix, input_width, input_height) if expand else (input_width, input_height)
+    )
 
-        ow, oh = _compute_affine_output_size(matrix, width, height) if expand else (width, height)
-        dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-        theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
-        grid = _affine_grid(theta, w=width, h=height, ow=ow, oh=oh)
-        output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
-
-        new_height, new_width = output.shape[-2:]
-    else:
-        output = image
-        new_width, new_height = _compute_affine_output_size(matrix, width, height) if expand else (width, height)
-
-    return output.reshape(shape[:-3] + (num_channels, new_height, new_width))
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
+    grid = _affine_grid(
+        theta,
+        input_width=input_width,
+        input_height=input_height,
+        output_width=output_width,
+        output_height=output_height,
+    )
+    return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
 
 @_register_kernel_internal(rotate, PIL.Image.Image)
@@ -1062,13 +1049,7 @@ def rotate_mask(
     center: Optional[List[float]] = None,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
-    if mask.ndim < 3:
-        mask = mask.unsqueeze(0)
-        needs_squeeze = True
-    else:
-        needs_squeeze = False
-
-    output = rotate_image(
+    return rotate_image(
         mask,
         angle=angle,
         expand=expand,
@@ -1076,11 +1057,6 @@ def rotate_mask(
         fill=fill,
         center=center,
     )
-
-    if needs_squeeze:
-        output = output.squeeze(0)
-
-    return output
 
 
 @_register_kernel_internal(rotate, tv_tensors.Mask, tv_tensor_wrapper=False)
@@ -1184,14 +1160,23 @@ def _pad_with_scalar_fill(
     fill: Union[int, float],
     padding_mode: str,
 ) -> torch.Tensor:
-    shape = image.shape
-    num_channels, height, width = shape[-3:]
+    old_height, old_width = image.shape[-2:]
 
-    batch_size = 1
-    for s in shape[:-3]:
-        batch_size *= s
+    left, right, top, bottom = torch_padding
+    new_height = old_height + top + bottom
+    new_width = old_width + left + right
 
-    image = image.reshape(batch_size, num_channels, height, width)
+    if image.ndim > 2:
+        num_channels = image.shape[-3]
+        output_shape = image.shape[:-3] + (num_channels, new_height, new_width)
+    else:
+        num_channels = 1
+        output_shape = [new_height, new_width]
+
+    if image.numel() == 0:
+        return image.reshape(output_shape)
+
+    image = image.reshape(-1, num_channels, old_height, old_width)
 
     if padding_mode == "edge":
         # Similar to the padding order, `torch_pad`'s PIL's padding modes don't have the same names. Thus, we map
@@ -1218,9 +1203,7 @@ def _pad_with_scalar_fill(
     else:  # padding_mode == "symmetric"
         image = _pad_symmetric(image, torch_padding)
 
-    new_height, new_width = image.shape[-2:]
-
-    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
+    return image.reshape(output_shape)
 
 
 # TODO: This should be removed once torch_pad supports non-scalar padding values
@@ -1268,18 +1251,7 @@ def pad_mask(
     if isinstance(fill, (tuple, list)):
         raise ValueError("Non-scalar fill value is not supported")
 
-    if mask.ndim < 3:
-        mask = mask.unsqueeze(0)
-        needs_squeeze = True
-    else:
-        needs_squeeze = False
-
-    output = pad_image(mask, padding=padding, fill=fill, padding_mode=padding_mode)
-
-    if needs_squeeze:
-        output = output.squeeze(0)
-
-    return output
+    return pad_image(mask, padding=padding, fill=fill, padding_mode=padding_mode)
 
 
 def pad_bounding_boxes(
@@ -1401,18 +1373,7 @@ def _crop_bounding_boxes_dispatch(
 
 @_register_kernel_internal(crop, tv_tensors.Mask)
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
-    if mask.ndim < 3:
-        mask = mask.unsqueeze(0)
-        needs_squeeze = True
-    else:
-        needs_squeeze = False
-
-    output = crop_image(mask, top, left, height, width)
-
-    if needs_squeeze:
-        output = output.squeeze(0)
-
-    return output
+    return crop_image(mask, top, left, height, width)
 
 
 @_register_kernel_internal(crop, tv_tensors.Video)
@@ -1452,11 +1413,11 @@ def perspective(
     )
 
 
-def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
-    # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
-    # src/libImaging/Geometry.c#L394
+def _perspective_grid(
+    coeffs: List[float], width: int, height: int, dtype: torch.dtype, device: torch.device
+) -> torch.Tensor:
+    # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/src/libImaging/Geometry.c#L394
 
-    #
     # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #
@@ -1466,20 +1427,20 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
     theta2 = torch.tensor([[[coeffs[6], coeffs[7], 1.0], [coeffs[6], coeffs[7], 1.0]]], dtype=dtype, device=device)
 
     d = 0.5
-    base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
-    x_grid = torch.linspace(d, ow + d - 1.0, steps=ow, device=device, dtype=dtype)
+    base_grid = torch.empty(1, height, width, 3, dtype=dtype, device=device)
+    x_grid = torch.linspace(d, width + d - 1.0, steps=width, device=device, dtype=dtype)
     base_grid[..., 0].copy_(x_grid)
-    y_grid = torch.linspace(d, oh + d - 1.0, steps=oh, device=device, dtype=dtype).unsqueeze_(-1)
+    y_grid = torch.linspace(d, height + d - 1.0, steps=height, device=device, dtype=dtype).unsqueeze_(-1)
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta1 = theta1.transpose(1, 2).div_(torch.tensor([0.5 * ow, 0.5 * oh], dtype=dtype, device=device))
-    shape = (1, oh * ow, 3)
+    rescaled_theta1 = theta1.transpose(1, 2).div_(torch.tensor([0.5 * width, 0.5 * height], dtype=dtype, device=device))
+    shape = (1, height * width, 3)
     output_grid1 = base_grid.view(shape).bmm(rescaled_theta1)
     output_grid2 = base_grid.view(shape).bmm(theta2.transpose(1, 2))
 
     output_grid = output_grid1.div_(output_grid2).sub_(1.0)
-    return output_grid.view(1, oh, ow, 2)
+    return output_grid.view(1, height, width, 2)
 
 
 def _perspective_coefficients(
@@ -1512,21 +1473,6 @@ def perspective_image(
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
     interpolation = _check_interpolation(interpolation)
 
-    if image.numel() == 0:
-        return image
-
-    shape = image.shape
-    ndim = image.ndim
-
-    if ndim > 4:
-        image = image.reshape((-1,) + shape[-3:])
-        needs_unsquash = True
-    elif ndim == 3:
-        image = image.unsqueeze(0)
-        needs_unsquash = True
-    else:
-        needs_unsquash = False
-
     _assert_grid_transform_inputs(
         image,
         matrix=None,
@@ -1536,15 +1482,11 @@ def perspective_image(
         coeffs=perspective_coeffs,
     )
 
-    oh, ow = shape[-2:]
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=image.device)
-    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
-
-    if needs_unsquash:
-        output = output.reshape(shape)
-
-    return output
+    grid = _perspective_grid(
+        perspective_coeffs, width=image.shape[-1], height=image.shape[-2], dtype=dtype, device=image.device
+    )
+    return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
 
 @_register_kernel_internal(perspective, PIL.Image.Image)
@@ -1681,20 +1623,9 @@ def perspective_mask(
     fill: _FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    if mask.ndim < 3:
-        mask = mask.unsqueeze(0)
-        needs_squeeze = True
-    else:
-        needs_squeeze = False
-
-    output = perspective_image(
+    return perspective_image(
         mask, startpoints, endpoints, interpolation=InterpolationMode.NEAREST, fill=fill, coefficients=coefficients
     )
-
-    if needs_squeeze:
-        output = output.squeeze(0)
-
-    return output
 
 
 @_register_kernel_internal(perspective, tv_tensors.Mask, tv_tensor_wrapper=False)
@@ -1762,12 +1693,7 @@ def elastic_image(
 
     interpolation = _check_interpolation(interpolation)
 
-    if image.numel() == 0:
-        return image
-
-    shape = image.shape
-    ndim = image.ndim
-
+    height, width = image.shape[-2:]
     device = image.device
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
 
@@ -1778,36 +1704,17 @@ def elastic_image(
         dtype = torch.float32
 
     # We are aware that if input image dtype is uint8 and displacement is float64 then
-    # displacement will be casted to float32 and all computations will be done with float32
+    # displacement will be cast to float32 and all computations will be done with float32
     # We can fix this later if needed
 
-    expected_shape = (1,) + shape[-2:] + (2,)
+    expected_shape = (1, height, width, 2)
     if expected_shape != displacement.shape:
         raise ValueError(f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}")
 
-    if ndim > 4:
-        image = image.reshape((-1,) + shape[-3:])
-        needs_unsquash = True
-    elif ndim == 3:
-        image = image.unsqueeze(0)
-        needs_unsquash = True
-    else:
-        needs_unsquash = False
-
-    if displacement.dtype != dtype or displacement.device != device:
-        displacement = displacement.to(dtype=dtype, device=device)
-
-    image_height, image_width = shape[-2:]
-    grid = _create_identity_grid((image_height, image_width), device=device, dtype=dtype).add_(displacement)
-    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
-
-    if needs_unsquash:
-        output = output.reshape(shape)
-
-    if is_cpu_half:
-        output = output.to(torch.float16)
-
-    return output
+    grid = _create_identity_grid((height, width), device=device, dtype=dtype).add_(
+        displacement.to(dtype=dtype, device=device)
+    )
+    return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
 
 @_register_kernel_internal(elastic, PIL.Image.Image)
@@ -1906,18 +1813,7 @@ def elastic_mask(
     displacement: torch.Tensor,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
-    if mask.ndim < 3:
-        mask = mask.unsqueeze(0)
-        needs_squeeze = True
-    else:
-        needs_squeeze = False
-
-    output = elastic_image(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST, fill=fill)
-
-    if needs_squeeze:
-        output = output.squeeze(0)
-
-    return output
+    return elastic_image(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST, fill=fill)
 
 
 @_register_kernel_internal(elastic, tv_tensors.Mask, tv_tensor_wrapper=False)
@@ -2039,18 +1935,7 @@ def _center_crop_bounding_boxes_dispatch(
 
 @_register_kernel_internal(center_crop, tv_tensors.Mask)
 def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
-    if mask.ndim < 3:
-        mask = mask.unsqueeze(0)
-        needs_squeeze = True
-    else:
-        needs_squeeze = False
-
-    output = center_crop_image(image=mask, output_size=output_size)
-
-    if needs_squeeze:
-        output = output.squeeze(0)
-
-    return output
+    return center_crop_image(image=mask, output_size=output_size)
 
 
 @_register_kernel_internal(center_crop, tv_tensors.Video)
