@@ -124,7 +124,7 @@ jobs:
         conda activate ci
         
         echo '::group::Install ONNX'
-        pip install --progress-bar=off onnx onnxruntime
+        pip install --progress-bar=off onnx onnxruntime!=1.16.0
         echo '::endgroup::'
         
         echo '::group::Install testing utilities'
