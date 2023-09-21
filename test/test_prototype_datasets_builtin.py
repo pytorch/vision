@@ -19,13 +19,13 @@ from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.dataloader2.graph.utils import traverse_dps
 from torchdata.datapipes.iter import ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
-from torchvision import datapoints
+from torchvision import tv_tensors
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datasets
-from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import EncodedImage
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
-from torchvision.transforms.v2.utils import is_pure_tensor
+from torchvision.prototype.tv_tensors import Label
+from torchvision.transforms.v2._utils import is_pure_tensor
 
 
 def assert_samples_equal(*args, msg=None, **kwargs):
@@ -147,7 +147,7 @@ class TestCommon:
         pure_tensors = {key for key, value in sample.items() if is_pure_tensor(value)}
 
         if pure_tensors and not any(
-            isinstance(item, (datapoints.Image, datapoints.Video, EncodedImage)) for item in sample.values()
+            isinstance(item, (tv_tensors.Image, tv_tensors.Video, EncodedImage)) for item in sample.values()
         ):
             raise AssertionError(
                 f"The values of key(s) "
@@ -276,7 +276,7 @@ class TestUSPS:
             assert "image" in sample
             assert "label" in sample
 
-            assert isinstance(sample["image"], datapoints.Image)
+            assert isinstance(sample["image"], tv_tensors.Image)
             assert isinstance(sample["label"], Label)
 
             assert sample["image"].shape == (1, 16, 16)

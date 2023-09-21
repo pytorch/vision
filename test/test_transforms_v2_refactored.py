@@ -1,7 +1,10 @@
 import contextlib
 import decimal
+import functools
 import inspect
+import itertools
 import math
+import pickle
 import re
 from pathlib import Path
 from unittest import mock
@@ -11,6 +14,8 @@ import PIL.Image
 import pytest
 
 import torch
+
+import torchvision.ops
 import torchvision.transforms.v2 as transforms
 from common_utils import (
     assert_equal,
@@ -35,11 +40,12 @@ from torch import nn
 from torch.testing import assert_close
 from torch.utils._pytree import tree_map
 from torch.utils.data import DataLoader, default_collate
-from torchvision import datapoints
+from torchvision import tv_tensors
 
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
 
@@ -137,7 +143,6 @@ def check_kernel(
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
     check_batched_vs_unbatched=True,
-    expect_same_dtype=True,
     **kwargs,
 ):
     initial_input_version = input._version
@@ -150,7 +155,7 @@ def check_kernel(
     # check that no inplace operation happened
     assert input._version == initial_input_version
 
-    if expect_same_dtype:
+    if kernel not in {F.to_dtype_image, F.to_dtype_video}:
         assert output.dtype == input.dtype
     assert output.device == input.device
 
@@ -166,7 +171,7 @@ def check_kernel(
 
 def _check_functional_scripted_smoke(functional, input, *args, **kwargs):
     """Checks if the functional can be scripted and the scripted version can be called without error."""
-    if not isinstance(input, datapoints.Image):
+    if not isinstance(input, tv_tensors.Image):
         return
 
     functional_scripted = _script(functional)
@@ -186,7 +191,7 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, **kwar
 
     assert isinstance(output, type(input))
 
-    if isinstance(input, datapoints.BoundingBoxes):
+    if isinstance(input, tv_tensors.BoundingBoxes) and functional is not F.convert_bounding_box_format:
         assert output.format == input.format
 
     if check_scripted_smoke:
@@ -198,11 +203,11 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
     functional_params = list(inspect.signature(functional).parameters.values())[1:]
     kernel_params = list(inspect.signature(kernel).parameters.values())[1:]
 
-    if issubclass(input_type, datapoints.Datapoint):
-        # We filter out metadata that is implicitly passed to the functional through the input datapoint, but has to be
+    if issubclass(input_type, tv_tensors.TVTensor):
+        # We filter out metadata that is implicitly passed to the functional through the input tv_tensor, but has to be
         # explicitly passed to the kernel.
         explicit_metadata = {
-            datapoints.BoundingBoxes: {"format", "canvas_size"},
+            tv_tensors.BoundingBoxes: {"format", "canvas_size"},
         }
         kernel_params = [param for param in kernel_params if param.name not in explicit_metadata.get(input_type, set())]
 
@@ -227,33 +232,47 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
         assert functional_param == kernel_param
 
 
-def _check_transform_v1_compatibility(transform, input):
+def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
-    ``get_params`` method, is scriptable, and the scripted version can be called without error."""
-    if transform._v1_transform_cls is None:
+    ``get_params`` method that is the v1 equivalent, the output is close to v1, is scriptable, and the scripted version
+    can be called without error."""
+    if not (type(input) is torch.Tensor or isinstance(input, PIL.Image.Image)):
         return
 
-    if type(input) is not torch.Tensor:
+    v1_transform_cls = transform._v1_transform_cls
+    if v1_transform_cls is None:
         return
 
-    if hasattr(transform._v1_transform_cls, "get_params"):
-        assert type(transform).get_params is transform._v1_transform_cls.get_params
+    if hasattr(v1_transform_cls, "get_params"):
+        assert type(transform).get_params is v1_transform_cls.get_params
 
-    scripted_transform = _script(transform)
-    with ignore_jit_no_profile_information_warning():
-        scripted_transform(input)
+    v1_transform = v1_transform_cls(**transform._extract_params_for_v1_transform())
+
+    with freeze_rng_state():
+        output_v2 = transform(input)
+
+    with freeze_rng_state():
+        output_v1 = v1_transform(input)
+
+    assert_close(F.to_image(output_v2), F.to_image(output_v1), rtol=rtol, atol=atol)
+
+    if isinstance(input, PIL.Image.Image):
+        return
+
+    _script(v1_transform)(input)
 
 
-def check_transform(transform_cls, input, *args, **kwargs):
-    transform = transform_cls(*args, **kwargs)
+def check_transform(transform, input, check_v1_compatibility=True):
+    pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
     assert isinstance(output, type(input))
 
-    if isinstance(input, datapoints.BoundingBoxes):
+    if isinstance(input, tv_tensors.BoundingBoxes) and not isinstance(transform, transforms.ConvertBoundingBoxFormat):
         assert output.format == input.format
 
-    _check_transform_v1_compatibility(transform, input)
+    if check_v1_compatibility:
+        _check_transform_v1_compatibility(transform, input, **_to_tolerances(check_v1_compatibility))
 
 
 def transform_cls_to_functional(transform_cls, **transform_specific_kwargs):
@@ -294,11 +313,12 @@ def adapt_fill(value, *, dtype):
         return value
 
     max_value = get_max_value(dtype)
+    value_type = float if dtype.is_floating_point else int
 
     if isinstance(value, (int, float)):
-        return type(value)(value * max_value)
+        return value_type(value * max_value)
     elif isinstance(value, (list, tuple)):
-        return type(value)(type(v)(v * max_value) for v in value)
+        return type(value)(value_type(v * max_value) for v in value)
     else:
         raise ValueError(f"fill should be an int or float, or a list or tuple of the former, but got '{value}'.")
 
@@ -336,45 +356,71 @@ def assert_warns_antialias_default_value():
         yield
 
 
-def reference_affine_bounding_boxes_helper(bounding_boxes, *, format, canvas_size, affine_matrix):
-    def transform(bbox):
+def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
+    format = bounding_boxes.format
+    canvas_size = new_canvas_size or bounding_boxes.canvas_size
+
+    def affine_bounding_boxes(bounding_boxes):
+        dtype = bounding_boxes.dtype
+        device = bounding_boxes.device
+
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
-        in_dtype = bbox.dtype
-        if not torch.is_floating_point(bbox):
-            bbox = bbox.float()
-        bbox_xyxy = F.convert_bounding_box_format(
-            bbox.as_subclass(torch.Tensor),
+        input_xyxy = F.convert_bounding_box_format(
+            bounding_boxes.to(dtype=torch.float64, device="cpu", copy=True),
             old_format=format,
-            new_format=datapoints.BoundingBoxFormat.XYXY,
+            new_format=tv_tensors.BoundingBoxFormat.XYXY,
             inplace=True,
         )
+        x1, y1, x2, y2 = input_xyxy.squeeze(0).tolist()
+
         points = np.array(
             [
-                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
+                [x1, y1, 1.0],
+                [x2, y1, 1.0],
+                [x1, y2, 1.0],
+                [x2, y2, 1.0],
             ]
         )
-        transformed_points = np.matmul(points, affine_matrix.T)
-        out_bbox = torch.tensor(
-            [
-                np.min(transformed_points[:, 0]).item(),
-                np.min(transformed_points[:, 1]).item(),
-                np.max(transformed_points[:, 0]).item(),
-                np.max(transformed_points[:, 1]).item(),
-            ],
-            dtype=bbox_xyxy.dtype,
-        )
-        out_bbox = F.convert_bounding_box_format(
-            out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-        )
-        # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-        out_bbox = F.clamp_bounding_boxes(out_bbox, format=format, canvas_size=canvas_size)
-        out_bbox = out_bbox.to(dtype=in_dtype)
-        return out_bbox
+        transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
 
-    return torch.stack([transform(b) for b in bounding_boxes.reshape(-1, 4).unbind()]).reshape(bounding_boxes.shape)
+        output_xyxy = torch.Tensor(
+            [
+                float(np.min(transformed_points[:, 0])),
+                float(np.min(transformed_points[:, 1])),
+                float(np.max(transformed_points[:, 0])),
+                float(np.max(transformed_points[:, 1])),
+            ]
+        )
+
+        output = F.convert_bounding_box_format(
+            output_xyxy, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format
+        )
+
+        if clamp:
+            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+            output = F.clamp_bounding_boxes(
+                output,
+                format=format,
+                canvas_size=canvas_size,
+            )
+        else:
+            # We leave the bounding box as float64 so the caller gets the full precision to perform any additional
+            # operation
+            dtype = output.dtype
+
+        return output.to(dtype=dtype, device=device)
+
+    return tv_tensors.BoundingBoxes(
+        torch.cat([affine_bounding_boxes(b) for b in bounding_boxes.reshape(-1, 4).unbind()], dim=0).reshape(
+            bounding_boxes.shape
+        ),
+        format=format,
+        canvas_size=canvas_size,
+    )
+
+
+# turns all warnings into errors for this module
+pytestmark = pytest.mark.filterwarnings("error")
 
 
 class TestResize:
@@ -427,7 +473,7 @@ class TestResize:
     @pytest.mark.parametrize("antialias", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, size, interpolation, use_max_size, antialias, dtype, device):
+    def test_kernel_image(self, size, interpolation, use_max_size, antialias, dtype, device):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
@@ -447,7 +493,7 @@ class TestResize:
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
@@ -497,10 +543,10 @@ class TestResize:
         [
             (F.resize_image, torch.Tensor),
             (F._resize_image_pil, PIL.Image.Image),
-            (F.resize_image, datapoints.Image),
-            (F.resize_bounding_boxes, datapoints.BoundingBoxes),
-            (F.resize_mask, datapoints.Mask),
-            (F.resize_video, datapoints.Video),
+            (F.resize_image, tv_tensors.Image),
+            (F.resize_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.resize_mask, tv_tensors.Mask),
+            (F.resize_video, tv_tensors.Video),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -521,7 +567,12 @@ class TestResize:
         ],
     )
     def test_transform(self, size, device, make_input):
-        check_transform(transforms.Resize, make_input(self.INPUT_SIZE, device=device), size=size, antialias=True)
+        check_transform(
+            transforms.Resize(size=size, antialias=True),
+            make_input(self.INPUT_SIZE, device=device),
+            # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
+            check_v1_compatibility=dict(rtol=0, atol=1),
+        )
 
     def _check_output_size(self, input, output, *, size, max_size):
         assert tuple(F.get_size(output)) == self._compute_output_size(
@@ -560,18 +611,15 @@ class TestResize:
                 [new_width / old_width, 0, 0],
                 [0, new_height / old_height, 0],
             ],
-            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_boxes_helper(
+        return reference_affine_bounding_boxes_helper(
             bounding_boxes,
-            format=bounding_boxes.format,
-            canvas_size=(new_height, new_width),
             affine_matrix=affine_matrix,
+            new_canvas_size=(new_height, new_width),
         )
-        return datapoints.wrap(expected_bboxes, like=bounding_boxes, canvas_size=(new_height, new_width))
 
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
@@ -700,9 +748,9 @@ class TestResize:
 
         # This identity check is not a requirement. It is here to avoid breaking the behavior by accident. If there
         # is a good reason to break this, feel free to downgrade to an equality check.
-        if isinstance(input, datapoints.Datapoint):
+        if isinstance(input, tv_tensors.TVTensor):
             # We can't test identity directly, since that checks for the identity of the Python object. Since all
-            # datapoints unwrap before a kernel and wrap again afterwards, the Python object changes. Thus, we check
+            # tv_tensors unwrap before a kernel and wrap again afterwards, the Python object changes. Thus, we check
             # that the underlying storage is the same
             assert output.data_ptr() == input.data_ptr()
         else:
@@ -732,14 +780,74 @@ class TestResize:
 
         assert max(F.get_size(output)) == max_size
 
+    def _make_image(self, *args, batch_dims=(), memory_format=torch.contiguous_format, **kwargs):
+        # torch.channels_last memory_format is only available for 4D tensors, i.e. (B, C, H, W). However, images coming
+        # from PIL or our own I/O functions do not have a batch dimensions and are thus 3D, i.e. (C, H, W). Still, the
+        # layout of the data in memory is channels last. To emulate this when a 3D input is requested here, we create
+        # the image as 4D and create a view with the right shape afterwards. With this the layout in memory is channels
+        # last although PyTorch doesn't recognizes it as such.
+        emulate_channels_last = memory_format is torch.channels_last and len(batch_dims) != 1
+
+        image = make_image(
+            *args,
+            batch_dims=(math.prod(batch_dims),) if emulate_channels_last else batch_dims,
+            memory_format=memory_format,
+            **kwargs,
+        )
+
+        if emulate_channels_last:
+            image = tv_tensors.wrap(image.view(*batch_dims, *image.shape[-3:]), like=image)
+
+        return image
+
+    def _check_stride(self, image, *, memory_format):
+        C, H, W = F.get_dimensions(image)
+        if memory_format is torch.contiguous_format:
+            expected_stride = (H * W, W, 1)
+        elif memory_format is torch.channels_last:
+            expected_stride = (1, W * C, C)
+        else:
+            raise ValueError(f"Unknown memory_format: {memory_format}")
+
+        assert image.stride() == expected_stride
+
+    # TODO: We can remove this test and related torchvision workaround
+    #  once we fixed related pytorch issue: https://github.com/pytorch/pytorch/issues/68430
+    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
+    @pytest.mark.parametrize("antialias", [True, False])
+    @pytest.mark.parametrize("memory_format", [torch.contiguous_format, torch.channels_last])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image_memory_format_consistency(self, interpolation, antialias, memory_format, dtype, device):
+        size = self.OUTPUT_SIZES[0]
+
+        input = self._make_image(self.INPUT_SIZE, dtype=dtype, device=device, memory_format=memory_format)
+
+        # Smoke test to make sure we aren't starting with wrong assumptions
+        self._check_stride(input, memory_format=memory_format)
+
+        output = F.resize_image(input, size=size, interpolation=interpolation, antialias=antialias)
+
+        self._check_stride(output, memory_format=memory_format)
+
+    def test_float16_no_rounding(self):
+        # Make sure Resize() doesn't round float16 images
+        # Non-regression test for https://github.com/pytorch/vision/issues/7667
+
+        input = make_image_tensor(self.INPUT_SIZE, dtype=torch.float16)
+        output = F.resize_image(input, size=self.OUTPUT_SIZES[0], antialias=True)
+
+        assert output.dtype is torch.float16
+        assert (output.round() - output).abs().sum() > 0
+
 
 class TestHorizontalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, dtype, device):
+    def test_kernel_image(self, dtype, device):
         check_kernel(F.horizontal_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -770,10 +878,10 @@ class TestHorizontalFlip:
         [
             (F.horizontal_flip_image, torch.Tensor),
             (F._horizontal_flip_image_pil, PIL.Image.Image),
-            (F.horizontal_flip_image, datapoints.Image),
-            (F.horizontal_flip_bounding_boxes, datapoints.BoundingBoxes),
-            (F.horizontal_flip_mask, datapoints.Mask),
-            (F.horizontal_flip_video, datapoints.Video),
+            (F.horizontal_flip_image, tv_tensors.Image),
+            (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.horizontal_flip_mask, tv_tensors.Mask),
+            (F.horizontal_flip_video, tv_tensors.Video),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -785,7 +893,7 @@ class TestHorizontalFlip:
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
-        check_transform(transforms.RandomHorizontalFlip, make_input(device=device), p=1)
+        check_transform(transforms.RandomHorizontalFlip(p=1), make_input(device=device))
 
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
@@ -804,19 +912,11 @@ class TestHorizontalFlip:
                 [-1, 0, bounding_boxes.canvas_size[1]],
                 [0, 1, 0],
             ],
-            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_boxes_helper(
-            bounding_boxes,
-            format=bounding_boxes.format,
-            canvas_size=bounding_boxes.canvas_size,
-            affine_matrix=affine_matrix,
-        )
+        return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
-        return datapoints.wrap(expected_bboxes, like=bounding_boxes)
-
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
@@ -894,7 +994,7 @@ class TestAffine:
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, param, value, dtype, device):
+    def test_kernel_image(self, param, value, dtype, device):
         if param == "fill":
             value = adapt_fill(value, dtype=dtype)
         self._check_kernel(
@@ -913,7 +1013,7 @@ class TestAffine:
         shear=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"],
         center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
     )
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
@@ -946,10 +1046,10 @@ class TestAffine:
         [
             (F.affine_image, torch.Tensor),
             (F._affine_image_pil, PIL.Image.Image),
-            (F.affine_image, datapoints.Image),
-            (F.affine_bounding_boxes, datapoints.BoundingBoxes),
-            (F.affine_mask, datapoints.Mask),
-            (F.affine_video, datapoints.Video),
+            (F.affine_image, tv_tensors.Image),
+            (F.affine_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.affine_mask, tv_tensors.Mask),
+            (F.affine_video, tv_tensors.Video),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -963,7 +1063,7 @@ class TestAffine:
     def test_transform(self, make_input, device):
         input = make_input(device=device)
 
-        check_transform(transforms.RandomAffine, input, **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES)
+        check_transform(transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES), input)
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
@@ -1049,27 +1149,20 @@ class TestAffine:
         shear_y_matrix = np.array([[1, 0, 0], [-math.tan(sy), 1, 0], [0, 0, 1]])
         rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
         true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
-        return true_matrix
+        return true_matrix[:2, :]
 
     def _reference_affine_bounding_boxes(self, bounding_boxes, *, angle, translate, scale, shear, center):
         if center is None:
             center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
 
-        affine_matrix = self._compute_affine_matrix(
-            angle=angle, translate=translate, scale=scale, shear=shear, center=center
-        )
-        affine_matrix = affine_matrix[:2, :]
-
-        expected_bboxes = reference_affine_bounding_boxes_helper(
+        return reference_affine_bounding_boxes_helper(
             bounding_boxes,
-            format=bounding_boxes.format,
-            canvas_size=bounding_boxes.canvas_size,
-            affine_matrix=affine_matrix,
+            affine_matrix=self._compute_affine_matrix(
+                angle=angle, translate=translate, scale=scale, shear=shear, center=center
+            ),
         )
 
-        return expected_bboxes
-
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
     @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
@@ -1097,7 +1190,7 @@ class TestAffine:
 
         torch.testing.assert_close(actual, expected)
 
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, center, seed):
@@ -1201,10 +1294,10 @@ class TestAffine:
 class TestVerticalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, dtype, device):
+    def test_kernel_image(self, dtype, device):
         check_kernel(F.vertical_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -1235,10 +1328,10 @@ class TestVerticalFlip:
         [
             (F.vertical_flip_image, torch.Tensor),
             (F._vertical_flip_image_pil, PIL.Image.Image),
-            (F.vertical_flip_image, datapoints.Image),
-            (F.vertical_flip_bounding_boxes, datapoints.BoundingBoxes),
-            (F.vertical_flip_mask, datapoints.Mask),
-            (F.vertical_flip_video, datapoints.Video),
+            (F.vertical_flip_image, tv_tensors.Image),
+            (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.vertical_flip_mask, tv_tensors.Mask),
+            (F.vertical_flip_video, tv_tensors.Video),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -1250,7 +1343,7 @@ class TestVerticalFlip:
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
-        check_transform(transforms.RandomVerticalFlip, make_input(device=device), p=1)
+        check_transform(transforms.RandomVerticalFlip(p=1), make_input(device=device))
 
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_image_correctness(self, fn):
@@ -1267,19 +1360,11 @@ class TestVerticalFlip:
                 [1, 0, 0],
                 [0, -1, bounding_boxes.canvas_size[0]],
             ],
-            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_boxes_helper(
-            bounding_boxes,
-            format=bounding_boxes.format,
-            canvas_size=bounding_boxes.canvas_size,
-            affine_matrix=affine_matrix,
-        )
+        return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
-        return datapoints.wrap(expected_bboxes, like=bounding_boxes)
-
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_bounding_boxes_correctness(self, format, fn):
         bounding_boxes = make_bounding_boxes(format=format)
@@ -1332,7 +1417,7 @@ class TestRotate:
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, param, value, dtype, device):
+    def test_kernel_image(self, param, value, dtype, device):
         kwargs = {param: value}
         if param != "angle":
             kwargs["angle"] = self._MINIMAL_AFFINE_KWARGS["angle"]
@@ -1348,7 +1433,7 @@ class TestRotate:
         expand=[False, True],
         center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
     )
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
@@ -1385,10 +1470,10 @@ class TestRotate:
         [
             (F.rotate_image, torch.Tensor),
             (F._rotate_image_pil, PIL.Image.Image),
-            (F.rotate_image, datapoints.Image),
-            (F.rotate_bounding_boxes, datapoints.BoundingBoxes),
-            (F.rotate_mask, datapoints.Mask),
-            (F.rotate_video, datapoints.Video),
+            (F.rotate_image, tv_tensors.Image),
+            (F.rotate_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.rotate_mask, tv_tensors.Mask),
+            (F.rotate_video, tv_tensors.Video),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -1401,7 +1486,7 @@ class TestRotate:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
         check_transform(
-            transforms.RandomRotation, make_input(device=device), **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES
+            transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES), make_input(device=device)
         )
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
@@ -1455,39 +1540,73 @@ class TestRotate:
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
 
-    def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center):
-        # FIXME
-        if expand:
-            raise ValueError("This reference currently does not support expand=True")
+    def _compute_output_canvas_size(self, *, expand, canvas_size, affine_matrix):
+        if not expand:
+            return canvas_size, (0.0, 0.0)
 
+        input_height, input_width = canvas_size
+
+        input_image_frame = np.array(
+            [
+                [0.0, 0.0, 1.0],
+                [0.0, input_height, 1.0],
+                [input_width, input_height, 1.0],
+                [input_width, 0.0, 1.0],
+            ],
+            dtype=np.float64,
+        )
+        output_image_frame = np.matmul(input_image_frame, affine_matrix.astype(input_image_frame.dtype).T)
+
+        recenter_x = float(np.min(output_image_frame[:, 0]))
+        recenter_y = float(np.min(output_image_frame[:, 1]))
+
+        output_width = int(np.max(output_image_frame[:, 0]) - recenter_x)
+        output_height = int(np.max(output_image_frame[:, 1]) - recenter_y)
+
+        return (output_height, output_width), (recenter_x, recenter_y)
+
+    def _recenter_bounding_boxes_after_expand(self, bounding_boxes, *, recenter_xy):
+        x, y = recenter_xy
+        if bounding_boxes.format is tv_tensors.BoundingBoxFormat.XYXY:
+            translate = [x, y, x, y]
+        else:
+            translate = [x, y, 0.0, 0.0]
+        return tv_tensors.wrap(
+            (bounding_boxes.to(torch.float64) - torch.tensor(translate)).to(bounding_boxes.dtype), like=bounding_boxes
+        )
+
+    def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center):
         if center is None:
             center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
+        cx, cy = center
 
         a = np.cos(angle * np.pi / 180.0)
         b = np.sin(angle * np.pi / 180.0)
-        cx = center[0]
-        cy = center[1]
         affine_matrix = np.array(
             [
                 [a, b, cx - cx * a - b * cy],
                 [-b, a, cy + cx * b - a * cy],
             ],
-            dtype="float64" if bounding_boxes.dtype == torch.float64 else "float32",
         )
 
-        expected_bboxes = reference_affine_bounding_boxes_helper(
+        new_canvas_size, recenter_xy = self._compute_output_canvas_size(
+            expand=expand, canvas_size=bounding_boxes.canvas_size, affine_matrix=affine_matrix
+        )
+
+        output = reference_affine_bounding_boxes_helper(
             bounding_boxes,
-            format=bounding_boxes.format,
-            canvas_size=bounding_boxes.canvas_size,
             affine_matrix=affine_matrix,
+            new_canvas_size=new_canvas_size,
+            clamp=False,
         )
 
-        return expected_bboxes
+        return F.clamp_bounding_boxes(self._recenter_bounding_boxes_after_expand(output, recenter_xy=recenter_xy)).to(
+            bounding_boxes
+        )
 
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
-    # TODO: add support for expand=True in the reference
-    @pytest.mark.parametrize("expand", [False])
+    @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     def test_functional_bounding_boxes_correctness(self, format, angle, expand, center):
         bounding_boxes = make_bounding_boxes(format=format)
@@ -1496,10 +1615,10 @@ class TestRotate:
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
-    # TODO: add support for expand=True in the reference
-    @pytest.mark.parametrize("expand", [False])
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
@@ -1516,6 +1635,7 @@ class TestRotate:
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
     @pytest.mark.parametrize("degrees", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["degrees"])
     @pytest.mark.parametrize("seed", list(range(10)))
@@ -1632,7 +1752,6 @@ class TestToDtype:
         check_kernel(
             kernel,
             make_input(dtype=input_dtype, device=device),
-            expect_same_dtype=input_dtype is output_dtype,
             dtype=output_dtype,
             scale=scale,
         )
@@ -1663,7 +1782,7 @@ class TestToDtype:
         input = make_input(dtype=input_dtype, device=device)
         if as_dict:
             output_dtype = {type(input): output_dtype}
-        check_transform(transforms.ToDtype, input, dtype=output_dtype, scale=scale)
+        check_transform(transforms.ToDtype(dtype=output_dtype, scale=scale), input)
 
     def reference_convert_dtype_image_tensor(self, image, dtype=torch.float, scale=False):
         input_dtype = image.dtype
@@ -1755,7 +1874,7 @@ class TestToDtype:
         # make sure "others" works as a catch-all and that None means no conversion
 
         sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
-        out = transforms.ToDtype(dtype={datapoints.Mask: torch.int64, "others": None})(sample)
+        out = transforms.ToDtype(dtype={tv_tensors.Mask: torch.int64, "others": None})(sample)
         assert out["inpt"].dtype == inpt_dtype
         assert out["bbox"].dtype == bbox_dtype
         assert out["mask"].dtype != mask_dtype
@@ -1768,7 +1887,7 @@ class TestToDtype:
 
         sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
         out = transforms.ToDtype(
-            dtype={type(sample["inpt"]): torch.float32, datapoints.Mask: torch.int64, "others": None}, scale=True
+            dtype={type(sample["inpt"]): torch.float32, tv_tensors.Mask: torch.int64, "others": None}, scale=True
         )(sample)
         assert out["inpt"].dtype != inpt_dtype
         assert out["inpt"].dtype == torch.float32
@@ -1782,9 +1901,9 @@ class TestToDtype:
         sample, inpt_dtype, bbox_dtype, mask_dtype = self.make_inpt_with_bbox_and_mask(make_input)
 
         with pytest.raises(ValueError, match="No dtype was specified for"):
-            out = transforms.ToDtype(dtype={datapoints.Mask: torch.float32})(sample)
+            out = transforms.ToDtype(dtype={tv_tensors.Mask: torch.float32})(sample)
         with pytest.warns(UserWarning, match=re.escape("plain `torch.Tensor` will *not* be transformed")):
-            transforms.ToDtype(dtype={torch.Tensor: torch.float32, datapoints.Image: torch.float32})
+            transforms.ToDtype(dtype={torch.Tensor: torch.float32, tv_tensors.Image: torch.float32})
         with pytest.warns(UserWarning, match="no scaling will be done"):
             out = transforms.ToDtype(dtype={"others": None}, scale=True)(sample)
         assert out["inpt"].dtype == inpt_dtype
@@ -1817,8 +1936,8 @@ class TestAdjustBrightness:
         [
             (F.adjust_brightness_image, torch.Tensor),
             (F._adjust_brightness_image_pil, PIL.Image.Image),
-            (F.adjust_brightness_image, datapoints.Image),
-            (F.adjust_brightness_video, datapoints.Video),
+            (F.adjust_brightness_image, tv_tensors.Image),
+            (F.adjust_brightness_video, tv_tensors.Video),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -1922,8 +2041,8 @@ class TestCutMixMixUp:
 
         for input_with_bad_type in (
             F.to_pil_image(imgs[0]),
-            datapoints.Mask(torch.rand(12, 12)),
-            datapoints.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
+            tv_tensors.Mask(torch.rand(12, 12)),
+            tv_tensors.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
         ):
             with pytest.raises(ValueError, match="does not support PIL images, "):
                 cutmix_mixup(input_with_bad_type)
@@ -2066,12 +2185,12 @@ class TestShapeGetters:
 class TestRegisterKernel:
     @pytest.mark.parametrize("functional", (F.resize, "resize"))
     def test_register_kernel(self, functional):
-        class CustomDatapoint(datapoints.Datapoint):
+        class CustomTVTensor(tv_tensors.TVTensor):
             pass
 
         kernel_was_called = False
 
-        @F.register_kernel(functional, CustomDatapoint)
+        @F.register_kernel(functional, CustomTVTensor)
         def new_resize(dp, *args, **kwargs):
             nonlocal kernel_was_called
             kernel_was_called = True
@@ -2079,38 +2198,38 @@ class TestRegisterKernel:
 
         t = transforms.Resize(size=(224, 224), antialias=True)
 
-        my_dp = CustomDatapoint(torch.rand(3, 10, 10))
+        my_dp = CustomTVTensor(torch.rand(3, 10, 10))
         out = t(my_dp)
         assert out is my_dp
         assert kernel_was_called
 
         # Sanity check to make sure we didn't override the kernel of other types
         t(torch.rand(3, 10, 10)).shape == (3, 224, 224)
-        t(datapoints.Image(torch.rand(3, 10, 10))).shape == (3, 224, 224)
+        t(tv_tensors.Image(torch.rand(3, 10, 10))).shape == (3, 224, 224)
 
     def test_errors(self):
         with pytest.raises(ValueError, match="Could not find functional with name"):
-            F.register_kernel("bad_name", datapoints.Image)
+            F.register_kernel("bad_name", tv_tensors.Image)
 
         with pytest.raises(ValueError, match="Kernels can only be registered on functionals"):
-            F.register_kernel(datapoints.Image, F.resize)
+            F.register_kernel(tv_tensors.Image, F.resize)
 
         with pytest.raises(ValueError, match="Kernels can only be registered for subclasses"):
             F.register_kernel(F.resize, object)
 
-        with pytest.raises(ValueError, match="cannot be registered for the builtin datapoint classes"):
-            F.register_kernel(F.resize, datapoints.Image)(F.resize_image)
+        with pytest.raises(ValueError, match="cannot be registered for the builtin tv_tensor classes"):
+            F.register_kernel(F.resize, tv_tensors.Image)(F.resize_image)
 
-        class CustomDatapoint(datapoints.Datapoint):
+        class CustomTVTensor(tv_tensors.TVTensor):
             pass
 
-        def resize_custom_datapoint():
+        def resize_custom_tv_tensor():
             pass
 
-        F.register_kernel(F.resize, CustomDatapoint)(resize_custom_datapoint)
+        F.register_kernel(F.resize, CustomTVTensor)(resize_custom_tv_tensor)
 
         with pytest.raises(ValueError, match="already has a kernel registered for type"):
-            F.register_kernel(F.resize, CustomDatapoint)(resize_custom_datapoint)
+            F.register_kernel(F.resize, CustomTVTensor)(resize_custom_tv_tensor)
 
 
 class TestGetKernel:
@@ -2119,10 +2238,10 @@ class TestGetKernel:
     KERNELS = {
         torch.Tensor: F.resize_image,
         PIL.Image.Image: F._resize_image_pil,
-        datapoints.Image: F.resize_image,
-        datapoints.BoundingBoxes: F.resize_bounding_boxes,
-        datapoints.Mask: F.resize_mask,
-        datapoints.Video: F.resize_video,
+        tv_tensors.Image: F.resize_image,
+        tv_tensors.BoundingBoxes: F.resize_bounding_boxes,
+        tv_tensors.Mask: F.resize_mask,
+        tv_tensors.Video: F.resize_video,
     }
 
     @pytest.mark.parametrize("input_type", [str, int, object])
@@ -2138,57 +2257,57 @@ class TestGetKernel:
             pass
 
         for input_type, kernel in self.KERNELS.items():
-            _register_kernel_internal(resize_with_pure_kernels, input_type, datapoint_wrapper=False)(kernel)
+            _register_kernel_internal(resize_with_pure_kernels, input_type, tv_tensor_wrapper=False)(kernel)
 
             assert _get_kernel(resize_with_pure_kernels, input_type) is kernel
 
-    def test_builtin_datapoint_subclass(self):
+    def test_builtin_tv_tensor_subclass(self):
         # We cannot use F.resize together with self.KERNELS mapping here directly here, since this is only the
         # ideal wrapping. Practically, we have an intermediate wrapper layer. Thus, we create a new resize functional
-        # here, register the kernels without wrapper, and check if subclasses of our builtin datapoints get dispatched
+        # here, register the kernels without wrapper, and check if subclasses of our builtin tv_tensors get dispatched
         # to the kernel of the corresponding superclass
         def resize_with_pure_kernels():
             pass
 
-        class MyImage(datapoints.Image):
+        class MyImage(tv_tensors.Image):
             pass
 
-        class MyBoundingBoxes(datapoints.BoundingBoxes):
+        class MyBoundingBoxes(tv_tensors.BoundingBoxes):
             pass
 
-        class MyMask(datapoints.Mask):
+        class MyMask(tv_tensors.Mask):
             pass
 
-        class MyVideo(datapoints.Video):
+        class MyVideo(tv_tensors.Video):
             pass
 
-        for custom_datapoint_subclass in [
+        for custom_tv_tensor_subclass in [
             MyImage,
             MyBoundingBoxes,
             MyMask,
             MyVideo,
         ]:
-            builtin_datapoint_class = custom_datapoint_subclass.__mro__[1]
-            builtin_datapoint_kernel = self.KERNELS[builtin_datapoint_class]
-            _register_kernel_internal(resize_with_pure_kernels, builtin_datapoint_class, datapoint_wrapper=False)(
-                builtin_datapoint_kernel
+            builtin_tv_tensor_class = custom_tv_tensor_subclass.__mro__[1]
+            builtin_tv_tensor_kernel = self.KERNELS[builtin_tv_tensor_class]
+            _register_kernel_internal(resize_with_pure_kernels, builtin_tv_tensor_class, tv_tensor_wrapper=False)(
+                builtin_tv_tensor_kernel
             )
 
-            assert _get_kernel(resize_with_pure_kernels, custom_datapoint_subclass) is builtin_datapoint_kernel
+            assert _get_kernel(resize_with_pure_kernels, custom_tv_tensor_subclass) is builtin_tv_tensor_kernel
 
-    def test_datapoint_subclass(self):
-        class MyDatapoint(datapoints.Datapoint):
+    def test_tv_tensor_subclass(self):
+        class MyTVTensor(tv_tensors.TVTensor):
             pass
 
         with pytest.raises(TypeError, match="supports inputs of type"):
-            _get_kernel(F.resize, MyDatapoint)
+            _get_kernel(F.resize, MyTVTensor)
 
-        def resize_my_datapoint():
+        def resize_my_tv_tensor():
             pass
 
-        _register_kernel_internal(F.resize, MyDatapoint, datapoint_wrapper=False)(resize_my_datapoint)
+        _register_kernel_internal(F.resize, MyTVTensor, tv_tensor_wrapper=False)(resize_my_tv_tensor)
 
-        assert _get_kernel(F.resize, MyDatapoint) is resize_my_datapoint
+        assert _get_kernel(F.resize, MyTVTensor) is resize_my_tv_tensor
 
     def test_pil_image_subclass(self):
         opened_image = PIL.Image.open(Path(__file__).parent / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg")
@@ -2236,8 +2355,8 @@ class TestPermuteChannels:
         [
             (F.permute_channels_image, torch.Tensor),
             (F._permute_channels_image_pil, PIL.Image.Image),
-            (F.permute_channels_image, datapoints.Image),
-            (F.permute_channels_video, datapoints.Video),
+            (F.permute_channels_image, tv_tensors.Image),
+            (F.permute_channels_video, tv_tensors.Video),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -2246,7 +2365,7 @@ class TestPermuteChannels:
     def reference_image_correctness(self, image, permutation):
         channel_images = image.split(1, dim=-3)
         permuted_channel_images = [channel_images[channel_idx] for channel_idx in permutation]
-        return datapoints.Image(torch.concat(permuted_channel_images, dim=-3))
+        return tv_tensors.Image(torch.concat(permuted_channel_images, dim=-3))
 
     @pytest.mark.parametrize("permutation", [[2, 0, 1], [1, 2, 0], [2, 0, 1], [0, 1, 2]])
     @pytest.mark.parametrize("batch_dims", [(), (2,), (2, 1)])
@@ -2275,7 +2394,7 @@ class TestElastic:
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_image_tensor(self, param, value, dtype, device):
+    def test_kernel_image(self, param, value, dtype, device):
         image = make_image_tensor(dtype=dtype, device=device)
 
         check_kernel(
@@ -2286,7 +2405,7 @@ class TestElastic:
             check_scripted_vs_eager=not (param == "fill" and isinstance(value, (int, float))),
         )
 
-    @pytest.mark.parametrize("format", list(datapoints.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -2322,10 +2441,10 @@ class TestElastic:
         [
             (F.elastic_image, torch.Tensor),
             (F._elastic_image_pil, PIL.Image.Image),
-            (F.elastic_image, datapoints.Image),
-            (F.elastic_bounding_boxes, datapoints.BoundingBoxes),
-            (F.elastic_mask, datapoints.Mask),
-            (F.elastic_video, datapoints.Video),
+            (F.elastic_image, tv_tensors.Image),
+            (F.elastic_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.elastic_mask, tv_tensors.Mask),
+            (F.elastic_video, tv_tensors.Video),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -2352,7 +2471,12 @@ class TestElastic:
     @pytest.mark.parametrize("size", [(163, 163), (72, 333), (313, 95)])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, size, device):
-        check_transform(transforms.ElasticTransform, make_input(size, device=device))
+        check_transform(
+            transforms.ElasticTransform(),
+            make_input(size, device=device),
+            # We updated gaussian blur kernel generation with a faster and numerically more stable version
+            check_v1_compatibility=dict(rtol=0, atol=1),
+        )
 
 
 class TestToPureTensor:
@@ -2370,7 +2494,1454 @@ class TestToPureTensor:
         out = transforms.ToPureTensor()(input)
 
         for input_value, out_value in zip(input.values(), out.values()):
-            if isinstance(input_value, datapoints.Datapoint):
-                assert isinstance(out_value, torch.Tensor) and not isinstance(out_value, datapoints.Datapoint)
+            if isinstance(input_value, tv_tensors.TVTensor):
+                assert isinstance(out_value, torch.Tensor) and not isinstance(out_value, tv_tensors.TVTensor)
             else:
                 assert isinstance(out_value, type(input_value))
+
+
+class TestCrop:
+    INPUT_SIZE = (21, 11)
+
+    CORRECTNESS_CROP_KWARGS = [
+        # center
+        dict(top=5, left=5, height=10, width=5),
+        # larger than input, i.e. pad
+        dict(top=-5, left=-5, height=30, width=20),
+        # sides: left, right, top, bottom
+        dict(top=-5, left=-5, height=30, width=10),
+        dict(top=-5, left=5, height=30, width=10),
+        dict(top=-5, left=-5, height=20, width=20),
+        dict(top=5, left=-5, height=20, width=20),
+        # corners: top-left, top-right, bottom-left, bottom-right
+        dict(top=-5, left=-5, height=20, width=10),
+        dict(top=-5, left=5, height=20, width=10),
+        dict(top=5, left=-5, height=20, width=10),
+        dict(top=5, left=5, height=20, width=10),
+    ]
+    MINIMAL_CROP_KWARGS = CORRECTNESS_CROP_KWARGS[0]
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, kwargs, dtype, device):
+        check_kernel(F.crop_image, make_image(self.INPUT_SIZE, dtype=dtype, device=device), **kwargs)
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_bounding_box(self, kwargs, format, dtype, device):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
+        check_kernel(F.crop_bounding_boxes, bounding_boxes, format=format, **kwargs)
+
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    def test_kernel_mask(self, make_mask):
+        check_kernel(F.crop_mask, make_mask(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
+
+    def test_kernel_video(self):
+        check_kernel(F.crop_video, make_video(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.crop, make_input(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.crop_image, torch.Tensor),
+            (F._crop_image_pil, PIL.Image.Image),
+            (F.crop_image, tv_tensors.Image),
+            (F.crop_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.crop_mask, tv_tensors.Mask),
+            (F.crop_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.crop, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    def test_functional_image_correctness(self, kwargs):
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+
+        actual = F.crop(image, **kwargs)
+        expected = F.to_image(F.crop(F.to_pil_image(image), **kwargs))
+
+        assert_equal(actual, expected)
+
+    @param_value_parametrization(
+        size=[(10, 5), (25, 15), (25, 5), (10, 15)],
+        fill=EXHAUSTIVE_TYPE_FILLS,
+    )
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_transform(self, param, value, make_input):
+        input = make_input(self.INPUT_SIZE)
+
+        if param == "fill":
+            if isinstance(input, tv_tensors.Mask) and isinstance(value, (tuple, list)):
+                pytest.skip("F.pad_mask doesn't support non-scalar fill.")
+
+            kwargs = dict(
+                # 1. size is required
+                # 2. the fill parameter only has an affect if we need padding
+                size=[s + 4 for s in self.INPUT_SIZE],
+                fill=adapt_fill(value, dtype=input.dtype if isinstance(input, torch.Tensor) else torch.uint8),
+            )
+        else:
+            kwargs = {param: value}
+
+        check_transform(
+            transforms.RandomCrop(**kwargs, pad_if_needed=True),
+            input,
+            check_v1_compatibility=param != "fill" or isinstance(value, (int, float)),
+        )
+
+    @pytest.mark.parametrize("padding", [1, (1, 1), (1, 1, 1, 1)])
+    def test_transform_padding(self, padding):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s + 2 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(output_size, padding=padding)
+
+        output = transform(inpt)
+
+        assert F.get_size(output) == output_size
+
+    @pytest.mark.parametrize("padding", [None, 1, (1, 1), (1, 1, 1, 1)])
+    def test_transform_insufficient_padding(self, padding):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s + 3 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(output_size, padding=padding)
+
+        with pytest.raises(ValueError, match="larger than (padded )?input image size"):
+            transform(inpt)
+
+    def test_transform_pad_if_needed(self):
+        inpt = make_image(self.INPUT_SIZE)
+
+        output_size = [s * 2 for s in F.get_size(inpt)]
+        transform = transforms.RandomCrop(output_size, pad_if_needed=True)
+
+        output = transform(inpt)
+
+        assert F.get_size(output) == output_size
+
+    @param_value_parametrization(
+        size=[(10, 5), (25, 15), (25, 5), (10, 15)],
+        fill=CORRECTNESS_FILLS,
+        padding_mode=["constant", "edge", "reflect", "symmetric"],
+    )
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_image_correctness(self, param, value, seed):
+        kwargs = {param: value}
+        if param != "size":
+            # 1. size is required
+            # 2. the fill / padding_mode parameters only have an affect if we need padding
+            kwargs["size"] = [s + 4 for s in self.INPUT_SIZE]
+        if param == "fill":
+            kwargs["fill"] = adapt_fill(kwargs["fill"], dtype=torch.uint8)
+
+        transform = transforms.RandomCrop(pad_if_needed=True, **kwargs)
+
+        image = make_image(self.INPUT_SIZE)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            actual = transform(image)
+
+            torch.manual_seed(seed)
+            expected = F.to_image(transform(F.to_pil_image(image)))
+
+        assert_equal(actual, expected)
+
+    def _reference_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width):
+        affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+            ],
+        )
+        return reference_affine_bounding_boxes_helper(
+            bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=(height, width)
+        )
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_functional_bounding_box_correctness(self, kwargs, format, dtype, device):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
+
+        actual = F.crop(bounding_boxes, **kwargs)
+        expected = self._reference_crop_bounding_boxes(bounding_boxes, **kwargs)
+
+        assert_equal(actual, expected, atol=1, rtol=0)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    @pytest.mark.parametrize("output_size", [(17, 11), (11, 17), (11, 11)])
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_bounding_boxes_correctness(self, output_size, format, dtype, device, seed):
+        input_size = [s * 2 for s in output_size]
+        bounding_boxes = make_bounding_boxes(input_size, format=format, dtype=dtype, device=device)
+
+        transform = transforms.RandomCrop(output_size)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            params = transform._get_params([bounding_boxes])
+            assert not params.pop("needs_pad")
+            del params["padding"]
+            assert params.pop("needs_crop")
+
+            torch.manual_seed(seed)
+            actual = transform(bounding_boxes)
+
+        expected = self._reference_crop_bounding_boxes(bounding_boxes, **params)
+
+        assert_equal(actual, expected)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    def test_errors(self):
+        with pytest.raises(ValueError, match="Please provide only two dimensions"):
+            transforms.RandomCrop([10, 12, 14])
+
+        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+            transforms.RandomCrop([10, 12], padding="abc")
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomCrop([10, 12], padding=1, fill="abc")
+
+        with pytest.raises(ValueError, match="Padding mode should be either"):
+            transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
+
+
+class TestErase:
+    INPUT_SIZE = (17, 11)
+    FUNCTIONAL_KWARGS = dict(
+        zip("ijhwv", [2, 2, 10, 8, torch.tensor(0.0, dtype=torch.float32, device="cpu").reshape(-1, 1, 1)])
+    )
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.erase_image, make_image(self.INPUT_SIZE, dtype=dtype, device=device), **self.FUNCTIONAL_KWARGS)
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image_inplace(self, dtype, device):
+        input = make_image(self.INPUT_SIZE, dtype=dtype, device=device)
+        input_version = input._version
+
+        output_out_of_place = F.erase_image(input, **self.FUNCTIONAL_KWARGS)
+        assert output_out_of_place.data_ptr() != input.data_ptr()
+        assert output_out_of_place is not input
+
+        output_inplace = F.erase_image(input, **self.FUNCTIONAL_KWARGS, inplace=True)
+        assert output_inplace.data_ptr() == input.data_ptr()
+        assert output_inplace._version > input_version
+        assert output_inplace is input
+
+        assert_equal(output_inplace, output_out_of_place)
+
+    def test_kernel_video(self):
+        check_kernel(F.erase_video, make_video(self.INPUT_SIZE), **self.FUNCTIONAL_KWARGS)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.erase, make_input(), **self.FUNCTIONAL_KWARGS)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.erase_image, torch.Tensor),
+            (F._erase_image_pil, PIL.Image.Image),
+            (F.erase_image, tv_tensors.Image),
+            (F.erase_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.erase, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, device):
+        input = make_input(device=device)
+        check_transform(
+            transforms.RandomErasing(p=1), input, check_v1_compatibility=not isinstance(input, PIL.Image.Image)
+        )
+
+    def _reference_erase_image(self, image, *, i, j, h, w, v):
+        mask = torch.zeros_like(image, dtype=torch.bool)
+        mask[..., i : i + h, j : j + w] = True
+
+        # The broadcasting and type casting logic is handled automagically in the kernel through indexing
+        value = torch.broadcast_to(v, (*image.shape[:-2], h, w)).to(image)
+
+        erased_image = torch.empty_like(image)
+        erased_image[mask] = value.flatten()
+        erased_image[~mask] = image[~mask]
+
+        return erased_image
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_functional_image_correctness(self, dtype, device):
+        image = make_image(dtype=dtype, device=device)
+
+        actual = F.erase(image, **self.FUNCTIONAL_KWARGS)
+        expected = self._reference_erase_image(image, **self.FUNCTIONAL_KWARGS)
+
+        assert_equal(actual, expected)
+
+    @param_value_parametrization(
+        scale=[(0.1, 0.2), [0.0, 1.0]],
+        ratio=[(0.3, 0.7), [0.1, 5.0]],
+        value=[0, 0.5, (0, 1, 0), [-0.2, 0.0, 1.3], "random"],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_image_correctness(self, param, value, dtype, device, seed):
+        transform = transforms.RandomErasing(**{param: value}, p=1)
+
+        image = make_image(dtype=dtype, device=device)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            # This emulates the random apply check that happens before _get_params is called
+            torch.rand(1)
+            params = transform._get_params([image])
+
+            torch.manual_seed(seed)
+            actual = transform(image)
+
+        expected = self._reference_erase_image(image, **params)
+
+        assert_equal(actual, expected)
+
+    def test_transform_errors(self):
+        with pytest.raises(TypeError, match="Argument value should be either a number or str or a sequence"):
+            transforms.RandomErasing(value={})
+
+        with pytest.raises(ValueError, match="If value is str, it should be 'random'"):
+            transforms.RandomErasing(value="abc")
+
+        with pytest.raises(TypeError, match="Scale should be a sequence"):
+            transforms.RandomErasing(scale=123)
+
+        with pytest.raises(TypeError, match="Ratio should be a sequence"):
+            transforms.RandomErasing(ratio=123)
+
+        with pytest.raises(ValueError, match="Scale should be between 0 and 1"):
+            transforms.RandomErasing(scale=[-1, 2])
+
+        transform = transforms.RandomErasing(value=[1, 2, 3, 4])
+
+        with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
+            transform._get_params([make_image()])
+
+    @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_mask])
+    def test_transform_passthrough(self, make_input):
+        transform = transforms.RandomErasing(p=1)
+
+        input = make_input(self.INPUT_SIZE)
+
+        with pytest.warns(UserWarning, match="currently passing through inputs of type"):
+            # RandomErasing requires an image or video to be present
+            _, output = transform(make_image(self.INPUT_SIZE), input)
+
+        assert output is input
+
+
+class TestGaussianBlur:
+    @pytest.mark.parametrize("kernel_size", [1, 3, (3, 1), [3, 5]])
+    @pytest.mark.parametrize("sigma", [None, 1.0, 1, (0.5,), [0.3], (0.3, 0.7), [0.9, 0.2]])
+    def test_kernel_image(self, kernel_size, sigma):
+        check_kernel(
+            F.gaussian_blur_image,
+            make_image(),
+            kernel_size=kernel_size,
+            sigma=sigma,
+            check_scripted_vs_eager=not (isinstance(kernel_size, int) or isinstance(sigma, (float, int))),
+        )
+
+    def test_kernel_image_errors(self):
+        image = make_image_tensor()
+
+        with pytest.raises(ValueError, match="kernel_size is a sequence its length should be 2"):
+            F.gaussian_blur_image(image, kernel_size=[1, 2, 3])
+
+        for kernel_size in [2, -1]:
+            with pytest.raises(ValueError, match="kernel_size should have odd and positive integers"):
+                F.gaussian_blur_image(image, kernel_size=kernel_size)
+
+        with pytest.raises(ValueError, match="sigma is a sequence, its length should be 2"):
+            F.gaussian_blur_image(image, kernel_size=1, sigma=[1, 2, 3])
+
+        with pytest.raises(TypeError, match="sigma should be either float or sequence of floats"):
+            F.gaussian_blur_image(image, kernel_size=1, sigma=object())
+
+        with pytest.raises(ValueError, match="sigma should have positive values"):
+            F.gaussian_blur_image(image, kernel_size=1, sigma=-1)
+
+    def test_kernel_video(self):
+        check_kernel(F.gaussian_blur_video, make_video(), kernel_size=(3, 3))
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.gaussian_blur, make_input(), kernel_size=(3, 3))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.gaussian_blur_image, torch.Tensor),
+            (F._gaussian_blur_image_pil, PIL.Image.Image),
+            (F.gaussian_blur_image, tv_tensors.Image),
+            (F.gaussian_blur_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.gaussian_blur, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("sigma", [5, 2.0, (0.5, 2), [1.3, 2.7]])
+    def test_transform(self, make_input, device, sigma):
+        check_transform(transforms.GaussianBlur(kernel_size=3, sigma=sigma), make_input(device=device))
+
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur([10, 12, 14])
+
+        with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur(4)
+
+        with pytest.raises(ValueError, match="If sigma is a sequence its length should be 1 or 2. Got 3"):
+            transforms.GaussianBlur(3, sigma=[1, 2, 3])
+
+        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
+            transforms.GaussianBlur(3, sigma=-1.0)
+
+        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
+            transforms.GaussianBlur(3, sigma=[2.0, 1.0])
+
+        with pytest.raises(TypeError, match="sigma should be a number or a sequence of numbers"):
+            transforms.GaussianBlur(3, sigma={})
+
+    @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0], (10, 12.0), [10]])
+    def test__get_params(self, sigma):
+        transform = transforms.GaussianBlur(3, sigma=sigma)
+        params = transform._get_params([])
+
+        if isinstance(sigma, float):
+            assert params["sigma"][0] == params["sigma"][1] == sigma
+        elif isinstance(sigma, list) and len(sigma) == 1:
+            assert params["sigma"][0] == params["sigma"][1] == sigma[0]
+        else:
+            assert sigma[0] <= params["sigma"][0] <= sigma[1]
+            assert sigma[0] <= params["sigma"][1] <= sigma[1]
+
+    # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
+    # np_img2 = np.arange(26 * 28, dtype="uint8").reshape((26, 28))
+    # {
+    #     "10_12_3__3_3_0.8": cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8),
+    #     "10_12_3__3_3_0.5": cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.5),
+    #     "10_12_3__3_5_0.8": cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.8),
+    #     "10_12_3__3_5_0.5": cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.5),
+    #     "26_28_1__23_23_1.7": cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7),
+    # }
+    REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS = torch.load(
+        Path(__file__).parent / "assets" / "gaussian_blur_opencv_results.pt"
+    )
+
+    @pytest.mark.parametrize(
+        ("dimensions", "kernel_size", "sigma"),
+        [
+            ((3, 10, 12), (3, 3), 0.8),
+            ((3, 10, 12), (3, 3), 0.5),
+            ((3, 10, 12), (3, 5), 0.8),
+            ((3, 10, 12), (3, 5), 0.5),
+            ((1, 26, 28), (23, 23), 1.7),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, dtype, device):
+        if dtype is torch.float16 and device == "cpu":
+            pytest.skip("The CPU implementation of float16 on CPU differs from opencv")
+
+        num_channels, height, width = dimensions
+
+        reference_results_key = f"{height}_{width}_{num_channels}__{kernel_size[0]}_{kernel_size[1]}_{sigma}"
+        expected = (
+            torch.tensor(self.REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS[reference_results_key])
+            .reshape(height, width, num_channels)
+            .permute(2, 0, 1)
+            .to(dtype=dtype, device=device)
+        )
+
+        image = tv_tensors.Image(
+            torch.arange(num_channels * height * width, dtype=torch.uint8)
+            .reshape(height, width, num_channels)
+            .permute(2, 0, 1),
+            dtype=dtype,
+            device=device,
+        )
+
+        actual = F.gaussian_blur_image(image, kernel_size=kernel_size, sigma=sigma)
+
+        torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestAutoAugmentTransforms:
+    # These transforms have a lot of branches in their `forward()` passes which are conditioned on random sampling.
+    # It's typically very hard to test the effect on some parameters without heavy mocking logic.
+    # This class adds correctness tests for the kernels that are specific to those transforms. The rest of kernels, e.g.
+    # rotate, are tested in their respective classes. The rest of the tests here are mostly smoke tests.
+
+    def _reference_shear_translate(self, image, *, transform_id, magnitude, interpolation, fill):
+        if isinstance(image, PIL.Image.Image):
+            input = image
+        else:
+            input = F.to_pil_image(image)
+
+        matrix = {
+            "ShearX": (1, magnitude, 0, 0, 1, 0),
+            "ShearY": (1, 0, 0, magnitude, 1, 0),
+            "TranslateX": (1, 0, -int(magnitude), 0, 1, 0),
+            "TranslateY": (1, 0, 0, 0, 1, -int(magnitude)),
+        }[transform_id]
+
+        output = input.transform(
+            input.size, PIL.Image.AFFINE, matrix, resample=pil_modes_mapping[interpolation], fill=fill
+        )
+
+        if isinstance(image, PIL.Image.Image):
+            return output
+        else:
+            return F.to_image(output)
+
+    @pytest.mark.parametrize("transform_id", ["ShearX", "ShearY", "TranslateX", "TranslateY"])
+    @pytest.mark.parametrize("magnitude", [0.3, -0.2, 0.0])
+    @pytest.mark.parametrize(
+        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+    )
+    @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
+    @pytest.mark.parametrize("input_type", ["Tensor", "PIL"])
+    def test_correctness_shear_translate(self, transform_id, magnitude, interpolation, fill, input_type):
+        # ShearX/Y and TranslateX/Y are the only ops that are native to the AA transforms. They are modeled after the
+        # reference implementation:
+        # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/research/autoaugment/augmentation_transforms.py#L273-L362
+        # All other ops are checked in their respective dedicated tests.
+
+        image = make_image(dtype=torch.uint8, device="cpu")
+        if input_type == "PIL":
+            image = F.to_pil_image(image)
+
+        if "Translate" in transform_id:
+            # For TranslateX/Y magnitude is a value in pixels
+            magnitude *= min(F.get_size(image))
+
+        actual = transforms.AutoAugment()._apply_image_or_video_transform(
+            image,
+            transform_id=transform_id,
+            magnitude=magnitude,
+            interpolation=interpolation,
+            fill={type(image): fill},
+        )
+        expected = self._reference_shear_translate(
+            image, transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill
+        )
+
+        if input_type == "PIL":
+            actual, expected = F.to_image(actual), F.to_image(expected)
+
+        if "Shear" in transform_id and input_type == "Tensor":
+            mae = (actual.float() - expected.float()).abs().mean()
+            assert mae < (12 if interpolation is transforms.InterpolationMode.NEAREST else 5)
+        else:
+            assert_close(actual, expected, rtol=0, atol=1)
+
+    @pytest.mark.parametrize(
+        "transform",
+        [transforms.AutoAugment(), transforms.RandAugment(), transforms.TrivialAugmentWide(), transforms.AugMix()],
+    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_smoke(self, transform, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+        input = make_input(dtype=dtype, device=device)
+
+        with freeze_rng_state():
+            # By default every test starts from the same random seed. This leads to minimal coverage of the sampling
+            # that happens inside forward(). To avoid calling the transform multiple times to achieve higher coverage,
+            # we build a reproducible random seed from the input type, dtype, and device.
+            torch.manual_seed(hash((make_input, dtype, device)))
+
+            # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
+            # and v2 outputs without complicated mocking and monkeypatching. Thus, we skip the v1 compatibility checks
+            # here and only check if we can script the v2 transform and subsequently call the result.
+            check_transform(transform, input, check_v1_compatibility=False)
+
+            if type(input) is torch.Tensor and dtype is torch.uint8:
+                _script(transform)(input)
+
+    def test_auto_augment_policy_error(self):
+        with pytest.raises(ValueError, match="provided policy"):
+            transforms.AutoAugment(policy=None)
+
+    @pytest.mark.parametrize("severity", [0, 11])
+    def test_aug_mix_severity_error(self, severity):
+        with pytest.raises(ValueError, match="severity must be between"):
+            transforms.AugMix(severity=severity)
+
+
+class TestConvertBoundingBoxFormat:
+    old_new_formats = list(itertools.permutations(iter(tv_tensors.BoundingBoxFormat), 2))
+
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    def test_kernel(self, old_format, new_format):
+        check_kernel(
+            F.convert_bounding_box_format,
+            make_bounding_boxes(format=old_format),
+            new_format=new_format,
+            old_format=old_format,
+        )
+
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("inplace", [False, True])
+    def test_kernel_noop(self, format, inplace):
+        input = make_bounding_boxes(format=format).as_subclass(torch.Tensor)
+        input_version = input._version
+
+        output = F.convert_bounding_box_format(input, old_format=format, new_format=format, inplace=inplace)
+
+        assert output is input
+        assert output.data_ptr() == input.data_ptr()
+        assert output._version == input_version
+
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    def test_kernel_inplace(self, old_format, new_format):
+        input = make_bounding_boxes(format=old_format).as_subclass(torch.Tensor)
+        input_version = input._version
+
+        output_out_of_place = F.convert_bounding_box_format(input, old_format=old_format, new_format=new_format)
+        assert output_out_of_place.data_ptr() != input.data_ptr()
+        assert output_out_of_place is not input
+
+        output_inplace = F.convert_bounding_box_format(
+            input, old_format=old_format, new_format=new_format, inplace=True
+        )
+        assert output_inplace.data_ptr() == input.data_ptr()
+        assert output_inplace._version > input_version
+        assert output_inplace is input
+
+        assert_equal(output_inplace, output_out_of_place)
+
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    def test_functional(self, old_format, new_format):
+        check_functional(F.convert_bounding_box_format, make_bounding_boxes(format=old_format), new_format=new_format)
+
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    @pytest.mark.parametrize("format_type", ["enum", "str"])
+    def test_transform(self, old_format, new_format, format_type):
+        check_transform(
+            transforms.ConvertBoundingBoxFormat(new_format.name if format_type == "str" else new_format),
+            make_bounding_boxes(format=old_format),
+        )
+
+    def _reference_convert_bounding_box_format(self, bounding_boxes, new_format):
+        return tv_tensors.wrap(
+            torchvision.ops.box_convert(
+                bounding_boxes.as_subclass(torch.Tensor),
+                in_fmt=bounding_boxes.format.name.lower(),
+                out_fmt=new_format.name.lower(),
+            ).to(bounding_boxes.dtype),
+            like=bounding_boxes,
+            format=new_format,
+        )
+
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("fn_type", ["functional", "transform"])
+    def test_correctness(self, old_format, new_format, dtype, device, fn_type):
+        bounding_boxes = make_bounding_boxes(format=old_format, dtype=dtype, device=device)
+
+        if fn_type == "functional":
+            fn = functools.partial(F.convert_bounding_box_format, new_format=new_format)
+        else:
+            fn = transforms.ConvertBoundingBoxFormat(format=new_format)
+
+        actual = fn(bounding_boxes)
+        expected = self._reference_convert_bounding_box_format(bounding_boxes, new_format)
+
+        assert_equal(actual, expected)
+
+    def test_errors(self):
+        input_tv_tensor = make_bounding_boxes()
+        input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
+
+        for input in [input_tv_tensor, input_pure_tensor]:
+            with pytest.raises(TypeError, match="missing 1 required argument: 'new_format'"):
+                F.convert_bounding_box_format(input)
+
+        with pytest.raises(ValueError, match="`old_format` has to be passed"):
+            F.convert_bounding_box_format(input_pure_tensor, new_format=input_tv_tensor.format)
+
+        with pytest.raises(ValueError, match="`old_format` must not be passed"):
+            F.convert_bounding_box_format(
+                input_tv_tensor, old_format=input_tv_tensor.format, new_format=input_tv_tensor.format
+            )
+
+
+class TestResizedCrop:
+    INPUT_SIZE = (17, 11)
+    CROP_KWARGS = dict(top=2, left=2, height=5, width=7)
+    OUTPUT_SIZE = (19, 32)
+
+    @pytest.mark.parametrize(
+        ("kernel", "make_input"),
+        [
+            (F.resized_crop_image, make_image),
+            (F.resized_crop_bounding_boxes, make_bounding_boxes),
+            (F.resized_crop_mask, make_segmentation_mask),
+            (F.resized_crop_mask, make_detection_mask),
+            (F.resized_crop_video, make_video),
+        ],
+    )
+    def test_kernel(self, kernel, make_input):
+        input = make_input(self.INPUT_SIZE)
+        if isinstance(input, tv_tensors.BoundingBoxes):
+            extra_kwargs = dict(format=input.format)
+        elif isinstance(input, tv_tensors.Mask):
+            extra_kwargs = dict()
+        else:
+            extra_kwargs = dict(antialias=True)
+
+        check_kernel(kernel, input, **self.CROP_KWARGS, size=self.OUTPUT_SIZE, **extra_kwargs)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(
+            F.resized_crop, make_input(self.INPUT_SIZE), **self.CROP_KWARGS, size=self.OUTPUT_SIZE, antialias=True
+        )
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.resized_crop_image, torch.Tensor),
+            (F._resized_crop_image_pil, PIL.Image.Image),
+            (F.resized_crop_image, tv_tensors.Image),
+            (F.resized_crop_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.resized_crop_mask, tv_tensors.Mask),
+            (F.resized_crop_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.resized_crop, kernel=kernel, input_type=input_type)
+
+    @param_value_parametrization(
+        scale=[(0.1, 0.2), [0.0, 1.0]],
+        ratio=[(0.3, 0.7), [0.1, 5.0]],
+    )
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_transform(self, param, value, make_input):
+        check_transform(
+            transforms.RandomResizedCrop(size=self.OUTPUT_SIZE, **{param: value}, antialias=True),
+            make_input(self.INPUT_SIZE),
+            check_v1_compatibility=dict(rtol=0, atol=1),
+        )
+
+    # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
+    # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
+    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
+    def test_functional_image_correctness(self, interpolation):
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8)
+
+        actual = F.resized_crop(
+            image, **self.CROP_KWARGS, size=self.OUTPUT_SIZE, interpolation=interpolation, antialias=True
+        )
+        expected = F.to_image(
+            F.resized_crop(
+                F.to_pil_image(image), **self.CROP_KWARGS, size=self.OUTPUT_SIZE, interpolation=interpolation
+            )
+        )
+
+        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
+
+    def _reference_resized_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width, size):
+        new_height, new_width = size
+
+        crop_affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+                [0, 0, 1],
+            ],
+        )
+        resize_affine_matrix = np.array(
+            [
+                [new_width / width, 0, 0],
+                [0, new_height / height, 0],
+                [0, 0, 1],
+            ],
+        )
+        affine_matrix = (resize_affine_matrix @ crop_affine_matrix)[:2, :]
+
+        return reference_affine_bounding_boxes_helper(
+            bounding_boxes,
+            affine_matrix=affine_matrix,
+            new_canvas_size=size,
+        )
+
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    def test_functional_bounding_boxes_correctness(self, format):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
+
+        actual = F.resized_crop(bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
+        expected = self._reference_resized_crop_bounding_boxes(
+            bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE
+        )
+
+        assert_equal(actual, expected)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    def test_transform_errors_warnings(self):
+        with pytest.raises(ValueError, match="provide only two dimensions"):
+            transforms.RandomResizedCrop(size=(1, 2, 3))
+
+        with pytest.raises(TypeError, match="Scale should be a sequence"):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, scale=123)
+
+        with pytest.raises(TypeError, match="Ratio should be a sequence"):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, ratio=123)
+
+        for param in ["scale", "ratio"]:
+            with pytest.warns(match="Scale and ratio should be of kind"):
+                transforms.RandomResizedCrop(size=self.INPUT_SIZE, **{param: [1, 0]})
+
+
+class TestPad:
+    EXHAUSTIVE_TYPE_PADDINGS = [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
+    CORRECTNESS_PADDINGS = [
+        padding
+        for padding in EXHAUSTIVE_TYPE_PADDINGS
+        if isinstance(padding, int) or isinstance(padding, list) and len(padding) > 1
+    ]
+    PADDING_MODES = ["constant", "symmetric", "edge", "reflect"]
+
+    @param_value_parametrization(
+        padding=EXHAUSTIVE_TYPE_PADDINGS,
+        fill=EXHAUSTIVE_TYPE_FILLS,
+        padding_mode=PADDING_MODES,
+    )
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, param, value, dtype, device):
+        if param == "fill":
+            value = adapt_fill(value, dtype=dtype)
+        kwargs = {param: value}
+        if param != "padding":
+            kwargs["padding"] = [1]
+
+        image = make_image(dtype=dtype, device=device)
+
+        check_kernel(
+            F.pad_image,
+            image,
+            **kwargs,
+            check_scripted_vs_eager=not (
+                (param == "padding" and isinstance(value, int))
+                # See https://github.com/pytorch/vision/pull/7252#issue-1585585521 for details
+                or (
+                    param == "fill"
+                    and (
+                        isinstance(value, tuple) or (isinstance(value, list) and any(isinstance(v, int) for v in value))
+                    )
+                )
+            ),
+        )
+
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    def test_kernel_bounding_boxes(self, format):
+        bounding_boxes = make_bounding_boxes(format=format)
+        check_kernel(
+            F.pad_bounding_boxes,
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
+            padding=[1],
+        )
+
+    @pytest.mark.parametrize("padding_mode", ["symmetric", "edge", "reflect"])
+    def test_kernel_bounding_boxes_errors(self, padding_mode):
+        bounding_boxes = make_bounding_boxes()
+        with pytest.raises(ValueError, match=f"'{padding_mode}' is not supported"):
+            F.pad_bounding_boxes(
+                bounding_boxes,
+                format=bounding_boxes.format,
+                canvas_size=bounding_boxes.canvas_size,
+                padding=[1],
+                padding_mode=padding_mode,
+            )
+
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    def test_kernel_mask(self, make_mask):
+        check_kernel(F.pad_mask, make_mask(), padding=[1])
+
+    @pytest.mark.parametrize("fill", [[1], (0,), [1, 0, 1], (0, 1, 0)])
+    def test_kernel_mask_errors(self, fill):
+        with pytest.raises(ValueError, match="Non-scalar fill value is not supported"):
+            check_kernel(F.pad_mask, make_segmentation_mask(), padding=[1], fill=fill)
+
+    def test_kernel_video(self):
+        check_kernel(F.pad_video, make_video(), padding=[1])
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.pad, make_input(), padding=[1])
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.pad_image, torch.Tensor),
+            # The PIL kernel uses fill=0 as default rather than fill=None as all others.
+            # Since the whole fill story is already really inconsistent, we won't introduce yet another case to allow
+            # for this test to pass.
+            # See https://github.com/pytorch/vision/issues/6623 for a discussion.
+            # (F._pad_image_pil, PIL.Image.Image),
+            (F.pad_image, tv_tensors.Image),
+            (F.pad_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.pad_mask, tv_tensors.Mask),
+            (F.pad_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.pad, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.Pad(padding=[1]), make_input())
+
+    def test_transform_errors(self):
+        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+            transforms.Pad("abc")
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.Pad([-0.7, 0, 0.7])
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.Pad(12, fill="abc")
+
+        with pytest.raises(ValueError, match="Padding mode should be either"):
+            transforms.Pad(12, padding_mode="abc")
+
+    @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
+    @pytest.mark.parametrize(
+        ("padding_mode", "fill"),
+        [
+            *[("constant", fill) for fill in CORRECTNESS_FILLS],
+            *[(padding_mode, None) for padding_mode in ["symmetric", "edge", "reflect"]],
+        ],
+    )
+    @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
+    def test_image_correctness(self, padding, padding_mode, fill, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        fill = adapt_fill(fill, dtype=torch.uint8)
+
+        actual = fn(image, padding=padding, padding_mode=padding_mode, fill=fill)
+        expected = F.to_image(F.pad(F.to_pil_image(image), padding=padding, padding_mode=padding_mode, fill=fill))
+
+        assert_equal(actual, expected)
+
+    def _reference_pad_bounding_boxes(self, bounding_boxes, *, padding):
+        if isinstance(padding, int):
+            padding = [padding]
+        left, top, right, bottom = padding * (4 // len(padding))
+
+        affine_matrix = np.array(
+            [
+                [1, 0, left],
+                [0, 1, top],
+            ],
+        )
+
+        height = bounding_boxes.canvas_size[0] + top + bottom
+        width = bounding_boxes.canvas_size[1] + left + right
+
+        return reference_affine_bounding_boxes_helper(
+            bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=(height, width)
+        )
+
+    @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
+    def test_bounding_boxes_correctness(self, padding, format, dtype, device, fn):
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
+
+        actual = fn(bounding_boxes, padding=padding)
+        expected = self._reference_pad_bounding_boxes(bounding_boxes, padding=padding)
+
+        assert_equal(actual, expected)
+
+
+class TestCenterCrop:
+    INPUT_SIZE = (17, 11)
+    OUTPUT_SIZES = [(3, 5), (5, 3), (4, 4), (21, 9), (13, 15), (19, 14), 3, (4,), [5], INPUT_SIZE]
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, output_size, dtype, device):
+        check_kernel(
+            F.center_crop_image,
+            make_image(self.INPUT_SIZE, dtype=dtype, device=device),
+            output_size=output_size,
+            check_scripted_vs_eager=not isinstance(output_size, int),
+        )
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    def test_kernel_bounding_boxes(self, output_size, format):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
+        check_kernel(
+            F.center_crop_bounding_boxes,
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
+            output_size=output_size,
+            check_scripted_vs_eager=not isinstance(output_size, int),
+        )
+
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    def test_kernel_mask(self, make_mask):
+        check_kernel(F.center_crop_mask, make_mask(), output_size=self.OUTPUT_SIZES[0])
+
+    def test_kernel_video(self):
+        check_kernel(F.center_crop_video, make_video(self.INPUT_SIZE), output_size=self.OUTPUT_SIZES[0])
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.center_crop, make_input(self.INPUT_SIZE), output_size=self.OUTPUT_SIZES[0])
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.center_crop_image, torch.Tensor),
+            (F._center_crop_image_pil, PIL.Image.Image),
+            (F.center_crop_image, tv_tensors.Image),
+            (F.center_crop_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.center_crop_mask, tv_tensors.Mask),
+            (F.center_crop_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.center_crop, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.CenterCrop(self.OUTPUT_SIZES[0]), make_input(self.INPUT_SIZE))
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
+    def test_image_correctness(self, output_size, fn):
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, output_size)
+        expected = F.to_image(F.center_crop(F.to_pil_image(image), output_size=output_size))
+
+        assert_equal(actual, expected)
+
+    def _reference_center_crop_bounding_boxes(self, bounding_boxes, output_size):
+        image_height, image_width = bounding_boxes.canvas_size
+        if isinstance(output_size, int):
+            output_size = (output_size, output_size)
+        elif len(output_size) == 1:
+            output_size *= 2
+        crop_height, crop_width = output_size
+
+        top = int(round((image_height - crop_height) / 2))
+        left = int(round((image_width - crop_width) / 2))
+
+        affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+            ],
+        )
+        return reference_affine_bounding_boxes_helper(
+            bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=output_size
+        )
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
+    def test_bounding_boxes_correctness(self, output_size, format, dtype, device, fn):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
+
+        actual = fn(bounding_boxes, output_size)
+        expected = self._reference_center_crop_bounding_boxes(bounding_boxes, output_size)
+
+        assert_equal(actual, expected)
+
+
+class TestPerspective:
+    COEFFICIENTS = [
+        [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
+        [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
+    ]
+    START_END_POINTS = [
+        ([[0, 0], [33, 0], [33, 25], [0, 25]], [[3, 2], [32, 3], [30, 24], [2, 25]]),
+        ([[3, 2], [32, 3], [30, 24], [2, 25]], [[0, 0], [33, 0], [33, 25], [0, 25]]),
+        ([[3, 2], [32, 3], [30, 24], [2, 25]], [[5, 5], [30, 3], [33, 19], [4, 25]]),
+    ]
+    MINIMAL_KWARGS = dict(startpoints=None, endpoints=None, coefficients=COEFFICIENTS[0])
+
+    @param_value_parametrization(
+        coefficients=COEFFICIENTS,
+        start_end_points=START_END_POINTS,
+        fill=EXHAUSTIVE_TYPE_FILLS,
+    )
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, param, value, dtype, device):
+        if param == "start_end_points":
+            kwargs = dict(zip(["startpoints", "endpoints"], value))
+        else:
+            kwargs = {"startpoints": None, "endpoints": None, param: value}
+        if param == "fill":
+            kwargs["coefficients"] = self.COEFFICIENTS[0]
+
+        check_kernel(
+            F.perspective_image,
+            make_image(dtype=dtype, device=device),
+            **kwargs,
+            check_scripted_vs_eager=not (param == "fill" and isinstance(value, (int, float))),
+        )
+
+    def test_kernel_image_error(self):
+        image = make_image_tensor()
+
+        with pytest.raises(ValueError, match="startpoints/endpoints or the coefficients must have non `None` values"):
+            F.perspective_image(image, startpoints=None, endpoints=None)
+
+        with pytest.raises(
+            ValueError, match="startpoints/endpoints and the coefficients shouldn't be defined concurrently"
+        ):
+            startpoints, endpoints = self.START_END_POINTS[0]
+            coefficients = self.COEFFICIENTS[0]
+            F.perspective_image(image, startpoints=startpoints, endpoints=endpoints, coefficients=coefficients)
+
+        with pytest.raises(ValueError, match="coefficients should have 8 float values"):
+            F.perspective_image(image, startpoints=None, endpoints=None, coefficients=list(range(7)))
+
+    @param_value_parametrization(
+        coefficients=COEFFICIENTS,
+        start_end_points=START_END_POINTS,
+    )
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    def test_kernel_bounding_boxes(self, param, value, format):
+        if param == "start_end_points":
+            kwargs = dict(zip(["startpoints", "endpoints"], value))
+        else:
+            kwargs = {"startpoints": None, "endpoints": None, param: value}
+
+        bounding_boxes = make_bounding_boxes(format=format)
+
+        check_kernel(
+            F.perspective_bounding_boxes,
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
+            **kwargs,
+        )
+
+    def test_kernel_bounding_boxes_error(self):
+        bounding_boxes = make_bounding_boxes()
+        format, canvas_size = bounding_boxes.format, bounding_boxes.canvas_size
+        bounding_boxes = bounding_boxes.as_subclass(torch.Tensor)
+
+        with pytest.raises(RuntimeError, match="Denominator is zero"):
+            F.perspective_bounding_boxes(
+                bounding_boxes,
+                format=format,
+                canvas_size=canvas_size,
+                startpoints=None,
+                endpoints=None,
+                coefficients=[0.0] * 8,
+            )
+
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    def test_kernel_mask(self, make_mask):
+        check_kernel(F.perspective_mask, make_mask(), **self.MINIMAL_KWARGS)
+
+    def test_kernel_video(self):
+        check_kernel(F.perspective_video, make_video(), **self.MINIMAL_KWARGS)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.perspective, make_input(), **self.MINIMAL_KWARGS)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.perspective_image, torch.Tensor),
+            (F._perspective_image_pil, PIL.Image.Image),
+            (F.perspective_image, tv_tensors.Image),
+            (F.perspective_bounding_boxes, tv_tensors.BoundingBoxes),
+            (F.perspective_mask, tv_tensors.Mask),
+            (F.perspective_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.perspective, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("distortion_scale", [0.5, 0.0, 1.0])
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    def test_transform(self, distortion_scale, make_input):
+        check_transform(transforms.RandomPerspective(distortion_scale=distortion_scale, p=1), make_input())
+
+    @pytest.mark.parametrize("distortion_scale", [-1, 2])
+    def test_transform_error(self, distortion_scale):
+        with pytest.raises(ValueError, match="distortion_scale value should be between 0 and 1"):
+            transforms.RandomPerspective(distortion_scale=distortion_scale)
+
+    @pytest.mark.parametrize("coefficients", COEFFICIENTS)
+    @pytest.mark.parametrize(
+        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+    )
+    @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
+    def test_image_functional_correctness(self, coefficients, interpolation, fill):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.perspective(
+            image, startpoints=None, endpoints=None, coefficients=coefficients, interpolation=interpolation, fill=fill
+        )
+        expected = F.to_image(
+            F.perspective(
+                F.to_pil_image(image),
+                startpoints=None,
+                endpoints=None,
+                coefficients=coefficients,
+                interpolation=interpolation,
+                fill=fill,
+            )
+        )
+
+        if interpolation is transforms.InterpolationMode.BILINEAR:
+            abs_diff = (actual.float() - expected.float()).abs()
+            assert (abs_diff > 1).float().mean() < 7e-2
+            mae = abs_diff.mean()
+            assert mae < 3
+        else:
+            assert_equal(actual, expected)
+
+    def _reference_perspective_bounding_boxes(self, bounding_boxes, *, startpoints, endpoints):
+        format = bounding_boxes.format
+        canvas_size = bounding_boxes.canvas_size
+        dtype = bounding_boxes.dtype
+        device = bounding_boxes.device
+
+        coefficients = _get_perspective_coeffs(endpoints, startpoints)
+
+        def perspective_bounding_boxes(bounding_boxes):
+            m1 = np.array(
+                [
+                    [coefficients[0], coefficients[1], coefficients[2]],
+                    [coefficients[3], coefficients[4], coefficients[5]],
+                ]
+            )
+            m2 = np.array(
+                [
+                    [coefficients[6], coefficients[7], 1.0],
+                    [coefficients[6], coefficients[7], 1.0],
+                ]
+            )
+
+            # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
+            input_xyxy = F.convert_bounding_box_format(
+                bounding_boxes.to(dtype=torch.float64, device="cpu", copy=True),
+                old_format=format,
+                new_format=tv_tensors.BoundingBoxFormat.XYXY,
+                inplace=True,
+            )
+            x1, y1, x2, y2 = input_xyxy.squeeze(0).tolist()
+
+            points = np.array(
+                [
+                    [x1, y1, 1.0],
+                    [x2, y1, 1.0],
+                    [x1, y2, 1.0],
+                    [x2, y2, 1.0],
+                ]
+            )
+
+            numerator = points @ m1.T
+            denominator = points @ m2.T
+            transformed_points = numerator / denominator
+
+            output_xyxy = torch.Tensor(
+                [
+                    float(np.min(transformed_points[:, 0])),
+                    float(np.min(transformed_points[:, 1])),
+                    float(np.max(transformed_points[:, 0])),
+                    float(np.max(transformed_points[:, 1])),
+                ]
+            )
+
+            output = F.convert_bounding_box_format(
+                output_xyxy, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format
+            )
+
+            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+            return F.clamp_bounding_boxes(
+                output,
+                format=format,
+                canvas_size=canvas_size,
+            ).to(dtype=dtype, device=device)
+
+        return tv_tensors.BoundingBoxes(
+            torch.cat([perspective_bounding_boxes(b) for b in bounding_boxes.reshape(-1, 4).unbind()], dim=0).reshape(
+                bounding_boxes.shape
+            ),
+            format=format,
+            canvas_size=canvas_size,
+        )
+
+    @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_correctness_perspective_bounding_boxes(self, startpoints, endpoints, format, dtype, device):
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
+
+        actual = F.perspective(bounding_boxes, startpoints=startpoints, endpoints=endpoints)
+        expected = self._reference_perspective_bounding_boxes(
+            bounding_boxes, startpoints=startpoints, endpoints=endpoints
+        )
+
+        assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestColorJitter:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        check_transform(
+            transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.25),
+            make_input(dtype=dtype, device=device),
+        )
+
+    def test_transform_noop(self):
+        input = make_image()
+        input_version = input._version
+
+        transform = transforms.ColorJitter()
+        output = transform(input)
+
+        assert output is input
+        assert output.data_ptr() == input.data_ptr()
+        assert output._version == input_version
+
+    def test_transform_error(self):
+        with pytest.raises(ValueError, match="must be non negative"):
+            transforms.ColorJitter(brightness=-1)
+
+        for brightness in [object(), [1, 2, 3]]:
+            with pytest.raises(TypeError, match="single number or a sequence with length 2"):
+                transforms.ColorJitter(brightness=brightness)
+
+        with pytest.raises(ValueError, match="values should be between"):
+            transforms.ColorJitter(brightness=(-1, 0.5))
+
+        with pytest.raises(ValueError, match="values should be between"):
+            transforms.ColorJitter(hue=1)
+
+    @pytest.mark.parametrize("brightness", [None, 0.1, (0.2, 0.3)])
+    @pytest.mark.parametrize("contrast", [None, 0.4, (0.5, 0.6)])
+    @pytest.mark.parametrize("saturation", [None, 0.7, (0.8, 0.9)])
+    @pytest.mark.parametrize("hue", [None, 0.3, (-0.1, 0.2)])
+    def test_transform_correctness(self, brightness, contrast, saturation, hue):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        transform = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
+
+        with freeze_rng_state():
+            torch.manual_seed(0)
+            actual = transform(image)
+
+            torch.manual_seed(0)
+            expected = F.to_image(transform(F.to_pil_image(image)))
+
+        mae = (actual.float() - expected.float()).abs().mean()
+        assert mae < 2

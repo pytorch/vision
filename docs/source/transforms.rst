@@ -30,28 +30,45 @@ tasks (image classification, detection, segmentation, video classification).
 .. code:: python
 
     # Detection (re-using imports and transforms from above)
-    from torchvision import datapoints
+    from torchvision import tv_tensors
 
     img = torch.randint(0, 256, size=(3, H, W), dtype=torch.uint8)
-    bboxes = torch.randint(0, H // 2, size=(3, 4))
-    bboxes[:, 2:] += bboxes[:, :2]
-    bboxes = datapoints.BoundingBoxes(bboxes, format="XYXY", canvas_size=(H, W))
+    boxes = torch.randint(0, H // 2, size=(3, 4))
+    boxes[:, 2:] += boxes[:, :2]
+    boxes = tv_tensors.BoundingBoxes(boxes, format="XYXY", canvas_size=(H, W))
 
     # The same transforms can be used!
-    img, bboxes = transforms(img, bboxes)
+    img, boxes = transforms(img, boxes)
     # And you can pass arbitrary input structures
-    output_dict = transforms({"image": img, "bboxes": bboxes})
+    output_dict = transforms({"image": img, "boxes": boxes})
 
 Transforms are typically passed as the ``transform`` or ``transforms`` argument
 to the :ref:`Datasets <datasets>`.
 
-.. TODO: add link to getting started guide here.
+Start here
+----------
+
+Whether you're new to Torchvision transforms, or you're already experienced with
+them, we encourage you to start with
+:ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` in
+order to learn more about what can be done with the new v2 transforms.
+
+Then, browse the sections in below this page for general information and
+performance tips. The available transforms and functionals are listed in the
+:ref:`API reference <v2_api_ref>`.
+
+More information and tutorials can also be found in our :ref:`example gallery
+<gallery>`, e.g. :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`
+or :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`.
+
+.. _conventions:
 
 Supported input types and conventions
 -------------------------------------
 
 Most transformations accept both `PIL <https://pillow.readthedocs.io>`_ images
-and tensor images. The result of both backends (PIL or Tensors) should be very
+and tensor inputs. Both CPU and CUDA tensors are supported.
+The result of both backends (PIL or Tensors) should be very
 close. In general, we recommend relying on the tensor backend :ref:`for
 performance <transforms_perf>`.  The :ref:`conversion transforms
 <conversion_transforms>` may be used to convert to and from PIL images, or for
@@ -94,24 +111,20 @@ advantages compared to the v1 ones (in ``torchvision.transforms``):
 
 - They can transform images **but also** bounding boxes, masks, or videos. This
   provides support for tasks beyond image classification: detection, segmentation,
-  video classification, etc.
+  video classification, etc. See
+  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`
+  and :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`.
 - They support more transforms like :class:`~torchvision.transforms.v2.CutMix`
-  and :class:`~torchvision.transforms.v2.MixUp`.
+  and :class:`~torchvision.transforms.v2.MixUp`. See
+  :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py`.
 - They're :ref:`faster <transforms_perf>`.
 - They support arbitrary input structures (dicts, lists, tuples, etc.).
 - Future improvements and features will be added to the v2 transforms only.
-
-.. TODO: Add link to e2e example for first bullet point.
 
 These transforms are **fully backward compatible** with the v1 ones, so if
 you're already using tranforms from ``torchvision.transforms``, all you need to
 do to is to update the import to ``torchvision.transforms.v2``. In terms of
 output, there might be negligible differences due to implementation differences.
-
-To learn more about the v2 transforms, check out
-:ref:`sphx_glr_auto_examples_v2_transforms_plot_transforms_v2.py`.
-
-.. TODO: make sure link is still good!!
 
 .. note::
 
@@ -152,13 +165,15 @@ The above should give you the best performance in a typical training environment
 that relies on the :class:`torch.utils.data.DataLoader` with ``num_workers >
 0``.
 
-Transforms tend to be sensitive to the input strides / memory layout. Some
+Transforms tend to be sensitive to the input strides / memory format. Some
 transforms will be faster with channels-first images while others prefer
-channels-last. You may want to experiment a bit if you're chasing the very
-best performance. Using :func:`torch.compile` on individual transforms may
-also help factoring out the memory layout variable (e.g. on
+channels-last. Like ``torch`` operators, most transforms will preserve the
+memory format of the input, but this may not always be respected due to
+implementation details. You may want to experiment a bit if you're chasing the
+very best performance.  Using :func:`torch.compile` on individual transforms may
+also help factoring out the memory format variable (e.g. on
 :class:`~torchvision.transforms.v2.Normalize`). Note that we're talking about
-**memory layout**, not tensor shape.
+**memory format**, not :ref:`tensor shape <conventions>`.
 
 Note that resize transforms like :class:`~torchvision.transforms.v2.Resize`
 and :class:`~torchvision.transforms.v2.RandomResizedCrop` typically prefer
@@ -177,8 +192,8 @@ Transforms are available as classes like
 This is very much like the :mod:`torch.nn` package which defines both classes
 and functional equivalents in :mod:`torch.nn.functional`.
 
-The functionals support PIL images, pure tensors, or :ref:`datapoints
-<datapoints>`, e.g. both ``resize(image_tensor)`` and ``resize(bboxes)`` are
+The functionals support PIL images, pure tensors, or :ref:`TVTensors
+<tv_tensors>`, e.g. both ``resize(image_tensor)`` and ``resize(boxes)`` are
 valid.
 
 .. note::
@@ -208,7 +223,8 @@ Torchscript support
 -------------------
 
 Most transform classes and functionals support torchscript. For composing
-transforms, use :class:`torch.nn.Sequential` instead of ``Compose``:
+transforms, use :class:`torch.nn.Sequential` instead of
+:class:`~torchvision.transforms.v2.Compose`:
 
 .. code:: python
 
@@ -226,7 +242,7 @@ transforms, use :class:`torch.nn.Sequential` instead of ``Compose``:
     scripted and eager executions due to implementation differences between v1
     and v2.
 
-    If you really need torchscript support for the v2 tranforms, we recommend
+    If you really need torchscript support for the v2 transforms, we recommend
     scripting the **functionals** from the
     ``torchvision.transforms.v2.functional`` namespace to avoid surprises.
 
@@ -236,7 +252,12 @@ are always treated as images. If you need torchscript support for other types
 like bounding boxes or masks, you can rely on the :ref:`low-level kernels
 <functional_transforms>`.
 
-For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
+For any custom transformations to be used with ``torch.jit.script``, they should
+be derived from ``torch.nn.Module``.
+
+See also: :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`.
+
+.. _v2_api_ref:
 
 V2 API reference - Recommended
 ------------------------------
@@ -473,7 +494,7 @@ CutMix and MixUp are special transforms that
 are meant to be used on batches rather than on individual images, because they
 are combining pairs of images together. These can be used after the dataloader
 (once the samples are batched), or part of a collation function. See
-:ref:`sphx_glr_auto_examples_v2_transforms_plot_cutmix_mixup.py` for detailed usage examples.
+:ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` for detailed usage examples.
 
 .. autosummary::
     :toctree: generated/

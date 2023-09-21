@@ -76,13 +76,45 @@ gen_rst.EXAMPLE_HEADER = """
 """
 
 
+class CustomGalleryExampleSortKey:
+    # See https://sphinx-gallery.github.io/stable/configuration.html#sorting-gallery-examples
+    # and https://github.com/sphinx-gallery/sphinx-gallery/blob/master/sphinx_gallery/sorting.py
+    def __init__(self, src_dir):
+        self.src_dir = src_dir
+
+    transforms_subsection_order = [
+        "plot_transforms_getting_started.py",
+        "plot_transforms_illustrations.py",
+        "plot_transforms_e2e.py",
+        "plot_cutmix_mixup.py",
+        "plot_custom_transforms.py",
+        "plot_tv_tensors.py",
+        "plot_custom_tv_tensors.py",
+    ]
+
+    def __call__(self, filename):
+        if "gallery/transforms" in self.src_dir:
+            try:
+                return self.transforms_subsection_order.index(filename)
+            except ValueError as e:
+                raise ValueError(
+                    "Looks like you added an example in gallery/transforms? "
+                    "You need to specify its order in docs/source/conf.py. Look for CustomGalleryExampleSortKey."
+                ) from e
+        else:
+            # For other subsections we just sort alphabetically by filename
+            return filename
+
+
 sphinx_gallery_conf = {
     "examples_dirs": "../../gallery/",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
-    "subsection_order": ExplicitOrder(["../../gallery/v2_transforms", "../../gallery/others"]),
+    "subsection_order": ExplicitOrder(["../../gallery/transforms", "../../gallery/others"]),
     "backreferences_dir": "gen_modules/backreferences",
     "doc_module": ("torchvision",),
     "remove_config_comments": True,
+    "ignore_pattern": "helpers.py",
+    "within_subsection_order": CustomGalleryExampleSortKey,
 }
 
 napoleon_use_ivar = True

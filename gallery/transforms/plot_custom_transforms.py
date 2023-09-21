@@ -5,7 +5,7 @@ How to write your own v2 transforms
 
 .. note::
     Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_custom_transforms.ipynb>`_
-    or :ref:`go to the end <sphx_glr_download_auto_examples_v2_transforms_plot_custom_transforms.py>` to download the full example code.
+    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_custom_transforms.py>` to download the full example code.
 
 This guide explains how to write transforms that are compatible with the
 torchvision transforms V2 API.
@@ -13,7 +13,7 @@ torchvision transforms V2 API.
 
 # %%
 import torch
-from torchvision import datapoints
+from torchvision import tv_tensors
 from torchvision.transforms import v2
 
 
@@ -62,7 +62,7 @@ transforms = v2.Compose([
 
 H, W = 256, 256
 img = torch.rand(3, H, W)
-bboxes = datapoints.BoundingBoxes(
+bboxes = tv_tensors.BoundingBoxes(
     torch.tensor([[0, 10, 10, 20], [50, 50, 70, 70]]),
     format="XYXY",
     canvas_size=(H, W)
@@ -74,9 +74,9 @@ out_img, out_bboxes, out_label = transforms(img, bboxes, label)
 print(f"Output image shape: {out_img.shape}\nout_bboxes = {out_bboxes}\n{out_label = }")
 # %%
 # .. note::
-#     While working with datapoint classes in your code, make sure to
+#     While working with TVTensor classes in your code, make sure to
 #     familiarize yourself with this section:
-#     :ref:`datapoint_unwrapping_behaviour`
+#     :ref:`tv_tensor_unwrapping_behaviour`
 #
 # Supporting arbitrary input structures
 # =====================================
@@ -111,7 +111,7 @@ print(f"The transformed bboxes are:\n{structured_output['annotations'][0]}")
 # In brief, the core logic is to unpack the input into a flat list using `pytree
 # <https://github.com/pytorch/pytorch/blob/main/torch/utils/_pytree.py>`_, and
 # then transform only the entries that can be transformed (the decision is made
-# based on the **class** of the entries, as all datapoints are
+# based on the **class** of the entries, as all TVTensors are
 # tensor-subclasses) plus some custom logic that is out of score here - check the
 # code for details. The (potentially transformed) entries are then repacked and
 # returned, in the same structure as the input.

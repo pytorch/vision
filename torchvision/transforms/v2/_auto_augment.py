@@ -5,18 +5,17 @@ import PIL.Image
 import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
-from torchvision import datapoints, transforms as _transforms
+from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms import _functional_tensor as _FT
 from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._meta import get_size
 from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
-from ._utils import _get_fill, _setup_fill_arg
-from .utils import check_type, is_pure_tensor
+from ._utils import _get_fill, _setup_fill_arg, check_type, is_pure_tensor
 
 
-ImageOrVideo = Union[torch.Tensor, PIL.Image.Image, datapoints.Image, datapoints.Video]
+ImageOrVideo = Union[torch.Tensor, PIL.Image.Image, tv_tensors.Image, tv_tensors.Video]
 
 
 class _AutoAugmentBase(Transform):
@@ -28,7 +27,16 @@ class _AutoAugmentBase(Transform):
     ) -> None:
         super().__init__()
         self.interpolation = _check_interpolation(interpolation)
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+
+        if isinstance(params["fill"], dict):
+            raise ValueError(f"{type(self).__name__}() can not be scripted for when `fill` is a dictionary.")
+
+        return params
 
     def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
         keys = tuple(dct.keys())
@@ -38,7 +46,7 @@ class _AutoAugmentBase(Transform):
     def _flatten_and_extract_image_or_video(
         self,
         inputs: Any,
-        unsupported_types: Tuple[Type, ...] = (datapoints.BoundingBoxes, datapoints.Mask),
+        unsupported_types: Tuple[Type, ...] = (tv_tensors.BoundingBoxes, tv_tensors.Mask),
     ) -> Tuple[Tuple[List[Any], TreeSpec, int], ImageOrVideo]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
         needs_transform_list = self._needs_transform_list(flat_inputs)
@@ -48,10 +56,10 @@ class _AutoAugmentBase(Transform):
             if needs_transform and check_type(
                 inpt,
                 (
-                    datapoints.Image,
+                    tv_tensors.Image,
                     PIL.Image.Image,
                     is_pure_tensor,
-                    datapoints.Video,
+                    tv_tensors.Video,
                 ),
             ):
                 image_or_videos.append((idx, inpt))
@@ -335,7 +343,7 @@ class AutoAugment(_AutoAugmentBase):
                 magnitude = 0.0
 
             image_or_video = self._apply_image_or_video_transform(
-                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
             )
 
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
@@ -419,7 +427,7 @@ class RandAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
             image_or_video = self._apply_image_or_video_transform(
-                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
             )
 
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
@@ -491,7 +499,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
             magnitude = 0.0
 
         image_or_video = self._apply_image_or_video_transform(
-            image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+            image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
         )
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
 
@@ -582,7 +590,7 @@ class AugMix(_AutoAugmentBase):
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
         orig_dims = list(image_or_video.shape)
-        expected_ndim = 5 if isinstance(orig_image_or_video, datapoints.Video) else 4
+        expected_ndim = 5 if isinstance(orig_image_or_video, tv_tensors.Video) else 4
         batch = image_or_video.reshape([1] * max(expected_ndim - image_or_video.ndim, 0) + orig_dims)
         batch_dims = [batch.size(0)] + [1] * (batch.ndim - 1)
 
@@ -614,13 +622,13 @@ class AugMix(_AutoAugmentBase):
                     magnitude = 0.0
 
                 aug = self._apply_image_or_video_transform(
-                    aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+                    aug, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
                 )
             mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
-        if isinstance(orig_image_or_video, (datapoints.Image, datapoints.Video)):
-            mix = datapoints.wrap(mix, like=orig_image_or_video)
+        if isinstance(orig_image_or_video, (tv_tensors.Image, tv_tensors.Video)):
+            mix = tv_tensors.wrap(mix, like=orig_image_or_video)
         elif isinstance(orig_image_or_video, PIL.Image.Image):
             mix = F.to_pil_image(mix)
 

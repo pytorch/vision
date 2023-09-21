@@ -242,7 +242,6 @@ detection_models_input_dims = {
 )
 @run_if_test_with_extended
 def test_schema_meta_validation(model_fn):
-
     if model_fn.__name__ == "maskrcnn_resnet50_fpn_v2":
         pytest.skip(reason="FIXME https://github.com/pytorch/vision/issues/7349")
 
@@ -326,9 +325,11 @@ def test_schema_meta_validation(model_fn):
                     height, width = detection_models_input_dims[model_name]
                     kwargs = {"height": height, "width": width}
 
-                calculated_ops = get_ops(model=model, weight=w, **kwargs)
-                if calculated_ops != w.meta["_ops"]:
-                    incorrect_meta.append((w, "_ops"))
+                if not model_fn.__name__.startswith("vit"):
+                    # FIXME: https://github.com/pytorch/vision/issues/7871
+                    calculated_ops = get_ops(model=model, weight=w, **kwargs)
+                    if calculated_ops != w.meta["_ops"]:
+                        incorrect_meta.append((w, "_ops"))
 
         if not w.name.isupper():
             bad_names.append(w)
