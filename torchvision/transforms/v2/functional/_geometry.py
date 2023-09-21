@@ -221,7 +221,7 @@ def resize_image(
         output_shape = image.shape[:-3] + (num_channels, new_height, new_width)
     else:
         num_channels = 1
-        output_shape = [new_height, new_width]
+        output_shape = [new_height, new_width]  # type: ignore[assignment]
 
     numel = image.numel()
     if numel == 0:
@@ -561,7 +561,7 @@ def _apply_grid_transform(img: torch.Tensor, grid: torch.Tensor, mode: str, fill
     else:
         num_channels = 1
         input_height, input_width = input_shape
-        output_shape = [output_height, output_width]
+        output_shape = [output_height, output_width]  # type: ignore[assignment]
 
     if img.numel() == 0:
         return img.reshape(output_shape)
@@ -1170,7 +1170,7 @@ def _pad_with_scalar_fill(
         output_shape = image.shape[:-3] + (num_channels, new_height, new_width)
     else:
         num_channels = 1
-        output_shape = [new_height, new_width]
+        output_shape = [new_height, new_width]  # type: ignore[assignment]
 
     if image.numel() == 0:
         return image.reshape(output_shape)
