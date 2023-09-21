@@ -977,7 +977,6 @@ def rotate_image(
     output_width, output_height = (
         _compute_affine_output_size(matrix, input_width, input_height) if expand else (input_width, input_height)
     )
-
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
     grid = _affine_grid(
