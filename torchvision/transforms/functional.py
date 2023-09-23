@@ -374,9 +374,9 @@ def _compute_resized_output_size(
         new_short, new_long = requested_new_short, int(requested_new_short * long / short)
 
         if max_size is not None:
-            if max_size <= requested_new_short:
+            if max_size < requested_new_short:
                 raise ValueError(
-                    f"max_size = {max_size} must be strictly greater than the requested "
+                    f"max_size = {max_size} must be strictly greater than or equal to the requested "
                     f"size for the smaller edge size = {size}"
                 )
             if new_long > max_size:
