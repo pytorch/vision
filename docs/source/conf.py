@@ -90,6 +90,7 @@ class CustomGalleryExampleSortKey:
         "plot_custom_transforms.py",
         "plot_tv_tensors.py",
         "plot_custom_tv_tensors.py",
+        "plot_transform_tensor_image.py"
     ]
 
     def __call__(self, filename):
