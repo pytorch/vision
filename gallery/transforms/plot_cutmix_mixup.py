@@ -112,7 +112,7 @@ def collate_fn(batch):
     return cutmix_or_mixup(*default_collate(batch))
 
 
-dataloader = DataLoader(dataset, batch_size=4, shuffle=True, num_workers=0, collate_fn=collate_fn)
+dataloader = DataLoader(dataset, batch_size=4, shuffle=True, num_workers=2, collate_fn=collate_fn)
 
 for images, labels in dataloader:
     print(f"{images.shape = }, {labels.shape = }")
