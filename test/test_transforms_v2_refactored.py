@@ -675,7 +675,7 @@ class TestResize:
     def test_max_size_error(self, size, make_input):
         if isinstance(size, int) or len(size) == 1:
             max_size = (size if isinstance(size, int) else size[0]) - 1
-            match = "must be strictly greater than the requested size"
+            match = "must be strictly greater than or equal to the requested size"
         else:
             # value can be anything other than None
             max_size = -1
