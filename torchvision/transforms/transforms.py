@@ -1760,7 +1760,7 @@ class RandomErasing(torch.nn.Module):
 class GaussianBlur(torch.nn.Module):
     """Blurs image with randomly chosen Gaussian blur.
     If the image is torch Tensor, it is expected
-    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    to have [..., C, H, W] shape, where ... means at most one leading dimension.
 
     Args:
         kernel_size (int or sequence): Size of the Gaussian kernel.
