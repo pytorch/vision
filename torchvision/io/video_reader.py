@@ -171,7 +171,7 @@ class VideoReader:
             self.container = av.open(src, metadata_errors="ignore")
             try:
                 _ = self.get_metadata()
-            except Exception as err:
+            except Exception:
                 raise ValueError("Invalid metadata")
             stream_type = stream.split(":")[0]
             stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
