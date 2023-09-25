@@ -417,26 +417,6 @@ class TestRandomZoomOut:
         assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
 
 
-class TestRandomPerspective:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Argument distortion_scale value should be between 0 and 1"):
-            transforms.RandomPerspective(distortion_scale=-1.0)
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomPerspective(0.5, fill="abc")
-
-    def test__get_params(self):
-        dscale = 0.5
-        transform = transforms.RandomPerspective(dscale)
-
-        image = make_image((24, 32))
-
-        params = transform._get_params([image])
-
-        assert "coefficients" in params
-        assert len(params["coefficients"]) == 8
-
-
 class TestElasticTransform:
     def test_assertions(self):
 
