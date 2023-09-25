@@ -3,13 +3,13 @@ from typing import Any, cast, Dict, List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import datapoints
+from torchvision import tv_tensors
 from torchvision.ops import masks_to_boxes
-from torchvision.prototype import datapoints as proto_datapoints
+from torchvision.prototype import tv_tensors as proto_tv_tensors
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2._utils import is_pure_tensor
 
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
-from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 class SimpleCopyPaste(Transform):
@@ -26,21 +26,19 @@ class SimpleCopyPaste(Transform):
 
     def _copy_paste(
         self,
-        image: datapoints._TensorImageType,
+        image: Union[torch.Tensor, tv_tensors.Image],
         target: Dict[str, Any],
-        paste_image: datapoints._TensorImageType,
+        paste_image: Union[torch.Tensor, tv_tensors.Image],
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
         blending: bool,
         resize_interpolation: F.InterpolationMode,
         antialias: Optional[bool],
-    ) -> Tuple[datapoints._TensorImageType, Dict[str, Any]]:
+    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
 
-        paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
-        paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
-        paste_labels = paste_target["labels"].wrap_like(
-            paste_target["labels"], paste_target["labels"][random_selection]
-        )
+        paste_masks = tv_tensors.wrap(paste_target["masks"][random_selection], like=paste_target["masks"])
+        paste_boxes = tv_tensors.wrap(paste_target["boxes"][random_selection], like=paste_target["boxes"])
+        paste_labels = tv_tensors.wrap(paste_target["labels"][random_selection], like=paste_target["labels"])
 
         masks = target["masks"]
 
@@ -82,8 +80,8 @@ class SimpleCopyPaste(Transform):
         # There is a similar +1 in other reference implementations:
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
-        boxes = F.convert_format_bounding_boxes(
-            xyxy_boxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
+        boxes = F.convert_bounding_box_format(
+            xyxy_boxes, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
 
@@ -91,8 +89,8 @@ class SimpleCopyPaste(Transform):
         out_target["labels"] = torch.cat([labels, paste_labels])
 
         # Check for degenerated boxes and remove them
-        boxes = F.convert_format_bounding_boxes(
-            out_target["boxes"], old_format=bbox_format, new_format=datapoints.BoundingBoxFormat.XYXY
+        boxes = F.convert_bounding_box_format(
+            out_target["boxes"], old_format=bbox_format, new_format=tv_tensors.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
         if degenerate_boxes.any():
@@ -106,20 +104,20 @@ class SimpleCopyPaste(Transform):
 
     def _extract_image_targets(
         self, flat_sample: List[Any]
-    ) -> Tuple[List[datapoints._TensorImageType], List[Dict[str, Any]]]:
+    ) -> Tuple[List[Union[torch.Tensor, tv_tensors.Image]], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
         # with List[image], List[BoundingBoxes], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, datapoints.Image) or is_simple_tensor(obj):
+            if isinstance(obj, tv_tensors.Image) or is_pure_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(F.to_image_tensor(obj))
-            elif isinstance(obj, datapoints.BoundingBoxes):
+                images.append(F.to_image(obj))
+            elif isinstance(obj, tv_tensors.BoundingBoxes):
                 bboxes.append(obj)
-            elif isinstance(obj, datapoints.Mask):
+            elif isinstance(obj, tv_tensors.Mask):
                 masks.append(obj)
-            elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
+            elif isinstance(obj, (proto_tv_tensors.Label, proto_tv_tensors.OneHotLabel)):
                 labels.append(obj)
 
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
@@ -137,28 +135,28 @@ class SimpleCopyPaste(Transform):
     def _insert_outputs(
         self,
         flat_sample: List[Any],
-        output_images: List[datapoints._TensorImageType],
+        output_images: List[torch.Tensor],
         output_targets: List[Dict[str, Any]],
     ) -> None:
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):
-            if isinstance(obj, datapoints.Image):
-                flat_sample[i] = datapoints.Image.wrap_like(obj, output_images[c0])
+            if isinstance(obj, tv_tensors.Image):
+                flat_sample[i] = tv_tensors.wrap(output_images[c0], like=obj)
                 c0 += 1
             elif isinstance(obj, PIL.Image.Image):
-                flat_sample[i] = F.to_image_pil(output_images[c0])
+                flat_sample[i] = F.to_pil_image(output_images[c0])
                 c0 += 1
-            elif is_simple_tensor(obj):
+            elif is_pure_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
-            elif isinstance(obj, datapoints.BoundingBoxes):
-                flat_sample[i] = datapoints.BoundingBoxes.wrap_like(obj, output_targets[c1]["boxes"])
+            elif isinstance(obj, tv_tensors.BoundingBoxes):
+                flat_sample[i] = tv_tensors.wrap(output_targets[c1]["boxes"], like=obj)
                 c1 += 1
-            elif isinstance(obj, datapoints.Mask):
-                flat_sample[i] = datapoints.Mask.wrap_like(obj, output_targets[c2]["masks"])
+            elif isinstance(obj, tv_tensors.Mask):
+                flat_sample[i] = tv_tensors.wrap(output_targets[c2]["masks"], like=obj)
                 c2 += 1
-            elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
-                flat_sample[i] = obj.wrap_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
+            elif isinstance(obj, (proto_tv_tensors.Label, proto_tv_tensors.OneHotLabel)):
+                flat_sample[i] = tv_tensors.wrap(output_targets[c3]["labels"], like=obj)
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:

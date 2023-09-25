@@ -4,6 +4,10 @@
 How to use CutMix and MixUp
 ===========================
 
+.. note::
+    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_cutmix_mixup.ipynb>`_
+    or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_cutmix_mixup.py>` to download the full example code.
+
 :class:`~torchvision.transforms.v2.CutMix` and
 :class:`~torchvision.transforms.v2.MixUp` are popular augmentation strategies
 that can improve classification accuracy.
@@ -17,13 +21,7 @@ function.
 
 # %%
 import torch
-import torchvision
 from torchvision.datasets import FakeData
-
-# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
-# some APIs may slightly change in the future
-torchvision.disable_beta_transforms_warning()
-
 from torchvision.transforms import v2
 
 

@@ -1,4 +1,3 @@
-import enum
 import importlib.machinery
 import importlib.util
 import inspect
@@ -7,31 +6,27 @@ import re
 from pathlib import Path
 
 import numpy as np
-import PIL.Image
 import pytest
 
 import torch
 import torchvision.transforms.v2 as v2_transforms
-from common_utils import (
-    ArgsKwargs,
-    assert_close,
-    assert_equal,
-    make_bounding_box,
-    make_detection_mask,
-    make_image,
-    make_images,
-    make_segmentation_mask,
-    set_rng_seed,
-)
+from common_utils import assert_close, assert_equal, set_rng_seed
 from torch import nn
-from torchvision import datapoints, transforms as legacy_transforms
+from torchvision import transforms as legacy_transforms, tv_tensors
 from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
-from torchvision.transforms.v2._utils import _get_fill
-from torchvision.transforms.v2.functional import to_image_pil
-from torchvision.transforms.v2.utils import query_size
+from torchvision.transforms.v2._utils import _get_fill, query_size
+from torchvision.transforms.v2.functional import to_pil_image
+from transforms_v2_legacy_utils import (
+    ArgsKwargs,
+    make_bounding_boxes,
+    make_detection_mask,
+    make_image,
+    make_images,
+    make_segmentation_mask,
+)
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
@@ -87,43 +82,6 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.float]),
     ),
     ConsistencyConfig(
-        v2_transforms.Resize,
-        legacy_transforms.Resize,
-        [
-            NotScriptableArgsKwargs(32),
-            ArgsKwargs([32]),
-            ArgsKwargs((32, 29)),
-            ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((30, 27), interpolation=PIL.Image.NEAREST),
-            ArgsKwargs((35, 29), interpolation=PIL.Image.BILINEAR),
-            NotScriptableArgsKwargs(31, max_size=32),
-            ArgsKwargs([31], max_size=32),
-            NotScriptableArgsKwargs(30, max_size=100),
-            ArgsKwargs([31], max_size=32),
-            ArgsKwargs((29, 32), antialias=False),
-            ArgsKwargs((28, 31), antialias=True),
-        ],
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        closeness_kwargs=dict(rtol=0, atol=1),
-    ),
-    ConsistencyConfig(
-        v2_transforms.Resize,
-        legacy_transforms.Resize,
-        [
-            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC, antialias=True),
-            ArgsKwargs((34, 25), interpolation=PIL.Image.BICUBIC, antialias=True),
-        ],
-        closeness_kwargs=dict(rtol=0, atol=21),
-    ),
-    ConsistencyConfig(
-        v2_transforms.CenterCrop,
-        legacy_transforms.CenterCrop,
-        [
-            ArgsKwargs(18),
-            ArgsKwargs((18, 13)),
-        ],
-    ),
-    ConsistencyConfig(
         v2_transforms.FiveCrop,
         legacy_transforms.FiveCrop,
         [
@@ -141,21 +99,6 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(18, vertical_flip=True),
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
-    ),
-    ConsistencyConfig(
-        v2_transforms.Pad,
-        legacy_transforms.Pad,
-        [
-            NotScriptableArgsKwargs(3),
-            ArgsKwargs([3]),
-            ArgsKwargs([2, 3]),
-            ArgsKwargs([3, 2, 1, 4]),
-            NotScriptableArgsKwargs(5, fill=1, padding_mode="constant"),
-            ArgsKwargs([5], fill=1, padding_mode="constant"),
-            NotScriptableArgsKwargs(5, padding_mode="edge"),
-            NotScriptableArgsKwargs(5, padding_mode="reflect"),
-            NotScriptableArgsKwargs(5, padding_mode="symmetric"),
-        ],
     ),
     *[
         ConsistencyConfig(
@@ -191,20 +134,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.ConvertImageDtype,
-        legacy_transforms.ConvertImageDtype,
-        [
-            ArgsKwargs(torch.float16),
-            ArgsKwargs(torch.bfloat16),
-            ArgsKwargs(torch.float32),
-            ArgsKwargs(torch.float64),
-            ArgsKwargs(torch.uint8),
-        ],
-        supports_pil=False,
-        # Use default tolerances of `torch.testing.assert_close`
-        closeness_kwargs=dict(rtol=None, atol=None),
-    ),
-    ConsistencyConfig(
         v2_transforms.ToPILImage,
         legacy_transforms.ToPILImage,
         [NotScriptableArgsKwargs()],
@@ -228,22 +157,6 @@ CONSISTENCY_CONFIGS = [
         # Technically, this also supports PIL, but it is overkill to write a function here that supports tensor and PIL
         # images given that the transform does nothing but call it anyway.
         supports_pil=False,
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomHorizontalFlip,
-        legacy_transforms.RandomHorizontalFlip,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-        ],
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomVerticalFlip,
-        legacy_transforms.RandomVerticalFlip,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-        ],
     ),
     ConsistencyConfig(
         v2_transforms.RandomEqualize,
@@ -316,165 +229,6 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        v2_transforms.RandomResizedCrop,
-        legacy_transforms.RandomResizedCrop,
-        [
-            ArgsKwargs(16),
-            ArgsKwargs(17, scale=(0.3, 0.7)),
-            ArgsKwargs(25, ratio=(0.5, 1.5)),
-            ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((31, 28), interpolation=PIL.Image.NEAREST),
-            ArgsKwargs((29, 32), antialias=False),
-            ArgsKwargs((28, 31), antialias=True),
-        ],
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        closeness_kwargs=dict(rtol=0, atol=1),
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomResizedCrop,
-        legacy_transforms.RandomResizedCrop,
-        [
-            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC, antialias=True),
-            ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC, antialias=True),
-        ],
-        closeness_kwargs=dict(rtol=0, atol=21),
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomErasing,
-        legacy_transforms.RandomErasing,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-            ArgsKwargs(p=1, scale=(0.3, 0.7)),
-            ArgsKwargs(p=1, ratio=(0.5, 1.5)),
-            ArgsKwargs(p=1, value=1),
-            ArgsKwargs(p=1, value=(1, 2, 3)),
-            ArgsKwargs(p=1, value="random"),
-        ],
-        supports_pil=False,
-    ),
-    ConsistencyConfig(
-        v2_transforms.ColorJitter,
-        legacy_transforms.ColorJitter,
-        [
-            ArgsKwargs(),
-            ArgsKwargs(brightness=0.1),
-            ArgsKwargs(brightness=(0.2, 0.3)),
-            ArgsKwargs(contrast=0.4),
-            ArgsKwargs(contrast=(0.5, 0.6)),
-            ArgsKwargs(saturation=0.7),
-            ArgsKwargs(saturation=(0.8, 0.9)),
-            ArgsKwargs(hue=0.3),
-            ArgsKwargs(hue=(-0.1, 0.2)),
-            ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.3),
-        ],
-        closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
-    ),
-    *[
-        ConsistencyConfig(
-            v2_transforms.ElasticTransform,
-            legacy_transforms.ElasticTransform,
-            [
-                ArgsKwargs(),
-                ArgsKwargs(alpha=20.0),
-                ArgsKwargs(alpha=(15.3, 27.2)),
-                ArgsKwargs(sigma=3.0),
-                ArgsKwargs(sigma=(2.5, 3.9)),
-                ArgsKwargs(interpolation=v2_transforms.InterpolationMode.NEAREST),
-                ArgsKwargs(interpolation=v2_transforms.InterpolationMode.BICUBIC),
-                ArgsKwargs(interpolation=PIL.Image.NEAREST),
-                ArgsKwargs(interpolation=PIL.Image.BICUBIC),
-                ArgsKwargs(fill=1),
-            ],
-            # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
-            make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)], dtypes=[dt]),
-            # We updated gaussian blur kernel generation with a faster and numerically more stable version
-            # This brings float32 accumulation visible in elastic transform -> we need to relax consistency tolerance
-            closeness_kwargs=ckw,
-        )
-        for dt, ckw in [(torch.uint8, {"rtol": 1e-1, "atol": 1}), (torch.float32, {"rtol": 1e-2, "atol": 1e-3})]
-    ],
-    ConsistencyConfig(
-        v2_transforms.GaussianBlur,
-        legacy_transforms.GaussianBlur,
-        [
-            ArgsKwargs(kernel_size=3),
-            ArgsKwargs(kernel_size=(1, 5)),
-            ArgsKwargs(kernel_size=3, sigma=0.7),
-            ArgsKwargs(kernel_size=5, sigma=(0.3, 1.4)),
-        ],
-        closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomAffine,
-        legacy_transforms.RandomAffine,
-        [
-            ArgsKwargs(degrees=30.0),
-            ArgsKwargs(degrees=(-20.0, 10.0)),
-            ArgsKwargs(degrees=0.0, translate=(0.4, 0.6)),
-            ArgsKwargs(degrees=0.0, scale=(0.3, 0.8)),
-            ArgsKwargs(degrees=0.0, shear=13),
-            ArgsKwargs(degrees=0.0, shear=(8, 17)),
-            ArgsKwargs(degrees=0.0, shear=(4, 5, 4, 13)),
-            ArgsKwargs(degrees=(-20.0, 10.0), translate=(0.4, 0.6), scale=(0.3, 0.8), shear=(4, 5, 4, 13)),
-            ArgsKwargs(degrees=30.0, interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs(degrees=30.0, interpolation=PIL.Image.NEAREST),
-            ArgsKwargs(degrees=30.0, fill=1),
-            ArgsKwargs(degrees=30.0, fill=(2, 3, 4)),
-            ArgsKwargs(degrees=30.0, center=(0, 0)),
-        ],
-        removed_params=["fillcolor", "resample"],
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomCrop,
-        legacy_transforms.RandomCrop,
-        [
-            ArgsKwargs(12),
-            ArgsKwargs((15, 17)),
-            NotScriptableArgsKwargs(11, padding=1),
-            ArgsKwargs(11, padding=[1]),
-            ArgsKwargs((8, 13), padding=(2, 3)),
-            ArgsKwargs((14, 9), padding=(0, 2, 1, 0)),
-            ArgsKwargs(36, pad_if_needed=True),
-            ArgsKwargs((7, 8), fill=1),
-            NotScriptableArgsKwargs(5, fill=(1, 2, 3)),
-            ArgsKwargs(12),
-            NotScriptableArgsKwargs(15, padding=2, padding_mode="edge"),
-            ArgsKwargs(17, padding=(1, 0), padding_mode="reflect"),
-            ArgsKwargs(8, padding=(3, 0, 0, 1), padding_mode="symmetric"),
-        ],
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(26, 26), (18, 33), (29, 22)]),
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomPerspective,
-        legacy_transforms.RandomPerspective,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-            ArgsKwargs(p=1, distortion_scale=0.3),
-            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=v2_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=PIL.Image.NEAREST),
-            ArgsKwargs(p=1, distortion_scale=0.1, fill=1),
-            ArgsKwargs(p=1, distortion_scale=0.4, fill=(1, 2, 3)),
-        ],
-        closeness_kwargs={"atol": None, "rtol": None},
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomRotation,
-        legacy_transforms.RandomRotation,
-        [
-            ArgsKwargs(degrees=30.0),
-            ArgsKwargs(degrees=(-20.0, 10.0)),
-            ArgsKwargs(degrees=30.0, interpolation=v2_transforms.InterpolationMode.BILINEAR),
-            ArgsKwargs(degrees=30.0, interpolation=PIL.Image.BILINEAR),
-            ArgsKwargs(degrees=30.0, expand=True),
-            ArgsKwargs(degrees=30.0, center=(0, 0)),
-            ArgsKwargs(degrees=30.0, fill=1),
-            ArgsKwargs(degrees=30.0, fill=(1, 2, 3)),
-        ],
-        removed_params=["resample"],
-    ),
-    ConsistencyConfig(
         v2_transforms.PILToTensor,
         legacy_transforms.PILToTensor,
     ),
@@ -515,23 +269,6 @@ CONSISTENCY_CONFIGS = [
         legacy_transforms.TrivialAugmentWide,
     ),
 ]
-
-
-def test_automatic_coverage():
-    available = {
-        name
-        for name, obj in legacy_transforms.__dict__.items()
-        if not name.startswith("_") and isinstance(obj, type) and not issubclass(obj, enum.Enum)
-    }
-
-    checked = {config.legacy_cls.__name__ for config in CONSISTENCY_CONFIGS}
-
-    missing = available - checked
-    if missing:
-        raise AssertionError(
-            f"The prototype transformations {sequence_to_str(sorted(missing), separate_last='and ')} "
-            f"are not checked for consistency although a legacy counterpart exists."
-        )
 
 
 @pytest.mark.parametrize("config", CONSISTENCY_CONFIGS, ids=lambda config: config.legacy_cls.__name__)
@@ -602,7 +339,7 @@ def check_call_consistency(
             raise AssertionError(
                 f"Transforming a tensor image with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`is_simple_tensor` path in `_transform`."
+                f"`is_pure_tensor` path in `_transform`."
             ) from exc
 
         assert_close(
@@ -617,20 +354,20 @@ def check_call_consistency(
             output_prototype_image = prototype_transform(image)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a image datapoint with shape {image_repr} failed in the prototype transform with "
+                f"Transforming a image tv_tensor with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`datapoints.Image` path in `_transform`."
+                f"`tv_tensors.Image` path in `_transform`."
             ) from exc
 
         assert_close(
             output_prototype_image,
             output_prototype_tensor,
-            msg=lambda msg: f"Output for datapoint and tensor images is not equal: \n\n{msg}",
+            msg=lambda msg: f"Output for tv_tensor and tensor images is not equal: \n\n{msg}",
             **closeness_kwargs,
         )
 
         if image.ndim == 3 and supports_pil:
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
 
             try:
                 torch.manual_seed(0)
@@ -697,60 +434,6 @@ def test_call_consistency(config, args_kwargs):
         supports_pil=config.supports_pil,
         closeness_kwargs=config.closeness_kwargs,
     )
-
-
-get_params_parametrization = pytest.mark.parametrize(
-    ("config", "get_params_args_kwargs"),
-    [
-        pytest.param(
-            next(config for config in CONSISTENCY_CONFIGS if config.prototype_cls is transform_cls),
-            get_params_args_kwargs,
-            id=transform_cls.__name__,
-        )
-        for transform_cls, get_params_args_kwargs in [
-            (v2_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
-            (v2_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
-            (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
-            (v2_transforms.ElasticTransform, ArgsKwargs(alpha=[15.3, 27.2], sigma=[2.5, 3.9], size=[17, 31])),
-            (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
-            (
-                v2_transforms.RandomAffine,
-                ArgsKwargs(degrees=[-20.0, 10.0], translate=None, scale_ranges=None, shears=None, img_size=[15, 29]),
-            ),
-            (v2_transforms.RandomCrop, ArgsKwargs(make_image(size=(61, 47)), output_size=(19, 25))),
-            (v2_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
-            (v2_transforms.RandomRotation, ArgsKwargs(degrees=[-20.0, 10.0])),
-            (v2_transforms.AutoAugment, ArgsKwargs(5)),
-        ]
-    ],
-)
-
-
-@get_params_parametrization
-def test_get_params_alias(config, get_params_args_kwargs):
-    assert config.prototype_cls.get_params is config.legacy_cls.get_params
-
-    if not config.args_kwargs:
-        return
-    args, kwargs = config.args_kwargs[0]
-    legacy_transform = config.legacy_cls(*args, **kwargs)
-    prototype_transform = config.prototype_cls(*args, **kwargs)
-
-    assert prototype_transform.get_params is legacy_transform.get_params
-
-
-@get_params_parametrization
-def test_get_params_jit(config, get_params_args_kwargs):
-    get_params_args, get_params_kwargs = get_params_args_kwargs
-
-    torch.jit.script(config.prototype_cls.get_params)(*get_params_args, **get_params_kwargs)
-
-    if not config.args_kwargs:
-        return
-    args, kwargs = config.args_kwargs[0]
-    transform = config.prototype_cls(*args, **kwargs)
-
-    torch.jit.script(transform.get_params)(*get_params_args, **get_params_kwargs)
 
 
 @pytest.mark.parametrize(
@@ -869,7 +552,7 @@ class TestToTensorTransforms:
         legacy_transform = legacy_transforms.PILToTensor()
 
         for image in make_images(extra_dims=[()]):
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
 
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
 
@@ -879,189 +562,11 @@ class TestToTensorTransforms:
         legacy_transform = legacy_transforms.ToTensor()
 
         for image in make_images(extra_dims=[()]):
-            image_pil = to_image_pil(image)
+            image_pil = to_pil_image(image)
             image_numpy = np.array(image_pil)
 
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
             assert_equal(prototype_transform(image_numpy), legacy_transform(image_numpy))
-
-
-class TestAATransforms:
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
-            PIL.Image.new("RGB", (256, 256), 123),
-            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-            PIL.Image.NEAREST,
-        ],
-    )
-    def test_randaug(self, inpt, interpolation, mocker):
-        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1)
-        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1)
-
-        le = len(t._AUGMENTATION_SPACE)
-        keys = list(t._AUGMENTATION_SPACE.keys())
-        randint_values = []
-        for i in range(le):
-            # Stable API, op_index random call
-            randint_values.append(i)
-            # Stable API, if signed there is another random call
-            if t._AUGMENTATION_SPACE[keys[i]][1]:
-                randint_values.append(0)
-            # New API, _get_random_item
-            randint_values.append(i)
-        randint_values = iter(randint_values)
-
-        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
-        mocker.patch("torch.rand", return_value=1.0)
-
-        for i in range(le):
-            expected_output = t_ref(inpt)
-            output = t(inpt)
-
-            assert_close(expected_output, output, atol=1, rtol=0.1)
-
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
-            PIL.Image.new("RGB", (256, 256), 123),
-            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-            PIL.Image.NEAREST,
-        ],
-    )
-    def test_trivial_aug(self, inpt, interpolation, mocker):
-        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation)
-        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation)
-
-        le = len(t._AUGMENTATION_SPACE)
-        keys = list(t._AUGMENTATION_SPACE.keys())
-        randint_values = []
-        for i in range(le):
-            # Stable API, op_index random call
-            randint_values.append(i)
-            key = keys[i]
-            # Stable API, random magnitude
-            aug_op = t._AUGMENTATION_SPACE[key]
-            magnitudes = aug_op[0](2, 0, 0)
-            if magnitudes is not None:
-                randint_values.append(5)
-            # Stable API, if signed there is another random call
-            if aug_op[1]:
-                randint_values.append(0)
-            # New API, _get_random_item
-            randint_values.append(i)
-            # New API, random magnitude
-            if magnitudes is not None:
-                randint_values.append(5)
-
-        randint_values = iter(randint_values)
-
-        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
-        mocker.patch("torch.rand", return_value=1.0)
-
-        for _ in range(le):
-            expected_output = t_ref(inpt)
-            output = t(inpt)
-
-            assert_close(expected_output, output, atol=1, rtol=0.1)
-
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
-            PIL.Image.new("RGB", (256, 256), 123),
-            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-            PIL.Image.NEAREST,
-        ],
-    )
-    def test_augmix(self, inpt, interpolation, mocker):
-        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
-        t_ref._sample_dirichlet = lambda t: t.softmax(dim=-1)
-        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
-        t._sample_dirichlet = lambda t: t.softmax(dim=-1)
-
-        le = len(t._AUGMENTATION_SPACE)
-        keys = list(t._AUGMENTATION_SPACE.keys())
-        randint_values = []
-        for i in range(le):
-            # Stable API, op_index random call
-            randint_values.append(i)
-            key = keys[i]
-            # Stable API, random magnitude
-            aug_op = t._AUGMENTATION_SPACE[key]
-            magnitudes = aug_op[0](2, 0, 0)
-            if magnitudes is not None:
-                randint_values.append(5)
-            # Stable API, if signed there is another random call
-            if aug_op[1]:
-                randint_values.append(0)
-            # New API, _get_random_item
-            randint_values.append(i)
-            # New API, random magnitude
-            if magnitudes is not None:
-                randint_values.append(5)
-
-        randint_values = iter(randint_values)
-
-        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
-        mocker.patch("torch.rand", return_value=1.0)
-
-        expected_output = t_ref(inpt)
-        output = t(inpt)
-
-        assert_equal(expected_output, output)
-
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
-            PIL.Image.new("RGB", (256, 256), 123),
-            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "interpolation",
-        [
-            v2_transforms.InterpolationMode.NEAREST,
-            v2_transforms.InterpolationMode.BILINEAR,
-            PIL.Image.NEAREST,
-        ],
-    )
-    def test_aa(self, inpt, interpolation):
-        aa_policy = legacy_transforms.AutoAugmentPolicy("imagenet")
-        t_ref = legacy_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-        t = v2_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-
-        torch.manual_seed(12)
-        expected_output = t_ref(inpt)
-
-        torch.manual_seed(12)
-        output = t(inpt)
-
-        assert_equal(expected_output, output)
 
 
 def import_transforms_from_references(reference):
@@ -1081,16 +586,16 @@ det_transforms = import_transforms_from_references("detection")
 
 
 class TestRefDetTransforms:
-    def make_datapoints(self, with_mask=True):
+    def make_tv_tensors(self, with_mask=True):
         size = (600, 800)
         num_objects = 22
 
         def make_label(extra_dims, categories):
             return torch.randint(categories, extra_dims, dtype=torch.int64)
 
-        pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
+        pil_image = to_pil_image(make_image(size=size, color_space="RGB"))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1100,7 +605,7 @@ class TestRefDetTransforms:
 
         tensor_image = torch.Tensor(make_image(size=size, color_space="RGB", dtype=torch.float32))
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -1108,15 +613,15 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        datapoint_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
+        tv_tensor_image = make_image(size=size, color_space="RGB", dtype=torch.float32)
         target = {
-            "boxes": make_bounding_box(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_boxes(canvas_size=size, format="XYXY", batch_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
             target["masks"] = make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long)
 
-        yield (datapoint_image, target)
+        yield (tv_tensor_image, target)
 
     @pytest.mark.parametrize(
         "t_ref, t, data_kwargs",
@@ -1146,7 +651,7 @@ class TestRefDetTransforms:
         ],
     )
     def test_transform(self, t_ref, t, data_kwargs):
-        for dp in self.make_datapoints(**data_kwargs):
+        for dp in self.make_tv_tensors(**data_kwargs):
 
             # We should use prototype transform first as reference transform performs inplace target update
             torch.manual_seed(12)
@@ -1186,23 +691,23 @@ class PadIfSmaller(v2_transforms.Transform):
 
 
 class TestRefSegTransforms:
-    def make_datapoints(self, supports_pil=True, image_dtype=torch.uint8):
+    def make_tv_tensors(self, supports_pil=True, image_dtype=torch.uint8):
         size = (256, 460)
         num_categories = 21
 
         conv_fns = []
         if supports_pil:
-            conv_fns.append(to_image_pil)
+            conv_fns.append(to_pil_image)
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
-            datapoint_image = make_image(size=size, color_space="RGB", dtype=image_dtype)
-            datapoint_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
+            tv_tensor_image = make_image(size=size, color_space="RGB", dtype=image_dtype)
+            tv_tensor_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
 
-            dp = (conv_fn(datapoint_image), datapoint_mask)
+            dp = (conv_fn(tv_tensor_image), tv_tensor_mask)
             dp_ref = (
-                to_image_pil(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
-                to_image_pil(datapoint_mask),
+                to_pil_image(tv_tensor_image) if supports_pil else tv_tensor_image.as_subclass(torch.Tensor),
+                to_pil_image(tv_tensor_mask),
             )
 
             yield dp, dp_ref
@@ -1212,7 +717,7 @@ class TestRefSegTransforms:
         random.seed(seed)
 
     def check(self, t, t_ref, data_kwargs=None):
-        for dp, dp_ref in self.make_datapoints(**data_kwargs or dict()):
+        for dp, dp_ref in self.make_tv_tensors(**data_kwargs or dict()):
 
             self.set_seed()
             actual = actual_image, actual_mask = t(dp)
@@ -1243,7 +748,7 @@ class TestRefSegTransforms:
                 seg_transforms.RandomCrop(size=480),
                 v2_transforms.Compose(
                     [
-                        PadIfSmaller(size=480, fill={datapoints.Mask: 255, "others": 0}),
+                        PadIfSmaller(size=480, fill={tv_tensors.Mask: 255, "others": 0}),
                         v2_transforms.RandomCrop(size=480),
                     ]
                 ),
@@ -1258,68 +763,6 @@ class TestRefSegTransforms:
     )
     def test_common(self, t_ref, t, data_kwargs):
         self.check(t, t_ref, data_kwargs)
-
-    def check_resize(self, mocker, t_ref, t):
-        mock = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
-        mock_ref = mocker.patch("torchvision.transforms.functional.resize")
-
-        for dp, dp_ref in self.make_datapoints():
-            mock.reset_mock()
-            mock_ref.reset_mock()
-
-            self.set_seed()
-            t(dp)
-            assert mock.call_count == 2
-            assert all(
-                actual is expected
-                for actual, expected in zip([call_args[0][0] for call_args in mock.call_args_list], dp)
-            )
-
-            self.set_seed()
-            t_ref(*dp_ref)
-            assert mock_ref.call_count == 2
-            assert all(
-                actual is expected
-                for actual, expected in zip([call_args[0][0] for call_args in mock_ref.call_args_list], dp_ref)
-            )
-
-            for args_kwargs, args_kwargs_ref in zip(mock.call_args_list, mock_ref.call_args_list):
-                assert args_kwargs[0][1] == [args_kwargs_ref[0][1]]
-
-    def test_random_resize_train(self, mocker):
-        base_size = 520
-        min_size = base_size // 2
-        max_size = base_size * 2
-
-        randint = torch.randint
-
-        def patched_randint(a, b, *other_args, **kwargs):
-            if kwargs or len(other_args) > 1 or other_args[0] != ():
-                return randint(a, b, *other_args, **kwargs)
-
-            return random.randint(a, b)
-
-        # We are patching torch.randint -> random.randint here, because we can't patch the modules that are not imported
-        # normally
-        t = v2_transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
-        mocker.patch(
-            "torchvision.transforms.v2._geometry.torch.randint",
-            new=patched_randint,
-        )
-
-        t_ref = seg_transforms.RandomResize(min_size=min_size, max_size=max_size)
-
-        self.check_resize(mocker, t_ref, t)
-
-    def test_random_resize_eval(self, mocker):
-        torch.manual_seed(0)
-        base_size = 520
-
-        t = v2_transforms.Resize(size=base_size, antialias=True)
-
-        t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
-
-        self.check_resize(mocker, t_ref, t)
 
 
 @pytest.mark.parametrize(

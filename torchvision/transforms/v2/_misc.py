@@ -6,11 +6,10 @@ import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
-from torchvision import datapoints, transforms as _transforms
+from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _parse_labels_getter, _setup_float_or_seq, _setup_size
-from .utils import has_any, is_simple_tensor, query_bounding_boxes
+from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
 
 
 # TODO: do we want/need to expose this?
@@ -75,7 +74,7 @@ class LinearTransformation(Transform):
 
     _v1_transform_cls = _transforms.LinearTransformation
 
-    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_pure_tensor, tv_tensors.Image, tv_tensors.Video)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
@@ -106,7 +105,7 @@ class LinearTransformation(Transform):
 
     def _check_inputs(self, sample: Any) -> Any:
         if has_any(sample, PIL.Image.Image):
-            raise TypeError("LinearTransformation does not work on PIL Images")
+            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         shape = inpt.shape
@@ -130,8 +129,8 @@ class LinearTransformation(Transform):
         output = torch.mm(flat_inpt, transformation_matrix)
         output = output.reshape(shape)
 
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
+        if isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)):
+            output = tv_tensors.wrap(output, like=inpt)
         return output
 
 
@@ -157,7 +156,6 @@ class Normalize(Transform):
     """
 
     _v1_transform_cls = _transforms.Normalize
-    _transformed_types = (datapoints.Image, is_simple_tensor, datapoints.Video)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()
@@ -169,10 +167,8 @@ class Normalize(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def _transform(
-        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
-    ) -> Any:
-        return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
 class GaussianBlur(Transform):
@@ -202,24 +198,17 @@ class GaussianBlur(Transform):
             if ks <= 0 or ks % 2 == 0:
                 raise ValueError("Kernel size value should be an odd and positive number.")
 
-        if isinstance(sigma, (int, float)):
-            if sigma <= 0:
-                raise ValueError("If sigma is a single number, it must be positive.")
-            sigma = float(sigma)
-        elif isinstance(sigma, Sequence) and len(sigma) == 2:
-            if not 0.0 < sigma[0] <= sigma[1]:
-                raise ValueError("sigma values should be positive and of the form (min, max).")
-        else:
-            raise TypeError("sigma should be a single int or float or a list/tuple with length 2 floats.")
+        self.sigma = _setup_number_or_seq(sigma, "sigma")
 
-        self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
+        if not 0.0 < self.sigma[0] <= self.sigma[1]:
+            raise ValueError(f"sigma values should be positive and of the form (min, max). Got {self.sigma}")
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.gaussian_blur(inpt, self.kernel_size, **params)
+        return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
 class ToDtype(Transform):
@@ -231,13 +220,14 @@ class ToDtype(Transform):
         ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.
 
     Args:
-        dtype (``torch.dtype`` or dict of ``Datapoint`` -> ``torch.dtype``): The dtype to convert to.
+        dtype (``torch.dtype`` or dict of ``TVTensor`` -> ``torch.dtype``): The dtype to convert to.
             If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted
             to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.
-            A dict can be passed to specify per-datapoint conversions, e.g.
-            ``dtype={datapoints.Image: torch.float32, datapoints.Mask: torch.int64, "others":None}``. The "others"
-            key can be used as a catch-all for any other datapoint type, and ``None`` means no conversion.
-        scale (bool, optional): Whether to scale the values for images or videos. Default: ``False``.
+            A dict can be passed to specify per-tv_tensor conversions, e.g.
+            ``dtype={tv_tensors.Image: torch.float32, tv_tensors.Mask: torch.int64, "others":None}``. The "others"
+            key can be used as a catch-all for any other tv_tensor type, and ``None`` means no conversion.
+        scale (bool, optional): Whether to scale the values for images or videos. See :ref:`range_and_dtype`.
+            Default: ``False``.
     """
 
     _transformed_types = (torch.Tensor,)
@@ -253,12 +243,12 @@ class ToDtype(Transform):
         if (
             isinstance(dtype, dict)
             and torch.Tensor in dtype
-            and any(cls in dtype for cls in [datapoints.Image, datapoints.Video])
+            and any(cls in dtype for cls in [tv_tensors.Image, tv_tensors.Video])
         ):
             warnings.warn(
-                "Got `dtype` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
+                "Got `dtype` values for `torch.Tensor` and either `tv_tensors.Image` or `tv_tensors.Video`. "
                 "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
-                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
+                "in case a `tv_tensors.Image` or `tv_tensors.Video` is present in the input."
             )
         self.dtype = dtype
         self.scale = scale
@@ -267,7 +257,7 @@ class ToDtype(Transform):
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
-            if not is_simple_tensor(inpt) and not isinstance(inpt, (datapoints.Image, datapoints.Video)):
+            if not is_pure_tensor(inpt) and not isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)):
                 return inpt
 
             dtype: Optional[torch.dtype] = self.dtype
@@ -281,10 +271,10 @@ class ToDtype(Transform):
                 "If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. "
                 "If you're passing a dict as dtype, "
                 'you can use "others" as a catch-all key '
-                'e.g. dtype={datapoints.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
+                'e.g. dtype={tv_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
             )
 
-        supports_scaling = is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video))
+        supports_scaling = is_pure_tensor(inpt) or isinstance(inpt, (tv_tensors.Image, tv_tensors.Video))
         if dtype is None:
             if self.scale and supports_scaling:
                 warnings.warn(
@@ -292,11 +282,13 @@ class ToDtype(Transform):
                 )
             return inpt
 
-        return F.to_dtype(inpt, dtype=dtype, scale=self.scale)
+        return self._call_kernel(F.to_dtype, inpt, dtype=dtype, scale=self.scale)
 
 
 class ConvertImageDtype(Transform):
-    """[BETA] Convert input image to the given ``dtype`` and scale the values accordingly.
+    """[BETA] [DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.
+
+    Convert input image to the given ``dtype`` and scale the values accordingly.
 
     .. v2betastatus:: ConvertImageDtype transform
 
@@ -322,14 +314,12 @@ class ConvertImageDtype(Transform):
 
     _v1_transform_cls = _transforms.ConvertImageDtype
 
-    _transformed_types = (is_simple_tensor, datapoints.Image)
-
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.to_dtype(inpt, dtype=self.dtype, scale=True)
+        return self._call_kernel(F.to_dtype, inpt, dtype=self.dtype, scale=True)
 
 
 class SanitizeBoundingBoxes(Transform):
@@ -384,13 +374,7 @@ class SanitizeBoundingBoxes(Transform):
             )
 
         flat_inputs, spec = tree_flatten(inputs)
-        # TODO: this enforces one single BoundingBoxes entry.
-        # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
-        # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
-        boxes = query_bounding_boxes(flat_inputs)
-
-        if boxes.ndim != 2:
-            raise ValueError(f"boxes must be of shape (num_boxes, 4), got {boxes.shape}")
+        boxes = get_bounding_boxes(flat_inputs)
 
         if labels is not None and boxes.shape[0] != labels.shape[0]:
             raise ValueError(
@@ -398,10 +382,10 @@ class SanitizeBoundingBoxes(Transform):
             )
 
         boxes = cast(
-            datapoints.BoundingBoxes,
-            F.convert_format_bounding_boxes(
+            tv_tensors.BoundingBoxes,
+            F.convert_bounding_box_format(
                 boxes,
-                new_format=datapoints.BoundingBoxFormat.XYXY,
+                new_format=tv_tensors.BoundingBoxFormat.XYXY,
             ),
         )
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
@@ -412,7 +396,7 @@ class SanitizeBoundingBoxes(Transform):
         valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
         valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
-        params = dict(valid=valid, labels=labels)
+        params = dict(valid=valid.as_subclass(torch.Tensor), labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
             # _transform() will only care about BoundingBoxeses and the labels
@@ -424,7 +408,7 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_boxes_or_mask = isinstance(inpt, (datapoints.BoundingBoxes, datapoints.Mask))
+        is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
 
         if not (is_label or is_bounding_boxes_or_mask):
             return inpt
@@ -434,4 +418,4 @@ class SanitizeBoundingBoxes(Transform):
         if is_label:
             return output
 
-        return type(inpt).wrap_like(inpt, output)
+        return tv_tensors.wrap(output, like=inpt)

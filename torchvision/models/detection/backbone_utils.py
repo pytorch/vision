@@ -79,8 +79,10 @@ def resnet_fpn_backbone(
 
     Examples::
 
+        >>> import torch
+        >>> from torchvision.models import ResNet50_Weights
         >>> from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-        >>> backbone = resnet_fpn_backbone('resnet50', weights=ResNet50_Weights.DEFAULT, trainable_layers=3)
+        >>> backbone = resnet_fpn_backbone(backbone_name='resnet50', weights=ResNet50_Weights.DEFAULT, trainable_layers=3)
         >>> # get some dummy image
         >>> x = torch.rand(1,3,64,64)
         >>> # compute the output

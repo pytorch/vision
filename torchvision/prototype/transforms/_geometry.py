@@ -3,18 +3,26 @@ from typing import Any, Dict, List, Optional, Sequence, Type, Union
 import PIL.Image
 import torch
 
-from torchvision import datapoints
-from torchvision.prototype.datapoints import Label, OneHotLabel
+from torchvision import tv_tensors
+from torchvision.prototype.tv_tensors import Label, OneHotLabel
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2._utils import _get_fill, _setup_fill_arg, _setup_size
-from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_bounding_boxes, query_size
+from torchvision.transforms.v2._utils import (
+    _FillType,
+    _get_fill,
+    _setup_fill_arg,
+    _setup_size,
+    get_bounding_boxes,
+    has_any,
+    is_pure_tensor,
+    query_size,
+)
 
 
 class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[datapoints._FillType, Dict[Union[Type, str], datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
@@ -31,15 +39,15 @@ class FixedSizeCrop(Transform):
         if not has_any(
             flat_inputs,
             PIL.Image.Image,
-            datapoints.Image,
-            is_simple_tensor,
-            datapoints.Video,
+            tv_tensors.Image,
+            is_pure_tensor,
+            tv_tensors.Video,
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
             )
 
-        if has_any(flat_inputs, datapoints.BoundingBoxes) and not has_any(flat_inputs, Label, OneHotLabel):
+        if has_any(flat_inputs, tv_tensors.BoundingBoxes) and not has_any(flat_inputs, Label, OneHotLabel):
             raise TypeError(
                 f"If a BoundingBoxes is contained in the input sample, "
                 f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
@@ -61,7 +69,7 @@ class FixedSizeCrop(Transform):
 
         bounding_boxes: Optional[torch.Tensor]
         try:
-            bounding_boxes = query_bounding_boxes(flat_inputs)
+            bounding_boxes = get_bounding_boxes(flat_inputs)
         except ValueError:
             bounding_boxes = None
 
@@ -76,8 +84,8 @@ class FixedSizeCrop(Transform):
                 width=new_width,
             )
             bounding_boxes = F.clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size)
-            height_and_width = F.convert_format_bounding_boxes(
-                bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
+            height_and_width = F.convert_bounding_box_format(
+                bounding_boxes, old_format=format, new_format=tv_tensors.BoundingBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
         else:
@@ -101,7 +109,8 @@ class FixedSizeCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_crop"]:
-            inpt = F.crop(
+            inpt = self._call_kernel(
+                F.crop,
                 inpt,
                 top=params["top"],
                 left=params["left"],
@@ -110,16 +119,16 @@ class FixedSizeCrop(Transform):
             )
 
         if params["is_valid"] is not None:
-            if isinstance(inpt, (Label, OneHotLabel, datapoints.Mask)):
-                inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
-            elif isinstance(inpt, datapoints.BoundingBoxes):
-                inpt = datapoints.BoundingBoxes.wrap_like(
-                    inpt,
+            if isinstance(inpt, (Label, OneHotLabel, tv_tensors.Mask)):
+                inpt = tv_tensors.wrap(inpt[params["is_valid"]], like=inpt)
+            elif isinstance(inpt, tv_tensors.BoundingBoxes):
+                inpt = tv_tensors.wrap(
                     F.clamp_bounding_boxes(inpt[params["is_valid"]], format=inpt.format, canvas_size=inpt.canvas_size),
+                    like=inpt,
                 )
 
         if params["needs_pad"]:
             fill = _get_fill(self._fill, type(inpt))
-            inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
+            inpt = self._call_kernel(F.pad, inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt

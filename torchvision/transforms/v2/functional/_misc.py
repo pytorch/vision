@@ -1,29 +1,28 @@
 import math
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import PIL.Image
 import torch
 from torch.nn.functional import conv2d, pad as torch_pad
 
-from torchvision import datapoints
+from torchvision import tv_tensors
 from torchvision.transforms._functional_tensor import _max_value
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal, _register_unsupported_type
+from ._utils import _get_kernel, _register_kernel_internal
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-@_register_unsupported_type(PIL.Image.Image)
 def normalize(
-    inpt: Union[datapoints._TensorImageTypeJIT, datapoints._TensorVideoTypeJIT],
+    inpt: torch.Tensor,
     mean: List[float],
     std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.Normalize` for details."""
     if torch.jit.is_scripting():
-        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+        return normalize_image(inpt, mean=mean, std=std, inplace=inplace)
 
     _log_api_usage_once(normalize)
 
@@ -32,10 +31,8 @@ def normalize(
 
 
 @_register_kernel_internal(normalize, torch.Tensor)
-@_register_kernel_internal(normalize, datapoints.Image)
-def normalize_image_tensor(
-    image: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False
-) -> torch.Tensor:
+@_register_kernel_internal(normalize, tv_tensors.Image)
+def normalize_image(image: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
     if not image.is_floating_point():
         raise TypeError(f"Input tensor should be a float tensor. Got {image.dtype}.")
 
@@ -68,17 +65,15 @@ def normalize_image_tensor(
     return image.div_(std)
 
 
-@_register_kernel_internal(normalize, datapoints.Video)
+@_register_kernel_internal(normalize, tv_tensors.Video)
 def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
-    return normalize_image_tensor(video, mean, std, inplace=inplace)
+    return normalize_image(video, mean, std, inplace=inplace)
 
 
-@_register_explicit_noop(datapoints.BoundingBoxes, datapoints.Mask)
-def gaussian_blur(
-    inpt: datapoints._InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
-) -> datapoints._InputTypeJIT:
+def gaussian_blur(inpt: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.GaussianBlur` for details."""
     if torch.jit.is_scripting():
-        return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
+        return gaussian_blur_image(inpt, kernel_size=kernel_size, sigma=sigma)
 
     _log_api_usage_once(gaussian_blur)
 
@@ -103,8 +98,8 @@ def _get_gaussian_kernel2d(
 
 
 @_register_kernel_internal(gaussian_blur, torch.Tensor)
-@_register_kernel_internal(gaussian_blur, datapoints.Image)
-def gaussian_blur_image_tensor(
+@_register_kernel_internal(gaussian_blur, tv_tensors.Image)
+def gaussian_blur_image(
     image: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
     # TODO: consider deprecating integers from sigma on the future
@@ -169,27 +164,25 @@ def gaussian_blur_image_tensor(
 
 
 @_register_kernel_internal(gaussian_blur, PIL.Image.Image)
-def gaussian_blur_image_pil(
+def _gaussian_blur_image_pil(
     image: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(image)
-    output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
+    output = gaussian_blur_image(t_img, kernel_size=kernel_size, sigma=sigma)
     return to_pil_image(output, mode=image.mode)
 
 
-@_register_kernel_internal(gaussian_blur, datapoints.Video)
+@_register_kernel_internal(gaussian_blur, tv_tensors.Video)
 def gaussian_blur_video(
     video: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
-    return gaussian_blur_image_tensor(video, kernel_size, sigma)
+    return gaussian_blur_image(video, kernel_size, sigma)
 
 
-@_register_unsupported_type(PIL.Image.Image)
-def to_dtype(
-    inpt: datapoints._InputTypeJIT, dtype: torch.dtype = torch.float, scale: bool = False
-) -> datapoints._InputTypeJIT:
+def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
+    """[BETA] See :func:`~torchvision.transforms.v2.ToDtype` for details."""
     if torch.jit.is_scripting():
-        return to_dtype_image_tensor(inpt, dtype=dtype, scale=scale)
+        return to_dtype_image(inpt, dtype=dtype, scale=scale)
 
     _log_api_usage_once(to_dtype)
 
@@ -213,8 +206,8 @@ def _num_value_bits(dtype: torch.dtype) -> int:
 
 
 @_register_kernel_internal(to_dtype, torch.Tensor)
-@_register_kernel_internal(to_dtype, datapoints.Image)
-def to_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
+@_register_kernel_internal(to_dtype, tv_tensors.Image)
+def to_dtype_image(image: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
 
     if image.dtype == dtype:
         return image
@@ -268,18 +261,17 @@ def to_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float,
 
 # We encourage users to use to_dtype() instead but we keep this for BC
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float32) -> torch.Tensor:
-    return to_dtype_image_tensor(image, dtype=dtype, scale=True)
+    """[BETA] [DEPRECATED] Use to_dtype() instead."""
+    return to_dtype_image(image, dtype=dtype, scale=True)
 
 
-@_register_kernel_internal(to_dtype, datapoints.Video)
+@_register_kernel_internal(to_dtype, tv_tensors.Video)
 def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
-    return to_dtype_image_tensor(video, dtype, scale=scale)
+    return to_dtype_image(video, dtype, scale=scale)
 
 
-@_register_kernel_internal(to_dtype, datapoints.BoundingBoxes, datapoint_wrapper=False)
-@_register_kernel_internal(to_dtype, datapoints.Mask, datapoint_wrapper=False)
-def _to_dtype_tensor_dispatch(
-    inpt: datapoints._InputTypeJIT, dtype: torch.dtype, scale: bool = False
-) -> datapoints._InputTypeJIT:
-    # We don't need to unwrap and rewrap here, since Datapoint.to() preserves the type
+@_register_kernel_internal(to_dtype, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
+@_register_kernel_internal(to_dtype, tv_tensors.Mask, tv_tensor_wrapper=False)
+def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
+    # We don't need to unwrap and rewrap here, since TVTensor.to() preserves the type
     return inpt.to(dtype)

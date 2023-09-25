@@ -9,7 +9,7 @@ from collections import defaultdict
 
 import torch
 
-from torchvision import datapoints, datasets
+from torchvision import datasets, tv_tensors
 from torchvision.transforms.v2 import functional as F
 
 __all__ = ["wrap_dataset_for_transforms_v2"]
@@ -36,26 +36,26 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
 
         * :class:`~torchvision.datasets.CocoDetection`: Instead of returning the target as list of dicts, the wrapper
           returns a dict of lists. In addition, the key-value-pairs ``"boxes"`` (in ``XYXY`` coordinate format),
-          ``"masks"`` and ``"labels"`` are added and wrap the data in the corresponding ``torchvision.datapoints``.
-          The original keys are preserved. If ``target_keys`` is ommitted, returns only the values for the
+          ``"masks"`` and ``"labels"`` are added and wrap the data in the corresponding ``torchvision.tv_tensors``.
+          The original keys are preserved. If ``target_keys`` is omitted, returns only the values for the
           ``"image_id"``, ``"boxes"``, and ``"labels"``.
         * :class:`~torchvision.datasets.VOCDetection`: The key-value-pairs ``"boxes"`` and ``"labels"`` are added to
-          the target and wrap the data in the corresponding ``torchvision.datapoints``. The original keys are
-          preserved. If ``target_keys`` is ommitted, returns only the values for the ``"boxes"`` and ``"labels"``.
+          the target and wrap the data in the corresponding ``torchvision.tv_tensors``. The original keys are
+          preserved. If ``target_keys`` is omitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`~torchvision.datasets.CelebA`: The target for ``target_type="bbox"`` is converted to the ``XYXY``
-          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBoxes` datapoint.
+          coordinate format and wrapped into a :class:`~torchvision.tv_tensors.BoundingBoxes` tv_tensor.
         * :class:`~torchvision.datasets.Kitti`: Instead returning the target as list of dicts, the wrapper returns a
           dict of lists. In addition, the key-value-pairs ``"boxes"`` and ``"labels"`` are added and wrap the data
-          in the corresponding ``torchvision.datapoints``. The original keys are preserved. If ``target_keys`` is
-          ommitted, returns only the values for the ``"boxes"`` and ``"labels"``.
+          in the corresponding ``torchvision.tv_tensors``. The original keys are preserved. If ``target_keys`` is
+          omitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`~torchvision.datasets.OxfordIIITPet`: The target for ``target_type="segmentation"`` is wrapped into a
-          :class:`~torchvision.datapoints.Mask` datapoint.
+          :class:`~torchvision.tv_tensors.Mask` tv_tensor.
         * :class:`~torchvision.datasets.Cityscapes`: The target for ``target_type="semantic"`` is wrapped into a
-          :class:`~torchvision.datapoints.Mask` datapoint. The target for ``target_type="instance"`` is *replaced* by
-          a dictionary with the key-value-pairs ``"masks"`` (as :class:`~torchvision.datapoints.Mask` datapoint) and
+          :class:`~torchvision.tv_tensors.Mask` tv_tensor. The target for ``target_type="instance"`` is *replaced* by
+          a dictionary with the key-value-pairs ``"masks"`` (as :class:`~torchvision.tv_tensors.Mask` tv_tensor) and
           ``"labels"``.
         * :class:`~torchvision.datasets.WIDERFace`: The value for key ``"bbox"`` in the target is converted to ``XYXY``
-          coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBoxes` datapoint.
+          coordinate format and wrapped into a :class:`~torchvision.tv_tensors.BoundingBoxes` tv_tensor.
 
     Image classification datasets
 
@@ -66,13 +66,13 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
 
         Segmentation datasets, e.g. :class:`~torchvision.datasets.VOCSegmentation`, return a two-tuple of
         :class:`PIL.Image.Image`'s. This wrapper leaves the image as is (first item), while wrapping the
-        segmentation mask into a :class:`~torchvision.datapoints.Mask` (second item).
+        segmentation mask into a :class:`~torchvision.tv_tensors.Mask` (second item).
 
     Video classification datasets
 
         Video classification datasets, e.g. :class:`~torchvision.datasets.Kinetics`, return a three-tuple containing a
         :class:`torch.Tensor` for the video and audio and a :class:`int` as label. This wrapper wraps the video into a
-        :class:`~torchvision.datapoints.Video` while leaving the other items as is.
+        :class:`~torchvision.tv_tensors.Video` while leaving the other items as is.
 
         .. note::
 
@@ -98,12 +98,12 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
         )
 
     # Imagine we have isinstance(dataset, datasets.ImageNet). This will create a new class with the name
-    # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetDatapointWrapper (see below) as well as the
+    # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetTVTensorWrapper (see below) as well as the
     # original ImageNet class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks,
     # while we can still inject everything that we need.
-    wrapped_dataset_cls = type(f"Wrapped{type(dataset).__name__}", (VisionDatasetDatapointWrapper, type(dataset)), {})
-    # Since VisionDatasetDatapointWrapper comes before ImageNet in the MRO, calling the class hits
-    # VisionDatasetDatapointWrapper.__init__ first. Since we are never doing super().__init__(...), the constructor of
+    wrapped_dataset_cls = type(f"Wrapped{type(dataset).__name__}", (VisionDatasetTVTensorWrapper, type(dataset)), {})
+    # Since VisionDatasetTVTensorWrapper comes before ImageNet in the MRO, calling the class hits
+    # VisionDatasetTVTensorWrapper.__init__ first. Since we are never doing super().__init__(...), the constructor of
     # ImageNet is never hit. That is by design, since we don't want to create the dataset instance again, but rather
     # have the existing instance as attribute on the new object.
     return wrapped_dataset_cls(dataset, target_keys)
@@ -125,7 +125,7 @@ class WrapperFactories(dict):
 WRAPPER_FACTORIES = WrapperFactories()
 
 
-class VisionDatasetDatapointWrapper:
+class VisionDatasetTVTensorWrapper:
     def __init__(self, dataset, target_keys):
         dataset_cls = type(dataset)
 
@@ -134,7 +134,7 @@ class VisionDatasetDatapointWrapper:
                 f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
                 f"but got a '{dataset_cls.__name__}' instead.\n"
                 f"For an example of how to perform the wrapping for custom datasets, see\n\n"
-                "https://pytorch.org/vision/main/auto_examples/plot_datapoints.html#do-i-have-to-wrap-the-output-of-the-datasets-myself"
+                "https://pytorch.org/vision/main/auto_examples/plot_tv_tensors.html#do-i-have-to-wrap-the-output-of-the-datasets-myself"
             )
 
         for cls in dataset_cls.mro():
@@ -162,6 +162,7 @@ class VisionDatasetDatapointWrapper:
                 raise TypeError(msg)
 
         self._dataset = dataset
+        self._target_keys = target_keys
         self._wrapper = wrapper_factory(dataset, target_keys)
 
         # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
@@ -197,6 +198,9 @@ class VisionDatasetDatapointWrapper:
     def __len__(self):
         return len(self._dataset)
 
+    def __reduce__(self):
+        return wrap_dataset_for_transforms_v2, (self._dataset, self._target_keys)
+
 
 def raise_not_supported(description):
     raise RuntimeError(
@@ -217,7 +221,7 @@ def identity_wrapper_factory(dataset, target_keys):
 
 
 def pil_image_to_mask(pil_image):
-    return datapoints.Mask(pil_image)
+    return tv_tensors.Mask(pil_image)
 
 
 def parse_target_keys(target_keys, *, available, default):
@@ -298,7 +302,7 @@ def video_classification_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         video, audio, label = sample
 
-        video = datapoints.Video(video)
+        video = tv_tensors.Video(video)
 
         return video, audio, label
 
@@ -368,17 +372,17 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             target["image_id"] = image_id
 
         if "boxes" in target_keys:
-            target["boxes"] = F.convert_format_bounding_boxes(
-                datapoints.BoundingBoxes(
+            target["boxes"] = F.convert_bounding_box_format(
+                tv_tensors.BoundingBoxes(
                     batched_target["bbox"],
-                    format=datapoints.BoundingBoxFormat.XYWH,
+                    format=tv_tensors.BoundingBoxFormat.XYWH,
                     canvas_size=canvas_size,
                 ),
-                new_format=datapoints.BoundingBoxFormat.XYXY,
+                new_format=tv_tensors.BoundingBoxFormat.XYXY,
             )
 
         if "masks" in target_keys:
-            target["masks"] = datapoints.Mask(
+            target["masks"] = tv_tensors.Mask(
                 torch.stack(
                     [
                         segmentation_to_mask(segmentation, canvas_size=canvas_size)
@@ -450,12 +454,12 @@ def voc_detection_wrapper_factory(dataset, target_keys):
             target = {}
 
         if "boxes" in target_keys:
-            target["boxes"] = datapoints.BoundingBoxes(
+            target["boxes"] = tv_tensors.BoundingBoxes(
                 [
                     [int(bndbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")]
                     for bndbox in batched_instances["bndbox"]
                 ],
-                format=datapoints.BoundingBoxFormat.XYXY,
+                format=tv_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=(image.height, image.width),
             )
 
@@ -489,13 +493,13 @@ def celeba_wrapper_factory(dataset, target_keys):
             target,
             target_types=dataset.target_type,
             type_wrappers={
-                "bbox": lambda item: F.convert_format_bounding_boxes(
-                    datapoints.BoundingBoxes(
+                "bbox": lambda item: F.convert_bounding_box_format(
+                    tv_tensors.BoundingBoxes(
                         item,
-                        format=datapoints.BoundingBoxFormat.XYWH,
+                        format=tv_tensors.BoundingBoxFormat.XYWH,
                         canvas_size=(image.height, image.width),
                     ),
-                    new_format=datapoints.BoundingBoxFormat.XYXY,
+                    new_format=tv_tensors.BoundingBoxFormat.XYXY,
                 ),
             },
         )
@@ -540,9 +544,9 @@ def kitti_wrapper_factory(dataset, target_keys):
         target = {}
 
         if "boxes" in target_keys:
-            target["boxes"] = datapoints.BoundingBoxes(
+            target["boxes"] = tv_tensors.BoundingBoxes(
                 batched_target["bbox"],
-                format=datapoints.BoundingBoxFormat.XYXY,
+                format=tv_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=(image.height, image.width),
             )
 
@@ -592,7 +596,7 @@ def cityscapes_wrapper_factory(dataset, target_keys):
             if label >= 1_000:
                 label //= 1_000
             labels.append(label)
-        return dict(masks=datapoints.Mask(torch.stack(masks)), labels=torch.stack(labels))
+        return dict(masks=tv_tensors.Mask(torch.stack(masks)), labels=torch.stack(labels))
 
     def wrapper(idx, sample):
         image, target = sample
@@ -636,11 +640,11 @@ def widerface_wrapper(dataset, target_keys):
         target = {key: target[key] for key in target_keys}
 
         if "bbox" in target_keys:
-            target["bbox"] = F.convert_format_bounding_boxes(
-                datapoints.BoundingBoxes(
-                    target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, canvas_size=(image.height, image.width)
+            target["bbox"] = F.convert_bounding_box_format(
+                tv_tensors.BoundingBoxes(
+                    target["bbox"], format=tv_tensors.BoundingBoxFormat.XYWH, canvas_size=(image.height, image.width)
                 ),
-                new_format=datapoints.BoundingBoxFormat.XYXY,
+                new_format=tv_tensors.BoundingBoxFormat.XYXY,
             )
 
         return image, target

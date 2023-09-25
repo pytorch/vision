@@ -1,29 +1,40 @@
+from __future__ import annotations
+
 import collections.abc
 import numbers
 from contextlib import suppress
-from typing import Any, Callable, Dict, Literal, Optional, Sequence, Type, Union
 
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
+
+import PIL.Image
 import torch
 
-from torchvision import datapoints
-from torchvision.datapoints._datapoint import _FillType, _FillTypeJIT
+from torchvision import tv_tensors
+
+from torchvision._utils import sequence_to_str
+
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
+from torchvision.transforms.v2.functional import get_dimensions, get_size, is_pure_tensor
+from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
 
-def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size: int = 2) -> Sequence[float]:
-    if not isinstance(arg, (float, Sequence)):
-        raise TypeError(f"{name} should be float or a sequence of floats. Got {type(arg)}")
-    if isinstance(arg, Sequence) and len(arg) != req_size:
-        raise ValueError(f"If {name} is a sequence its length should be one of {req_size}. Got {len(arg)}")
+def _setup_number_or_seq(arg: Union[int, float, Sequence[Union[int, float]]], name: str) -> Sequence[float]:
+    if not isinstance(arg, (int, float, Sequence)):
+        raise TypeError(f"{name} should be a number or a sequence of numbers. Got {type(arg)}")
+    if isinstance(arg, Sequence) and len(arg) not in (1, 2):
+        raise ValueError(f"If {name} is a sequence its length should be 1 or 2. Got {len(arg)}")
     if isinstance(arg, Sequence):
         for element in arg:
-            if not isinstance(element, float):
-                raise ValueError(f"{name} should be a sequence of floats. Got {type(element)}")
+            if not isinstance(element, (int, float)):
+                raise ValueError(f"{name} should be a sequence of numbers. Got {type(element)}")
 
-    if isinstance(arg, float):
+    if isinstance(arg, (int, float)):
         arg = [float(arg), float(arg)]
-    if isinstance(arg, (list, tuple)) and len(arg) == 1:
-        arg = [arg[0], arg[0]]
+    elif isinstance(arg, Sequence):
+        if len(arg) == 1:
+            arg = [float(arg[0]), float(arg[0])]
+        else:
+            arg = [float(arg[0]), float(arg[1])]
     return arg
 
 
@@ -36,7 +47,7 @@ def _check_fill_arg(fill: Union[_FillType, Dict[Union[Type, str], _FillType]]) -
             raise TypeError("Got inappropriate fill arg, only Numbers, tuples, lists and dicts are allowed.")
 
 
-def _convert_fill_arg(fill: datapoints._FillType) -> datapoints._FillTypeJIT:
+def _convert_fill_arg(fill: _FillType) -> _FillTypeJIT:
     # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
     # So, we can't reassign fill to 0
     # if fill is None:
@@ -104,7 +115,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
         inputs = inputs[1]
 
     # MixUp, CutMix
-    if isinstance(inputs, torch.Tensor):
+    if is_pure_tensor(inputs):
         return inputs
 
     if not isinstance(inputs, collections.abc.Mapping):
@@ -139,3 +150,73 @@ def _parse_labels_getter(
         return lambda _: None
     else:
         raise ValueError(f"labels_getter should either be 'default', a callable, or None, but got {labels_getter}.")
+
+
+def get_bounding_boxes(flat_inputs: List[Any]) -> tv_tensors.BoundingBoxes:
+    # This assumes there is only one bbox per sample as per the general convention
+    try:
+        return next(inpt for inpt in flat_inputs if isinstance(inpt, tv_tensors.BoundingBoxes))
+    except StopIteration:
+        raise ValueError("No bounding boxes were found in the sample")
+
+
+def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
+    chws = {
+        tuple(get_dimensions(inpt))
+        for inpt in flat_inputs
+        if check_type(inpt, (is_pure_tensor, tv_tensors.Image, PIL.Image.Image, tv_tensors.Video))
+    }
+    if not chws:
+        raise TypeError("No image or video was found in the sample")
+    elif len(chws) > 1:
+        raise ValueError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
+    c, h, w = chws.pop()
+    return c, h, w
+
+
+def query_size(flat_inputs: List[Any]) -> Tuple[int, int]:
+    sizes = {
+        tuple(get_size(inpt))
+        for inpt in flat_inputs
+        if check_type(
+            inpt,
+            (
+                is_pure_tensor,
+                tv_tensors.Image,
+                PIL.Image.Image,
+                tv_tensors.Video,
+                tv_tensors.Mask,
+                tv_tensors.BoundingBoxes,
+            ),
+        )
+    }
+    if not sizes:
+        raise TypeError("No image, video, mask or bounding box was found in the sample")
+    elif len(sizes) > 1:
+        raise ValueError(f"Found multiple HxW dimensions in the sample: {sequence_to_str(sorted(sizes))}")
+    h, w = sizes.pop()
+    return h, w
+
+
+def check_type(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:
+    for type_or_check in types_or_checks:
+        if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
+            return True
+    return False
+
+
+def has_any(flat_inputs: List[Any], *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
+    for inpt in flat_inputs:
+        if check_type(inpt, types_or_checks):
+            return True
+    return False
+
+
+def has_all(flat_inputs: List[Any], *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
+    for type_or_check in types_or_checks:
+        for inpt in flat_inputs:
+            if isinstance(inpt, type_or_check) if isinstance(type_or_check, type) else type_or_check(inpt):
+                break
+        else:
+            return False
+    return True

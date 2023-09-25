@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
+from torch.utils._pytree import tree_flatten
 
-from ._datapoint import Datapoint
+from ._tv_tensor import TVTensor
 
 
 class BoundingBoxFormat(Enum):
@@ -23,8 +24,14 @@ class BoundingBoxFormat(Enum):
     CXCYWH = "CXCYWH"
 
 
-class BoundingBoxes(Datapoint):
+class BoundingBoxes(TVTensor):
     """[BETA] :class:`torch.Tensor` subclass for bounding boxes.
+
+    .. note::
+        There should be only one :class:`~torchvision.tv_tensors.BoundingBoxes`
+        instance per sample e.g. ``{"img": img, "bbox": BoundingBoxes(...)}``,
+        although one :class:`~torchvision.tv_tensors.BoundingBoxes` object can
+        contain multiple bounding boxes.
 
     Args:
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
@@ -42,7 +49,12 @@ class BoundingBoxes(Datapoint):
     canvas_size: Tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int]) -> BoundingBoxes:  # type: ignore[override]
+    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int], check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
+        if check_dims:
+            if tensor.ndim == 1:
+                tensor = tensor.unsqueeze(0)
+            elif tensor.ndim != 2:
+                raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
         if isinstance(format, str):
             format = BoundingBoxFormat[format.upper()]
         bounding_boxes = tensor.as_subclass(cls)
@@ -64,30 +76,28 @@ class BoundingBoxes(Datapoint):
         return cls._wrap(tensor, format=format, canvas_size=canvas_size)
 
     @classmethod
-    def wrap_like(
+    def _wrap_output(
         cls,
-        other: BoundingBoxes,
-        tensor: torch.Tensor,
-        *,
-        format: Optional[Union[BoundingBoxFormat, str]] = None,
-        canvas_size: Optional[Tuple[int, int]] = None,
+        output: torch.Tensor,
+        args: Sequence[Any] = (),
+        kwargs: Optional[Mapping[str, Any]] = None,
     ) -> BoundingBoxes:
-        """Wrap a :class:`torch.Tensor` as :class:`BoundingBoxes` from a reference.
+        # If there are BoundingBoxes instances in the output, their metadata got lost when we called
+        # super().__torch_function__. We need to restore the metadata somehow, so we choose to take
+        # the metadata from the first bbox in the parameters.
+        # This should be what we want in most cases. When it's not, it's probably a mis-use anyway, e.g.
+        # something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.
+        flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
+        first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
+        format, canvas_size = first_bbox_from_args.format, first_bbox_from_args.canvas_size
 
-        Args:
-            other (BoundingBoxes): Reference bounding box.
-            tensor (Tensor): Tensor to be wrapped as :class:`BoundingBoxes`
-            format (BoundingBoxFormat, str, optional): Format of the bounding box.  If omitted, it is taken from the
-                reference.
-            canvas_size (two-tuple of ints, optional): Height and width of the corresponding image or video. If
-                omitted, it is taken from the reference.
-
-        """
-        return cls._wrap(
-            tensor,
-            format=format if format is not None else other.format,
-            canvas_size=canvas_size if canvas_size is not None else other.canvas_size,
-        )
+        if isinstance(output, torch.Tensor) and not isinstance(output, BoundingBoxes):
+            output = BoundingBoxes._wrap(output, format=format, canvas_size=canvas_size, check_dims=False)
+        elif isinstance(output, (tuple, list)):
+            output = type(output)(
+                BoundingBoxes._wrap(part, format=format, canvas_size=canvas_size, check_dims=False) for part in output
+            )
+        return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(format=self.format, canvas_size=self.canvas_size)

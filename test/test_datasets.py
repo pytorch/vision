@@ -183,6 +183,10 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
                 ), "Type of the combined target does not match the type of the corresponding individual target: "
                 f"{actual} is not {expected}",
 
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset(target_type="category") as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+
 
 class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Caltech256
@@ -190,7 +194,7 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir) / "caltech256" / "256_ObjectCategories"
 
-        categories = ((1, "ak47"), (127, "laptop-101"), (257, "clutter"))
+        categories = ((1, "ak47"), (2, "american-flag"), (3, "backpack"))
         num_images_per_category = 2
 
         for idx, category in categories:
@@ -257,6 +261,10 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
                 annotation_file.write(annotation_content)
 
         return split_to_num_examples[config["split"]]
+
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset() as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
 
 
 class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
@@ -382,6 +390,11 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
             assert isinstance(polygon_img, PIL.Image.Image)
             (polygon_target, info["expected_polygon_target"])
 
+    def test_transforms_v2_wrapper_spawn(self):
+        for target_type in ["instance", "semantic", ["instance", "semantic"]]:
+            with self.create_dataset(target_type=target_type) as (dataset, _):
+                datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageNet
@@ -412,6 +425,10 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
         wnid_to_classes = {wnid: [1]}
         torch.save((wnid_to_classes, None), tmpdir / "meta.bin")
         return num_examples
+
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset() as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
 
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -607,6 +624,11 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
 
         assert merged_imgs_names == all_imgs_names
 
+    def test_transforms_v2_wrapper_spawn(self):
+        for target_type in ["identity", "bbox", ["identity", "bbox"]]:
+            with self.create_dataset(target_type=target_type) as (dataset, _):
+                datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.VOCSegmentation
@@ -694,6 +716,10 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
 
         return data
 
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset() as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+
 
 class VOCDetectionTestCase(VOCSegmentationTestCase):
     DATASET_CLASS = datasets.VOCDetection
@@ -713,6 +739,10 @@ class VOCDetectionTestCase(VOCSegmentationTestCase):
             object = objects[0]
 
             assert object == info["annotation"]
+
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset() as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
 
 
 class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
@@ -784,6 +814,10 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
             json.dump(content, fh)
         return file
 
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset() as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+
 
 class CocoCaptionsTestCase(CocoDetectionTestCase):
     DATASET_CLASS = datasets.CocoCaptions
@@ -799,6 +833,11 @@ class CocoCaptionsTestCase(CocoDetectionTestCase):
         with self.create_dataset() as (dataset, info):
             _, captions = dataset[0]
             assert tuple(captions) == tuple(info["captions"])
+
+    def test_transforms_v2_wrapper_spawn(self):
+        # We need to define this method, because otherwise the test from the super class will
+        # be run
+        pytest.skip("CocoCaptions is currently not supported by the v2 wrapper.")
 
 
 class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
@@ -965,6 +1004,10 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
                 num_videos_per_class,
             )
         return num_videos_per_class * len(classes)
+
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset(output_format="TCHW") as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
 
 
 class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
@@ -1192,6 +1235,10 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
 
     def _file_stem(self, idx):
         return f"2008_{idx:06d}"
+
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset(mode="segmentation") as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
 
 
 class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1641,6 +1688,10 @@ class KittiTestCase(datasets_utils.ImageDatasetTestCase):
                         target_file.write(target_contents)
 
         return split_to_num_examples[config["train"]]
+
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset() as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
 
 
 class SvhnTestCase(datasets_utils.ImageDatasetTestCase):
@@ -2516,6 +2567,10 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         breed_id = "-1"
         return (image_id, class_id, species, breed_id)
 
+    def test_transforms_v2_wrapper_spawn(self):
+        with self.create_dataset() as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+
 
 class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.StanfordCars
@@ -3332,11 +3387,11 @@ class TestDatasetWrapper:
             datasets.wrap_dataset_for_transforms_v2(dataset)
 
     def test_subclass(self, mocker):
-        from torchvision import datapoints
+        from torchvision import tv_tensors
 
         sentinel = object()
         mocker.patch.dict(
-            datapoints._dataset_wrapper.WRAPPER_FACTORIES,
+            tv_tensors._dataset_wrapper.WRAPPER_FACTORIES,
             clear=False,
             values={datasets.FakeData: lambda dataset, target_keys: lambda idx, sample: sentinel},
         )

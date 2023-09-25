@@ -5,13 +5,13 @@ from typing import Any, Optional, Sequence, Type, TypeVar, Union
 import torch
 from torch.utils._pytree import tree_map
 
-from torchvision.datapoints._datapoint import Datapoint
+from torchvision.tv_tensors._tv_tensor import TVTensor
 
 
 L = TypeVar("L", bound="_LabelBase")
 
 
-class _LabelBase(Datapoint):
+class _LabelBase(TVTensor):
     categories: Optional[Sequence[str]]
 
     @classmethod
@@ -31,13 +31,6 @@ class _LabelBase(Datapoint):
     ) -> L:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor, categories=categories)
-
-    @classmethod
-    def wrap_like(cls: Type[L], other: L, tensor: torch.Tensor, *, categories: Optional[Sequence[str]] = None) -> L:
-        return cls._wrap(
-            tensor,
-            categories=categories if categories is not None else other.categories,
-        )
 
     @classmethod
     def from_category(

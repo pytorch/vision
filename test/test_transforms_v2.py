@@ -1,7 +1,7 @@
 import itertools
 import pathlib
+import pickle
 import random
-import textwrap
 import warnings
 
 import numpy as np
@@ -11,25 +11,23 @@ import pytest
 import torch
 import torchvision.transforms.v2 as transforms
 
-from common_utils import (
-    assert_equal,
-    assert_run_python_script,
-    cpu_and_cuda,
-    make_bounding_box,
+from common_utils import assert_equal, cpu_and_cuda
+from torch.utils._pytree import tree_flatten, tree_unflatten
+from torchvision import tv_tensors
+from torchvision.ops.boxes import box_iou
+from torchvision.transforms.functional import to_pil_image
+from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2._utils import check_type, is_pure_tensor, query_chw
+from transforms_v2_legacy_utils import (
     make_bounding_boxes,
     make_detection_mask,
     make_image,
     make_images,
+    make_multiple_bounding_boxes,
     make_segmentation_mask,
     make_video,
     make_videos,
 )
-from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import datapoints
-from torchvision.ops.boxes import box_iou
-from torchvision.transforms.functional import InterpolationMode, to_pil_image
-from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -45,7 +43,7 @@ def make_pil_images(*args, **kwargs):
 
 
 def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
-    for bounding_boxes in make_bounding_boxes(*args, **kwargs):
+    for bounding_boxes in make_multiple_bounding_boxes(*args, **kwargs):
         yield bounding_boxes.data
 
 
@@ -68,10 +66,10 @@ def auto_augment_adapter(transform, input, device):
     adapted_input = {}
     image_or_video_found = False
     for key, value in input.items():
-        if isinstance(value, (datapoints.BoundingBoxes, datapoints.Mask)):
+        if isinstance(value, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
             # AA transforms don't support bounding boxes or masks
             continue
-        elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor, PIL.Image.Image)):
+        elif check_type(value, (tv_tensors.Image, tv_tensors.Video, is_pure_tensor, PIL.Image.Image)):
             if image_or_video_found:
                 # AA transforms only support a single image or video
                 continue
@@ -101,7 +99,7 @@ def normalize_adapter(transform, input, device):
         if isinstance(value, PIL.Image.Image):
             # normalize doesn't support PIL images
             continue
-        elif check_type(value, (datapoints.Image, datapoints.Video, is_simple_tensor)):
+        elif check_type(value, (tv_tensors.Image, tv_tensors.Video, is_pure_tensor)):
             # normalize doesn't support integer images
             value = F.to_dtype(value, torch.float32, scale=True)
         adapted_input[key] = value
@@ -124,6 +122,7 @@ class TestSmoke:
             (transforms.RandomEqualize(p=1.0), None),
             (transforms.RandomGrayscale(p=1.0), None),
             (transforms.RandomInvert(p=1.0), None),
+            (transforms.RandomChannelPermutation(), None),
             (transforms.RandomPhotometricDistort(p=1.0), None),
             (transforms.RandomPosterize(bits=4, p=1.0), None),
             (transforms.RandomSolarize(threshold=0.5, p=1.0), None),
@@ -143,7 +142,7 @@ class TestSmoke:
             (transforms.Resize([16, 16], antialias=True), None),
             (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
             (transforms.ClampBoundingBoxes(), None),
-            (transforms.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.CXCYWH), None),
+            (transforms.ConvertBoundingBoxFormat(tv_tensors.BoundingBoxFormat.CXCYWH), None),
             (transforms.ConvertImageDtype(), None),
             (transforms.GaussianBlur(kernel_size=3), None),
             (
@@ -171,24 +170,27 @@ class TestSmoke:
             next(make_vanilla_tensor_images()),
         ],
     )
+    @pytest.mark.parametrize("de_serialize", [lambda t: t, lambda t: pickle.loads(pickle.dumps(t))])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_common(self, transform, adapter, container_type, image_or_video, device):
+    def test_common(self, transform, adapter, container_type, image_or_video, de_serialize, device):
+        transform = de_serialize(transform)
+
         canvas_size = F.get_size(image_or_video)
         input = dict(
             image_or_video=image_or_video,
-            image_datapoint=make_image(size=canvas_size),
-            video_datapoint=make_video(size=canvas_size),
+            image_tv_tensor=make_image(size=canvas_size),
+            video_tv_tensor=make_video(size=canvas_size),
             image_pil=next(make_pil_images(sizes=[canvas_size], color_spaces=["RGB"])),
-            bounding_boxes_xyxy=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(3,)
+            bounding_boxes_xyxy=make_bounding_boxes(
+                format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(3,)
             ),
-            bounding_boxes_xywh=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.XYWH, canvas_size=canvas_size, batch_dims=(4,)
+            bounding_boxes_xywh=make_bounding_boxes(
+                format=tv_tensors.BoundingBoxFormat.XYWH, canvas_size=canvas_size, batch_dims=(4,)
             ),
-            bounding_boxes_cxcywh=make_bounding_box(
-                format=datapoints.BoundingBoxFormat.CXCYWH, canvas_size=canvas_size, batch_dims=(5,)
+            bounding_boxes_cxcywh=make_bounding_boxes(
+                format=tv_tensors.BoundingBoxFormat.CXCYWH, canvas_size=canvas_size, batch_dims=(5,)
             ),
-            bounding_boxes_degenerate_xyxy=datapoints.BoundingBoxes(
+            bounding_boxes_degenerate_xyxy=tv_tensors.BoundingBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height
@@ -197,10 +199,10 @@ class TestSmoke:
                     [0, 2, 1, 1],  # x1 < x2, y1 > y2
                     [2, 2, 1, 1],  # x1 > x2, y1 > y2
                 ],
-                format=datapoints.BoundingBoxFormat.XYXY,
+                format=tv_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=canvas_size,
             ),
-            bounding_boxes_degenerate_xywh=datapoints.BoundingBoxes(
+            bounding_boxes_degenerate_xywh=tv_tensors.BoundingBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height
@@ -209,10 +211,10 @@ class TestSmoke:
                     [0, 0, -1, 1],  # negative width
                     [0, 0, -1, -1],  # negative height and width
                 ],
-                format=datapoints.BoundingBoxFormat.XYWH,
+                format=tv_tensors.BoundingBoxFormat.XYWH,
                 canvas_size=canvas_size,
             ),
-            bounding_boxes_degenerate_cxcywh=datapoints.BoundingBoxes(
+            bounding_boxes_degenerate_cxcywh=tv_tensors.BoundingBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
                     [0, 0, 0, 1],  # no height
@@ -221,7 +223,7 @@ class TestSmoke:
                     [0, 0, -1, 1],  # negative width
                     [0, 0, -1, -1],  # negative height and width
                 ],
-                format=datapoints.BoundingBoxFormat.CXCYWH,
+                format=tv_tensors.BoundingBoxFormat.CXCYWH,
                 canvas_size=canvas_size,
             ),
             detection_mask=make_detection_mask(size=canvas_size),
@@ -260,7 +262,7 @@ class TestSmoke:
             else:
                 assert output_item is input_item
 
-            if isinstance(input_item, datapoints.BoundingBoxes) and not isinstance(
+            if isinstance(input_item, tv_tensors.BoundingBoxes) and not isinstance(
                 transform, transforms.ConvertBoundingBoxFormat
             ):
                 assert output_item.format == input_item.format
@@ -268,9 +270,9 @@ class TestSmoke:
         # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
         # transform that does this), back into a valid one.
         # TODO: we should test that against all degenerate boxes above
-        for format in list(datapoints.BoundingBoxFormat):
+        for format in list(tv_tensors.BoundingBoxFormat):
             sample = dict(
-                boxes=datapoints.BoundingBoxes([[0, 0, 0, 0]], format=format, canvas_size=(224, 244)),
+                boxes=tv_tensors.BoundingBoxes([[0, 0, 0, 0]], format=format, canvas_size=(224, 244)),
                 labels=torch.tensor([3]),
             )
             assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
@@ -326,22 +328,6 @@ class TestSmoke:
     def test_normalize(self, transform, input):
         transform(input)
 
-    @parametrize(
-        [
-            (
-                transforms.RandomResizedCrop([16, 16], antialias=True),
-                itertools.chain(
-                    make_images(extra_dims=[(4,)]),
-                    make_vanilla_tensor_images(),
-                    make_pil_images(),
-                    make_videos(extra_dims=[()]),
-                ),
-            )
-        ]
-    )
-    def test_random_resized_crop(self, transform, input):
-        transform(input)
-
 
 @pytest.mark.parametrize(
     "flat_inputs",
@@ -356,19 +342,19 @@ class TestSmoke:
         3,
     ),
 )
-def test_simple_tensor_heuristic(flat_inputs):
-    def split_on_simple_tensor(to_split):
+def test_pure_tensor_heuristic(flat_inputs):
+    def split_on_pure_tensor(to_split):
         # This takes a sequence that is structurally aligned with `flat_inputs` and splits its items into three parts:
-        # 1. The first simple tensor. If none is present, this will be `None`
-        # 2. A list of the remaining simple tensors
+        # 1. The first pure tensor. If none is present, this will be `None`
+        # 2. A list of the remaining pure tensors
         # 3. A list of all other items
-        simple_tensors = []
+        pure_tensors = []
         others = []
         # Splitting always happens on the original `flat_inputs` to avoid any erroneous type changes by the transform to
         # affect the splitting.
         for item, inpt in zip(to_split, flat_inputs):
-            (simple_tensors if is_simple_tensor(inpt) else others).append(item)
-        return simple_tensors[0] if simple_tensors else None, simple_tensors[1:], others
+            (pure_tensors if is_pure_tensor(inpt) else others).append(item)
+        return pure_tensors[0] if pure_tensors else None, pure_tensors[1:], others
 
     class CopyCloneTransform(transforms.Transform):
         def _transform(self, inpt, params):
@@ -384,79 +370,24 @@ def test_simple_tensor_heuristic(flat_inputs):
             assert_equal(output, inpt)
             return True
 
-    first_simple_tensor_input, other_simple_tensor_inputs, other_inputs = split_on_simple_tensor(flat_inputs)
+    first_pure_tensor_input, other_pure_tensor_inputs, other_inputs = split_on_pure_tensor(flat_inputs)
 
     transform = CopyCloneTransform()
     transformed_sample = transform(flat_inputs)
 
-    first_simple_tensor_output, other_simple_tensor_outputs, other_outputs = split_on_simple_tensor(transformed_sample)
+    first_pure_tensor_output, other_pure_tensor_outputs, other_outputs = split_on_pure_tensor(transformed_sample)
 
-    if first_simple_tensor_input is not None:
+    if first_pure_tensor_input is not None:
         if other_inputs:
-            assert not transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+            assert not transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
         else:
-            assert transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+            assert transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
 
-    for output, inpt in zip(other_simple_tensor_outputs, other_simple_tensor_inputs):
+    for output, inpt in zip(other_pure_tensor_outputs, other_pure_tensor_inputs):
         assert not transform.was_applied(output, inpt)
 
     for input, output in zip(other_inputs, other_outputs):
         assert transform.was_applied(output, input)
-
-
-class TestPad:
-    def test_assertions(self):
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
-            transforms.Pad("abc")
-
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
-            transforms.Pad([-0.7, 0, 0.7])
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.Pad(12, fill="abc")
-
-        with pytest.raises(ValueError, match="Padding mode should be either"):
-            transforms.Pad(12, padding_mode="abc")
-
-    @pytest.mark.parametrize("padding", [1, (1, 2), [1, 2, 3, 4]])
-    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
-    @pytest.mark.parametrize("padding_mode", ["constant", "edge"])
-    def test__transform(self, padding, fill, padding_mode, mocker):
-        transform = transforms.Pad(padding, fill=fill, padding_mode=padding_mode)
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.pad")
-        inpt = mocker.MagicMock(spec=datapoints.Image)
-        _ = transform(inpt)
-
-        fill = transforms._utils._convert_fill_arg(fill)
-        if isinstance(padding, tuple):
-            padding = list(padding)
-        fn.assert_called_once_with(inpt, padding=padding, fill=fill, padding_mode=padding_mode)
-
-    @pytest.mark.parametrize("fill", [12, {datapoints.Image: 12, datapoints.Mask: 34}])
-    def test__transform_image_mask(self, fill, mocker):
-        transform = transforms.Pad(1, fill=fill, padding_mode="constant")
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.pad")
-        image = datapoints.Image(torch.rand(3, 32, 32))
-        mask = datapoints.Mask(torch.randint(0, 5, size=(32, 32)))
-        inpt = [image, mask]
-        _ = transform(inpt)
-
-        if isinstance(fill, int):
-            fill = transforms._utils._convert_fill_arg(fill)
-            calls = [
-                mocker.call(image, padding=1, fill=fill, padding_mode="constant"),
-                mocker.call(mask, padding=1, fill=fill, padding_mode="constant"),
-            ]
-        else:
-            fill_img = transforms._utils._convert_fill_arg(fill[type(image)])
-            fill_mask = transforms._utils._convert_fill_arg(fill[type(mask)])
-            calls = [
-                mocker.call(image, padding=1, fill=fill_img, padding_mode="constant"),
-                mocker.call(mask, padding=1, fill=fill_mask, padding_mode="constant"),
-            ]
-        fn.assert_has_calls(calls)
 
 
 class TestRandomZoomOut:
@@ -486,313 +417,21 @@ class TestRandomZoomOut:
         assert 0 <= params["padding"][2] <= (side_range[1] - 1) * w
         assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
 
-    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
-    @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
-    def test__transform(self, fill, side_range, mocker):
-        inpt = make_image((24, 32))
-
-        transform = transforms.RandomZoomOut(fill=fill, side_range=side_range, p=1)
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.pad")
-        # vfdev-5, Feature Request: let's store params as Transform attribute
-        # This could be also helpful for users
-        # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        torch.rand(1)  # random apply changes random state
-        params = transform._get_params([inpt])
-
-        fill = transforms._utils._convert_fill_arg(fill)
-        fn.assert_called_once_with(inpt, **params, fill=fill)
-
-    @pytest.mark.parametrize("fill", [12, {datapoints.Image: 12, datapoints.Mask: 34}])
-    def test__transform_image_mask(self, fill, mocker):
-        transform = transforms.RandomZoomOut(fill=fill, p=1.0)
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.pad")
-        image = datapoints.Image(torch.rand(3, 32, 32))
-        mask = datapoints.Mask(torch.randint(0, 5, size=(32, 32)))
-        inpt = [image, mask]
-
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        torch.rand(1)  # random apply changes random state
-        params = transform._get_params(inpt)
-
-        if isinstance(fill, int):
-            fill = transforms._utils._convert_fill_arg(fill)
-            calls = [
-                mocker.call(image, **params, fill=fill),
-                mocker.call(mask, **params, fill=fill),
-            ]
-        else:
-            fill_img = transforms._utils._convert_fill_arg(fill[type(image)])
-            fill_mask = transforms._utils._convert_fill_arg(fill[type(mask)])
-            calls = [
-                mocker.call(image, **params, fill=fill_img),
-                mocker.call(mask, **params, fill=fill_mask),
-            ]
-        fn.assert_has_calls(calls)
-
-
-class TestRandomCrop:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Please provide only two dimensions"):
-            transforms.RandomCrop([10, 12, 14])
-
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
-            transforms.RandomCrop([10, 12], padding="abc")
-
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
-            transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomCrop([10, 12], padding=1, fill="abc")
-
-        with pytest.raises(ValueError, match="Padding mode should be either"):
-            transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
-
-    @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
-    @pytest.mark.parametrize("size, pad_if_needed", [((10, 10), False), ((50, 25), True)])
-    def test__get_params(self, padding, pad_if_needed, size):
-        h, w = size = (24, 32)
-        image = make_image(size)
-
-        transform = transforms.RandomCrop(size, padding=padding, pad_if_needed=pad_if_needed)
-        params = transform._get_params([image])
-
-        if padding is not None:
-            if isinstance(padding, int):
-                pad_top = pad_bottom = pad_left = pad_right = padding
-            elif isinstance(padding, list) and len(padding) == 2:
-                pad_left = pad_right = padding[0]
-                pad_top = pad_bottom = padding[1]
-            elif isinstance(padding, list) and len(padding) == 4:
-                pad_left, pad_top, pad_right, pad_bottom = padding
-
-            h += pad_top + pad_bottom
-            w += pad_left + pad_right
-        else:
-            pad_left = pad_right = pad_top = pad_bottom = 0
-
-        if pad_if_needed:
-            if w < size[1]:
-                diff = size[1] - w
-                pad_left += diff
-                pad_right += diff
-                w += 2 * diff
-            if h < size[0]:
-                diff = size[0] - h
-                pad_top += diff
-                pad_bottom += diff
-                h += 2 * diff
-
-        padding = [pad_left, pad_top, pad_right, pad_bottom]
-
-        assert 0 <= params["top"] <= h - size[0] + 1
-        assert 0 <= params["left"] <= w - size[1] + 1
-        assert params["height"] == size[0]
-        assert params["width"] == size[1]
-        assert params["needs_pad"] is any(padding)
-        assert params["padding"] == padding
-
-    @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
-    @pytest.mark.parametrize("pad_if_needed", [False, True])
-    @pytest.mark.parametrize("fill", [False, True])
-    @pytest.mark.parametrize("padding_mode", ["constant", "edge"])
-    def test__transform(self, padding, pad_if_needed, fill, padding_mode, mocker):
-        output_size = [10, 12]
-        transform = transforms.RandomCrop(
-            output_size, padding=padding, pad_if_needed=pad_if_needed, fill=fill, padding_mode=padding_mode
-        )
-
-        h, w = size = (32, 32)
-        inpt = make_image(size)
-
-        if isinstance(padding, int):
-            new_size = (h + padding, w + padding)
-        elif isinstance(padding, list):
-            new_size = (h + sum(padding[0::2]), w + sum(padding[1::2]))
-        else:
-            new_size = size
-        expected = make_image(new_size)
-        _ = mocker.patch("torchvision.transforms.v2.functional.pad", return_value=expected)
-        fn_crop = mocker.patch("torchvision.transforms.v2.functional.crop")
-
-        # vfdev-5, Feature Request: let's store params as Transform attribute
-        # This could be also helpful for users
-        # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params([inpt])
-        if padding is None and not pad_if_needed:
-            fn_crop.assert_called_once_with(
-                inpt, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
-            )
-        elif not pad_if_needed:
-            fn_crop.assert_called_once_with(
-                expected, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
-            )
-        elif padding is None:
-            # vfdev-5: I do not know how to mock and test this case
-            pass
-        else:
-            # vfdev-5: I do not know how to mock and test this case
-            pass
-
-
-class TestGaussianBlur:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
-            transforms.GaussianBlur([10, 12, 14])
-
-        with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
-            transforms.GaussianBlur(4)
-
-        with pytest.raises(
-            TypeError, match="sigma should be a single int or float or a list/tuple with length 2 floats."
-        ):
-            transforms.GaussianBlur(3, sigma=[1, 2, 3])
-
-        with pytest.raises(ValueError, match="If sigma is a single number, it must be positive"):
-            transforms.GaussianBlur(3, sigma=-1.0)
-
-        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
-            transforms.GaussianBlur(3, sigma=[2.0, 1.0])
-
-    @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0]])
-    def test__get_params(self, sigma):
-        transform = transforms.GaussianBlur(3, sigma=sigma)
-        params = transform._get_params([])
-
-        if isinstance(sigma, float):
-            assert params["sigma"][0] == params["sigma"][1] == 10
-        else:
-            assert sigma[0] <= params["sigma"][0] <= sigma[1]
-            assert sigma[0] <= params["sigma"][1] <= sigma[1]
-
-    @pytest.mark.parametrize("kernel_size", [3, [3, 5], (5, 3)])
-    @pytest.mark.parametrize("sigma", [2.0, [2.0, 3.0]])
-    def test__transform(self, kernel_size, sigma, mocker):
-        transform = transforms.GaussianBlur(kernel_size=kernel_size, sigma=sigma)
-
-        if isinstance(kernel_size, (tuple, list)):
-            assert transform.kernel_size == kernel_size
-        else:
-            kernel_size = (kernel_size, kernel_size)
-            assert transform.kernel_size == kernel_size
-
-        if isinstance(sigma, (tuple, list)):
-            assert transform.sigma == sigma
-        else:
-            assert transform.sigma == [sigma, sigma]
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.gaussian_blur")
-        inpt = mocker.MagicMock(spec=datapoints.Image)
-        inpt.num_channels = 3
-        inpt.canvas_size = (24, 32)
-
-        # vfdev-5, Feature Request: let's store params as Transform attribute
-        # This could be also helpful for users
-        # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        params = transform._get_params([inpt])
-
-        fn.assert_called_once_with(inpt, kernel_size, **params)
-
-
-class TestRandomColorOp:
-    @pytest.mark.parametrize("p", [0.0, 1.0])
-    @pytest.mark.parametrize(
-        "transform_cls, func_op_name, kwargs",
-        [
-            (transforms.RandomEqualize, "equalize", {}),
-            (transforms.RandomInvert, "invert", {}),
-            (transforms.RandomAutocontrast, "autocontrast", {}),
-            (transforms.RandomPosterize, "posterize", {"bits": 4}),
-            (transforms.RandomSolarize, "solarize", {"threshold": 0.5}),
-            (transforms.RandomAdjustSharpness, "adjust_sharpness", {"sharpness_factor": 0.5}),
-        ],
-    )
-    def test__transform(self, p, transform_cls, func_op_name, kwargs, mocker):
-        transform = transform_cls(p=p, **kwargs)
-
-        fn = mocker.patch(f"torchvision.transforms.v2.functional.{func_op_name}")
-        inpt = mocker.MagicMock(spec=datapoints.Image)
-        _ = transform(inpt)
-        if p > 0.0:
-            fn.assert_called_once_with(inpt, **kwargs)
-        else:
-            assert fn.call_count == 0
-
-
-class TestRandomPerspective:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Argument distortion_scale value should be between 0 and 1"):
-            transforms.RandomPerspective(distortion_scale=-1.0)
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomPerspective(0.5, fill="abc")
-
-    def test__get_params(self):
-        dscale = 0.5
-        transform = transforms.RandomPerspective(dscale)
-
-        image = make_image((24, 32))
-
-        params = transform._get_params([image])
-
-        assert "coefficients" in params
-        assert len(params["coefficients"]) == 8
-
-    @pytest.mark.parametrize("distortion_scale", [0.1, 0.7])
-    def test__transform(self, distortion_scale, mocker):
-        interpolation = InterpolationMode.BILINEAR
-        fill = 12
-        transform = transforms.RandomPerspective(distortion_scale, fill=fill, interpolation=interpolation)
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.perspective")
-
-        inpt = make_image((24, 32))
-
-        # vfdev-5, Feature Request: let's store params as Transform attribute
-        # This could be also helpful for users
-        # Otherwise, we can mock transform._get_params
-        torch.manual_seed(12)
-        _ = transform(inpt)
-        torch.manual_seed(12)
-        torch.rand(1)  # random apply changes random state
-        params = transform._get_params([inpt])
-
-        fill = transforms._utils._convert_fill_arg(fill)
-        fn.assert_called_once_with(inpt, None, None, **params, fill=fill, interpolation=interpolation)
-
 
 class TestElasticTransform:
     def test_assertions(self):
 
-        with pytest.raises(TypeError, match="alpha should be float or a sequence of floats"):
+        with pytest.raises(TypeError, match="alpha should be a number or a sequence of numbers"):
             transforms.ElasticTransform({})
 
-        with pytest.raises(ValueError, match="alpha is a sequence its length should be one of 2"):
+        with pytest.raises(ValueError, match="alpha is a sequence its length should be 1 or 2"):
             transforms.ElasticTransform([1.0, 2.0, 3.0])
 
-        with pytest.raises(ValueError, match="alpha should be a sequence of floats"):
-            transforms.ElasticTransform([1, 2])
-
-        with pytest.raises(TypeError, match="sigma should be float or a sequence of floats"):
+        with pytest.raises(TypeError, match="sigma should be a number or a sequence of numbers"):
             transforms.ElasticTransform(1.0, {})
 
-        with pytest.raises(ValueError, match="sigma is a sequence its length should be one of 2"):
+        with pytest.raises(ValueError, match="sigma is a sequence its length should be 1 or 2"):
             transforms.ElasticTransform(1.0, [1.0, 2.0, 3.0])
-
-        with pytest.raises(ValueError, match="sigma should be a sequence of floats"):
-            transforms.ElasticTransform(1.0, [1, 2])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.ElasticTransform(1.0, 2.0, fill="abc")
@@ -812,121 +451,11 @@ class TestElasticTransform:
         assert (-alpha / w <= displacement[0, ..., 0]).all() and (displacement[0, ..., 0] <= alpha / w).all()
         assert (-alpha / h <= displacement[0, ..., 1]).all() and (displacement[0, ..., 1] <= alpha / h).all()
 
-    @pytest.mark.parametrize("alpha", [5.0, [5.0, 10.0]])
-    @pytest.mark.parametrize("sigma", [2.0, [2.0, 5.0]])
-    def test__transform(self, alpha, sigma, mocker):
-        interpolation = InterpolationMode.BILINEAR
-        fill = 12
-        transform = transforms.ElasticTransform(alpha, sigma=sigma, fill=fill, interpolation=interpolation)
-
-        if isinstance(alpha, float):
-            assert transform.alpha == [alpha, alpha]
-        else:
-            assert transform.alpha == alpha
-
-        if isinstance(sigma, float):
-            assert transform.sigma == [sigma, sigma]
-        else:
-            assert transform.sigma == sigma
-
-        fn = mocker.patch("torchvision.transforms.v2.functional.elastic")
-        inpt = mocker.MagicMock(spec=datapoints.Image)
-        inpt.num_channels = 3
-        inpt.canvas_size = (24, 32)
-
-        # Let's mock transform._get_params to control the output:
-        transform._get_params = mocker.MagicMock()
-        _ = transform(inpt)
-        params = transform._get_params([inpt])
-        fill = transforms._utils._convert_fill_arg(fill)
-        fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)
-
-
-class TestRandomErasing:
-    def test_assertions(self):
-        with pytest.raises(TypeError, match="Argument value should be either a number or str or a sequence"):
-            transforms.RandomErasing(value={})
-
-        with pytest.raises(ValueError, match="If value is str, it should be 'random'"):
-            transforms.RandomErasing(value="abc")
-
-        with pytest.raises(TypeError, match="Scale should be a sequence"):
-            transforms.RandomErasing(scale=123)
-
-        with pytest.raises(TypeError, match="Ratio should be a sequence"):
-            transforms.RandomErasing(ratio=123)
-
-        with pytest.raises(ValueError, match="Scale should be between 0 and 1"):
-            transforms.RandomErasing(scale=[-1, 2])
-
-        image = make_image((24, 32))
-
-        transform = transforms.RandomErasing(value=[1, 2, 3, 4])
-
-        with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
-            transform._get_params([image])
-
-    @pytest.mark.parametrize("value", [5.0, [1, 2, 3], "random"])
-    def test__get_params(self, value):
-        image = make_image((24, 32))
-        num_channels, height, width = F.get_dimensions(image)
-
-        transform = transforms.RandomErasing(value=value)
-        params = transform._get_params([image])
-
-        v = params["v"]
-        h, w = params["h"], params["w"]
-        i, j = params["i"], params["j"]
-        assert isinstance(v, torch.Tensor)
-        if value == "random":
-            assert v.shape == (num_channels, h, w)
-        elif isinstance(value, (int, float)):
-            assert v.shape == (1, 1, 1)
-        elif isinstance(value, (list, tuple)):
-            assert v.shape == (num_channels, 1, 1)
-
-        assert 0 <= i <= height - h
-        assert 0 <= j <= width - w
-
-    @pytest.mark.parametrize("p", [0, 1])
-    def test__transform(self, mocker, p):
-        transform = transforms.RandomErasing(p=p)
-        transform._transformed_types = (mocker.MagicMock,)
-
-        i_sentinel = mocker.MagicMock()
-        j_sentinel = mocker.MagicMock()
-        h_sentinel = mocker.MagicMock()
-        w_sentinel = mocker.MagicMock()
-        v_sentinel = mocker.MagicMock()
-        mocker.patch(
-            "torchvision.transforms.v2._augment.RandomErasing._get_params",
-            return_value=dict(i=i_sentinel, j=j_sentinel, h=h_sentinel, w=w_sentinel, v=v_sentinel),
-        )
-
-        inpt_sentinel = mocker.MagicMock()
-
-        mock = mocker.patch("torchvision.transforms.v2._augment.F.erase")
-        output = transform(inpt_sentinel)
-
-        if p:
-            mock.assert_called_once_with(
-                inpt_sentinel,
-                i=i_sentinel,
-                j=j_sentinel,
-                h=h_sentinel,
-                w=w_sentinel,
-                v=v_sentinel,
-                inplace=transform.inplace,
-            )
-        else:
-            mock.assert_not_called()
-            assert output is inpt_sentinel
-
 
 class TestTransform:
     @pytest.mark.parametrize(
         "inpt_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
+        [torch.Tensor, PIL.Image.Image, tv_tensors.Image, np.ndarray, tv_tensors.BoundingBoxes, str, int],
     )
     def test_check_transformed_types(self, inpt_type, mocker):
         # This test ensures that we correctly handle which types to transform and which to bypass
@@ -941,55 +470,38 @@ class TestTransform:
                 t(inpt)
 
 
-class TestToImageTensor:
+class TestToImage:
     @pytest.mark.parametrize(
         "inpt_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
+        [torch.Tensor, PIL.Image.Image, tv_tensors.Image, np.ndarray, tv_tensors.BoundingBoxes, str, int],
     )
     def test__transform(self, inpt_type, mocker):
         fn = mocker.patch(
-            "torchvision.transforms.v2.functional.to_image_tensor",
+            "torchvision.transforms.v2.functional.to_image",
             return_value=torch.rand(1, 3, 8, 8),
         )
 
         inpt = mocker.MagicMock(spec=inpt_type)
-        transform = transforms.ToImageTensor()
+        transform = transforms.ToImage()
         transform(inpt)
-        if inpt_type in (datapoints.BoundingBoxes, datapoints.Image, str, int):
+        if inpt_type in (tv_tensors.BoundingBoxes, tv_tensors.Image, str, int):
             assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt)
 
 
-class TestToImagePIL:
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
-    )
-    def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.v2.functional.to_image_pil")
-
-        inpt = mocker.MagicMock(spec=inpt_type)
-        transform = transforms.ToImagePIL()
-        transform(inpt)
-        if inpt_type in (datapoints.BoundingBoxes, PIL.Image.Image, str, int):
-            assert fn.call_count == 0
-        else:
-            fn.assert_called_once_with(inpt, mode=transform.mode)
-
-
 class TestToPILImage:
     @pytest.mark.parametrize(
         "inpt_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
+        [torch.Tensor, PIL.Image.Image, tv_tensors.Image, np.ndarray, tv_tensors.BoundingBoxes, str, int],
     )
     def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.v2.functional.to_image_pil")
+        fn = mocker.patch("torchvision.transforms.v2.functional.to_pil_image")
 
         inpt = mocker.MagicMock(spec=inpt_type)
         transform = transforms.ToPILImage()
         transform(inpt)
-        if inpt_type in (PIL.Image.Image, datapoints.BoundingBoxes, str, int):
+        if inpt_type in (PIL.Image.Image, tv_tensors.BoundingBoxes, str, int):
             assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt, mode=transform.mode)
@@ -998,7 +510,7 @@ class TestToPILImage:
 class TestToTensor:
     @pytest.mark.parametrize(
         "inpt_type",
-        [torch.Tensor, PIL.Image.Image, datapoints.Image, np.ndarray, datapoints.BoundingBoxes, str, int],
+        [torch.Tensor, PIL.Image.Image, tv_tensors.Image, np.ndarray, tv_tensors.BoundingBoxes, str, int],
     )
     def test__transform(self, inpt_type, mocker):
         fn = mocker.patch("torchvision.transforms.functional.to_tensor")
@@ -1007,7 +519,7 @@ class TestToTensor:
         with pytest.warns(UserWarning, match="deprecated and will be removed"):
             transform = transforms.ToTensor()
         transform(inpt)
-        if inpt_type in (datapoints.Image, torch.Tensor, datapoints.BoundingBoxes, str, int):
+        if inpt_type in (tv_tensors.Image, torch.Tensor, tv_tensors.BoundingBoxes, str, int):
             assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt)
@@ -1048,7 +560,7 @@ class TestRandomIoUCrop:
     def test__get_params(self, device, options):
         orig_h, orig_w = size = (24, 32)
         image = make_image(size)
-        bboxes = datapoints.BoundingBoxes(
+        bboxes = tv_tensors.BoundingBoxes(
             torch.tensor([[1, 1, 10, 10], [20, 20, 23, 23], [1, 20, 10, 23], [20, 1, 23, 10]]),
             format="XYXY",
             canvas_size=size,
@@ -1083,8 +595,8 @@ class TestRandomIoUCrop:
 
     def test__transform_empty_params(self, mocker):
         transform = transforms.RandomIoUCrop(sampler_options=[2.0])
-        image = datapoints.Image(torch.rand(1, 3, 4, 4))
-        bboxes = datapoints.BoundingBoxes(torch.tensor([[1, 1, 2, 2]]), format="XYXY", canvas_size=(4, 4))
+        image = tv_tensors.Image(torch.rand(1, 3, 4, 4))
+        bboxes = tv_tensors.BoundingBoxes(torch.tensor([[1, 1, 2, 2]]), format="XYXY", canvas_size=(4, 4))
         label = torch.tensor([1])
         sample = [image, bboxes, label]
         # Let's mock transform._get_params to control the output:
@@ -1105,35 +617,24 @@ class TestRandomIoUCrop:
 
         size = (32, 24)
         image = make_image(size)
-        bboxes = make_bounding_box(format="XYXY", canvas_size=size, batch_dims=(6,))
+        bboxes = make_bounding_boxes(format="XYXY", canvas_size=size, batch_dims=(6,))
         masks = make_detection_mask(size, num_objects=6)
 
         sample = [image, bboxes, masks]
 
-        fn = mocker.patch("torchvision.transforms.v2.functional.crop", side_effect=lambda x, **params: x)
         is_within_crop_area = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.bool)
 
         params = dict(top=1, left=2, height=12, width=12, is_within_crop_area=is_within_crop_area)
         transform._get_params = mocker.MagicMock(return_value=params)
         output = transform(sample)
 
-        assert fn.call_count == 3
-
-        expected_calls = [
-            mocker.call(image, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
-            mocker.call(bboxes, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
-            mocker.call(masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
-        ]
-
-        fn.assert_has_calls(expected_calls)
-
         # check number of bboxes vs number of labels:
         output_bboxes = output[1]
-        assert isinstance(output_bboxes, datapoints.BoundingBoxes)
+        assert isinstance(output_bboxes, tv_tensors.BoundingBoxes)
         assert (output_bboxes[~is_within_crop_area] == 0).all()
 
         output_masks = output[2]
-        assert isinstance(output_masks, datapoints.Mask)
+        assert isinstance(output_masks, tv_tensors.Mask)
 
 
 class TestScaleJitter:
@@ -1163,29 +664,6 @@ class TestScaleJitter:
             assert int(canvas_size[0] * r_min) <= height <= int(canvas_size[0] * r_max)
             assert int(canvas_size[1] * r_min) <= width <= int(canvas_size[1] * r_max)
 
-    def test__transform(self, mocker):
-        interpolation_sentinel = mocker.MagicMock(spec=InterpolationMode)
-        antialias_sentinel = mocker.MagicMock()
-
-        transform = transforms.ScaleJitter(
-            target_size=(16, 12), interpolation=interpolation_sentinel, antialias=antialias_sentinel
-        )
-        transform._transformed_types = (mocker.MagicMock,)
-
-        size_sentinel = mocker.MagicMock()
-        mocker.patch(
-            "torchvision.transforms.v2._geometry.ScaleJitter._get_params", return_value=dict(size=size_sentinel)
-        )
-
-        inpt_sentinel = mocker.MagicMock()
-
-        mock = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
-        transform(inpt_sentinel)
-
-        mock.assert_called_once_with(
-            inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
-        )
-
 
 class TestRandomShortestSize:
     @pytest.mark.parametrize("min_size,max_size", [([5, 9], 20), ([5, 9], None)])
@@ -1210,30 +688,6 @@ class TestRandomShortestSize:
         else:
             assert shorter in min_size
 
-    def test__transform(self, mocker):
-        interpolation_sentinel = mocker.MagicMock(spec=InterpolationMode)
-        antialias_sentinel = mocker.MagicMock()
-
-        transform = transforms.RandomShortestSize(
-            min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel, antialias=antialias_sentinel
-        )
-        transform._transformed_types = (mocker.MagicMock,)
-
-        size_sentinel = mocker.MagicMock()
-        mocker.patch(
-            "torchvision.transforms.v2._geometry.RandomShortestSize._get_params",
-            return_value=dict(size=size_sentinel),
-        )
-
-        inpt_sentinel = mocker.MagicMock()
-
-        mock = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
-        transform(inpt_sentinel)
-
-        mock.assert_called_once_with(
-            inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
-        )
-
 
 class TestLinearTransformation:
     def test_assertions(self):
@@ -1248,7 +702,7 @@ class TestLinearTransformation:
         [
             122 * torch.ones(1, 3, 8, 8),
             122.0 * torch.ones(1, 3, 8, 8),
-            datapoints.Image(122 * torch.ones(1, 3, 8, 8)),
+            tv_tensors.Image(122 * torch.ones(1, 3, 8, 8)),
             PIL.Image.new("RGB", (8, 8), (122, 122, 122)),
         ],
     )
@@ -1259,7 +713,7 @@ class TestLinearTransformation:
         transform = transforms.LinearTransformation(m, v)
 
         if isinstance(inpt, PIL.Image.Image):
-            with pytest.raises(TypeError, match="LinearTransformation does not work on PIL Images"):
+            with pytest.raises(TypeError, match="does not support PIL images"):
                 transform(inpt)
         else:
             output = transform(inpt)
@@ -1283,30 +737,6 @@ class TestRandomResize:
 
             assert min_size <= size < max_size
 
-    def test__transform(self, mocker):
-        interpolation_sentinel = mocker.MagicMock(spec=InterpolationMode)
-        antialias_sentinel = mocker.MagicMock()
-
-        transform = transforms.RandomResize(
-            min_size=-1, max_size=-1, interpolation=interpolation_sentinel, antialias=antialias_sentinel
-        )
-        transform._transformed_types = (mocker.MagicMock,)
-
-        size_sentinel = mocker.MagicMock()
-        mocker.patch(
-            "torchvision.transforms.v2._geometry.RandomResize._get_params",
-            return_value=dict(size=size_sentinel),
-        )
-
-        inpt_sentinel = mocker.MagicMock()
-
-        mock_resize = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
-        transform(inpt_sentinel)
-
-        mock_resize.assert_called_with(
-            inpt_sentinel, size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
-        )
-
 
 class TestUniformTemporalSubsample:
     @pytest.mark.parametrize(
@@ -1314,7 +744,7 @@ class TestUniformTemporalSubsample:
         [
             torch.zeros(10, 3, 8, 8),
             torch.zeros(1, 10, 3, 8, 8),
-            datapoints.Video(torch.zeros(1, 10, 3, 8, 8)),
+            tv_tensors.Video(torch.zeros(1, 10, 3, 8, 8)),
         ],
     )
     def test__transform(self, inpt):
@@ -1344,12 +774,12 @@ def test_antialias_warning():
         transforms.RandomResize(10, 20)(tensor_img)
 
     with pytest.warns(UserWarning, match=match):
-        F.resized_crop(datapoints.Image(tensor_img), 0, 0, 10, 10, (20, 20))
+        F.resized_crop(tv_tensors.Image(tensor_img), 0, 0, 10, 10, (20, 20))
 
     with pytest.warns(UserWarning, match=match):
-        F.resize(datapoints.Video(tensor_video), (20, 20))
+        F.resize(tv_tensors.Video(tensor_video), (20, 20))
     with pytest.warns(UserWarning, match=match):
-        F.resized_crop(datapoints.Video(tensor_video), 0, 0, 10, 10, (20, 20))
+        F.resized_crop(tv_tensors.Video(tensor_video), 0, 0, 10, 10, (20, 20))
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -1363,22 +793,22 @@ def test_antialias_warning():
         transforms.RandomShortestSize((20, 20), antialias=True)(tensor_img)
         transforms.RandomResize(10, 20, antialias=True)(tensor_img)
 
-        F.resized_crop(datapoints.Image(tensor_img), 0, 0, 10, 10, (20, 20), antialias=True)
-        F.resized_crop(datapoints.Video(tensor_video), 0, 0, 10, 10, (20, 20), antialias=True)
+        F.resized_crop(tv_tensors.Image(tensor_img), 0, 0, 10, 10, (20, 20), antialias=True)
+        F.resized_crop(tv_tensors.Video(tensor_video), 0, 0, 10, 10, (20, 20), antialias=True)
 
 
-@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
+@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, tv_tensors.Image))
 @pytest.mark.parametrize("label_type", (torch.Tensor, int))
 @pytest.mark.parametrize("dataset_return_type", (dict, tuple))
-@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImage))
 def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
 
-    image = datapoints.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
+    image = tv_tensors.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
     if image_type is PIL.Image:
         image = to_pil_image(image[0])
     elif image_type is torch.Tensor:
         image = image.as_subclass(torch.Tensor)
-        assert is_simple_tensor(image)
+        assert is_pure_tensor(image)
 
     label = 1 if label_type is int else torch.tensor([1])
 
@@ -1429,9 +859,9 @@ def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
     assert out_label == label
 
 
-@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
+@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, tv_tensors.Image))
 @pytest.mark.parametrize("data_augmentation", ("hflip", "lsj", "multiscale", "ssd", "ssdlite"))
-@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImage))
 @pytest.mark.parametrize("sanitize", (True, False))
 def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     torch.manual_seed(0)
@@ -1455,7 +885,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
             # leaving FixedSizeCrop in prototype for now, and it expects Label
             # classes which we won't release yet.
             # transforms.FixedSizeCrop(
-            #     size=(1024, 1024), fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})
+            #     size=(1024, 1024), fill=defaultdict(lambda: (123.0, 117.0, 104.0), {tv_tensors.Mask: 0})
             # ),
             transforms.RandomCrop((1024, 1024), pad_if_needed=True),
             transforms.RandomHorizontalFlip(p=1),
@@ -1474,7 +904,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     elif data_augmentation == "ssd":
         t = [
             transforms.RandomPhotometricDistort(p=1),
-            transforms.RandomZoomOut(fill={"others": (123.0, 117.0, 104.0), datapoints.Mask: 0}, p=1),
+            transforms.RandomZoomOut(fill={"others": (123.0, 117.0, 104.0), tv_tensors.Mask: 0}, p=1),
             transforms.RandomIoUCrop(),
             transforms.RandomHorizontalFlip(p=1),
             to_tensor,
@@ -1494,21 +924,21 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     num_boxes = 5
     H = W = 250
 
-    image = datapoints.Image(torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8))
+    image = tv_tensors.Image(torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8))
     if image_type is PIL.Image:
         image = to_pil_image(image[0])
     elif image_type is torch.Tensor:
         image = image.as_subclass(torch.Tensor)
-        assert is_simple_tensor(image)
+        assert is_pure_tensor(image)
 
     label = torch.randint(0, 10, size=(num_boxes,))
 
     boxes = torch.randint(0, min(H, W) // 2, size=(num_boxes, 4))
     boxes[:, 2:] += boxes[:, :2]
     boxes = boxes.clamp(min=0, max=min(H, W))
-    boxes = datapoints.BoundingBoxes(boxes, format="XYXY", canvas_size=(H, W))
+    boxes = tv_tensors.BoundingBoxes(boxes, format="XYXY", canvas_size=(H, W))
 
-    masks = datapoints.Mask(torch.randint(0, 2, size=(num_boxes, H, W), dtype=torch.uint8))
+    masks = tv_tensors.Mask(torch.randint(0, 2, size=(num_boxes, H, W), dtype=torch.uint8))
 
     sample = {
         "image": image,
@@ -1519,10 +949,10 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 
     out = t(sample)
 
-    if isinstance(to_tensor, transforms.ToTensor) and image_type is not datapoints.Image:
-        assert is_simple_tensor(out["image"])
+    if isinstance(to_tensor, transforms.ToTensor) and image_type is not tv_tensors.Image:
+        assert is_pure_tensor(out["image"])
     else:
-        assert isinstance(out["image"], datapoints.Image)
+        assert isinstance(out["image"], tv_tensors.Image)
     assert isinstance(out["label"], type(sample["label"]))
 
     num_boxes_expected = {
@@ -1577,13 +1007,13 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
     boxes = torch.tensor(boxes)
     labels = torch.arange(boxes.shape[0])
 
-    boxes = datapoints.BoundingBoxes(
+    boxes = tv_tensors.BoundingBoxes(
         boxes,
-        format=datapoints.BoundingBoxFormat.XYXY,
+        format=tv_tensors.BoundingBoxFormat.XYXY,
         canvas_size=(H, W),
     )
 
-    masks = datapoints.Mask(torch.randint(0, 2, size=(boxes.shape[0], H, W)))
+    masks = tv_tensors.Mask(torch.randint(0, 2, size=(boxes.shape[0], H, W)))
     whatever = torch.rand(10)
     input_img = torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8)
     sample = {
@@ -1617,8 +1047,8 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
     assert out_image is input_img
     assert out_whatever is whatever
 
-    assert isinstance(out_boxes, datapoints.BoundingBoxes)
-    assert isinstance(out_masks, datapoints.Mask)
+    assert isinstance(out_boxes, tv_tensors.BoundingBoxes)
+    assert isinstance(out_masks, tv_tensors.Mask)
 
     if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
         assert out_labels is labels
@@ -1629,11 +1059,25 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         assert out_labels.tolist() == valid_indices
 
 
+def test_sanitize_bounding_boxes_no_label():
+    # Non-regression test for https://github.com/pytorch/vision/issues/7878
+
+    img = make_image()
+    boxes = make_bounding_boxes()
+
+    with pytest.raises(ValueError, match="or a two-tuple whose second item is a dict"):
+        transforms.SanitizeBoundingBoxes()(img, boxes)
+
+    out_img, out_boxes = transforms.SanitizeBoundingBoxes(labels_getter=None)(img, boxes)
+    assert isinstance(out_img, tv_tensors.Image)
+    assert isinstance(out_boxes, tv_tensors.BoundingBoxes)
+
+
 def test_sanitize_bounding_boxes_errors():
 
-    good_bbox = datapoints.BoundingBoxes(
+    good_bbox = tv_tensors.BoundingBoxes(
         [[0, 0, 10, 10]],
-        format=datapoints.BoundingBoxFormat.XYXY,
+        format=tv_tensors.BoundingBoxFormat.XYXY,
         canvas_size=(20, 20),
     )
 
@@ -1653,67 +1097,6 @@ def test_sanitize_bounding_boxes_errors():
     with pytest.raises(ValueError, match="Number of boxes"):
         different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
         transforms.SanitizeBoundingBoxes()(different_sizes)
-
-    with pytest.raises(ValueError, match="boxes must be of shape"):
-        bad_bbox = datapoints.BoundingBoxes(  # batch with 2 elements
-            [
-                [[0, 0, 10, 10]],
-                [[0, 0, 10, 10]],
-            ],
-            format=datapoints.BoundingBoxFormat.XYXY,
-            canvas_size=(20, 20),
-        )
-        different_sizes = {"bbox": bad_bbox, "labels": torch.arange(bad_bbox.shape[0])}
-        transforms.SanitizeBoundingBoxes()(different_sizes)
-
-
-@pytest.mark.parametrize(
-    "import_statement",
-    (
-        "from torchvision.transforms import v2",
-        "import torchvision.transforms.v2",
-        "from torchvision.transforms.v2 import Resize",
-        "import torchvision.transforms.v2.functional",
-        "from torchvision.transforms.v2.functional import resize",
-        "from torchvision import datapoints",
-        "from torchvision.datapoints import Image",
-        "from torchvision.datasets import wrap_dataset_for_transforms_v2",
-    ),
-)
-@pytest.mark.parametrize("call_disable_warning", (True, False))
-def test_warnings_v2_namespaces(import_statement, call_disable_warning):
-    if call_disable_warning:
-        source = f"""
-        import warnings
-        import torchvision
-        torchvision.disable_beta_transforms_warning()
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            {import_statement}
-        """
-    else:
-        source = f"""
-        import pytest
-        with pytest.warns(UserWarning, match="v2 namespaces are still Beta"):
-            {import_statement}
-        """
-    assert_run_python_script(textwrap.dedent(source))
-
-
-def test_no_warnings_v1_namespace():
-    source = """
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        import torchvision.transforms
-        from torchvision import transforms
-        import torchvision.transforms.functional
-        from torchvision.transforms import Resize
-        from torchvision.transforms.functional import resize
-        from torchvision import datasets
-        from torchvision.datasets import ImageNet
-    """
-    assert_run_python_script(textwrap.dedent(source))
 
 
 class TestLambda:

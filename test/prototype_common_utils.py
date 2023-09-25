@@ -4,11 +4,11 @@ from typing import Optional, Sequence
 
 import pytest
 import torch
-
-from common_utils import combinations_grid, DEFAULT_EXTRA_DIMS, from_loader, from_loaders, TensorLoader
 from torch.nn.functional import one_hot
 
-from torchvision.prototype import datapoints
+from torchvision.prototype import tv_tensors
+
+from transforms_v2_legacy_utils import combinations_grid, DEFAULT_EXTRA_DIMS, from_loader, from_loaders, TensorLoader
 
 
 @dataclasses.dataclass
@@ -40,7 +40,7 @@ def make_label_loader(*, extra_dims=(), categories=None, dtype=torch.int64):
         # The idiom `make_tensor(..., dtype=torch.int64).to(dtype)` is intentional to only get integer values,
         # regardless of the requested dtype, e.g. 0 or 0.0 rather than 0 or 0.123
         data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=torch.int64, device=device).to(dtype)
-        return datapoints.Label(data, categories=categories)
+        return tv_tensors.Label(data, categories=categories)
 
     return LabelLoader(fn, shape=extra_dims, dtype=dtype, categories=categories)
 
@@ -64,7 +64,7 @@ def make_one_hot_label_loader(*, categories=None, extra_dims=(), dtype=torch.int
             # since `one_hot` only supports int64
             label = make_label_loader(extra_dims=extra_dims, categories=num_categories, dtype=torch.int64).load(device)
             data = one_hot(label, num_classes=num_categories).to(dtype)
-        return datapoints.OneHotLabel(data, categories=categories)
+        return tv_tensors.OneHotLabel(data, categories=categories)
 
     return OneHotLabelLoader(fn, shape=(*extra_dims, num_categories), dtype=dtype, categories=categories)
 

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Union
 
-from torchvision import datapoints
+from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
 
@@ -10,21 +10,21 @@ class ConvertBoundingBoxFormat(Transform):
     .. v2betastatus:: ConvertBoundingBoxFormat transform
 
     Args:
-        format (str or datapoints.BoundingBoxFormat): output bounding box format.
-            Possible values are defined by :class:`~torchvision.datapoints.BoundingBoxFormat` and
+        format (str or tv_tensors.BoundingBoxFormat): output bounding box format.
+            Possible values are defined by :class:`~torchvision.tv_tensors.BoundingBoxFormat` and
             string values match the enums, e.g. "XYXY" or "XYWH" etc.
     """
 
-    _transformed_types = (datapoints.BoundingBoxes,)
+    _transformed_types = (tv_tensors.BoundingBoxes,)
 
-    def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
+    def __init__(self, format: Union[str, tv_tensors.BoundingBoxFormat]) -> None:
         super().__init__()
         if isinstance(format, str):
-            format = datapoints.BoundingBoxFormat[format]
+            format = tv_tensors.BoundingBoxFormat[format]
         self.format = format
 
-    def _transform(self, inpt: datapoints.BoundingBoxes, params: Dict[str, Any]) -> datapoints.BoundingBoxes:
-        return F.convert_format_bounding_boxes(inpt, new_format=self.format)  # type: ignore[return-value]
+    def _transform(self, inpt: tv_tensors.BoundingBoxes, params: Dict[str, Any]) -> tv_tensors.BoundingBoxes:
+        return F.convert_bounding_box_format(inpt, new_format=self.format)  # type: ignore[return-value]
 
 
 class ClampBoundingBoxes(Transform):
@@ -36,7 +36,7 @@ class ClampBoundingBoxes(Transform):
 
     """
 
-    _transformed_types = (datapoints.BoundingBoxes,)
+    _transformed_types = (tv_tensors.BoundingBoxes,)
 
-    def _transform(self, inpt: datapoints.BoundingBoxes, params: Dict[str, Any]) -> datapoints.BoundingBoxes:
+    def _transform(self, inpt: tv_tensors.BoundingBoxes, params: Dict[str, Any]) -> tv_tensors.BoundingBoxes:
         return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]

@@ -55,6 +55,17 @@ jobs:
         # cores (`-j auto`). Thus, we limit to a single process (`-j 1`) here.
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
+
+        # Below is an imperfect way for us to add "try on collab" links to all of our gallery examples.
+        # sphinx-gallery will convert all gallery examples to .ipynb notebooks and stores them in
+        # build/html/_downloads/<some_hash>/<example_name>.ipynb
+        # We copy all those ipynb files in a more convenient folder so that we can more easily link to them.
+        mkdir build/html/_generated_ipynb_notebooks
+        for file in `find build/html/_downloads`; do
+          if [[ $file == *.ipynb ]]; then
+            cp $file build/html/_generated_ipynb_notebooks/
+          fi
+        done
         
         cp -r build/html "${RUNNER_ARTIFACT_DIR}"
         
@@ -111,5 +122,6 @@ jobs:
         
         git config user.name 'pytorchbot'
         git config user.email 'soumith+bot@pytorch.org'
+        git config http.postBuffer 524288000
         git commit -m "auto-generating sphinx docs" || true
         git push

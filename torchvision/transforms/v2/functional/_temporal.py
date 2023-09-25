@@ -1,17 +1,14 @@
-import PIL.Image
 import torch
 
-from torchvision import datapoints
+from torchvision import tv_tensors
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_explicit_noop, _register_kernel_internal
+from ._utils import _get_kernel, _register_kernel_internal
 
 
-@_register_explicit_noop(
-    PIL.Image.Image, datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask, warn_passthrough=True
-)
-def uniform_temporal_subsample(inpt: datapoints._VideoTypeJIT, num_samples: int) -> datapoints._VideoTypeJIT:
+def uniform_temporal_subsample(inpt: torch.Tensor, num_samples: int) -> torch.Tensor:
+    """[BETA] See :class:`~torchvision.transforms.v2.UniformTemporalSubsample` for details."""
     if torch.jit.is_scripting():
         return uniform_temporal_subsample_video(inpt, num_samples=num_samples)
 
@@ -22,7 +19,7 @@ def uniform_temporal_subsample(inpt: datapoints._VideoTypeJIT, num_samples: int)
 
 
 @_register_kernel_internal(uniform_temporal_subsample, torch.Tensor)
-@_register_kernel_internal(uniform_temporal_subsample, datapoints.Video)
+@_register_kernel_internal(uniform_temporal_subsample, tv_tensors.Video)
 def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int) -> torch.Tensor:
     # Reference: https://github.com/facebookresearch/pytorchvideo/blob/a0a131e/pytorchvideo/transforms/functional.py#L19
     t_max = video.shape[-4] - 1
