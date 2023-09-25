@@ -3945,3 +3945,58 @@ class TestColorJitter:
 
         mae = (actual.float() - expected.float()).abs().mean()
         assert mae < 2
+
+
+class TestRgbToGrayscale:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.rgb_to_grayscale_image, make_image(dtype=dtype, device=device))
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_functional(self, make_input):
+        check_functional(F.rgb_to_grayscale, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.rgb_to_grayscale_image, torch.Tensor),
+            (F._rgb_to_grayscale_image_pil, PIL.Image.Image),
+            (F.rgb_to_grayscale_image, tv_tensors.Image),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.rgb_to_grayscale, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("transform", [transforms.Grayscale(), transforms.RandomGrayscale(p=1)])
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_transform(self, transform, make_input):
+        check_transform(transform, make_input())
+
+    @pytest.mark.parametrize("num_output_channels", [1, 3])
+    @pytest.mark.parametrize("fn", [F.rgb_to_grayscale, transform_cls_to_functional(transforms.Grayscale)])
+    def test_image_correctness(self, num_output_channels, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, num_output_channels=num_output_channels)
+        expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_output_channels))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
+
+    @pytest.mark.parametrize("num_input_channels", [1, 3])
+    def test_random_transform_correctness(self, num_input_channels):
+        image = make_image(
+            color_space={
+                1: "GRAY",
+                3: "RGB",
+            }[num_input_channels],
+            dtype=torch.uint8,
+            device="cpu",
+        )
+
+        transform = transforms.RandomGrayscale(p=1)
+
+        actual = transform(image)
+        expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_input_channels))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
