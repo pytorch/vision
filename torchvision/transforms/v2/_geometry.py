@@ -538,7 +538,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
         self.side_range = side_range
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
-            raise ValueError(f"Invalid canvas side range provided {side_range}.")
+            raise ValueError(f"Invalid side range provided {side_range}.")
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         orig_h, orig_w = query_size(flat_inputs)
@@ -1000,8 +1000,8 @@ class RandomPerspective(_RandomApplyTransform):
         return self._call_kernel(
             F.perspective,
             inpt,
-            None,
-            None,
+            startpoints=None,
+            endpoints=None,
             fill=fill,
             interpolation=self.interpolation,
             **params,

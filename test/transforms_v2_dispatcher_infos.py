@@ -112,19 +112,6 @@ multi_crop_skips.append(skip_dispatch_tv_tensor)
 
 DISPATCHER_INFOS = [
     DispatcherInfo(
-        F.perspective,
-        kernels={
-            tv_tensors.Image: F.perspective_image,
-            tv_tensors.Video: F.perspective_video,
-            tv_tensors.BoundingBoxes: F.perspective_bounding_boxes,
-            tv_tensors.Mask: F.perspective_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F._perspective_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("fill"),
-        ],
-    ),
-    DispatcherInfo(
         F.elastic,
         kernels={
             tv_tensors.Image: F.elastic_image,
@@ -134,19 +121,6 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F._elastic_image_pil),
         test_marks=[xfail_jit_python_scalar_arg("fill")],
-    ),
-    DispatcherInfo(
-        F.center_crop,
-        kernels={
-            tv_tensors.Image: F.center_crop_image,
-            tv_tensors.Video: F.center_crop_video,
-            tv_tensors.BoundingBoxes: F.center_crop_bounding_boxes,
-            tv_tensors.Mask: F.center_crop_mask,
-        },
-        pil_kernel_info=PILKernelInfo(F._center_crop_image_pil),
-        test_marks=[
-            xfail_jit_python_scalar_arg("output_size"),
-        ],
     ),
     DispatcherInfo(
         F.equalize,

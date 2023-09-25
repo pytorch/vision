@@ -115,11 +115,9 @@ class TestSmoke:
             (transforms.RandAugment(), auto_augment_adapter),
             (transforms.TrivialAugmentWide(), auto_augment_adapter),
             (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
-            (transforms.Grayscale(), None),
             (transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1.0), None),
             (transforms.RandomAutocontrast(p=1.0), None),
             (transforms.RandomEqualize(p=1.0), None),
-            (transforms.RandomGrayscale(p=1.0), None),
             (transforms.RandomInvert(p=1.0), None),
             (transforms.RandomChannelPermutation(), None),
             (transforms.RandomPhotometricDistort(p=1.0), None),
@@ -137,7 +135,6 @@ class TestSmoke:
             (transforms.RandomRotation(degrees=30), None),
             (transforms.RandomShortestSize(min_size=10, antialias=True), None),
             (transforms.RandomVerticalFlip(p=1.0), None),
-            (transforms.RandomZoomOut(p=1.0), None),
             (transforms.Resize([16, 16], antialias=True), None),
             (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
             (transforms.ClampBoundingBoxes(), None),
@@ -387,54 +384,6 @@ def test_pure_tensor_heuristic(flat_inputs):
 
     for input, output in zip(other_inputs, other_outputs):
         assert transform.was_applied(output, input)
-
-
-class TestRandomZoomOut:
-    def test_assertions(self):
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomZoomOut(fill="abc")
-
-        with pytest.raises(TypeError, match="should be a sequence of length"):
-            transforms.RandomZoomOut(0, side_range=0)
-
-        with pytest.raises(ValueError, match="Invalid canvas side range"):
-            transforms.RandomZoomOut(0, side_range=[4.0, 1.0])
-
-    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
-    @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
-    def test__get_params(self, fill, side_range):
-        transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
-
-        h, w = size = (24, 32)
-        image = make_image(size)
-
-        params = transform._get_params([image])
-
-        assert len(params["padding"]) == 4
-        assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
-        assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
-        assert 0 <= params["padding"][2] <= (side_range[1] - 1) * w
-        assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
-
-
-class TestRandomPerspective:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Argument distortion_scale value should be between 0 and 1"):
-            transforms.RandomPerspective(distortion_scale=-1.0)
-
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomPerspective(0.5, fill="abc")
-
-    def test__get_params(self):
-        dscale = 0.5
-        transform = transforms.RandomPerspective(dscale)
-
-        image = make_image((24, 32))
-
-        params = transform._get_params([image])
-
-        assert "coefficients" in params
-        assert len(params["coefficients"]) == 8
 
 
 class TestElasticTransform:
