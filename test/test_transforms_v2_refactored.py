@@ -4000,3 +4000,67 @@ class TestRgbToGrayscale:
         expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_input_channels))
 
         assert_equal(actual, expected, rtol=0, atol=1)
+
+
+class TestRandomZoomOut:
+    # Tests are light because this largely relies on the already tested `pad` kernels.
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomZoomOut(p=1), make_input())
+
+    def test_transform_error(self):
+        for side_range in [None, 1, [1, 2, 3]]:
+            with pytest.raises(
+                ValueError if isinstance(side_range, list) else TypeError, match="should be a sequence of length 2"
+            ):
+                transforms.RandomZoomOut(side_range=side_range)
+
+        for side_range in [[0.5, 1.5], [2.0, 1.0]]:
+            with pytest.raises(ValueError, match="Invalid side range"):
+                transforms.RandomZoomOut(side_range=side_range)
+
+    @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_params_correctness(self, side_range, make_input, device):
+        if make_input is make_image_pil and device != "cpu":
+            pytest.skip("PIL image tests with parametrization device!='cpu' will degenerate to that anyway.")
+
+        transform = transforms.RandomZoomOut(side_range=side_range)
+
+        input = make_input()
+        height, width = F.get_size(input)
+
+        params = transform._get_params([input])
+        assert "padding" in params
+
+        padding = params["padding"]
+        assert len(padding) == 4
+
+        assert 0 <= padding[0] <= (side_range[1] - 1) * width
+        assert 0 <= padding[1] <= (side_range[1] - 1) * height
+        assert 0 <= padding[2] <= (side_range[1] - 1) * width
+        assert 0 <= padding[3] <= (side_range[1] - 1) * height
