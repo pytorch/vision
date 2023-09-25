@@ -4003,6 +4003,8 @@ class TestRgbToGrayscale:
 
 
 class TestRandomZoomOut:
+    # Tests are light because this largely relies on the already tested `pad` kernels.
+
     @pytest.mark.parametrize(
         "make_input",
         [
