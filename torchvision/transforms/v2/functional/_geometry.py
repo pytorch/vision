@@ -11,7 +11,6 @@ from torchvision import tv_tensors
 from torchvision.transforms import _functional_pil as _FP
 from torchvision.transforms._functional_tensor import _pad_symmetric
 from torchvision.transforms.functional import (
-    _check_antialias,
     _compute_resized_output_size as __compute_resized_output_size,
     _get_perspective_coeffs,
     _interpolation_modes_from_int,
@@ -177,7 +176,7 @@ def resize(
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     """[BETA] See :class:`~torchvision.transforms.v2.Resize` for details."""
     if torch.jit.is_scripting():
@@ -196,17 +195,15 @@ def resize_image(
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     interpolation = _check_interpolation(interpolation)
-    antialias = _check_antialias(img=image, antialias=antialias, interpolation=interpolation)
-    assert not isinstance(antialias, str)
     antialias = False if antialias is None else antialias
     align_corners: Optional[bool] = None
     if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
         align_corners = False
     else:
-        # The default of antialias should be True from 0.17, so we don't warn or
+        # The default of antialias is True from 0.17, so we don't warn or
         # error if other interpolation modes are used. This is documented.
         antialias = False
 
@@ -297,7 +294,7 @@ def __resize_image_pil_dispatch(
     size: Union[Sequence[int], int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> PIL.Image.Image:
     if antialias is False:
         warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
@@ -361,7 +358,7 @@ def resize_video(
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     return resize_image(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
@@ -2066,7 +2063,7 @@ def resized_crop(
     width: int,
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     """[BETA] See :class:`~torchvision.transforms.v2.RandomResizedCrop` for details."""
     if torch.jit.is_scripting():
@@ -2106,7 +2103,7 @@ def resized_crop_image(
     width: int,
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     image = crop_image(image, top, left, height, width)
     return resize_image(image, size, interpolation=interpolation, antialias=antialias)
@@ -2134,7 +2131,7 @@ def _resized_crop_image_pil_dispatch(
     width: int,
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> PIL.Image.Image:
     if antialias is False:
         warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
@@ -2203,7 +2200,7 @@ def resized_crop_video(
     width: int,
     size: List[int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     return resized_crop_image(
         video, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
