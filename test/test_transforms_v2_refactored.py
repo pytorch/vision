@@ -48,11 +48,6 @@ from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
-try:
-    import scipy.stats
-except ModuleNotFoundError:
-    scipy = None
-
 
 @pytest.fixture(autouse=True)
 def fix_rng_seed():
@@ -4049,11 +4044,10 @@ class TestNormalize:
     MEANS_STDS = [
         ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
-        (0.5, 2.0),
     ]
     MEAN, STD = MEANS_STDS[0]
 
-    @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
+    @pytest.mark.parametrize(("mean", "std"), [*MEANS_STDS, (0.5, 2.0)])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image(self, mean, std, device):
         check_kernel(F.normalize_image, make_image(dtype=torch.float32, device=device), mean=self.MEAN, std=self.STD)
@@ -4107,22 +4101,21 @@ class TestNormalize:
     def test_transform(self, make_input):
         check_transform(transforms.Normalize(mean=self.MEAN, std=self.STD), make_input(dtype=torch.float32))
 
-    def _assert_is_standard_normal_distributed(self, tensor):
-        result = scipy.stats.kstest(tensor.flatten().cpu(), cdf="norm", args=(0, 1))
-        assert result.pvalue > 1e-4
+    def _reference_normalize_image(self, image, *, mean, std):
+        image = image.numpy()
+        mean, std = [np.array(stat, dtype=image.dtype).reshape((-1, 1, 1)) for stat in [mean, std]]
+        return tv_tensors.Image((image - mean) / std)
 
-    @pytest.mark.skipif(scipy is None, reason="SciPy is not available")
+    @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
     @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
-    def test_correctness_image(self, dtype, device, fn):
-        input = tv_tensors.Image(torch.rand(3, 10, 10, dtype=dtype, device=device))
-        mean = input.mean(dim=(-2, -1)).tolist()
-        std = input.std(dim=(-2, -1)).tolist()
+    def test_correctness_image(self, mean, std, dtype, fn):
+        image = make_image(dtype=dtype)
 
-        output = fn(input, mean=mean, std=std)
+        actual = fn(image, mean=mean, std=std)
+        expected = self._reference_normalize_image(image, mean=mean, std=std)
 
-        self._assert_is_standard_normal_distributed(output)
+        assert_equal(actual, expected)
 
 
 class TestClampBoundingBoxes:
