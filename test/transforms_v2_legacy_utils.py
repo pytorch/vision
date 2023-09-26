@@ -5,11 +5,9 @@ implemented there and must not use any of the utilities here.
 
 The following legacy modules depend on this module
 
-- transforms_v2_kernel_infos.py
-- transforms_v2_dispatcher_infos.py
 - test_transforms_v2_functional.py
 - test_transforms_v2_consistency.py
-- test_transforms.py
+- test_transforms_v2.py
 
 When all the logic is ported from the files above to test_transforms_v2_refactored.py, delete
 all the legacy modules including this one and drop the _refactored prefix from the name.
