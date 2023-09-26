@@ -4514,7 +4514,7 @@ class TestFiveTenCrop:
 
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("kernel", [F.five_crop_image, F.ten_crop])
+    @pytest.mark.parametrize("kernel", [F.five_crop_image, F.ten_crop_image])
     def test_kernel_image(self, dtype, device, kernel):
         check_kernel(
             kernel,
@@ -4527,9 +4527,9 @@ class TestFiveTenCrop:
     def test_kernel_video(self, kernel):
         check_kernel(kernel, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZE, check_batched_vs_unbatched=False)
 
-    def _five_ten_crop_functional_wrapper(self, fn):
+    def _functional_wrapper(self, fn):
         # This wrapper is needed to make five_crop / ten_crop compatible with check_functional, since that requires a
-        # single rather than a sequence.
+        # single output rather than a sequence.
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             outputs = fn(*args, **kwargs)
@@ -4544,7 +4544,7 @@ class TestFiveTenCrop:
     @pytest.mark.parametrize("functional", [F.five_crop, F.ten_crop])
     def test_functional(self, make_input, functional):
         check_functional(
-            self._five_ten_crop_functional_wrapper(functional),
+            self._functional_wrapper(functional),
             make_input(self.INPUT_SIZE),
             size=self.OUTPUT_SIZE,
             check_scripted_smoke=False,
@@ -4566,13 +4566,13 @@ class TestFiveTenCrop:
     def test_functional_signature(self, functional, kernel, input_type):
         check_functional_kernel_signature_match(functional, kernel=kernel, input_type=input_type)
 
-    class _FiveTenCropTransformWrapper(nn.Module):
+    class _TransformWrapper(nn.Module):
         # This wrapper is needed to make FiveCrop / TenCrop compatible with check_transform, since that requires a
         # single output rather than a sequence.
         _v1_transform_cls = None
 
         def _extract_params_for_v1_transform(self):
-            return dict(five_ten_crop_transform=self.five_ten_crop_transform.__prepare_scriptable__())
+            return dict(five_ten_crop_transform=self.five_ten_crop_transform)
 
         def __init__(self, five_ten_crop_transform):
             super().__init__()
@@ -4589,9 +4589,7 @@ class TestFiveTenCrop:
     )
     @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
     def test_transform(self, make_input, transform_cls):
-        check_transform(
-            self._FiveTenCropTransformWrapper(transform_cls(size=self.OUTPUT_SIZE)), make_input(self.INPUT_SIZE)
-        )
+        check_transform(self._TransformWrapper(transform_cls(size=self.OUTPUT_SIZE)), make_input(self.INPUT_SIZE))
 
     @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_mask])
     @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
