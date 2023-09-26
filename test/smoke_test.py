@@ -1,5 +1,6 @@
 """Run smoke tests"""
 
+import re
 import sys
 from pathlib import Path
 
@@ -78,6 +79,18 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
+
+    if re.match(r"\d+\.\d+\.\d+(?!a0)", torchvision.__version__):
+        try:
+            import torchvision.prototype as _
+        except ModuleNotFoundError:
+            pass
+        else:
+            raise AssertionError(
+                "torchvision.prototype available on a release version. "
+                "Run\n\n"
+                "rm -rf torchvision/prototype test/test_prototype* .github/workflows/prototype*"
+            )
 
     # Turn 1.11.0aHASH into 1.11 (major.minor only)
     version = ".".join(torchvision.__version__.split(".")[:2])
