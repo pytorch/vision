@@ -2,7 +2,7 @@
 This file is part of the private API. Please do not use directly these classes as they will be modified on
 future versions without warning. The classes should be accessed only via the transforms argument of Weights.
 """
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import torch
 from torch import nn, Tensor
@@ -44,7 +44,7 @@ class ImageClassification(nn.Module):
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
         self.crop_size = [crop_size]
@@ -151,7 +151,7 @@ class SemanticSegmentation(nn.Module):
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
         self.resize_size = [resize_size] if resize_size is not None else None

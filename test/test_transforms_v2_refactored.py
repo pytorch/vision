@@ -19,7 +19,6 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 from common_utils import (
     assert_equal,
-    assert_no_warnings,
     cache,
     cpu_and_cuda,
     freeze_rng_state,
@@ -350,12 +349,6 @@ INTERPOLATION_MODES = [
 ]
 
 
-@contextlib.contextmanager
-def assert_warns_antialias_default_value():
-    with pytest.warns(UserWarning, match="The default value of the antialias parameter of all the resizing transforms"):
-        yield
-
-
 def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
     format = bounding_boxes.format
     canvas_size = new_canvas_size or bounding_boxes.canvas_size
@@ -683,23 +676,6 @@ class TestResize:
 
         with pytest.raises(ValueError, match=match):
             F.resize(make_input(self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
-
-    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
-    @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image, make_video],
-    )
-    def test_antialias_warning(self, interpolation, make_input):
-        with (
-            assert_warns_antialias_default_value()
-            if interpolation in {transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC}
-            else assert_no_warnings()
-        ):
-            F.resize(
-                make_input(self.INPUT_SIZE),
-                size=self.OUTPUT_SIZES[0],
-                interpolation=interpolation,
-            )
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
@@ -4651,3 +4627,186 @@ class TestFiveTenCrop:
 
         assert isinstance(actual, tuple)
         assert_equal(actual, [F.to_image(e) for e in expected])
+
+
+class TestColorJitter:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        check_transform(
+            transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.25),
+            make_input(dtype=dtype, device=device),
+        )
+
+    def test_transform_noop(self):
+        input = make_image()
+        input_version = input._version
+
+        transform = transforms.ColorJitter()
+        output = transform(input)
+
+        assert output is input
+        assert output.data_ptr() == input.data_ptr()
+        assert output._version == input_version
+
+    def test_transform_error(self):
+        with pytest.raises(ValueError, match="must be non negative"):
+            transforms.ColorJitter(brightness=-1)
+
+        for brightness in [object(), [1, 2, 3]]:
+            with pytest.raises(TypeError, match="single number or a sequence with length 2"):
+                transforms.ColorJitter(brightness=brightness)
+
+        with pytest.raises(ValueError, match="values should be between"):
+            transforms.ColorJitter(brightness=(-1, 0.5))
+
+        with pytest.raises(ValueError, match="values should be between"):
+            transforms.ColorJitter(hue=1)
+
+    @pytest.mark.parametrize("brightness", [None, 0.1, (0.2, 0.3)])
+    @pytest.mark.parametrize("contrast", [None, 0.4, (0.5, 0.6)])
+    @pytest.mark.parametrize("saturation", [None, 0.7, (0.8, 0.9)])
+    @pytest.mark.parametrize("hue", [None, 0.3, (-0.1, 0.2)])
+    def test_transform_correctness(self, brightness, contrast, saturation, hue):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        transform = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
+
+        with freeze_rng_state():
+            torch.manual_seed(0)
+            actual = transform(image)
+
+            torch.manual_seed(0)
+            expected = F.to_image(transform(F.to_pil_image(image)))
+
+        mae = (actual.float() - expected.float()).abs().mean()
+        assert mae < 2
+
+
+class TestRgbToGrayscale:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.rgb_to_grayscale_image, make_image(dtype=dtype, device=device))
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_functional(self, make_input):
+        check_functional(F.rgb_to_grayscale, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.rgb_to_grayscale_image, torch.Tensor),
+            (F._rgb_to_grayscale_image_pil, PIL.Image.Image),
+            (F.rgb_to_grayscale_image, tv_tensors.Image),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.rgb_to_grayscale, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("transform", [transforms.Grayscale(), transforms.RandomGrayscale(p=1)])
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_transform(self, transform, make_input):
+        check_transform(transform, make_input())
+
+    @pytest.mark.parametrize("num_output_channels", [1, 3])
+    @pytest.mark.parametrize("fn", [F.rgb_to_grayscale, transform_cls_to_functional(transforms.Grayscale)])
+    def test_image_correctness(self, num_output_channels, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, num_output_channels=num_output_channels)
+        expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_output_channels))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
+
+    @pytest.mark.parametrize("num_input_channels", [1, 3])
+    def test_random_transform_correctness(self, num_input_channels):
+        image = make_image(
+            color_space={
+                1: "GRAY",
+                3: "RGB",
+            }[num_input_channels],
+            dtype=torch.uint8,
+            device="cpu",
+        )
+
+        transform = transforms.RandomGrayscale(p=1)
+
+        actual = transform(image)
+        expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_input_channels))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
+
+
+class TestRandomZoomOut:
+    # Tests are light because this largely relies on the already tested `pad` kernels.
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomZoomOut(p=1), make_input())
+
+    def test_transform_error(self):
+        for side_range in [None, 1, [1, 2, 3]]:
+            with pytest.raises(
+                ValueError if isinstance(side_range, list) else TypeError, match="should be a sequence of length 2"
+            ):
+                transforms.RandomZoomOut(side_range=side_range)
+
+        for side_range in [[0.5, 1.5], [2.0, 1.0]]:
+            with pytest.raises(ValueError, match="Invalid side range"):
+                transforms.RandomZoomOut(side_range=side_range)
+
+    @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_params_correctness(self, side_range, make_input, device):
+        if make_input is make_image_pil and device != "cpu":
+            pytest.skip("PIL image tests with parametrization device!='cpu' will degenerate to that anyway.")
+
+        transform = transforms.RandomZoomOut(side_range=side_range)
+
+        input = make_input()
+        height, width = F.get_size(input)
+
+        params = transform._get_params([input])
+        assert "padding" in params
+
+        padding = params["padding"]
+        assert len(padding) == 4
+
+        assert 0 <= padding[0] <= (side_range[1] - 1) * width
+        assert 0 <= padding[1] <= (side_range[1] - 1) * height
+        assert 0 <= padding[2] <= (side_range[1] - 1) * width
+        assert 0 <= padding[3] <= (side_range[1] - 1) * height
