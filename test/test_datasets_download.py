@@ -391,4 +391,4 @@ def test_url_is_not_accessible(url):
     If you see this test failing, find the offending dataset in the parametrization and move it to
     ``test_url_is_accessible``.
     """
-    retry(lambda: assert_url_is_accessible(url))
+    assert_url_is_accessible(url)

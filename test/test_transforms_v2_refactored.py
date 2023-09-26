@@ -19,7 +19,6 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 from common_utils import (
     assert_equal,
-    assert_no_warnings,
     cache,
     cpu_and_cuda,
     freeze_rng_state,
@@ -350,12 +349,6 @@ INTERPOLATION_MODES = [
 ]
 
 
-@contextlib.contextmanager
-def assert_warns_antialias_default_value():
-    with pytest.warns(UserWarning, match="The default value of the antialias parameter of all the resizing transforms"):
-        yield
-
-
 def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
     format = bounding_boxes.format
     canvas_size = new_canvas_size or bounding_boxes.canvas_size
@@ -683,23 +676,6 @@ class TestResize:
 
         with pytest.raises(ValueError, match=match):
             F.resize(make_input(self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
-
-    @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
-    @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image, make_video],
-    )
-    def test_antialias_warning(self, interpolation, make_input):
-        with (
-            assert_warns_antialias_default_value()
-            if interpolation in {transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC}
-            else assert_no_warnings()
-        ):
-            F.resize(
-                make_input(self.INPUT_SIZE),
-                size=self.OUTPUT_SIZES[0],
-                interpolation=interpolation,
-            )
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
@@ -3881,3 +3857,934 @@ class TestPerspective:
         )
 
         assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestEqualize:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.equalize_image, make_image(dtype=dtype, device=device))
+
+    def test_kernel_video(self):
+        check_kernel(F.equalize_image, make_video())
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.equalize, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.equalize_image, torch.Tensor),
+            (F._equalize_image_pil, PIL.Image.Image),
+            (F.equalize_image, tv_tensors.Image),
+            (F.equalize_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.equalize, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomEqualize(p=1), make_input())
+
+    @pytest.mark.parametrize(("low", "high"), [(0, 64), (64, 192), (192, 256), (0, 1), (127, 128), (255, 256)])
+    @pytest.mark.parametrize("fn", [F.equalize, transform_cls_to_functional(transforms.RandomEqualize, p=1)])
+    def test_image_correctness(self, low, high, fn):
+        # We are not using the default `make_image` here since that uniformly samples the values over the whole value
+        # range. Since the whole point of F.equalize is to transform an arbitrary distribution of values into a uniform
+        # one over the full range, the information gain is low if we already provide something really close to the
+        # expected value.
+        image = tv_tensors.Image(
+            torch.testing.make_tensor((3, 117, 253), dtype=torch.uint8, device="cpu", low=low, high=high)
+        )
+
+        actual = fn(image)
+        expected = F.to_image(F.equalize(F.to_pil_image(image)))
+
+        assert_equal(actual, expected)
+
+
+class TestUniformTemporalSubsample:
+    def test_kernel_video(self):
+        check_kernel(F.uniform_temporal_subsample_video, make_video(), num_samples=2)
+
+    @pytest.mark.parametrize("make_input", [make_video_tensor, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.uniform_temporal_subsample, make_input(), num_samples=2)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.uniform_temporal_subsample_video, torch.Tensor),
+            (F.uniform_temporal_subsample_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.uniform_temporal_subsample, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_video_tensor, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.UniformTemporalSubsample(num_samples=2), make_input())
+
+    def _reference_uniform_temporal_subsample_video(self, video, *, num_samples):
+        # Adapted from
+        # https://github.com/facebookresearch/pytorchvideo/blob/c8d23d8b7e597586a9e2d18f6ed31ad8aa379a7a/pytorchvideo/transforms/functional.py#L19
+        t = video.shape[-4]
+        assert num_samples > 0 and t > 0
+        # Sample by nearest neighbor interpolation if num_samples > t.
+        indices = torch.linspace(0, t - 1, num_samples, device=video.device)
+        indices = torch.clamp(indices, 0, t - 1).long()
+        return tv_tensors.Video(torch.index_select(video, -4, indices))
+
+    CORRECTNESS_NUM_FRAMES = 5
+
+    @pytest.mark.parametrize("num_samples", list(range(1, CORRECTNESS_NUM_FRAMES + 1)))
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize(
+        "fn", [F.uniform_temporal_subsample, transform_cls_to_functional(transforms.UniformTemporalSubsample)]
+    )
+    def test_video_correctness(self, num_samples, dtype, device, fn):
+        video = make_video(num_frames=self.CORRECTNESS_NUM_FRAMES, dtype=dtype, device=device)
+
+        actual = fn(video, num_samples=num_samples)
+        expected = self._reference_uniform_temporal_subsample_video(video, num_samples=num_samples)
+
+        assert_equal(actual, expected)
+
+
+class TestNormalize:
+    MEANS_STDS = [
+        ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
+    ]
+    MEAN, STD = MEANS_STDS[0]
+
+    @pytest.mark.parametrize(("mean", "std"), [*MEANS_STDS, (0.5, 2.0)])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, mean, std, device):
+        check_kernel(F.normalize_image, make_image(dtype=torch.float32, device=device), mean=self.MEAN, std=self.STD)
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image_inplace(self, device):
+        input = make_image_tensor(dtype=torch.float32, device=device)
+        input_version = input._version
+
+        output_out_of_place = F.normalize_image(input, mean=self.MEAN, std=self.STD)
+        assert output_out_of_place.data_ptr() != input.data_ptr()
+        assert output_out_of_place is not input
+
+        output_inplace = F.normalize_image(input, mean=self.MEAN, std=self.STD, inplace=True)
+        assert output_inplace.data_ptr() == input.data_ptr()
+        assert output_inplace._version > input_version
+        assert output_inplace is input
+
+        assert_equal(output_inplace, output_out_of_place)
+
+    def test_kernel_video(self):
+        check_kernel(F.normalize_video, make_video(dtype=torch.float32), mean=self.MEAN, std=self.STD)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.normalize, make_input(dtype=torch.float32), mean=self.MEAN, std=self.STD)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.normalize_image, torch.Tensor),
+            (F.normalize_image, tv_tensors.Image),
+            (F.normalize_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.normalize, kernel=kernel, input_type=input_type)
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="should be a float tensor"):
+            F.normalize_image(make_image(dtype=torch.uint8), mean=self.MEAN, std=self.STD)
+
+        with pytest.raises(ValueError, match="tensor image of size"):
+            F.normalize_image(torch.rand(16, 16, dtype=torch.float32), mean=self.MEAN, std=self.STD)
+
+        for std in [0, [0, 0, 0], [0, 1, 1]]:
+            with pytest.raises(ValueError, match="std evaluated to zero, leading to division by zero"):
+                F.normalize_image(make_image(dtype=torch.float32), mean=self.MEAN, std=std)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.Normalize(mean=self.MEAN, std=self.STD), make_input(dtype=torch.float32))
+
+    def _reference_normalize_image(self, image, *, mean, std):
+        image = image.numpy()
+        mean, std = [np.array(stat, dtype=image.dtype).reshape((-1, 1, 1)) for stat in [mean, std]]
+        return tv_tensors.Image((image - mean) / std)
+
+    @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
+    @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
+    @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
+    def test_correctness_image(self, mean, std, dtype, fn):
+        image = make_image(dtype=dtype)
+
+        actual = fn(image, mean=mean, std=std)
+        expected = self._reference_normalize_image(image, mean=mean, std=std)
+
+        assert_equal(actual, expected)
+
+
+class TestClampBoundingBoxes:
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel(self, format, dtype, device):
+        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
+        check_kernel(
+            F.clamp_bounding_boxes,
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
+        )
+
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    def test_functional(self, format):
+        check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format))
+
+    def test_errors(self):
+        input_tv_tensor = make_bounding_boxes()
+        input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
+        format, canvas_size = input_tv_tensor.format, input_tv_tensor.canvas_size
+
+        for format_, canvas_size_ in [(None, None), (format, None), (None, canvas_size)]:
+            with pytest.raises(
+                ValueError, match="For pure tensor inputs, `format` and `canvas_size` have to be passed."
+            ):
+                F.clamp_bounding_boxes(input_pure_tensor, format=format_, canvas_size=canvas_size_)
+
+        for format_, canvas_size_ in [(format, canvas_size), (format, None), (None, canvas_size)]:
+            with pytest.raises(
+                ValueError, match="For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed."
+            ):
+                F.clamp_bounding_boxes(input_tv_tensor, format=format_, canvas_size=canvas_size_)
+
+    def test_transform(self):
+        check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
+
+
+class TestInvert:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.int16, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.invert_image, make_image(dtype=dtype, device=device))
+
+    def test_kernel_video(self):
+        check_kernel(F.invert_video, make_video())
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.invert, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.invert_image, torch.Tensor),
+            (F._invert_image_pil, PIL.Image.Image),
+            (F.invert_image, tv_tensors.Image),
+            (F.invert_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.invert, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomInvert(p=1), make_input())
+
+    @pytest.mark.parametrize("fn", [F.invert, transform_cls_to_functional(transforms.RandomInvert, p=1)])
+    def test_correctness_image(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image)
+        expected = F.to_image(F.invert(F.to_pil_image(image)))
+
+        assert_equal(actual, expected)
+
+
+class TestPosterize:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.posterize_image, make_image(dtype=dtype, device=device), bits=1)
+
+    def test_kernel_video(self):
+        check_kernel(F.posterize_video, make_video(), bits=1)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.posterize, make_input(), bits=1)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.posterize_image, torch.Tensor),
+            (F._posterize_image_pil, PIL.Image.Image),
+            (F.posterize_image, tv_tensors.Image),
+            (F.posterize_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.posterize, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomPosterize(bits=1, p=1), make_input())
+
+    @pytest.mark.parametrize("bits", [1, 4, 8])
+    @pytest.mark.parametrize("fn", [F.posterize, transform_cls_to_functional(transforms.RandomPosterize, p=1)])
+    def test_correctness_image(self, bits, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, bits=bits)
+        expected = F.to_image(F.posterize(F.to_pil_image(image), bits=bits))
+
+        assert_equal(actual, expected)
+
+
+class TestSolarize:
+    def _make_threshold(self, input, *, factor=0.5):
+        dtype = input.dtype if isinstance(input, torch.Tensor) else torch.uint8
+        return (float if dtype.is_floating_point else int)(get_max_value(dtype) * factor)
+
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        image = make_image(dtype=dtype, device=device)
+        check_kernel(F.solarize_image, image, threshold=self._make_threshold(image))
+
+    def test_kernel_video(self):
+        video = make_video()
+        check_kernel(F.solarize_video, video, threshold=self._make_threshold(video))
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        input = make_input()
+        check_functional(F.solarize, input, threshold=self._make_threshold(input))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.solarize_image, torch.Tensor),
+            (F._solarize_image_pil, PIL.Image.Image),
+            (F.solarize_image, tv_tensors.Image),
+            (F.solarize_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.solarize, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(("dtype", "threshold"), [(torch.uint8, 256), (torch.float, 1.5)])
+    def test_functional_error(self, dtype, threshold):
+        with pytest.raises(TypeError, match="Threshold should be less or equal the maximum value of the dtype"):
+            F.solarize(make_image(dtype=dtype), threshold=threshold)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        input = make_input()
+        check_transform(transforms.RandomSolarize(threshold=self._make_threshold(input), p=1), input)
+
+    @pytest.mark.parametrize("threshold_factor", [0.0, 0.1, 0.5, 0.9, 1.0])
+    @pytest.mark.parametrize("fn", [F.solarize, transform_cls_to_functional(transforms.RandomSolarize, p=1)])
+    def test_correctness_image(self, threshold_factor, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+        threshold = self._make_threshold(image, factor=threshold_factor)
+
+        actual = fn(image, threshold=threshold)
+        expected = F.to_image(F.solarize(F.to_pil_image(image), threshold=threshold))
+
+        assert_equal(actual, expected)
+
+
+class TestAutocontrast:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.int16, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.autocontrast_image, make_image(dtype=dtype, device=device))
+
+    def test_kernel_video(self):
+        check_kernel(F.autocontrast_video, make_video())
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.autocontrast, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.autocontrast_image, torch.Tensor),
+            (F._autocontrast_image_pil, PIL.Image.Image),
+            (F.autocontrast_image, tv_tensors.Image),
+            (F.autocontrast_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.autocontrast, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomAutocontrast(p=1), make_input(), check_v1_compatibility=dict(rtol=0, atol=1))
+
+    @pytest.mark.parametrize("fn", [F.autocontrast, transform_cls_to_functional(transforms.RandomAutocontrast, p=1)])
+    def test_correctness_image(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image)
+        expected = F.to_image(F.autocontrast(F.to_pil_image(image)))
+
+        assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestAdjustSharpness:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.adjust_sharpness_image, make_image(dtype=dtype, device=device), sharpness_factor=0.5)
+
+    def test_kernel_video(self):
+        check_kernel(F.adjust_sharpness_video, make_video(), sharpness_factor=0.5)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.adjust_sharpness, make_input(), sharpness_factor=0.5)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_sharpness_image, torch.Tensor),
+            (F._adjust_sharpness_image_pil, PIL.Image.Image),
+            (F.adjust_sharpness_image, tv_tensors.Image),
+            (F.adjust_sharpness_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.adjust_sharpness, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1), make_input())
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="can have 1 or 3 channels"):
+            F.adjust_sharpness(make_image(color_space="RGBA"), sharpness_factor=0.5)
+
+        with pytest.raises(ValueError, match="is not non-negative"):
+            F.adjust_sharpness(make_image(), sharpness_factor=-1)
+
+    @pytest.mark.parametrize("sharpness_factor", [0.1, 0.5, 1.0])
+    @pytest.mark.parametrize(
+        "fn", [F.adjust_sharpness, transform_cls_to_functional(transforms.RandomAdjustSharpness, p=1)]
+    )
+    def test_correctness_image(self, sharpness_factor, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, sharpness_factor=sharpness_factor)
+        expected = F.to_image(F.adjust_sharpness(F.to_pil_image(image), sharpness_factor=sharpness_factor))
+
+        assert_equal(actual, expected)
+
+
+class TestAdjustContrast:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.adjust_contrast_image, make_image(dtype=dtype, device=device), contrast_factor=0.5)
+
+    def test_kernel_video(self):
+        check_kernel(F.adjust_contrast_video, make_video(), contrast_factor=0.5)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.adjust_contrast, make_input(), contrast_factor=0.5)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_contrast_image, torch.Tensor),
+            (F._adjust_contrast_image_pil, PIL.Image.Image),
+            (F.adjust_contrast_image, tv_tensors.Image),
+            (F.adjust_contrast_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.adjust_contrast, kernel=kernel, input_type=input_type)
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="permitted channel values are 1 or 3"):
+            F.adjust_contrast(make_image(color_space="RGBA"), contrast_factor=0.5)
+
+        with pytest.raises(ValueError, match="is not non-negative"):
+            F.adjust_contrast(make_image(), contrast_factor=-1)
+
+    @pytest.mark.parametrize("contrast_factor", [0.1, 0.5, 1.0])
+    def test_correctness_image(self, contrast_factor):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.adjust_contrast(image, contrast_factor=contrast_factor)
+        expected = F.to_image(F.adjust_contrast(F.to_pil_image(image), contrast_factor=contrast_factor))
+
+        assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestAdjustGamma:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.adjust_gamma_image, make_image(dtype=dtype, device=device), gamma=0.5)
+
+    def test_kernel_video(self):
+        check_kernel(F.adjust_gamma_video, make_video(), gamma=0.5)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.adjust_gamma, make_input(), gamma=0.5)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_gamma_image, torch.Tensor),
+            (F._adjust_gamma_image_pil, PIL.Image.Image),
+            (F.adjust_gamma_image, tv_tensors.Image),
+            (F.adjust_gamma_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.adjust_gamma, kernel=kernel, input_type=input_type)
+
+    def test_functional_error(self):
+        with pytest.raises(ValueError, match="Gamma should be a non-negative real number"):
+            F.adjust_gamma(make_image(), gamma=-1)
+
+    @pytest.mark.parametrize("gamma", [0.1, 0.5, 1.0])
+    @pytest.mark.parametrize("gain", [0.1, 1.0, 2.0])
+    def test_correctness_image(self, gamma, gain):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.adjust_gamma(image, gamma=gamma, gain=gain)
+        expected = F.to_image(F.adjust_gamma(F.to_pil_image(image), gamma=gamma, gain=gain))
+
+        assert_equal(actual, expected)
+
+
+class TestAdjustHue:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.adjust_hue_image, make_image(dtype=dtype, device=device), hue_factor=0.25)
+
+    def test_kernel_video(self):
+        check_kernel(F.adjust_hue_video, make_video(), hue_factor=0.25)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.adjust_hue, make_input(), hue_factor=0.25)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_hue_image, torch.Tensor),
+            (F._adjust_hue_image_pil, PIL.Image.Image),
+            (F.adjust_hue_image, tv_tensors.Image),
+            (F.adjust_hue_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.adjust_hue, kernel=kernel, input_type=input_type)
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="permitted channel values are 1 or 3"):
+            F.adjust_hue(make_image(color_space="RGBA"), hue_factor=0.25)
+
+        for hue_factor in [-1, 1]:
+            with pytest.raises(ValueError, match=re.escape("is not in [-0.5, 0.5]")):
+                F.adjust_hue(make_image(), hue_factor=hue_factor)
+
+    @pytest.mark.parametrize("hue_factor", [-0.5, -0.3, 0.0, 0.2, 0.5])
+    def test_correctness_image(self, hue_factor):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.adjust_hue(image, hue_factor=hue_factor)
+        expected = F.to_image(F.adjust_hue(F.to_pil_image(image), hue_factor=hue_factor))
+
+        mae = (actual.float() - expected.float()).abs().mean()
+        assert mae < 2
+
+
+class TestAdjustSaturation:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.adjust_saturation_image, make_image(dtype=dtype, device=device), saturation_factor=0.5)
+
+    def test_kernel_video(self):
+        check_kernel(F.adjust_saturation_video, make_video(), saturation_factor=0.5)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.adjust_saturation, make_input(), saturation_factor=0.5)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.adjust_saturation_image, torch.Tensor),
+            (F._adjust_saturation_image_pil, PIL.Image.Image),
+            (F.adjust_saturation_image, tv_tensors.Image),
+            (F.adjust_saturation_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.adjust_saturation, kernel=kernel, input_type=input_type)
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="permitted channel values are 1 or 3"):
+            F.adjust_saturation(make_image(color_space="RGBA"), saturation_factor=0.5)
+
+        with pytest.raises(ValueError, match="is not non-negative"):
+            F.adjust_saturation(make_image(), saturation_factor=-1)
+
+    @pytest.mark.parametrize("saturation_factor", [0.1, 0.5, 1.0])
+    def test_correctness_image(self, saturation_factor):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.adjust_saturation(image, saturation_factor=saturation_factor)
+        expected = F.to_image(F.adjust_saturation(F.to_pil_image(image), saturation_factor=saturation_factor))
+
+        assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestFiveTenCrop:
+    INPUT_SIZE = (17, 11)
+    OUTPUT_SIZE = (3, 5)
+
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("kernel", [F.five_crop_image, F.ten_crop_image])
+    def test_kernel_image(self, dtype, device, kernel):
+        check_kernel(
+            kernel,
+            make_image(self.INPUT_SIZE, dtype=dtype, device=device),
+            size=self.OUTPUT_SIZE,
+            check_batched_vs_unbatched=False,
+        )
+
+    @pytest.mark.parametrize("kernel", [F.five_crop_video, F.ten_crop_video])
+    def test_kernel_video(self, kernel):
+        check_kernel(kernel, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZE, check_batched_vs_unbatched=False)
+
+    def _functional_wrapper(self, fn):
+        # This wrapper is needed to make five_crop / ten_crop compatible with check_functional, since that requires a
+        # single output rather than a sequence.
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            outputs = fn(*args, **kwargs)
+            return outputs[0]
+
+        return wrapper
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("functional", [F.five_crop, F.ten_crop])
+    def test_functional(self, make_input, functional):
+        check_functional(
+            self._functional_wrapper(functional),
+            make_input(self.INPUT_SIZE),
+            size=self.OUTPUT_SIZE,
+            check_scripted_smoke=False,
+        )
+
+    @pytest.mark.parametrize(
+        ("functional", "kernel", "input_type"),
+        [
+            (F.five_crop, F.five_crop_image, torch.Tensor),
+            (F.five_crop, F._five_crop_image_pil, PIL.Image.Image),
+            (F.five_crop, F.five_crop_image, tv_tensors.Image),
+            (F.five_crop, F.five_crop_video, tv_tensors.Video),
+            (F.ten_crop, F.ten_crop_image, torch.Tensor),
+            (F.ten_crop, F._ten_crop_image_pil, PIL.Image.Image),
+            (F.ten_crop, F.ten_crop_image, tv_tensors.Image),
+            (F.ten_crop, F.ten_crop_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, functional, kernel, input_type):
+        check_functional_kernel_signature_match(functional, kernel=kernel, input_type=input_type)
+
+    class _TransformWrapper(nn.Module):
+        # This wrapper is needed to make FiveCrop / TenCrop compatible with check_transform, since that requires a
+        # single output rather than a sequence.
+        _v1_transform_cls = None
+
+        def _extract_params_for_v1_transform(self):
+            return dict(five_ten_crop_transform=self.five_ten_crop_transform)
+
+        def __init__(self, five_ten_crop_transform):
+            super().__init__()
+            type(self)._v1_transform_cls = type(self)
+            self.five_ten_crop_transform = five_ten_crop_transform
+
+        def forward(self, input: torch.Tensor) -> torch.Tensor:
+            outputs = self.five_ten_crop_transform(input)
+            return outputs[0]
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
+    def test_transform(self, make_input, transform_cls):
+        check_transform(self._TransformWrapper(transform_cls(size=self.OUTPUT_SIZE)), make_input(self.INPUT_SIZE))
+
+    @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_mask])
+    @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
+    def test_transform_error(self, make_input, transform_cls):
+        transform = transform_cls(size=self.OUTPUT_SIZE)
+
+        with pytest.raises(TypeError, match="not supported"):
+            transform(make_input(self.INPUT_SIZE))
+
+    @pytest.mark.parametrize("fn", [F.five_crop, transform_cls_to_functional(transforms.FiveCrop)])
+    def test_correctness_image_five_crop(self, fn):
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, size=self.OUTPUT_SIZE)
+        expected = F.five_crop(F.to_pil_image(image), size=self.OUTPUT_SIZE)
+
+        assert isinstance(actual, tuple)
+        assert_equal(actual, [F.to_image(e) for e in expected])
+
+    @pytest.mark.parametrize("fn_or_class", [F.ten_crop, transforms.TenCrop])
+    @pytest.mark.parametrize("vertical_flip", [False, True])
+    def test_correctness_image_ten_crop(self, fn_or_class, vertical_flip):
+        if fn_or_class is transforms.TenCrop:
+            fn = transform_cls_to_functional(fn_or_class, size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
+            kwargs = dict()
+        else:
+            fn = fn_or_class
+            kwargs = dict(size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
+
+        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, **kwargs)
+        expected = F.ten_crop(F.to_pil_image(image), size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
+
+        assert isinstance(actual, tuple)
+        assert_equal(actual, [F.to_image(e) for e in expected])
+
+
+class TestColorJitter:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        check_transform(
+            transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.25),
+            make_input(dtype=dtype, device=device),
+        )
+
+    def test_transform_noop(self):
+        input = make_image()
+        input_version = input._version
+
+        transform = transforms.ColorJitter()
+        output = transform(input)
+
+        assert output is input
+        assert output.data_ptr() == input.data_ptr()
+        assert output._version == input_version
+
+    def test_transform_error(self):
+        with pytest.raises(ValueError, match="must be non negative"):
+            transforms.ColorJitter(brightness=-1)
+
+        for brightness in [object(), [1, 2, 3]]:
+            with pytest.raises(TypeError, match="single number or a sequence with length 2"):
+                transforms.ColorJitter(brightness=brightness)
+
+        with pytest.raises(ValueError, match="values should be between"):
+            transforms.ColorJitter(brightness=(-1, 0.5))
+
+        with pytest.raises(ValueError, match="values should be between"):
+            transforms.ColorJitter(hue=1)
+
+    @pytest.mark.parametrize("brightness", [None, 0.1, (0.2, 0.3)])
+    @pytest.mark.parametrize("contrast", [None, 0.4, (0.5, 0.6)])
+    @pytest.mark.parametrize("saturation", [None, 0.7, (0.8, 0.9)])
+    @pytest.mark.parametrize("hue", [None, 0.3, (-0.1, 0.2)])
+    def test_transform_correctness(self, brightness, contrast, saturation, hue):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        transform = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
+
+        with freeze_rng_state():
+            torch.manual_seed(0)
+            actual = transform(image)
+
+            torch.manual_seed(0)
+            expected = F.to_image(transform(F.to_pil_image(image)))
+
+        mae = (actual.float() - expected.float()).abs().mean()
+        assert mae < 2
+
+
+class TestRgbToGrayscale:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.rgb_to_grayscale_image, make_image(dtype=dtype, device=device))
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_functional(self, make_input):
+        check_functional(F.rgb_to_grayscale, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.rgb_to_grayscale_image, torch.Tensor),
+            (F._rgb_to_grayscale_image_pil, PIL.Image.Image),
+            (F.rgb_to_grayscale_image, tv_tensors.Image),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.rgb_to_grayscale, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("transform", [transforms.Grayscale(), transforms.RandomGrayscale(p=1)])
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_transform(self, transform, make_input):
+        check_transform(transform, make_input())
+
+    @pytest.mark.parametrize("num_output_channels", [1, 3])
+    @pytest.mark.parametrize("fn", [F.rgb_to_grayscale, transform_cls_to_functional(transforms.Grayscale)])
+    def test_image_correctness(self, num_output_channels, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = fn(image, num_output_channels=num_output_channels)
+        expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_output_channels))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
+
+    @pytest.mark.parametrize("num_input_channels", [1, 3])
+    def test_random_transform_correctness(self, num_input_channels):
+        image = make_image(
+            color_space={
+                1: "GRAY",
+                3: "RGB",
+            }[num_input_channels],
+            dtype=torch.uint8,
+            device="cpu",
+        )
+
+        transform = transforms.RandomGrayscale(p=1)
+
+        actual = transform(image)
+        expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_input_channels))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
+
+
+class TestRandomZoomOut:
+    # Tests are light because this largely relies on the already tested `pad` kernels.
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.RandomZoomOut(p=1), make_input())
+
+    def test_transform_error(self):
+        for side_range in [None, 1, [1, 2, 3]]:
+            with pytest.raises(
+                ValueError if isinstance(side_range, list) else TypeError, match="should be a sequence of length 2"
+            ):
+                transforms.RandomZoomOut(side_range=side_range)
+
+        for side_range in [[0.5, 1.5], [2.0, 1.0]]:
+            with pytest.raises(ValueError, match="Invalid side range"):
+                transforms.RandomZoomOut(side_range=side_range)
+
+    @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_mask,
+            make_video,
+        ],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform_params_correctness(self, side_range, make_input, device):
+        if make_input is make_image_pil and device != "cpu":
+            pytest.skip("PIL image tests with parametrization device!='cpu' will degenerate to that anyway.")
+
+        transform = transforms.RandomZoomOut(side_range=side_range)
+
+        input = make_input()
+        height, width = F.get_size(input)
+
+        params = transform._get_params([input])
+        assert "padding" in params
+
+        padding = params["padding"]
+        assert len(padding) == 4
+
+        assert 0 <= padding[0] <= (side_range[1] - 1) * width
+        assert 0 <= padding[1] <= (side_range[1] - 1) * height
+        assert 0 <= padding[2] <= (side_range[1] - 1) * width
+        assert 0 <= padding[3] <= (side_range[1] - 1) * height
+
+
+class TestRandomPhotometricDistort:
+    # Tests are light because this largely relies on the already tested
+    # `adjust_{brightness,contrast,saturation,hue}` and `permute_channels` kernels.
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, dtype, device):
+        if make_input is make_image_pil and not (dtype is torch.uint8 and device == "cpu"):
+            pytest.skip(
+                "PIL image tests with parametrization other than dtype=torch.uint8 and device='cpu' "
+                "will degenerate to that anyway."
+            )
+
+        check_transform(
+            transforms.RandomPhotometricDistort(
+                brightness=(0.3, 0.4), contrast=(0.5, 0.6), saturation=(0.7, 0.8), hue=(-0.1, 0.2), p=1
+            ),
+            make_input(dtype=dtype, device=device),
+        )

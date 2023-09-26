@@ -59,7 +59,7 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     model.eval()
 
     # Step 2: Initialize the inference transforms
-    preprocess = weights.transforms()
+    preprocess = weights.transforms(antialias=(device != "mps"))  # antialias not supported on MPS
 
     # Step 3: Apply inference preprocessing transforms
     batch = preprocess(img).unsqueeze(0)
