@@ -261,7 +261,7 @@ def clamp_bounding_boxes(
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
         if format is None or canvas_size is None:
-            raise ValueError("For pure tensor inputs, `format` and `canvas_size` has to be passed.")
+            raise ValueError("For pure tensor inputs, `format` and `canvas_size` have to be passed.")
         return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
     elif isinstance(inpt, tv_tensors.BoundingBoxes):
         if format is not None or canvas_size is not None:
