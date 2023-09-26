@@ -80,22 +80,21 @@ def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
 
-    if re.match(r"\d+\.\d+\.\d+(?!a0)", torchvision.__version__):
+    # The "a0" after the semantic version should only be present on the main branch or nightly builds,
+    # but not release branches.
+    if re.match(r"\d+\.\d+\.\d+(?!a0)\+", torchvision.__version__):
         try:
-            import torchvision.prototype as _
+            from torchvision import prototype
         except ModuleNotFoundError:
             pass
         else:
             raise AssertionError(
                 "torchvision.prototype available on a release version. "
-                "Run\n\n"
-                "rm -rf torchvision/prototype test/test_prototype* .github/workflows/prototype*"
+                "Run rm -r torchvision/prototype test/test_prototype* .github/workflows/prototype*"
             )
 
-    major_minor_version = torchvision.__version__.split(".")[:2]
-    if major_minor_version >= (0, 16):
-        print(f"{torch.ops.image._jpeg_version() = }")
-        assert torch.ops.image._is_compiled_against_turbo()
+    print(f"{torch.ops.image._jpeg_version() = }")
+    assert torch.ops.image._is_compiled_against_turbo()
 
     smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
