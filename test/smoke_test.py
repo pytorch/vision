@@ -92,9 +92,8 @@ def main() -> None:
                 "rm -rf torchvision/prototype test/test_prototype* .github/workflows/prototype*"
             )
 
-    # Turn 1.11.0aHASH into 1.11 (major.minor only)
-    version = ".".join(torchvision.__version__.split(".")[:2])
-    if version >= "0.16":
+    major_minor_version = torchvision.__version__.split(".")[:2]
+    if major_minor_version >= (0, 16):
         print(f"{torch.ops.image._jpeg_version() = }")
         assert torch.ops.image._is_compiled_against_turbo()
 
