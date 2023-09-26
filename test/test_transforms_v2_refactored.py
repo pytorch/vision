@@ -312,11 +312,12 @@ def adapt_fill(value, *, dtype):
         return value
 
     max_value = get_max_value(dtype)
+    value_type = float if dtype.is_floating_point else int
 
     if isinstance(value, (int, float)):
-        return type(value)(value * max_value)
+        return value_type(value * max_value)
     elif isinstance(value, (list, tuple)):
-        return type(value)(type(v)(v * max_value) for v in value)
+        return type(value)(value_type(v * max_value) for v in value)
     else:
         raise ValueError(f"fill should be an int or float, or a list or tuple of the former, but got '{value}'.")
 
@@ -415,6 +416,10 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
         format=format,
         canvas_size=canvas_size,
     )
+
+
+# turns all warnings into errors for this module
+pytestmark = pytest.mark.filterwarnings("error")
 
 
 class TestResize:
@@ -2577,14 +2582,18 @@ class TestCrop:
     def test_transform(self, param, value, make_input):
         input = make_input(self.INPUT_SIZE)
 
-        kwargs = {param: value}
         if param == "fill":
-            # 1. size is required
-            # 2. the fill parameter only has an affect if we need padding
-            kwargs["size"] = [s + 4 for s in self.INPUT_SIZE]
-
             if isinstance(input, tv_tensors.Mask) and isinstance(value, (tuple, list)):
                 pytest.skip("F.pad_mask doesn't support non-scalar fill.")
+
+            kwargs = dict(
+                # 1. size is required
+                # 2. the fill parameter only has an affect if we need padding
+                size=[s + 4 for s in self.INPUT_SIZE],
+                fill=adapt_fill(value, dtype=input.dtype if isinstance(input, torch.Tensor) else torch.uint8),
+            )
+        else:
+            kwargs = {param: value}
 
         check_transform(
             transforms.RandomCrop(**kwargs, pad_if_needed=True),
@@ -3477,6 +3486,8 @@ class TestPad:
     @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
     def test_image_correctness(self, padding, padding_mode, fill, fn):
         image = make_image(dtype=torch.uint8, device="cpu")
+
+        fill = adapt_fill(fill, dtype=torch.uint8)
 
         actual = fn(image, padding=padding, padding_mode=padding_mode, fill=fill)
         expected = F.to_image(F.pad(F.to_pil_image(image), padding=padding, padding_mode=padding_mode, fill=fill))
