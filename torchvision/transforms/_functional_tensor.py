@@ -440,9 +440,7 @@ def resize(
     img: Tensor,
     size: List[int],
     interpolation: str = "bilinear",
-    # TODO: in v0.17, change the default to True. This will a private function
-    # by then, so we don't care about warning here.
-    antialias: Optional[bool] = None,
+    antialias: Optional[bool] = True,
 ) -> Tensor:
     _assert_image_tensor(img)
 

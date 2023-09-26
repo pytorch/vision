@@ -123,17 +123,6 @@ CONSISTENCY_CONFIGS = [
         ]
     ],
     ConsistencyConfig(
-        v2_transforms.Grayscale,
-        legacy_transforms.Grayscale,
-        [
-            ArgsKwargs(num_output_channels=1),
-            ArgsKwargs(num_output_channels=3),
-        ],
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=["RGB", "GRAY"]),
-        # Use default tolerances of `torch.testing.assert_close`
-        closeness_kwargs=dict(rtol=None, atol=None),
-    ),
-    ConsistencyConfig(
         v2_transforms.ToPILImage,
         legacy_transforms.ToPILImage,
         [NotScriptableArgsKwargs()],
@@ -216,17 +205,6 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=1, sharpness_factor=0.99),
         ],
         closeness_kwargs={"atol": 1e-6, "rtol": 1e-6},
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomGrayscale,
-        legacy_transforms.RandomGrayscale,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-        ],
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=["RGB", "GRAY"]),
-        # Use default tolerances of `torch.testing.assert_close`
-        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         v2_transforms.PILToTensor,

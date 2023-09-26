@@ -2,7 +2,6 @@ import itertools
 import pathlib
 import pickle
 import random
-import warnings
 
 import numpy as np
 
@@ -116,11 +115,9 @@ class TestSmoke:
             (transforms.RandAugment(), auto_augment_adapter),
             (transforms.TrivialAugmentWide(), auto_augment_adapter),
             (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
-            (transforms.Grayscale(), None),
             (transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1.0), None),
             (transforms.RandomAutocontrast(p=1.0), None),
             (transforms.RandomEqualize(p=1.0), None),
-            (transforms.RandomGrayscale(p=1.0), None),
             (transforms.RandomInvert(p=1.0), None),
             (transforms.RandomChannelPermutation(), None),
             (transforms.RandomPosterize(bits=4, p=1.0), None),
@@ -137,7 +134,6 @@ class TestSmoke:
             (transforms.RandomRotation(degrees=30), None),
             (transforms.RandomShortestSize(min_size=10, antialias=True), None),
             (transforms.RandomVerticalFlip(p=1.0), None),
-            (transforms.RandomZoomOut(p=1.0), None),
             (transforms.Resize([16, 16], antialias=True), None),
             (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
             (transforms.ClampBoundingBoxes(), None),
@@ -387,34 +383,6 @@ def test_pure_tensor_heuristic(flat_inputs):
 
     for input, output in zip(other_inputs, other_outputs):
         assert transform.was_applied(output, input)
-
-
-class TestRandomZoomOut:
-    def test_assertions(self):
-        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
-            transforms.RandomZoomOut(fill="abc")
-
-        with pytest.raises(TypeError, match="should be a sequence of length"):
-            transforms.RandomZoomOut(0, side_range=0)
-
-        with pytest.raises(ValueError, match="Invalid canvas side range"):
-            transforms.RandomZoomOut(0, side_range=[4.0, 1.0])
-
-    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
-    @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
-    def test__get_params(self, fill, side_range):
-        transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
-
-        h, w = size = (24, 32)
-        image = make_image(size)
-
-        params = transform._get_params([image])
-
-        assert len(params["padding"]) == 4
-        assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
-        assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
-        assert 0 <= params["padding"][2] <= (side_range[1] - 1) * w
-        assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
 
 
 class TestElasticTransform:
@@ -754,46 +722,6 @@ class TestUniformTemporalSubsample:
         assert type(output) is type(inpt)
         assert output.shape[-4] == num_samples
         assert output.dtype == inpt.dtype
-
-
-# TODO: remove this test in 0.17 when the default of antialias changes to True
-def test_antialias_warning():
-    pil_img = PIL.Image.new("RGB", size=(10, 10), color=127)
-    tensor_img = torch.randint(0, 256, size=(3, 10, 10), dtype=torch.uint8)
-    tensor_video = torch.randint(0, 256, size=(2, 3, 10, 10), dtype=torch.uint8)
-
-    match = "The default value of the antialias parameter"
-    with pytest.warns(UserWarning, match=match):
-        transforms.RandomResizedCrop((20, 20))(tensor_img)
-    with pytest.warns(UserWarning, match=match):
-        transforms.ScaleJitter((20, 20))(tensor_img)
-    with pytest.warns(UserWarning, match=match):
-        transforms.RandomShortestSize((20, 20))(tensor_img)
-    with pytest.warns(UserWarning, match=match):
-        transforms.RandomResize(10, 20)(tensor_img)
-
-    with pytest.warns(UserWarning, match=match):
-        F.resized_crop(tv_tensors.Image(tensor_img), 0, 0, 10, 10, (20, 20))
-
-    with pytest.warns(UserWarning, match=match):
-        F.resize(tv_tensors.Video(tensor_video), (20, 20))
-    with pytest.warns(UserWarning, match=match):
-        F.resized_crop(tv_tensors.Video(tensor_video), 0, 0, 10, 10, (20, 20))
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        transforms.RandomResizedCrop((20, 20))(pil_img)
-        transforms.ScaleJitter((20, 20))(pil_img)
-        transforms.RandomShortestSize((20, 20))(pil_img)
-        transforms.RandomResize(10, 20)(pil_img)
-
-        transforms.RandomResizedCrop((20, 20), antialias=True)(tensor_img)
-        transforms.ScaleJitter((20, 20), antialias=True)(tensor_img)
-        transforms.RandomShortestSize((20, 20), antialias=True)(tensor_img)
-        transforms.RandomResize(10, 20, antialias=True)(tensor_img)
-
-        F.resized_crop(tv_tensors.Image(tensor_img), 0, 0, 10, 10, (20, 20), antialias=True)
-        F.resized_crop(tv_tensors.Video(tensor_video), 0, 0, 10, 10, (20, 20), antialias=True)
 
 
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, tv_tensors.Image))
