@@ -189,10 +189,7 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, **kwar
 
         spy.assert_any_call(f"{functional.__module__}.{functional.__name__}")
 
-    if functional in {F.five_crop, F.ten_crop}:
-        assert all(isinstance(o, type(input)) for o in output)
-    else:
-        assert isinstance(output, type(input))
+    assert isinstance(output, type(input))
 
     if isinstance(input, tv_tensors.BoundingBoxes) and functional is not F.convert_bounding_box_format:
         assert output.format == input.format
@@ -257,13 +254,7 @@ def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
     with freeze_rng_state():
         output_v1 = v1_transform(input)
 
-    output_v2, output_v1 = [
-        type(output)(F.to_image(o) for o in output)
-        if isinstance(transform, (transforms.FiveCrop, transforms.TenCrop))
-        else F.to_image(output)
-        for output in [output_v2, output_v1]
-    ]
-    assert_close(output_v2, output_v1, rtol=rtol, atol=atol)
+    assert_close(F.to_image(output_v2), F.to_image(output_v1), rtol=rtol, atol=atol)
 
     if isinstance(input, PIL.Image.Image):
         return
@@ -275,11 +266,7 @@ def check_transform(transform, input, check_v1_compatibility=True):
     pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
-
-    if isinstance(transform, (transforms.FiveCrop, transforms.TenCrop)):
-        assert all(isinstance(o, type(input)) for o in output)
-    else:
-        assert isinstance(output, type(input))
+    assert isinstance(output, type(input))
 
     if isinstance(input, tv_tensors.BoundingBoxes) and not isinstance(transform, transforms.ConvertBoundingBoxFormat):
         assert output.format == input.format
@@ -4563,13 +4550,28 @@ class TestFiveTenCrop:
     def test_kernel_video(self, kernel):
         check_kernel(kernel, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZE, check_batched_vs_unbatched=False)
 
+    def _five_ten_crop_functional_wrapper(self, fn):
+        # This wrapper is needed to make five_crop / ten_crop compatible with check_functional, since that requires a
+        # single rather than a sequence.
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            outputs = fn(*args, **kwargs)
+            return outputs[0]
+
+        return wrapper
+
     @pytest.mark.parametrize(
         "make_input",
         [make_image_tensor, make_image_pil, make_image, make_video],
     )
     @pytest.mark.parametrize("functional", [F.five_crop, F.ten_crop])
     def test_functional(self, make_input, functional):
-        check_functional(functional, make_input(self.INPUT_SIZE), size=self.OUTPUT_SIZE)
+        check_functional(
+            self._five_ten_crop_functional_wrapper(functional),
+            make_input(self.INPUT_SIZE),
+            size=self.OUTPUT_SIZE,
+            check_scripted_smoke=False,
+        )
 
     @pytest.mark.parametrize(
         ("functional", "kernel", "input_type"),
@@ -4587,13 +4589,32 @@ class TestFiveTenCrop:
     def test_functional_signature(self, functional, kernel, input_type):
         check_functional_kernel_signature_match(functional, kernel=kernel, input_type=input_type)
 
+    class _FiveTenCropTransformWrapper(nn.Module):
+        # This wrapper is needed to make FiveCrop / TenCrop compatible with check_transform, since that requires a
+        # single output rather than a sequence.
+        _v1_transform_cls = None
+
+        def _extract_params_for_v1_transform(self):
+            return dict(five_ten_crop_transform=self.five_ten_crop_transform.__prepare_scriptable__())
+
+        def __init__(self, five_ten_crop_transform):
+            super().__init__()
+            type(self)._v1_transform_cls = type(self)
+            self.five_ten_crop_transform = five_ten_crop_transform
+
+        def forward(self, input: torch.Tensor) -> torch.Tensor:
+            outputs = self.five_ten_crop_transform(input)
+            return outputs[0]
+
     @pytest.mark.parametrize(
         "make_input",
         [make_image_tensor, make_image_pil, make_image, make_video],
     )
     @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
     def test_transform(self, make_input, transform_cls):
-        check_transform(transform_cls(size=self.OUTPUT_SIZE), make_input(self.INPUT_SIZE))
+        check_transform(
+            self._FiveTenCropTransformWrapper(transform_cls(size=self.OUTPUT_SIZE)), make_input(self.INPUT_SIZE)
+        )
 
     @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_mask])
     @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
