@@ -12,7 +12,6 @@ from torchvision import tv_tensors
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import is_pure_tensor
-from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
 from torchvision.transforms.v2.functional._meta import clamp_bounding_boxes, convert_bounding_box_format
 from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
 from transforms_v2_kernel_infos import KERNEL_INFOS
@@ -599,75 +598,6 @@ def test_correctness_perspective_bounding_boxes(device, startpoints, endpoints):
         ).reshape(bboxes.shape)
 
         torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=0, atol=1)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize(
-    "output_size",
-    [(18, 18), [18, 15], (16, 19), [12], [46, 48]],
-)
-def test_correctness_center_crop_bounding_boxes(device, output_size):
-    def _compute_expected_bbox(bbox, format_, canvas_size_, output_size_):
-        dtype = bbox.dtype
-        bbox = convert_bounding_box_format(bbox.float(), format_, tv_tensors.BoundingBoxFormat.XYWH)
-
-        if len(output_size_) == 1:
-            output_size_.append(output_size_[-1])
-
-        cy = int(round((canvas_size_[0] - output_size_[0]) * 0.5))
-        cx = int(round((canvas_size_[1] - output_size_[1]) * 0.5))
-        out_bbox = [
-            bbox[0].item() - cx,
-            bbox[1].item() - cy,
-            bbox[2].item(),
-            bbox[3].item(),
-        ]
-        out_bbox = torch.tensor(out_bbox)
-        out_bbox = convert_bounding_box_format(out_bbox, tv_tensors.BoundingBoxFormat.XYWH, format_)
-        out_bbox = clamp_bounding_boxes(out_bbox, format=format_, canvas_size=output_size)
-        return out_bbox.to(dtype=dtype, device=bbox.device)
-
-    for bboxes in make_multiple_bounding_boxes(extra_dims=((4,),)):
-        bboxes = bboxes.to(device)
-        bboxes_format = bboxes.format
-        bboxes_canvas_size = bboxes.canvas_size
-
-        output_boxes, output_canvas_size = F.center_crop_bounding_boxes(
-            bboxes, bboxes_format, bboxes_canvas_size, output_size
-        )
-
-        expected_bboxes = torch.stack(
-            [
-                _compute_expected_bbox(b, bboxes_format, bboxes_canvas_size, output_size)
-                for b in bboxes.reshape(-1, 4).unbind()
-            ]
-        ).reshape(bboxes.shape)
-
-        torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
-        torch.testing.assert_close(output_canvas_size, output_size)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("output_size", [[4, 2], [4], [7, 6]])
-def test_correctness_center_crop_mask(device, output_size):
-    def _compute_expected_mask(mask, output_size):
-        crop_height, crop_width = output_size if len(output_size) > 1 else [output_size[0], output_size[0]]
-
-        _, image_height, image_width = mask.shape
-        if crop_width > image_height or crop_height > image_width:
-            padding = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-            mask = F.pad_image(mask, padding, fill=0)
-
-        left = round((image_width - crop_width) * 0.5)
-        top = round((image_height - crop_height) * 0.5)
-
-        return mask[:, top : top + crop_height, left : left + crop_width]
-
-    mask = torch.randint(0, 2, size=(1, 6, 6), dtype=torch.long, device=device)
-    actual = F.center_crop_mask(mask, output_size)
-
-    expected = _compute_expected_mask(mask, output_size)
-    torch.testing.assert_close(expected, actual)
 
 
 @pytest.mark.parametrize(

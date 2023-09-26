@@ -83,14 +83,6 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.float]),
     ),
     ConsistencyConfig(
-        v2_transforms.CenterCrop,
-        legacy_transforms.CenterCrop,
-        [
-            ArgsKwargs(18),
-            ArgsKwargs((18, 13)),
-        ],
-    ),
-    ConsistencyConfig(
         v2_transforms.FiveCrop,
         legacy_transforms.FiveCrop,
         [
