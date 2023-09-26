@@ -4240,10 +4240,11 @@ class TestSolarize:
         input = make_input()
         check_transform(transforms.RandomSolarize(threshold=self._make_threshold(input), p=1), input)
 
-    @pytest.mark.parametrize("threshold", [0.0, 0.1, 0.5, 0.9, 1.0])
+    @pytest.mark.parametrize("threshold_factor", [0.0, 0.1, 0.5, 0.9, 1.0])
     @pytest.mark.parametrize("fn", [F.solarize, transform_cls_to_functional(transforms.RandomSolarize, p=1)])
-    def test_correctness_image(self, threshold, fn):
+    def test_correctness_image(self, threshold_factor, fn):
         image = make_image(dtype=torch.uint8, device="cpu")
+        threshold = self._make_threshold(image, factor=threshold_factor)
 
         actual = fn(image, threshold=threshold)
         expected = F.to_image(F.solarize(F.to_pil_image(image), threshold=threshold))
