@@ -2863,12 +2863,64 @@ class TestErase:
 
 
 class TestGaussianBlur:
+    @pytest.mark.parametrize("kernel_size", [1, 3, (3, 1), [3, 5]])
+    @pytest.mark.parametrize("sigma", [None, 1.0, 1, (0.5,), [0.3], (0.3, 0.7), [0.9, 0.2]])
+    def test_kernel_image(self, kernel_size, sigma):
+        check_kernel(
+            F.gaussian_blur_image,
+            make_image(),
+            kernel_size=kernel_size,
+            sigma=sigma,
+            check_scripted_vs_eager=not (isinstance(kernel_size, int) or isinstance(sigma, (float, int))),
+        )
+
+    def test_kernel_image_errors(self):
+        image = make_image_tensor()
+
+        with pytest.raises(ValueError, match="kernel_size is a sequence its length should be 2"):
+            F.gaussian_blur_image(image, kernel_size=[1, 2, 3])
+
+        for kernel_size in [2, -1]:
+            with pytest.raises(ValueError, match="kernel_size should have odd and positive integers"):
+                F.gaussian_blur_image(image, kernel_size=kernel_size)
+
+        with pytest.raises(ValueError, match="sigma is a sequence, its length should be 2"):
+            F.gaussian_blur_image(image, kernel_size=1, sigma=[1, 2, 3])
+
+        with pytest.raises(TypeError, match="sigma should be either float or sequence of floats"):
+            F.gaussian_blur_image(image, kernel_size=1, sigma=object())
+
+        with pytest.raises(ValueError, match="sigma should have positive values"):
+            F.gaussian_blur_image(image, kernel_size=1, sigma=-1)
+
+    def test_kernel_video(self):
+        check_kernel(F.gaussian_blur_video, make_video(), kernel_size=(3, 3))
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.gaussian_blur, make_input(), kernel_size=(3, 3))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.gaussian_blur_image, torch.Tensor),
+            (F._gaussian_blur_image_pil, PIL.Image.Image),
+            (F.gaussian_blur_image, tv_tensors.Image),
+            (F.gaussian_blur_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.gaussian_blur, kernel=kernel, input_type=input_type)
+
     @pytest.mark.parametrize(
         "make_input",
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("sigma", [5, (0.5, 2)])
+    @pytest.mark.parametrize("sigma", [5, 2.0, (0.5, 2), [1.3, 2.7]])
     def test_transform(self, make_input, device, sigma):
         check_transform(transforms.GaussianBlur(kernel_size=3, sigma=sigma), make_input(device=device))
 
@@ -2903,6 +2955,57 @@ class TestGaussianBlur:
         else:
             assert sigma[0] <= params["sigma"][0] <= sigma[1]
             assert sigma[0] <= params["sigma"][1] <= sigma[1]
+
+    # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
+    # np_img2 = np.arange(26 * 28, dtype="uint8").reshape((26, 28))
+    # {
+    #     "10_12_3__3_3_0.8": cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8),
+    #     "10_12_3__3_3_0.5": cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.5),
+    #     "10_12_3__3_5_0.8": cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.8),
+    #     "10_12_3__3_5_0.5": cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.5),
+    #     "26_28_1__23_23_1.7": cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7),
+    # }
+    REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS = torch.load(
+        Path(__file__).parent / "assets" / "gaussian_blur_opencv_results.pt"
+    )
+
+    @pytest.mark.parametrize(
+        ("dimensions", "kernel_size", "sigma"),
+        [
+            ((3, 10, 12), (3, 3), 0.8),
+            ((3, 10, 12), (3, 3), 0.5),
+            ((3, 10, 12), (3, 5), 0.8),
+            ((3, 10, 12), (3, 5), 0.5),
+            ((1, 26, 28), (23, 23), 1.7),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, dtype, device):
+        if dtype is torch.float16 and device == "cpu":
+            pytest.skip("The CPU implementation of float16 on CPU differs from opencv")
+
+        num_channels, height, width = dimensions
+
+        reference_results_key = f"{height}_{width}_{num_channels}__{kernel_size[0]}_{kernel_size[1]}_{sigma}"
+        expected = (
+            torch.tensor(self.REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS[reference_results_key])
+            .reshape(height, width, num_channels)
+            .permute(2, 0, 1)
+            .to(dtype=dtype, device=device)
+        )
+
+        image = tv_tensors.Image(
+            torch.arange(num_channels * height * width, dtype=torch.uint8)
+            .reshape(height, width, num_channels)
+            .permute(2, 0, 1),
+            dtype=dtype,
+            device=device,
+        )
+
+        actual = F.gaussian_blur_image(image, kernel_size=kernel_size, sigma=sigma)
+
+        torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
 
 class TestAutoAugmentTransforms:
