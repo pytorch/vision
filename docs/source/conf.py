@@ -371,7 +371,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
       used within the autoclass directive.
     """
 
-    if getattr(obj, ".__name__", "").endswith(("_Weights", "_QuantizedWeights")):
+    if getattr(obj, "__name__", "").endswith(("_Weights", "_QuantizedWeights")):
 
         if len(obj) == 0:
             lines[:] = ["There are no available pre-trained weights."]

@@ -285,13 +285,6 @@ class Resize(torch.nn.Module):
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means a maximum of two leading dimensions
 
-    .. warning::
-        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
-        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
-        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
-        closer.
-
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
             (h, w), output size will be matched to this. If size is an int,
@@ -321,7 +314,7 @@ class Resize(torch.nn.Module):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -330,11 +323,11 @@ class Resize(torch.nn.Module):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias="warn"):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=True):
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(size, (int, Sequence)):
@@ -884,7 +877,7 @@ class RandomResizedCrop(torch.nn.Module):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -893,8 +886,8 @@ class RandomResizedCrop(torch.nn.Module):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -903,7 +896,7 @@ class RandomResizedCrop(torch.nn.Module):
         scale=(0.08, 1.0),
         ratio=(3.0 / 4.0, 4.0 / 3.0),
         interpolation=InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -1760,7 +1753,7 @@ class RandomErasing(torch.nn.Module):
 class GaussianBlur(torch.nn.Module):
     """Blurs image with randomly chosen Gaussian blur.
     If the image is torch Tensor, it is expected
-    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    to have [..., C, H, W] shape, where ... means at most one leading dimension.
 
     Args:
         kernel_size (int or sequence): Size of the Gaussian kernel.
