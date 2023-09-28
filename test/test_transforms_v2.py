@@ -1,6 +1,4 @@
 import itertools
-import pathlib
-import pickle
 import random
 
 import numpy as np
@@ -11,22 +9,11 @@ import torch
 import torchvision.transforms.v2 as transforms
 
 from common_utils import assert_equal, cpu_and_cuda
-from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
-from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import is_pure_tensor
-from transforms_v2_legacy_utils import (
-    make_bounding_boxes,
-    make_detection_mask,
-    make_image,
-    make_images,
-    make_multiple_bounding_boxes,
-    make_segmentation_mask,
-    make_video,
-    make_videos,
-)
+from transforms_v2_legacy_utils import make_bounding_boxes, make_detection_mask, make_image, make_images, make_videos
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -39,11 +26,6 @@ def make_vanilla_tensor_images(*args, **kwargs):
 def make_pil_images(*args, **kwargs):
     for image in make_vanilla_tensor_images(*args, **kwargs):
         yield to_pil_image(image)
-
-
-def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
-    for bounding_boxes in make_multiple_bounding_boxes(*args, **kwargs):
-        yield bounding_boxes.data
 
 
 def parametrize(transforms_with_inputs):
@@ -59,132 +41,6 @@ def parametrize(transforms_with_inputs):
             for idx, input in enumerate(inputs)
         ],
     )
-
-
-class TestSmoke:
-    @pytest.mark.parametrize(
-        ("transform", "adapter"),
-        [
-            (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
-        ],
-        ids=lambda transform: type(transform).__name__,
-    )
-    @pytest.mark.parametrize("container_type", [dict, list, tuple])
-    @pytest.mark.parametrize(
-        "image_or_video",
-        [
-            make_image(),
-            make_video(),
-            next(make_pil_images(color_spaces=["RGB"])),
-            next(make_vanilla_tensor_images()),
-        ],
-    )
-    @pytest.mark.parametrize("de_serialize", [lambda t: t, lambda t: pickle.loads(pickle.dumps(t))])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_common(self, transform, adapter, container_type, image_or_video, de_serialize, device):
-        transform = de_serialize(transform)
-
-        canvas_size = F.get_size(image_or_video)
-        input = dict(
-            image_or_video=image_or_video,
-            image_tv_tensor=make_image(size=canvas_size),
-            video_tv_tensor=make_video(size=canvas_size),
-            image_pil=next(make_pil_images(sizes=[canvas_size], color_spaces=["RGB"])),
-            bounding_boxes_xyxy=make_bounding_boxes(
-                format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(3,)
-            ),
-            bounding_boxes_xywh=make_bounding_boxes(
-                format=tv_tensors.BoundingBoxFormat.XYWH, canvas_size=canvas_size, batch_dims=(4,)
-            ),
-            bounding_boxes_cxcywh=make_bounding_boxes(
-                format=tv_tensors.BoundingBoxFormat.CXCYWH, canvas_size=canvas_size, batch_dims=(5,)
-            ),
-            bounding_boxes_degenerate_xyxy=tv_tensors.BoundingBoxes(
-                [
-                    [0, 0, 0, 0],  # no height or width
-                    [0, 0, 0, 1],  # no height
-                    [0, 0, 1, 0],  # no width
-                    [2, 0, 1, 1],  # x1 > x2, y1 < y2
-                    [0, 2, 1, 1],  # x1 < x2, y1 > y2
-                    [2, 2, 1, 1],  # x1 > x2, y1 > y2
-                ],
-                format=tv_tensors.BoundingBoxFormat.XYXY,
-                canvas_size=canvas_size,
-            ),
-            bounding_boxes_degenerate_xywh=tv_tensors.BoundingBoxes(
-                [
-                    [0, 0, 0, 0],  # no height or width
-                    [0, 0, 0, 1],  # no height
-                    [0, 0, 1, 0],  # no width
-                    [0, 0, 1, -1],  # negative height
-                    [0, 0, -1, 1],  # negative width
-                    [0, 0, -1, -1],  # negative height and width
-                ],
-                format=tv_tensors.BoundingBoxFormat.XYWH,
-                canvas_size=canvas_size,
-            ),
-            bounding_boxes_degenerate_cxcywh=tv_tensors.BoundingBoxes(
-                [
-                    [0, 0, 0, 0],  # no height or width
-                    [0, 0, 0, 1],  # no height
-                    [0, 0, 1, 0],  # no width
-                    [0, 0, 1, -1],  # negative height
-                    [0, 0, -1, 1],  # negative width
-                    [0, 0, -1, -1],  # negative height and width
-                ],
-                format=tv_tensors.BoundingBoxFormat.CXCYWH,
-                canvas_size=canvas_size,
-            ),
-            detection_mask=make_detection_mask(size=canvas_size),
-            segmentation_mask=make_segmentation_mask(size=canvas_size),
-            int=0,
-            float=0.0,
-            bool=True,
-            none=None,
-            str="str",
-            path=pathlib.Path.cwd(),
-            object=object(),
-            tensor=torch.empty(5),
-            array=np.empty(5),
-        )
-        if adapter is not None:
-            input = adapter(transform, input, device)
-
-        if container_type in {tuple, list}:
-            input = container_type(input.values())
-
-        input_flat, input_spec = tree_flatten(input)
-        input_flat = [item.to(device) if isinstance(item, torch.Tensor) else item for item in input_flat]
-        input = tree_unflatten(input_flat, input_spec)
-
-        torch.manual_seed(0)
-        output = transform(input)
-        output_flat, output_spec = tree_flatten(output)
-
-        assert output_spec == input_spec
-
-        for output_item, input_item, should_be_transformed in zip(
-            output_flat, input_flat, transforms.Transform()._needs_transform_list(input_flat)
-        ):
-            if should_be_transformed:
-                assert type(output_item) is type(input_item)
-            else:
-                assert output_item is input_item
-
-            if isinstance(input_item, tv_tensors.BoundingBoxes) and not isinstance(
-                transform, transforms.ConvertBoundingBoxFormat
-            ):
-                assert output_item.format == input_item.format
-
-        # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
-        # transform that does this), back into a valid one.
-        # TODO: we should test that against all degenerate boxes above
-        for format in list(tv_tensors.BoundingBoxFormat):
-            sample = dict(
-                boxes=tv_tensors.BoundingBoxes([[0, 0, 0, 0]], format=format, canvas_size=(224, 244)),
-                labels=torch.tensor([3]),
-            )
-            assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
 
 
 @pytest.mark.parametrize(
@@ -431,34 +287,6 @@ class TestRandomIoUCrop:
 
         output_masks = output[2]
         assert isinstance(output_masks, tv_tensors.Mask)
-
-
-class TestScaleJitter:
-    def test__get_params(self):
-        canvas_size = (24, 32)
-        target_size = (16, 12)
-        scale_range = (0.5, 1.5)
-
-        transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
-
-        sample = make_image(canvas_size)
-
-        n_samples = 5
-        for _ in range(n_samples):
-
-            params = transform._get_params([sample])
-
-            assert "size" in params
-            size = params["size"]
-
-            assert isinstance(size, tuple) and len(size) == 2
-            height, width = size
-
-            r_min = min(target_size[1] / canvas_size[0], target_size[0] / canvas_size[1]) * scale_range[0]
-            r_max = min(target_size[1] / canvas_size[0], target_size[0] / canvas_size[1]) * scale_range[1]
-
-            assert int(canvas_size[0] * r_min) <= height <= int(canvas_size[0] * r_max)
-            assert int(canvas_size[1] * r_min) <= width <= int(canvas_size[1] * r_max)
 
 
 class TestRandomShortestSize:
