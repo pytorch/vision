@@ -345,18 +345,18 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
 def _check_transform_sample_input_smoke(transform, input, *, adapter):
     if not check_type(input, (is_pure_tensor, PIL.Image.Image, tv_tensors.Image, tv_tensors.Video)):
         return
-    image_or_video = input
 
+    sample = _make_transform_sample(
+        # adapter might change transform inplace
+        transform=transform if adapter is None else deepcopy(transform),
+        image_or_video=input,
+        adapter=adapter,
+    )
     for container_type in [dict, list, tuple]:
-        input = _make_transform_sample(
-            # adapter might change transform inplace
-            transform=transform if adapter is None else deepcopy(transform),
-            image_or_video=image_or_video,
-            adapter=adapter,
-        )
-
-        if container_type in {tuple, list}:
-            input = container_type(input.values())
+        if container_type is dict:
+            input = sample
+        else:
+            input = container_type(sample.values())
 
         input_flat, input_spec = tree_flatten(input)
 
@@ -375,13 +375,16 @@ def _check_transform_sample_input_smoke(transform, input, *, adapter):
             else:
                 assert output_item is input_item
 
-    # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
-    # transform that does this), back into a valid one.
-    # TODO: we should test that against all degenerate boxes above
-    for format in list(tv_tensors.BoundingBoxFormat):
+    # Enforce that the transform does not turn a degenerate bounding box, e.g. marked by RandomIoUCrop (or any other
+    # future transform that does this), back into a valid one.
+    for degenerate_bounding_boxes in (
+        bounding_box
+        for name, bounding_box in sample.items()
+        if "degenerate" in name and isinstance(bounding_box, tv_tensors.BoundingBoxes)
+    ):
         sample = dict(
-            boxes=tv_tensors.BoundingBoxes([[0, 0, 0, 0]], format=format, canvas_size=(224, 244)),
-            labels=torch.tensor([3]),
+            boxes=degenerate_bounding_boxes,
+            labels=torch.randint(10, (degenerate_bounding_boxes.shape[0],), device=degenerate_bounding_boxes.device),
         )
         assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
 
