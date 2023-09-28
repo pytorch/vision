@@ -72,28 +72,6 @@ LINEAR_TRANSFORMATION_MEAN = torch.rand(36)
 LINEAR_TRANSFORMATION_MATRIX = torch.rand([LINEAR_TRANSFORMATION_MEAN.numel()] * 2)
 
 CONSISTENCY_CONFIGS = [
-    *[
-        ConsistencyConfig(
-            v2_transforms.LinearTransformation,
-            legacy_transforms.LinearTransformation,
-            [
-                ArgsKwargs(LINEAR_TRANSFORMATION_MATRIX.to(matrix_dtype), LINEAR_TRANSFORMATION_MEAN.to(matrix_dtype)),
-            ],
-            # Make sure that the product of the height, width and number of channels matches the number of elements in
-            # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
-            make_images_kwargs=dict(
-                DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=["RGB"], dtypes=[image_dtype]
-            ),
-            supports_pil=False,
-        )
-        for matrix_dtype, image_dtype in [
-            (torch.float32, torch.float32),
-            (torch.float64, torch.float64),
-            (torch.float32, torch.uint8),
-            (torch.float64, torch.float32),
-            (torch.float32, torch.float64),
-        ]
-    ],
     ConsistencyConfig(
         v2_transforms.ToPILImage,
         legacy_transforms.ToPILImage,
