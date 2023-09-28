@@ -271,21 +271,9 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
         image_tv_tensor=make_image(size, device=device),
         video_tv_tensor=make_video(size, device=device),
         image_pil=make_image_pil(size),
-        bounding_boxes_xyxy=make_bounding_boxes(
-            size, format=tv_tensors.BoundingBoxFormat.XYXY, num_objects=3, device=device
-        ),
-        bounding_boxes_xywh=make_bounding_boxes(
-            size,
-            format=tv_tensors.BoundingBoxFormat.XYWH,
-            num_objects=4,
-            device=device,
-        ),
-        bounding_boxes_cxcywh=make_bounding_boxes(
-            size,
-            format=tv_tensors.BoundingBoxFormat.CXCYWH,
-            num_objects=5,
-            device=device,
-        ),
+        bounding_boxes_xyxy=make_bounding_boxes(size, format=tv_tensors.BoundingBoxFormat.XYXY, device=device),
+        bounding_boxes_xywh=make_bounding_boxes(size, format=tv_tensors.BoundingBoxFormat.XYWH, device=device),
+        bounding_boxes_cxcywh=make_bounding_boxes(size, format=tv_tensors.BoundingBoxFormat.CXCYWH, device=device),
         bounding_boxes_degenerate_xyxy=tv_tensors.BoundingBoxes(
             [
                 [0, 0, 0, 0],  # no height or width
@@ -343,6 +331,8 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
 
 
 def _check_transform_sample_input_smoke(transform, input, *, adapter):
+    # This is a bunch of input / output convention checks, using a big sample with different parts as input.
+
     if not check_type(input, (is_pure_tensor, PIL.Image.Image, tv_tensors.Image, tv_tensors.Video)):
         return
 
