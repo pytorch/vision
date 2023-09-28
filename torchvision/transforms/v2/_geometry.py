@@ -135,11 +135,11 @@ class Resize(Transform):
 
         if isinstance(size, int):
             size = [size]
-        elif isinstance(size, (list, tuple)) and len(size) in {1, 2}:
+        elif isinstance(size, Sequence) and len(size) in {1, 2}:
             size = list(size)
         else:
             raise ValueError(
-                f"size can either be an integer or a list or tuple of one or two integers, " f"but got {size} instead."
+                f"size can either be an integer or a sequence of one or two integers, but got {size} instead."
             )
         self.size = size
 
