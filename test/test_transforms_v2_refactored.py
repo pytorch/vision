@@ -375,6 +375,16 @@ def _check_transform_sample_input_smoke(transform, input, *, adapter):
             else:
                 assert output_item is input_item
 
+    # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
+    # transform that does this), back into a valid one.
+    # TODO: we should test that against all degenerate boxes above
+    for format in list(tv_tensors.BoundingBoxFormat):
+        sample = dict(
+            boxes=tv_tensors.BoundingBoxes([[0, 0, 0, 0]], format=format, canvas_size=(224, 244)),
+            labels=torch.tensor([3]),
+        )
+        assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
+
 
 def check_transform(transform, input, check_v1_compatibility=True, check_sample_input=True):
     pickle.loads(pickle.dumps(transform))
