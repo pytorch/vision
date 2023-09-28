@@ -832,7 +832,7 @@ class TestResize:
         assert_equal(actual, expected)
 
     def test_transform_unknown_size_error(self):
-        with pytest.raises(ValueError, match="size can either be an integer or a list or tuple of one or two integers"):
+        with pytest.raises(ValueError, match="size can either be an integer or a sequence of one or two integers"):
             transforms.Resize(size=object())
 
     @pytest.mark.parametrize(
