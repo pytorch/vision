@@ -139,7 +139,7 @@ class Resize(Transform):
             size = list(size)
         else:
             raise ValueError(
-                f"size can either be an integer or a sequence of one or two integers, but got {size} instead."
+                f"size can either be an integer or a list or tuple of one or two integers, " f"but got {size} instead."
             )
         self.size = size
 
