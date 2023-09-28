@@ -4148,9 +4148,25 @@ class TestNormalize:
             with pytest.raises(ValueError, match="std evaluated to zero, leading to division by zero"):
                 F.normalize_image(make_image(dtype=torch.float32), mean=self.MEAN, std=std)
 
+    def _sample_input_adapter(self, transform, input, device):
+        adapted_input = {}
+        for key, value in input.items():
+            if isinstance(value, PIL.Image.Image):
+                # normalize doesn't support PIL images
+                continue
+            elif check_type(value, (is_pure_tensor, tv_tensors.Image, tv_tensors.Video)):
+                # normalize doesn't support integer images
+                value = F.to_dtype(value, torch.float32, scale=True)
+            adapted_input[key] = value
+        return adapted_input
+
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
     def test_transform(self, make_input):
-        check_transform(transforms.Normalize(mean=self.MEAN, std=self.STD), make_input(dtype=torch.float32))
+        check_transform(
+            transforms.Normalize(mean=self.MEAN, std=self.STD),
+            make_input(dtype=torch.float32),
+            check_sample_input=self._sample_input_adapter,
+        )
 
     def _reference_normalize_image(self, image, *, mean, std):
         image = image.numpy()
@@ -4677,7 +4693,11 @@ class TestFiveTenCrop:
     )
     @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
     def test_transform(self, make_input, transform_cls):
-        check_transform(self._TransformWrapper(transform_cls(size=self.OUTPUT_SIZE)), make_input(self.INPUT_SIZE))
+        check_transform(
+            self._TransformWrapper(transform_cls(size=self.OUTPUT_SIZE)),
+            make_input(self.INPUT_SIZE),
+            check_sample_input=False,
+        )
 
     @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_mask])
     @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
