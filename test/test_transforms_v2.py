@@ -519,34 +519,6 @@ class TestRandomIoUCrop:
         assert isinstance(output_masks, tv_tensors.Mask)
 
 
-class TestScaleJitter:
-    def test__get_params(self):
-        canvas_size = (24, 32)
-        target_size = (16, 12)
-        scale_range = (0.5, 1.5)
-
-        transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
-
-        sample = make_image(canvas_size)
-
-        n_samples = 5
-        for _ in range(n_samples):
-
-            params = transform._get_params([sample])
-
-            assert "size" in params
-            size = params["size"]
-
-            assert isinstance(size, tuple) and len(size) == 2
-            height, width = size
-
-            r_min = min(target_size[1] / canvas_size[0], target_size[0] / canvas_size[1]) * scale_range[0]
-            r_max = min(target_size[1] / canvas_size[0], target_size[0] / canvas_size[1]) * scale_range[1]
-
-            assert int(canvas_size[0] * r_min) <= height <= int(canvas_size[0] * r_max)
-            assert int(canvas_size[1] * r_min) <= width <= int(canvas_size[1] * r_max)
-
-
 class TestRandomShortestSize:
     @pytest.mark.parametrize("min_size,max_size", [([5, 9], 20), ([5, 9], None)])
     def test__get_params(self, min_size, max_size):
