@@ -135,7 +135,7 @@ class Resize(Transform):
 
         if isinstance(size, int):
             size = [size]
-        elif isinstance(size, (list, tuple)) and len(size) in {1, 2}:
+        elif isinstance(size, (list, tuple, Sequence)) and len(size) in {1, 2}:
             size = list(size)
         else:
             raise ValueError(
