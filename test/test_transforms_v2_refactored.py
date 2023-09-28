@@ -4788,3 +4788,41 @@ class TestRandomPhotometricDistort:
             ),
             make_input(dtype=dtype, device=device),
         )
+
+
+class TestScaleJitter:
+    # Tests are light because this largely relies on the already tested `resize` kernels.
+
+    INPUT_SIZE = (17, 11)
+    TARGET_SIZE = (12, 13)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_transform(self, make_input, device):
+        if make_input is make_image_pil and device != "cpu":
+            pytest.skip("PIL image tests with parametrization device!='cpu' will degenerate to that anyway.")
+
+        check_transform(transforms.ScaleJitter(self.TARGET_SIZE), make_input(self.INPUT_SIZE, device=device))
+
+    def test__get_params(self):
+        input_size = self.INPUT_SIZE
+        target_size = self.TARGET_SIZE
+        scale_range = (0.5, 1.5)
+
+        transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
+        params = transform._get_params([make_image(input_size)])
+
+        assert "size" in params
+        size = params["size"]
+
+        assert isinstance(size, tuple) and len(size) == 2
+        height, width = size
+
+        r_min = min(target_size[1] / input_size[0], target_size[0] / input_size[1]) * scale_range[0]
+        r_max = min(target_size[1] / input_size[0], target_size[0] / input_size[1]) * scale_range[1]
+
+        assert int(input_size[0] * r_min) <= height <= int(input_size[0] * r_max)
+        assert int(input_size[1] * r_min) <= width <= int(input_size[1] * r_max)
