@@ -1,7 +1,7 @@
 # Semantic segmentation reference training scripts
 
 This folder contains reference training scripts for semantic segmentation.
-They serve as a log of how to train specific models, as provide baseline
+They serve as a log of how to train specific models and provide baseline
 training and evaluation scripts to quickly bootstrap research.
 
 All models have been trained on 8x V100 GPUs.
