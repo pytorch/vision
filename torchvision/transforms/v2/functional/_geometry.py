@@ -974,21 +974,25 @@ def rotate_image(
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
 
-    _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
+    # FIXME: revert before merge
+    if True:
+        _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
-    output_width, output_height = (
-        _compute_affine_output_size(matrix, input_width, input_height) if expand else (input_width, input_height)
-    )
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-    theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
-    grid = _affine_grid(
-        theta,
-        input_width=input_width,
-        input_height=input_height,
-        output_width=output_width,
-        output_height=output_height,
-    )
-    return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
+        output_width, output_height = (
+            _compute_affine_output_size(matrix, input_width, input_height) if expand else (input_width, input_height)
+        )
+        dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+        theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
+        grid = _affine_grid(
+            theta,
+            input_width=input_width,
+            input_height=input_height,
+            output_width=output_width,
+            output_height=output_height,
+        )
+        output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
+
+    return output
 
 
 @_register_kernel_internal(rotate, PIL.Image.Image)
