@@ -5126,3 +5126,21 @@ class TestPILToTensor:
     def test_functional_error(self):
         with pytest.raises(TypeError, match="pic should be PIL Image"):
             F.pil_to_tensor(object())
+
+
+class TestLambda:
+    @pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
+    @pytest.mark.parametrize("types", [(), (torch.Tensor, np.ndarray)])
+    def test_transform(self, input, types):
+        was_applied = False
+
+        def was_applied_fn(input):
+            nonlocal was_applied
+            was_applied = True
+            return input
+
+        transform = transforms.Lambda(was_applied_fn, *types)
+        output = transform(input)
+
+        assert output is input
+        assert was_applied is (not types or isinstance(input, types))
