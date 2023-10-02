@@ -1743,7 +1743,12 @@ def elastic_image(
     grid = _create_identity_grid((height, width), device=device, dtype=dtype).add_(
         displacement.to(dtype=dtype, device=device)
     )
-    return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
+    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
+
+    if is_cpu_half:
+        output = output.to(torch.float16)
+
+    return output
 
 
 @_register_kernel_internal(elastic, PIL.Image.Image)
