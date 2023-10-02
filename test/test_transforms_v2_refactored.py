@@ -5111,3 +5111,18 @@ class TestToTensor:
 
         input_size = list(input.shape[:2]) if isinstance(input, np.ndarray) else F.get_size(input)
         assert F.get_size(output) == input_size
+
+
+class TestPILToTensor:
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize("fn", [F.pil_to_tensor, transform_cls_to_functional(transforms.PILToTensor)])
+    def test_functional_and_transform(self, color_space, fn):
+        input = make_image_pil(color_space=color_space)
+        output = fn(input)
+
+        assert isinstance(output, torch.Tensor) and not isinstance(output, tv_tensors.TVTensor)
+        assert F.get_size(output) == F.get_size(input)
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="pic should be PIL Image"):
+            F.pil_to_tensor(object())
