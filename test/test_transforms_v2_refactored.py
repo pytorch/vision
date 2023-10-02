@@ -1924,13 +1924,7 @@ class TestContainerTransforms:
             with pytest.raises(ValueError, match=re.escape("value in the interval [0.0, 1.0]")):
                 transforms.RandomApply([lambda x: x], p=p)
 
-        for transforms_, p in [
-            (
-                [lambda x: x],
-                [],
-            ),
-            ([], [1.0]),
-        ]:
+        for transforms_, p in [([lambda x: x], []), ([], [1.0])]:
             with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
                 transforms.RandomChoice(transforms_, p=p)
 
