@@ -1,154 +1,16 @@
-import itertools
 import random
-
-import numpy as np
 
 import PIL.Image
 import pytest
 import torch
 import torchvision.transforms.v2 as transforms
 
-from common_utils import assert_equal, cpu_and_cuda
+from common_utils import cpu_and_cuda
 from torchvision import tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
 from torchvision.transforms.v2._utils import is_pure_tensor
-from transforms_v2_legacy_utils import make_bounding_boxes, make_detection_mask, make_image, make_images, make_videos
-
-
-def make_vanilla_tensor_images(*args, **kwargs):
-    for image in make_images(*args, **kwargs):
-        if image.ndim > 3:
-            continue
-        yield image.data
-
-
-def make_pil_images(*args, **kwargs):
-    for image in make_vanilla_tensor_images(*args, **kwargs):
-        yield to_pil_image(image)
-
-
-def parametrize(transforms_with_inputs):
-    return pytest.mark.parametrize(
-        ("transform", "input"),
-        [
-            pytest.param(
-                transform,
-                input,
-                id=f"{type(transform).__name__}-{type(input).__module__}.{type(input).__name__}-{idx}",
-            )
-            for transform, inputs in transforms_with_inputs
-            for idx, input in enumerate(inputs)
-        ],
-    )
-
-
-@pytest.mark.parametrize(
-    "flat_inputs",
-    itertools.permutations(
-        [
-            next(make_vanilla_tensor_images()),
-            next(make_vanilla_tensor_images()),
-            next(make_pil_images()),
-            make_image(),
-            next(make_videos()),
-        ],
-        3,
-    ),
-)
-def test_pure_tensor_heuristic(flat_inputs):
-    def split_on_pure_tensor(to_split):
-        # This takes a sequence that is structurally aligned with `flat_inputs` and splits its items into three parts:
-        # 1. The first pure tensor. If none is present, this will be `None`
-        # 2. A list of the remaining pure tensors
-        # 3. A list of all other items
-        pure_tensors = []
-        others = []
-        # Splitting always happens on the original `flat_inputs` to avoid any erroneous type changes by the transform to
-        # affect the splitting.
-        for item, inpt in zip(to_split, flat_inputs):
-            (pure_tensors if is_pure_tensor(inpt) else others).append(item)
-        return pure_tensors[0] if pure_tensors else None, pure_tensors[1:], others
-
-    class CopyCloneTransform(transforms.Transform):
-        def _transform(self, inpt, params):
-            return inpt.clone() if isinstance(inpt, torch.Tensor) else inpt.copy()
-
-        @staticmethod
-        def was_applied(output, inpt):
-            identity = output is inpt
-            if identity:
-                return False
-
-            # Make sure nothing fishy is going on
-            assert_equal(output, inpt)
-            return True
-
-    first_pure_tensor_input, other_pure_tensor_inputs, other_inputs = split_on_pure_tensor(flat_inputs)
-
-    transform = CopyCloneTransform()
-    transformed_sample = transform(flat_inputs)
-
-    first_pure_tensor_output, other_pure_tensor_outputs, other_outputs = split_on_pure_tensor(transformed_sample)
-
-    if first_pure_tensor_input is not None:
-        if other_inputs:
-            assert not transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
-        else:
-            assert transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
-
-    for output, inpt in zip(other_pure_tensor_outputs, other_pure_tensor_inputs):
-        assert not transform.was_applied(output, inpt)
-
-    for input, output in zip(other_inputs, other_outputs):
-        assert transform.was_applied(output, input)
-
-
-class TestTransform:
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [torch.Tensor, PIL.Image.Image, tv_tensors.Image, np.ndarray, tv_tensors.BoundingBoxes, str, int],
-    )
-    def test_check_transformed_types(self, inpt_type, mocker):
-        # This test ensures that we correctly handle which types to transform and which to bypass
-        t = transforms.Transform()
-        inpt = mocker.MagicMock(spec=inpt_type)
-
-        if inpt_type in (np.ndarray, str, int):
-            output = t(inpt)
-            assert output is inpt
-        else:
-            with pytest.raises(NotImplementedError):
-                t(inpt)
-
-
-class TestContainers:
-    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
-    def test_assertions(self, transform_cls):
-        with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
-            transform_cls(transforms.RandomCrop(28))
-
-    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
-    @pytest.mark.parametrize(
-        "trfms",
-        [
-            [transforms.Pad(2), transforms.RandomCrop(28)],
-            [lambda x: 2.0 * x, transforms.Pad(2), transforms.RandomCrop(28)],
-            [transforms.Pad(2), lambda x: 2.0 * x, transforms.RandomCrop(28)],
-        ],
-    )
-    def test_ctor(self, transform_cls, trfms):
-        c = transform_cls(trfms)
-        inpt = torch.rand(1, 3, 32, 32)
-        output = c(inpt)
-        assert isinstance(output, torch.Tensor)
-        assert output.ndim == 4
-
-
-class TestRandomChoice:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
-            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1])
+from transforms_v2_legacy_utils import make_bounding_boxes, make_detection_mask, make_image
 
 
 class TestRandomIoUCrop:
@@ -574,38 +436,3 @@ def test_sanitize_bounding_boxes_errors():
     with pytest.raises(ValueError, match="Number of boxes"):
         different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
         transforms.SanitizeBoundingBoxes()(different_sizes)
-
-
-class TestLambda:
-    inputs = pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
-
-    @inputs
-    def test_default(self, input):
-        was_applied = False
-
-        def was_applied_fn(input):
-            nonlocal was_applied
-            was_applied = True
-            return input
-
-        transform = transforms.Lambda(was_applied_fn)
-
-        transform(input)
-
-        assert was_applied
-
-    @inputs
-    def test_with_types(self, input):
-        was_applied = False
-
-        def was_applied_fn(input):
-            nonlocal was_applied
-            was_applied = True
-            return input
-
-        types = (torch.Tensor, np.ndarray)
-        transform = transforms.Lambda(was_applied_fn, *types)
-
-        transform(input)
-
-        assert was_applied is isinstance(input, types)

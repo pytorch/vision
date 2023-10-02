@@ -5126,3 +5126,84 @@ class TestPILToTensor:
     def test_functional_error(self):
         with pytest.raises(TypeError, match="pic should be PIL Image"):
             F.pil_to_tensor(object())
+
+
+@pytest.mark.parametrize(
+    ("alias", "target"),
+    [
+        pytest.param(alias, target, id=alias.__name__)
+        for alias, target in [
+            (F.hflip, F.horizontal_flip),
+            (F.vflip, F.vertical_flip),
+            (F.get_image_num_channels, F.get_num_channels),
+            (F.to_pil_image, F.to_pil_image),
+            (F.elastic_transform, F.elastic),
+            (F.to_grayscale, F.rgb_to_grayscale),
+        ]
+    ],
+)
+def test_alias(alias, target):
+    assert alias is target
+
+
+@pytest.mark.parametrize(
+    "make_inputs",
+    itertools.permutations(
+        [
+            make_image_tensor,
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+        ],
+        3,
+    ),
+)
+def test_pure_tensor_heuristic(make_inputs):
+    flat_inputs = [make_input() for make_input in make_inputs]
+
+    def split_on_pure_tensor(to_split):
+        # This takes a sequence that is structurally aligned with `flat_inputs` and splits its items into three parts:
+        # 1. The first pure tensor. If none is present, this will be `None`
+        # 2. A list of the remaining pure tensors
+        # 3. A list of all other items
+        pure_tensors = []
+        others = []
+        # Splitting always happens on the original `flat_inputs` to avoid any erroneous type changes by the transform to
+        # affect the splitting.
+        for item, inpt in zip(to_split, flat_inputs):
+            (pure_tensors if is_pure_tensor(inpt) else others).append(item)
+        return pure_tensors[0] if pure_tensors else None, pure_tensors[1:], others
+
+    class CopyCloneTransform(transforms.Transform):
+        def _transform(self, inpt, params):
+            return inpt.clone() if isinstance(inpt, torch.Tensor) else inpt.copy()
+
+        @staticmethod
+        def was_applied(output, inpt):
+            identity = output is inpt
+            if identity:
+                return False
+
+            # Make sure nothing fishy is going on
+            assert_equal(output, inpt)
+            return True
+
+    first_pure_tensor_input, other_pure_tensor_inputs, other_inputs = split_on_pure_tensor(flat_inputs)
+
+    transform = CopyCloneTransform()
+    transformed_sample = transform(flat_inputs)
+
+    first_pure_tensor_output, other_pure_tensor_outputs, other_outputs = split_on_pure_tensor(transformed_sample)
+
+    if first_pure_tensor_input is not None:
+        if other_inputs:
+            assert not transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
+        else:
+            assert transform.was_applied(first_pure_tensor_output, first_pure_tensor_input)
+
+    for output, inpt in zip(other_pure_tensor_outputs, other_pure_tensor_inputs):
+        assert not transform.was_applied(output, inpt)
+
+    for input, output in zip(other_inputs, other_outputs):
+        assert transform.was_applied(output, input)
