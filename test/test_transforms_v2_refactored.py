@@ -5070,7 +5070,7 @@ class TestToImage:
             assert output.data_ptr() == input.data_ptr()
 
     def test_functional_error(self):
-        with pytest.raises(TypeError, match="Input can either be a numpy array or a PIL image"):
+        with pytest.raises(TypeError, match="Input can either be a pure Tensor, a numpy array, or a PIL image"):
             F.to_image(object())
 
 
