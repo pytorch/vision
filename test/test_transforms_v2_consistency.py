@@ -11,7 +11,6 @@ import pytest
 import torch
 import torchvision.transforms.v2 as v2_transforms
 from common_utils import assert_close, assert_equal, set_rng_seed
-from torch import nn
 from torchvision import transforms as legacy_transforms, tv_tensors
 from torchvision._utils import sequence_to_str
 
@@ -81,22 +80,6 @@ CONSISTENCY_CONFIGS = [
         # Technically, this also supports PIL, but it is overkill to write a function here that supports tensor and PIL
         # images given that the transform does nothing but call it anyway.
         supports_pil=False,
-    ),
-    ConsistencyConfig(
-        v2_transforms.Compose,
-        legacy_transforms.Compose,
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomApply,
-        legacy_transforms.RandomApply,
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomChoice,
-        legacy_transforms.RandomChoice,
-    ),
-    ConsistencyConfig(
-        v2_transforms.RandomOrder,
-        legacy_transforms.RandomOrder,
     ),
 ]
 
@@ -296,84 +279,6 @@ def test_jit_consistency(config, args_kwargs):
         output_prototype_scripted = prototype_transform_scripted(image)
 
         assert_close(output_prototype_scripted, output_legacy_scripted, **config.closeness_kwargs)
-
-
-class TestContainerTransforms:
-    """
-    Since we are testing containers here, we also need some transforms to wrap. Thus, testing a container transform for
-    consistency automatically tests the wrapped transforms consistency.
-
-    Instead of complicated mocking or creating custom transforms just for these tests, here we use deterministic ones
-    that were already tested for consistency above.
-    """
-
-    def test_compose(self):
-        prototype_transform = v2_transforms.Compose(
-            [
-                v2_transforms.Resize(256),
-                v2_transforms.CenterCrop(224),
-            ]
-        )
-        legacy_transform = legacy_transforms.Compose(
-            [
-                legacy_transforms.Resize(256),
-                legacy_transforms.CenterCrop(224),
-            ]
-        )
-
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=0, atol=1))
-
-    @pytest.mark.parametrize("p", [0, 0.1, 0.5, 0.9, 1])
-    @pytest.mark.parametrize("sequence_type", [list, nn.ModuleList])
-    def test_random_apply(self, p, sequence_type):
-        prototype_transform = v2_transforms.RandomApply(
-            sequence_type(
-                [
-                    v2_transforms.Resize(256),
-                    v2_transforms.CenterCrop(224),
-                ]
-            ),
-            p=p,
-        )
-        legacy_transform = legacy_transforms.RandomApply(
-            sequence_type(
-                [
-                    legacy_transforms.Resize(256),
-                    legacy_transforms.CenterCrop(224),
-                ]
-            ),
-            p=p,
-        )
-
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=0, atol=1))
-
-        if sequence_type is nn.ModuleList:
-            # quick and dirty test that it is jit-scriptable
-            scripted = torch.jit.script(prototype_transform)
-            scripted(torch.rand(1, 3, 300, 300))
-
-    # We can't test other values for `p` since the random parameter generation is different
-    @pytest.mark.parametrize("probabilities", [(0, 1), (1, 0)])
-    def test_random_choice(self, probabilities):
-        prototype_transform = v2_transforms.RandomChoice(
-            [
-                v2_transforms.Resize(256),
-                legacy_transforms.CenterCrop(224),
-            ],
-            p=probabilities,
-        )
-        legacy_transform = legacy_transforms.RandomChoice(
-            [
-                legacy_transforms.Resize(256),
-                legacy_transforms.CenterCrop(224),
-            ],
-            p=probabilities,
-        )
-
-        # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-        check_call_consistency(prototype_transform, legacy_transform, closeness_kwargs=dict(rtol=0, atol=1))
 
 
 class TestToTensorTransforms:

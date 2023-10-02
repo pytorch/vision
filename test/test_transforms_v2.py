@@ -122,35 +122,6 @@ class TestTransform:
                 t(inpt)
 
 
-class TestContainers:
-    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
-    def test_assertions(self, transform_cls):
-        with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
-            transform_cls(transforms.RandomCrop(28))
-
-    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
-    @pytest.mark.parametrize(
-        "trfms",
-        [
-            [transforms.Pad(2), transforms.RandomCrop(28)],
-            [lambda x: 2.0 * x, transforms.Pad(2), transforms.RandomCrop(28)],
-            [transforms.Pad(2), lambda x: 2.0 * x, transforms.RandomCrop(28)],
-        ],
-    )
-    def test_ctor(self, transform_cls, trfms):
-        c = transform_cls(trfms)
-        inpt = torch.rand(1, 3, 32, 32)
-        output = c(inpt)
-        assert isinstance(output, torch.Tensor)
-        assert output.ndim == 4
-
-
-class TestRandomChoice:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
-            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1])
-
-
 class TestRandomIoUCrop:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("options", [[0.5, 0.9], [2.0]])
