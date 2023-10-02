@@ -228,5 +228,3 @@ By contributing to Torchvision, you agree that your contributions will be licens
 under the LICENSE file in the root directory of this source tree.
 
 Contributers are also required to [sign our Contributor License Agreement](https://code.facebook.com/cla). If you are contributing on behalf of someone else (eg your employer), the individual CLA may not be sufficient and your employer may need to sign the corporate CLA. If you have any questions, please contact us at cla@meta.com
-
-
