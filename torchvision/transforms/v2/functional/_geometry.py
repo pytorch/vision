@@ -1740,9 +1740,6 @@ def elastic_image(
     if expected_shape != displacement.shape:
         raise ValueError(f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}")
 
-    if displacement.dtype != dtype or displacement.device != device:
-        displacement = displacement.to(dtype=dtype, device=device)
-
     grid = _create_identity_grid((height, width), device=device, dtype=dtype).add_(
         displacement.to(dtype=dtype, device=device)
     )
