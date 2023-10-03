@@ -17,7 +17,9 @@ def to_image(inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> tv_tenso
     elif isinstance(inpt, torch.Tensor):
         output = inpt
     else:
-        raise TypeError(f"Input can either be a numpy array or a PIL image, but got {type(inpt)} instead.")
+        raise TypeError(
+            f"Input can either be a pure Tensor, a numpy array, or a PIL image, but got {type(inpt)} instead."
+        )
     return tv_tensors.Image(output)
 
 

@@ -2491,7 +2491,7 @@ class TestElastic:
         interpolation=[transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR],
         fill=EXHAUSTIVE_TYPE_FILLS,
     )
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8, torch.float16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image(self, param, value, dtype, device):
         image = make_image_tensor(dtype=dtype, device=device)
@@ -2502,6 +2502,7 @@ class TestElastic:
             displacement=self._make_displacement(image),
             **{param: value},
             check_scripted_vs_eager=not (param == "fill" and isinstance(value, (int, float))),
+            check_cuda_vs_cpu=dtype is not torch.float16,
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
@@ -5046,3 +5047,82 @@ class TestLinearTransform:
                 ValueError, match="Input tensor should be on the same device as transformation matrix and mean vector"
             ):
                 transform(input)
+
+
+def make_image_numpy(*args, **kwargs):
+    image = make_image_tensor(*args, **kwargs)
+    return image.permute((1, 2, 0)).numpy()
+
+
+class TestToImage:
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_image_numpy])
+    @pytest.mark.parametrize("fn", [F.to_image, transform_cls_to_functional(transforms.ToImage)])
+    def test_functional_and_transform(self, make_input, fn):
+        input = make_input()
+        output = fn(input)
+
+        assert isinstance(output, tv_tensors.Image)
+
+        input_size = list(input.shape[:2]) if isinstance(input, np.ndarray) else F.get_size(input)
+        assert F.get_size(output) == input_size
+
+        if isinstance(input, torch.Tensor):
+            assert output.data_ptr() == input.data_ptr()
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="Input can either be a pure Tensor, a numpy array, or a PIL image"):
+            F.to_image(object())
+
+
+class TestToPILImage:
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_numpy])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize("fn", [F.to_pil_image, transform_cls_to_functional(transforms.ToPILImage)])
+    def test_functional_and_transform(self, make_input, color_space, fn):
+        input = make_input(color_space=color_space)
+        output = fn(input)
+
+        assert isinstance(output, PIL.Image.Image)
+
+        input_size = list(input.shape[:2]) if isinstance(input, np.ndarray) else F.get_size(input)
+        assert F.get_size(output) == input_size
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="pic should be Tensor or ndarray"):
+            F.to_pil_image(object())
+
+        for ndim in [1, 4]:
+            with pytest.raises(ValueError, match="pic should be 2/3 dimensional"):
+                F.to_pil_image(torch.empty(*[1] * ndim))
+
+        with pytest.raises(ValueError, match="pic should not have > 4 channels"):
+            num_channels = 5
+            F.to_pil_image(torch.empty(num_channels, 1, 1))
+
+
+class TestToTensor:
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_image_numpy])
+    def test_smoke(self, make_input):
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            transform = transforms.ToTensor()
+
+        input = make_input()
+        output = transform(input)
+
+        input_size = list(input.shape[:2]) if isinstance(input, np.ndarray) else F.get_size(input)
+        assert F.get_size(output) == input_size
+
+
+class TestPILToTensor:
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize("fn", [F.pil_to_tensor, transform_cls_to_functional(transforms.PILToTensor)])
+    def test_functional_and_transform(self, color_space, fn):
+        input = make_image_pil(color_space=color_space)
+        output = fn(input)
+
+        assert isinstance(output, torch.Tensor) and not isinstance(output, tv_tensors.TVTensor)
+        assert F.get_size(output) == F.get_size(input)
+
+    def test_functional_error(self):
+        with pytest.raises(TypeError, match="pic should be PIL Image"):
+            F.pil_to_tensor(object())

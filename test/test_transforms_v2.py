@@ -122,61 +122,6 @@ class TestTransform:
                 t(inpt)
 
 
-class TestToImage:
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [torch.Tensor, PIL.Image.Image, tv_tensors.Image, np.ndarray, tv_tensors.BoundingBoxes, str, int],
-    )
-    def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch(
-            "torchvision.transforms.v2.functional.to_image",
-            return_value=torch.rand(1, 3, 8, 8),
-        )
-
-        inpt = mocker.MagicMock(spec=inpt_type)
-        transform = transforms.ToImage()
-        transform(inpt)
-        if inpt_type in (tv_tensors.BoundingBoxes, tv_tensors.Image, str, int):
-            assert fn.call_count == 0
-        else:
-            fn.assert_called_once_with(inpt)
-
-
-class TestToPILImage:
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [torch.Tensor, PIL.Image.Image, tv_tensors.Image, np.ndarray, tv_tensors.BoundingBoxes, str, int],
-    )
-    def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.v2.functional.to_pil_image")
-
-        inpt = mocker.MagicMock(spec=inpt_type)
-        transform = transforms.ToPILImage()
-        transform(inpt)
-        if inpt_type in (PIL.Image.Image, tv_tensors.BoundingBoxes, str, int):
-            assert fn.call_count == 0
-        else:
-            fn.assert_called_once_with(inpt, mode=transform.mode)
-
-
-class TestToTensor:
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [torch.Tensor, PIL.Image.Image, tv_tensors.Image, np.ndarray, tv_tensors.BoundingBoxes, str, int],
-    )
-    def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.functional.to_tensor")
-
-        inpt = mocker.MagicMock(spec=inpt_type)
-        with pytest.warns(UserWarning, match="deprecated and will be removed"):
-            transform = transforms.ToTensor()
-        transform(inpt)
-        if inpt_type in (tv_tensors.Image, torch.Tensor, tv_tensors.BoundingBoxes, str, int):
-            assert fn.call_count == 0
-        else:
-            fn.assert_called_once_with(inpt)
-
-
 class TestContainers:
     @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
     def test_assertions(self, transform_cls):
