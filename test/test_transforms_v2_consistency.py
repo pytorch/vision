@@ -12,7 +12,6 @@ import torch
 import torchvision.transforms.v2 as v2_transforms
 from common_utils import assert_close, assert_equal, set_rng_seed
 from torchvision import transforms as legacy_transforms, tv_tensors
-from torchvision._utils import sequence_to_str
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
@@ -70,57 +69,7 @@ class ConsistencyConfig:
 LINEAR_TRANSFORMATION_MEAN = torch.rand(36)
 LINEAR_TRANSFORMATION_MATRIX = torch.rand([LINEAR_TRANSFORMATION_MEAN.numel()] * 2)
 
-CONSISTENCY_CONFIGS = [
-    ConsistencyConfig(
-        v2_transforms.Lambda,
-        legacy_transforms.Lambda,
-        [
-            NotScriptableArgsKwargs(lambda image: image / 2),
-        ],
-        # Technically, this also supports PIL, but it is overkill to write a function here that supports tensor and PIL
-        # images given that the transform does nothing but call it anyway.
-        supports_pil=False,
-    ),
-]
-
-
-@pytest.mark.parametrize("config", CONSISTENCY_CONFIGS, ids=lambda config: config.legacy_cls.__name__)
-def test_signature_consistency(config):
-    legacy_params = dict(inspect.signature(config.legacy_cls).parameters)
-    prototype_params = dict(inspect.signature(config.prototype_cls).parameters)
-
-    for param in config.removed_params:
-        legacy_params.pop(param, None)
-
-    missing = legacy_params.keys() - prototype_params.keys()
-    if missing:
-        raise AssertionError(
-            f"The prototype transform does not support the parameters "
-            f"{sequence_to_str(sorted(missing), separate_last='and ')}, but the legacy transform does. "
-            f"If that is intentional, e.g. pending deprecation, please add the parameters to the `removed_params` on "
-            f"the `ConsistencyConfig`."
-        )
-
-    extra = prototype_params.keys() - legacy_params.keys()
-    extra_without_default = {
-        param
-        for param in extra
-        if prototype_params[param].default is inspect.Parameter.empty
-        and prototype_params[param].kind not in {inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD}
-    }
-    if extra_without_default:
-        raise AssertionError(
-            f"The prototype transform requires the parameters "
-            f"{sequence_to_str(sorted(extra_without_default), separate_last='and ')}, but the legacy transform does "
-            f"not. Please add a default value."
-        )
-
-    legacy_signature = list(legacy_params.keys())
-    # Since we made sure that we don't have any extra parameters without default above, we clamp the prototype signature
-    # to the same number of parameters as the legacy one
-    prototype_signature = list(prototype_params.keys())[: len(legacy_signature)]
-
-    assert prototype_signature == legacy_signature
+CONSISTENCY_CONFIGS = []
 
 
 def check_call_consistency(

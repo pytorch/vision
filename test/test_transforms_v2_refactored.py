@@ -1906,8 +1906,9 @@ class TestContainerTransforms:
         input = make_image()
 
         actual = check_transform(transform, input)
-        # horizontal and vertical flip are commutative. Meaning, although the order in the transform is indeed random,
-        # we don't need to care here.
+        # We can't really check whether the transforms are actually applied in random order. However, horizontal and
+        # vertical flip are commutative. Meaning, even under the assumption that the transform applies them in random
+        # order, we can use a fixed order to compute the expected value.
         expected = F.vertical_flip(F.horizontal_flip(input))
 
         assert_equal(actual, expected)
@@ -5221,3 +5222,21 @@ class TestPILToTensor:
     def test_functional_error(self):
         with pytest.raises(TypeError, match="pic should be PIL Image"):
             F.pil_to_tensor(object())
+
+
+class TestLambda:
+    @pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
+    @pytest.mark.parametrize("types", [(), (torch.Tensor, np.ndarray)])
+    def test_transform(self, input, types):
+        was_applied = False
+
+        def was_applied_fn(input):
+            nonlocal was_applied
+            was_applied = True
+            return input
+
+        transform = transforms.Lambda(was_applied_fn, *types)
+        output = transform(input)
+
+        assert output is input
+        assert was_applied is (not types or isinstance(input, types))

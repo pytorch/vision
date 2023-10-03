@@ -1270,7 +1270,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
     Note:
         Please, note that this method supports only RGB images as input. For inputs in other color spaces,
-        please, consider using meth:`~torchvision.transforms.functional.to_grayscale` with PIL Image.
+        please, consider using :meth:`~torchvision.transforms.functional.to_grayscale` with PIL Image.
 
     Args:
         img (PIL Image or Tensor): RGB Image to be converted to grayscale.
