@@ -7,14 +7,24 @@ import pytest
 
 import torch
 import torchvision.transforms.v2 as v2_transforms
-from common_utils import assert_equal
+from common_utils import (
+    assert_equal,
+    make_bounding_boxes as _make_bounding_boxes,
+    make_detection_mask,
+    make_image,
+    make_segmentation_mask,
+)
 from torchvision import tv_tensors
 
 from torchvision.transforms import functional as legacy_F
 from torchvision.transforms.v2 import functional as prototype_F
 from torchvision.transforms.v2._utils import _get_fill, query_size
 from torchvision.transforms.v2.functional import to_pil_image
-from transforms_v2_legacy_utils import make_bounding_boxes, make_detection_mask, make_image, make_segmentation_mask
+
+
+def make_bounding_boxes(*args, batch_dims, **kwargs):
+    assert len(batch_dims) == 1
+    return _make_bounding_boxes(*args, num_objects=batch_dims[0], **kwargs)
 
 
 def import_transforms_from_references(reference):
