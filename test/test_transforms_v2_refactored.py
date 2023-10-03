@@ -396,6 +396,8 @@ def check_transform(transform, input, check_v1_compatibility=True, check_sample_
     if check_v1_compatibility:
         _check_transform_v1_compatibility(transform, input, **_to_tolerances(check_v1_compatibility))
 
+    return output
+
 
 def transform_cls_to_functional(transform_cls, **transform_specific_kwargs):
     def wrapper(input, *args, **kwargs):
@@ -1773,7 +1775,7 @@ class TestRotate:
             transforms.RandomAffine(degrees=0, fill="fill")
 
 
-class TestCompose:
+class TestContainerTransforms:
     class BuiltinTransform(transforms.Transform):
         def _transform(self, inpt, params):
             return inpt
@@ -1788,7 +1790,10 @@ class TestCompose:
             return image, label
 
     @pytest.mark.parametrize(
-        "transform_clss",
+        "transform_cls", [transforms.Compose, functools.partial(transforms.RandomApply, p=1), transforms.RandomOrder]
+    )
+    @pytest.mark.parametrize(
+        "wrapped_transform_clss",
         [
             [BuiltinTransform],
             [PackedInputTransform],
@@ -1803,12 +1808,12 @@ class TestCompose:
         ],
     )
     @pytest.mark.parametrize("unpack", [True, False])
-    def test_packed_unpacked(self, transform_clss, unpack):
-        needs_packed_inputs = any(issubclass(cls, self.PackedInputTransform) for cls in transform_clss)
-        needs_unpacked_inputs = any(issubclass(cls, self.UnpackedInputTransform) for cls in transform_clss)
+    def test_packed_unpacked(self, transform_cls, wrapped_transform_clss, unpack):
+        needs_packed_inputs = any(issubclass(cls, self.PackedInputTransform) for cls in wrapped_transform_clss)
+        needs_unpacked_inputs = any(issubclass(cls, self.UnpackedInputTransform) for cls in wrapped_transform_clss)
         assert not (needs_packed_inputs and needs_unpacked_inputs)
 
-        transform = transforms.Compose([cls() for cls in transform_clss])
+        transform = transform_cls([cls() for cls in wrapped_transform_clss])
 
         image = make_image()
         label = 3
@@ -1832,6 +1837,97 @@ class TestCompose:
             assert isinstance(output, tuple) and len(output) == 2
             assert output[0] is image
             assert output[1] is label
+
+    def test_compose(self):
+        transform = transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(p=1),
+                transforms.RandomVerticalFlip(p=1),
+            ]
+        )
+
+        input = make_image()
+
+        actual = check_transform(transform, input)
+        expected = F.vertical_flip(F.horizontal_flip(input))
+
+        assert_equal(actual, expected)
+
+    @pytest.mark.parametrize("p", [0.0, 1.0])
+    @pytest.mark.parametrize("sequence_type", [list, nn.ModuleList])
+    def test_random_apply(self, p, sequence_type):
+        transform = transforms.RandomApply(
+            sequence_type(
+                [
+                    transforms.RandomHorizontalFlip(p=1),
+                    transforms.RandomVerticalFlip(p=1),
+                ]
+            ),
+            p=p,
+        )
+
+        # This needs to be a pure tensor (or a PIL image), because otherwise check_transforms skips the v1 compatibility
+        # check
+        input = make_image_tensor()
+        output = check_transform(transform, input, check_v1_compatibility=issubclass(sequence_type, nn.ModuleList))
+
+        if p == 1:
+            assert_equal(output, F.vertical_flip(F.horizontal_flip(input)))
+        else:
+            assert output is input
+
+    @pytest.mark.parametrize("p", [(0, 1), (1, 0)])
+    def test_random_choice(self, p):
+        transform = transforms.RandomChoice(
+            [
+                transforms.RandomHorizontalFlip(p=1),
+                transforms.RandomVerticalFlip(p=1),
+            ],
+            p=p,
+        )
+
+        input = make_image()
+        output = check_transform(transform, input)
+
+        p_horz, p_vert = p
+        if p_horz:
+            assert_equal(output, F.horizontal_flip(input))
+        else:
+            assert_equal(output, F.vertical_flip(input))
+
+    def test_random_order(self):
+        transform = transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(p=1),
+                transforms.RandomVerticalFlip(p=1),
+            ]
+        )
+
+        input = make_image()
+
+        actual = check_transform(transform, input)
+        # We can't really check whether the transforms are actually applied in random order. However, horizontal and
+        # vertical flip are commutative. Meaning, even under the assumption that the transform applies them in random
+        # order, we can use a fixed order to compute the expected value.
+        expected = F.vertical_flip(F.horizontal_flip(input))
+
+        assert_equal(actual, expected)
+
+    def test_errors(self):
+        for cls in [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder]:
+            with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
+                cls(lambda x: x)
+
+        with pytest.raises(ValueError, match="at least one transform"):
+            transforms.Compose([])
+
+        for p in [-1, 2]:
+            with pytest.raises(ValueError, match=re.escape("value in the interval [0.0, 1.0]")):
+                transforms.RandomApply([lambda x: x], p=p)
+
+        for transforms_, p in [([lambda x: x], []), ([], [1.0])]:
+            with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
+                transforms.RandomChoice(transforms_, p=p)
 
 
 class TestToDtype:
@@ -5126,6 +5222,24 @@ class TestPILToTensor:
     def test_functional_error(self):
         with pytest.raises(TypeError, match="pic should be PIL Image"):
             F.pil_to_tensor(object())
+
+
+class TestLambda:
+    @pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
+    @pytest.mark.parametrize("types", [(), (torch.Tensor, np.ndarray)])
+    def test_transform(self, input, types):
+        was_applied = False
+
+        def was_applied_fn(input):
+            nonlocal was_applied
+            was_applied = True
+            return input
+
+        transform = transforms.Lambda(was_applied_fn, *types)
+        output = transform(input)
+
+        assert output is input
+        assert was_applied is (not types or isinstance(input, types))
 
 
 @pytest.mark.parametrize(
