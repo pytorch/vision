@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+efficientnet_v2_s
+=================
+
+.. autofunction:: efficientnet_v2_s

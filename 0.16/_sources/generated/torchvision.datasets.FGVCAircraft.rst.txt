@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+FGVCAircraft
+============
+
+.. autoclass:: FGVCAircraft
+    :members:
+        __getitem__,
+        
+    :special-members:

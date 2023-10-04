@@ -1,0 +1,1011 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Datasets &mdash; Torchvision 0.16 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Caltech101" href="generated/torchvision.datasets.Caltech101.html" />
+    <link rel="prev" title="raft_small" href="models/generated/torchvision.models.optical_flow.raft_small.html" />
+  <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T8XT4PS');</script>
+    <!-- End Google Tag Manager -->
+  
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="active docs-active">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torcharrow">
+                  <span class="dropdown-title">torcharrow</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/data">
+                  <span class="dropdown-title">TorchData</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchrec">
+                  <span class="dropdown-title">TorchRec</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchx/">
+                  <span class="dropdown-title">TorchX</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/foundation">
+                  <span class="dropdown-title">PyTorch Foundation</span>
+                  <p>Learn about the PyTorch foundation</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/community-stories">
+                  <span class="dropdown-title">Community Stories</span>
+                  <p>Learn how our community solves real, everyday machine learning problems with PyTorch.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/events">
+                  <span class="dropdown-title">Events</span>
+                  <p>Find events, webinars, and podcasts</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">GitHub</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='https://pytorch.org/vision/versions.html'>0.16 &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tv_tensors.html">TVTensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Examples and tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_references.html">Training references</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/text">torchtext</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/vision">torchvision</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/elastic/">TorchElastic</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/serve">TorchServe</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://pytorch.org/xla/">PyTorch on XLA Devices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>Datasets</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/datasets.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          <!-- Google Tag Manager (noscript) -->
+          <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T8XT4PS"
+          height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+          <!-- End Google Tag Manager (noscript) -->
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <section id="datasets">
+<span id="id1"></span><h1>Datasets<a class="headerlink" href="#datasets" title="Permalink to this heading">¶</a></h1>
+<p>Torchvision provides many built-in datasets in the <code class="docutils literal notranslate"><span class="pre">torchvision.datasets</span></code>
+module, as well as utility classes for building your own datasets.</p>
+<section id="built-in-datasets">
+<h2>Built-in datasets<a class="headerlink" href="#built-in-datasets" title="Permalink to this heading">¶</a></h2>
+<p>All datasets are subclasses of <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></a>
+i.e, they have <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> and <code class="docutils literal notranslate"><span class="pre">__len__</span></code> methods implemented.
+Hence, they can all be passed to a <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a>
+which can load multiple samples in parallel using <code class="docutils literal notranslate"><span class="pre">torch.multiprocessing</span></code> workers.
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">imagenet_data</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">ImageNet</span><span class="p">(</span><span class="s1">&#39;path/to/imagenet_root/&#39;</span><span class="p">)</span>
+<span class="n">data_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">imagenet_data</span><span class="p">,</span>
+                                          <span class="n">batch_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                                          <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                          <span class="n">num_workers</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">nThreads</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>All the datasets have almost similar API. They all have two common arguments:
+<code class="docutils literal notranslate"><span class="pre">transform</span></code> and  <code class="docutils literal notranslate"><span class="pre">target_transform</span></code> to transform the input and target respectively.
+You can also create your own datasets using the provided <a class="reference internal" href="#base-classes-datasets"><span class="std std-ref">base classes</span></a>.</p>
+<section id="image-classification">
+<h3>Image classification<a class="headerlink" href="#image-classification" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.Caltech101.html#torchvision.datasets.Caltech101" title="torchvision.datasets.Caltech101"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Caltech101</span></code></a>(root[, target_type, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://data.caltech.edu/records/20086">Caltech 101</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.Caltech256.html#torchvision.datasets.Caltech256" title="torchvision.datasets.Caltech256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Caltech256</span></code></a>(root[, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://data.caltech.edu/records/20087">Caltech 256</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.CelebA.html#torchvision.datasets.CelebA" title="torchvision.datasets.CelebA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CelebA</span></code></a>(root[, split, target_type, ...])</p></td>
+<td><p><a class="reference external" href="http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html">Large-scale CelebFaces Attributes (CelebA) Dataset</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.CIFAR10.html#torchvision.datasets.CIFAR10" title="torchvision.datasets.CIFAR10"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CIFAR10</span></code></a>(root[, train, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://www.cs.toronto.edu/~kriz/cifar.html">CIFAR10</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.CIFAR100.html#torchvision.datasets.CIFAR100" title="torchvision.datasets.CIFAR100"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CIFAR100</span></code></a>(root[, train, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://www.cs.toronto.edu/~kriz/cifar.html">CIFAR100</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.Country211.html#torchvision.datasets.Country211" title="torchvision.datasets.Country211"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Country211</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://github.com/openai/CLIP/blob/main/data/country211.md">The Country211 Data Set</a> from OpenAI.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.DTD.html#torchvision.datasets.DTD" title="torchvision.datasets.DTD"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DTD</span></code></a>(root[, split, partition, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://www.robots.ox.ac.uk/~vgg/data/dtd/">Describable Textures Dataset (DTD)</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.EMNIST.html#torchvision.datasets.EMNIST" title="torchvision.datasets.EMNIST"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EMNIST</span></code></a>(root, split, **kwargs)</p></td>
+<td><p><a class="reference external" href="https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist">EMNIST</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.EuroSAT.html#torchvision.datasets.EuroSAT" title="torchvision.datasets.EuroSAT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EuroSAT</span></code></a>(root[, transform, target_transform, ...])</p></td>
+<td><p>RGB version of the <a class="reference external" href="https://github.com/phelber/eurosat">EuroSAT</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.FakeData.html#torchvision.datasets.FakeData" title="torchvision.datasets.FakeData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FakeData</span></code></a>([size, image_size, num_classes, ...])</p></td>
+<td><p>A fake dataset that returns randomly generated images and returns them as PIL images</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.FashionMNIST.html#torchvision.datasets.FashionMNIST" title="torchvision.datasets.FashionMNIST"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FashionMNIST</span></code></a>(root[, train, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://github.com/zalandoresearch/fashion-mnist">Fashion-MNIST</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.FER2013.html#torchvision.datasets.FER2013" title="torchvision.datasets.FER2013"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FER2013</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge">FER2013</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.FGVCAircraft.html#torchvision.datasets.FGVCAircraft" title="torchvision.datasets.FGVCAircraft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FGVCAircraft</span></code></a>(root[, split, ...])</p></td>
+<td><p><a class="reference external" href="https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/">FGVC Aircraft</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.Flickr8k.html#torchvision.datasets.Flickr8k" title="torchvision.datasets.Flickr8k"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flickr8k</span></code></a>(root, ann_file[, transform, ...])</p></td>
+<td><p><a class="reference external" href="http://hockenmaier.cs.illinois.edu/8k-pictures.html">Flickr8k Entities</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.Flickr30k.html#torchvision.datasets.Flickr30k" title="torchvision.datasets.Flickr30k"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flickr30k</span></code></a>(root, ann_file[, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://bryanplummer.com/Flickr30kEntities/">Flickr30k Entities</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.Flowers102.html#torchvision.datasets.Flowers102" title="torchvision.datasets.Flowers102"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flowers102</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://www.robots.ox.ac.uk/~vgg/data/flowers/102/">Oxford 102 Flower</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.Food101.html#torchvision.datasets.Food101" title="torchvision.datasets.Food101"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Food101</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/">The Food-101 Data Set</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.GTSRB.html#torchvision.datasets.GTSRB" title="torchvision.datasets.GTSRB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GTSRB</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://benchmark.ini.rub.de/">German Traffic Sign Recognition Benchmark (GTSRB)</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.INaturalist.html#torchvision.datasets.INaturalist" title="torchvision.datasets.INaturalist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">INaturalist</span></code></a>(root[, version, target_type, ...])</p></td>
+<td><p><a class="reference external" href="https://github.com/visipedia/inat_comp">iNaturalist</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.ImageNet.html#torchvision.datasets.ImageNet" title="torchvision.datasets.ImageNet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ImageNet</span></code></a>(root[, split])</p></td>
+<td><p><a class="reference external" href="http://image-net.org/">ImageNet</a> 2012 Classification Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.KMNIST.html#torchvision.datasets.KMNIST" title="torchvision.datasets.KMNIST"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KMNIST</span></code></a>(root[, train, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://github.com/rois-codh/kmnist">Kuzushiji-MNIST</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.LFWPeople.html#torchvision.datasets.LFWPeople" title="torchvision.datasets.LFWPeople"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFWPeople</span></code></a>(root[, split, image_set, ...])</p></td>
+<td><p><a class="reference external" href="http://vis-www.cs.umass.edu/lfw/">LFW</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.LSUN.html#torchvision.datasets.LSUN" title="torchvision.datasets.LSUN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LSUN</span></code></a>(root[, classes, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://www.yf.io/p/lsun">LSUN</a> dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.MNIST.html#torchvision.datasets.MNIST" title="torchvision.datasets.MNIST"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MNIST</span></code></a>(root[, train, transform, ...])</p></td>
+<td><p><a class="reference external" href="http://yann.lecun.com/exdb/mnist/">MNIST</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.Omniglot.html#torchvision.datasets.Omniglot" title="torchvision.datasets.Omniglot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Omniglot</span></code></a>(root[, background, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://github.com/brendenlake/omniglot">Omniglot</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.OxfordIIITPet.html#torchvision.datasets.OxfordIIITPet" title="torchvision.datasets.OxfordIIITPet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OxfordIIITPet</span></code></a>(root[, split, target_types, ...])</p></td>
+<td><p><a class="reference external" href="https://www.robots.ox.ac.uk/~vgg/data/pets/">Oxford-IIIT Pet Dataset</a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.Places365.html#torchvision.datasets.Places365" title="torchvision.datasets.Places365"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Places365</span></code></a>(root, split, small, download, ...)</p></td>
+<td><p><a class="reference external" href="http://places2.csail.mit.edu/index.html">Places365</a> classification dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.PCAM.html#torchvision.datasets.PCAM" title="torchvision.datasets.PCAM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PCAM</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://github.com/basveeling/pcam">PCAM Dataset</a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.QMNIST.html#torchvision.datasets.QMNIST" title="torchvision.datasets.QMNIST"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QMNIST</span></code></a>(root[, what, compat, train])</p></td>
+<td><p><a class="reference external" href="https://github.com/facebookresearch/qmnist">QMNIST</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.RenderedSST2.html#torchvision.datasets.RenderedSST2" title="torchvision.datasets.RenderedSST2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RenderedSST2</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://github.com/openai/CLIP/blob/main/data/rendered-sst2.md">The Rendered SST2 Dataset</a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.SEMEION.html#torchvision.datasets.SEMEION" title="torchvision.datasets.SEMEION"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SEMEION</span></code></a>(root[, transform, target_transform, ...])</p></td>
+<td><p><a class="reference external" href="http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit">SEMEION</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.SBU.html#torchvision.datasets.SBU" title="torchvision.datasets.SBU"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SBU</span></code></a>(root[, transform, target_transform, ...])</p></td>
+<td><p><a class="reference external" href="http://www.cs.virginia.edu/~vicente/sbucaptions/">SBU Captioned Photo</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.StanfordCars.html#torchvision.datasets.StanfordCars" title="torchvision.datasets.StanfordCars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StanfordCars</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://ai.stanford.edu/~jkrause/cars/car_dataset.html">Stanford Cars</a> Dataset</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.STL10.html#torchvision.datasets.STL10" title="torchvision.datasets.STL10"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STL10</span></code></a>(root[, split, folds, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://cs.stanford.edu/~acoates/stl10/">STL10</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.SUN397.html#torchvision.datasets.SUN397" title="torchvision.datasets.SUN397"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SUN397</span></code></a>(root[, transform, target_transform, ...])</p></td>
+<td><p><a class="reference external" href="https://vision.princeton.edu/projects/2010/SUN/">The SUN397 Data Set</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.SVHN.html#torchvision.datasets.SVHN" title="torchvision.datasets.SVHN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SVHN</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="http://ufldl.stanford.edu/housenumbers/">SVHN</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.USPS.html#torchvision.datasets.USPS" title="torchvision.datasets.USPS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">USPS</span></code></a>(root[, train, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#usps">USPS</a> Dataset.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="image-detection-or-segmentation">
+<h3>Image detection or segmentation<a class="headerlink" href="#image-detection-or-segmentation" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.CocoDetection.html#torchvision.datasets.CocoDetection" title="torchvision.datasets.CocoDetection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CocoDetection</span></code></a>(root, annFile[, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://cocodataset.org/#detection-2016">MS Coco Detection</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.CelebA.html#torchvision.datasets.CelebA" title="torchvision.datasets.CelebA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CelebA</span></code></a>(root[, split, target_type, ...])</p></td>
+<td><p><p><a class="reference external" href="http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html">Large-scale CelebFaces Attributes (CelebA) Dataset</a> Dataset.</p>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.Cityscapes.html#torchvision.datasets.Cityscapes" title="torchvision.datasets.Cityscapes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cityscapes</span></code></a>(root[, split, mode, target_type, ...])</p></td>
+<td><p><a class="reference external" href="http://www.cityscapes-dataset.com/">Cityscapes</a> Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.Kitti.html#torchvision.datasets.Kitti" title="torchvision.datasets.Kitti"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Kitti</span></code></a>(root[, train, transform, ...])</p></td>
+<td><p><a class="reference external" href="http://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark">KITTI</a> Dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.OxfordIIITPet.html#torchvision.datasets.OxfordIIITPet" title="torchvision.datasets.OxfordIIITPet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OxfordIIITPet</span></code></a>(root[, split, target_types, ...])</p></td>
+<td><p><p><a class="reference external" href="https://www.robots.ox.ac.uk/~vgg/data/pets/">Oxford-IIIT Pet Dataset</a>.</p>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.SBDataset.html#torchvision.datasets.SBDataset" title="torchvision.datasets.SBDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SBDataset</span></code></a>(root[, image_set, mode, download, ...])</p></td>
+<td><p><a class="reference external" href="http://home.bharathh.info/pubs/codes/SBD/download.html">Semantic Boundaries Dataset</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.VOCSegmentation.html#torchvision.datasets.VOCSegmentation" title="torchvision.datasets.VOCSegmentation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VOCSegmentation</span></code></a>(root[, year, image_set, ...])</p></td>
+<td><p><a class="reference external" href="http://host.robots.ox.ac.uk/pascal/VOC/">Pascal VOC</a> Segmentation Dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.VOCDetection.html#torchvision.datasets.VOCDetection" title="torchvision.datasets.VOCDetection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VOCDetection</span></code></a>(root[, year, image_set, ...])</p></td>
+<td><p><p><a class="reference external" href="http://host.robots.ox.ac.uk/pascal/VOC/">Pascal VOC</a> Detection Dataset.</p>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.WIDERFace.html#torchvision.datasets.WIDERFace" title="torchvision.datasets.WIDERFace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WIDERFace</span></code></a>(root[, split, transform, ...])</p></td>
+<td><p><a class="reference external" href="http://shuoyang1213.me/WIDERFACE/">WIDERFace</a> Dataset.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="optical-flow">
+<h3>Optical Flow<a class="headerlink" href="#optical-flow" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.FlyingChairs.html#torchvision.datasets.FlyingChairs" title="torchvision.datasets.FlyingChairs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlyingChairs</span></code></a>(root[, split, transforms])</p></td>
+<td><p><a class="reference external" href="https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs">FlyingChairs</a> Dataset for optical flow.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.FlyingThings3D.html#torchvision.datasets.FlyingThings3D" title="torchvision.datasets.FlyingThings3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlyingThings3D</span></code></a>(root[, split, pass_name, ...])</p></td>
+<td><p><a class="reference external" href="https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html">FlyingThings3D</a> dataset for optical flow.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.HD1K.html#torchvision.datasets.HD1K" title="torchvision.datasets.HD1K"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HD1K</span></code></a>(root[, split, transforms])</p></td>
+<td><p><a class="reference external" href="http://hci-benchmark.iwr.uni-heidelberg.de/">HD1K</a> dataset for optical flow.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.KittiFlow.html#torchvision.datasets.KittiFlow" title="torchvision.datasets.KittiFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KittiFlow</span></code></a>(root[, split, transforms])</p></td>
+<td><p><a class="reference external" href="http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow">KITTI</a> dataset for optical flow (2015).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.Sintel.html#torchvision.datasets.Sintel" title="torchvision.datasets.Sintel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sintel</span></code></a>(root[, split, pass_name, transforms])</p></td>
+<td><p><a class="reference external" href="http://sintel.is.tue.mpg.de/">Sintel</a> Dataset for optical flow.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="stereo-matching">
+<h3>Stereo Matching<a class="headerlink" href="#stereo-matching" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.CarlaStereo.html#torchvision.datasets.CarlaStereo" title="torchvision.datasets.CarlaStereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CarlaStereo</span></code></a>(root[, transforms])</p></td>
+<td><p>Carla simulator data linked in the <a class="reference external" href="https://github.com/megvii-research/CREStereo">CREStereo github repo</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.Kitti2012Stereo.html#torchvision.datasets.Kitti2012Stereo" title="torchvision.datasets.Kitti2012Stereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Kitti2012Stereo</span></code></a>(root[, split, transforms])</p></td>
+<td><p>KITTI dataset from the <a class="reference external" href="http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php">2012 stereo evaluation benchmark</a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.Kitti2015Stereo.html#torchvision.datasets.Kitti2015Stereo" title="torchvision.datasets.Kitti2015Stereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Kitti2015Stereo</span></code></a>(root[, split, transforms])</p></td>
+<td><p>KITTI dataset from the <a class="reference external" href="http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php">2015 stereo evaluation benchmark</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.CREStereo.html#torchvision.datasets.CREStereo" title="torchvision.datasets.CREStereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CREStereo</span></code></a>(root[, transforms])</p></td>
+<td><p>Synthetic dataset used in training the <a class="reference external" href="https://arxiv.org/pdf/2203.11483.pdf">CREStereo</a> architecture.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.FallingThingsStereo.html#torchvision.datasets.FallingThingsStereo" title="torchvision.datasets.FallingThingsStereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FallingThingsStereo</span></code></a>(root[, variant, transforms])</p></td>
+<td><p><a class="reference external" href="https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation">FallingThings</a> dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.SceneFlowStereo.html#torchvision.datasets.SceneFlowStereo" title="torchvision.datasets.SceneFlowStereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SceneFlowStereo</span></code></a>(root[, variant, pass_name, ...])</p></td>
+<td><p>Dataset interface for <a class="reference external" href="https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html">Scene Flow</a> datasets.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.SintelStereo.html#torchvision.datasets.SintelStereo" title="torchvision.datasets.SintelStereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SintelStereo</span></code></a>(root[, pass_name, transforms])</p></td>
+<td><p>Sintel <a class="reference external" href="http://sintel.is.tue.mpg.de/stereo">Stereo Dataset</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.InStereo2k.html#torchvision.datasets.InStereo2k" title="torchvision.datasets.InStereo2k"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InStereo2k</span></code></a>(root[, split, transforms])</p></td>
+<td><p><a class="reference external" href="https://github.com/YuhuaXu/StereoDataset">InStereo2k</a> dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.ETH3DStereo.html#torchvision.datasets.ETH3DStereo" title="torchvision.datasets.ETH3DStereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ETH3DStereo</span></code></a>(root[, split, transforms])</p></td>
+<td><p>ETH3D <a class="reference external" href="https://www.eth3d.net/datasets">Low-Res Two-View</a> dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.Middlebury2014Stereo.html#torchvision.datasets.Middlebury2014Stereo" title="torchvision.datasets.Middlebury2014Stereo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Middlebury2014Stereo</span></code></a>(root[, split, ...])</p></td>
+<td><p>Publicly available scenes from the Middlebury dataset <cite>2014 version &lt;https://vision.middlebury.edu/stereo/data/scenes2014/&gt;</cite>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="image-pairs">
+<h3>Image pairs<a class="headerlink" href="#image-pairs" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.LFWPairs.html#torchvision.datasets.LFWPairs" title="torchvision.datasets.LFWPairs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFWPairs</span></code></a>(root[, split, image_set, ...])</p></td>
+<td><p><p><a class="reference external" href="http://vis-www.cs.umass.edu/lfw/">LFW</a> Dataset.</p>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.PhotoTour.html#torchvision.datasets.PhotoTour" title="torchvision.datasets.PhotoTour"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PhotoTour</span></code></a>(root, name[, train, transform, ...])</p></td>
+<td><p><a class="reference external" href="http://matthewalunbrown.com/patchdata/patchdata.html">Multi-view Stereo Correspondence</a> Dataset.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="image-captioning">
+<h3>Image captioning<a class="headerlink" href="#image-captioning" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.CocoCaptions.html#torchvision.datasets.CocoCaptions" title="torchvision.datasets.CocoCaptions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CocoCaptions</span></code></a>(root, annFile[, transform, ...])</p></td>
+<td><p><a class="reference external" href="https://cocodataset.org/#captions-2015">MS Coco Captions</a> Dataset.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="video-classification">
+<h3>Video classification<a class="headerlink" href="#video-classification" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.HMDB51.html#torchvision.datasets.HMDB51" title="torchvision.datasets.HMDB51"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HMDB51</span></code></a>(root, annotation_path, frames_per_clip)</p></td>
+<td><p><a class="reference external" href="https://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/">HMDB51</a> dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.Kinetics.html#torchvision.datasets.Kinetics" title="torchvision.datasets.Kinetics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Kinetics</span></code></a>(root, frames_per_clip[, ...])</p></td>
+<td><p><a class="reference external" href="https://www.deepmind.com/open-source/kinetics">Generic Kinetics</a> dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.UCF101.html#torchvision.datasets.UCF101" title="torchvision.datasets.UCF101"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UCF101</span></code></a>(root, annotation_path, frames_per_clip)</p></td>
+<td><p><a class="reference external" href="https://www.crcv.ucf.edu/data/UCF101.php">UCF101</a> dataset.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="video-prediction">
+<h3>Video prediction<a class="headerlink" href="#video-prediction" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.MovingMNIST.html#torchvision.datasets.MovingMNIST" title="torchvision.datasets.MovingMNIST"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MovingMNIST</span></code></a>(root[, split, split_ratio, ...])</p></td>
+<td><p><a class="reference external" href="http://www.cs.toronto.edu/~nitish/unsupervised_video/">MovingMNIST</a> Dataset.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="base-classes-for-custom-datasets">
+<span id="base-classes-datasets"></span><h2>Base classes for custom datasets<a class="headerlink" href="#base-classes-for-custom-datasets" title="Permalink to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.DatasetFolder.html#torchvision.datasets.DatasetFolder" title="torchvision.datasets.DatasetFolder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetFolder</span></code></a>(root, loader[, extensions, ...])</p></td>
+<td><p>A generic data loader.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.datasets.ImageFolder.html#torchvision.datasets.ImageFolder" title="torchvision.datasets.ImageFolder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ImageFolder</span></code></a>(root, transform, ...)</p></td>
+<td><p>A generic data loader where the images are arranged in this way by default: .</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.VisionDataset.html#torchvision.datasets.VisionDataset" title="torchvision.datasets.VisionDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisionDataset</span></code></a>(root[, transforms, transform, ...])</p></td>
+<td><p>Base Class For making datasets which are compatible with torchvision.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="transforms-v2">
+<h2>Transforms v2<a class="headerlink" href="#transforms-v2" title="Permalink to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2" title="torchvision.datasets.wrap_dataset_for_transforms_v2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wrap_dataset_for_transforms_v2</span></code></a>(dataset[, ...])</p></td>
+<td><p>[BETA] Wrap a <code class="docutils literal notranslate"><span class="pre">torchvision.dataset</span></code> for usage with <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="generated/torchvision.datasets.Caltech101.html" class="btn btn-neutral float-right" title="Caltech101" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="models/generated/torchvision.models.optical_flow.raft_small.html" class="btn btn-neutral" title="raft_small" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-present, Torch Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">Datasets</a><ul>
+<li><a class="reference internal" href="#built-in-datasets">Built-in datasets</a><ul>
+<li><a class="reference internal" href="#image-classification">Image classification</a></li>
+<li><a class="reference internal" href="#image-detection-or-segmentation">Image detection or segmentation</a></li>
+<li><a class="reference internal" href="#optical-flow">Optical Flow</a></li>
+<li><a class="reference internal" href="#stereo-matching">Stereo Matching</a></li>
+<li><a class="reference internal" href="#image-pairs">Image pairs</a></li>
+<li><a class="reference internal" href="#image-captioning">Image captioning</a></li>
+<li><a class="reference internal" href="#video-classification">Video classification</a></li>
+<li><a class="reference internal" href="#video-prediction">Video prediction</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#base-classes-for-custom-datasets">Base classes for custom datasets</a></li>
+<li><a class="reference internal" href="#transforms-v2">Transforms v2</a></li>
+</ul>
+</li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+         <script src="_static/jquery.js"></script>
+         <script src="_static/underscore.js"></script>
+         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+         <script src="_static/doctools.js"></script>
+         <script src="_static/clipboard.min.js"></script>
+         <script src="_static/copybutton.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">Stay up to date</li>
+            <li><a href="https://www.facebook.com/pytorch" target="_blank">Facebook</a></li>
+            <li><a href="https://twitter.com/pytorch" target="_blank">Twitter</a></li>
+            <li><a href="https://www.youtube.com/pytorch" target="_blank">YouTube</a></li>
+            <li><a href="https://www.linkedin.com/company/pytorch" target="_blank">LinkedIn</a></li>
+          </ul>  
+          </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">PyTorch Podcasts</li>
+            <li><a href="https://open.spotify.com/show/6UzHKeiy368jKfQMKKvJY5" target="_blank">Spotify</a></li>
+            <li><a href="https://podcasts.apple.com/us/podcast/pytorch-developer-podcast/id1566080008" target="_blank">Apple</a></li>
+            <li><a href="https://www.google.com/podcasts?feed=aHR0cHM6Ly9mZWVkcy5zaW1wbGVjYXN0LmNvbS9PQjVGa0lsOA%3D%3D" target="_blank">Google</a></li>
+            <li><a href="https://music.amazon.com/podcasts/7a4e6f0e-26c2-49e9-a478-41bd244197d0/PyTorch-Developer-Podcast?" target="_blank">Amazon</a></li>
+          </ul>
+         </div>
+        </div>
+        
+        <div class="privacy-policy">
+          <ul>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/terms/" target="_blank">Terms</a></li>
+            <li class="privacy-policy-links">|</li>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/privacy-policy/" target="_blank">Privacy</a></li>
+          </ul>
+        </div>
+        <div class="copyright">
+        <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
+          For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
+          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
+          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+      </div>
+     </div>
+
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+            
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torcharrow">torcharrow</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/data">TorchData</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torchrec">TorchRec</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torchx/">TorchX</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
+          </li>
+            
+           <ul class="resources-mobile-menu-items">
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/foundation">PyTorch Foundation</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/community-stories">Community Stories</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/events">Events</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+          </ul>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

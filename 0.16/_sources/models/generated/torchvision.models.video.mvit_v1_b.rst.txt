@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.video
+
+
+mvit_v1_b
+=========
+
+.. autofunction:: mvit_v1_b

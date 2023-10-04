@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+resnext50_32x4d
+===============
+
+.. autofunction:: resnext50_32x4d

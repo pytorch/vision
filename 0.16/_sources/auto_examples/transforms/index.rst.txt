@@ -1,0 +1,151 @@
+
+
+.. _sphx_glr_auto_examples_transforms:
+
+.. _transforms_gallery:
+
+Transforms
+----------
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates all of what you need to know to get started with the new torchvision.t...">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_getting_started_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Getting started with transforms v2</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the various transforms available in the torchvision.transforms...">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_illustrations_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Illustration of transforms</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Object detection and segmentation tasks are natively supported: torchvision.transforms.v2 enabl...">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_e2e_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Transforms v2: End-to-end object detection/segmentation example</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="CutMix and MixUp are popular augmentation strategies that can improve classification accuracy.">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_cutmix_mixup_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">How to use CutMix and MixUp</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This guide explains how to write transforms that are compatible with the torchvision transforms...">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_custom_transforms_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">How to write your own v2 transforms</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip=" TVTensors are Tensor subclasses introduced together with torchvision.transforms.v2. This examp...">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_tv_tensors_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">TVTensors FAQ</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This guide is intended for advanced users and downstream library maintainers. We explain how to...">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_custom_tv_tensors_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">How to write your own TVTensor class</div>
+    </div>
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/transforms/plot_transforms_getting_started
+   /auto_examples/transforms/plot_transforms_illustrations
+   /auto_examples/transforms/plot_transforms_e2e
+   /auto_examples/transforms/plot_cutmix_mixup
+   /auto_examples/transforms/plot_custom_transforms
+   /auto_examples/transforms/plot_tv_tensors
+   /auto_examples/transforms/plot_custom_tv_tensors
+
