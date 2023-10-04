@@ -372,7 +372,43 @@ for more details about this class.</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchvision.models.ConvNeXt_Small_Weights">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.models.</span></span><span class="sig-name descname"><span class="pre">ConvNeXt_Small_Weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/torchvision/models/convnext.html#ConvNeXt_Small_Weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.ConvNeXt_Small_Weights" title="Permalink to this definition">¶</a></dt>
-<dd><p>An enumeration.</p>
+<dd><p>The model builder above accepts the following values as the <code class="docutils literal notranslate"><span class="pre">weights</span></code> parameter.
+<code class="docutils literal notranslate"><span class="pre">ConvNeXt_Small_Weights.DEFAULT</span></code> is equivalent to <code class="docutils literal notranslate"><span class="pre">ConvNeXt_Small_Weights.IMAGENET1K_V1</span></code>. You can also use strings, e.g. <code class="docutils literal notranslate"><span class="pre">weights='DEFAULT'</span></code> or <code class="docutils literal notranslate"><span class="pre">weights='IMAGENET1K_V1'</span></code>.</p>
+<p><strong>ConvNeXt_Small_Weights.IMAGENET1K_V1</strong>:</p>
+<p>
+        These weights improve upon the results of the original paper by using a modified version of TorchVision’s
+        <a class="reference external" href="https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/">new training recipe</a>.
+    
+Also available as <code class="docutils literal notranslate"><span class="pre">ConvNeXt_Small_Weights.DEFAULT</span></code>.</p>
+<table class="table-weights docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>acc&#64;1 (on ImageNet-1K)</p></td>
+<td><p>83.616</p></td>
+</tr>
+<tr class="row-even"><td><p>acc&#64;5 (on ImageNet-1K)</p></td>
+<td><p>96.65</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_size</p></td>
+<td><p>height=32, width=32</p></td>
+</tr>
+<tr class="row-even"><td><p>categories</p></td>
+<td><p>tench, goldfish, great white shark, … (997 omitted)</p></td>
+</tr>
+<tr class="row-odd"><td><p>recipe</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p>num_params</p></td>
+<td><p>50223688</p></td>
+</tr>
+<tr class="row-odd"><td><p>GFLOPS</p></td>
+<td><p>8.68</p></td>
+</tr>
+<tr class="row-even"><td><p>File size</p></td>
+<td><p>191.7 MB</p></td>
+</tr>
+</tbody>
+</table>
+<p>The inference transforms are available at <code class="docutils literal notranslate"><span class="pre">ConvNeXt_Small_Weights.IMAGENET1K_V1.transforms</span></code> and perform the following preprocessing operations: Accepts <code class="docutils literal notranslate"><span class="pre">PIL.Image</span></code>, batched <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> and single <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> image <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> objects. The images are resized to <code class="docutils literal notranslate"><span class="pre">resize_size=[230]</span></code> using <code class="docutils literal notranslate"><span class="pre">interpolation=InterpolationMode.BILINEAR</span></code>, followed by a central crop of <code class="docutils literal notranslate"><span class="pre">crop_size=[224]</span></code>. Finally the values are first rescaled to <code class="docutils literal notranslate"><span class="pre">[0.0,</span> <span class="pre">1.0]</span></code> and then normalized using <code class="docutils literal notranslate"><span class="pre">mean=[0.485,</span> <span class="pre">0.456,</span> <span class="pre">0.406]</span></code> and <code class="docutils literal notranslate"><span class="pre">std=[0.229,</span> <span class="pre">0.224,</span> <span class="pre">0.225]</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
