@@ -1,0 +1,1893 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchvision.datasets._stereo_matching &mdash; Torchvision main documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T8XT4PS');</script>
+    <!-- End Google Tag Manager -->
+  
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="active docs-active">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torcharrow">
+                  <span class="dropdown-title">torcharrow</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/data">
+                  <span class="dropdown-title">TorchData</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchrec">
+                  <span class="dropdown-title">TorchRec</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchx/">
+                  <span class="dropdown-title">TorchX</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/foundation">
+                  <span class="dropdown-title">PyTorch Foundation</span>
+                  <p>Learn about the PyTorch foundation</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/community-stories">
+                  <span class="dropdown-title">Community Stories</span>
+                  <p>Learn how our community solves real, everyday machine learning problems with PyTorch.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/events">
+                  <span class="dropdown-title">Events</span>
+                  <p>Find events, webinars, and podcasts</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">GitHub</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='https://pytorch.org/vision/versions.html'>main (0.16.0+9b13bcb) &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tv_tensors.html">TVTensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../auto_examples/index.html">Examples and tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_references.html">Training references</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/text">torchtext</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/vision">torchvision</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/elastic/">TorchElastic</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/serve">TorchServe</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://pytorch.org/xla/">PyTorch on XLA Devices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="../../../index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+          <li><a href="../../index.html">Module code</a> &gt;</li>
+        
+          <li><a href="../../torchvision.html">torchvision</a> &gt;</li>
+        
+      <li>torchvision.datasets._stereo_matching</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          <!-- Google Tag Manager (noscript) -->
+          <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T8XT4PS"
+          height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+          <!-- End Google Tag Manager (noscript) -->
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <h1>Source code for torchvision.datasets._stereo_matching</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">_read_pfm</span><span class="p">,</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
+<span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
+
+<span class="n">T1</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
+<span class="n">T2</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">()</span>
+
+<span class="n">_read_pfm_file</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">_read_pfm</span><span class="p">,</span> <span class="n">slice_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">StereoMatchingDataset</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">VisionDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base interface for Stereo matching datasets&quot;&quot;&quot;</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            root(str): Root directory of the dataset.</span>
+<span class="sd">            transforms(callable, optional): A function/transform that takes in Tuples of</span>
+<span class="sd">                (images, disparities, valid_masks) and returns a transformed version of each of them.</span>
+<span class="sd">                images is a Tuple of (``PIL.Image``, ``PIL.Image``)</span>
+<span class="sd">                disparities is a Tuple of (``np.ndarray``, ``np.ndarray``) with shape (1, H, W)</span>
+<span class="sd">                valid_masks is a Tuple of (``np.ndarray``, ``np.ndarray``) with shape (H, W)</span>
+<span class="sd">                In some cases, when a dataset does not provide disparities, the ``disparities`` and</span>
+<span class="sd">                ``valid_masks`` can be Tuples containing None values.</span>
+<span class="sd">                For training splits generally the datasets provide a minimal guarantee of</span>
+<span class="sd">                images: (``PIL.Image``, ``PIL.Image``)</span>
+<span class="sd">                disparities: (``np.ndarray``, ``None``) with shape (1, H, W)</span>
+<span class="sd">                Optionally, based on the dataset, it can return a ``mask`` as well:</span>
+<span class="sd">                valid_masks: (``np.ndarray | None``, ``None``) with shape (H, W)</span>
+<span class="sd">                For some test splits, the datasets provides outputs that look like:</span>
+<span class="sd">                imgaes: (``PIL.Image``, ``PIL.Image``)</span>
+<span class="sd">                disparities: (``None``, ``None``)</span>
+<span class="sd">                Optionally, based on the dataset, it can return a ``mask`` as well:</span>
+<span class="sd">                valid_masks: (``None``, ``None``)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">transforms</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># type: ignore</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># type: ignore</span>
+
+    <span class="k">def</span> <span class="nf">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;RGB&quot;</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;RGB&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="nf">_scan_pairs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">paths_left_pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">paths_right_pattern</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]:</span>
+
+        <span class="n">left_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">paths_left_pattern</span><span class="p">)))</span>
+
+        <span class="n">right_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">paths_right_pattern</span><span class="p">:</span>
+            <span class="n">right_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">paths_right_pattern</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">right_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">left_paths</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">left_paths</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find any files matching the patterns: </span><span class="si">{</span><span class="n">paths_left_pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">right_paths</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find any files matching the patterns: </span><span class="si">{</span><span class="n">paths_right_pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">left_paths</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">right_paths</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">left_paths</span><span class="p">)</span><span class="si">}</span><span class="s2"> left files but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">right_paths</span><span class="p">)</span><span class="si">}</span><span class="s2"> right files using:</span><span class="se">\n</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;left pattern: </span><span class="si">{</span><span class="n">paths_left_pattern</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;right pattern: </span><span class="si">{</span><span class="n">paths_right_pattern</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span> <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">left_paths</span><span class="p">,</span> <span class="n">right_paths</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">paths</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+        <span class="c1"># function that returns a disparity map and an occlusion map</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 3 or 4-tuple with ``(img_left, img_right, disparity, Optional[valid_mask])`` where ``valid_mask``</span>
+<span class="sd">                can be a numpy boolean mask of shape (H, W) if the dataset provides a file</span>
+<span class="sd">                indicating which disparity pixels are valid. The disparity is a numpy array of</span>
+<span class="sd">                shape (1, H, W) and the images are PIL images. ``disparity`` is None for</span>
+<span class="sd">                datasets on which for ``split=&quot;test&quot;`` the authors did not provide annotations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">img_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">img_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">dsp_map_left</span><span class="p">,</span> <span class="n">valid_mask_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">dsp_map_right</span><span class="p">,</span> <span class="n">valid_mask_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">imgs</span> <span class="o">=</span> <span class="p">(</span><span class="n">img_left</span><span class="p">,</span> <span class="n">img_right</span><span class="p">)</span>
+        <span class="n">dsp_maps</span> <span class="o">=</span> <span class="p">(</span><span class="n">dsp_map_left</span><span class="p">,</span> <span class="n">dsp_map_right</span><span class="p">)</span>
+        <span class="n">valid_masks</span> <span class="o">=</span> <span class="p">(</span><span class="n">valid_mask_left</span><span class="p">,</span> <span class="n">valid_mask_right</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="p">(</span>
+                <span class="n">imgs</span><span class="p">,</span>
+                <span class="n">dsp_maps</span><span class="p">,</span>
+                <span class="n">valid_masks</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">(</span><span class="n">imgs</span><span class="p">,</span> <span class="n">dsp_maps</span><span class="p">,</span> <span class="n">valid_masks</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_built_in_disparity_mask</span> <span class="ow">or</span> <span class="n">valid_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">imgs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">imgs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dsp_maps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cast</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">valid_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">imgs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">imgs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dsp_maps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CarlaStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CarlaStereo.html#torchvision.datasets.CarlaStereo">[docs]</a><span class="k">class</span> <span class="nc">CarlaStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Carla simulator data linked in the `CREStereo github repo &lt;https://github.com/megvii-research/CREStereo&gt;`_.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            carla-highres</span>
+<span class="sd">                trainingF</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        img0.png</span>
+<span class="sd">                        img1.png</span>
+<span class="sd">                        disp0GT.pfm</span>
+<span class="sd">                        disp1GT.pfm</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                        img0.png</span>
+<span class="sd">                        img1.png</span>
+<span class="sd">                        disp0GT.pfm</span>
+<span class="sd">                        disp1GT.pfm</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory where `carla-highres` is located.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;carla-highres&quot;</span>
+
+        <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;trainingF&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im0.png&quot;</span><span class="p">)</span>
+        <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;trainingF&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im1.png&quot;</span><span class="p">)</span>
+        <span class="n">imgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_image_pattern</span><span class="p">,</span> <span class="n">right_image_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="n">imgs</span>
+
+        <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;trainingF&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;disp0GT.pfm&quot;</span><span class="p">)</span>
+        <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;trainingF&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;disp1GT.pfm&quot;</span><span class="p">)</span>
+        <span class="n">disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="n">disparities</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">_read_pfm_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">)</span>  <span class="c1"># ensure that the disparity is positive</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="CarlaStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CarlaStereo.html#torchvision.datasets.CarlaStereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
+<span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="Kitti2012Stereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Kitti2012Stereo.html#torchvision.datasets.Kitti2012Stereo">[docs]</a><span class="k">class</span> <span class="nc">Kitti2012Stereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    KITTI dataset from the `2012 stereo evaluation benchmark &lt;http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php&gt;`_.</span>
+<span class="sd">    Uses the RGB images for consistency with KITTI 2015.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            Kitti2012</span>
+<span class="sd">                testing</span>
+<span class="sd">                    colored_0</span>
+<span class="sd">                        1_10.png</span>
+<span class="sd">                        2_10.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    colored_1</span>
+<span class="sd">                        1_10.png</span>
+<span class="sd">                        2_10.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                training</span>
+<span class="sd">                    colored_0</span>
+<span class="sd">                        1_10.png</span>
+<span class="sd">                        2_10.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    colored_1</span>
+<span class="sd">                        1_10.png</span>
+<span class="sd">                        2_10.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    disp_noc</span>
+<span class="sd">                        1.png</span>
+<span class="sd">                        2.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    calib</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory where `Kitti2012` is located.</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default) or &quot;test&quot;.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Kitti2012&quot;</span> <span class="o">/</span> <span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="s2">&quot;ing&quot;</span><span class="p">)</span>
+
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;colored_0&quot;</span> <span class="o">/</span> <span class="s2">&quot;*_10.png&quot;</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;colored_1&quot;</span> <span class="o">/</span> <span class="s2">&quot;*_10.png&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disp_noc&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">disparity_pattern</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="c1"># test split has no disparity maps</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span> <span class="o">/</span> <span class="mf">256.0</span>
+        <span class="c1"># unsqueeze the disparity map into (C, H, W) format</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">disparity_map</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="Kitti2012Stereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Kitti2012Stereo.html#torchvision.datasets.Kitti2012Stereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
+<span class="sd">            generate a valid mask.</span>
+<span class="sd">            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="Kitti2015Stereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Kitti2015Stereo.html#torchvision.datasets.Kitti2015Stereo">[docs]</a><span class="k">class</span> <span class="nc">Kitti2015Stereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    KITTI dataset from the `2015 stereo evaluation benchmark &lt;http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php&gt;`_.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            Kitti2015</span>
+<span class="sd">                testing</span>
+<span class="sd">                    image_2</span>
+<span class="sd">                        img1.png</span>
+<span class="sd">                        img2.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    image_3</span>
+<span class="sd">                        img1.png</span>
+<span class="sd">                        img2.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                training</span>
+<span class="sd">                    image_2</span>
+<span class="sd">                        img1.png</span>
+<span class="sd">                        img2.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    image_3</span>
+<span class="sd">                        img1.png</span>
+<span class="sd">                        img2.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    disp_occ_0</span>
+<span class="sd">                        img1.png</span>
+<span class="sd">                        img2.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    disp_occ_1</span>
+<span class="sd">                        img1.png</span>
+<span class="sd">                        img2.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    calib</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory where `Kitti2015` is located.</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default) or &quot;test&quot;.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Kitti2015&quot;</span> <span class="o">/</span> <span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="s2">&quot;ing&quot;</span><span class="p">)</span>
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;image_3&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disp_occ_0&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disp_occ_1&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="c1"># test split has no disparity maps</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span> <span class="o">/</span> <span class="mf">256.0</span>
+        <span class="c1"># unsqueeze the disparity map into (C, H, W) format</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">disparity_map</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="Kitti2015Stereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Kitti2015Stereo.html#torchvision.datasets.Kitti2015Stereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
+<span class="sd">            generate a valid mask.</span>
+<span class="sd">            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="Middlebury2014Stereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Middlebury2014Stereo.html#torchvision.datasets.Middlebury2014Stereo">[docs]</a><span class="k">class</span> <span class="nc">Middlebury2014Stereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Publicly available scenes from the Middlebury dataset `2014 version &lt;https://vision.middlebury.edu/stereo/data/scenes2014/&gt;`.</span>
+
+<span class="sd">    The dataset mostly follows the original format, without containing the ambient subdirectories.  : ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            Middlebury2014</span>
+<span class="sd">                train</span>
+<span class="sd">                    scene1-{perfect,imperfect}</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                        im{0,1}.png</span>
+<span class="sd">                        im1E.png</span>
+<span class="sd">                        im1L.png</span>
+<span class="sd">                        disp{0,1}.pfm</span>
+<span class="sd">                        disp{0,1}-n.png</span>
+<span class="sd">                        disp{0,1}-sd.pfm</span>
+<span class="sd">                        disp{0,1}y.pfm</span>
+<span class="sd">                    scene2-{perfect,imperfect}</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                        im{0,1}.png</span>
+<span class="sd">                        im1E.png</span>
+<span class="sd">                        im1L.png</span>
+<span class="sd">                        disp{0,1}.pfm</span>
+<span class="sd">                        disp{0,1}-n.png</span>
+<span class="sd">                        disp{0,1}-sd.pfm</span>
+<span class="sd">                        disp{0,1}y.pfm</span>
+<span class="sd">                    ...</span>
+<span class="sd">                additional</span>
+<span class="sd">                    scene1-{perfect,imperfect}</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                        im{0,1}.png</span>
+<span class="sd">                        im1E.png</span>
+<span class="sd">                        im1L.png</span>
+<span class="sd">                        disp{0,1}.pfm</span>
+<span class="sd">                        disp{0,1}-n.png</span>
+<span class="sd">                        disp{0,1}-sd.pfm</span>
+<span class="sd">                        disp{0,1}y.pfm</span>
+<span class="sd">                    ...</span>
+<span class="sd">                test</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                        im{0,1}.png</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                        im{0,1}.png</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory of the Middleburry 2014 Dataset.</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default), &quot;test&quot;, or &quot;additional&quot;</span>
+<span class="sd">        use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible.</span>
+<span class="sd">            The dataset samples with equal probability between ``[im1.png, im1E.png, im1L.png]``.</span>
+<span class="sd">        calibration (string, optional): Whether or not to use the calibrated (default) or uncalibrated scenes.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">        download (boolean, optional): Whether or not to download the dataset in the ``root`` directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">splits</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Adirondack&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Jadeplant&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Motorcycle&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Piano&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Pipes&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Playroom&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Playtable&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Recycle&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Shelves&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Vintage&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;additional&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Backpack&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Bicycle1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Cable&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Classroom1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Couch&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Flowers&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Mask&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Shopvac&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Sticks&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Storage&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Sword1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Sword2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Umbrella&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;Plants&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Classroom2E&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Classroom2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Australia&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;DjembeL&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;CrusadeP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Crusade&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Hoops&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Bicycle2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Staircase&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Newkuba&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;AustraliaP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Djembe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Livingroom&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Computer&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
+        <span class="n">calibration</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;perfect&quot;</span><span class="p">,</span>
+        <span class="n">use_ambient_views</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;additional&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">split</span> <span class="o">=</span> <span class="n">split</span>
+
+        <span class="k">if</span> <span class="n">calibration</span><span class="p">:</span>
+            <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">calibration</span><span class="p">,</span> <span class="s2">&quot;calibration&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;perfect&quot;</span><span class="p">,</span> <span class="s2">&quot;imperfect&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
+            <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Split &#39;test&#39; has only no calibration settings, please set `calibration=None`.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">split</span> <span class="o">!=</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Split &#39;</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">&#39; has calibration settings, however None was provided as an argument.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Setting calibration to &#39;perfect&#39; for split &#39;</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">&#39;. Available calibration settings are: &#39;perfect&#39;, &#39;imperfect&#39;, &#39;both&#39;.&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_download_dataset</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Middlebury2014&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> directory was not found in the provided root directory&quot;</span><span class="p">)</span>
+
+        <span class="n">split_scenes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="n">split</span><span class="p">]</span>
+        <span class="c1"># check that the provided root folder contains the scene splits</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="c1"># using startswith to account for perfect / imperfect calibrartion</span>
+            <span class="n">scene</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">split_scenes</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Provided root folder does not contain any scenes from the </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> split.&quot;</span><span class="p">)</span>
+
+        <span class="n">calibrartion_suffixes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="kc">None</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;perfect&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;-perfect&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;imperfect&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;-imperfect&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;-perfect&quot;</span><span class="p">,</span> <span class="s2">&quot;-imperfect&quot;</span><span class="p">],</span>
+        <span class="p">}[</span><span class="n">calibration</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">calibration_suffix</span> <span class="ow">in</span> <span class="n">calibrartion_suffixes</span><span class="p">:</span>
+            <span class="n">scene_pattern</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span> <span class="o">+</span> <span class="n">calibration_suffix</span>
+            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">&quot;im0.png&quot;</span><span class="p">)</span>
+            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">&quot;im1.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">left_dispartity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">&quot;disp0.pfm&quot;</span><span class="p">)</span>
+                <span class="n">right_dispartity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">&quot;disp1.pfm&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_dispartity_pattern</span><span class="p">,</span> <span class="n">right_dispartity_pattern</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_ambient_views</span> <span class="o">=</span> <span class="n">use_ambient_views</span>
+
+    <span class="k">def</span> <span class="nf">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function that reads either the original right image or an augmented view when ``use_ambient_views`` is True.</span>
+<span class="sd">        When ``use_ambient_views`` is True, the dataset will return at random one of ``[im1.png, im1E.png, im1L.png]``</span>
+<span class="sd">        as the right image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ambient_file_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span>  <span class="c1"># make mypy happy</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">file_path</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;im1.png&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ambient_views</span><span class="p">:</span>
+            <span class="n">base_path</span> <span class="o">=</span> <span class="n">file_path</span><span class="o">.</span><span class="n">parent</span>
+            <span class="c1"># initialize sampleable container</span>
+            <span class="n">ambient_file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">base_path</span> <span class="o">/</span> <span class="n">view_name</span> <span class="k">for</span> <span class="n">view_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;im1E.png&quot;</span><span class="p">,</span> <span class="s2">&quot;im1L.png&quot;</span><span class="p">])</span>
+            <span class="c1"># double check that we&#39;re not going to try to read from an invalid file path</span>
+            <span class="n">ambient_file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">ambient_file_paths</span><span class="p">))</span>
+            <span class="c1"># keep the original image as an option as well for uniform sampling between base views</span>
+            <span class="n">ambient_file_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">ambient_file_paths</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_read_img</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+        <span class="c1"># test split has not disparity maps</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">_read_pfm_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">)</span>  <span class="c1"># ensure that the disparity is positive</span>
+        <span class="n">disparity_map</span><span class="p">[</span><span class="n">disparity_map</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># remove infinite disparities</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">disparity_map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># mask out invalid disparities</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+    <span class="k">def</span> <span class="nf">_download_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">base_url</span> <span class="o">=</span> <span class="s2">&quot;https://vision.middlebury.edu/stereo/data/scenes2014/zip&quot;</span>
+        <span class="c1"># train and additional splits have 2 different calibration settings</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Middlebury2014&quot;</span>
+        <span class="n">split_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span>
+
+        <span class="k">if</span> <span class="n">split_name</span> <span class="o">!=</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">split_scene</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="n">split_name</span><span class="p">]:</span>
+                <span class="n">split_root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">split_name</span>
+                <span class="k">for</span> <span class="n">calibration</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;perfect&quot;</span><span class="p">,</span> <span class="s2">&quot;imperfect&quot;</span><span class="p">]:</span>
+                    <span class="n">scene_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">split_scene</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">calibration</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">scene_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">scene_name</span><span class="si">}</span><span class="s2">.zip&quot;</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading </span><span class="si">{</span><span class="n">scene_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="c1"># download the scene only if it doesn&#39;t exist</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">split_root</span> <span class="o">/</span> <span class="n">scene_name</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                        <span class="n">download_and_extract_archive</span><span class="p">(</span>
+                            <span class="n">url</span><span class="o">=</span><span class="n">scene_url</span><span class="p">,</span>
+                            <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">scene_name</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="p">,</span>
+                            <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">split_root</span><span class="p">),</span>
+                            <span class="n">remove_finished</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">]):</span>
+                <span class="c1"># test split is downloaded from a different location</span>
+                <span class="n">test_set_url</span> <span class="o">=</span> <span class="s2">&quot;https://vision.middlebury.edu/stereo/submit3/zip/MiddEval3-data-F.zip&quot;</span>
+                <span class="c1"># the unzip is going to produce a directory MiddEval3 with two subdirectories trainingF and testF</span>
+                <span class="c1"># we want to move the contents from testF into the  directory</span>
+                <span class="n">download_and_extract_archive</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">test_set_url</span><span class="p">,</span> <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">),</span> <span class="n">remove_finished</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">scene_dir</span><span class="p">,</span> <span class="n">scene_names</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;MiddEval3/testF&quot;</span><span class="p">)):</span>
+                    <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">scene_names</span><span class="p">:</span>
+                        <span class="n">scene_dst_dir</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;test&quot;</span>
+                        <span class="n">scene_src_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">scene_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">scene</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">scene_dst_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">scene_src_dir</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">scene_dst_dir</span><span class="p">))</span>
+
+                <span class="c1"># cleanup MiddEval3 directory</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;MiddEval3&quot;</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Middlebury2014Stereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Middlebury2014Stereo.html#torchvision.datasets.Middlebury2014Stereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T2</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            ``valid_mask`` is implicitly ``None`` for `split=test`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T2</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="CREStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CREStereo.html#torchvision.datasets.CREStereo">[docs]</a><span class="k">class</span> <span class="nc">CREStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Synthetic dataset used in training the `CREStereo &lt;https://arxiv.org/pdf/2203.11483.pdf&gt;`_ architecture.</span>
+<span class="sd">    Dataset details on the official paper `repo &lt;https://github.com/megvii-research/CREStereo&gt;`_.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            CREStereo</span>
+<span class="sd">                tree</span>
+<span class="sd">                    img1_left.jpg</span>
+<span class="sd">                    img1_right.jpg</span>
+<span class="sd">                    img1_left.disp.jpg</span>
+<span class="sd">                    img1_right.disp.jpg</span>
+<span class="sd">                    img2_left.jpg</span>
+<span class="sd">                    img2_right.jpg</span>
+<span class="sd">                    img2_left.disp.jpg</span>
+<span class="sd">                    img2_right.disp.jpg</span>
+<span class="sd">                    ...</span>
+<span class="sd">                shapenet</span>
+<span class="sd">                    img1_left.jpg</span>
+<span class="sd">                    img1_right.jpg</span>
+<span class="sd">                    img1_left.disp.jpg</span>
+<span class="sd">                    img1_right.disp.jpg</span>
+<span class="sd">                    ...</span>
+<span class="sd">                reflective</span>
+<span class="sd">                    img1_left.jpg</span>
+<span class="sd">                    img1_right.jpg</span>
+<span class="sd">                    img1_left.disp.jpg</span>
+<span class="sd">                    img1_right.disp.jpg</span>
+<span class="sd">                    ...</span>
+<span class="sd">                hole</span>
+<span class="sd">                    img1_left.jpg</span>
+<span class="sd">                    img1_right.jpg</span>
+<span class="sd">                    img1_left.disp.jpg</span>
+<span class="sd">                    img1_right.disp.jpg</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (str): Root directory of the dataset.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;CREStereo&quot;</span>
+
+        <span class="n">dirs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;shapenet&quot;</span><span class="p">,</span> <span class="s2">&quot;reflective&quot;</span><span class="p">,</span> <span class="s2">&quot;tree&quot;</span><span class="p">,</span> <span class="s2">&quot;hole&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+            <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_left.jpg&quot;</span><span class="p">)</span>
+            <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_right.jpg&quot;</span><span class="p">)</span>
+            <span class="n">imgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_image_pattern</span><span class="p">,</span> <span class="n">right_image_pattern</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="n">imgs</span>
+
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_left.disp.png&quot;</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_right.disp.png&quot;</span><span class="p">)</span>
+            <span class="n">disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="n">disparities</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="c1"># unsqueeze the disparity map into (C, H, W) format</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">disparity_map</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">/</span> <span class="mf">32.0</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="CREStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CREStereo.html#torchvision.datasets.CREStereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
+<span class="sd">            generate a valid mask.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="FallingThingsStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FallingThingsStereo.html#torchvision.datasets.FallingThingsStereo">[docs]</a><span class="k">class</span> <span class="nc">FallingThingsStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;`FallingThings &lt;https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation&gt;`_ dataset.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            FallingThings</span>
+<span class="sd">                single</span>
+<span class="sd">                    dir1</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            _object_settings.json</span>
+<span class="sd">                            _camera_settings.json</span>
+<span class="sd">                            image1.left.depth.png</span>
+<span class="sd">                            image1.right.depth.png</span>
+<span class="sd">                            image1.left.jpg</span>
+<span class="sd">                            image1.right.jpg</span>
+<span class="sd">                            image2.left.depth.png</span>
+<span class="sd">                            image2.right.depth.png</span>
+<span class="sd">                            image2.left.jpg</span>
+<span class="sd">                            image2.right</span>
+<span class="sd">                            ...</span>
+<span class="sd">                        scene2</span>
+<span class="sd">                    ...</span>
+<span class="sd">                mixed</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        _object_settings.json</span>
+<span class="sd">                        _camera_settings.json</span>
+<span class="sd">                        image1.left.depth.png</span>
+<span class="sd">                        image1.right.depth.png</span>
+<span class="sd">                        image1.left.jpg</span>
+<span class="sd">                        image1.right.jpg</span>
+<span class="sd">                        image2.left.depth.png</span>
+<span class="sd">                        image2.right.depth.png</span>
+<span class="sd">                        image2.left.jpg</span>
+<span class="sd">                        image2.right</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory where FallingThings is located.</span>
+<span class="sd">        variant (string): Which variant to use. Either &quot;single&quot;, &quot;mixed&quot;, or &quot;both&quot;.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;FallingThings&quot;</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="s2">&quot;variant&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
+
+        <span class="n">variants</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;single&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;single&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;mixed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;mixed&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">],</span>
+        <span class="p">}[</span><span class="n">variant</span><span class="p">]</span>
+
+        <span class="n">split_prefix</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;single&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mixed&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
+            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.left.jpg&quot;</span><span class="p">)</span>
+            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.right.jpg&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
+
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.left.depth.png&quot;</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.right.depth.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="c1"># (H, W) image</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+        <span class="c1"># as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt</span>
+        <span class="c1"># in order to extract disparity from depth maps</span>
+        <span class="n">camera_settings_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;_camera_settings.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">camera_settings_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="c1"># inverse of depth-from-disparity equation: depth = (baseline * focal) / (disparity * pixel_constant)</span>
+            <span class="n">intrinsics</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">focal</span> <span class="o">=</span> <span class="n">intrinsics</span><span class="p">[</span><span class="s2">&quot;camera_settings&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;intrinsic_settings&quot;</span><span class="p">][</span><span class="s2">&quot;fx&quot;</span><span class="p">]</span>
+            <span class="n">baseline</span><span class="p">,</span> <span class="n">pixel_constant</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">100</span>  <span class="c1"># pixel constant is inverted</span>
+            <span class="n">disparity_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">baseline</span> <span class="o">*</span> <span class="n">focal</span> <span class="o">*</span> <span class="n">pixel_constant</span><span class="p">)</span> <span class="o">/</span> <span class="n">depth</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="c1"># unsqueeze disparity to (C, H, W)</span>
+            <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">disparity_map</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+            <span class="n">valid_mask</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="FallingThingsStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FallingThingsStereo.html#torchvision.datasets.FallingThingsStereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
+<span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="SceneFlowStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.SceneFlowStereo.html#torchvision.datasets.SceneFlowStereo">[docs]</a><span class="k">class</span> <span class="nc">SceneFlowStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset interface for `Scene Flow &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html&gt;`_ datasets.</span>
+<span class="sd">    This interface provides access to the `FlyingThings3D, `Monkaa` and `Driving` datasets.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            SceneFlow</span>
+<span class="sd">                Monkaa</span>
+<span class="sd">                    frames_cleanpass</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            left</span>
+<span class="sd">                                img1.png</span>
+<span class="sd">                                img2.png</span>
+<span class="sd">                            right</span>
+<span class="sd">                                img1.png</span>
+<span class="sd">                                img2.png</span>
+<span class="sd">                        scene2</span>
+<span class="sd">                            left</span>
+<span class="sd">                                img1.png</span>
+<span class="sd">                                img2.png</span>
+<span class="sd">                            right</span>
+<span class="sd">                                img1.png</span>
+<span class="sd">                                img2.png</span>
+<span class="sd">                    frames_finalpass</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            left</span>
+<span class="sd">                                img1.png</span>
+<span class="sd">                                img2.png</span>
+<span class="sd">                            right</span>
+<span class="sd">                                img1.png</span>
+<span class="sd">                                img2.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    disparity</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            left</span>
+<span class="sd">                                img1.pfm</span>
+<span class="sd">                                img2.pfm</span>
+<span class="sd">                            right</span>
+<span class="sd">                                img1.pfm</span>
+<span class="sd">                                img2.pfm</span>
+<span class="sd">                FlyingThings3D</span>
+<span class="sd">                    ...</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory where SceneFlow is located.</span>
+<span class="sd">        variant (string): Which dataset variant to user, &quot;FlyingThings3D&quot; (default), &quot;Monkaa&quot; or &quot;Driving&quot;.</span>
+<span class="sd">        pass_name (string): Which pass to use, &quot;clean&quot; (default), &quot;final&quot; or &quot;both&quot;.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;FlyingThings3D&quot;</span><span class="p">,</span>
+        <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;clean&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;SceneFlow&quot;</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="s2">&quot;variant&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;FlyingThings3D&quot;</span><span class="p">,</span> <span class="s2">&quot;Driving&quot;</span><span class="p">,</span> <span class="s2">&quot;Monkaa&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">&quot;pass_name&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;clean&quot;</span><span class="p">,</span> <span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
+
+        <span class="n">passes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clean&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_cleanpass&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;final&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_finalpass&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_cleanpass&quot;</span><span class="p">,</span> <span class="s2">&quot;frames_finalpass&quot;</span><span class="p">],</span>
+        <span class="p">}[</span><span class="n">pass_name</span><span class="p">]</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">variant</span>
+
+        <span class="n">prefix_directories</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Monkaa&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;FlyingThings3D&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Driving&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">passes</span><span class="p">:</span>
+            <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">p</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;left&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">p</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;right&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_image_pattern</span><span class="p">,</span> <span class="n">right_image_pattern</span><span class="p">)</span>
+
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disparity&quot;</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;left&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.pfm&quot;</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disparity&quot;</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;right&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.pfm&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">_read_pfm_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">)</span>  <span class="c1"># ensure that the disparity is positive</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="SceneFlowStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.SceneFlowStereo.html#torchvision.datasets.SceneFlowStereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
+<span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="SintelStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.SintelStereo.html#torchvision.datasets.SintelStereo">[docs]</a><span class="k">class</span> <span class="nc">SintelStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sintel `Stereo Dataset &lt;http://sintel.is.tue.mpg.de/stereo&gt;`_.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            Sintel</span>
+<span class="sd">                training</span>
+<span class="sd">                    final_left</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            img1.png</span>
+<span class="sd">                            img2.png</span>
+<span class="sd">                            ...</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    final_right</span>
+<span class="sd">                        scene2</span>
+<span class="sd">                            img1.png</span>
+<span class="sd">                            img2.png</span>
+<span class="sd">                            ...</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    disparities</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            img1.png</span>
+<span class="sd">                            img2.png</span>
+<span class="sd">                            ...</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    occlusions</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            img1.png</span>
+<span class="sd">                            img2.png</span>
+<span class="sd">                            ...</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    outofframe</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            img1.png</span>
+<span class="sd">                            img2.png</span>
+<span class="sd">                            ...</span>
+<span class="sd">                        ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory where Sintel Stereo is located.</span>
+<span class="sd">        pass_name (string): The name of the pass to use, either &quot;final&quot;, &quot;clean&quot; or &quot;both&quot;.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">&quot;pass_name&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="s2">&quot;clean&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Sintel&quot;</span>
+        <span class="n">pass_names</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;final&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;final&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;clean&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;clean&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="s2">&quot;clean&quot;</span><span class="p">],</span>
+        <span class="p">}[</span><span class="n">pass_name</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pass_names</span><span class="p">:</span>
+            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;training&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_left&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;training&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_right&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
+
+            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;training&quot;</span> <span class="o">/</span> <span class="s2">&quot;disparities&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">disparity_pattern</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_occlussion_mask_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="c1"># helper function to get the occlusion mask paths</span>
+        <span class="c1"># a path will look like  .../.../.../training/disparities/scene1/img1.png</span>
+        <span class="c1"># we want to get something like .../.../.../training/occlusions/scene1/img1.png</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">basename</span> <span class="o">=</span> <span class="n">fpath</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">scenedir</span> <span class="o">=</span> <span class="n">fpath</span><span class="o">.</span><span class="n">parent</span>
+        <span class="c1"># the parent of the scenedir is actually the disparity dir</span>
+        <span class="n">sampledir</span> <span class="o">=</span> <span class="n">scenedir</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+
+        <span class="n">occlusion_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sampledir</span> <span class="o">/</span> <span class="s2">&quot;occlusions&quot;</span> <span class="o">/</span> <span class="n">scenedir</span><span class="o">.</span><span class="n">name</span> <span class="o">/</span> <span class="n">basename</span><span class="p">)</span>
+        <span class="n">outofframe_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sampledir</span> <span class="o">/</span> <span class="s2">&quot;outofframe&quot;</span> <span class="o">/</span> <span class="n">scenedir</span><span class="o">.</span><span class="n">name</span> <span class="o">/</span> <span class="n">basename</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">occlusion_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Occlusion mask </span><span class="si">{</span><span class="n">occlusion_path</span><span class="si">}</span><span class="s2"> does not exist&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outofframe_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Out of frame mask </span><span class="si">{</span><span class="n">outofframe_path</span><span class="si">}</span><span class="s2"> does not exist&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">occlusion_path</span><span class="p">,</span> <span class="n">outofframe_path</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="c1"># disparity decoding as per Sintel instructions in the README provided with the dataset</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">g</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">14</span><span class="p">)</span>
+        <span class="c1"># reshape into (C, H, W) format</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># find the appropriate file paths</span>
+        <span class="n">occlued_mask_path</span><span class="p">,</span> <span class="n">out_of_frame_mask_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_occlussion_mask_paths</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="c1"># occlusion masks</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">occlued_mask_path</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="c1"># out of frame masks</span>
+        <span class="n">off_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">out_of_frame_mask_path</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="c1"># combine the masks together</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">off_mask</span><span class="p">,</span> <span class="n">valid_mask</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="SintelStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.SintelStereo.html#torchvision.datasets.SintelStereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T2</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images whilst</span>
+<span class="sd">            the valid_mask is a numpy array of shape (H, W).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T2</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="InStereo2k"><a class="viewcode-back" href="../../../generated/torchvision.datasets.InStereo2k.html#torchvision.datasets.InStereo2k">[docs]</a><span class="k">class</span> <span class="nc">InStereo2k</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;`InStereo2k &lt;https://github.com/YuhuaXu/StereoDataset&gt;`_ dataset.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            InStereo2k</span>
+<span class="sd">                train</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        left.png</span>
+<span class="sd">                        right.png</span>
+<span class="sd">                        left_disp.png</span>
+<span class="sd">                        right_disp.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                    ...</span>
+<span class="sd">                test</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        left.png</span>
+<span class="sd">                        right.png</span>
+<span class="sd">                        left_disp.png</span>
+<span class="sd">                        right_disp.png</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory where InStereo2k is located.</span>
+<span class="sd">        split (string): Either &quot;train&quot; or &quot;test&quot;.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;InStereo2k&quot;</span> <span class="o">/</span> <span class="n">split</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;left.png&quot;</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;right.png&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
+
+        <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;left_disp.png&quot;</span><span class="p">)</span>
+        <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;right_disp.png&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="c1"># unsqueeze disparity to (C, H, W)</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">disparity_map</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">/</span> <span class="mf">1024.0</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="InStereo2k.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.InStereo2k.html#torchvision.datasets.InStereo2k.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
+<span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="ETH3DStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.ETH3DStereo.html#torchvision.datasets.ETH3DStereo">[docs]</a><span class="k">class</span> <span class="nc">ETH3DStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ETH3D `Low-Res Two-View &lt;https://www.eth3d.net/datasets&gt;`_ dataset.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            ETH3D</span>
+<span class="sd">                two_view_training</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        im1.png</span>
+<span class="sd">                        im0.png</span>
+<span class="sd">                        images.txt</span>
+<span class="sd">                        cameras.txt</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                        im1.png</span>
+<span class="sd">                        im0.png</span>
+<span class="sd">                        images.txt</span>
+<span class="sd">                        cameras.txt</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    ...</span>
+<span class="sd">                two_view_training_gt</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        disp0GT.pfm</span>
+<span class="sd">                        mask0nocc.png</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                        disp0GT.pfm</span>
+<span class="sd">                        mask0nocc.png</span>
+<span class="sd">                    ...</span>
+<span class="sd">                two_view_testing</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        im1.png</span>
+<span class="sd">                        im0.png</span>
+<span class="sd">                        images.txt</span>
+<span class="sd">                        cameras.txt</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                        im1.png</span>
+<span class="sd">                        im0.png</span>
+<span class="sd">                        images.txt</span>
+<span class="sd">                        cameras.txt</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory of the ETH3D Dataset.</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default) or &quot;test&quot;.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;ETH3D&quot;</span>
+
+        <span class="n">img_dir</span> <span class="o">=</span> <span class="s2">&quot;two_view_training&quot;</span> <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="k">else</span> <span class="s2">&quot;two_view_test&quot;</span>
+        <span class="n">anot_dir</span> <span class="o">=</span> <span class="s2">&quot;two_view_training_gt&quot;</span>
+
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">img_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im0.png&quot;</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">img_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im1.png&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">anot_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;disp0GT.pfm&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">disparity_pattern</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+        <span class="c1"># test split has no disparity maps</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">_read_pfm_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">)</span>  <span class="c1"># ensure that the disparity is positive</span>
+        <span class="n">mask_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;mask0nocc.png&quot;</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">mask_path</span><span class="p">)</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="ETH3DStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.ETH3DStereo.html#torchvision.datasets.ETH3DStereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T2</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
+<span class="sd">            generate a valid mask.</span>
+<span class="sd">            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T2</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
+</pre></div>
+
+             </article>
+             
+            </div>
+            <footer>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-present, Torch Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+         <script src="../../../_static/jquery.js"></script>
+         <script src="../../../_static/underscore.js"></script>
+         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+         <script src="../../../_static/doctools.js"></script>
+         <script src="../../../_static/clipboard.min.js"></script>
+         <script src="../../../_static/copybutton.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">Stay up to date</li>
+            <li><a href="https://www.facebook.com/pytorch" target="_blank">Facebook</a></li>
+            <li><a href="https://twitter.com/pytorch" target="_blank">Twitter</a></li>
+            <li><a href="https://www.youtube.com/pytorch" target="_blank">YouTube</a></li>
+            <li><a href="https://www.linkedin.com/company/pytorch" target="_blank">LinkedIn</a></li>
+          </ul>  
+          </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">PyTorch Podcasts</li>
+            <li><a href="https://open.spotify.com/show/6UzHKeiy368jKfQMKKvJY5" target="_blank">Spotify</a></li>
+            <li><a href="https://podcasts.apple.com/us/podcast/pytorch-developer-podcast/id1566080008" target="_blank">Apple</a></li>
+            <li><a href="https://www.google.com/podcasts?feed=aHR0cHM6Ly9mZWVkcy5zaW1wbGVjYXN0LmNvbS9PQjVGa0lsOA%3D%3D" target="_blank">Google</a></li>
+            <li><a href="https://music.amazon.com/podcasts/7a4e6f0e-26c2-49e9-a478-41bd244197d0/PyTorch-Developer-Podcast?" target="_blank">Amazon</a></li>
+          </ul>
+         </div>
+        </div>
+        
+        <div class="privacy-policy">
+          <ul>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/terms/" target="_blank">Terms</a></li>
+            <li class="privacy-policy-links">|</li>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/privacy-policy/" target="_blank">Privacy</a></li>
+          </ul>
+        </div>
+        <div class="copyright">
+        <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
+          For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
+          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
+          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+      </div>
+     </div>
+
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="../../../_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+            
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torcharrow">torcharrow</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/data">TorchData</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torchrec">TorchRec</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torchx/">TorchX</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
+          </li>
+            
+           <ul class="resources-mobile-menu-items">
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/foundation">PyTorch Foundation</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/community-stories">Community Stories</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/events">Events</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+          </ul>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="../../../_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

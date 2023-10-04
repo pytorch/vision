@@ -1,0 +1,18 @@
+.. rst-class:: table-weights
+.. table::
+    :widths: 110 18 18 18 10 
+
+    ==============================================================================================================  =============  ============  ============  ==================================================================================================================
+    **Weight**                                                                                                        **Box MAP**  **Params**      **GFLOPS**  **Recipe**
+    ==============================================================================================================  =============  ============  ============  ==================================================================================================================
+    :class:`FCOS_ResNet50_FPN_Weights.COCO_V1 <FCOS_ResNet50_FPN_Weights>`                                                   39.2  32.3M               128.21  `link <https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn>`__
+    :class:`FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1 <FasterRCNN_MobileNet_V3_Large_320_FPN_Weights>`           22.8  19.4M                 0.72  `link <https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn>`__
+    :class:`FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1 <FasterRCNN_MobileNet_V3_Large_FPN_Weights>`                   32.8  19.4M                 4.49  `link <https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn>`__
+    :class:`FasterRCNN_ResNet50_FPN_V2_Weights.COCO_V1 <FasterRCNN_ResNet50_FPN_V2_Weights>`                                 46.7  43.7M               280.37  `link <https://github.com/pytorch/vision/pull/5763>`__
+    :class:`FasterRCNN_ResNet50_FPN_Weights.COCO_V1 <FasterRCNN_ResNet50_FPN_Weights>`                                       37    41.8M               134.38  `link <https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn>`__
+    :class:`RetinaNet_ResNet50_FPN_V2_Weights.COCO_V1 <RetinaNet_ResNet50_FPN_V2_Weights>`                                   41.5  38.2M               152.24  `link <https://github.com/pytorch/vision/pull/5756>`__
+    :class:`RetinaNet_ResNet50_FPN_Weights.COCO_V1 <RetinaNet_ResNet50_FPN_Weights>`                                         36.4  34.0M               151.54  `link <https://github.com/pytorch/vision/tree/main/references/detection#retinanet>`__
+    :class:`SSD300_VGG16_Weights.COCO_V1 <SSD300_VGG16_Weights>`                                                             25.1  35.6M                34.86  `link <https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16>`__
+    :class:`SSDLite320_MobileNet_V3_Large_Weights.COCO_V1 <SSDLite320_MobileNet_V3_Large_Weights>`                           21.3  3.4M                  0.58  `link <https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large>`__
+    ==============================================================================================================  =============  ============  ============  ==================================================================================================================
+

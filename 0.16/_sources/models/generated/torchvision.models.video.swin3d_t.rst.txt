@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.video
+
+
+swin3d_t
+========
+
+.. autofunction:: swin3d_t
