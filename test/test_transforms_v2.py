@@ -122,35 +122,6 @@ class TestTransform:
                 t(inpt)
 
 
-class TestContainers:
-    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
-    def test_assertions(self, transform_cls):
-        with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
-            transform_cls(transforms.RandomCrop(28))
-
-    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
-    @pytest.mark.parametrize(
-        "trfms",
-        [
-            [transforms.Pad(2), transforms.RandomCrop(28)],
-            [lambda x: 2.0 * x, transforms.Pad(2), transforms.RandomCrop(28)],
-            [transforms.Pad(2), lambda x: 2.0 * x, transforms.RandomCrop(28)],
-        ],
-    )
-    def test_ctor(self, transform_cls, trfms):
-        c = transform_cls(trfms)
-        inpt = torch.rand(1, 3, 32, 32)
-        output = c(inpt)
-        assert isinstance(output, torch.Tensor)
-        assert output.ndim == 4
-
-
-class TestRandomChoice:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
-            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1])
-
-
 class TestRandomIoUCrop:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("options", [[0.5, 0.9], [2.0]])
@@ -574,38 +545,3 @@ def test_sanitize_bounding_boxes_errors():
     with pytest.raises(ValueError, match="Number of boxes"):
         different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
         transforms.SanitizeBoundingBoxes()(different_sizes)
-
-
-class TestLambda:
-    inputs = pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
-
-    @inputs
-    def test_default(self, input):
-        was_applied = False
-
-        def was_applied_fn(input):
-            nonlocal was_applied
-            was_applied = True
-            return input
-
-        transform = transforms.Lambda(was_applied_fn)
-
-        transform(input)
-
-        assert was_applied
-
-    @inputs
-    def test_with_types(self, input):
-        was_applied = False
-
-        def was_applied_fn(input):
-            nonlocal was_applied
-            was_applied = True
-            return input
-
-        types = (torch.Tensor, np.ndarray)
-        transform = transforms.Lambda(was_applied_fn, *types)
-
-        transform(input)
-
-        assert was_applied is isinstance(input, types)
