@@ -406,6 +406,7 @@ def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
     format=tv_tensors.BoundingBoxFormat.XYXY,
+    num_boxes=1,
     dtype=None,
     device="cpu",
 ):
@@ -419,8 +420,7 @@ def make_bounding_boxes(
 
     dtype = dtype or torch.float32
 
-    num_objects = 1
-    h, w = [torch.randint(1, s, (num_objects,)) for s in canvas_size]
+    h, w = [torch.randint(1, s, (num_boxes,)) for s in canvas_size]
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
 
@@ -443,12 +443,11 @@ def make_bounding_boxes(
     )
 
 
-def make_detection_mask(size=DEFAULT_SIZE, *, dtype=None, device="cpu"):
+def make_detection_masks(size=DEFAULT_SIZE, *, num_masks=1, dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
-    num_objects = 1
     return tv_tensors.Mask(
         torch.testing.make_tensor(
-            (num_objects, *size),
+            (num_masks, *size),
             low=0,
             high=2,
             dtype=dtype or torch.bool,
