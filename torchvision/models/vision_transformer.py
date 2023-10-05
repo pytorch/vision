@@ -124,7 +124,6 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        seq_length: int,
         num_layers: int,
         num_heads: int,
         hidden_dim: int,
@@ -134,9 +133,7 @@ class Encoder(nn.Module):
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
-        # Note that batch_size is on the first dim because
-        # we have batch_first=True in nn.MultiAttention() by default
-        self.pos_embedding = nn.Parameter(torch.empty(1, seq_length, hidden_dim).normal_(std=0.02))  # from BERT
+
         self.dropout = nn.Dropout(dropout)
         layers: OrderedDict[str, nn.Module] = OrderedDict()
         for i in range(num_layers):
@@ -149,12 +146,10 @@ class Encoder(nn.Module):
                 norm_layer,
             )
         self.layers = nn.Sequential(layers)
-        self.ln = norm_layer(hidden_dim)
 
     def forward(self, input: torch.Tensor):
         torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
-        input = input + self.pos_embedding
-        return self.ln(self.layers(self.dropout(input)))
+        return self.layers(self.dropout(input))
 
 
 class VisionTransformer(nn.Module):
@@ -174,6 +169,7 @@ class VisionTransformer(nn.Module):
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
         conv_stem_configs: Optional[List[ConvStemConfig]] = None,
+        include_head: bool = True,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -214,14 +210,17 @@ class VisionTransformer(nn.Module):
                 in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size
             )
 
-        seq_length = (image_size // patch_size) ** 2
-
         # Add a class token
         self.class_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
-        seq_length += 1
+
+        # Note that batch_size is on the first dim because
+        # we have batch_first=True in nn.MultiAttention() by default
+        patch_dim = image_size // patch_size
+        self.pos_embedding = nn.Parameter(
+            torch.empty(1, hidden_dim, patch_dim, patch_dim).normal_(std=0.02)  # from BERT
+        )
 
         self.encoder = Encoder(
-            seq_length,
             num_layers,
             num_heads,
             hidden_dim,
@@ -230,17 +229,27 @@ class VisionTransformer(nn.Module):
             attention_dropout,
             norm_layer,
         )
-        self.seq_length = seq_length
 
-        heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
-        if representation_size is None:
-            heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
-        else:
-            heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
-            heads_layers["act"] = nn.Tanh()
-            heads_layers["head"] = nn.Linear(representation_size, num_classes)
+        self.heads = None
+        if include_head:
+            heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
+            if representation_size is None:
+                heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
+            else:
+                heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
+                heads_layers["act"] = nn.Tanh()
+                heads_layers["head"] = nn.Linear(representation_size, num_classes)
 
-        self.heads = nn.Sequential(heads_layers)
+            self.heads = nn.Sequential(heads_layers)
+
+            if hasattr(self.heads, "pre_logits") and isinstance(self.heads.pre_logits, nn.Linear):
+                fan_in = self.heads.pre_logits.in_features
+                nn.init.trunc_normal_(self.heads.pre_logits.weight, std=math.sqrt(1 / fan_in))
+                nn.init.zeros_(self.heads.pre_logits.bias)
+
+            if isinstance(self.heads.head, nn.Linear):
+                nn.init.zeros_(self.heads.head.weight)
+                nn.init.zeros_(self.heads.head.bias)
 
         if isinstance(self.conv_proj, nn.Conv2d):
             # Init the patchify stem
@@ -256,53 +265,49 @@ class VisionTransformer(nn.Module):
             if self.conv_proj.conv_last.bias is not None:
                 nn.init.zeros_(self.conv_proj.conv_last.bias)
 
-        if hasattr(self.heads, "pre_logits") and isinstance(self.heads.pre_logits, nn.Linear):
-            fan_in = self.heads.pre_logits.in_features
-            nn.init.trunc_normal_(self.heads.pre_logits.weight, std=math.sqrt(1 / fan_in))
-            nn.init.zeros_(self.heads.pre_logits.bias)
-
-        if isinstance(self.heads.head, nn.Linear):
-            nn.init.zeros_(self.heads.head.weight)
-            nn.init.zeros_(self.heads.head.bias)
-
-    def _process_input(self, x: torch.Tensor) -> torch.Tensor:
-        n, c, h, w = x.shape
-        p = self.patch_size
-        torch._assert(h == self.image_size, f"Wrong image height! Expected {self.image_size} but got {h}!")
-        torch._assert(w == self.image_size, f"Wrong image width! Expected {self.image_size} but got {w}!")
-        n_h = h // p
-        n_w = w // p
-
-        # (n, c, h, w) -> (n, hidden_dim, n_h, n_w)
-        x = self.conv_proj(x)
-        # (n, hidden_dim, n_h, n_w) -> (n, hidden_dim, (n_h * n_w))
-        x = x.reshape(n, self.hidden_dim, n_h * n_w)
-
-        # (n, hidden_dim, (n_h * n_w)) -> (n, (n_h * n_w), hidden_dim)
-        # The self attention layer expects inputs in the format (N, S, E)
-        # where S is the source sequence length, N is the batch size, E is the
-        # embedding dimension
-        x = x.permute(0, 2, 1)
-
-        return x
 
     def forward(self, x: torch.Tensor):
-        # Reshape and permute the input tensor
-        x = self._process_input(x)
-        n = x.shape[0]
+        # Compute patches from the image
+        # (n, c, h, w) -> (n, hidden_dim, n_h, n_w)
+        # Where n_h and n_w are the number of patches in the height and width
+        x = self.conv_proj(x)
 
-        # Expand the class token to the full batch
+        # Add the positional embedding, but resize to match the image first
+        pos_embedding = torch.nn.functional.interpolate(
+            self.pos_embedding,
+            size=(x.shape[2], x.shape[3]),
+            mode="bicubic",
+            align_corners=False,
+        )
+        x = x + pos_embedding
+
+        # Flatten the patches
+        n, hidden_dim, n_h, n_w = x.shape
+        # (n, hidden_dim, n_h, n_w) -> (n, n_h, n_w, hidden_dim)
+        x = x.permute(0, 2, 3, 1)
+        # (n, n_h, n_w, hidden_dim) -> (n, (n_h * n_w), hidden_dim)
+        x = x.reshape(n, (n_h * n_w), hidden_dim)
+
+        # Add the class token
         batch_class_token = self.class_token.expand(n, -1, -1)
         x = torch.cat([batch_class_token, x], dim=1)
 
+        # Encode the patches
         x = self.encoder(x)
 
-        # Classifier "token" as used by standard language architectures
-        x = x[:, 0]
-
-        x = self.heads(x)
-
-        return x
+        if self.heads is not None:
+            # Classifier "token" as used by standard language architectures
+            x = x[:, 0]
+            x = self.heads(x)
+            return x
+        else:
+            # Skip classifier token
+            x = x[:, 1:]
+            # (n, (n_h * n_w), hidden_dim) -> (n, n_h, n_w, hidden_dim)
+            x = x.reshape(n, n_h, n_w, hidden_dim)
+            # (n, n_h, n_w, hidden_dim) -> (n, hidden_dim, n_h, n_w)
+            x = x.permute(0, 3, 1, 2)
+            return x
 
 
 def _vision_transformer(
@@ -320,6 +325,7 @@ def _vision_transformer(
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
         _ovewrite_named_param(kwargs, "image_size", weights.meta["min_size"][0])
     image_size = kwargs.pop("image_size", 224)
+    include_head = kwargs.pop("include_head", True)
 
     model = VisionTransformer(
         image_size=image_size,
@@ -328,11 +334,29 @@ def _vision_transformer(
         num_heads=num_heads,
         hidden_dim=hidden_dim,
         mlp_dim=mlp_dim,
+        include_head=include_head,
         **kwargs,
     )
 
+
     if weights:
-        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))
+        state_dict = weights.get_state_dict(progress=progress, check_hash=True)
+
+        # Remove head if we don't include the head
+        if not include_head and "heads.head.weight" in state_dict and "heads.head.bias" in state_dict:
+            del state_dict["heads.head.weight"]
+            del state_dict["heads.head.bias"]
+
+        # Fix compatibility with legacy state dict
+        if "encoder.pos_embedding" in state_dict:
+            pos_embedding = state_dict["encoder.pos_embedding"]
+            pos_embedding = pos_embedding.permute(0, 2, 1)
+            pos_embedding = pos_embedding[:, :, 1:]
+            pos_embedding = pos_embedding.reshape(1, -1, 14, 14)
+            state_dict["pos_embedding"] = pos_embedding
+            del state_dict["encoder.pos_embedding"]
+
+        model.load_state_dict(state_dict)
 
     return model
 

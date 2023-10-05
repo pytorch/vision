@@ -3,9 +3,14 @@ from typing import Callable, Dict, List, Optional, Union
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
-from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
+from torchvision.ops.feature_pyramid_network import (
+    ExtraFPNBlock,
+    FeaturePyramidNetwork,
+    LastLevelMaxPool,
+    SimpleFeaturePyramidNetwork,
+)
 
-from .. import mobilenet, resnet
+from .. import mobilenet, resnet, vision_transformer
 from .._api import _get_enum_from_fn, WeightsEnum
 from .._utils import handle_legacy_interface, IntermediateLayerGetter
 
@@ -55,6 +60,46 @@ class BackboneWithFPN(nn.Module):
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
         x = self.body(x)
+        x = self.fpn(x)
+        return x
+
+
+class BackboneWithSimpleFPN(nn.Module):
+    """
+    Adds a Simple FPN on top of a model.
+    Args:
+        backbone (nn.Module)
+        in_channels_list (int): number of channels from the provided feature map.
+        out_channels (int): number of channels in the SFPN.
+        extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
+            be performed. It is expected to take the fpn features, the original
+            features and the names of features as input, and returns
+            a new list of feature maps and their corresponding names. By
+            default a ``LastLevelMaxPool`` is used.
+    """
+
+    def __init__(
+        self,
+        backbone: nn.Module,
+        in_channels: int,
+        out_channels: int,
+        extra_blocks: Optional[ExtraFPNBlock] = None,
+    ) -> None:
+        super().__init__()
+
+        if extra_blocks is None:
+            extra_blocks = LastLevelMaxPool()
+
+        self.backbone = backbone
+        self.fpn = SimpleFeaturePyramidNetwork(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            extra_blocks=extra_blocks,
+        )
+        self.out_channels = out_channels
+
+    def forward(self, x: Tensor) -> List[Tensor]:
+        x = self.backbone(x)
         x = self.fpn(x)
         return x
 
@@ -242,3 +287,54 @@ def _mobilenet_extractor(
         )
         m.out_channels = out_channels  # type: ignore[assignment]
         return m
+
+
+def vit_sfpn_backbone(
+    *,
+    backbone_name: str,
+    weights: Optional[WeightsEnum],
+    extra_blocks: Optional[ExtraFPNBlock] = None,
+) -> BackboneWithSimpleFPN:
+    """
+    Constructs a specified ViT backbone with SFPN on top.
+
+    Examples::
+
+        >>> from torchvision.models.detection.backbone_utils import vit_sfpn_backbone
+        >>> backbone = vit_sfpn_backbone('vit_b_16', weights=ViT_B_16_Weights.DEFAULT)
+        >>> # get some dummy image
+        >>> x = torch.rand(1,3,64,64)
+        >>> # compute the output
+        >>> output = backbone(x)
+        >>> print([(k, v.shape) for k, v in output.items()])
+        >>> # returns
+        >>>   # TODO
+
+    Args:
+        backbone_name (string): resnet architecture. Possible values are 'vit_b_16', 'vit_b_32', 'vit_l_16',
+             'vit_l_32', 'vit_h_14'
+        weights (WeightsEnum, optional): The pretrained weights for the model
+        extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
+            be performed. It is expected to take the sfpn features, the original
+            features and the names of the original features as input, and returns
+            a new list of feature maps and their corresponding names. By
+            default a ``LastLevelMaxPool`` is used.
+    """
+    backbone = vision_transformer.__dict__[backbone_name](weights=weights, include_head=False)
+    return _vit_sfpn_extractor(backbone, extra_blocks)
+
+
+def _vit_sfpn_extractor(
+    backbone: vision_transformer.VisionTransformer,
+    extra_blocks: Optional[ExtraFPNBlock] = None,
+) -> BackboneWithSimpleFPN:
+    # TODO: set trainable layers?
+
+    if extra_blocks is None:
+        extra_blocks = LastLevelMaxPool()
+
+    in_channels = backbone.hidden_dim
+    out_channels = 256
+    return BackboneWithSimpleFPN(
+        backbone, in_channels, out_channels, extra_blocks=extra_blocks
+    )

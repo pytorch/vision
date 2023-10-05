@@ -414,7 +414,7 @@ class FixedSizeCrop(nn.Module):
 class RandomShortestSize(nn.Module):
     def __init__(
         self,
-        min_size: Union[List[int], Tuple[int], int],
+        min_size: Union[List[int], Tuple[int, ...], int],
         max_size: int,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ):
