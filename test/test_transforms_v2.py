@@ -26,7 +26,7 @@ from common_utils import (
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
-    make_detection_mask,
+    make_detection_masks,
     make_image,
     make_image_pil,
     make_image_tensor,
@@ -315,7 +315,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
             canvas_size=size,
             device=device,
         ),
-        detection_mask=make_detection_mask(size, device=device),
+        detection_mask=make_detection_masks(size, device=device),
         segmentation_mask=make_segmentation_mask(size, device=device),
         int=0,
         float=0.0,
@@ -637,7 +637,7 @@ class TestResize:
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.resize_mask, make_mask(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1])
 
@@ -682,7 +682,7 @@ class TestResize:
             make_image,
             make_bounding_boxes,
             make_segmentation_mask,
-            make_detection_mask,
+            make_detection_masks,
             make_video,
         ],
     )
@@ -788,7 +788,7 @@ class TestResize:
             make_image,
             make_bounding_boxes,
             make_segmentation_mask,
-            make_detection_mask,
+            make_detection_masks,
             make_video,
         ],
     )
@@ -840,7 +840,7 @@ class TestResize:
             make_image,
             make_bounding_boxes,
             make_segmentation_mask,
-            make_detection_mask,
+            make_detection_masks,
             make_video,
         ],
     )
@@ -867,7 +867,7 @@ class TestResize:
             make_image,
             make_bounding_boxes,
             make_segmentation_mask,
-            make_detection_mask,
+            make_detection_masks,
             make_video,
         ],
     )
@@ -962,7 +962,7 @@ class TestHorizontalFlip:
             canvas_size=bounding_boxes.canvas_size,
         )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.horizontal_flip_mask, make_mask())
 
@@ -1130,7 +1130,7 @@ class TestAffine:
             check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
         )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         self._check_kernel(F.affine_mask, make_mask())
 
@@ -1412,7 +1412,7 @@ class TestVerticalFlip:
             canvas_size=bounding_boxes.canvas_size,
         )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.vertical_flip_mask, make_mask())
 
@@ -1554,7 +1554,7 @@ class TestRotate:
             **kwargs,
         )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.rotate_mask, make_mask(), **self._MINIMAL_AFFINE_KWARGS)
 
@@ -2044,7 +2044,7 @@ class TestToDtype:
         sample = {
             "inpt": make_input(size=(H, W), dtype=inpt_dtype),
             "bbox": make_bounding_boxes(canvas_size=(H, W), dtype=bbox_dtype),
-            "mask": make_detection_mask(size=(H, W), dtype=mask_dtype),
+            "mask": make_detection_masks(size=(H, W), dtype=mask_dtype),
         }
 
         return sample, inpt_dtype, bbox_dtype, mask_dtype
@@ -2330,7 +2330,7 @@ class TestShapeGetters:
             (F._get_size_image_pil, make_image_pil),
             (F.get_size_image, make_image),
             (F.get_size_bounding_boxes, make_bounding_boxes),
-            (F.get_size_mask, make_detection_mask),
+            (F.get_size_mask, make_detection_masks),
             (F.get_size_mask, make_segmentation_mask),
             (F.get_size_video, make_video),
         ],
@@ -2360,15 +2360,15 @@ class TestShapeGetters:
         ("functional", "make_input"),
         [
             (F.get_dimensions, make_bounding_boxes),
-            (F.get_dimensions, make_detection_mask),
+            (F.get_dimensions, make_detection_masks),
             (F.get_dimensions, make_segmentation_mask),
             (F.get_num_channels, make_bounding_boxes),
-            (F.get_num_channels, make_detection_mask),
+            (F.get_num_channels, make_detection_masks),
             (F.get_num_channels, make_segmentation_mask),
             (F.get_num_frames, make_image_pil),
             (F.get_num_frames, make_image),
             (F.get_num_frames, make_bounding_boxes),
-            (F.get_num_frames, make_detection_mask),
+            (F.get_num_frames, make_detection_masks),
             (F.get_num_frames, make_segmentation_mask),
         ],
     )
@@ -2617,7 +2617,7 @@ class TestElastic:
             displacement=self._make_displacement(bounding_boxes),
         )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         mask = make_mask()
         check_kernel(F.elastic_mask, mask, displacement=self._make_displacement(mask))
@@ -2683,7 +2683,7 @@ class TestToPureTensor:
             "img": make_image(),
             "img_tensor": make_image_tensor(),
             "img_pil": make_image_pil(),
-            "mask": make_detection_mask(),
+            "mask": make_detection_masks(),
             "video": make_video(),
             "bbox": make_bounding_boxes(),
             "str": "str",
@@ -2733,7 +2733,7 @@ class TestCrop:
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
         check_kernel(F.crop_bounding_boxes, bounding_boxes, format=format, **kwargs)
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.crop_mask, make_mask(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
 
@@ -3448,7 +3448,7 @@ class TestResizedCrop:
             (F.resized_crop_image, make_image),
             (F.resized_crop_bounding_boxes, make_bounding_boxes),
             (F.resized_crop_mask, make_segmentation_mask),
-            (F.resized_crop_mask, make_detection_mask),
+            (F.resized_crop_mask, make_detection_masks),
             (F.resized_crop_video, make_video),
         ],
     )
@@ -3634,7 +3634,7 @@ class TestPad:
                 padding_mode=padding_mode,
             )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.pad_mask, make_mask(), padding=[1])
 
@@ -3771,7 +3771,7 @@ class TestCenterCrop:
             check_scripted_vs_eager=not isinstance(output_size, int),
         )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.center_crop_mask, make_mask(), output_size=self.OUTPUT_SIZES[0])
 
@@ -3937,7 +3937,7 @@ class TestPerspective:
                 coefficients=[0.0] * 8,
             )
 
-    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_mask])
+    @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.perspective_mask, make_mask(), **self.MINIMAL_KWARGS)
 
@@ -4801,7 +4801,7 @@ class TestFiveTenCrop:
             check_sample_input=False,
         )
 
-    @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_mask])
+    @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_detection_masks])
     @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
     def test_transform_error(self, make_input, transform_cls):
         transform = transform_cls(size=self.OUTPUT_SIZE)
@@ -4968,7 +4968,7 @@ class TestRandomZoomOut:
             make_image,
             make_bounding_boxes,
             make_segmentation_mask,
-            make_detection_mask,
+            make_detection_masks,
             make_video,
         ],
     )
@@ -4995,7 +4995,7 @@ class TestRandomZoomOut:
             make_image,
             make_bounding_boxes,
             make_segmentation_mask,
-            make_detection_mask,
+            make_detection_masks,
             make_video,
         ],
     )
@@ -5388,8 +5388,8 @@ class TestRandomIoUCrop:
 
         size = (32, 24)
         image = make_image(size)
-        bboxes = make_bounding_boxes(format="XYXY", canvas_size=size, num_objects=6)
-        masks = make_detection_mask(size, num_objects=6)
+        bboxes = make_bounding_boxes(format="XYXY", canvas_size=size, num_boxes=6)
+        masks = make_detection_masks(size, num_masks=6)
 
         sample = [image, bboxes, masks]
 
