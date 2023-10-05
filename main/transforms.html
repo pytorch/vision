@@ -220,7 +220,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+af3077e) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+67f3ce2) &#x25BC</a>
     </div>
     
 
@@ -478,20 +478,20 @@ transforms:</p>
 </pre></div>
 </div>
 <p>The above should give you the best performance in a typical training environment
-that relies on the <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a> with <code class="docutils literal notranslate"><span class="pre">num_workers</span> <span class="pre">&gt;</span>
+that relies on the <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a> with <code class="docutils literal notranslate"><span class="pre">num_workers</span> <span class="pre">&gt;</span>
 <span class="pre">0</span></code>.</p>
 <p>Transforms tend to be sensitive to the input strides / memory format. Some
 transforms will be faster with channels-first images while others prefer
 channels-last. Like <code class="docutils literal notranslate"><span class="pre">torch</span></code> operators, most transforms will preserve the
 memory format of the input, but this may not always be respected due to
 implementation details. You may want to experiment a bit if you’re chasing the
-very best performance.  Using <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> on individual transforms may
+very best performance.  Using <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.1)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> on individual transforms may
 also help factoring out the memory format variable (e.g. on
 <a class="reference internal" href="generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize" title="torchvision.transforms.v2.Normalize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normalize</span></code></a>). Note that we’re talking about
 <strong>memory format</strong>, not <a class="reference internal" href="#conventions"><span class="std std-ref">tensor shape</span></a>.</p>
 <p>Note that resize transforms like <a class="reference internal" href="generated/torchvision.transforms.v2.Resize.html#torchvision.transforms.v2.Resize" title="torchvision.transforms.v2.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a>
 and <a class="reference internal" href="generated/torchvision.transforms.v2.RandomResizedCrop.html#torchvision.transforms.v2.RandomResizedCrop" title="torchvision.transforms.v2.RandomResizedCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a> typically prefer
-channels-last input and tend <strong>not</strong> to benefit from <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> at
+channels-last input and tend <strong>not</strong> to benefit from <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.1)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> at
 this time.</p>
 </section>
 <section id="transform-classes-functionals-and-kernels">
@@ -500,7 +500,7 @@ this time.</p>
 <a class="reference internal" href="generated/torchvision.transforms.v2.Resize.html#torchvision.transforms.v2.Resize" title="torchvision.transforms.v2.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a>, but also as functionals like
 <a class="reference internal" href="generated/torchvision.transforms.v2.functional.resize.html#torchvision.transforms.v2.functional.resize" title="torchvision.transforms.v2.functional.resize"><code class="xref py py-func docutils literal notranslate"><span class="pre">resize()</span></code></a> in the
 <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2.functional</span></code> namespace.
-This is very much like the <a class="reference external" href="https://pytorch.org/docs/stable/nn.html#module-torch.nn" title="(in PyTorch v2.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn</span></code></a> package which defines both classes
+This is very much like the <a class="reference external" href="https://pytorch.org/docs/stable/nn.html#module-torch.nn" title="(in PyTorch v2.1)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn</span></code></a> package which defines both classes
 and functional equivalents in <code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn.functional</span></code>.</p>
 <p>The functionals support PIL images, pure tensors, or <a class="reference internal" href="tv_tensors.html#tv-tensors"><span class="std std-ref">TVTensors</span></a>, e.g. both <code class="docutils literal notranslate"><span class="pre">resize(image_tensor)</span></code> and <code class="docutils literal notranslate"><span class="pre">resize(boxes)</span></code> are
 valid.</p>
@@ -526,7 +526,7 @@ boxes or masks.</p>
 <section id="torchscript-support">
 <span id="transforms-torchscript"></span><h2>Torchscript support<a class="headerlink" href="#torchscript-support" title="Permalink to this heading">¶</a></h2>
 <p>Most transform classes and functionals support torchscript. For composing
-transforms, use <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a> instead of
+transforms, use <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a> instead of
 <a class="reference internal" href="generated/torchvision.transforms.v2.Compose.html#torchvision.transforms.v2.Compose" title="torchvision.transforms.v2.Compose"><code class="xref py py-class docutils literal notranslate"><span class="pre">Compose</span></code></a>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">transforms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
     <span class="n">CenterCrop</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span>
