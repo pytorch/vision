@@ -127,6 +127,12 @@ def get_args_parser(add_help=True):
         "--data-augmentation", default="hflip", type=str, help="data augmentation policy (default: hflip)"
     )
     parser.add_argument(
+        "--image-min-size", default=800, type=int, help="resize images so that the smallest side is equal to this"
+    )
+    parser.add_argument(
+        "--image-max-size", default=1333, type=int, help="resize images so that the largest side is less than this"
+    )
+    parser.add_argument(
         "--sync-bn",
         dest="sync_bn",
         help="Use sync batch norm",
@@ -210,7 +216,11 @@ def main(args):
     )
 
     print("Creating model")
-    kwargs = {"trainable_backbone_layers": args.trainable_backbone_layers}
+    kwargs = {
+        "trainable_backbone_layers": args.trainable_backbone_layers,
+        "min_size": args.image_min_size,
+        "max_size": args.image_max_size,
+    }
     if args.data_augmentation in ["multiscale", "lsj"]:
         kwargs["_skip_resize"] = True
     if "rcnn" in args.model:

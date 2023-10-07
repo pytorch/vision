@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from typing import Callable, Dict, List, Optional, Tuple
 
+import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 

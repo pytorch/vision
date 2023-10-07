@@ -15,9 +15,9 @@ class DetectionPresetTrain:
         elif data_augmentation == "lsj":
             self.transforms = T.Compose(
                 [
-                    T.ScaleJitter(target_size=(1024, 1024)),
-                    T.FixedSizeCrop(size=(1024, 1024), fill=mean),
                     T.RandomHorizontalFlip(p=hflip_prob),
+                    T.ScaleJitter(target_size=(1024, 1024)),
+                    T.FixedSizeCrop(size=(1024, 1024), fill=0),
                     T.PILToTensor(),
                     T.ConvertImageDtype(torch.float),
                 ]
