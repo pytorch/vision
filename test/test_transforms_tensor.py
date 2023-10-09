@@ -1,6 +1,5 @@
 import os
 import sys
-import warnings
 
 import numpy as np
 import PIL.Image
@@ -427,22 +426,6 @@ class TestResize:
     def test_resized_crop_save_load(self, tmpdir):
         fn = T.RandomResizedCrop(size=[32], antialias=True)
         _test_fn_save_load(fn, tmpdir)
-
-    def test_antialias_default_warning(self):
-
-        img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
-
-        match = "The default value of the antialias"
-        with pytest.warns(UserWarning, match=match):
-            T.Resize((20, 20))(img)
-        with pytest.warns(UserWarning, match=match):
-            T.RandomResizedCrop((20, 20))(img)
-
-        # For modes that aren't bicubic or bilinear, don't throw a warning
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            T.Resize((20, 20), interpolation=NEAREST)(img)
-            T.RandomResizedCrop((20, 20), interpolation=NEAREST)(img)
 
 
 def _test_random_affine_helper(device, **kwargs):
