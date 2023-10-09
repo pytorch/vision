@@ -135,6 +135,7 @@ def get_extensions():
     source_cpu = (
         glob.glob(os.path.join(extensions_dir, "ops", "autograd", "*.cpp"))
         + glob.glob(os.path.join(extensions_dir, "ops", "cpu", "*.cpp"))
+        + glob.glob(os.path.join(extensions_dir, "ops", "autocast", "*.cpp"))
         + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
     )
     source_mps = glob.glob(os.path.join(extensions_dir, "ops", "mps", "*.mm"))
