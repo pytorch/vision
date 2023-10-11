@@ -169,7 +169,10 @@ class VideoReader:
 
         elif self.backend == "pyav":
             self.container = av.open(src, metadata_errors="ignore")
-            # TODO: load metadata
+            try:
+                _ = self.get_metadata()
+            except Exception:
+                raise ValueError("Invalid metadata")
             stream_type = stream.split(":")[0]
             stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
             self.pyav_stream = {stream_type: stream_id}
