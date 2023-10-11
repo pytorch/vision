@@ -52,10 +52,8 @@ from torchvision.transforms.v2.functional._geometry import _get_perspective_coef
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
 
-# FIXME: Put this back once https://github.com/pytorch/vision/issues/8030
-# and https://github.com/pytorch/pytorch/issues/110857 are addressed
 # turns all warnings into errors for this module
-# pytestmark = pytest.mark.filterwarnings("error")
+pytestmark = pytest.mark.filterwarnings("error")
 
 
 @pytest.fixture(autouse=True)
