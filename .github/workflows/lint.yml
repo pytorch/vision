@@ -14,6 +14,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
+      test-infra-ref: release/2.1
       script: |
         set -euo pipefail
 
@@ -40,6 +41,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
+      test-infra-ref: release/2.1
       script: |
         set -euo pipefail
 
@@ -73,6 +75,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.1
     with:
       repository: pytorch/vision
+      test-infra-ref: release/2.1
       script: |
         set -euo pipefail
 
