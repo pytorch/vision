@@ -18,6 +18,7 @@ jobs:
     with:
       repository: pytorch/vision
       upload-artifact: docs
+      test-infra-ref: release/2.1
       script: |
         set -euo pipefail
 
@@ -85,6 +86,7 @@ jobs:
       repository: pytorch/vision
       download-artifact: docs
       ref: gh-pages
+      test-infra-ref: release/2.1
       script: |
         set -euo pipefail
 
