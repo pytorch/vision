@@ -672,7 +672,7 @@ def maskrcnn_vit_b_16_sfpn(
     elif num_classes is None:
         num_classes = 91
 
-    backbone = vit_b_16(weights=weights_backbone, progress=progress, include_head=False)
+    backbone = vit_b_16(weights=weights_backbone, progress=progress, include_head=False, image_size=1024)
     backbone = _vit_sfpn_extractor(backbone)
     model = MaskRCNN(backbone, num_classes=num_classes, **kwargs)
 

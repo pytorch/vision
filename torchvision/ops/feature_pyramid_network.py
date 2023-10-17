@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
+from ..models.vision_transformer import LayerNorm
 from ..ops.misc import Conv2dNormActivation
 from ..utils import _log_api_usage_once
 
@@ -204,29 +205,6 @@ class FeaturePyramidNetwork(nn.Module):
 
         return out
 
-# TODO: Remove this? The pytorch version MUST have channels as last dimension..
-class LayerNorm(torch.nn.Module):
-    """
-    A LayerNorm variant, popularized by Transformers, that performs point-wise mean and
-    variance normalization over the channel dimension for inputs that have shape
-    (batch_size, channels, height, width).
-    https://github.com/facebookresearch/ConvNeXt/blob/d1fa8f6fef0a165b27399986cc2bdacc92777e40/models/convnext.py#L119  # noqa B950
-    """
-
-    def __init__(self, normalized_shape, eps=1e-6):
-        super().__init__()
-        self.weight = torch.nn.Parameter(torch.ones(normalized_shape))
-        self.bias = torch.nn.Parameter(torch.zeros(normalized_shape))
-        self.eps = eps
-        self.normalized_shape = (normalized_shape,)
-
-    def forward(self, x):
-        u = x.mean(1, keepdim=True)
-        s = (x - u).pow(2).mean(1, keepdim=True)
-        x = (x - u) / torch.sqrt(s + self.eps)
-        x = self.weight[:, None, None] * x + self.bias[:, None, None]
-        return x
-
 
 class SimpleFeaturePyramidNetwork(nn.Module):
     """
@@ -274,7 +252,7 @@ class SimpleFeaturePyramidNetwork(nn.Module):
         _log_api_usage_once(self)
         self.blocks = nn.ModuleList()
         if in_channels <= 0:
-            raise ValueError("in_channels<=0 is currently not supported")
+            raise ValueError("in_channels <= 0 is currently not supported")
 
         for block_index in range(4):
             layers = []

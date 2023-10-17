@@ -256,6 +256,25 @@ def main(args):
         )
     elif opt_name == "adamw":
         optimizer = torch.optim.AdamW(parameters, lr=args.lr, weight_decay=args.weight_decay)
+    elif opt_name == "vitdet":
+        from torchvision.models.vision_transformer import get_default_optimizer_params, get_vit_lr_decay_rate
+        from functools import partial
+
+        optimizer = torch.optim.AdamW(
+            params=get_default_optimizer_params(
+                model,
+                # params.model is meant to be set to the model object, before instantiating
+                # the optimizer.
+                base_lr=args.lr,
+                weight_decay_norm=0.0,
+                # TODO: Adjust num_layers for specific model. Currently this assumes ViT-B.
+                lr_factor_func=partial(get_vit_lr_decay_rate, num_layers=12, lr_decay_rate=0.7),
+                overrides={"pos_embed": {"weight_decay": 0.0}},
+            ),
+            lr=args.lr,
+            betas=(0.9, 0.999),
+            weight_decay=0.1,
+        )
     else:
         raise RuntimeError(f"Invalid optimizer {args.opt}. Only SGD and AdamW are supported.")
 
