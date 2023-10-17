@@ -124,7 +124,7 @@ class RoIOpTester(ABC):
                 tol = 4e-3
         
         if x_dtype == torch.bfloat16:
-            tol = 6e-3
+            tol = 5e-3
 
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS operations.
