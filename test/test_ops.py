@@ -122,8 +122,7 @@ class RoIOpTester(ABC):
                 tol = 5e-3
             else:
                 tol = 4e-3
-        
-        if x_dtype == torch.bfloat16:
+        elif x_dtype == torch.bfloat16:
             tol = 5e-3
 
         pool_size = 5
@@ -509,7 +508,7 @@ class TestRoIAlign(RoIOpTester):
                 aligned=aligned,
                 x_dtype=x_dtype,
                 rois_dtype=rois_dtype,
-            )            
+            )
 
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
@@ -730,13 +729,18 @@ class TestNMS:
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("seed", range(10))
-    def test_nms_ref(self, iou, seed):
+    def test_nms_ref(self, iou, seed, dtype=torch.float):
         torch.random.manual_seed(seed)
         err_msg = "NMS incompatible between CPU and reference implementation for IoU={}"
         boxes, scores = self._create_tensors_with_iou(1000, iou)
         keep_ref = self._reference_nms(boxes, scores, iou)
         keep = ops.nms(boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, msg=err_msg.format(iou))
+
+        if dtype == torch.bfloat16:
+            keep_ref_float = ops.nms(boxes.to(dtype).float(), scores.to(dtype).float(), iou)
+            keep_dtype = ops.nms(boxes.to(dtype), scores.to(dtype), iou)
+            torch.testing.assert_close(keep_ref_float, keep_dtype)
 
     def test_nms_input_errors(self):
         with pytest.raises(RuntimeError):
@@ -768,17 +772,6 @@ class TestNMS:
         qkeep = ops.nms(qboxes, qscores, iou)
 
         torch.testing.assert_close(qkeep, keep, msg=err_msg.format(iou))
-
-    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
-    def test_nms_cpu(self, iou, dtype=torch.float):
-        err_msg = "NMS incompatible between float and {dtype} for IoU={}"
-
-        boxes, scores = self._create_tensors_with_iou(1000, iou)
-        r_ref = ops.nms(boxes.to(dtype).float(), scores.to(dtype).float(), iou)
-        r_dtype = ops.nms(boxes.to(dtype), scores.to(dtype), iou)
-
-        is_eq = torch.allclose(r_ref, r_dtype)
-        assert is_eq, err_msg.format(iou)
 
     @pytest.mark.parametrize(
         "device",
@@ -815,7 +808,7 @@ class TestNMS:
     @pytest.mark.parametrize("dtype", (torch.float, torch.bfloat16))
     def test_autocast_cpu(self, iou, dtype):
         with torch.cpu.amp.autocast():
-            self.test_nms_cpu(iou=iou, dtype=dtype)        
+            self.test_nms_ref(iou=iou, seed=0, dtype=dtype)
 
     @pytest.mark.parametrize(
         "device",

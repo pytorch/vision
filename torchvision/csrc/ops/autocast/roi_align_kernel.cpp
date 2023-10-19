@@ -9,7 +9,7 @@ namespace ops {
 
 namespace {
 
-template<c10::DispatchKey autocast_key, c10::DeviceType device_type>
+template <c10::DispatchKey autocast_key, c10::DeviceType device_type>
 at::Tensor roi_align_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -35,13 +35,17 @@ at::Tensor roi_align_autocast(
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::roi_align"),
-      TORCH_FN((roi_align_autocast<c10::DispatchKey::Autocast, c10::DeviceType::CUDA>)));
+      TORCH_FN((roi_align_autocast<
+                c10::DispatchKey::Autocast,
+                c10::DeviceType::CUDA>)));
 }
 
 TORCH_LIBRARY_IMPL(torchvision, AutocastCPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::roi_align"),
-      TORCH_FN((roi_align_autocast<c10::DispatchKey::AutocastCPU, c10::DeviceType::CPU>)));
+      TORCH_FN((roi_align_autocast<
+                c10::DispatchKey::AutocastCPU,
+                c10::DeviceType::CPU>)));
 }
 
 } // namespace ops
