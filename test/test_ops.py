@@ -596,7 +596,7 @@ class TestRoIAlign(RoIOpTester):
 optests.generate_opcheck_tests(
     testcase=TestRoIAlign,
     namespaces=["torchvision"],
-    failures_dict_path="test/optests_failures_dict.json",
+    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
     additional_decorators=[],
     test_utils=OPTESTS,
 )
@@ -861,7 +861,7 @@ class TestNMS:
 optests.generate_opcheck_tests(
     testcase=TestNMS,
     namespaces=["torchvision"],
-    failures_dict_path="test/optests_failures_dict.json",
+    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
     additional_decorators=[],
     test_utils=OPTESTS,
 )
