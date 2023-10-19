@@ -226,3 +226,5 @@ please read [GitHub's guides](https://docs.github.com/en/github/collaborating-wi
 
 By contributing to Torchvision, you agree that your contributions will be licensed
 under the LICENSE file in the root directory of this source tree.
+
+Contributors are also required to [sign our Contributor License Agreement](https://code.facebook.com/cla).

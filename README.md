@@ -66,7 +66,7 @@ Torchvision currently supports the following video backends:
   conflicting version of ffmpeg installed. Currently, this is only supported on Linux.
 
 ```
-conda install -c conda-forge ffmpeg
+conda install -c conda-forge 'ffmpeg<4.3'
 python setup.py install
 ```
 

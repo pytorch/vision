@@ -79,7 +79,7 @@ class ToPILImage(Transform):
 
 
 class ToPureTensor(Transform):
-    """[BETA] Convert all tv_tensors to pure tensors, removing associated metadata (if any).
+    """[BETA] Convert all TVTensors to pure tensors, removing associated metadata (if any).
 
     .. v2betastatus:: ToPureTensor transform
 
