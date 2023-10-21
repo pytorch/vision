@@ -10,6 +10,7 @@ import pytest
 import torch
 import torch.fx
 import torch.nn.functional as F
+import torch.testing._internal.optests as optests
 from common_utils import assert_equal, cpu_and_cuda, cpu_and_cuda_and_mps, needs_cuda, needs_mps
 from PIL import Image
 from torch import nn, Tensor
@@ -17,6 +18,14 @@ from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
 from torchvision.models.feature_extraction import get_graph_node_names
+
+
+OPTESTS = [
+    "test_schema",
+    "test_autograd_registration",
+    "test_faketensor",
+    "test_aot_dispatch_dynamic",
+]
 
 
 # Context manager for setting deterministic flag and automatically
@@ -462,7 +471,7 @@ class TestRoIAlign(RoIOpTester):
 
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
-    @pytest.mark.parametrize("x_dtype", (torch.float16, torch.float32, torch.float64), ids=str)
+    @pytest.mark.parametrize("x_dtype", (torch.float16, torch.float32, torch.float64))  # , ids=str)
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
     def test_forward(self, device, contiguous, deterministic, aligned, x_dtype, rois_dtype=None):
@@ -712,6 +721,7 @@ class TestNMS:
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.opcheck_only_one()
     def test_nms_ref(self, iou, seed):
         torch.random.manual_seed(seed)
         err_msg = "NMS incompatible between CPU and reference implementation for IoU={}"
@@ -732,6 +742,7 @@ class TestNMS:
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("scale, zero_point", ((1, 0), (2, 50), (3, 10)))
+    @pytest.mark.opcheck_only_one()
     def test_qnms(self, iou, scale, zero_point):
         # Note: we compare qnms vs nms instead of qnms vs reference implementation.
         # This is because with the int conversion, the trick used in _create_tensors_with_iou
@@ -759,6 +770,7 @@ class TestNMS:
         ),
     )
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    @pytest.mark.opcheck_only_one()
     def test_nms_gpu(self, iou, device, dtype=torch.float64):
         dtype = torch.float32 if device == "mps" else dtype
         tol = 1e-3 if dtype is torch.half else 1e-5
@@ -778,6 +790,7 @@ class TestNMS:
     @needs_cuda
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("dtype", (torch.float, torch.half))
+    @pytest.mark.opcheck_only_one()
     def test_autocast(self, iou, dtype):
         with torch.cuda.amp.autocast():
             self.test_nms_gpu(iou=iou, dtype=dtype, device="cuda")
@@ -789,6 +802,7 @@ class TestNMS:
             pytest.param("mps", marks=pytest.mark.needs_mps),
         ),
     )
+    @pytest.mark.opcheck_only_one()
     def test_nms_float16(self, device):
         boxes = torch.tensor(
             [
@@ -805,6 +819,7 @@ class TestNMS:
         assert_equal(keep32, keep16)
 
     @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.opcheck_only_one()
     def test_batched_nms_implementations(self, seed):
         """Make sure that both implementations of batched_nms yield identical results"""
         torch.random.manual_seed(seed)
@@ -828,6 +843,15 @@ class TestNMS:
         # Also make sure an empty tensor is returned if boxes is empty
         empty = torch.empty((0,), dtype=torch.int64)
         torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
+
+
+optests.generate_opcheck_tests(
+    testcase=TestNMS,
+    namespaces=["torchvision"],
+    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
+    additional_decorators=[],
+    test_utils=OPTESTS,
+)
 
 
 class TestDeformConv:
