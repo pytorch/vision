@@ -3,12 +3,12 @@
   "_version": 1,
   "data": {
     "torchvision::roi_align": {
-      "TestRoIAlign.test_autograd_registration__test_mps_error_inputs": {
-        "comment": "NotImplementedError: autograd_registration_check: NYI devices other than CPU/CUDA, got {'mps'}",
-        "status": "xfail"
-      },
       "TestRoIAlign.test_aot_dispatch_dynamic__test_mps_error_inputs": {
         "comment": "RuntimeError: MPS does not support roi_align backward with float16 inputs",
+        "status": "xfail"
+      },
+      "TestRoIAlign.test_autograd_registration__test_mps_error_inputs": {
+        "comment": "NotImplementedError: autograd_registration_check: NYI devices other than CPU/CUDA, got {'mps'}",
         "status": "xfail"
       }
     }
