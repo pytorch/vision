@@ -117,8 +117,9 @@ class RoIOpTester(ABC):
             torch.float32,
             torch.float64,
         ),
-        ids=str,
+        # ids=str,
     )
+    @pytest.mark.opcheck_only_one()
     def test_forward(self, device, contiguous, x_dtype, rois_dtype=None, deterministic=False, **kwargs):
         if device == "mps" and x_dtype is torch.float64:
             pytest.skip("MPS does not support float64")
@@ -186,6 +187,7 @@ class RoIOpTester(ABC):
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
+    @pytest.mark.opcheck_only_one()
     def test_backward(self, seed, device, contiguous, deterministic=False):
         atol = self.mps_backward_atol if device == "mps" else 1e-05
         dtype = self.mps_dtype if device == "mps" else self.dtype
@@ -316,6 +318,15 @@ class TestRoiPool(RoIOpTester):
     def test_jit_boxes_list(self):
         model = PoolWrapper(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
         self._helper_jit_boxes_list(model)
+
+
+optests.generate_opcheck_tests(
+    testcase=TestRoiPool,
+    namespaces=["torchvision"],
+    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
+    additional_decorators=[],
+    test_utils=OPTESTS,
+)
 
 
 class TestPSRoIPool(RoIOpTester):
