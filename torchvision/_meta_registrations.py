@@ -61,16 +61,30 @@ def meta_ps_roi_align(input, rois, spatial_scale, pooled_height, pooled_width, s
             f"but type {input.dtype} does not equal {rois.dtype}"
         ),
     )
-    num_rois = rois.size(0)
     channels = input.size(1)
-    print("RETURNING")
-    print(input)
-    return input.new_empty((num_rois, channels, pooled_height, pooled_width))
+    torch._check(
+        channels % (pooled_height * pooled_width) == 0,
+        "input channels must be a multiple of pooling height * pooling width",
+    )
+
+    num_rois = rois.size(0)
+    out_size = (num_rois, channels // (pooled_height * pooled_width), pooled_height, pooled_width)
+    return input.new_empty(out_size), torch.empty(out_size, dtype=torch.int32, device="meta")
 
 
 @register_meta("_ps_roi_align_backward")
 def meta_ps_roi_align_backward(
-    grad, rois, channel_mapping, spatial_scale, pooled_height, pooled_width, sampling_ratio, batch_size, channels, height, width
+    grad,
+    rois,
+    channel_mapping,
+    spatial_scale,
+    pooled_height,
+    pooled_width,
+    sampling_ratio,
+    batch_size,
+    channels,
+    height,
+    width,
 ):
     torch._check(
         grad.dtype == rois.dtype,
