@@ -19,6 +19,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "needs_cuda: mark for tests that rely on a CUDA device")
     config.addinivalue_line("markers", "needs_mps: mark for tests that rely on a MPS device")
     config.addinivalue_line("markers", "dont_collect: mark for tests that should not be collected")
+    config.addinivalue_line("markers", "opcheck_only_one: only opcheck one parametrization")
 
 
 def pytest_collection_modifyitems(items):
