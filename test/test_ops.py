@@ -117,8 +117,9 @@ class RoIOpTester(ABC):
             torch.float32,
             torch.float64,
         ),
-        ids=str,
+        # ids=str,
     )
+    @pytest.mark.opcheck_only_one()
     def test_forward(self, device, contiguous, x_dtype, rois_dtype=None, deterministic=False, **kwargs):
         if device == "mps" and x_dtype is torch.float64:
             pytest.skip("MPS does not support float64")
@@ -186,6 +187,7 @@ class RoIOpTester(ABC):
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
+    @pytest.mark.opcheck_only_one()
     def test_backward(self, seed, device, contiguous, deterministic=False):
         atol = self.mps_backward_atol if device == "mps" else 1e-05
         dtype = self.mps_dtype if device == "mps" else self.dtype
@@ -228,6 +230,7 @@ class RoIOpTester(ABC):
     @needs_cuda
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
     @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
+    @pytest.mark.opcheck_only_one()
     def test_autocast(self, x_dtype, rois_dtype):
         with torch.cuda.amp.autocast():
             self.test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
@@ -367,6 +370,15 @@ class TestPSRoIPool(RoIOpTester):
 
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_pool)
+
+
+optests.generate_opcheck_tests(
+    testcase=TestPSRoIPool,
+    namespaces=["torchvision"],
+    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
+    additional_decorators=[],
+    test_utils=OPTESTS,
+)
 
 
 def bilinear_interpolate(data, y, x, snap_border=False):
