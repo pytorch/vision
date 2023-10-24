@@ -93,7 +93,13 @@ def meta_deform_conv2d_backward(
     offset_groups,
     use_mask,
 ):
-    return None  # TODO
+
+    grad_input = input.new_empty(input.shape)
+    grad_weight = input.new_empty(weight.shape)
+    grad_offset = input.new_empty(offset.shape)
+    grad_mask = input.new_empty(mask.shape)
+    grad_bias = input.new_empty(bias.shape)
+    return grad_input, grad_weight, grad_offset, grad_mask, grad_bias
 
 
 @torch._custom_ops.impl_abstract("torchvision::nms")

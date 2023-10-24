@@ -18,17 +18,17 @@ class DeformConv2dFunction
       const torch::autograd::Variable& offset,
       const torch::autograd::Variable& mask,
       const torch::autograd::Variable& bias,
-      int64_t stride_h,
-      int64_t stride_w,
-      int64_t pad_h,
-      int64_t pad_w,
-      int64_t dilation_h,
-      int64_t dilation_w,
-      int64_t groups,
-      int64_t offset_groups,
+      c10::SymInt stride_h,
+      c10::SymInt stride_w,
+      c10::SymInt pad_h,
+      c10::SymInt pad_w,
+      c10::SymInt dilation_h,
+      c10::SymInt dilation_w,
+      c10::SymInt groups,
+      c10::SymInt offset_groups,
       bool use_mask) {
     at::AutoDispatchBelowADInplaceOrView g;
-    auto output = deform_conv2d(
+    auto output = deform_conv2d_symint(
         input,
         weight,
         offset,
@@ -70,17 +70,17 @@ class DeformConv2dFunction
     auto mask = saved[3];
     auto bias = saved[4];
 
-    auto stride_h = ctx->saved_data["stride_h"].toInt();
-    auto stride_w = ctx->saved_data["stride_w"].toInt();
-    auto pad_h = ctx->saved_data["pad_h"].toInt();
-    auto pad_w = ctx->saved_data["pad_w"].toInt();
-    auto dilation_h = ctx->saved_data["dilation_h"].toInt();
-    auto dilation_w = ctx->saved_data["dilation_w"].toInt();
-    auto groups = ctx->saved_data["groups"].toInt();
-    auto offset_groups = ctx->saved_data["offset_groups"].toInt();
+    auto stride_h = ctx->saved_data["stride_h"].toSymInt();
+    auto stride_w = ctx->saved_data["stride_w"].toSymInt();
+    auto pad_h = ctx->saved_data["pad_h"].toSymInt();
+    auto pad_w = ctx->saved_data["pad_w"].toSymInt();
+    auto dilation_h = ctx->saved_data["dilation_h"].toSymInt();
+    auto dilation_w = ctx->saved_data["dilation_w"].toSymInt();
+    auto groups = ctx->saved_data["groups"].toSymInt();
+    auto offset_groups = ctx->saved_data["offset_groups"].toSymInt();
     auto use_mask = ctx->saved_data["use_mask"].toBool();
 
-    auto grads = detail::_deform_conv2d_backward(
+    auto grads = detail::_deform_conv2d_backward_symint(
         grad_output[0],
         input,
         weight,
@@ -133,17 +133,17 @@ class DeformConv2dBackwardFunction
       const torch::autograd::Variable& offset,
       const torch::autograd::Variable& mask,
       const torch::autograd::Variable& bias,
-      int64_t stride_h,
-      int64_t stride_w,
-      int64_t pad_h,
-      int64_t pad_w,
-      int64_t dilation_h,
-      int64_t dilation_w,
-      int64_t groups,
-      int64_t offset_groups,
+      c10::SymInt stride_h,
+      c10::SymInt stride_w,
+      c10::SymInt pad_h,
+      c10::SymInt pad_w,
+      c10::SymInt dilation_h,
+      c10::SymInt dilation_w,
+      c10::SymInt groups,
+      c10::SymInt offset_groups,
       bool use_mask) {
     at::AutoDispatchBelowADInplaceOrView g;
-    auto result = detail::_deform_conv2d_backward(
+    auto result = detail::_deform_conv2d_backward_symint(
         grad,
         input,
         weight,
@@ -188,14 +188,14 @@ at::Tensor deform_conv2d_autograd(
     const at::Tensor& offset,
     const at::Tensor& mask,
     const at::Tensor& bias,
-    int64_t stride_h,
-    int64_t stride_w,
-    int64_t pad_h,
-    int64_t pad_w,
-    int64_t dilation_h,
-    int64_t dilation_w,
-    int64_t groups,
-    int64_t offset_groups,
+    c10::SymInt stride_h,
+    c10::SymInt stride_w,
+    c10::SymInt pad_h,
+    c10::SymInt pad_w,
+    c10::SymInt dilation_h,
+    c10::SymInt dilation_w,
+    c10::SymInt groups,
+    c10::SymInt offset_groups,
     bool use_mask) {
   return DeformConv2dFunction::apply(
       input,
@@ -222,14 +222,14 @@ deform_conv2d_backward_autograd(
     const at::Tensor& offset,
     const at::Tensor& mask,
     const at::Tensor& bias,
-    int64_t stride_h,
-    int64_t stride_w,
-    int64_t pad_h,
-    int64_t pad_w,
-    int64_t dilation_h,
-    int64_t dilation_w,
-    int64_t groups,
-    int64_t offset_groups,
+    c10::SymInt stride_h,
+    c10::SymInt stride_w,
+    c10::SymInt pad_h,
+    c10::SymInt pad_w,
+    c10::SymInt dilation_h,
+    c10::SymInt dilation_w,
+    c10::SymInt groups,
+    c10::SymInt offset_groups,
     bool use_mask) {
   auto result = DeformConv2dBackwardFunction::apply(
       grad,
