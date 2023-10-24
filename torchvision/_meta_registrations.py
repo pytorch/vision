@@ -95,10 +95,10 @@ def meta_deform_conv2d_backward(
 ):
 
     grad_input = input.new_empty(input.shape)
-    grad_weight = input.new_empty(weight.shape)
-    grad_offset = input.new_empty(offset.shape)
-    grad_mask = input.new_empty(mask.shape)
-    grad_bias = input.new_empty(bias.shape)
+    grad_weight = weight.new_empty(weight.shape)
+    grad_offset = offset.new_empty(offset.shape)
+    grad_mask = mask.new_empty(mask.shape)
+    grad_bias = bias.new_empty(bias.shape)
     return grad_input, grad_weight, grad_offset, grad_mask, grad_bias
 
 
