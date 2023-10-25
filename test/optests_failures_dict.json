@@ -13,14 +13,6 @@
       }
     },
     "torchvision::roi_pool": {
-      "TestRoiPool.test_aot_dispatch_dynamic__test_backward": {
-        "comment": "",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_aot_dispatch_dynamic__test_forward": {
-        "comment": "",
-        "status": "xfail"
-      },
       "TestRoiPool.test_aot_dispatch_dynamic__test_mps_error_inputs": {
         "comment": "RuntimeError: MPS does not support roi_pool backward with float16 inputs.",
         "status": "xfail"
