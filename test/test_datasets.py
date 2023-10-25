@@ -741,7 +741,9 @@ class VOCDetectionTestCase(VOCSegmentationTestCase):
             assert object == info["annotation"]
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset() as (dataset, _):
+        from torchvision.transforms import v2
+
+        with self.create_dataset(transform=v2.Resize(size=(123, 321))) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
 
 

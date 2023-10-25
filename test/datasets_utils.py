@@ -5,7 +5,6 @@ import inspect
 import itertools
 import os
 import pathlib
-import platform
 import random
 import shutil
 import string
@@ -713,8 +712,8 @@ def check_transforms_v2_wrapper_spawn(dataset):
     # On Linux and Windows, the DataLoader forks the main process by default. This is not available on macOS, so new
     # subprocesses are spawned. This requires the whole pipeline including the dataset to be pickleable, which is what
     # we are enforcing here.
-    if platform.system() != "Darwin":
-        pytest.skip("Multiprocessing spawning is only checked on macOS.")
+    # if platform.system() != "Darwin":
+    #     pytest.skip("Multiprocessing spawning is only checked on macOS.")
 
     from torch.utils.data import DataLoader
     from torchvision import tv_tensors
@@ -728,6 +727,10 @@ def check_transforms_v2_wrapper_spawn(dataset):
         assert tree_any(
             lambda item: isinstance(item, (tv_tensors.Image, tv_tensors.Video, PIL.Image.Image)), wrapped_sample
         )
+        from torchvision.datasets import VOCDetection
+
+        if isinstance(dataset, VOCDetection):
+            assert wrapped_sample[0][0].size == (321, 123)
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
