@@ -38,7 +38,6 @@ VISION_API at::Tensor deform_conv2d_symint(
     c10::SymInt offset_groups,
     bool use_mask);
 
-
 namespace detail {
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
