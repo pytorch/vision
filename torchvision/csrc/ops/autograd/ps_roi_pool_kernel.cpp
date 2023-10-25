@@ -22,8 +22,8 @@ class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["input_shape"] = input.sym_sizes();
     at::AutoDispatchBelowADInplaceOrView g;
-    auto result =
-        ps_roi_pool_symint(input, rois, spatial_scale, pooled_height, pooled_width);
+    auto result = ps_roi_pool_symint(
+        input, rois, spatial_scale, pooled_height, pooled_width);
 
     auto output = std::get<0>(result);
     auto channel_mapping = std::get<1>(result);
