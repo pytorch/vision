@@ -33,7 +33,6 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_pool_symint(
   return op.call(input, rois, spatial_scale, pooled_height, pooled_width);
 }
 
-
 namespace detail {
 
 at::Tensor _ps_roi_pool_backward(
@@ -91,7 +90,6 @@ at::Tensor _ps_roi_pool_backward_symint(
       height,
       width);
 }
-
 
 } // namespace detail
 
