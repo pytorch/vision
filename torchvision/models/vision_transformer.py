@@ -69,7 +69,7 @@ def get_vit_lr_decay_rate(name, lr_decay_rate=1.0, num_layers=12):
     """
     layer_id = num_layers + 1
     if "backbone.backbone" in name:
-        if ".pos_embed" in name or ".patch_embed" in name:
+        if ".pos_embedding" in name or ".conv_proj" in name:
             layer_id = 0
         elif ".encoder_layer" in name and ".residual." not in name:
             layer_id = int(name[name.find(".encoder_layer_") + len(".encoder_layer_") :].split(".")[0]) + 1
@@ -680,7 +680,7 @@ class VisionTransformer(nn.Module):
         x = x + pos_embedding
 
         # Flatten the patches
-        n, hidden_dim, n_h, n_w = x.shape
+        # n, hidden_dim, n_h, n_w = x.shape
         # (n, hidden_dim, n_h, n_w) -> (n, n_h, n_w, hidden_dim)
         x = x.permute(0, 2, 3, 1)
         # # (n, n_h, n_w, hidden_dim) -> (n, (n_h * n_w), hidden_dim)
