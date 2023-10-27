@@ -716,8 +716,8 @@ def check_transforms_v2_wrapper_spawn(dataset, expected_size):
     # https://github.com/pytorch/vision/issues/8066
     # Implicitly, this also checks that the wrapped datasets are pickleable.
 
-    # To save CI/test time, we only check on macOS where "spawn" is the default
-    if platform.system() != "Darwin":
+    # To save CI/test time, we only check on Windows where "spawn" is the default
+    if platform.system() != "Windows":
         pytest.skip("Multiprocessing spawning is only checked on macOS.")
 
     wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
