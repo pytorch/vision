@@ -199,6 +199,7 @@ class VisionDatasetTVTensorWrapper:
     def __len__(self):
         return len(self._dataset)
 
+    # TODO: maybe we should use __getstate__ and __setstate__ instead of __reduce__, as recommended in the docs.
     def __reduce__(self):
         # __reduce__ gets called when we try to pickle the dataset.
         # In a DataLoader with spawn context, this gets called `num_workers` times from the main process.
