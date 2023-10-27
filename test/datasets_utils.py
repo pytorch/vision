@@ -711,7 +711,7 @@ def _no_collate(batch):
 
 
 def check_transforms_v2_wrapper_spawn(dataset, expected_size):
-    # This check ensures that the wrapped datasets can be used with multiprocessing_context="spawn" in the DataLoadaer.
+    # This check ensures that the wrapped datasets can be used with multiprocessing_context="spawn" in the DataLoader.
     # We also check that transforms are applied correctly as a non-regression test for
     # https://github.com/pytorch/vision/issues/8066
     # Implicitly, this also checks that the wrapped datasets are pickleable.
