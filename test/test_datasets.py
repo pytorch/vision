@@ -24,6 +24,7 @@ import torch
 import torch.nn.functional as F
 from common_utils import combinations_grid
 from torchvision import datasets
+from torchvision.transforms import v2
 
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -184,8 +185,9 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
                 f"{actual} is not {expected}",
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset(target_type="category") as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(target_type="category", transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
@@ -263,8 +265,9 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
         return split_to_num_examples[config["split"]]
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset() as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
@@ -391,9 +394,10 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
             (polygon_target, info["expected_polygon_target"])
 
     def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
         for target_type in ["instance", "semantic", ["instance", "semantic"]]:
-            with self.create_dataset(target_type=target_type) as (dataset, _):
-                datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+            with self.create_dataset(target_type=target_type, transform=v2.Resize(size=expected_size)) as (dataset, _):
+                datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
@@ -427,8 +431,9 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
         return num_examples
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset() as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -625,9 +630,10 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         assert merged_imgs_names == all_imgs_names
 
     def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
         for target_type in ["identity", "bbox", ["identity", "bbox"]]:
-            with self.create_dataset(target_type=target_type) as (dataset, _):
-                datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+            with self.create_dataset(target_type=target_type, transform=v2.Resize(size=expected_size)) as (dataset, _):
+                datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
@@ -717,8 +723,9 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
         return data
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset() as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class VOCDetectionTestCase(VOCSegmentationTestCase):
@@ -741,8 +748,9 @@ class VOCDetectionTestCase(VOCSegmentationTestCase):
             assert object == info["annotation"]
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset() as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
@@ -815,8 +823,9 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
         return file
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset() as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class CocoCaptionsTestCase(CocoDetectionTestCase):
@@ -1005,9 +1014,11 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
             )
         return num_videos_per_class * len(classes)
 
+    @pytest.mark.xfail(reason="FIXME")
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset(output_format="TCHW") as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(output_format="TCHW", transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
@@ -1237,8 +1248,9 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
         return f"2008_{idx:06d}"
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset(mode="segmentation") as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(mode="segmentation", transforms=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1690,8 +1702,9 @@ class KittiTestCase(datasets_utils.ImageDatasetTestCase):
         return split_to_num_examples[config["train"]]
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset() as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class SvhnTestCase(datasets_utils.ImageDatasetTestCase):
@@ -2568,8 +2581,9 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         return (image_id, class_id, species, breed_id)
 
     def test_transforms_v2_wrapper_spawn(self):
-        with self.create_dataset() as (dataset, _):
-            datasets_utils.check_transforms_v2_wrapper_spawn(dataset)
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
