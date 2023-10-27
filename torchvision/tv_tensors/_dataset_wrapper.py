@@ -202,13 +202,14 @@ class VisionDatasetTVTensorWrapper:
     def __reduce__(self):
         # __reduce__ gets called when we try to pickle the dataset.
         # In a DataLoader with spawn context, this gets called `num_workers` times from the main process.
-        # We have to reset the [target_]transform[s] attribute of the dataset
-        # before we pass it back to wrap_dataset_for_transforms_v2, because we
-        # set them to None in __init__().
+
+        # We have to reset the [target_]transform[s] attributes of the dataset
+        # to their original values, because we previously set them to None in __init__().
         dataset = copy(self._dataset)
         dataset.transform = self.transform
         dataset.transforms = self.transforms
         dataset.target_transform = self.target_transform
+
         return wrap_dataset_for_transforms_v2, (dataset, self._target_keys)
 
 

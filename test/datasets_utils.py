@@ -5,6 +5,7 @@ import inspect
 import itertools
 import os
 import pathlib
+import platform
 import random
 import shutil
 import string
@@ -26,7 +27,11 @@ import torchvision.datasets
 import torchvision.io
 from common_utils import disable_console_output, get_tmp_dir
 from torch.utils._pytree import tree_any
+from torch.utils.data import DataLoader
+from torchvision import tv_tensors
+from torchvision.datasets import wrap_dataset_for_transforms_v2
 from torchvision.transforms.functional import get_dimensions
+from torchvision.transforms.v2.functional import get_size
 
 
 __all__ = [
@@ -567,9 +572,6 @@ class DatasetTestCase(unittest.TestCase):
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
-        from torchvision import tv_tensors
-        from torchvision.datasets import wrap_dataset_for_transforms_v2
-
         try:
             with self.create_dataset(config) as (dataset, info):
                 for target_keys in [None, "all"]:
@@ -708,29 +710,28 @@ def _no_collate(batch):
     return batch
 
 
-def check_transforms_v2_wrapper_spawn(dataset):
-    # On Linux and Windows, the DataLoader forks the main process by default. This is not available on macOS, so new
-    # subprocesses are spawned. This requires the whole pipeline including the dataset to be pickleable, which is what
-    # we are enforcing here.
-    # if platform.system() != "Darwin":
-    #     pytest.skip("Multiprocessing spawning is only checked on macOS.")
+def check_transforms_v2_wrapper_spawn(dataset, expected_size):
+    # Test check ensures that the wrapped datasets can be used with multiprocessing_context="spawn" in the DataLoadaer.
+    # We also check that transforms are applied correctly as a non-regression test for
+    # https://github.com/pytorch/vision/issues/8066
+    # Implicitly, this also checks that the wrapped datasets are pickleable.
 
-    from torch.utils.data import DataLoader
-    from torchvision import tv_tensors
-    from torchvision.datasets import wrap_dataset_for_transforms_v2
+    # To save CI/test time, we only check on macOS where "spawn" is the default
+    if platform.system() != "Darwin":
+        pytest.skip("Multiprocessing spawning is only checked on macOS.")
 
     wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
 
     dataloader = DataLoader(wrapped_dataset, num_workers=2, multiprocessing_context="spawn", collate_fn=_no_collate)
 
-    for wrapped_sample in dataloader:
-        assert tree_any(
-            lambda item: isinstance(item, (tv_tensors.Image, tv_tensors.Video, PIL.Image.Image)), wrapped_sample
+    def resize_was_applied(item):
+        # Checking the size of the output ensures that the Resize transform was correctly applied
+        return isinstance(item, (tv_tensors.Image, tv_tensors.Video, PIL.Image.Image)) and get_size(item) == list(
+            expected_size
         )
-        from torchvision.datasets import VOCDetection
 
-        if isinstance(dataset, VOCDetection):
-            assert wrapped_sample[0][0].size == (321, 123)
+    for wrapped_sample in dataloader:
+        assert tree_any(resize_was_applied, wrapped_sample)
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
