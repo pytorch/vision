@@ -6,6 +6,7 @@ import collections.abc
 
 import contextlib
 from collections import defaultdict
+from copy import copy
 
 import torch
 
@@ -198,8 +199,19 @@ class VisionDatasetTVTensorWrapper:
     def __len__(self):
         return len(self._dataset)
 
+    # TODO: maybe we should use __getstate__ and __setstate__ instead of __reduce__, as recommended in the docs.
     def __reduce__(self):
-        return wrap_dataset_for_transforms_v2, (self._dataset, self._target_keys)
+        # __reduce__ gets called when we try to pickle the dataset.
+        # In a DataLoader with spawn context, this gets called `num_workers` times from the main process.
+
+        # We have to reset the [target_]transform[s] attributes of the dataset
+        # to their original values, because we previously set them to None in __init__().
+        dataset = copy(self._dataset)
+        dataset.transform = self.transform
+        dataset.transforms = self.transforms
+        dataset.target_transform = self.target_transform
+
+        return wrap_dataset_for_transforms_v2, (dataset, self._target_keys)
 
 
 def raise_not_supported(description):
