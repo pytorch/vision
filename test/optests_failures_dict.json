@@ -11,44 +11,6 @@
         "comment": "NotImplementedError: autograd_registration_check: NYI devices other than CPU/CUDA, got {'mps'}",
         "status": "xfail"
       }
-    },
-    "torchvision::roi_pool": {
-      "TestRoiPool.test_aot_dispatch_dynamic__test_backward": {
-        "comment": "",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_aot_dispatch_dynamic__test_forward": {
-        "comment": "",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_aot_dispatch_dynamic__test_mps_error_inputs": {
-        "comment": "RuntimeError: MPS does not support roi_pool backward with float16 inputs.",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_aot_dispatch_dynamic__test_torch_fx_trace": {
-        "comment": "",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_autograd_registration__test_backward[True-mps-0]": {
-        "comment": "NotImplementedError: autograd_registration_check: NYI devices other than CPU/CUDA, got {'mps'}",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_autograd_registration__test_mps_error_inputs": {
-        "comment": "NotImplementedError: autograd_registration_check: NYI devices other than CPU/CUDA, got {'mps'}",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_faketensor__test_backward[True-mps-0]": {
-        "comment": "AssertionError: Dtypes torch.int64 and torch.int32 are not equal!",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_faketensor__test_forward[x_dtype0-True-mps]": {
-        "comment": "AssertionError: Dtypes torch.int64 and torch.int32 are not equal!",
-        "status": "xfail"
-      },
-      "TestRoiPool.test_faketensor__test_mps_error_inputs": {
-        "comment": "AssertionError: Dtypes torch.int64 and torch.int32 are not equal!",
-        "status": "xfail"
-      }
     }
   }
 }
