@@ -33,13 +33,58 @@ def meta_roi_align(input, rois, spatial_scale, pooled_height, pooled_width, samp
         ),
     )
     num_rois = rois.size(0)
-    _, channels, height, width = input.size()
+    channels = input.size(1)
     return input.new_empty((num_rois, channels, pooled_height, pooled_width))
 
 
 @register_meta("_roi_align_backward")
 def meta_roi_align_backward(
     grad, rois, spatial_scale, pooled_height, pooled_width, batch_size, channels, height, width, sampling_ratio, aligned
+):
+    torch._check(
+        grad.dtype == rois.dtype,
+        lambda: (
+            "Expected tensor for grad to have the same type as tensor for rois; "
+            f"but type {grad.dtype} does not equal {rois.dtype}"
+        ),
+    )
+    return grad.new_empty((batch_size, channels, height, width))
+
+
+@register_meta("ps_roi_align")
+def meta_ps_roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio):
+    torch._check(rois.size(1) == 5, lambda: "rois must have shape as Tensor[K, 5]")
+    torch._check(
+        input.dtype == rois.dtype,
+        lambda: (
+            "Expected tensor for input to have the same type as tensor for rois; "
+            f"but type {input.dtype} does not equal {rois.dtype}"
+        ),
+    )
+    channels = input.size(1)
+    torch._check(
+        channels % (pooled_height * pooled_width) == 0,
+        "input channels must be a multiple of pooling height * pooling width",
+    )
+
+    num_rois = rois.size(0)
+    out_size = (num_rois, channels // (pooled_height * pooled_width), pooled_height, pooled_width)
+    return input.new_empty(out_size), torch.empty(out_size, dtype=torch.int32, device="meta")
+
+
+@register_meta("_ps_roi_align_backward")
+def meta_ps_roi_align_backward(
+    grad,
+    rois,
+    channel_mapping,
+    spatial_scale,
+    pooled_height,
+    pooled_width,
+    sampling_ratio,
+    batch_size,
+    channels,
+    height,
+    width,
 ):
     torch._check(
         grad.dtype == rois.dtype,
