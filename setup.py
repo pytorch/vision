@@ -129,8 +129,10 @@ def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, "torchvision", "csrc")
 
-    main_file = glob.glob(os.path.join(extensions_dir, "*.cpp")) + glob.glob(
-        os.path.join(extensions_dir, "ops", "*.cpp")
+    main_file = (
+        glob.glob(os.path.join(extensions_dir, "*.cpp"))
+        + glob.glob(os.path.join(extensions_dir, "ops", "*.cpp"))
+        + glob.glob(os.path.join(extensions_dir, "ops", "autocast", "*.cpp"))
     )
     source_cpu = (
         glob.glob(os.path.join(extensions_dir, "ops", "autograd", "*.cpp"))
@@ -183,8 +185,6 @@ def get_extensions():
             shutil.copy(file, "torchvision/csrc/ops/hip")
     else:
         source_cuda = glob.glob(os.path.join(extensions_dir, "ops", "cuda", "*.cu"))
-
-    source_cuda += glob.glob(os.path.join(extensions_dir, "ops", "autocast", "*.cpp"))
 
     sources = main_file + source_cpu
     extension = CppExtension

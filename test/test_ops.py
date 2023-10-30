@@ -131,6 +131,8 @@ class RoIOpTester(ABC):
                 tol = 5e-3
             else:
                 tol = 4e-3
+        elif x_dtype == torch.bfloat16:
+            tol = 5e-3
 
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS operations.
@@ -505,6 +507,21 @@ class TestRoIAlign(RoIOpTester):
                 rois_dtype=rois_dtype,
             )
 
+    @pytest.mark.parametrize("aligned", (True, False))
+    @pytest.mark.parametrize("deterministic", (True, False))
+    @pytest.mark.parametrize("x_dtype", (torch.float, torch.bfloat16))
+    @pytest.mark.parametrize("rois_dtype", (torch.float, torch.bfloat16))
+    def test_autocast_cpu(self, aligned, deterministic, x_dtype, rois_dtype):
+        with torch.cpu.amp.autocast():
+            self.test_forward(
+                torch.device("cpu"),
+                contiguous=False,
+                deterministic=deterministic,
+                aligned=aligned,
+                x_dtype=x_dtype,
+                rois_dtype=rois_dtype,
+            )
+
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
@@ -808,6 +825,15 @@ class TestNMS:
     def test_autocast(self, iou, dtype):
         with torch.cuda.amp.autocast():
             self.test_nms_gpu(iou=iou, dtype=dtype, device="cuda")
+
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    @pytest.mark.parametrize("dtype", (torch.float, torch.bfloat16))
+    def test_autocast_cpu(self, iou, dtype):
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        with torch.cpu.amp.autocast():
+            keep_ref_float = ops.nms(boxes.to(dtype).float(), scores.to(dtype).float(), iou)
+            keep_dtype = ops.nms(boxes.to(dtype), scores.to(dtype), iou)
+        torch.testing.assert_close(keep_ref_float, keep_dtype)
 
     @pytest.mark.parametrize(
         "device",
