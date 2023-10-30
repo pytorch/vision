@@ -230,7 +230,6 @@ class RoIOpTester(ABC):
     @needs_cuda
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
     @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
-    @pytest.mark.opcheck_only_one()
     def test_autocast(self, x_dtype, rois_dtype):
         with torch.cuda.amp.autocast():
             self.test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
