@@ -328,6 +328,11 @@ class RandomSolarize(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomSolarize
 
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+        params["threshold"] = float(params["threshold"])
+        return params
+
     def __init__(self, threshold: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.threshold = threshold
