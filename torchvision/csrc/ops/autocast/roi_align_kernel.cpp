@@ -9,6 +9,7 @@ namespace ops {
 
 namespace {
 
+template <c10::DispatchKey autocast_key, c10::DeviceType device_type>
 at::Tensor roi_align_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -17,10 +18,10 @@ at::Tensor roi_align_autocast(
     int64_t pooled_width,
     int64_t sampling_ratio,
     bool aligned) {
-  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(autocast_key);
   return roi_align(
-             at::autocast::cached_cast(at::kFloat, input),
-             at::autocast::cached_cast(at::kFloat, rois),
+             at::autocast::cached_cast(at::kFloat, input, device_type),
+             at::autocast::cached_cast(at::kFloat, rois, device_type),
              spatial_scale,
              pooled_height,
              pooled_width,
@@ -34,7 +35,17 @@ at::Tensor roi_align_autocast(
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::roi_align"),
-      TORCH_FN(roi_align_autocast));
+      TORCH_FN((roi_align_autocast<
+                c10::DispatchKey::Autocast,
+                c10::DeviceType::CUDA>)));
+}
+
+TORCH_LIBRARY_IMPL(torchvision, AutocastCPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::roi_align"),
+      TORCH_FN((roi_align_autocast<
+                c10::DispatchKey::AutocastCPU,
+                c10::DeviceType::CPU>)));
 }
 
 } // namespace ops
