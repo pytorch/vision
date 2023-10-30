@@ -420,7 +420,7 @@ def make_bounding_boxes(
     dtype = dtype or torch.float32
 
     num_objects = 1
-    h, w = [torch.randint(1, c, (num_objects,)) for c in canvas_size]
+    h, w = [torch.randint(1, s, (num_objects,)) for s in canvas_size]
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
 

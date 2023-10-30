@@ -1,6 +1,4 @@
 import itertools
-import pathlib
-import pickle
 import random
 
 import numpy as np
@@ -11,22 +9,11 @@ import torch
 import torchvision.transforms.v2 as transforms
 
 from common_utils import assert_equal, cpu_and_cuda
-from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import to_pil_image
-from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2._utils import check_type, is_pure_tensor, query_chw
-from transforms_v2_legacy_utils import (
-    make_bounding_boxes,
-    make_detection_mask,
-    make_image,
-    make_images,
-    make_multiple_bounding_boxes,
-    make_segmentation_mask,
-    make_video,
-    make_videos,
-)
+from torchvision.transforms.v2._utils import is_pure_tensor
+from transforms_v2_legacy_utils import make_bounding_boxes, make_detection_mask, make_image, make_images, make_videos
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -39,11 +26,6 @@ def make_vanilla_tensor_images(*args, **kwargs):
 def make_pil_images(*args, **kwargs):
     for image in make_vanilla_tensor_images(*args, **kwargs):
         yield to_pil_image(image)
-
-
-def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
-    for bounding_boxes in make_multiple_bounding_boxes(*args, **kwargs):
-        yield bounding_boxes.data
 
 
 def parametrize(transforms_with_inputs):
@@ -59,218 +41,6 @@ def parametrize(transforms_with_inputs):
             for idx, input in enumerate(inputs)
         ],
     )
-
-
-def auto_augment_adapter(transform, input, device):
-    adapted_input = {}
-    image_or_video_found = False
-    for key, value in input.items():
-        if isinstance(value, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
-            # AA transforms don't support bounding boxes or masks
-            continue
-        elif check_type(value, (tv_tensors.Image, tv_tensors.Video, is_pure_tensor, PIL.Image.Image)):
-            if image_or_video_found:
-                # AA transforms only support a single image or video
-                continue
-            image_or_video_found = True
-        adapted_input[key] = value
-    return adapted_input
-
-
-def linear_transformation_adapter(transform, input, device):
-    flat_inputs = list(input.values())
-    c, h, w = query_chw(
-        [
-            item
-            for item, needs_transform in zip(flat_inputs, transforms.Transform()._needs_transform_list(flat_inputs))
-            if needs_transform
-        ]
-    )
-    num_elements = c * h * w
-    transform.transformation_matrix = torch.randn((num_elements, num_elements), device=device)
-    transform.mean_vector = torch.randn((num_elements,), device=device)
-    return {key: value for key, value in input.items() if not isinstance(value, PIL.Image.Image)}
-
-
-def normalize_adapter(transform, input, device):
-    adapted_input = {}
-    for key, value in input.items():
-        if isinstance(value, PIL.Image.Image):
-            # normalize doesn't support PIL images
-            continue
-        elif check_type(value, (tv_tensors.Image, tv_tensors.Video, is_pure_tensor)):
-            # normalize doesn't support integer images
-            value = F.to_dtype(value, torch.float32, scale=True)
-        adapted_input[key] = value
-    return adapted_input
-
-
-class TestSmoke:
-    @pytest.mark.parametrize(
-        ("transform", "adapter"),
-        [
-            (transforms.RandomErasing(p=1.0), None),
-            (transforms.AugMix(), auto_augment_adapter),
-            (transforms.AutoAugment(), auto_augment_adapter),
-            (transforms.RandAugment(), auto_augment_adapter),
-            (transforms.TrivialAugmentWide(), auto_augment_adapter),
-            (transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.3, hue=0.15), None),
-            (transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1.0), None),
-            (transforms.RandomAutocontrast(p=1.0), None),
-            (transforms.RandomEqualize(p=1.0), None),
-            (transforms.RandomInvert(p=1.0), None),
-            (transforms.RandomChannelPermutation(), None),
-            (transforms.RandomPosterize(bits=4, p=1.0), None),
-            (transforms.RandomSolarize(threshold=0.5, p=1.0), None),
-            (transforms.CenterCrop([16, 16]), None),
-            (transforms.ElasticTransform(sigma=1.0), None),
-            (transforms.Pad(4), None),
-            (transforms.RandomAffine(degrees=30.0), None),
-            (transforms.RandomCrop([16, 16], pad_if_needed=True), None),
-            (transforms.RandomHorizontalFlip(p=1.0), None),
-            (transforms.RandomPerspective(p=1.0), None),
-            (transforms.RandomResize(min_size=10, max_size=20, antialias=True), None),
-            (transforms.RandomResizedCrop([16, 16], antialias=True), None),
-            (transforms.RandomRotation(degrees=30), None),
-            (transforms.RandomShortestSize(min_size=10, antialias=True), None),
-            (transforms.RandomVerticalFlip(p=1.0), None),
-            (transforms.Resize([16, 16], antialias=True), None),
-            (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2), antialias=True), None),
-            (transforms.ClampBoundingBoxes(), None),
-            (transforms.ConvertBoundingBoxFormat(tv_tensors.BoundingBoxFormat.CXCYWH), None),
-            (transforms.ConvertImageDtype(), None),
-            (transforms.GaussianBlur(kernel_size=3), None),
-            (
-                transforms.LinearTransformation(
-                    # These are just dummy values that will be filled by the adapter. We can't define them upfront,
-                    # because for we neither know the spatial size nor the device at this point
-                    transformation_matrix=torch.empty((1, 1)),
-                    mean_vector=torch.empty((1,)),
-                ),
-                linear_transformation_adapter,
-            ),
-            (transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), normalize_adapter),
-            (transforms.ToDtype(torch.float64), None),
-            (transforms.UniformTemporalSubsample(num_samples=2), None),
-        ],
-        ids=lambda transform: type(transform).__name__,
-    )
-    @pytest.mark.parametrize("container_type", [dict, list, tuple])
-    @pytest.mark.parametrize(
-        "image_or_video",
-        [
-            make_image(),
-            make_video(),
-            next(make_pil_images(color_spaces=["RGB"])),
-            next(make_vanilla_tensor_images()),
-        ],
-    )
-    @pytest.mark.parametrize("de_serialize", [lambda t: t, lambda t: pickle.loads(pickle.dumps(t))])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_common(self, transform, adapter, container_type, image_or_video, de_serialize, device):
-        transform = de_serialize(transform)
-
-        canvas_size = F.get_size(image_or_video)
-        input = dict(
-            image_or_video=image_or_video,
-            image_tv_tensor=make_image(size=canvas_size),
-            video_tv_tensor=make_video(size=canvas_size),
-            image_pil=next(make_pil_images(sizes=[canvas_size], color_spaces=["RGB"])),
-            bounding_boxes_xyxy=make_bounding_boxes(
-                format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=canvas_size, batch_dims=(3,)
-            ),
-            bounding_boxes_xywh=make_bounding_boxes(
-                format=tv_tensors.BoundingBoxFormat.XYWH, canvas_size=canvas_size, batch_dims=(4,)
-            ),
-            bounding_boxes_cxcywh=make_bounding_boxes(
-                format=tv_tensors.BoundingBoxFormat.CXCYWH, canvas_size=canvas_size, batch_dims=(5,)
-            ),
-            bounding_boxes_degenerate_xyxy=tv_tensors.BoundingBoxes(
-                [
-                    [0, 0, 0, 0],  # no height or width
-                    [0, 0, 0, 1],  # no height
-                    [0, 0, 1, 0],  # no width
-                    [2, 0, 1, 1],  # x1 > x2, y1 < y2
-                    [0, 2, 1, 1],  # x1 < x2, y1 > y2
-                    [2, 2, 1, 1],  # x1 > x2, y1 > y2
-                ],
-                format=tv_tensors.BoundingBoxFormat.XYXY,
-                canvas_size=canvas_size,
-            ),
-            bounding_boxes_degenerate_xywh=tv_tensors.BoundingBoxes(
-                [
-                    [0, 0, 0, 0],  # no height or width
-                    [0, 0, 0, 1],  # no height
-                    [0, 0, 1, 0],  # no width
-                    [0, 0, 1, -1],  # negative height
-                    [0, 0, -1, 1],  # negative width
-                    [0, 0, -1, -1],  # negative height and width
-                ],
-                format=tv_tensors.BoundingBoxFormat.XYWH,
-                canvas_size=canvas_size,
-            ),
-            bounding_boxes_degenerate_cxcywh=tv_tensors.BoundingBoxes(
-                [
-                    [0, 0, 0, 0],  # no height or width
-                    [0, 0, 0, 1],  # no height
-                    [0, 0, 1, 0],  # no width
-                    [0, 0, 1, -1],  # negative height
-                    [0, 0, -1, 1],  # negative width
-                    [0, 0, -1, -1],  # negative height and width
-                ],
-                format=tv_tensors.BoundingBoxFormat.CXCYWH,
-                canvas_size=canvas_size,
-            ),
-            detection_mask=make_detection_mask(size=canvas_size),
-            segmentation_mask=make_segmentation_mask(size=canvas_size),
-            int=0,
-            float=0.0,
-            bool=True,
-            none=None,
-            str="str",
-            path=pathlib.Path.cwd(),
-            object=object(),
-            tensor=torch.empty(5),
-            array=np.empty(5),
-        )
-        if adapter is not None:
-            input = adapter(transform, input, device)
-
-        if container_type in {tuple, list}:
-            input = container_type(input.values())
-
-        input_flat, input_spec = tree_flatten(input)
-        input_flat = [item.to(device) if isinstance(item, torch.Tensor) else item for item in input_flat]
-        input = tree_unflatten(input_flat, input_spec)
-
-        torch.manual_seed(0)
-        output = transform(input)
-        output_flat, output_spec = tree_flatten(output)
-
-        assert output_spec == input_spec
-
-        for output_item, input_item, should_be_transformed in zip(
-            output_flat, input_flat, transforms.Transform()._needs_transform_list(input_flat)
-        ):
-            if should_be_transformed:
-                assert type(output_item) is type(input_item)
-            else:
-                assert output_item is input_item
-
-            if isinstance(input_item, tv_tensors.BoundingBoxes) and not isinstance(
-                transform, transforms.ConvertBoundingBoxFormat
-            ):
-                assert output_item.format == input_item.format
-
-        # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
-        # transform that does this), back into a valid one.
-        # TODO: we should test that against all degenerate boxes above
-        for format in list(tv_tensors.BoundingBoxFormat):
-            sample = dict(
-                boxes=tv_tensors.BoundingBoxes([[0, 0, 0, 0]], format=format, canvas_size=(224, 244)),
-                labels=torch.tensor([3]),
-            )
-            assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
 
 
 @pytest.mark.parametrize(
@@ -541,39 +311,6 @@ class TestRandomShortestSize:
             assert shorter <= max_size
         else:
             assert shorter in min_size
-
-
-class TestLinearTransformation:
-    def test_assertions(self):
-        with pytest.raises(ValueError, match="transformation_matrix should be square"):
-            transforms.LinearTransformation(torch.rand(2, 3), torch.rand(5))
-
-        with pytest.raises(ValueError, match="mean_vector should have the same length"):
-            transforms.LinearTransformation(torch.rand(3, 3), torch.rand(5))
-
-    @pytest.mark.parametrize(
-        "inpt",
-        [
-            122 * torch.ones(1, 3, 8, 8),
-            122.0 * torch.ones(1, 3, 8, 8),
-            tv_tensors.Image(122 * torch.ones(1, 3, 8, 8)),
-            PIL.Image.new("RGB", (8, 8), (122, 122, 122)),
-        ],
-    )
-    def test__transform(self, inpt):
-
-        v = 121 * torch.ones(3 * 8 * 8)
-        m = torch.ones(3 * 8 * 8, 3 * 8 * 8)
-        transform = transforms.LinearTransformation(m, v)
-
-        if isinstance(inpt, PIL.Image.Image):
-            with pytest.raises(TypeError, match="does not support PIL images"):
-                transform(inpt)
-        else:
-            output = transform(inpt)
-            assert isinstance(output, torch.Tensor)
-            assert output.unique() == 3 * 8 * 8
-            assert output.dtype == inpt.dtype
 
 
 class TestRandomResize:
