@@ -131,6 +131,8 @@ class RoIOpTester(ABC):
                 tol = 5e-3
             else:
                 tol = 4e-3
+        elif x_dtype == torch.bfloat16:
+            tol = 5e-3
 
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS operations.
@@ -474,6 +476,7 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("x_dtype", (torch.float16, torch.float32, torch.float64))  # , ids=str)
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
+    @pytest.mark.opcheck_only_one()
     def test_forward(self, device, contiguous, deterministic, aligned, x_dtype, rois_dtype=None):
         if deterministic and device == "cpu":
             pytest.skip("cpu is always deterministic, don't retest")
@@ -491,6 +494,7 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("deterministic", (True, False))
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
     @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
+    @pytest.mark.opcheck_only_one()
     def test_autocast(self, aligned, deterministic, x_dtype, rois_dtype):
         with torch.cuda.amp.autocast():
             self.test_forward(
@@ -502,10 +506,26 @@ class TestRoIAlign(RoIOpTester):
                 rois_dtype=rois_dtype,
             )
 
+    @pytest.mark.parametrize("aligned", (True, False))
+    @pytest.mark.parametrize("deterministic", (True, False))
+    @pytest.mark.parametrize("x_dtype", (torch.float, torch.bfloat16))
+    @pytest.mark.parametrize("rois_dtype", (torch.float, torch.bfloat16))
+    def test_autocast_cpu(self, aligned, deterministic, x_dtype, rois_dtype):
+        with torch.cpu.amp.autocast():
+            self.test_forward(
+                torch.device("cpu"),
+                contiguous=False,
+                deterministic=deterministic,
+                aligned=aligned,
+                x_dtype=x_dtype,
+                rois_dtype=rois_dtype,
+            )
+
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
+    @pytest.mark.opcheck_only_one()
     def test_backward(self, seed, device, contiguous, deterministic):
         if deterministic and device == "cpu":
             pytest.skip("cpu is always deterministic, don't retest")
@@ -520,6 +540,7 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("scale, zero_point", ((1, 0), (2, 10), (0.1, 50)))
     @pytest.mark.parametrize("qdtype", (torch.qint8, torch.quint8, torch.qint32))
+    @pytest.mark.opcheck_only_one()
     def test_qroialign(self, aligned, scale, zero_point, qdtype):
         """Make sure quantized version of RoIAlign is close to float version"""
         pool_size = 5
@@ -587,6 +608,15 @@ class TestRoIAlign(RoIOpTester):
     def test_jit_boxes_list(self):
         model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
         self._helper_jit_boxes_list(model)
+
+
+optests.generate_opcheck_tests(
+    testcase=TestRoIAlign,
+    namespaces=["torchvision"],
+    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
+    additional_decorators=[],
+    test_utils=OPTESTS,
+)
 
 
 class TestPSRoIAlign(RoIOpTester):
@@ -794,6 +824,15 @@ class TestNMS:
     def test_autocast(self, iou, dtype):
         with torch.cuda.amp.autocast():
             self.test_nms_gpu(iou=iou, dtype=dtype, device="cuda")
+
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    @pytest.mark.parametrize("dtype", (torch.float, torch.bfloat16))
+    def test_autocast_cpu(self, iou, dtype):
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        with torch.cpu.amp.autocast():
+            keep_ref_float = ops.nms(boxes.to(dtype).float(), scores.to(dtype).float(), iou)
+            keep_dtype = ops.nms(boxes.to(dtype), scores.to(dtype), iou)
+        torch.testing.assert_close(keep_ref_float, keep_dtype)
 
     @pytest.mark.parametrize(
         "device",
