@@ -11,7 +11,7 @@ requirements:
     - {{ compiler('c') }} # [win]
     - libpng
     - libjpeg-turbo
-    - pytorch::ffmpeg >=4.2  # [linux]
+    - ffmpeg >=4.2  # [linux]
 
   host:
     - python
