@@ -172,3 +172,54 @@ def meta_nms(dets, scores, iou_threshold):
     ctx = torch._custom_ops.get_ctx()
     num_to_keep = ctx.create_unbacked_symint()
     return dets.new_empty(num_to_keep, dtype=torch.long)
+
+
+@register_meta("deform_conv2d")
+def meta_deform_conv2d(
+    input,
+    weight,
+    offset,
+    mask,
+    bias,
+    stride_h,
+    stride_w,
+    pad_h,
+    pad_w,
+    dil_h,
+    dil_w,
+    n_weight_grps,
+    n_offset_grps,
+    use_mask,
+):
+
+    out_height, out_width = offset.shape[-2:]
+    out_channels = weight.shape[0]
+    batch_size = input.shape[0]
+    return input.new_empty((batch_size, out_channels, out_height, out_width))
+
+
+@register_meta("_deform_conv2d_backward")
+def meta_deform_conv2d_backward(
+    grad,
+    input,
+    weight,
+    offset,
+    mask,
+    bias,
+    stride_h,
+    stride_w,
+    pad_h,
+    pad_w,
+    dilation_h,
+    dilation_w,
+    groups,
+    offset_groups,
+    use_mask,
+):
+
+    grad_input = input.new_empty(input.shape)
+    grad_weight = weight.new_empty(weight.shape)
+    grad_offset = offset.new_empty(offset.shape)
+    grad_mask = mask.new_empty(mask.shape)
+    grad_bias = bias.new_empty(bias.shape)
+    return grad_input, grad_weight, grad_offset, grad_mask, grad_bias
