@@ -2491,7 +2491,7 @@ class TestElastic:
         interpolation=[transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR],
         fill=EXHAUSTIVE_TYPE_FILLS,
     )
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8, torch.float16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image(self, param, value, dtype, device):
         image = make_image_tensor(dtype=dtype, device=device)
@@ -2502,6 +2502,7 @@ class TestElastic:
             displacement=self._make_displacement(image),
             **{param: value},
             check_scripted_vs_eager=not (param == "fill" and isinstance(value, (int, float))),
+            check_cuda_vs_cpu=dtype is not torch.float16,
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
