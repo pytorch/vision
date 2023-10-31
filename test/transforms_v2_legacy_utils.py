@@ -6,7 +6,6 @@ implemented there and must not use any of the utilities here.
 The following legacy modules depend on this module
 
 - test_transforms_v2_consistency.py
-- test_prototype_transforms.py
 """
 
 import collections.abc
