@@ -73,16 +73,6 @@ LINEAR_TRANSFORMATION_MATRIX = torch.rand([LINEAR_TRANSFORMATION_MEAN.numel()] *
 
 CONSISTENCY_CONFIGS = [
     ConsistencyConfig(
-        v2_transforms.Lambda,
-        legacy_transforms.Lambda,
-        [
-            NotScriptableArgsKwargs(lambda image: image / 2),
-        ],
-        # Technically, this also supports PIL, but it is overkill to write a function here that supports tensor and PIL
-        # images given that the transform does nothing but call it anyway.
-        supports_pil=False,
-    ),
-    ConsistencyConfig(
         v2_transforms.Compose,
         legacy_transforms.Compose,
     ),
