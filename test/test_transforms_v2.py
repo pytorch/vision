@@ -186,7 +186,21 @@ def _check_functional_scripted_smoke(functional, input, *args, **kwargs):
         functional_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
 
 
-def check_functional(functional, input, *args, check_scripted_smoke=True, **kwargs):
+def _check_functional_torch_compile_smoke(functional, input, *args, **kwargs):
+    """Checks if the functional can be torch compiled and the compiled version can be called without error."""
+    if not isinstance(input, tv_tensors.Image):
+        return
+
+    functional_compiled = torch.compile(functional)
+    functional_compiled(input.as_subclass(torch.Tensor), *args, **kwargs)
+
+    explanation = torch._dynamo.explain(functional_compiled)(input.as_subclass(torch.Tensor), *args, **kwargs)
+    # TODO: Set expected values to 2, 1 once fixed the graph break related to function registration
+    assert explanation.graph_count == 2
+    assert explanation.graph_break_count == 1
+
+
+def check_functional(functional, input, *args, check_scripted_smoke=True, check_torch_compile_smoke=True, **kwargs):
     unknown_input = object()
     with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
         functional(unknown_input, *args, **kwargs)
@@ -203,6 +217,9 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, **kwar
 
     if check_scripted_smoke:
         _check_functional_scripted_smoke(functional, input, *args, **kwargs)
+
+    if check_torch_compile_smoke:
+        _check_functional_torch_compile_smoke(functional, input, *args, **kwargs)
 
 
 def check_functional_kernel_signature_match(functional, *, kernel, input_type):
@@ -656,6 +673,7 @@ class TestResize:
             size=size,
             antialias=True,
             check_scripted_smoke=not isinstance(size, int),
+            check_torch_compile_smoke=False,
         )
 
     @pytest.mark.parametrize(
@@ -3469,7 +3487,12 @@ class TestResizedCrop:
     )
     def test_functional(self, make_input):
         check_functional(
-            F.resized_crop, make_input(self.INPUT_SIZE), **self.CROP_KWARGS, size=self.OUTPUT_SIZE, antialias=True
+            F.resized_crop,
+            make_input(self.INPUT_SIZE),
+            **self.CROP_KWARGS,
+            size=self.OUTPUT_SIZE,
+            antialias=True,
+            check_torch_compile_smoke=False,
         )
 
     @pytest.mark.parametrize(
@@ -3949,7 +3972,7 @@ class TestPerspective:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
-        check_functional(F.perspective, make_input(), **self.MINIMAL_KWARGS)
+        check_functional(F.perspective, make_input(), **self.MINIMAL_KWARGS, check_torch_compile_smoke=False)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -4106,7 +4129,7 @@ class TestEqualize:
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
     def test_functional(self, make_input):
-        check_functional(F.equalize, make_input())
+        check_functional(F.equalize, make_input(), check_torch_compile_smoke=False)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
