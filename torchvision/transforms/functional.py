@@ -285,11 +285,10 @@ def to_pil_image(pic, mode=None):
         if pic.shape[-1] > 4:
             raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-1]} channels.")
 
-    npimg = pic
-    if isinstance(pic, torch.Tensor):
-        if pic.is_floating_point() and mode != "F":
-            pic = pic.mul(255).byte()
-        npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
+    npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0)) if isinstance(pic, torch.Tensor) else pic
+
+    if np.issubdtype(npimg.dtype, np.floating) and mode != "F":
+        npimg = (npimg * 255).astype(np.uint8)
 
     if not isinstance(npimg, np.ndarray):
         raise TypeError("Input pic must be a torch.Tensor or NumPy ndarray, not {type(npimg)}")
