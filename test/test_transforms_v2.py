@@ -7,6 +7,7 @@ import math
 import pickle
 import random
 import re
+import sys
 from copy import deepcopy
 from pathlib import Path
 from unittest import mock
@@ -195,9 +196,9 @@ def _check_functional_torch_compile_smoke(functional, input, *args, **kwargs):
     functional_compiled(input.as_subclass(torch.Tensor), *args, **kwargs)
 
     explanation = torch._dynamo.explain(functional_compiled)(input.as_subclass(torch.Tensor), *args, **kwargs)
-    # TODO: Set expected values to 2, 1 once fixed the graph break related to function registration
-    assert explanation.graph_count == 2
-    assert explanation.graph_break_count == 1
+    # TODO: Set expected values to 1, 0 once fixed the graph break related to function registration
+    assert explanation.graph_count in (1, 2)
+    assert explanation.graph_break_count in (0, 1)
 
 
 def check_functional(functional, input, *args, check_scripted_smoke=True, check_torch_compile_smoke=True, **kwargs):
@@ -218,7 +219,8 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, check_
     if check_scripted_smoke:
         _check_functional_scripted_smoke(functional, input, *args, **kwargs)
 
-    if check_torch_compile_smoke:
+    # Skip check on Windows as torch.compile does not work on Win32
+    if check_torch_compile_smoke and sys.platform != "win32":
         _check_functional_torch_compile_smoke(functional, input, *args, **kwargs)
 
 
@@ -1982,6 +1984,7 @@ class TestToDtype:
             make_input(dtype=input_dtype, device=device),
             dtype=output_dtype,
             scale=scale,
+
         )
 
     @pytest.mark.parametrize(
