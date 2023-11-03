@@ -1984,7 +1984,6 @@ class TestToDtype:
             make_input(dtype=input_dtype, device=device),
             dtype=output_dtype,
             scale=scale,
-
         )
 
     @pytest.mark.parametrize(
