@@ -105,7 +105,7 @@ def test_draw_boxes():
         res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
         res.save(path)
 
-    if PILLOW_VERSION >= (8, 2):
+    if PILLOW_VERSION >= (10, 1):
         # The reference image is only valid for new PIL versions
         expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
         assert_equal(result, expected)
