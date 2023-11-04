@@ -1,21 +1,17 @@
-import collections.abc
 import contextlib
-import dataclasses
-import enum
 import functools
 import itertools
 import os
 import pathlib
 import random
+import re
 import shutil
 import sys
 import tempfile
-from collections import defaultdict
+import warnings
 from subprocess import CalledProcessError, check_output, STDOUT
-from typing import Callable, Sequence, Tuple, Union
 
 import numpy as np
-
 import PIL.Image
 import pytest
 import torch
@@ -23,15 +19,16 @@ import torch.testing
 from PIL import Image
 
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
-from torchvision import datapoints, io
+from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import convert_dtype_image_tensor, to_image_tensor
+from torchvision.transforms.v2.functional import to_image, to_pil_image
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
+MPS_NOT_AVAILABLE_MSG = "MPS device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
 
 
@@ -122,16 +119,26 @@ def disable_console_output():
         yield
 
 
-def cpu_and_gpu():
+def cpu_and_cuda():
     import pytest  # noqa
 
     return ("cpu", pytest.param("cuda", marks=pytest.mark.needs_cuda))
+
+
+def cpu_and_cuda_and_mps():
+    return cpu_and_cuda() + (pytest.param("mps", marks=pytest.mark.needs_mps),)
 
 
 def needs_cuda(test_func):
     import pytest  # noqa
 
     return pytest.mark.needs_cuda(test_func)
+
+
+def needs_mps(test_func):
+    import pytest  # noqa
+
+    return pytest.mark.needs_mps(test_func)
 
 
 def _create_data(height=3, width=3, channels=3, device="cpu"):
@@ -280,7 +287,7 @@ class ImagePair(TensorLikePair):
         **other_parameters,
     ):
         if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
-            actual, expected = [to_image_tensor(input) for input in [actual, expected]]
+            actual, expected = [to_image(input) for input in [actual, expected]]
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae
@@ -350,125 +357,7 @@ def assert_close(
 assert_equal = functools.partial(assert_close, rtol=0, atol=0)
 
 
-def parametrized_error_message(*args, **kwargs):
-    def to_str(obj):
-        if isinstance(obj, torch.Tensor) and obj.numel() > 30:
-            return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
-        elif isinstance(obj, enum.Enum):
-            return f"{type(obj).__name__}.{obj.name}"
-        else:
-            return repr(obj)
-
-    if args or kwargs:
-        postfix = "\n".join(
-            [
-                "",
-                "Failure happened for the following parameters:",
-                "",
-                *[to_str(arg) for arg in args],
-                *[f"{name}={to_str(kwarg)}" for name, kwarg in kwargs.items()],
-            ]
-        )
-    else:
-        postfix = ""
-
-    def wrapper(msg):
-        return msg + postfix
-
-    return wrapper
-
-
-class ArgsKwargs:
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-    def __iter__(self):
-        yield self.args
-        yield self.kwargs
-
-    def load(self, device="cpu"):
-        return ArgsKwargs(
-            *(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args),
-            **{
-                keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg
-                for keyword, arg in self.kwargs.items()
-            },
-        )
-
-
-DEFAULT_SQUARE_SPATIAL_SIZE = 15
-DEFAULT_LANDSCAPE_SPATIAL_SIZE = (7, 33)
-DEFAULT_PORTRAIT_SPATIAL_SIZE = (31, 9)
-DEFAULT_SPATIAL_SIZES = (
-    DEFAULT_LANDSCAPE_SPATIAL_SIZE,
-    DEFAULT_PORTRAIT_SPATIAL_SIZE,
-    DEFAULT_SQUARE_SPATIAL_SIZE,
-    "random",
-)
-
-
-def _parse_spatial_size(size, *, name="size"):
-    if size == "random":
-        return tuple(torch.randint(15, 33, (2,)).tolist())
-    elif isinstance(size, int) and size > 0:
-        return (size, size)
-    elif (
-        isinstance(size, collections.abc.Sequence)
-        and len(size) == 2
-        and all(isinstance(length, int) and length > 0 for length in size)
-    ):
-        return tuple(size)
-    else:
-        raise pytest.UsageError(
-            f"'{name}' can either be `'random'`, a positive integer, or a sequence of two positive integers,"
-            f"but got {size} instead."
-        )
-
-
-VALID_EXTRA_DIMS = ((), (4,), (2, 3))
-DEGENERATE_BATCH_DIMS = ((0,), (5, 0), (0, 5))
-
-DEFAULT_EXTRA_DIMS = (*VALID_EXTRA_DIMS, *DEGENERATE_BATCH_DIMS)
-
-
-def from_loader(loader_fn):
-    def wrapper(*args, **kwargs):
-        device = kwargs.pop("device", "cpu")
-        loader = loader_fn(*args, **kwargs)
-        return loader.load(device)
-
-    return wrapper
-
-
-def from_loaders(loaders_fn):
-    def wrapper(*args, **kwargs):
-        device = kwargs.pop("device", "cpu")
-        loaders = loaders_fn(*args, **kwargs)
-        for loader in loaders:
-            yield loader.load(device)
-
-    return wrapper
-
-
-@dataclasses.dataclass
-class TensorLoader:
-    fn: Callable[[Sequence[int], torch.dtype, Union[str, torch.device]], torch.Tensor]
-    shape: Sequence[int]
-    dtype: torch.dtype
-
-    def load(self, device):
-        return self.fn(self.shape, self.dtype, device)
-
-
-@dataclasses.dataclass
-class ImageLoader(TensorLoader):
-    spatial_size: Tuple[int, int] = dataclasses.field(init=False)
-    num_channels: int = dataclasses.field(init=False)
-
-    def __post_init__(self):
-        self.spatial_size = self.shape[-2:]
-        self.num_channels = self.shape[-3]
+DEFAULT_SIZE = (17, 11)
 
 
 NUM_CHANNELS_MAP = {
@@ -479,368 +368,113 @@ NUM_CHANNELS_MAP = {
 }
 
 
-def get_num_channels(color_space):
-    num_channels = NUM_CHANNELS_MAP.get(color_space)
-    if not num_channels:
-        raise pytest.UsageError(f"Can't determine the number of channels for color space {color_space}")
-    return num_channels
-
-
-def make_image_loader(
-    size="random",
+def make_image(
+    size=DEFAULT_SIZE,
     *,
     color_space="RGB",
-    extra_dims=(),
-    dtype=torch.float32,
-    constant_alpha=True,
+    batch_dims=(),
+    dtype=None,
+    device="cpu",
+    memory_format=torch.contiguous_format,
 ):
-    size = _parse_spatial_size(size)
-    num_channels = get_num_channels(color_space)
-
-    def fn(shape, dtype, device):
-        max_value = get_max_value(dtype)
-        data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
-        if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
-            data[..., -1, :, :] = max_value
-        return datapoints.Image(data)
-
-    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype)
-
-
-make_image = from_loader(make_image_loader)
-
-
-def make_image_loaders(
-    *,
-    sizes=DEFAULT_SPATIAL_SIZES,
-    color_spaces=(
-        "GRAY",
-        "GRAY_ALPHA",
-        "RGB",
-        "RGBA",
-    ),
-    extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.float32, torch.float64, torch.uint8),
-    constant_alpha=True,
-):
-    for params in combinations_grid(size=sizes, color_space=color_spaces, extra_dims=extra_dims, dtype=dtypes):
-        yield make_image_loader(**params, constant_alpha=constant_alpha)
-
-
-make_images = from_loaders(make_image_loaders)
-
-
-def make_image_loader_for_interpolation(size="random", *, color_space="RGB", dtype=torch.uint8):
-    size = _parse_spatial_size(size)
-    num_channels = get_num_channels(color_space)
-
-    def fn(shape, dtype, device):
-        height, width = shape[-2:]
-
-        image_pil = (
-            PIL.Image.open(pathlib.Path(__file__).parent / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg")
-            .resize((width, height))
-            .convert(
-                {
-                    "GRAY": "L",
-                    "GRAY_ALPHA": "LA",
-                    "RGB": "RGB",
-                    "RGBA": "RGBA",
-                }[color_space]
-            )
-        )
-
-        image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
-
-        return datapoints.Image(image_tensor)
-
-    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype)
-
-
-def make_image_loaders_for_interpolation(
-    sizes=((233, 147),),
-    color_spaces=("RGB",),
-    dtypes=(torch.uint8,),
-):
-    for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
-        yield make_image_loader_for_interpolation(**params)
-
-
-@dataclasses.dataclass
-class BoundingBoxLoader(TensorLoader):
-    format: datapoints.BoundingBoxFormat
-    spatial_size: Tuple[int, int]
-
-
-def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
-    low, high = torch.broadcast_tensors(
-        *[torch.as_tensor(arg) for arg in ((0, arg1) if arg2 is None else (arg1, arg2))]
+    num_channels = NUM_CHANNELS_MAP[color_space]
+    dtype = dtype or torch.uint8
+    max_value = get_max_value(dtype)
+    data = torch.testing.make_tensor(
+        (*batch_dims, num_channels, *size),
+        low=0,
+        high=max_value,
+        dtype=dtype,
+        device=device,
+        memory_format=memory_format,
     )
-    return torch.stack(
-        [
-            torch.randint(low_scalar, high_scalar, (), **kwargs)
-            for low_scalar, high_scalar in zip(low.flatten().tolist(), high.flatten().tolist())
-        ]
-    ).reshape(low.shape)
+    if color_space in {"GRAY_ALPHA", "RGBA"}:
+        data[..., -1, :, :] = max_value
+
+    return tv_tensors.Image(data)
 
 
-def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dtype=torch.float32):
+def make_image_tensor(*args, **kwargs):
+    return make_image(*args, **kwargs).as_subclass(torch.Tensor)
+
+
+def make_image_pil(*args, **kwargs):
+    return to_pil_image(make_image(*args, **kwargs))
+
+
+def make_bounding_boxes(
+    canvas_size=DEFAULT_SIZE,
+    *,
+    format=tv_tensors.BoundingBoxFormat.XYXY,
+    num_boxes=1,
+    dtype=None,
+    device="cpu",
+):
+    def sample_position(values, max_value):
+        # We cannot use torch.randint directly here, because it only allows integer scalars as values for low and high.
+        # However, if we have batch_dims, we need tensors as limits.
+        return torch.stack([torch.randint(max_value - v, ()) for v in values.tolist()])
+
     if isinstance(format, str):
-        format = datapoints.BoundingBoxFormat[format]
-    if format not in {
-        datapoints.BoundingBoxFormat.XYXY,
-        datapoints.BoundingBoxFormat.XYWH,
-        datapoints.BoundingBoxFormat.CXCYWH,
-    }:
-        raise pytest.UsageError(f"Can't make bounding box in format {format}")
+        format = tv_tensors.BoundingBoxFormat[format]
 
-    spatial_size = _parse_spatial_size(spatial_size, name="spatial_size")
+    dtype = dtype or torch.float32
 
-    def fn(shape, dtype, device):
-        *extra_dims, num_coordinates = shape
-        if num_coordinates != 4:
-            raise pytest.UsageError()
+    h, w = [torch.randint(1, s, (num_boxes,)) for s in canvas_size]
+    y = sample_position(h, canvas_size[0])
+    x = sample_position(w, canvas_size[1])
 
-        if any(dim == 0 for dim in extra_dims):
-            return datapoints.BoundingBox(
-                torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
-            )
+    if format is tv_tensors.BoundingBoxFormat.XYWH:
+        parts = (x, y, w, h)
+    elif format is tv_tensors.BoundingBoxFormat.XYXY:
+        x1, y1 = x, y
+        x2 = x1 + w
+        y2 = y1 + h
+        parts = (x1, y1, x2, y2)
+    elif format is tv_tensors.BoundingBoxFormat.CXCYWH:
+        cx = x + w / 2
+        cy = y + h / 2
+        parts = (cx, cy, w, h)
+    else:
+        raise ValueError(f"Format {format} is not supported")
 
-        height, width = spatial_size
-
-        if format == datapoints.BoundingBoxFormat.XYXY:
-            x1 = torch.randint(0, width // 2, extra_dims)
-            y1 = torch.randint(0, height // 2, extra_dims)
-            x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
-            y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
-            parts = (x1, y1, x2, y2)
-        elif format == datapoints.BoundingBoxFormat.XYWH:
-            x = torch.randint(0, width // 2, extra_dims)
-            y = torch.randint(0, height // 2, extra_dims)
-            w = randint_with_tensor_bounds(1, width - x)
-            h = randint_with_tensor_bounds(1, height - y)
-            parts = (x, y, w, h)
-        else:  # format == features.BoundingBoxFormat.CXCYWH:
-            cx = torch.randint(1, width - 1, extra_dims)
-            cy = torch.randint(1, height - 1, extra_dims)
-            w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
-            h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
-            parts = (cx, cy, w, h)
-
-        return datapoints.BoundingBox(
-            torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
-        )
-
-    return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
-
-
-make_bounding_box = from_loader(make_bounding_box_loader)
-
-
-def make_bounding_box_loaders(
-    *,
-    extra_dims=DEFAULT_EXTRA_DIMS,
-    formats=tuple(datapoints.BoundingBoxFormat),
-    spatial_size="random",
-    dtypes=(torch.float32, torch.float64, torch.int64),
-):
-    for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
-        yield make_bounding_box_loader(**params, spatial_size=spatial_size)
-
-
-make_bounding_boxes = from_loaders(make_bounding_box_loaders)
-
-
-class MaskLoader(TensorLoader):
-    pass
-
-
-def make_detection_mask_loader(size="random", *, num_objects="random", extra_dims=(), dtype=torch.uint8):
-    # This produces "detection" masks, i.e. `(*, N, H, W)`, where `N` denotes the number of objects
-    size = _parse_spatial_size(size)
-    num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
-
-    def fn(shape, dtype, device):
-        data = torch.testing.make_tensor(shape, low=0, high=2, dtype=dtype, device=device)
-        return datapoints.Mask(data)
-
-    return MaskLoader(fn, shape=(*extra_dims, num_objects, *size), dtype=dtype)
-
-
-make_detection_mask = from_loader(make_detection_mask_loader)
-
-
-def make_detection_mask_loaders(
-    sizes=DEFAULT_SPATIAL_SIZES,
-    num_objects=(1, 0, "random"),
-    extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8,),
-):
-    for params in combinations_grid(size=sizes, num_objects=num_objects, extra_dims=extra_dims, dtype=dtypes):
-        yield make_detection_mask_loader(**params)
-
-
-make_detection_masks = from_loaders(make_detection_mask_loaders)
-
-
-def make_segmentation_mask_loader(size="random", *, num_categories="random", extra_dims=(), dtype=torch.uint8):
-    # This produces "segmentation" masks, i.e. `(*, H, W)`, where the category is encoded in the values
-    size = _parse_spatial_size(size)
-    num_categories = int(torch.randint(1, 11, ())) if num_categories == "random" else num_categories
-
-    def fn(shape, dtype, device):
-        data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=dtype, device=device)
-        return datapoints.Mask(data)
-
-    return MaskLoader(fn, shape=(*extra_dims, *size), dtype=dtype)
-
-
-make_segmentation_mask = from_loader(make_segmentation_mask_loader)
-
-
-def make_segmentation_mask_loaders(
-    *,
-    sizes=DEFAULT_SPATIAL_SIZES,
-    num_categories=(1, 2, "random"),
-    extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8,),
-):
-    for params in combinations_grid(size=sizes, num_categories=num_categories, extra_dims=extra_dims, dtype=dtypes):
-        yield make_segmentation_mask_loader(**params)
-
-
-make_segmentation_masks = from_loaders(make_segmentation_mask_loaders)
-
-
-def make_mask_loaders(
-    *,
-    sizes=DEFAULT_SPATIAL_SIZES,
-    num_objects=(1, 0, "random"),
-    num_categories=(1, 2, "random"),
-    extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8,),
-):
-    yield from make_detection_mask_loaders(sizes=sizes, num_objects=num_objects, extra_dims=extra_dims, dtypes=dtypes)
-    yield from make_segmentation_mask_loaders(
-        sizes=sizes, num_categories=num_categories, extra_dims=extra_dims, dtypes=dtypes
+    return tv_tensors.BoundingBoxes(
+        torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, canvas_size=canvas_size
     )
 
 
-make_masks = from_loaders(make_mask_loaders)
+def make_detection_masks(size=DEFAULT_SIZE, *, num_masks=1, dtype=None, device="cpu"):
+    """Make a "detection" mask, i.e. (*, N, H, W), where each object is encoded as one of N boolean masks"""
+    return tv_tensors.Mask(
+        torch.testing.make_tensor(
+            (num_masks, *size),
+            low=0,
+            high=2,
+            dtype=dtype or torch.bool,
+            device=device,
+        )
+    )
 
 
-class VideoLoader(ImageLoader):
-    pass
+def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
+    """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value"""
+    return tv_tensors.Mask(
+        torch.testing.make_tensor(
+            (*batch_dims, *size),
+            low=0,
+            high=num_categories,
+            dtype=dtype or torch.uint8,
+            device=device,
+        )
+    )
 
 
-def make_video_loader(
-    size="random",
-    *,
-    color_space="RGB",
-    num_frames="random",
-    extra_dims=(),
-    dtype=torch.uint8,
-):
-    size = _parse_spatial_size(size)
-    num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
-
-    def fn(shape, dtype, device):
-        video = make_image(size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device)
-        return datapoints.Video(video)
-
-    return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
+def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
+    return tv_tensors.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
 
 
-make_video = from_loader(make_video_loader)
-
-
-def make_video_loaders(
-    *,
-    sizes=DEFAULT_SPATIAL_SIZES,
-    color_spaces=(
-        "GRAY",
-        "RGB",
-    ),
-    num_frames=(1, 0, "random"),
-    extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8, torch.float32, torch.float64),
-):
-    for params in combinations_grid(
-        size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes
-    ):
-        yield make_video_loader(**params)
-
-
-make_videos = from_loaders(make_video_loaders)
-
-
-class TestMark:
-    def __init__(
-        self,
-        # Tuple of test class name and test function name that identifies the test the mark is applied to. If there is
-        # no test class, i.e. a standalone test function, use `None`.
-        test_id,
-        # `pytest.mark.*` to apply, e.g. `pytest.mark.skip` or `pytest.mark.xfail`
-        mark,
-        *,
-        # Callable, that will be passed an `ArgsKwargs` and should return a boolean to indicate if the mark will be
-        # applied. If omitted, defaults to always apply.
-        condition=None,
-    ):
-        self.test_id = test_id
-        self.mark = mark
-        self.condition = condition or (lambda args_kwargs: True)
-
-
-def mark_framework_limitation(test_id, reason, condition=None):
-    # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
-    # framework cannot handle the kernel in general or a specific parameter combination.
-    # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
-    # still justified.
-    # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
-    # we are wasting CI resources for no reason for most of the time
-    return TestMark(test_id, pytest.mark.skip(reason=reason), condition=condition)
-
-
-class InfoBase:
-    def __init__(
-        self,
-        *,
-        # Identifier if the info that shows up the parametrization.
-        id,
-        # Test markers that will be (conditionally) applied to an `ArgsKwargs` parametrization.
-        # See the `TestMark` class for details
-        test_marks=None,
-        # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`. Keys are a 3-tuple of `test_id` (see
-        # `TestMark`), the dtype, and the device.
-        closeness_kwargs=None,
-    ):
-        self.id = id
-
-        self.test_marks = test_marks or []
-        test_marks_map = defaultdict(list)
-        for test_mark in self.test_marks:
-            test_marks_map[test_mark.test_id].append(test_mark)
-        self._test_marks_map = dict(test_marks_map)
-
-        self.closeness_kwargs = closeness_kwargs or dict()
-
-    def get_marks(self, test_id, args_kwargs):
-        return [
-            test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
-        ]
-
-    def get_closeness_kwargs(self, test_id, *, dtype, device):
-        if not (isinstance(test_id, tuple) and len(test_id) == 2):
-            msg = "`test_id` should be a `Tuple[Optional[str], str]` denoting the test class and function name"
-            if callable(test_id):
-                msg += ". Did you forget to add the `test_id` fixture to parameters of the test?"
-            else:
-                msg += f", but got {test_id} instead."
-            raise pytest.UsageError(msg)
-        if isinstance(device, torch.device):
-            device = device.type
-        return self.closeness_kwargs.get((test_id, dtype, device), dict())
+def make_video_tensor(*args, **kwargs):
+    return make_video(*args, **kwargs).as_subclass(torch.Tensor)
 
 
 def assert_run_python_script(source_code):
@@ -863,3 +497,23 @@ def assert_run_python_script(source_code):
             raise RuntimeError(f"script errored with output:\n{e.output.decode()}")
         if out != b"":
             raise AssertionError(out.decode())
+
+
+@contextlib.contextmanager
+def assert_no_warnings():
+    # The name `catch_warnings` is a misnomer as the context manager does **not** catch any warnings, but rather scopes
+    # the warning filters. All changes that are made to the filters while in this context, will be reset upon exit.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        yield
+
+
+@contextlib.contextmanager
+def ignore_jit_no_profile_information_warning():
+    # Calling a scripted object often triggers a warning like
+    # `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
+    # with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
+    # them.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=re.escape("operator() profile_node %"), category=UserWarning)
+        yield

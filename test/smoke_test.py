@@ -26,6 +26,7 @@ def smoke_test_torchvision_read_decode() -> None:
     if img_png.shape != (4, 471, 354):
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
 
+
 def smoke_test_torchvision_decode_jpeg(device: str = "cpu"):
     img_jpg_data = read_file(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
     img_jpg = decode_jpeg(img_jpg_data, device=device)
@@ -58,7 +59,7 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     model.eval()
 
     # Step 2: Initialize the inference transforms
-    preprocess = weights.transforms()
+    preprocess = weights.transforms(antialias=(device != "mps"))  # antialias not supported on MPS
 
     # Step 3: Apply inference preprocessing transforms
     batch = preprocess(img).unsqueeze(0)
@@ -77,6 +78,13 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
+
+    # Turn 1.11.0aHASH into 1.11 (major.minor only)
+    version = ".".join(torchvision.__version__.split(".")[:2])
+    if version >= "0.16":
+        print(f"{torch.ops.image._jpeg_version() = }")
+        assert torch.ops.image._is_compiled_against_turbo()
+
     smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()

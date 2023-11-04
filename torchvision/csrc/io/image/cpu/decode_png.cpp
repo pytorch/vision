@@ -49,6 +49,7 @@ torch::Tensor decode_png(
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     TORCH_CHECK(false, "Internal error.");
   }
+  TORCH_CHECK(datap_len >= 8, "Content is too small for png!")
   auto is_png = !png_sig_cmp(datap, 0, 8);
   TORCH_CHECK(is_png, "Content is not png!")
 

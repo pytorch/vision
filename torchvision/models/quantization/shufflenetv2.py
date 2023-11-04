@@ -148,7 +148,7 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
 
 class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
-        url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
+        url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-1e62bb32.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,

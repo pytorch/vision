@@ -187,9 +187,9 @@ class VideoClips:
         }
         return type(self)(
             video_paths,
-            self.num_frames,
-            self.step,
-            self.frame_rate,
+            clip_length_in_frames=self.num_frames,
+            frames_between_clips=self.step,
+            frame_rate=self.frame_rate,
             _precomputed_metadata=metadata,
             num_workers=self.num_workers,
             _video_width=self._video_width,

@@ -44,13 +44,16 @@ class Compose(Transform):
         super().__init__()
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
+        elif not transforms:
+            raise ValueError("Pass at least one transform")
         self.transforms = transforms
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+        needs_unpacking = len(inputs) > 1
         for transform in self.transforms:
-            sample = transform(sample)
-        return sample
+            outputs = transform(*inputs)
+            inputs = outputs if needs_unpacking else (outputs,)
+        return outputs
 
     def extra_repr(self) -> str:
         format_string = []
@@ -98,14 +101,15 @@ class RandomApply(Transform):
         return {"transforms": self.transforms, "p": self.p}
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+        needs_unpacking = len(inputs) > 1
 
         if torch.rand(1) >= self.p:
-            return sample
+            return inputs if needs_unpacking else inputs[0]
 
         for transform in self.transforms:
-            sample = transform(sample)
-        return sample
+            outputs = transform(*inputs)
+            inputs = outputs if needs_unpacking else (outputs,)
+        return outputs
 
     def extra_repr(self) -> str:
         format_string = []
@@ -187,8 +191,9 @@ class RandomOrder(Transform):
         self.transforms = transforms
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+        needs_unpacking = len(inputs) > 1
         for idx in torch.randperm(len(self.transforms)):
             transform = self.transforms[idx]
-            sample = transform(sample)
-        return sample
+            outputs = transform(*inputs)
+            inputs = outputs if needs_unpacking else (outputs,)
+        return outputs

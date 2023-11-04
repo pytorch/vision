@@ -15,7 +15,7 @@ import torch
 import torch.fx
 import torch.nn as nn
 from _utils_internal import get_relative_path
-from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
+from common_utils import cpu_and_cuda, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
 from PIL import Image
 from torchvision import models, transforms
 from torchvision.models import get_model_builder, list_models
@@ -666,13 +666,14 @@ def vitc_b_16(**kwargs: Any):
 
 
 @pytest.mark.parametrize("model_fn", [vitc_b_16])
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_vitc_models(model_fn, dev):
     test_classification_model(model_fn, dev)
 
 
+@torch.backends.cudnn.flags(allow_tf32=False)  # see: https://github.com/pytorch/vision/issues/7618
 @pytest.mark.parametrize("model_fn", list_model_fns(models))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_classification_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
@@ -682,10 +683,6 @@ def test_classification_model(model_fn, dev):
     model_name = model_fn.__name__
     if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
-    if model_name == "vit_h_14" and dev == "cuda":
-        # TODO: investigate why this fail on CI. It doesn't fail on AWS cluster with CUDA 11.6
-        # (can't test with later versions ATM)
-        pytest.xfail("https://github.com/pytorch/vision/issues/7143")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
@@ -719,7 +716,7 @@ def test_classification_model(model_fn, dev):
 
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.segmentation))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
@@ -784,7 +781,7 @@ def test_segmentation_model(model_fn, dev):
 
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
@@ -916,7 +913,7 @@ def test_detection_model_validation(model_fn):
 
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.video))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.parametrize("dev", cpu_and_cuda())
 def test_video_model(model_fn, dev):
     set_rng_seed(0)
     # the default input shape is
@@ -1030,7 +1027,7 @@ def test_raft(model_fn, scripted):
     torch.manual_seed(0)
 
     # We need very small images, otherwise the pickle size would exceed the 50KB
-    # As a resut we need to override the correlation pyramid to not downsample
+    # As a result we need to override the correlation pyramid to not downsample
     # too much, otherwise we would get nan values (effective H and W would be
     # reduced to 1)
     corr_block = models.optical_flow.raft.CorrBlock(num_levels=2, radius=2)
@@ -1048,26 +1045,6 @@ def test_raft(model_fn, scripted):
     # Tolerance is fairly high, but there are 2 * H * W outputs to check
     # The .pkl were generated on the AWS cluter, on the CI it looks like the results are slightly different
     _assert_expected(flow_pred.cpu(), name=model_fn.__name__, atol=1e-2, rtol=1)
-
-
-def test_presets_antialias():
-
-    img = torch.randint(0, 256, size=(1, 3, 224, 224), dtype=torch.uint8)
-
-    match = "The default value of the antialias parameter"
-    with pytest.warns(UserWarning, match=match):
-        models.ResNet18_Weights.DEFAULT.transforms()(img)
-    with pytest.warns(UserWarning, match=match):
-        models.segmentation.DeepLabV3_ResNet50_Weights.DEFAULT.transforms()(img)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        models.ResNet18_Weights.DEFAULT.transforms(antialias=True)(img)
-        models.segmentation.DeepLabV3_ResNet50_Weights.DEFAULT.transforms(antialias=True)(img)
-
-        models.detection.FasterRCNN_ResNet50_FPN_Weights.DEFAULT.transforms()(img)
-        models.video.R3D_18_Weights.DEFAULT.transforms()(img)
-        models.optical_flow.Raft_Small_Weights.DEFAULT.transforms()(img, img)
 
 
 if __name__ == "__main__":

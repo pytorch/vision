@@ -14,24 +14,30 @@ from torch.optim.lr_scheduler import PolynomialLR
 from torchvision.transforms import functional as F, InterpolationMode
 
 
-def get_dataset(dir_path, name, image_set, transform):
+def get_dataset(args, is_train):
     def sbd(*args, **kwargs):
+        kwargs.pop("use_v2")
         return torchvision.datasets.SBDataset(*args, mode="segmentation", **kwargs)
 
-    paths = {
-        "voc": (dir_path, torchvision.datasets.VOCSegmentation, 21),
-        "voc_aug": (dir_path, sbd, 21),
-        "coco": (dir_path, get_coco, 21),
-    }
-    p, ds_fn, num_classes = paths[name]
+    def voc(*args, **kwargs):
+        kwargs.pop("use_v2")
+        return torchvision.datasets.VOCSegmentation(*args, **kwargs)
 
-    ds = ds_fn(p, image_set=image_set, transforms=transform)
+    paths = {
+        "voc": (args.data_path, voc, 21),
+        "voc_aug": (args.data_path, sbd, 21),
+        "coco": (args.data_path, get_coco, 21),
+    }
+    p, ds_fn, num_classes = paths[args.dataset]
+
+    image_set = "train" if is_train else "val"
+    ds = ds_fn(p, image_set=image_set, transforms=get_transform(is_train, args), use_v2=args.use_v2)
     return ds, num_classes
 
 
-def get_transform(train, args):
-    if train:
-        return presets.SegmentationPresetTrain(base_size=520, crop_size=480)
+def get_transform(is_train, args):
+    if is_train:
+        return presets.SegmentationPresetTrain(base_size=520, crop_size=480, backend=args.backend, use_v2=args.use_v2)
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
@@ -44,7 +50,7 @@ def get_transform(train, args):
 
         return preprocessing
     else:
-        return presets.SegmentationPresetEval(base_size=520)
+        return presets.SegmentationPresetEval(base_size=520, backend=args.backend, use_v2=args.use_v2)
 
 
 def criterion(inputs, target):
@@ -120,6 +126,12 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 
 def main(args):
+    if args.backend.lower() != "pil" and not args.use_v2:
+        # TODO: Support tensor backend in V1?
+        raise ValueError("Use --use-v2 if you want to use the tv_tensor or tensor backend.")
+    if args.use_v2 and args.dataset != "coco":
+        raise ValueError("v2 is only support supported for coco dataset for now.")
+
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -134,8 +146,8 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args))
-    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args))
+    dataset, num_classes = get_dataset(args, is_train=True)
+    dataset_test, _ = get_dataset(args, is_train=False)
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
@@ -307,6 +319,8 @@ def get_args_parser(add_help=True):
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
+    parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
+    parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
     return parser
 
 

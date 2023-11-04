@@ -3,7 +3,6 @@ import os
 import random
 import re
 import textwrap
-import warnings
 from functools import partial
 
 import numpy as np
@@ -438,16 +437,6 @@ def test_resize_antialias_error():
     with pytest.warns(UserWarning, match=r"Anti-alias option is always applied for PIL Image input"):
         t = transforms.Resize(osize, antialias=False)
         t(img)
-
-
-def test_resize_antialias_default_warning():
-
-    img = Image.new("RGB", size=(10, 10), color=127)
-    # We make sure we don't warn for PIL images since the default behaviour doesn't change
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        transforms.Resize((20, 20))(img)
-        transforms.RandomResizedCrop((20, 20))(img)
 
 
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
@@ -948,33 +937,6 @@ def test_adjust_contrast():
     y_pil = F.adjust_contrast(x_pil, 2)
     y_np = np.array(y_pil)
     y_ans = [0, 0, 0, 22, 184, 255, 0, 0, 255, 94, 255, 0]
-    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-    torch.testing.assert_close(y_np, y_ans)
-
-
-@pytest.mark.skipif(Image.__version__ >= "7", reason="Temporarily disabled")
-def test_adjust_saturation():
-    x_shape = [2, 2, 3]
-    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = Image.fromarray(x_np, mode="RGB")
-
-    # test 0
-    y_pil = F.adjust_saturation(x_pil, 1)
-    y_np = np.array(y_pil)
-    torch.testing.assert_close(y_np, x_np)
-
-    # test 1
-    y_pil = F.adjust_saturation(x_pil, 0.5)
-    y_np = np.array(y_pil)
-    y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
-    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-    torch.testing.assert_close(y_np, y_ans)
-
-    # test 2
-    y_pil = F.adjust_saturation(x_pil, 2)
-    y_np = np.array(y_pil)
-    y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
     y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
     torch.testing.assert_close(y_np, y_ans)
 

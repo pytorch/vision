@@ -11,8 +11,8 @@ at::Tensor nms_kernel_impl(
     const at::Tensor& dets,
     const at::Tensor& scores,
     double iou_threshold) {
-  TORCH_CHECK(!dets.is_cuda(), "dets must be a CPU tensor");
-  TORCH_CHECK(!scores.is_cuda(), "scores must be a CPU tensor");
+  TORCH_CHECK(dets.is_cpu(), "dets must be a CPU tensor");
+  TORCH_CHECK(scores.is_cpu(), "scores must be a CPU tensor");
   TORCH_CHECK(
       dets.scalar_type() == scores.scalar_type(),
       "dets should have the same type as scores");

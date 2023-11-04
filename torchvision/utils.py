@@ -29,7 +29,6 @@ def make_grid(
     value_range: Optional[Tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: float = 0.0,
-    **kwargs,
 ) -> torch.Tensor:
     """
     Make a grid of images.
@@ -305,7 +304,10 @@ def draw_segmentation_masks(
         return image
 
     out_dtype = torch.uint8
-    colors = [torch.tensor(color, dtype=out_dtype) for color in _parse_colors(colors, num_objects=num_masks)]
+    colors = [
+        torch.tensor(color, dtype=out_dtype, device=image.device)
+        for color in _parse_colors(colors, num_objects=num_masks)
+    ]
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this

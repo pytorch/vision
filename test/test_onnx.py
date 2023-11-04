@@ -79,7 +79,7 @@ class TestONNXExporter:
         inputs = list(map(to_numpy, inputs))
         outputs = list(map(to_numpy, outputs))
 
-        ort_session = onnxruntime.InferenceSession(onnx_io.getvalue())
+        ort_session = onnxruntime.InferenceSession(onnx_io.getvalue(), providers=onnxruntime.get_available_providers())
         # compute onnxruntime output prediction
         ort_inputs = {ort_session.get_inputs()[i].name: inpt for i, inpt in enumerate(inputs)}
         ort_outs = ort_session.run(None, ort_inputs)
