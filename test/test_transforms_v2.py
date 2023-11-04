@@ -5324,6 +5324,10 @@ def test_pure_tensor_heuristic(make_inputs):
     for input, output in zip(other_inputs, other_outputs):
         assert transform.was_applied(output, input)
 
+    def test_assertions_p_and_max_transforms(self):
+        with pytest.raises(ValueError, match="Only one of `p` and `max_transforms` should be specified."):
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1], max_transforms=3)
+
 
 class TestRandomIoUCrop:
     @pytest.mark.parametrize("device", cpu_and_cuda())
