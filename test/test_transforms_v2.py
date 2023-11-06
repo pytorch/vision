@@ -221,7 +221,13 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, check_
 
     # Skip check on Windows as torch.compile does not work on Win32
     if check_torch_compile_smoke and sys.platform != "win32":
-        _check_functional_torch_compile_smoke(functional, input, *args, **kwargs)
+        # Temporary fix to catch deprectation warning
+        # This can be removed once https://github.com/pytorch/pytorch/pull/113023 is merged:
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            _check_functional_torch_compile_smoke(functional, input, *args, **kwargs)
 
 
 def check_functional_kernel_signature_match(functional, *, kernel, input_type):
