@@ -258,8 +258,6 @@ def to_pil_image(pic, mode=None):
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(to_pil_image)
 
-    if isinstance(pic, Image.Image):
-        return pic
     if isinstance(pic, torch.Tensor):
         if pic.ndim == 3:
             pic = pic.permute((1, 2, 0))
