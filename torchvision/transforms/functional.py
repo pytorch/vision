@@ -261,8 +261,6 @@ def to_pil_image(pic, mode=None):
     if isinstance(pic, Image.Image):
         return pic
     if isinstance(pic, torch.Tensor):
-        if pic.is_floating_point() and mode != "F":
-            pic = pic.mul(255).byte()
         if pic.ndim == 3:
             pic = pic.permute((1, 2, 0))
         pic = pic.numpy(force=True)
@@ -279,6 +277,9 @@ def to_pil_image(pic, mode=None):
         raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-1]} channels.")
 
     npimg = pic
+
+    if np.issubdtype(npimg.dtype, np.floating) and mode != "F":
+        npimg = (npimg * 255).astype(np.uint8)
 
     if npimg.shape[2] == 1:
         expected_mode = None
