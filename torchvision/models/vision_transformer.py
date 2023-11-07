@@ -55,7 +55,7 @@ class LayerNorm(torch.nn.Module):
         return x
 
 
-def get_vit_lr_decay_rate(name, lr_decay_rate=1.0, num_layers=12):
+def get_vit_lr_decay_rate(name: str, lr_decay_rate: float = 1.0, num_layers: int = 12):
     """
     Calculate lr decay rate for different ViT blocks.
     Original version from https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/vit.py .
@@ -271,7 +271,7 @@ def window_unpartition(windows: torch.Tensor, window_size: int, pad_hw: Tuple[in
     return x
 
 
-def get_rel_pos(q_size, k_size, rel_pos):
+def get_rel_pos(q_size: int, k_size: int, rel_pos: torch.Tensor):
     """
     Get relative positional embeddings according to the relative positions of
         query and key sizes.
@@ -305,7 +305,14 @@ def get_rel_pos(q_size, k_size, rel_pos):
     return rel_pos_resized[relative_coords.long()]
 
 
-def add_decomposed_rel_pos(attn, q, rel_pos_h, rel_pos_w, q_size, k_size):
+def add_decomposed_rel_pos(
+    attn: torch.Tensor,
+    q: torch.Tensor,
+    rel_pos_h: torch.Tensor,
+    rel_pos_w: torch.Tensor,
+    q_size: Tuple[int, int],
+    k_size: Tuple[int, int]
+):
     """
     Calculate decomposed Relative Positional Embeddings from :paper:`mvitv2`.
     https://github.com/facebookresearch/mvit/blob/19786631e330df9f3622e5402b4a419a263a2c80/mvit/models/attention.py   # noqa B950
@@ -491,6 +498,9 @@ class EncoderBlock(nn.Module):
         x = self.ln_1(input)
 
         # Window partition
+        pad_hw = (0, 0)
+        H = 0
+        W = 0
         if self.window_size > 0:
             H, W = x.shape[1], x.shape[2]
             x, pad_hw = window_partition(x, self.window_size)

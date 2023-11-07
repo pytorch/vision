@@ -98,7 +98,7 @@ class BackboneWithSimpleFPN(nn.Module):
         )
         self.out_channels = out_channels
 
-    def forward(self, x: Tensor) -> List[Tensor]:
+    def forward(self, x: Tensor) -> Dict[str, Tensor]:
         x = self.backbone(x)
         x = self.fpn(x)
         return x

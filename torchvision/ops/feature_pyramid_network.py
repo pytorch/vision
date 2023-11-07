@@ -317,7 +317,7 @@ class SimpleFeaturePyramidNetwork(nn.Module):
                 raise TypeError(f"extra_blocks should be of type ExtraFPNBlock not {type(extra_blocks)}")
         self.extra_blocks = extra_blocks
 
-    def forward(self, x: Tensor) -> OrderedDict[str, Tensor]:
+    def forward(self, x: Tensor) -> Dict[str, Tensor]:
         """
         Computes the Simple FPN for a feature map.
 
