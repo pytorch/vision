@@ -258,41 +258,27 @@ def to_pil_image(pic, mode=None):
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(to_pil_image)
 
-    if not (isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
-        raise TypeError(f"pic should be Tensor or ndarray. Got {type(pic)}.")
-
-    elif isinstance(pic, torch.Tensor):
-        if pic.ndimension() not in {2, 3}:
-            raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndimension()} dimensions.")
-
-        elif pic.ndimension() == 2:
-            # if 2D image, add channel dimension (CHW)
-            pic = pic.unsqueeze(0)
-
-        # check number of channels
-        if pic.shape[-3] > 4:
-            raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-3]} channels.")
-
-    elif isinstance(pic, np.ndarray):
-        if pic.ndim not in {2, 3}:
-            raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndim} dimensions.")
-
-        elif pic.ndim == 2:
-            # if 2D image, add channel dimension (HWC)
-            pic = np.expand_dims(pic, 2)
-
-        # check number of channels
-        if pic.shape[-1] > 4:
-            raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-1]} channels.")
-
-    npimg = pic
+    if isinstance(pic, Image.Image):
+        return pic
     if isinstance(pic, torch.Tensor):
         if pic.is_floating_point() and mode != "F":
             pic = pic.mul(255).byte()
-        npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
+        if pic.ndim == 3:
+            pic = pic.permute((1, 2, 0))
+        pic = pic.numpy(force=True)
+    elif not isinstance(pic, np.ndarray):
+        raise TypeError(f"pic should be Tensor or ndarray. Got {type(pic)}.")
 
-    if not isinstance(npimg, np.ndarray):
-        raise TypeError("Input pic must be a torch.Tensor or NumPy ndarray, not {type(npimg)}")
+    if pic.ndim == 2:
+        # if 2D image, add channel dimension (HWC)
+        pic = np.expand_dims(pic, 2)
+    if pic.ndim != 3:
+        raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndim} dimensions.")
+
+    if pic.shape[-1] > 4:
+        raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-1]} channels.")
+
+    npimg = pic
 
     if npimg.shape[2] == 1:
         expected_mode = None
