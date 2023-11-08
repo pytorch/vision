@@ -44,8 +44,6 @@ def smoke_test_compile() -> None:
     except RuntimeError:
         if sys.platform == "win32":
             print("Successfully caught torch.compile RuntimeError on win")
-        elif sys.version_info >= (3, 11, 0):
-            print("Successfully caught torch.compile RuntimeError on Python 3.11")
         else:
             raise
 

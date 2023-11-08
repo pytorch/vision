@@ -45,6 +45,8 @@ conda create \
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools
+# FIXME: remove this when https://github.com/pytorch/pytorch/pull/113154 is resolved
+pip install --progress-bar=off packaging
 
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
