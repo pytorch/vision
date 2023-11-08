@@ -189,7 +189,7 @@ def _check_functional_scripted_smoke(functional, input, *args, **kwargs):
 
 def _check_functional_torch_compile_smoke(functional, input, *args, **kwargs):
     """Checks if the functional can be torch compiled and the compiled version can be called without error."""
-    if not isinstance(input, tv_tensors.Image):
+    if not isinstance(input, torch.Tensor):
         return
 
     functional_compiled = torch.compile(functional)
@@ -1162,7 +1162,22 @@ class TestAffine:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
-        check_functional(F.affine, make_input(), **self._MINIMAL_AFFINE_KWARGS)
+        # TODO: Remove this when fixed
+        # /usr/local/lib/python3.10/dist-packages/torch/_dynamo/symbolic_convert.py:1573: in UNPACK_SEQUENCE
+        #     assert len(val) == inst.argval
+        # E   AssertionError:
+        # E
+        # E   from user code:
+        # E      File "vision/torchvision/transforms/v2/functional/_geometry.py", line 392, in resume_in_affine
+        # E       return kernel(
+        # E     File "vision/torchvision/transforms/v2/functional/_geometry.py", line 692, in affine_image
+        # E       return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
+        # E     File "vision/torchvision/transforms/v2/functional/_geometry.py", line 556, in _apply_grid_transform
+        # E       num_channels, input_height, input_width = input_shape[-3:]
+        check_torch_compile_smoke = False if make_input in (make_bounding_boxes, make_segmentation_mask) else True
+        check_functional(
+            F.affine, make_input(), **self._MINIMAL_AFFINE_KWARGS, check_torch_compile_smoke=check_torch_compile_smoke
+        )
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -1586,7 +1601,12 @@ class TestRotate:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
-        check_functional(F.rotate, make_input(), **self._MINIMAL_AFFINE_KWARGS)
+        # TODO: Remove this when fixed
+        # Error is the same as for TestAffine
+        check_torch_compile_smoke = False if make_input in (make_bounding_boxes, make_segmentation_mask) else True
+        check_functional(
+            F.rotate, make_input(), **self._MINIMAL_AFFINE_KWARGS, check_torch_compile_smoke=check_torch_compile_smoke
+        )
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -2651,8 +2671,38 @@ class TestElastic:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
+        # TODO: Remove this when fixed
+        # - TestElastic.test_functional[make_bounding_boxes]:
+        # /usr/local/lib/python3.10/dist-packages/torch/_dynamo/eval_frame.py:410: in _fn
+        #     return fn(*args, **kwargs)
+        # torchvision/transforms/v2/functional/_geometry.py:1705: in elastic
+        #     kernel = _get_kernel(elastic, type(inpt))
+        # torchvision/transforms/v2/functional/_geometry.py:1706: in resume_in_elastic
+        #     return kernel(inpt, displacement=displacement, interpolation=interpolation, fill=fill)
+        # torchvision/transforms/v2/functional/_geometry.py:1741: in elastic_image
+        #     raise ValueError(f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}")
+        # torchvision/transforms/v2/functional/_geometry.py:1741: in resume_in_elastic_image
+        #     raise ValueError(f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}")
+        # E   ValueError: Argument displacement shape should be (1, 1, 4, 2), but given torch.Size([1, 17, 11, 2])
+        #
+        # - TestElastic.test_functional[make_segmentation_mask]:
+        # E   AssertionError:
+        # E
+        # E   from user code:
+        # E      File "vision/torchvision/transforms/v2/functional/_geometry.py", line 1706, in resume_in_elastic
+        # E       return kernel(inpt, displacement=displacement, interpolation=interpolation, fill=fill)
+        # E     File "vision/torchvision/transforms/v2/functional/_geometry.py", line 1746, in elastic_image
+        # E       output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
+        # E     File "vision/torchvision/transforms/v2/functional/_geometry.py", line 556, in _apply_grid_transform
+        # E       num_channels, input_height, input_width = input_shape[-3:]
+        check_torch_compile_smoke = False if make_input in (make_bounding_boxes, make_segmentation_mask) else True
         input = make_input()
-        check_functional(F.elastic, input, displacement=self._make_displacement(input))
+        check_functional(
+            F.elastic,
+            input,
+            displacement=self._make_displacement(input),
+            check_torch_compile_smoke=check_torch_compile_smoke,
+        )
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -2765,7 +2815,23 @@ class TestCrop:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
-        check_functional(F.crop, make_input(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
+        # TODO: Remove this when fixed
+        # E   AssertionError:
+        # E
+        # E   from user code:
+        # E      File "vision/torchvision/transforms/v2/functional/_geometry.py", line 1324, in resume_in_crop
+        # E       return kernel(inpt, top=top, left=left, height=height, width=width)
+        # E     File "vision/torchvision/transforms/v2/functional/_geometry.py", line 1343, in crop_image
+        # E       return _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
+        # E     File "vision/torchvision/transforms/v2/functional/_geometry.py", line 1168, in _pad_with_scalar_fill
+        # E       num_channels, height, width = shape[-3:]
+        check_torch_compile_smoke = False if make_input == make_bounding_boxes else True
+        check_functional(
+            F.crop,
+            make_input(self.INPUT_SIZE),
+            **self.MINIMAL_CROP_KWARGS,
+            check_torch_compile_smoke=check_torch_compile_smoke,
+        )
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -3402,7 +3468,18 @@ class TestConvertBoundingBoxFormat:
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_functional(self, old_format, new_format):
-        check_functional(F.convert_bounding_box_format, make_bounding_boxes(format=old_format), new_format=new_format)
+        # TODO: Disabled torch.compile check due to the error:
+        # torchvision/transforms/v2/functional/_meta.py:219: in convert_bounding_box_format
+        #     raise ValueError("For pure tensor inputs, `old_format` has to be passed.")
+        # torchvision/transforms/v2/functional/_meta.py:219: in resume_in_convert_bounding_box_format
+        #     raise ValueError("For pure tensor inputs, `old_format` has to be passed.")
+        # E   ValueError: For pure tensor inputs, `old_format` has to be passed.
+        check_functional(
+            F.convert_bounding_box_format,
+            make_bounding_boxes(format=old_format),
+            new_format=new_format,
+            check_torch_compile_smoke=False,
+        )
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     @pytest.mark.parametrize("format_type", ["enum", "str"])
@@ -3676,7 +3753,18 @@ class TestPad:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, make_input):
-        check_functional(F.pad, make_input(), padding=[1])
+        # TODO: Remove this when fixed
+        # E   AssertionError:
+        # E
+        # E   from user code:
+        # E      File "/vision/torchvision/transforms/v2/functional/_geometry.py", line 1104, in resume_in_pad
+        # E       return kernel(inpt, padding=padding, fill=fill, padding_mode=padding_mode)
+        # E     File "/vision/torchvision/transforms/v2/functional/_geometry.py", line 1154, in pad_image
+        # E       return _pad_with_scalar_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
+        # E     File "/vision/torchvision/transforms/v2/functional/_geometry.py", line 1168, in _pad_with_scalar_fill
+        # E       num_channels, height, width = shape[-3:]
+        check_torch_compile_smoke = False if make_input in (make_bounding_boxes, make_segmentation_mask) else True
+        check_functional(F.pad, make_input(), padding=[1], check_torch_compile_smoke=check_torch_compile_smoke)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -4327,7 +4415,13 @@ class TestClampBoundingBoxes:
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_functional(self, format):
-        check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format))
+        # TODO: Disabled torch.compile check due to the error:
+        # torchvision/transforms/v2/functional/_meta.py:219: in convert_bounding_box_format
+        #     raise ValueError("For pure tensor inputs, `old_format` has to be passed.")
+        # torchvision/transforms/v2/functional/_meta.py:219: in resume_in_convert_bounding_box_format
+        #     raise ValueError("For pure tensor inputs, `old_format` has to be passed.")
+        # E   ValueError: For pure tensor inputs, `old_format` has to be passed.
+        check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format), check_torch_compile_smoke=False)
 
     def test_errors(self):
         input_tv_tensor = make_bounding_boxes()
