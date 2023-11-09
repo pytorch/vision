@@ -3176,7 +3176,6 @@ class TestGaussianBlur:
     #     "26_28_1__23_23_1.7": cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7),
     # }
     REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS = torch.load(
-        # Potentially unsafe `weights_only=False` is needed here.
         Path(__file__).parent / "assets" / "gaussian_blur_opencv_results.pt",
         weights_only=False,
     )
