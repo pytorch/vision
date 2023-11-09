@@ -3177,7 +3177,8 @@ class TestGaussianBlur:
     # }
     REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS = torch.load(
         # Potentially unsafe `weights_only=False` is needed.
-        Path(__file__).parent / "assets" / "gaussian_blur_opencv_results.pt", weights_only=False
+        Path(__file__).parent / "assets" / "gaussian_blur_opencv_results.pt",
+        weights_only=False,
     )
 
     @pytest.mark.parametrize(
