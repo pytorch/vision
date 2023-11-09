@@ -84,7 +84,7 @@ def load_meta_file(root: str, file: Optional[str] = None) -> Tuple[Dict[str, str
     file = os.path.join(root, file)
 
     if check_integrity(file):
-        return torch.load(file)
+        return torch.load(file, weights_only=True)
     else:
         msg = (
             "The meta file {} is not present in the root directory or is corrupted. "

@@ -223,7 +223,7 @@ def main(args):
         lr_scheduler = main_lr_scheduler
 
     if args.resume:
-        checkpoint = torch.load(args.resume, map_location="cpu")
+        checkpoint = torch.load(args.resume, map_location="cpu", weights_only=True)
         model_without_ddp.load_state_dict(checkpoint["model"], strict=not args.test_only)
         if not args.test_only:
             optimizer.load_state_dict(checkpoint["optimizer"])
