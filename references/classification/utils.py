@@ -287,9 +287,8 @@ def average_checkpoints(inputs):
     for fpath in inputs:
         with open(fpath, "rb") as f:
             state = torch.load(
-                f,
-                map_location=(lambda s, _: torch.serialization.default_restore_location(s, "cpu")),
-            weights_only=True)
+                f, map_location=(lambda s, _: torch.serialization.default_restore_location(s, "cpu")), weights_only=True
+            )
         # Copies over the settings from the first checkpoint
         if new_state is None:
             new_state = state
