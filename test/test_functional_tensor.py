@@ -1024,7 +1024,9 @@ def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
     #     "23_23_1.7": ...
     # }
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "gaussian_blur_opencv_results.pt")
-    true_cv2_results = torch.load(p, weights_only=True)
+
+    # Potentially unsafe `weights_only=False` is needed here.
+    true_cv2_results = torch.load(p, weights_only=False)
 
     if image_size == "small":
         tensor = (
