@@ -661,7 +661,7 @@ class TestToPil:
     @pytest.mark.parametrize(
         "img_data, expected_mode",
         [
-            (torch.Tensor(4, 4, 1).uniform_().numpy(), "F"),
+            (torch.Tensor(4, 4, 1).uniform_().numpy(), "L"),
             (torch.ByteTensor(4, 4, 1).random_(0, 255).numpy(), "L"),
             (torch.ShortTensor(4, 4, 1).random_().numpy(), "I;16"),
             (torch.IntTensor(4, 4, 1).random_().numpy(), "I"),
@@ -671,6 +671,8 @@ class TestToPil:
         transform = transforms.ToPILImage(mode=expected_mode) if with_mode else transforms.ToPILImage()
         img = transform(img_data)
         assert img.mode == expected_mode
+        if np.issubdtype(img_data.dtype, np.floating):
+            img_data = (img_data * 255).astype(np.uint8)
         # note: we explicitly convert img's dtype because pytorch doesn't support uint16
         # and otherwise assert_close wouldn't be able to construct a tensor from the uint16 array
         torch.testing.assert_close(img_data[:, :, 0], np.asarray(img).astype(img_data.dtype))
@@ -741,7 +743,7 @@ class TestToPil:
     @pytest.mark.parametrize(
         "img_data, expected_mode",
         [
-            (torch.Tensor(4, 4).uniform_().numpy(), "F"),
+            (torch.Tensor(4, 4).uniform_().numpy(), "L"),
             (torch.ByteTensor(4, 4).random_(0, 255).numpy(), "L"),
             (torch.ShortTensor(4, 4).random_().numpy(), "I;16"),
             (torch.IntTensor(4, 4).random_().numpy(), "I"),
@@ -751,6 +753,8 @@ class TestToPil:
         transform = transforms.ToPILImage(mode=expected_mode) if with_mode else transforms.ToPILImage()
         img = transform(img_data)
         assert img.mode == expected_mode
+        if np.issubdtype(img_data.dtype, np.floating):
+            img_data = (img_data * 255).astype(np.uint8)
         np.testing.assert_allclose(img_data, img)
 
     @pytest.mark.parametrize("expected_mode", [None, "RGB", "HSV", "YCbCr"])
@@ -874,8 +878,6 @@ class TestToPil:
             trans(np.ones([4, 4, 1], np.uint16))
         with pytest.raises(TypeError, match=reg_msg):
             trans(np.ones([4, 4, 1], np.uint32))
-        with pytest.raises(TypeError, match=reg_msg):
-            trans(np.ones([4, 4, 1], np.float64))
 
         with pytest.raises(ValueError, match=r"pic should be 2/3 dimensional. Got \d+ dimensions."):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
