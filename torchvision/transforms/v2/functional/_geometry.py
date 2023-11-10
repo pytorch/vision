@@ -188,6 +188,18 @@ def resize(
     return kernel(inpt, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
+# This is an internal helper method for resize_image. We should put it here instead of keeping it
+# inside resize_image due to torchscript.
+# uint8 dtype support for bilinear and bicubic is limited to cpu and
+# according to our benchmarks, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
+# For torch.compile we use uint8 input and let decomposition work
+def _can_add_uint8() -> bool:
+    if torch._dynamo.is_compiling():
+        return True
+    else:
+        return "AVX2" in torch.backends.cpu.get_cpu_capability()
+
+
 @_register_kernel_internal(resize, torch.Tensor)
 @_register_kernel_internal(resize, tv_tensors.Image)
 def resize_image(
@@ -223,7 +235,8 @@ def resize_image(
         elif image.device.type == "cpu":
             # uint8 dtype support for bilinear and bicubic is limited to cpu and
             # according to our benchmarks, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
-            if (interpolation == InterpolationMode.BILINEAR and "AVX2" in torch.backends.cpu.get_cpu_capability()) or (
+            # For torch.compile we use uint8 input and let decomposition work
+            if (interpolation == InterpolationMode.BILINEAR and _can_add_uint8()) or (
                 interpolation == InterpolationMode.BICUBIC
             ):
                 acceptable_dtypes.append(torch.uint8)
