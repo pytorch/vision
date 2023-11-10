@@ -21,8 +21,6 @@ class Identity(Transform):
 class Lambda(Transform):
     """[BETA] Apply a user-defined function as a transform.
 
-    .. v2betastatus:: Lambda transform
-
     This transform does not support torchscript.
 
     Args:
@@ -53,8 +51,6 @@ class Lambda(Transform):
 
 class LinearTransformation(Transform):
     """[BETA] Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
-
-    .. v2betastatus:: LinearTransformation transform
 
     This transform does not support PIL Image.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
@@ -137,8 +133,6 @@ class LinearTransformation(Transform):
 class Normalize(Transform):
     """[BETA] Normalize a tensor image or video with mean and standard deviation.
 
-    .. v2betastatus:: Normalize transform
-
     This transform does not support PIL Image.
     Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
     channels, this transform will normalize each channel of the input
@@ -173,8 +167,6 @@ class Normalize(Transform):
 
 class GaussianBlur(Transform):
     """[BETA] Blurs image with randomly chosen Gaussian blur.
-
-    .. v2betastatus:: GausssianBlur transform
 
     If the input is a Tensor, it is expected
     to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -213,8 +205,6 @@ class GaussianBlur(Transform):
 
 class ToDtype(Transform):
     """[BETA] Converts the input to a specific dtype, optionally scaling the values for images or videos.
-
-    .. v2betastatus:: ToDtype transform
 
     .. note::
         ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.
@@ -290,8 +280,6 @@ class ConvertImageDtype(Transform):
 
     Convert input image to the given ``dtype`` and scale the values accordingly.
 
-    .. v2betastatus:: ConvertImageDtype transform
-
     .. warning::
         Consider using ``ToDtype(dtype, scale=True)`` instead. See :class:`~torchvision.transforms.v2.ToDtype`.
 
@@ -324,8 +312,6 @@ class ConvertImageDtype(Transform):
 
 class SanitizeBoundingBoxes(Transform):
     """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
-
-    .. v2betastatus:: SanitizeBoundingBoxes transform
 
     This transform removes bounding boxes and their associated labels/masks that:
 

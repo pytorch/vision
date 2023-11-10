@@ -33,8 +33,6 @@ from ._utils import (
 class RandomHorizontalFlip(_RandomApplyTransform):
     """[BETA] Horizontally flip the input with a given probability.
 
-    .. v2betastatus:: RandomHorizontalFlip transform
-
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
@@ -53,8 +51,6 @@ class RandomHorizontalFlip(_RandomApplyTransform):
 class RandomVerticalFlip(_RandomApplyTransform):
     """[BETA] Vertically flip the input with a given probability.
 
-    .. v2betastatus:: RandomVerticalFlip transform
-
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
@@ -72,8 +68,6 @@ class RandomVerticalFlip(_RandomApplyTransform):
 
 class Resize(Transform):
     """[BETA] Resize the input to the given size.
-
-    .. v2betastatus:: Resize transform
 
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
@@ -161,8 +155,6 @@ class Resize(Transform):
 class CenterCrop(Transform):
     """[BETA] Crop the input at the center.
 
-    .. v2betastatus:: CenterCrop transform
-
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
@@ -188,8 +180,6 @@ class CenterCrop(Transform):
 
 class RandomResizedCrop(Transform):
     """[BETA] Crop a random portion of the input and resize it to a given size.
-
-    .. v2betastatus:: RandomResizedCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
@@ -312,8 +302,6 @@ class RandomResizedCrop(Transform):
 class FiveCrop(Transform):
     """[BETA] Crop the image or video into four corners and the central crop.
 
-    .. v2betastatus:: FiveCrop transform
-
     If the input is a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.Image` or a
     :class:`~torchvision.tv_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
@@ -374,8 +362,6 @@ class TenCrop(Transform):
     """[BETA] Crop the image or video into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default).
 
-    .. v2betastatus:: TenCrop transform
-
     If the input is a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.Image` or a
     :class:`~torchvision.tv_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
@@ -419,8 +405,6 @@ class TenCrop(Transform):
 
 class Pad(Transform):
     """[BETA] Pad the input on all sides with the given "pad" value.
-
-    .. v2betastatus:: Pad transform
 
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
@@ -495,8 +479,6 @@ class RandomZoomOut(_RandomApplyTransform):
     """[BETA] "Zoom out" transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
-    .. v2betastatus:: RandomZoomOut transform
-
     This transformation randomly pads images, videos, bounding boxes and masks creating a zoom out effect.
     Output spatial size is randomly sampled from original size up to a maximum size configured
     with ``side_range`` parameter:
@@ -563,8 +545,6 @@ class RandomZoomOut(_RandomApplyTransform):
 
 class RandomRotation(Transform):
     """[BETA] Rotate the input by angle.
-
-    .. v2betastatus:: RandomRotation transform
 
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
@@ -644,8 +624,6 @@ class RandomRotation(Transform):
 
 class RandomAffine(Transform):
     """[BETA] Random affine transformation the input keeping center invariant.
-
-    .. v2betastatus:: RandomAffine transform
 
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
@@ -766,8 +744,6 @@ class RandomAffine(Transform):
 
 class RandomCrop(Transform):
     """[BETA] Crop the input at a random location.
-
-    .. v2betastatus:: RandomCrop transform
 
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
@@ -924,8 +900,6 @@ class RandomCrop(Transform):
 class RandomPerspective(_RandomApplyTransform):
     """[BETA] Perform a random perspective transformation of the input with a given probability.
 
-    .. v2betastatus:: RandomPerspective transform
-
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
@@ -1010,8 +984,6 @@ class RandomPerspective(_RandomApplyTransform):
 
 class ElasticTransform(Transform):
     """[BETA] Transform the input with elastic transformations.
-
-    .. v2betastatus:: RandomPerspective transform
 
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
@@ -1103,8 +1075,6 @@ class ElasticTransform(Transform):
 class RandomIoUCrop(Transform):
     """[BETA] Random IoU crop transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
-
-    .. v2betastatus:: RandomIoUCrop transform
 
     This transformation requires an image or video data and ``tv_tensors.BoundingBoxes`` in the input.
 
@@ -1232,8 +1202,6 @@ class ScaleJitter(Transform):
     """[BETA] Perform Large Scale Jitter on the input according to
     `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
 
-    .. v2betastatus:: ScaleJitter transform
-
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
@@ -1299,8 +1267,6 @@ class ScaleJitter(Transform):
 
 class RandomShortestSize(Transform):
     """[BETA] Randomly resize the input.
-
-    .. v2betastatus:: RandomShortestSize transform
 
     If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
     :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
@@ -1369,8 +1335,6 @@ class RandomShortestSize(Transform):
 
 class RandomResize(Transform):
     """[BETA] Randomly resize the input.
-
-    .. v2betastatus:: RandomResize transform
 
     This transformation can be used together with ``RandomCrop`` as data augmentations to train
     models on image segmentation task.

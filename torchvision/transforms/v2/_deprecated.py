@@ -14,8 +14,6 @@ class ToTensor(Transform):
 
     Convert a PIL Image or ndarray to tensor and scale the values accordingly.
 
-    .. v2betastatus:: ToTensor transform
-
     .. warning::
         :class:`v2.ToTensor` is deprecated and will be removed in a future release.
         Please use instead ``v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])``.

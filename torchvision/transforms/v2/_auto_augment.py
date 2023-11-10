@@ -177,8 +177,6 @@ class AutoAugment(_AutoAugmentBase):
     r"""[BETA] AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
 
-    .. v2betastatus:: AutoAugment transform
-
     This transformation works on images and videos only.
 
     If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
@@ -354,8 +352,6 @@ class RandAugment(_AutoAugmentBase):
     `"RandAugment: Practical automated data augmentation with a reduced search space"
     <https://arxiv.org/abs/1909.13719>`_.
 
-    .. v2betastatus:: RandAugment transform
-
     This transformation works on images and videos only.
 
     If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
@@ -437,8 +433,6 @@ class TrivialAugmentWide(_AutoAugmentBase):
     r"""[BETA] Dataset-independent data-augmentation with TrivialAugment Wide, as described in
     `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`_.
 
-    .. v2betastatus:: TrivialAugmentWide transform
-
     This transformation works on images and videos only.
 
     If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
@@ -507,8 +501,6 @@ class TrivialAugmentWide(_AutoAugmentBase):
 class AugMix(_AutoAugmentBase):
     r"""[BETA] AugMix data augmentation method based on
     `"AugMix: A Simple Data Processing Method to Improve Robustness and Uncertainty" <https://arxiv.org/abs/1912.02781>`_.
-
-    .. v2betastatus:: AugMix transform
 
     This transformation works on images and videos only.
 

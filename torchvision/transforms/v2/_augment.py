@@ -17,8 +17,6 @@ from ._utils import _parse_labels_getter, has_any, is_pure_tensor, query_chw, qu
 class RandomErasing(_RandomApplyTransform):
     """[BETA] Randomly select a rectangle region in the input image or video and erase its pixels.
 
-    .. v2betastatus:: RandomErasing transform
-
     This transform does not support PIL Image.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
 
@@ -209,8 +207,6 @@ class _BaseMixUpCutMix(Transform):
 class MixUp(_BaseMixUpCutMix):
     """[BETA] Apply MixUp to the provided batch of images and labels.
 
-    .. v2betastatus:: MixUp transform
-
     Paper: `mixup: Beyond Empirical Risk Minimization <https://arxiv.org/abs/1710.09412>`_.
 
     .. note::
@@ -257,8 +253,6 @@ class MixUp(_BaseMixUpCutMix):
 
 class CutMix(_BaseMixUpCutMix):
     """[BETA] Apply CutMix to the provided batch of images and labels.
-
-    .. v2betastatus:: CutMix transform
 
     Paper: `CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features
     <https://arxiv.org/abs/1905.04899>`_.

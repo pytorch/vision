@@ -12,8 +12,6 @@ from ._utils import query_chw
 class Grayscale(Transform):
     """[BETA] Convert images or videos to grayscale.
 
-    .. v2betastatus:: Grayscale transform
-
     If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
 
@@ -33,8 +31,6 @@ class Grayscale(Transform):
 
 class RandomGrayscale(_RandomApplyTransform):
     """[BETA] Randomly convert image or videos to grayscale with a probability of p (default 0.1).
-
-    .. v2betastatus:: RandomGrayscale transform
 
     If the input is a :class:`torch.Tensor`, it is expected to have [..., 3 or 1, H, W] shape,
     where ... means an arbitrary number of leading dimensions
@@ -60,8 +56,6 @@ class RandomGrayscale(_RandomApplyTransform):
 
 class ColorJitter(Transform):
     """[BETA] Randomly change the brightness, contrast, saturation and hue of an image or video.
-
-    .. v2betastatus:: ColorJitter transform
 
     If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -163,10 +157,7 @@ class ColorJitter(Transform):
 
 
 class RandomChannelPermutation(Transform):
-    """[BETA] Randomly permute the channels of an image or video
-
-    .. v2betastatus:: RandomChannelPermutation transform
-    """
+    """[BETA] Randomly permute the channels of an image or video"""
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
@@ -179,8 +170,6 @@ class RandomChannelPermutation(Transform):
 class RandomPhotometricDistort(Transform):
     """[BETA] Randomly distorts the image or video as used in `SSD: Single Shot
     MultiBox Detector <https://arxiv.org/abs/1512.02325>`_.
-
-    .. v2betastatus:: RandomPhotometricDistort transform
 
     This transform relies on :class:`~torchvision.transforms.v2.ColorJitter`
     under the hood to adjust the contrast, saturation, hue, brightness, and also
@@ -251,8 +240,6 @@ class RandomPhotometricDistort(Transform):
 class RandomEqualize(_RandomApplyTransform):
     """[BETA] Equalize the histogram of the given image or video with a given probability.
 
-    .. v2betastatus:: RandomEqualize transform
-
     If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
@@ -269,8 +256,6 @@ class RandomEqualize(_RandomApplyTransform):
 
 class RandomInvert(_RandomApplyTransform):
     """[BETA] Inverts the colors of the given image or video with a given probability.
-
-    .. v2betastatus:: RandomInvert transform
 
     If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
     where ... means it can have an arbitrary number of leading dimensions.
@@ -289,8 +274,6 @@ class RandomInvert(_RandomApplyTransform):
 class RandomPosterize(_RandomApplyTransform):
     """[BETA] Posterize the image or video with a given probability by reducing the
     number of bits for each color channel.
-
-    .. v2betastatus:: RandomPosterize transform
 
     If the input is a :class:`torch.Tensor`, it should be of type torch.uint8,
     and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -314,8 +297,6 @@ class RandomPosterize(_RandomApplyTransform):
 class RandomSolarize(_RandomApplyTransform):
     """[BETA] Solarize the image or video with a given probability by inverting all pixel
     values above a threshold.
-
-    .. v2betastatus:: RandomSolarize transform
 
     If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
     where ... means it can have an arbitrary number of leading dimensions.
@@ -344,8 +325,6 @@ class RandomSolarize(_RandomApplyTransform):
 class RandomAutocontrast(_RandomApplyTransform):
     """[BETA] Autocontrast the pixels of the given image or video with a given probability.
 
-    .. v2betastatus:: RandomAutocontrast transform
-
     If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
@@ -362,8 +341,6 @@ class RandomAutocontrast(_RandomApplyTransform):
 
 class RandomAdjustSharpness(_RandomApplyTransform):
     """[BETA] Adjust the sharpness of the image or video with a given probability.
-
-    .. v2betastatus:: RandomAdjustSharpness transform
 
     If the input is a :class:`torch.Tensor`,
     it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
