@@ -10,7 +10,7 @@ from torchvision.transforms.v2 import Transform
 
 
 class ToTensor(Transform):
-    """[BETA] [DEPRECATED] Use ``v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`` instead.
+    """[DEPRECATED] Use ``v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`` instead.
 
     Convert a PIL Image or ndarray to tensor and scale the values accordingly.
 

@@ -9,7 +9,7 @@ from ._video import Video
 
 
 def wrap(wrappee, *, like, **kwargs):
-    """[BETA] Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
+    """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
 
     If ``like`` is a :class:`~torchvision.tv_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
     ``like`` are assigned to ``wrappee``, unless they are passed as ``kwargs``.

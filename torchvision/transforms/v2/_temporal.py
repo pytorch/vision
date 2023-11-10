@@ -5,7 +5,7 @@ from torchvision.transforms.v2 import functional as F, Transform
 
 
 class UniformTemporalSubsample(Transform):
-    """[BETA] Uniformly subsample ``num_samples`` indices from the temporal dimension of the video.
+    """Uniformly subsample ``num_samples`` indices from the temporal dimension of the video.
 
     Videos are expected to be of shape ``[..., T, C, H, W]`` where ``T`` denotes the temporal dimension.
 

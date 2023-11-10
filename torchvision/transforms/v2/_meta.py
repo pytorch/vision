@@ -5,7 +5,7 @@ from torchvision.transforms.v2 import functional as F, Transform
 
 
 class ConvertBoundingBoxFormat(Transform):
-    """[BETA] Convert bounding box coordinates to the given ``format``, eg from "CXCYWH" to "XYXY".
+    """Convert bounding box coordinates to the given ``format``, eg from "CXCYWH" to "XYXY".
 
     Args:
         format (str or tv_tensors.BoundingBoxFormat): output bounding box format.
@@ -26,7 +26,7 @@ class ConvertBoundingBoxFormat(Transform):
 
 
 class ClampBoundingBoxes(Transform):
-    """[BETA] Clamp bounding boxes to their corresponding image dimensions.
+    """Clamp bounding boxes to their corresponding image dimensions.
 
     The clamping is done according to the bounding boxes' ``canvas_size`` meta-data.
 
