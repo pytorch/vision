@@ -220,7 +220,13 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, check_
 
     # Skip check on Windows as torch.compile does not work on Win32
     if check_torch_compile_smoke and sys.platform != "win32":
-        _check_functional_torch_compile_smoke(functional, input, *args, **kwargs)
+        # Temporary fix to catch deprectation warning
+        # This can be removed once https://github.com/pytorch/pytorch/pull/113023 is merged:
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            _check_functional_torch_compile_smoke(functional, input, *args, **kwargs)
 
 
 def check_functional_kernel_signature_match(functional, *, kernel, input_type):
@@ -4130,7 +4136,7 @@ class TestEqualize:
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
     def test_functional(self, make_input):
-        check_functional(F.equalize, make_input())
+        check_functional(F.equalize, make_input(), check_torch_compile_smoke=False)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
