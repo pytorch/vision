@@ -3,11 +3,11 @@ from warnings import warn
 
 import torch
 
-from ..extension import _load_library
-from ..utils import _log_api_usage_once
-
 from PIL import Image
 from PIL.ExifTags import TAGS
+
+from ..extension import _load_library
+from ..utils import _log_api_usage_once
 
 try:
     _load_library("image")
@@ -267,11 +267,11 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED, process
 def process_exif_metadata(image_path):
     try:
         with Image.open(image_path) as img:
-            if hasattr(img, '_getexif'):
+            if hasattr(img, "_getexif"):
                 exif_data = img._getexif()
                 if exif_data:
-                    img_width = exif_data.get(256)  
-                    img_height = exif_data.get(257)  
+                    img_width = exif_data.get(256)
+                    img_height = exif_data.get(257)
                     if img_width is not None and img_height is not None:
                         print(f"Image Dimensions: Width={img_width}, Height={img_height}")
                     else:
