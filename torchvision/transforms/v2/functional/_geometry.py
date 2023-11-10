@@ -215,8 +215,6 @@ def resize_image(
     if (new_height, new_width) == (old_height, old_width):
         return image
     elif numel > 0:
-        image = image.reshape(-1, num_channels, old_height, old_width)
-
         dtype = image.dtype
         acceptable_dtypes = [torch.float32, torch.float64]
         if interpolation == InterpolationMode.NEAREST or interpolation == InterpolationMode.NEAREST_EXACT:
@@ -230,6 +228,7 @@ def resize_image(
             ):
                 acceptable_dtypes.append(torch.uint8)
 
+        image = image.reshape(-1, num_channels, old_height, old_width)
         strides = image.stride()
         if image.is_contiguous(memory_format=torch.channels_last) and image.shape[0] == 1 and numel != strides[0]:
             # There is a weird behaviour in torch core where the output tensor of `interpolate()` can be allocated as
