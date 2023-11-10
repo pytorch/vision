@@ -237,7 +237,7 @@ def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     return output
 
 
-def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED, process_exif: bool = False) -> torch.Tensor:
     """
     Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
@@ -249,6 +249,7 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torc
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
             available modes.
+        process_exif(bool): Process the EXIF data of the image or not. Default: False
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
