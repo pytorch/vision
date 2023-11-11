@@ -476,7 +476,7 @@ class Pad(Transform):
 
 
 class RandomZoomOut(_RandomApplyTransform):
-    """"Zoom out" transformation from
+    """ "Zoom out" transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
     This transformation randomly pads images, videos, bounding boxes and masks creating a zoom out effect.
