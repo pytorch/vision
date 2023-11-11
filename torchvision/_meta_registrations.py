@@ -1,7 +1,6 @@
 import functools
 
 import torch
-import torch._custom_ops
 import torch.library
 
 # Ensure that torch.ops.torchvision is visible
@@ -160,7 +159,7 @@ def meta_ps_roi_pool_backward(
     return grad.new_empty((batch_size, channels, height, width))
 
 
-@torch._custom_ops.impl_abstract("torchvision::nms")
+@torch.library.impl_abstract("torchvision::nms")
 def meta_nms(dets, scores, iou_threshold):
     torch._check(dets.dim() == 2, lambda: f"boxes should be a 2d tensor, got {dets.dim()}D")
     torch._check(dets.size(1) == 4, lambda: f"boxes should have 4 elements in dimension 1, got {dets.size(1)}")
@@ -169,7 +168,7 @@ def meta_nms(dets, scores, iou_threshold):
         dets.size(0) == scores.size(0),
         lambda: f"boxes and scores should have same number of elements in dimension 0, got {dets.size(0)} and {scores.size(0)}",
     )
-    ctx = torch._custom_ops.get_ctx()
+    ctx = torch.library.get_ctx()
     num_to_keep = ctx.create_unbacked_symint()
     return dets.new_empty(num_to_keep, dtype=torch.long)
 
