@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+0e2a5ae) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+7b4681a) &#x25BC</a>
     </div>
     
 
@@ -367,9 +367,7 @@
 
 
 <div class="viewcode-block" id="Grayscale"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Grayscale.html#torchvision.transforms.v2.Grayscale">[docs]</a><span class="k">class</span> <span class="nc">Grayscale</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Convert images or videos to grayscale.</span>
-
-<span class="sd">    .. v2betastatus:: Grayscale transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert images or videos to grayscale.</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor`, it is expected</span>
 <span class="sd">    to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions</span>
@@ -389,9 +387,7 @@
 
 
 <div class="viewcode-block" id="RandomGrayscale"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomGrayscale.html#torchvision.transforms.v2.RandomGrayscale">[docs]</a><span class="k">class</span> <span class="nc">RandomGrayscale</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Randomly convert image or videos to grayscale with a probability of p (default 0.1).</span>
-
-<span class="sd">    .. v2betastatus:: RandomGrayscale transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Randomly convert image or videos to grayscale with a probability of p (default 0.1).</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor`, it is expected to have [..., 3 or 1, H, W] shape,</span>
 <span class="sd">    where ... means an arbitrary number of leading dimensions</span>
@@ -416,9 +412,7 @@
 
 
 <div class="viewcode-block" id="ColorJitter"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.ColorJitter.html#torchvision.transforms.v2.ColorJitter">[docs]</a><span class="k">class</span> <span class="nc">ColorJitter</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Randomly change the brightness, contrast, saturation and hue of an image or video.</span>
-
-<span class="sd">    .. v2betastatus:: ColorJitter transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Randomly change the brightness, contrast, saturation and hue of an image or video.</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor`, it is expected</span>
 <span class="sd">    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -520,10 +514,7 @@
 
 
 <div class="viewcode-block" id="RandomChannelPermutation"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomChannelPermutation.html#torchvision.transforms.v2.RandomChannelPermutation">[docs]</a><span class="k">class</span> <span class="nc">RandomChannelPermutation</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Randomly permute the channels of an image or video</span>
-
-<span class="sd">    .. v2betastatus:: RandomChannelPermutation transform</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Randomly permute the channels of an image or video&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">_get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">num_channels</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">query_chw</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">)</span>
@@ -534,10 +525,8 @@
 
 
 <div class="viewcode-block" id="RandomPhotometricDistort"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomPhotometricDistort.html#torchvision.transforms.v2.RandomPhotometricDistort">[docs]</a><span class="k">class</span> <span class="nc">RandomPhotometricDistort</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Randomly distorts the image or video as used in `SSD: Single Shot</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Randomly distorts the image or video as used in `SSD: Single Shot</span>
 <span class="sd">    MultiBox Detector &lt;https://arxiv.org/abs/1512.02325&gt;`_.</span>
-
-<span class="sd">    .. v2betastatus:: RandomPhotometricDistort transform</span>
 
 <span class="sd">    This transform relies on :class:`~torchvision.transforms.v2.ColorJitter`</span>
 <span class="sd">    under the hood to adjust the contrast, saturation, hue, brightness, and also</span>
@@ -606,9 +595,7 @@
 
 
 <div class="viewcode-block" id="RandomEqualize"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomEqualize.html#torchvision.transforms.v2.RandomEqualize">[docs]</a><span class="k">class</span> <span class="nc">RandomEqualize</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Equalize the histogram of the given image or video with a given probability.</span>
-
-<span class="sd">    .. v2betastatus:: RandomEqualize transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Equalize the histogram of the given image or video with a given probability.</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor`, it is expected</span>
 <span class="sd">    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -625,9 +612,7 @@
 
 
 <div class="viewcode-block" id="RandomInvert"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomInvert.html#torchvision.transforms.v2.RandomInvert">[docs]</a><span class="k">class</span> <span class="nc">RandomInvert</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Inverts the colors of the given image or video with a given probability.</span>
-
-<span class="sd">    .. v2betastatus:: RandomInvert transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inverts the colors of the given image or video with a given probability.</span>
 
 <span class="sd">    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,</span>
 <span class="sd">    where ... means it can have an arbitrary number of leading dimensions.</span>
@@ -644,10 +629,8 @@
 
 
 <div class="viewcode-block" id="RandomPosterize"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomPosterize.html#torchvision.transforms.v2.RandomPosterize">[docs]</a><span class="k">class</span> <span class="nc">RandomPosterize</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Posterize the image or video with a given probability by reducing the</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Posterize the image or video with a given probability by reducing the</span>
 <span class="sd">    number of bits for each color channel.</span>
-
-<span class="sd">    .. v2betastatus:: RandomPosterize transform</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor`, it should be of type torch.uint8,</span>
 <span class="sd">    and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -669,10 +652,8 @@
 
 
 <div class="viewcode-block" id="RandomSolarize"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomSolarize.html#torchvision.transforms.v2.RandomSolarize">[docs]</a><span class="k">class</span> <span class="nc">RandomSolarize</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Solarize the image or video with a given probability by inverting all pixel</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solarize the image or video with a given probability by inverting all pixel</span>
 <span class="sd">    values above a threshold.</span>
-
-<span class="sd">    .. v2betastatus:: RandomSolarize transform</span>
 
 <span class="sd">    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,</span>
 <span class="sd">    where ... means it can have an arbitrary number of leading dimensions.</span>
@@ -699,9 +680,7 @@
 
 
 <div class="viewcode-block" id="RandomAutocontrast"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomAutocontrast.html#torchvision.transforms.v2.RandomAutocontrast">[docs]</a><span class="k">class</span> <span class="nc">RandomAutocontrast</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Autocontrast the pixels of the given image or video with a given probability.</span>
-
-<span class="sd">    .. v2betastatus:: RandomAutocontrast transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Autocontrast the pixels of the given image or video with a given probability.</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor`, it is expected</span>
 <span class="sd">    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -718,9 +697,7 @@
 
 
 <div class="viewcode-block" id="RandomAdjustSharpness"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.RandomAdjustSharpness.html#torchvision.transforms.v2.RandomAdjustSharpness">[docs]</a><span class="k">class</span> <span class="nc">RandomAdjustSharpness</span><span class="p">(</span><span class="n">_RandomApplyTransform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Adjust the sharpness of the image or video with a given probability.</span>
-
-<span class="sd">    .. v2betastatus:: RandomAdjustSharpness transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust the sharpness of the image or video with a given probability.</span>
 
 <span class="sd">    If the input is a :class:`torch.Tensor`,</span>
 <span class="sd">    it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>

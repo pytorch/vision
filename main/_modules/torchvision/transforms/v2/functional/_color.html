@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+0e2a5ae) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+7b4681a) &#x25BC</a>
     </div>
     
 
@@ -372,7 +372,7 @@
 
 
 <div class="viewcode-block" id="rgb_to_grayscale"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.rgb_to_grayscale.html#torchvision.transforms.v2.functional.rgb_to_grayscale">[docs]</a><span class="k">def</span> <span class="nf">rgb_to_grayscale</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] See :class:`~torchvision.transforms.v2.Grayscale` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.Grayscale` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">rgb_to_grayscale_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="n">num_output_channels</span><span class="p">)</span>
 
@@ -504,7 +504,7 @@
 
 
 <div class="viewcode-block" id="adjust_contrast"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.adjust_contrast.html#torchvision.transforms.v2.functional.adjust_contrast">[docs]</a><span class="k">def</span> <span class="nf">adjust_contrast</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] See :class:`~torchvision.transforms.RandomAutocontrast`&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.RandomAutocontrast`&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">adjust_contrast_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="o">=</span><span class="n">contrast_factor</span><span class="p">)</span>
 
@@ -543,7 +543,7 @@
 
 
 <div class="viewcode-block" id="adjust_sharpness"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.adjust_sharpness.html#torchvision.transforms.v2.functional.adjust_sharpness">[docs]</a><span class="k">def</span> <span class="nf">adjust_sharpness</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] See :class:`~torchvision.transforms.RandomAdjustSharpness`&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.RandomAdjustSharpness`&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">adjust_sharpness_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="o">=</span><span class="n">sharpness_factor</span><span class="p">)</span>
 
@@ -774,7 +774,7 @@
 
 
 <div class="viewcode-block" id="posterize"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.posterize.html#torchvision.transforms.v2.functional.posterize">[docs]</a><span class="k">def</span> <span class="nf">posterize</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">bits</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] See :class:`~torchvision.transforms.v2.RandomPosterize` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.RandomPosterize` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">posterize_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="n">bits</span><span class="p">)</span>
 
@@ -808,7 +808,7 @@
 
 
 <div class="viewcode-block" id="solarize"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.solarize.html#torchvision.transforms.v2.functional.solarize">[docs]</a><span class="k">def</span> <span class="nf">solarize</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] See :class:`~torchvision.transforms.v2.RandomSolarize` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.RandomSolarize` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">solarize_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
 
@@ -836,7 +836,7 @@
 
 
 <div class="viewcode-block" id="autocontrast"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.autocontrast.html#torchvision.transforms.v2.functional.autocontrast">[docs]</a><span class="k">def</span> <span class="nf">autocontrast</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] See :class:`~torchvision.transforms.v2.RandomAutocontrast` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.RandomAutocontrast` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">autocontrast_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span>
 
@@ -886,7 +886,7 @@
 
 
 <div class="viewcode-block" id="equalize"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.equalize.html#torchvision.transforms.v2.functional.equalize">[docs]</a><span class="k">def</span> <span class="nf">equalize</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] See :class:`~torchvision.transforms.v2.RandomEqualize` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.RandomEqualize` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">equalize_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span>
 
@@ -976,7 +976,7 @@
 
 
 <div class="viewcode-block" id="invert"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.invert.html#torchvision.transforms.v2.functional.invert">[docs]</a><span class="k">def</span> <span class="nf">invert</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] See :func:`~torchvision.transforms.v2.RandomInvert`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :func:`~torchvision.transforms.v2.RandomInvert`.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">invert_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span>
 

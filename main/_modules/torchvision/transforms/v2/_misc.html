@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+0e2a5ae) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+7b4681a) &#x25BC</a>
     </div>
     
 
@@ -376,9 +376,7 @@
 
 
 <div class="viewcode-block" id="Lambda"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Lambda.html#torchvision.transforms.v2.Lambda">[docs]</a><span class="k">class</span> <span class="nc">Lambda</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Apply a user-defined function as a transform.</span>
-
-<span class="sd">    .. v2betastatus:: Lambda transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a user-defined function as a transform.</span>
 
 <span class="sd">    This transform does not support torchscript.</span>
 
@@ -409,9 +407,7 @@
 
 
 <div class="viewcode-block" id="LinearTransformation"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.LinearTransformation.html#torchvision.transforms.v2.LinearTransformation">[docs]</a><span class="k">class</span> <span class="nc">LinearTransformation</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.</span>
-
-<span class="sd">    .. v2betastatus:: LinearTransformation transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.</span>
 
 <span class="sd">    This transform does not support PIL Image.</span>
 <span class="sd">    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and</span>
@@ -492,9 +488,7 @@
 
 
 <div class="viewcode-block" id="Normalize"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize">[docs]</a><span class="k">class</span> <span class="nc">Normalize</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Normalize a tensor image or video with mean and standard deviation.</span>
-
-<span class="sd">    .. v2betastatus:: Normalize transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize a tensor image or video with mean and standard deviation.</span>
 
 <span class="sd">    This transform does not support PIL Image.</span>
 <span class="sd">    Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``</span>
@@ -529,9 +523,7 @@
 
 
 <div class="viewcode-block" id="GaussianBlur"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.GaussianBlur.html#torchvision.transforms.v2.GaussianBlur">[docs]</a><span class="k">class</span> <span class="nc">GaussianBlur</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Blurs image with randomly chosen Gaussian blur.</span>
-
-<span class="sd">    .. v2betastatus:: GausssianBlur transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Blurs image with randomly chosen Gaussian blur.</span>
 
 <span class="sd">    If the input is a Tensor, it is expected</span>
 <span class="sd">    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -569,9 +561,7 @@
 
 
 <div class="viewcode-block" id="ToDtype"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype">[docs]</a><span class="k">class</span> <span class="nc">ToDtype</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Converts the input to a specific dtype, optionally scaling the values for images or videos.</span>
-
-<span class="sd">    .. v2betastatus:: ToDtype transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts the input to a specific dtype, optionally scaling the values for images or videos.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">        ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.</span>
@@ -643,11 +633,9 @@
 
 
 <div class="viewcode-block" id="ConvertImageDtype"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.ConvertImageDtype.html#torchvision.transforms.v2.ConvertImageDtype">[docs]</a><span class="k">class</span> <span class="nc">ConvertImageDtype</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] [DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.</span>
 
 <span class="sd">    Convert input image to the given ``dtype`` and scale the values accordingly.</span>
-
-<span class="sd">    .. v2betastatus:: ConvertImageDtype transform</span>
 
 <span class="sd">    .. warning::</span>
 <span class="sd">        Consider using ``ToDtype(dtype, scale=True)`` instead. See :class:`~torchvision.transforms.v2.ToDtype`.</span>
@@ -680,9 +668,7 @@
 
 
 <div class="viewcode-block" id="SanitizeBoundingBoxes"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.SanitizeBoundingBoxes.html#torchvision.transforms.v2.SanitizeBoundingBoxes">[docs]</a><span class="k">class</span> <span class="nc">SanitizeBoundingBoxes</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.</span>
-
-<span class="sd">    .. v2betastatus:: SanitizeBoundingBoxes transform</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove degenerate/invalid bounding boxes and their corresponding labels and masks.</span>
 
 <span class="sd">    This transform removes bounding boxes and their associated labels/masks that:</span>
 
