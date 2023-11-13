@@ -82,7 +82,7 @@ namespace {
 const int kMaxParallelImgs = 32;
 
 inline unsigned int GET_THREADS() {
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef WITH_HIP
   return 256;
 #endif
   return 512;
