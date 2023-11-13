@@ -8,6 +8,10 @@ from ._tv_tensor import TVTensor
 from ._video import Video
 
 
+# TODO: Fix this. We skip this method as it leads to
+# RecursionError: maximum recursion depth exceeded while calling a Python object
+# Until `disable` is removed, there will be graph breaks after all calls to functional transforms
+@torch.compiler.disable
 def wrap(wrappee, *, like, **kwargs):
     """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
 
