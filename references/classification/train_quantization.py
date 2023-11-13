@@ -23,9 +23,9 @@ def main(args):
         raise RuntimeError("Post training quantization example should not be performed on distributed mode")
 
     # Set backend engine to ensure that quantized model runs on the correct kernels
-    if args.backend not in torch.backends.quantized.supported_engines:
-        raise RuntimeError("Quantized backend not supported: " + str(args.backend))
-    torch.backends.quantized.engine = args.backend
+    if args.qbackend not in torch.backends.quantized.supported_engines:
+        raise RuntimeError("Quantized backend not supported: " + str(args.qbackend))
+    torch.backends.quantized.engine = args.qbackend
 
     device = torch.device(args.device)
     torch.backends.cudnn.benchmark = True
@@ -55,7 +55,7 @@ def main(args):
 
     if not (args.test_only or args.post_training_quantize):
         model.fuse_model(is_qat=True)
-        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
+        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(args.qbackend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
 
         if args.distributed and args.sync_bn:
@@ -89,7 +89,7 @@ def main(args):
         )
         model.eval()
         model.fuse_model(is_qat=False)
-        model.qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
+        model.qconfig = torch.ao.quantization.get_default_qconfig(args.qbackend)
         torch.ao.quantization.prepare(model, inplace=True)
         # Calibrate first
         print("Calibrating")
@@ -161,7 +161,7 @@ def get_args_parser(add_help=True):
 
     parser.add_argument("--data-path", default="/datasets01/imagenet_full_size/061417/", type=str, help="dataset path")
     parser.add_argument("--model", default="mobilenet_v2", type=str, help="model name")
-    parser.add_argument("--backend", default="qnnpack", type=str, help="fbgemm or qnnpack")
+    parser.add_argument("--qbackend", default="qnnpack", type=str, help="Quantized backend: fbgemm or qnnpack")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
 
     parser.add_argument(
@@ -257,9 +257,17 @@ def get_args_parser(add_help=True):
     parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
+    parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
+    parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
+
     return parser
 
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()
+    if args.backend in ("fbgemm", "qnnpack"):
+        raise ValueError(
+            "The --backend parameter has been re-purposed to specify the backend of the transforms (PIL or Tensor) "
+            "instead of the quantized backend. Please use the --qbackend parameter to specify the quantized backend."
+        )
     main(args)
