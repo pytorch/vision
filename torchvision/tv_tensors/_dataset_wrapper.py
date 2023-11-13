@@ -17,9 +17,7 @@ __all__ = ["wrap_dataset_for_transforms_v2"]
 
 
 def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
-    """[BETA] Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.
-
-    .. v2betastatus:: wrap_dataset_for_transforms_v2 function
+    """Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.
 
     Example:
         >>> dataset = torchvision.datasets.CocoDetection(...)

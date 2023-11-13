@@ -126,13 +126,6 @@ you're already using tranforms from ``torchvision.transforms``, all you need to
 do to is to update the import to ``torchvision.transforms.v2``. In terms of
 output, there might be negligible differences due to implementation differences.
 
-.. note::
-
-    The v2 transforms are still BETA, but at this point we do not expect
-    disruptive changes to be made to their public APIs. We're planning to make
-    them fully stable in version 0.17. Please submit any feedback you may have
-    `here <https://github.com/pytorch/vision/issues/6753>`_.
-
 .. _transforms_perf:
 
 Performance considerations

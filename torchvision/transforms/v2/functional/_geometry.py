@@ -39,7 +39,7 @@ def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> Interp
 
 
 def horizontal_flip(inpt: torch.Tensor) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomHorizontalFlip` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomHorizontalFlip` for details."""
     if torch.jit.is_scripting():
         return horizontal_flip_image(inpt)
 
@@ -96,7 +96,7 @@ def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def vertical_flip(inpt: torch.Tensor) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomVerticalFlip` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomVerticalFlip` for details."""
     if torch.jit.is_scripting():
         return vertical_flip_image(inpt)
 
@@ -178,7 +178,7 @@ def resize(
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
 ) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.Resize` for details."""
+    """See :class:`~torchvision.transforms.v2.Resize` for details."""
     if torch.jit.is_scripting():
         return resize_image(inpt, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
@@ -373,7 +373,7 @@ def affine(
     fill: _FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomAffine` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomAffine` for details."""
     if torch.jit.is_scripting():
         return affine_image(
             inpt,
@@ -939,7 +939,7 @@ def rotate(
     center: Optional[List[float]] = None,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomRotation` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomRotation` for details."""
     if torch.jit.is_scripting():
         return rotate_image(inpt, angle=angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
@@ -1094,7 +1094,7 @@ def pad(
     fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.Pad` for details."""
+    """See :class:`~torchvision.transforms.v2.Pad` for details."""
     if torch.jit.is_scripting():
         return pad_image(inpt, padding=padding, fill=fill, padding_mode=padding_mode)
 
@@ -1314,7 +1314,7 @@ def pad_video(
 
 
 def crop(inpt: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
     if torch.jit.is_scripting():
         return crop_image(inpt, top=top, left=left, height=height, width=width)
 
@@ -1408,7 +1408,7 @@ def perspective(
     fill: _FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomPerspective` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomPerspective` for details."""
     if torch.jit.is_scripting():
         return perspective_image(
             inpt,
@@ -1696,7 +1696,7 @@ def elastic(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.ElasticTransform` for details."""
+    """See :class:`~torchvision.transforms.v2.ElasticTransform` for details."""
     if torch.jit.is_scripting():
         return elastic_image(inpt, displacement=displacement, interpolation=interpolation, fill=fill)
 
@@ -1880,7 +1880,7 @@ def elastic_video(
 
 
 def center_crop(inpt: torch.Tensor, output_size: List[int]) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
     if torch.jit.is_scripting():
         return center_crop_image(inpt, output_size=output_size)
 
@@ -2009,7 +2009,7 @@ def resized_crop(
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[bool] = True,
 ) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomResizedCrop` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomResizedCrop` for details."""
     if torch.jit.is_scripting():
         return resized_crop_image(
             inpt,
@@ -2154,7 +2154,7 @@ def resized_crop_video(
 def five_crop(
     inpt: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """[BETA] See :class:`~torchvision.transforms.v2.FiveCrop` for details."""
+    """See :class:`~torchvision.transforms.v2.FiveCrop` for details."""
     if torch.jit.is_scripting():
         return five_crop_image(inpt, size=size)
 
@@ -2238,7 +2238,7 @@ def ten_crop(
     torch.Tensor,
     torch.Tensor,
 ]:
-    """[BETA] See :class:`~torchvision.transforms.v2.TenCrop` for details."""
+    """See :class:`~torchvision.transforms.v2.TenCrop` for details."""
     if torch.jit.is_scripting():
         return ten_crop_image(inpt, size=size, vertical_flip=vertical_flip)
 
