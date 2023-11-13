@@ -193,7 +193,7 @@ def resize(
 # uint8 dtype support for bilinear and bicubic is limited to cpu and
 # according to our benchmarks, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
 # For torch.compile we use uint8 input and let decomposition work
-def _do_native_uint8_resize_on_cpu(interpolation: Union[InterpolationMode, int]) -> bool:
+def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
     if interpolation == InterpolationMode.BILINEAR:
         if torch._dynamo.is_compiling():
             return True
@@ -235,8 +235,9 @@ def resize_image(
         if interpolation == InterpolationMode.NEAREST or interpolation == InterpolationMode.NEAREST_EXACT:
             # uint8 dtype can be included for cpu and cuda input if nearest mode
             acceptable_dtypes.append(torch.uint8)
-        elif image.device.type == "cpu" and _do_native_uint8_resize_on_cpu(interpolation):
-            acceptable_dtypes.append(torch.uint8)
+        elif image.device.type == "cpu":
+            if _do_native_uint8_resize_on_cpu(interpolation):
+                acceptable_dtypes.append(torch.uint8)
 
         image = image.reshape(-1, num_channels, old_height, old_width)
         strides = image.stride()
