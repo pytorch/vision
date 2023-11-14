@@ -15,7 +15,7 @@ from ._utils import _get_kernel, _register_kernel_internal
 
 
 def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.Grayscale` for details."""
+    """See :class:`~torchvision.transforms.v2.Grayscale` for details."""
     if torch.jit.is_scripting():
         return rgb_to_grayscale_image(inpt, num_output_channels=num_output_channels)
 
@@ -147,7 +147,7 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
 
 
 def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.RandomAutocontrast`"""
+    """See :class:`~torchvision.transforms.RandomAutocontrast`"""
     if torch.jit.is_scripting():
         return adjust_contrast_image(inpt, contrast_factor=contrast_factor)
 
@@ -186,7 +186,7 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
 
 
 def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.RandomAdjustSharpness`"""
+    """See :class:`~torchvision.transforms.RandomAdjustSharpness`"""
     if torch.jit.is_scripting():
         return adjust_sharpness_image(inpt, sharpness_factor=sharpness_factor)
 
@@ -417,7 +417,7 @@ def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> to
 
 
 def posterize(inpt: torch.Tensor, bits: int) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomPosterize` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomPosterize` for details."""
     if torch.jit.is_scripting():
         return posterize_image(inpt, bits=bits)
 
@@ -451,7 +451,7 @@ def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
 
 
 def solarize(inpt: torch.Tensor, threshold: float) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomSolarize` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomSolarize` for details."""
     if torch.jit.is_scripting():
         return solarize_image(inpt, threshold=threshold)
 
@@ -479,7 +479,7 @@ def solarize_video(video: torch.Tensor, threshold: float) -> torch.Tensor:
 
 
 def autocontrast(inpt: torch.Tensor) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomAutocontrast` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomAutocontrast` for details."""
     if torch.jit.is_scripting():
         return autocontrast_image(inpt)
 
@@ -529,7 +529,7 @@ def autocontrast_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def equalize(inpt: torch.Tensor) -> torch.Tensor:
-    """[BETA] See :class:`~torchvision.transforms.v2.RandomEqualize` for details."""
+    """See :class:`~torchvision.transforms.v2.RandomEqualize` for details."""
     if torch.jit.is_scripting():
         return equalize_image(inpt)
 
@@ -619,7 +619,7 @@ def equalize_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def invert(inpt: torch.Tensor) -> torch.Tensor:
-    """[BETA] See :func:`~torchvision.transforms.v2.RandomInvert`."""
+    """See :func:`~torchvision.transforms.v2.RandomInvert`."""
     if torch.jit.is_scripting():
         return invert_image(inpt)
 
