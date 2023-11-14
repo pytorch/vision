@@ -1019,6 +1019,7 @@ class TestDeformConv:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("batch_sz", (0, 33))
+    @pytest.mark.opcheck_only_one()
     def test_forward(self, device, contiguous, batch_sz, dtype=None):
         dtype = dtype or self.dtype
         x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
@@ -1071,6 +1072,7 @@ class TestDeformConv:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("batch_sz", (0, 33))
+    @pytest.mark.opcheck_only_one()
     def test_backward(self, device, contiguous, batch_sz):
         x, weight, offset, mask, bias, stride, padding, dilation = self.get_fn_args(
             device, contiguous, batch_sz, self.dtype
@@ -1120,6 +1122,7 @@ class TestDeformConv:
 
     @needs_cuda
     @pytest.mark.parametrize("contiguous", (True, False))
+    @pytest.mark.opcheck_only_one()
     def test_compare_cpu_cuda_grads(self, contiguous):
         # Test from https://github.com/pytorch/vision/issues/2598
         # Run on CUDA only
@@ -1154,6 +1157,7 @@ class TestDeformConv:
     @needs_cuda
     @pytest.mark.parametrize("batch_sz", (0, 33))
     @pytest.mark.parametrize("dtype", (torch.float, torch.half))
+    @pytest.mark.opcheck_only_one()
     def test_autocast(self, batch_sz, dtype):
         with torch.cuda.amp.autocast():
             self.test_forward(torch.device("cuda"), contiguous=False, batch_sz=batch_sz, dtype=dtype)
@@ -1161,6 +1165,15 @@ class TestDeformConv:
     def test_forward_scriptability(self):
         # Non-regression test for https://github.com/pytorch/vision/issues/4078
         torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
+
+
+optests.generate_opcheck_tests(
+    testcase=TestDeformConv,
+    namespaces=["torchvision"],
+    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
+    additional_decorators=[],
+    test_utils=OPTESTS,
+)
 
 
 class TestFrozenBNT:
