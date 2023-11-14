@@ -9,7 +9,7 @@ from ._tv_tensor import TVTensor
 
 
 class Mask(TVTensor):
-    """[BETA] :class:`torch.Tensor` subclass for segmentation and detection masks.
+    """:class:`torch.Tensor` subclass for segmentation and detection masks.
 
     Args:
         data (tensor-like, PIL.Image.Image): Any data that can be turned into a tensor with :func:`torch.as_tensor` as

@@ -11,9 +11,7 @@ from torchvision.transforms.v2._utils import is_pure_tensor
 
 
 class PILToTensor(Transform):
-    """[BETA] Convert a PIL Image to a tensor of the same type - this does not scale values.
-
-    .. v2betastatus:: PILToTensor transform
+    """Convert a PIL Image to a tensor of the same type - this does not scale values.
 
     This transform does not support torchscript.
 
@@ -27,10 +25,8 @@ class PILToTensor(Transform):
 
 
 class ToImage(Transform):
-    """[BETA] Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.tv_tensors.Image`
+    """Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.tv_tensors.Image`
     ; this does not scale values.
-
-    .. v2betastatus:: ToImage transform
 
     This transform does not support torchscript.
     """
@@ -44,9 +40,7 @@ class ToImage(Transform):
 
 
 class ToPILImage(Transform):
-    """[BETA] Convert a tensor or an ndarray to PIL Image
-
-    .. v2betastatus:: ToPILImage transform
+    """Convert a tensor or an ndarray to PIL Image
 
     This transform does not support torchscript.
 
@@ -79,9 +73,7 @@ class ToPILImage(Transform):
 
 
 class ToPureTensor(Transform):
-    """[BETA] Convert all TVTensors to pure tensors, removing associated metadata (if any).
-
-    .. v2betastatus:: ToPureTensor transform
+    """Convert all TVTensors to pure tensors, removing associated metadata (if any).
 
     This doesn't scale or change the values, only the type.
     """
