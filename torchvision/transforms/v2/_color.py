@@ -178,7 +178,7 @@ class RandomPhotometricDistort(Transform):
     Args:
         brightness (tuple of float (min, max), optional): How much to jitter brightness.
             brightness_factor is chosen uniformly from [min, max]. Should be non negative numbers.
-        contrast tuple of float (min, max), optional): How much to jitter contrast.
+        contrast (tuple of float (min, max), optional): How much to jitter contrast.
             contrast_factor is chosen uniformly from [min, max]. Should be non-negative numbers.
         saturation (tuple of float (min, max), optional): How much to jitter saturation.
             saturation_factor is chosen uniformly from [min, max]. Should be non negative numbers.
