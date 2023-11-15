@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -354,9 +366,9 @@ keypoint detection, video classification, and optical flow.</p>
 <section id="general-information-on-pre-trained-weights">
 <h2>General information on pre-trained weights<a class="headerlink" href="#general-information-on-pre-trained-weights" title="Permalink to this heading">¶</a></h2>
 <p>TorchVision offers pre-trained weights for every provided architecture, using
-the PyTorch <a class="reference external" href="https://pytorch.org/docs/stable/hub.html#module-torch.hub" title="(in PyTorch v2.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.hub</span></code></a>. Instancing a pre-trained model will download its
+the PyTorch <a class="reference external" href="https://pytorch.org/docs/stable/hub.html#module-torch.hub" title="(in PyTorch v2.1)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.hub</span></code></a>. Instancing a pre-trained model will download its
 weights to a cache directory. This directory can be set using the <cite>TORCH_HOME</cite>
-environment variable. See <a class="reference external" href="https://pytorch.org/docs/stable/hub.html#torch.hub.load_state_dict_from_url" title="(in PyTorch v2.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.hub.load_state_dict_from_url()</span></code></a> for details.</p>
+environment variable. See <a class="reference external" href="https://pytorch.org/docs/stable/hub.html#torch.hub.load_state_dict_from_url" title="(in PyTorch v2.1)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.hub.load_state_dict_from_url()</span></code></a> for details.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The pre-trained models provided in this library may have their own licenses or
@@ -437,7 +449,7 @@ accessible via the <code class="docutils literal notranslate"><span class="pre">
 <p>Some models use modules which have different training and evaluation
 behavior, such as batch normalization. To switch between these modes, use
 <code class="docutils literal notranslate"><span class="pre">model.train()</span></code> or <code class="docutils literal notranslate"><span class="pre">model.eval()</span></code> as appropriate. See
-<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">train()</span></code></a> or <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eval()</span></code></a> for details.</p>
+<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train" title="(in PyTorch v2.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">train()</span></code></a> or <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval" title="(in PyTorch v2.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eval()</span></code></a> for details.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize model</span>
 <span class="n">weights</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
@@ -2289,9 +2301,9 @@ pre-trained weights:</p>
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -2330,7 +2342,7 @@ pre-trained weights:</p>
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

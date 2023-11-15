@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -351,9 +363,9 @@
 module, as well as utility classes for building your own datasets.</p>
 <section id="built-in-datasets">
 <h2>Built-in datasets<a class="headerlink" href="#built-in-datasets" title="Permalink to this heading">¶</a></h2>
-<p>All datasets are subclasses of <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></a>
+<p>All datasets are subclasses of <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></a>
 i.e, they have <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> and <code class="docutils literal notranslate"><span class="pre">__len__</span></code> methods implemented.
-Hence, they can all be passed to a <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a>
+Hence, they can all be passed to a <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a>
 which can load multiple samples in parallel using <code class="docutils literal notranslate"><span class="pre">torch.multiprocessing</span></code> workers.
 For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">imagenet_data</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">ImageNet</span><span class="p">(</span><span class="s1">&#39;path/to/imagenet_root/&#39;</span><span class="p">)</span>
@@ -841,9 +853,9 @@ You can also create your own datasets using the provided <a class="reference int
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -882,7 +894,7 @@ You can also create your own datasets using the provided <a class="reference int
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -358,7 +370,7 @@ these (horizontal flipping is used by default).</p>
 <p class="admonition-title">Note</p>
 <p>The TenCrop transform is in Beta stage, and while we do not expect disruptive breaking changes, some APIs may slightly change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753.</p>
 </div>
-<p>If the input is a <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> or a <a class="reference internal" href="torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> or a
+<p>If the input is a <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> or a <a class="reference internal" href="torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> or a
 <a class="reference internal" href="torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> it can have arbitrary number of leading batch dimensions.
 For example, the image can have <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code> shape.</p>
 <p>See <a class="reference internal" href="torchvision.transforms.v2.FiveCrop.html#torchvision.transforms.v2.FiveCrop" title="torchvision.transforms.v2.FiveCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">FiveCrop</span></code></a> for an example.</p>
@@ -549,9 +561,9 @@ made. If provided a sequence of length 1, it will be interpreted as (size[0], si
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -590,7 +602,7 @@ made. If provided a sequence of length 1, it will be interpreted as (size[0], si
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

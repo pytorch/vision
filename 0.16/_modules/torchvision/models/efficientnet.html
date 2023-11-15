@@ -87,7 +87,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -784,7 +796,7 @@
 <div class="viewcode-block" id="EfficientNet_B0_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b0.html#torchvision.models.EfficientNet_B0_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B0_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b0_rwightman-7f5810bc.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
         <span class="p">),</span>
@@ -856,7 +868,7 @@
 <div class="viewcode-block" id="EfficientNet_B2_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b2.html#torchvision.models.EfficientNet_B2_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b2_rwightman-c35c1473.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">288</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">288</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
         <span class="p">),</span>
@@ -880,7 +892,7 @@
 <div class="viewcode-block" id="EfficientNet_B3_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b3.html#torchvision.models.EfficientNet_B3_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B3_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b3_rwightman-b3899882.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">320</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
         <span class="p">),</span>
@@ -904,7 +916,7 @@
 <div class="viewcode-block" id="EfficientNet_B4_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b4.html#torchvision.models.EfficientNet_B4_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B4_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b4_rwightman-23ab8bcd.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">380</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
         <span class="p">),</span>
@@ -928,7 +940,7 @@
 <div class="viewcode-block" id="EfficientNet_B5_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b5.html#torchvision.models.EfficientNet_B5_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B5_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b5_lukemelas-1a07897c.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">456</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">456</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
         <span class="p">),</span>
@@ -952,7 +964,7 @@
 <div class="viewcode-block" id="EfficientNet_B6_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b6.html#torchvision.models.EfficientNet_B6_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B6_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b6_lukemelas-24a108a5.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">528</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">528</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
         <span class="p">),</span>
@@ -976,7 +988,7 @@
 <div class="viewcode-block" id="EfficientNet_B7_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b7.html#torchvision.models.EfficientNet_B7_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B7_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b7_lukemelas-c5b4e57e.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
         <span class="p">),</span>
@@ -1630,9 +1642,9 @@
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -1671,7 +1683,7 @@
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

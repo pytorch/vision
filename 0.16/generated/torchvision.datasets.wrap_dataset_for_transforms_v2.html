@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -404,13 +416,13 @@ coordinate format and wrapped into a <a class="reference internal" href="torchvi
 <p>Segmentation datasets</p>
 <blockquote>
 <div><p>Segmentation datasets, e.g. <a class="reference internal" href="torchvision.datasets.VOCSegmentation.html#torchvision.datasets.VOCSegmentation" title="torchvision.datasets.VOCSegmentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">VOCSegmentation</span></code></a>, return a two-tuple of
-<a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v10.0.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a>’s. This wrapper leaves the image as is (first item), while wrapping the
+<a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v10.1.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a>’s. This wrapper leaves the image as is (first item), while wrapping the
 segmentation mask into a <a class="reference internal" href="torchvision.tv_tensors.Mask.html#torchvision.tv_tensors.Mask" title="torchvision.tv_tensors.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a> (second item).</p>
 </div></blockquote>
 <p>Video classification datasets</p>
 <blockquote>
 <div><p>Video classification datasets, e.g. <a class="reference internal" href="torchvision.datasets.Kinetics.html#torchvision.datasets.Kinetics" title="torchvision.datasets.Kinetics"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kinetics</span></code></a>, return a three-tuple containing a
-<a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> for the video and audio and a <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> as label. This wrapper wraps the video into a
+<a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> for the video and audio and a <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> as label. This wrapper wraps the video into a
 <a class="reference internal" href="torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> while leaving the other items as is.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -608,9 +620,9 @@ fine grained access. Currently only supported for <a class="reference internal" 
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -649,7 +661,7 @@ fine grained access. Currently only supported for <a class="reference internal" 
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

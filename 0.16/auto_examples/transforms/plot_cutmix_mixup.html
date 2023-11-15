@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -441,7 +453,7 @@ After CutMix/MixUp: images.shape = torch.Size([4, 3, 224, 224]), labels.shape = 
 <p>Note how the labels were also transformed: we went from a batched label of
 shape (batch_size,) to a tensor of shape (batch_size, num_classes). The
 transformed labels can still be passed as-is to a loss function like
-<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html#torch.nn.functional.cross_entropy" title="(in PyTorch v2.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.nn.functional.cross_entropy()</span></code></a>.</p>
+<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html#torch.nn.functional.cross_entropy" title="(in PyTorch v2.1)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.nn.functional.cross_entropy()</span></code></a>.</p>
 </section>
 <section id="as-part-of-the-collation-function">
 <h3>As part of the collation function<a class="headerlink" href="#as-part-of-the-collation-function" title="Permalink to this heading">¶</a></h3>
@@ -500,7 +512,7 @@ by passing a callable to the <code class="docutils literal notranslate"><span cl
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>out[&#39;imgs&#39;].shape = torch.Size([4, 3, 224, 224]), out[&#39;target&#39;][&#39;classes&#39;].shape = torch.Size([4, 100])
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.155 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.166 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-cutmix-mixup-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/5a9ea474844f53cd409e782bd87efb13/plot_cutmix_mixup.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_cutmix_mixup.py</span></code></a></p>
@@ -689,9 +701,9 @@ by passing a callable to the <code class="docutils literal notranslate"><span cl
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -730,7 +742,7 @@ by passing a callable to the <code class="docutils literal notranslate"><span cl
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

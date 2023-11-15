@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -429,7 +441,7 @@ type(target[&#39;masks&#39;]) = &lt;class &#39;torchvision.tv_tensors._mask.Mask
 </div>
 <p>We used the <code class="docutils literal notranslate"><span class="pre">target_keys</span></code> parameter to specify the kind of output we’re
 interested in. Our dataset now returns a target which is dict where the values
-are <a class="reference internal" href="plot_transforms_getting_started.html#what-are-tv-tensors"><span class="std std-ref">TVTensors</span></a> (all are <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>
+are <a class="reference internal" href="plot_transforms_getting_started.html#what-are-tv-tensors"><span class="std std-ref">TVTensors</span></a> (all are <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>
 subclasses). We’re dropped all unncessary keys from the previous output, but
 if you need any of the original keys e.g. “image_id”, you can still ask for
 it.</p>
@@ -450,7 +462,7 @@ be transformed, slowing down your transformations unnecessarily.</p>
 to handle images, bouding boxes and masks when relevant.</p>
 <p>Transforms are typically passed as the <code class="docutils literal notranslate"><span class="pre">transforms</span></code> parameter of the
 dataset so that they can leverage multi-processing from the
-<a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a>.</p>
+<a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">transforms</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">Compose</span></a><span class="p">(</span>
     <span class="p">[</span>
         <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">ToImage</span></a><span class="p">(),</span>
@@ -539,7 +551,7 @@ the actual training scripts we use to train our models.</p>
 need for your own use-cases: this is because we’re supporting different
 backends (PIL, tensors, TVTensors) and different transforms namespaces (v1 and
 v2). So don’t be afraid to simplify and only keep what you need.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 4.813 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 4.872 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-transforms-e2e-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/40e082c3b2415f11f987eaa06c4d7513/plot_transforms_e2e.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_transforms_e2e.py</span></code></a></p>
@@ -725,9 +737,9 @@ v2). So don’t be afraid to simplify and only keep what you need.</p>
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -766,7 +778,7 @@ v2). So don’t be afraid to simplify and only keep what you need.</p>
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -848,7 +860,7 @@ class allows us to naturally oversample clips or images from each video if neede
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/pytorch/vision/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
   warnings.warn(
-{&#39;video&#39;: [&#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/2/SOX5yA1l24A.mp4&#39;, &#39;./dataset/2/SOX5yA1l24A.mp4&#39;, &#39;./dataset/2/v_SoccerJuggling_g24_c01.avi&#39;, &#39;./dataset/2/v_SoccerJuggling_g23_c01.avi&#39;], &#39;start&#39;: [1.2933978369482158, 1.7918684185786267, 4.373791147055652, 3.9307513195312067, 3.6426948895065263], &#39;end&#39;: [1.7999999999999998, 2.3023, 4.9049, 4.437767, 4.170833], &#39;tensorsize&#39;: [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+{&#39;video&#39;: [&#39;./dataset/2/v_SoccerJuggling_g23_c01.avi&#39;, &#39;./dataset/2/v_SoccerJuggling_g24_c01.avi&#39;, &#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/1/WUzgd7C1pWA.mp4&#39;], &#39;start&#39;: [4.608961938654843, 1.2014087681523253, 0.19253719218919402, 0.33459936179948085, 2.982084631777307], &#39;end&#39;: [5.1384669999999995, 1.735067, 0.7, 0.866667, 3.5035], &#39;tensorsize&#39;: [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 </pre></div>
 </div>
 </section>
@@ -871,7 +883,7 @@ class allows us to naturally oversample clips or images from each video if neede
 <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" title="shutil.rmtree" class="sphx-glr-backref-module-shutil sphx-glr-backref-type-py-function"><span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span></a><span class="p">(</span><span class="s2">&quot;./dataset&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.277 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 4.859 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-others-plot-video-api-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/175e3bb1b03a25b015d65842a3b8a883/plot_video_api.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_video_api.py</span></code></a></p>
@@ -1057,9 +1069,9 @@ class allows us to naturally oversample clips or images from each video if neede
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -1098,7 +1110,7 @@ class allows us to naturally oversample clips or images from each video if neede
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

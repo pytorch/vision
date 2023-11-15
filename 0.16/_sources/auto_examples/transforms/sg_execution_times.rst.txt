@@ -6,16 +6,16 @@
 
 Computation times
 =================
-**00:14.597** total execution time for **auto_examples_transforms** files:
+**00:14.470** total execution time for **auto_examples_transforms** files:
 
 +----------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``plot_transforms_illustrations.py``)     | 00:08.772 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``plot_transforms_illustrations.py``)     | 00:08.600 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``plot_transforms_e2e.py``)                         | 00:04.813 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``plot_transforms_e2e.py``)                         | 00:04.872 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``plot_transforms_getting_started.py``) | 00:00.838 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``plot_transforms_getting_started.py``) | 00:00.814 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``plot_cutmix_mixup.py``)                             | 00:00.155 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``plot_cutmix_mixup.py``)                             | 00:00.166 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py` (``plot_tv_tensors.py``)                                 | 00:00.008 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------------+-----------+--------+

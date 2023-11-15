@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -358,8 +370,8 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>in_channels</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Number of channels of the input</p></li>
 <li><p><strong>hidden_channels</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em>) – List of the hidden channel dimensions</p></li>
-<li><p><strong>norm_layer</strong> (<em>Callable</em><em>[</em><em>...</em><em>, </em><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.0)"><em>torch.nn.Module</em></a><em>]</em><em>, </em><em>optional</em>) – Norm layer that will be stacked on top of the linear layer. If <code class="docutils literal notranslate"><span class="pre">None</span></code> this layer won’t be used. Default: <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-<li><p><strong>activation_layer</strong> (<em>Callable</em><em>[</em><em>...</em><em>, </em><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.0)"><em>torch.nn.Module</em></a><em>]</em><em>, </em><em>optional</em>) – Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the linear layer. If <code class="docutils literal notranslate"><span class="pre">None</span></code> this layer won’t be used. Default: <code class="docutils literal notranslate"><span class="pre">torch.nn.ReLU</span></code></p></li>
+<li><p><strong>norm_layer</strong> (<em>Callable</em><em>[</em><em>...</em><em>, </em><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.1)"><em>torch.nn.Module</em></a><em>]</em><em>, </em><em>optional</em>) – Norm layer that will be stacked on top of the linear layer. If <code class="docutils literal notranslate"><span class="pre">None</span></code> this layer won’t be used. Default: <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
+<li><p><strong>activation_layer</strong> (<em>Callable</em><em>[</em><em>...</em><em>, </em><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.1)"><em>torch.nn.Module</em></a><em>]</em><em>, </em><em>optional</em>) – Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the linear layer. If <code class="docutils literal notranslate"><span class="pre">None</span></code> this layer won’t be used. Default: <code class="docutils literal notranslate"><span class="pre">torch.nn.ReLU</span></code></p></li>
 <li><p><strong>inplace</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Parameter for the activation layer, which can optionally do the operation in-place.
 Default is <code class="docutils literal notranslate"><span class="pre">None</span></code>, which uses the respective default values of the <code class="docutils literal notranslate"><span class="pre">activation_layer</span></code> and Dropout layer.</p></li>
 <li><p><strong>bias</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – Whether to use bias in the linear layer. Default <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
@@ -538,9 +550,9 @@ Default is <code class="docutils literal notranslate"><span class="pre">None</sp
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -579,7 +591,7 @@ Default is <code class="docutils literal notranslate"><span class="pre">None</sp
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

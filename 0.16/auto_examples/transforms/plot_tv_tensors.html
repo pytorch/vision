@@ -90,7 +90,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -398,7 +410,7 @@ for the input data.</p>
 <section id="what-can-i-do-with-a-tvtensor">
 <h2>What can I do with a TVTensor?<a class="headerlink" href="#what-can-i-do-with-a-tvtensor" title="Permalink to this heading">¶</a></h2>
 <p>TVTensors look and feel just like regular tensors - they <strong>are</strong> tensors.
-Everything that is supported on a plain <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> like <code class="docutils literal notranslate"><span class="pre">.sum()</span></code> or
+Everything that is supported on a plain <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> like <code class="docutils literal notranslate"><span class="pre">.sum()</span></code> or
 any <code class="docutils literal notranslate"><span class="pre">torch.*</span></code> operator will also work on TVTensors. See
 <a class="reference internal" href="#tv-tensor-unwrapping-behaviour"><span class="std std-ref">I had a TVTensor but now I have a Tensor. Help!</span></a> for a few gotchas.</p>
 </section>
@@ -406,7 +418,7 @@ any <code class="docutils literal notranslate"><span class="pre">torch.*</span><
 <span id="tv-tensor-creation"></span><h2>How do I construct a TVTensor?<a class="headerlink" href="#how-do-i-construct-a-tvtensor" title="Permalink to this heading">¶</a></h2>
 <section id="using-the-constructor">
 <h3>Using the constructor<a class="headerlink" href="#using-the-constructor" title="Permalink to this heading">¶</a></h3>
-<p>Each TVTensor class takes any tensor-like data that can be turned into a <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></p>
+<p>Each TVTensor class takes any tensor-like data that can be turned into a <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">image</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span></a><span class="p">([[[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]]])</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 </pre></div>
@@ -426,9 +438,9 @@ parameters.</p>
 </pre></div>
 </div>
 <p>In addition, <a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> and <a class="reference internal" href="../../generated/torchvision.tv_tensors.Mask.html#torchvision.tv_tensors.Mask" title="torchvision.tv_tensors.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a> can also take a
-<a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v10.0.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> directly:</p>
+<a class="reference external" href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="(in Pillow (PIL Fork) v10.1.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PIL.Image.Image</span></code></a> directly:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">image</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span></a><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.open" title="PIL.Image.open" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-function"><span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span></a><span class="p">(</span><span class="s2">&quot;../assets/astronaut.jpg&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/generated/torch.Tensor.shape.html#torch.Tensor.shape" title="torch.Tensor.shape" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-attribute"><span class="n">image</span><span class="o">.</span><span class="n">shape</span></a><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>torch.Size([3, 512, 512]) torch.uint8
@@ -441,7 +453,7 @@ metadata are required to properly transform the bounding boxes.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bboxes</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span></a><span class="p">(</span>
     <span class="p">[[</span><span class="mi">17</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">344</span><span class="p">,</span> <span class="mi">495</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">]],</span>
     <span class="nb">format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
-    <span class="n">canvas_size</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">canvas_size</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/generated/torch.Tensor.shape.html#torch.Tensor.shape" title="torch.Tensor.shape" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-attribute"><span class="n">image</span><span class="o">.</span><span class="n">shape</span></a><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">bboxes</span><span class="p">)</span>
 </pre></div>
@@ -534,8 +546,8 @@ have any suggestions on how to better support your use-cases, please reach out t
 <section id="exceptions">
 <h3>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this heading">¶</a></h3>
 <p>There are a few exceptions to this “unwrapping” rule:
-<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.clone.html#torch.Tensor.clone" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">clone()</span></code></a>, <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.to.html#torch.Tensor.to" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code></a>,
-<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.detach.html#torch.Tensor.detach" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.Tensor.detach()</span></code></a>, and <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.requires_grad_.html#torch.Tensor.requires_grad_" title="(in PyTorch v2.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requires_grad_()</span></code></a> retain
+<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.clone.html#torch.Tensor.clone" title="(in PyTorch v2.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">clone()</span></code></a>, <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.to.html#torch.Tensor.to" title="(in PyTorch v2.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code></a>,
+<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.detach.html#torch.Tensor.detach" title="(in PyTorch v2.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.Tensor.detach()</span></code></a>, and <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.Tensor.requires_grad_.html#torch.Tensor.requires_grad_" title="(in PyTorch v2.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requires_grad_()</span></code></a> retain
 the TVTensor type.</p>
 <p>Inplace operations on TVTensors like <code class="docutils literal notranslate"><span class="pre">obj.add_()</span></code> will preserve the type of
 <code class="docutils literal notranslate"><span class="pre">obj</span></code>. However, the <strong>returned</strong> value of inplace operations will be a pure
@@ -755,9 +767,9 @@ tensor:</p>
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -796,7 +808,7 @@ tensor:</p>
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>

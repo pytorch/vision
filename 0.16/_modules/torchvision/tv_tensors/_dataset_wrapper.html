@@ -87,7 +87,19 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                PyTorch Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
           </li>
 
           <li>
@@ -353,6 +365,7 @@
 
 <span class="kn">import</span> <span class="nn">contextlib</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
@@ -545,8 +558,19 @@
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset</span><span class="p">)</span>
 
+    <span class="c1"># TODO: maybe we should use __getstate__ and __setstate__ instead of __reduce__, as recommended in the docs.</span>
     <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">wrap_dataset_for_transforms_v2</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_keys</span><span class="p">)</span>
+        <span class="c1"># __reduce__ gets called when we try to pickle the dataset.</span>
+        <span class="c1"># In a DataLoader with spawn context, this gets called `num_workers` times from the main process.</span>
+
+        <span class="c1"># We have to reset the [target_]transform[s] attributes of the dataset</span>
+        <span class="c1"># to their original values, because we previously set them to None in __init__().</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset</span><span class="p">)</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">target_transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span>
+
+        <span class="k">return</span> <span class="n">wrap_dataset_for_transforms_v2</span><span class="p">,</span> <span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_keys</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">raise_not_supported</span><span class="p">(</span><span class="n">description</span><span class="p">):</span>
@@ -1153,9 +1177,9 @@
         <div class="copyright">
         <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
           For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
-          <a href="www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
           project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
-          please see <a href="www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
       </div>
      </div>
 
@@ -1194,7 +1218,7 @@
           </li>
             
           <li>
-            <a href="https://pytorch.org/mobile">Mobile</a>
+            <a href="">Mobile</a>
           </li>
 
           <li>
