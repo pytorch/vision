@@ -23,8 +23,8 @@ class TestVideoTransforms:
         numFrames = random.randint(4, 128)
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
-        oheight = random.randint(5, (height - 2) / 2) * 2
-        owidth = random.randint(5, (width - 2) / 2) * 2
+        oheight = random.randint(5, (height - 2) // 2) * 2
+        owidth = random.randint(5, (width - 2) // 2) * 2
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
         result = Compose(
             [
@@ -41,8 +41,8 @@ class TestVideoTransforms:
         numFrames = random.randint(4, 128)
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
-        oheight = random.randint(5, (height - 2) / 2) * 2
-        owidth = random.randint(5, (width - 2) / 2) * 2
+        oheight = random.randint(5, (height - 2) // 2) * 2
+        owidth = random.randint(5, (width - 2) // 2) * 2
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
         result = Compose(
             [
@@ -59,8 +59,8 @@ class TestVideoTransforms:
         numFrames = random.randint(4, 128)
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
-        oheight = random.randint(5, (height - 2) / 2) * 2
-        owidth = random.randint(5, (width - 2) / 2) * 2
+        oheight = random.randint(5, (height - 2) // 2) * 2
+        owidth = random.randint(5, (width - 2) // 2) * 2
 
         clip = torch.ones((numFrames, height, width, 3), dtype=torch.uint8) * 255
         oh1 = (height - oheight) // 2
