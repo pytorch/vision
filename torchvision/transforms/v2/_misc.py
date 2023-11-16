@@ -19,9 +19,7 @@ class Identity(Transform):
 
 
 class Lambda(Transform):
-    """[BETA] Apply a user-defined function as a transform.
-
-    .. v2betastatus:: Lambda transform
+    """Apply a user-defined function as a transform.
 
     This transform does not support torchscript.
 
@@ -52,9 +50,7 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-    """[BETA] Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
-
-    .. v2betastatus:: LinearTransformation transform
+    """Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
 
     This transform does not support PIL Image.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
@@ -135,9 +131,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    """[BETA] Normalize a tensor image or video with mean and standard deviation.
-
-    .. v2betastatus:: Normalize transform
+    """Normalize a tensor image or video with mean and standard deviation.
 
     This transform does not support PIL Image.
     Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
@@ -172,9 +166,7 @@ class Normalize(Transform):
 
 
 class GaussianBlur(Transform):
-    """[BETA] Blurs image with randomly chosen Gaussian blur.
-
-    .. v2betastatus:: GausssianBlur transform
+    """Blurs image with randomly chosen Gaussian blur.
 
     If the input is a Tensor, it is expected
     to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -212,9 +204,7 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
-    """[BETA] Converts the input to a specific dtype, optionally scaling the values for images or videos.
-
-    .. v2betastatus:: ToDtype transform
+    """Converts the input to a specific dtype, optionally scaling the values for images or videos.
 
     .. note::
         ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.
@@ -286,11 +276,9 @@ class ToDtype(Transform):
 
 
 class ConvertImageDtype(Transform):
-    """[BETA] [DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.
+    """[DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.
 
     Convert input image to the given ``dtype`` and scale the values accordingly.
-
-    .. v2betastatus:: ConvertImageDtype transform
 
     .. warning::
         Consider using ``ToDtype(dtype, scale=True)`` instead. See :class:`~torchvision.transforms.v2.ToDtype`.
@@ -323,9 +311,7 @@ class ConvertImageDtype(Transform):
 
 
 class SanitizeBoundingBoxes(Transform):
-    """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
-
-    .. v2betastatus:: SanitizeBoundingBoxes transform
+    """Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
     This transform removes bounding boxes and their associated labels/masks that:
 

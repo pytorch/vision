@@ -8,7 +8,7 @@ from ._tv_tensor import TVTensor
 
 
 class Video(TVTensor):
-    """[BETA] :class:`torch.Tensor` subclass for videos.
+    """:class:`torch.Tensor` subclass for videos.
 
     Args:
         data (tensor-like): Any data that can be turned into a tensor with :func:`torch.as_tensor`.

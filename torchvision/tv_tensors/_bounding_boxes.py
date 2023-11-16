@@ -10,7 +10,7 @@ from ._tv_tensor import TVTensor
 
 
 class BoundingBoxFormat(Enum):
-    """[BETA] Coordinate format of a bounding box.
+    """Coordinate format of a bounding box.
 
     Available formats are
 
@@ -25,7 +25,7 @@ class BoundingBoxFormat(Enum):
 
 
 class BoundingBoxes(TVTensor):
-    """[BETA] :class:`torch.Tensor` subclass for bounding boxes.
+    """:class:`torch.Tensor` subclass for bounding boxes.
 
     .. note::
         There should be only one :class:`~torchvision.tv_tensors.BoundingBoxes`
