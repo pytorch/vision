@@ -136,7 +136,7 @@ class VideoClips:
 
     def _compute_frame_pts(self) -> None:
         self.video_pts = []
-        self.video_fps = []
+        self.video_fps: List[int] = []
 
         # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
