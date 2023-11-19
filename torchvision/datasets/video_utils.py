@@ -281,7 +281,7 @@ class VideoClips:
             # optimization: if step is integer, don't need to perform
             # advanced indexing
             step = int(step)
-            return slice(None, None, step)
+            return slice(None, num_frames * step, step)
         idxs = torch.arange(num_frames, dtype=torch.float32) * step
         idxs = idxs.floor().to(torch.int64)
         return idxs
