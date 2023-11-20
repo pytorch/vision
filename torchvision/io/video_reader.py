@@ -121,8 +121,9 @@ class VideoReader:
         from .. import get_video_backend
 
         self.backend = get_video_backend()
-        if isinstance(src, str) and not src:
-            raise ValueError("src cannot be empty")
+        if isinstance(src, str):
+            if not src:
+                raise ValueError("src cannot be empty")
         elif isinstance(src, bytes):
             if self.backend in ["cuda"]:
                 raise RuntimeError(
