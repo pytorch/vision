@@ -302,7 +302,7 @@ class TestVideoApi:
     def test_src(self):
         with pytest.raises(ValueError, match="src cannot be empty"):
             VideoReader(src="")
-        with pytest.raises(ValueError, match="`src` must be either string"):
+        with pytest.raises(ValueError, match="src must be either string"):
             VideoReader(src=2)
         with pytest.raises(TypeError, match="unexpected keyword argument"):
             VideoReader(path="path")
