@@ -123,7 +123,7 @@ class VideoReader:
         self.backend = get_video_backend()
         if isinstance(src, str) and not src:
             raise ValueError("src cannot be empty")
-        if isinstance(src, bytes):
+        elif isinstance(src, bytes):
             if self.backend in ["cuda"]:
                 raise RuntimeError(
                     "VideoReader cannot be initialized from bytes object when using cuda or pyav backend."
