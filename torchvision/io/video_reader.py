@@ -141,7 +141,7 @@ class VideoReader:
                     "VideoReader cannot be initialized from Tensor object when using cuda or pyav backend."
                 )
         else:
-            raise ValueError(f"`src` must be either string, Tensor or bytes object. Got {type(src)}")
+            raise ValueError(f"src must be either string, Tensor or bytes object. Got {type(src)}")
 
         if self.backend == "cuda":
             device = torch.device("cuda")
