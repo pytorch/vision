@@ -1,6 +1,6 @@
 """This file only exists to be lazy-imported and avoid V2-related import warnings when just using V1."""
 import torch
-from torchvision import datapoints
+from torchvision import tv_tensors
 from torchvision.transforms import v2
 
 
@@ -8,10 +8,10 @@ class PadIfSmaller(v2.Transform):
     def __init__(self, size, fill=0):
         super().__init__()
         self.size = size
-        self.fill = v2._geometry._setup_fill_arg(fill)
+        self.fill = v2._utils._setup_fill_arg(fill)
 
     def _get_params(self, sample):
-        _, height, width = v2.utils.query_chw(sample)
+        _, height, width = v2._utils.query_chw(sample)
         padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
         needs_padding = any(padding)
         return dict(padding=padding, needs_padding=needs_padding)
@@ -20,7 +20,7 @@ class PadIfSmaller(v2.Transform):
         if not params["needs_padding"]:
             return inpt
 
-        fill = self.fill[type(inpt)]
+        fill = v2._utils._get_fill(self.fill, type(inpt))
         fill = v2._utils._convert_fill_arg(fill)
 
         return v2.functional.pad(inpt, padding=params["padding"], fill=fill)
@@ -78,6 +78,6 @@ class CocoDetectionToVOCSegmentation(v2.Transform):
     def forward(self, image, target):
         segmentation_mask = self._coco_detection_masks_to_voc_segmentation_mask(target)
         if segmentation_mask is None:
-            segmentation_mask = torch.zeros(v2.functional.get_spatial_size(image), dtype=torch.uint8)
+            segmentation_mask = torch.zeros(v2.functional.get_size(image), dtype=torch.uint8)
 
-        return image, datapoints.Mask(segmentation_mask)
+        return image, tv_tensors.Mask(segmentation_mask)

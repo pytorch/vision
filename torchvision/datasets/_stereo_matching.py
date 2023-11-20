@@ -796,7 +796,7 @@ class FallingThingsStereo(StereoMatchingDataset):
         # in order to extract disparity from depth maps
         camera_settings_path = Path(file_path).parent / "_camera_settings.json"
         with open(camera_settings_path, "r") as f:
-            # inverse of depth-from-disparity equation: depth = (baseline * focal) / (disparity * pixel_constatnt)
+            # inverse of depth-from-disparity equation: depth = (baseline * focal) / (disparity * pixel_constant)
             intrinsics = json.load(f)
             focal = intrinsics["camera_settings"][0]["intrinsic_settings"]["fx"]
             baseline, pixel_constant = 6, 100  # pixel constant is inverted

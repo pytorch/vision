@@ -129,18 +129,23 @@ def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, "torchvision", "csrc")
 
-    main_file = glob.glob(os.path.join(extensions_dir, "*.cpp")) + glob.glob(
-        os.path.join(extensions_dir, "ops", "*.cpp")
+    main_file = (
+        glob.glob(os.path.join(extensions_dir, "*.cpp"))
+        + glob.glob(os.path.join(extensions_dir, "ops", "*.cpp"))
+        + glob.glob(os.path.join(extensions_dir, "ops", "autocast", "*.cpp"))
     )
     source_cpu = (
         glob.glob(os.path.join(extensions_dir, "ops", "autograd", "*.cpp"))
         + glob.glob(os.path.join(extensions_dir, "ops", "cpu", "*.cpp"))
         + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
     )
+    source_mps = glob.glob(os.path.join(extensions_dir, "ops", "mps", "*.mm"))
 
     print("Compiling extensions with following flags:")
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
     print(f"  FORCE_CUDA: {force_cuda}")
+    force_mps = os.getenv("FORCE_MPS", "0") == "1"
+    print(f"  FORCE_MPS: {force_mps}")
     debug_mode = os.getenv("DEBUG", "0") == "1"
     print(f"  DEBUG: {debug_mode}")
     use_png = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
@@ -181,8 +186,6 @@ def get_extensions():
     else:
         source_cuda = glob.glob(os.path.join(extensions_dir, "ops", "cuda", "*.cu"))
 
-    source_cuda += glob.glob(os.path.join(extensions_dir, "ops", "autocast", "*.cpp"))
-
     sources = main_file + source_cpu
     extension = CppExtension
 
@@ -202,6 +205,8 @@ def get_extensions():
             define_macros += [("WITH_HIP", None)]
             nvcc_flags = []
         extra_compile_args["nvcc"] = nvcc_flags
+    elif torch.backends.mps.is_available() or force_mps:
+        sources += source_mps
 
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
@@ -218,6 +223,9 @@ def get_extensions():
             extra_compile_args["nvcc"] = [f for f in nvcc_flags if not ("-O" in f or "-g" in f)]
             extra_compile_args["nvcc"].append("-O0")
             extra_compile_args["nvcc"].append("-g")
+    else:
+        print("Compiling with debug mode OFF")
+        extra_compile_args["cxx"].append("-g0")
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
@@ -298,8 +306,8 @@ def get_extensions():
     use_jpeg = use_jpeg and jpeg_found
     if use_jpeg:
         print("Building torchvision with JPEG image support")
-        print(f"  libpng include path: {jpeg_include}")
-        print(f"  libpng lib path: {jpeg_lib}")
+        print(f"  libjpeg include path: {jpeg_include}")
+        print(f"  libjpeg lib path: {jpeg_lib}")
         image_link_flags.append("jpeg")
         if jpeg_conda:
             image_library += [jpeg_lib]

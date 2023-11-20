@@ -1,37 +1,40 @@
 import math
 import numbers
 import warnings
-from typing import Any, cast, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
 
-from torchvision import datapoints, transforms as _transforms
+from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2.functional._utils import _FillType
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
     _check_padding_arg,
     _check_padding_mode_arg,
     _check_sequence_input,
+    _get_fill,
     _setup_angle,
     _setup_fill_arg,
-    _setup_float_or_seq,
+    _setup_number_or_seq,
     _setup_size,
+    get_bounding_boxes,
+    has_all,
+    has_any,
+    is_pure_tensor,
+    query_size,
 )
-from .utils import has_all, has_any, is_simple_tensor, query_bounding_boxes, query_spatial_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
-    """[BETA] Horizontally flip the input with a given probability.
+    """Horizontally flip the input with a given probability.
 
-    .. v2betastatus:: RandomHorizontalFlip transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -42,16 +45,14 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomHorizontalFlip
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.horizontal_flip(inpt)
+        return self._call_kernel(F.horizontal_flip, inpt)
 
 
 class RandomVerticalFlip(_RandomApplyTransform):
-    """[BETA] Vertically flip the input with a given probability.
+    """Vertically flip the input with a given probability.
 
-    .. v2betastatus:: RandomVerticalFlip transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -62,25 +63,16 @@ class RandomVerticalFlip(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomVerticalFlip
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.vertical_flip(inpt)
+        return self._call_kernel(F.vertical_flip, inpt)
 
 
 class Resize(Transform):
-    """[BETA] Resize the input to the given size.
+    """Resize the input to the given size.
 
-    .. v2betastatus:: Resize transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
-
-    .. warning::
-        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
-        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
-        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
-        closer.
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
@@ -111,7 +103,7 @@ class Resize(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -120,8 +112,8 @@ class Resize(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     _v1_transform_cls = _transforms.Resize
@@ -131,26 +123,27 @@ class Resize(Transform):
         size: Union[int, Sequence[int]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
 
         if isinstance(size, int):
             size = [size]
-        elif isinstance(size, (list, tuple)) and len(size) in {1, 2}:
+        elif isinstance(size, Sequence) and len(size) in {1, 2}:
             size = list(size)
         else:
             raise ValueError(
-                f"size can either be an integer or a list or tuple of one or two integers, " f"but got {size} instead."
+                f"size can either be an integer or a sequence of one or two integers, but got {size} instead."
             )
         self.size = size
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(
+        return self._call_kernel(
+            F.resize,
             inpt,
             self.size,
             interpolation=self.interpolation,
@@ -160,12 +153,10 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
-    """[BETA] Crop the input at the center.
+    """Crop the input at the center.
 
-    .. v2betastatus:: CenterCrop transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -184,16 +175,14 @@ class CenterCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.center_crop(inpt, output_size=self.size)
+        return self._call_kernel(F.center_crop, inpt, output_size=self.size)
 
 
 class RandomResizedCrop(Transform):
-    """[BETA] Crop a random portion of the input and resize it to a given size.
+    """Crop a random portion of the input and resize it to a given size.
 
-    .. v2betastatus:: RandomResizedCrop transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -224,7 +213,7 @@ class RandomResizedCrop(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -233,8 +222,8 @@ class RandomResizedCrop(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     _v1_transform_cls = _transforms.RandomResizedCrop
@@ -245,7 +234,7 @@ class RandomResizedCrop(Transform):
         scale: Tuple[float, float] = (0.08, 1.0),
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -261,13 +250,13 @@ class RandomResizedCrop(Transform):
 
         self.scale = scale
         self.ratio = ratio
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
         area = height * width
 
         log_ratio = self._log_ratio
@@ -305,21 +294,16 @@ class RandomResizedCrop(Transform):
         return dict(top=i, left=j, height=h, width=w)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resized_crop(
-            inpt, **params, size=self.size, interpolation=self.interpolation, antialias=self.antialias
+        return self._call_kernel(
+            F.resized_crop, inpt, **params, size=self.size, interpolation=self.interpolation, antialias=self.antialias
         )
 
 
-ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
-
-
 class FiveCrop(Transform):
-    """[BETA] Crop the image or video into four corners and the central crop.
+    """Crop the image or video into four corners and the central crop.
 
-    .. v2betastatus:: FiveCrop transform
-
-    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.datapoints.Image` or a
-    :class:`~torchvision.datapoints.Video` it can have arbitrary number of leading batch dimensions.
+    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.Image` or a
+    :class:`~torchvision.tv_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
 
     .. Note::
@@ -334,15 +318,15 @@ class FiveCrop(Transform):
 
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], int]):
+        ...     def forward(self, sample: Tuple[Tuple[Union[tv_tensors.Image, tv_tensors.Video], ...], int]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
-        ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
+        ...         images_or_videos = tv_tensors.wrap(torch.stack(images_or_videos), like=image_or_video)
         ...         labels = torch.full((batch_size,), label, device=images_or_videos.device)
         ...         return images_or_videos, labels
         ...
-        >>> image = datapoints.Image(torch.rand(3, 256, 256))
+        >>> image = tv_tensors.Image(torch.rand(3, 256, 256))
         >>> label = 3
         >>> transform = transforms.Compose([transforms.FiveCrop(224), BatchMultiCrop()])
         >>> images, labels = transform(image, label)
@@ -354,35 +338,32 @@ class FiveCrop(Transform):
 
     _v1_transform_cls = _transforms.FiveCrop
 
-    _transformed_types = (
-        datapoints.Image,
-        PIL.Image.Image,
-        is_simple_tensor,
-        datapoints.Video,
-    )
-
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(
-        self, inpt: ImageOrVideoTypeJIT, params: Dict[str, Any]
-    ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
-        return F.five_crop(inpt, self.size)
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
+            warnings.warn(
+                f"{type(self).__name__}() is currently passing through inputs of type "
+                f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
+            )
+        return super()._call_kernel(functional, inpt, *args, **kwargs)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.five_crop, inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
+        if has_any(flat_inputs, tv_tensors.BoundingBoxes, tv_tensors.Mask):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
 
 class TenCrop(Transform):
-    """[BETA] Crop the image or video into four corners and the central crop plus the flipped version of
+    """Crop the image or video into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default).
 
-    .. v2betastatus:: TenCrop transform
-
-    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.datapoints.Image` or a
-    :class:`~torchvision.datapoints.Video` it can have arbitrary number of leading batch dimensions.
+    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.Image` or a
+    :class:`~torchvision.tv_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
 
     See :class:`~torchvision.transforms.v2.FiveCrop` for an example.
@@ -401,46 +382,32 @@ class TenCrop(Transform):
 
     _v1_transform_cls = _transforms.TenCrop
 
-    _transformed_types = (
-        datapoints.Image,
-        PIL.Image.Image,
-        is_simple_tensor,
-        datapoints.Video,
-    )
-
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
+        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
+            warnings.warn(
+                f"{type(self).__name__}() is currently passing through inputs of type "
+                f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
+            )
+        return super()._call_kernel(functional, inpt, *args, **kwargs)
+
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, datapoints.BoundingBoxes, datapoints.Mask):
+        if has_any(flat_inputs, tv_tensors.BoundingBoxes, tv_tensors.Mask):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
-    def _transform(
-        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
-    ) -> Tuple[
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-        ImageOrVideoTypeJIT,
-    ]:
-        return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.ten_crop, inpt, self.size, vertical_flip=self.vertical_flip)
 
 
 class Pad(Transform):
-    """[BETA] Pad the input on all sides with the given "pad" value.
+    """Pad the input on all sides with the given "pad" value.
 
-    .. v2betastatus:: Pad transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -456,7 +423,7 @@ class Pad(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
         padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is "constant".
@@ -487,7 +454,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -504,15 +471,13 @@ class Pad(Transform):
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
-        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
+        fill = _get_fill(self._fill, type(inpt))
+        return self._call_kernel(F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
 class RandomZoomOut(_RandomApplyTransform):
-    """[BETA] "Zoom out" transformation from
+    """ "Zoom out" transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
-
-    .. v2betastatus:: RandomZoomOut transform
 
     This transformation randomly pads images, videos, bounding boxes and masks creating a zoom out effect.
     Output spatial size is randomly sampled from original size up to a maximum size configured
@@ -524,8 +489,8 @@ class RandomZoomOut(_RandomApplyTransform):
         output_width = input_width * r
         output_height = input_height * r
 
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -533,7 +498,7 @@ class RandomZoomOut(_RandomApplyTransform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
         side_range (sequence of floats, optional): tuple of two floats defines minimum and maximum factors to
             scale the input size.
@@ -542,7 +507,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def __init__(
         self,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -555,10 +520,10 @@ class RandomZoomOut(_RandomApplyTransform):
 
         self.side_range = side_range
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
-            raise ValueError(f"Invalid canvas side range provided {side_range}.")
+            raise ValueError(f"Invalid side range provided {side_range}.")
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_h, orig_w = query_spatial_size(flat_inputs)
+        orig_h, orig_w = query_size(flat_inputs)
 
         r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
         canvas_width = int(orig_w * r)
@@ -574,17 +539,15 @@ class RandomZoomOut(_RandomApplyTransform):
         return dict(padding=padding)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
-        return F.pad(inpt, **params, fill=fill)
+        fill = _get_fill(self._fill, type(inpt))
+        return self._call_kernel(F.pad, inpt, **params, fill=fill)
 
 
 class RandomRotation(Transform):
-    """[BETA] Rotate the input by angle.
+    """Rotate the input by angle.
 
-    .. v2betastatus:: RandomRotation transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -599,13 +562,20 @@ class RandomRotation(Transform):
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
-            Note that the expand flag assumes rotation around the center and no translation.
+            Note that the expand flag assumes rotation around the center (see note below) and no translation.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
+
+            .. note::
+
+                In theory, setting ``center`` has no effect if ``expand=True``, since the image center will become the
+                center of rotation. In practice however, due to numerical precision, this can lead to off-by-one
+                differences of the resulting image size compared to using the image center in the first place. Thus, when
+                setting ``expand=True``, it's best to leave ``center=None`` (default).
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
@@ -620,11 +590,11 @@ class RandomRotation(Transform):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.expand = expand
 
         self.fill = fill
@@ -640,8 +610,9 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
-        return F.rotate(
+        fill = _get_fill(self._fill, type(inpt))
+        return self._call_kernel(
+            F.rotate,
             inpt,
             **params,
             interpolation=self.interpolation,
@@ -652,12 +623,10 @@ class RandomRotation(Transform):
 
 
 class RandomAffine(Transform):
-    """[BETA] Random affine transformation the input keeping center invariant.
+    """Random affine transformation the input keeping center invariant.
 
-    .. v2betastatus:: RandomAffine transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -684,7 +653,7 @@ class RandomAffine(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
@@ -702,7 +671,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -725,7 +694,7 @@ class RandomAffine(Transform):
         else:
             self.shear = shear
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -735,7 +704,7 @@ class RandomAffine(Transform):
         self.center = center
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
 
         angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
         if self.translate is not None:
@@ -762,8 +731,9 @@ class RandomAffine(Transform):
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
-        return F.affine(
+        fill = _get_fill(self._fill, type(inpt))
+        return self._call_kernel(
+            F.affine,
             inpt,
             **params,
             interpolation=self.interpolation,
@@ -773,12 +743,10 @@ class RandomAffine(Transform):
 
 
 class RandomCrop(Transform):
-    """[BETA] Crop the input at a random location.
+    """Crop the input at a random location.
 
-    .. v2betastatus:: RandomCrop transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -801,7 +769,7 @@ class RandomCrop(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
         padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
@@ -840,7 +808,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -859,7 +827,7 @@ class RandomCrop(Transform):
         self.padding_mode = padding_mode
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        padded_height, padded_width = query_spatial_size(flat_inputs)
+        padded_height, padded_width = query_size(flat_inputs)
 
         if self.padding is not None:
             pad_left, pad_right, pad_top, pad_bottom = self.padding
@@ -918,22 +886,22 @@ class RandomCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
-            fill = self._fill[type(inpt)]
-            inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
+            fill = _get_fill(self._fill, type(inpt))
+            inpt = self._call_kernel(F.pad, inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         if params["needs_crop"]:
-            inpt = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
+            inpt = self._call_kernel(
+                F.crop, inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+            )
 
         return inpt
 
 
 class RandomPerspective(_RandomApplyTransform):
-    """[BETA] Perform a random perspective transformation of the input with a given probability.
+    """Perform a random perspective transformation of the input with a given probability.
 
-    .. v2betastatus:: RandomPerspective transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -948,7 +916,7 @@ class RandomPerspective(_RandomApplyTransform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
     """
 
@@ -959,7 +927,7 @@ class RandomPerspective(_RandomApplyTransform):
         distortion_scale: float = 0.5,
         p: float = 0.5,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__(p=p)
 
@@ -967,12 +935,12 @@ class RandomPerspective(_RandomApplyTransform):
             raise ValueError("Argument distortion_scale value should be between 0 and 1")
 
         self.distortion_scale = distortion_scale
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        height, width = query_spatial_size(flat_inputs)
+        height, width = query_size(flat_inputs)
 
         distortion_scale = self.distortion_scale
 
@@ -1002,11 +970,12 @@ class RandomPerspective(_RandomApplyTransform):
         return dict(coefficients=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
-        return F.perspective(
+        fill = _get_fill(self._fill, type(inpt))
+        return self._call_kernel(
+            F.perspective,
             inpt,
-            None,
-            None,
+            startpoints=None,
+            endpoints=None,
             fill=fill,
             interpolation=self.interpolation,
             **params,
@@ -1014,12 +983,10 @@ class RandomPerspective(_RandomApplyTransform):
 
 
 class ElasticTransform(Transform):
-    """[BETA] Transform the input with elastic transformations.
+    """Transform the input with elastic transformations.
 
-    .. v2betastatus:: RandomPerspective transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1031,7 +998,7 @@ class ElasticTransform(Transform):
 
     .. note::
         Implementation to transform bounding boxes is approximative (not exact).
-        We construct an approximation of the inverse grid as ``inverse_grid = idenity - displacement``.
+        We construct an approximation of the inverse grid as ``inverse_grid = identity - displacement``.
         This is not an exact inverse of the grid used to transform images, i.e. ``grid = identity + displacement``.
         Our assumption is that ``displacement * displacement`` is small and can be ignored.
         Large displacements would lead to large errors in the approximation.
@@ -1050,7 +1017,7 @@ class ElasticTransform(Transform):
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
     """
 
@@ -1061,18 +1028,18 @@ class ElasticTransform(Transform):
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
-        self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
-        self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
+        self.alpha = _setup_number_or_seq(alpha, "alpha")
+        self.sigma = _setup_number_or_seq(sigma, "sigma")
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        size = list(query_spatial_size(flat_inputs))
+        size = list(query_size(flat_inputs))
 
         dx = torch.rand([1, 1] + size) * 2 - 1
         if self.sigma[0] > 0.0:
@@ -1080,7 +1047,7 @@ class ElasticTransform(Transform):
             # if kernel size is even we have to make it odd
             if kx % 2 == 0:
                 kx += 1
-            dx = F.gaussian_blur(dx, [kx, kx], list(self.sigma))
+            dx = self._call_kernel(F.gaussian_blur, dx, [kx, kx], list(self.sigma))
         dx = dx * self.alpha[0] / size[0]
 
         dy = torch.rand([1, 1] + size) * 2 - 1
@@ -1089,14 +1056,15 @@ class ElasticTransform(Transform):
             # if kernel size is even we have to make it odd
             if ky % 2 == 0:
                 ky += 1
-            dy = F.gaussian_blur(dy, [ky, ky], list(self.sigma))
+            dy = self._call_kernel(F.gaussian_blur, dy, [ky, ky], list(self.sigma))
         dy = dy * self.alpha[1] / size[1]
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self._fill[type(inpt)]
-        return F.elastic(
+        fill = _get_fill(self._fill, type(inpt))
+        return self._call_kernel(
+            F.elastic,
             inpt,
             **params,
             fill=fill,
@@ -1105,20 +1073,18 @@ class ElasticTransform(Transform):
 
 
 class RandomIoUCrop(Transform):
-    """[BETA] Random IoU crop transformation from
+    """Random IoU crop transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
-    .. v2betastatus:: RandomIoUCrop transform
-
-    This transformation requires an image or video data and ``datapoints.BoundingBoxes`` in the input.
+    This transformation requires an image or video data and ``tv_tensors.BoundingBoxes`` in the input.
 
     .. warning::
         In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`
         must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately
         after or later in the transforms pipeline.
 
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1155,8 +1121,8 @@ class RandomIoUCrop(Transform):
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
-            has_all(flat_inputs, datapoints.BoundingBoxes)
-            and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
+            has_all(flat_inputs, tv_tensors.BoundingBoxes)
+            and has_any(flat_inputs, PIL.Image.Image, tv_tensors.Image, is_pure_tensor)
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain tensor or PIL images "
@@ -1164,8 +1130,8 @@ class RandomIoUCrop(Transform):
             )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_h, orig_w = query_spatial_size(flat_inputs)
-        bboxes = query_bounding_boxes(flat_inputs)
+        orig_h, orig_w = query_size(flat_inputs)
+        bboxes = get_bounding_boxes(flat_inputs)
 
         while True:
             # sample an option
@@ -1193,8 +1159,10 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_boxes(
-                    bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
+                xyxy_bboxes = F.convert_bounding_box_format(
+                    bboxes.as_subclass(torch.Tensor),
+                    bboxes.format,
+                    tv_tensors.BoundingBoxFormat.XYXY,
                 )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
                 cy = 0.5 * (xyxy_bboxes[..., 1] + xyxy_bboxes[..., 3])
@@ -1218,9 +1186,11 @@ class RandomIoUCrop(Transform):
         if len(params) < 1:
             return inpt
 
-        output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
+        output = self._call_kernel(
+            F.crop, inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+        )
 
-        if isinstance(output, datapoints.BoundingBoxes):
+        if isinstance(output, tv_tensors.BoundingBoxes):
             # We "mark" the invalid boxes as degenreate, and they can be
             # removed by a later call to SanitizeBoundingBoxes()
             output[~params["is_within_crop_area"]] = 0
@@ -1229,13 +1199,11 @@ class RandomIoUCrop(Transform):
 
 
 class ScaleJitter(Transform):
-    """[BETA] Perform Large Scale Jitter on the input according to
+    """Perform Large Scale Jitter on the input according to
     `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
 
-    .. v2betastatus:: ScaleJitter transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1255,7 +1223,7 @@ class ScaleJitter(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -1264,8 +1232,8 @@ class ScaleJitter(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -1273,16 +1241,16 @@ class ScaleJitter(Transform):
         target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ):
         super().__init__()
         self.target_size = target_size
         self.scale_range = scale_range
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_height, orig_width = query_spatial_size(flat_inputs)
+        orig_height, orig_width = query_size(flat_inputs)
 
         scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
         r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
@@ -1292,16 +1260,16 @@ class ScaleJitter(Transform):
         return dict(size=(new_height, new_width))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias)
+        return self._call_kernel(
+            F.resize, inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
+        )
 
 
 class RandomShortestSize(Transform):
-    """[BETA] Randomly resize the input.
+    """Randomly resize the input.
 
-    .. v2betastatus:: RandomShortestSize transform
-
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1320,7 +1288,7 @@ class RandomShortestSize(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -1329,8 +1297,8 @@ class RandomShortestSize(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -1338,16 +1306,16 @@ class RandomShortestSize(Transform):
         min_size: Union[List[int], Tuple[int], int],
         max_size: Optional[int] = None,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ):
         super().__init__()
         self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
         self.max_size = max_size
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        orig_height, orig_width = query_spatial_size(flat_inputs)
+        orig_height, orig_width = query_size(flat_inputs)
 
         min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
         r = min_size / min(orig_height, orig_width)
@@ -1360,13 +1328,13 @@ class RandomShortestSize(Transform):
         return dict(size=(new_height, new_width))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias)
+        return self._call_kernel(
+            F.resize, inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
+        )
 
 
 class RandomResize(Transform):
-    """[BETA] Randomly resize the input.
-
-    .. v2betastatus:: RandomResize transform
+    """Randomly resize the input.
 
     This transformation can be used together with ``RandomCrop`` as data augmentations to train
     models on image segmentation task.
@@ -1379,8 +1347,8 @@ class RandomResize(Transform):
         output_width = size
         output_height = size
 
-    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
-    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBoxes` etc.)
+    If the input is a :class:`torch.Tensor` or a ``TVTensor`` (e.g. :class:`~torchvision.tv_tensors.Image`,
+    :class:`~torchvision.tv_tensors.Video`, :class:`~torchvision.tv_tensors.BoundingBoxes` etc.)
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
@@ -1399,7 +1367,7 @@ class RandomResize(Transform):
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -1408,8 +1376,8 @@ class RandomResize(Transform):
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -1417,12 +1385,12 @@ class RandomResize(Transform):
         min_size: int,
         max_size: int,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        antialias: Optional[Union[str, bool]] = "warn",
+        antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
         self.min_size = min_size
         self.max_size = max_size
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -1430,4 +1398,6 @@ class RandomResize(Transform):
         return dict(size=[size])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias)
+        return self._call_kernel(
+            F.resize, inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias
+        )

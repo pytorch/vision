@@ -20,6 +20,19 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_pool(
   return op.call(input, rois, spatial_scale, pooled_height, pooled_width);
 }
 
+std::tuple<at::Tensor, at::Tensor> ps_roi_pool_symint(
+    const at::Tensor& input,
+    const at::Tensor& rois,
+    double spatial_scale,
+    c10::SymInt pooled_height,
+    c10::SymInt pooled_width) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.ps_roi_pool.ps_roi_pool");
+  static auto op = c10::Dispatcher::singleton()
+                       .findSchemaOrThrow("torchvision::ps_roi_pool", "")
+                       .typed<decltype(ps_roi_pool_symint)>();
+  return op.call(input, rois, spatial_scale, pooled_height, pooled_width);
+}
+
 namespace detail {
 
 at::Tensor _ps_roi_pool_backward(
@@ -50,13 +63,41 @@ at::Tensor _ps_roi_pool_backward(
       width);
 }
 
+at::Tensor _ps_roi_pool_backward_symint(
+    const at::Tensor& grad,
+    const at::Tensor& rois,
+    const at::Tensor& channel_mapping,
+    double spatial_scale,
+    c10::SymInt pooled_height,
+    c10::SymInt pooled_width,
+    c10::SymInt batch_size,
+    c10::SymInt channels,
+    c10::SymInt height,
+    c10::SymInt width) {
+  static auto op =
+      c10::Dispatcher::singleton()
+          .findSchemaOrThrow("torchvision::_ps_roi_pool_backward", "")
+          .typed<decltype(_ps_roi_pool_backward_symint)>();
+  return op.call(
+      grad,
+      rois,
+      channel_mapping,
+      spatial_scale,
+      pooled_height,
+      pooled_width,
+      batch_size,
+      channels,
+      height,
+      width);
+}
+
 } // namespace detail
 
 TORCH_LIBRARY_FRAGMENT(torchvision, m) {
   m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::ps_roi_pool(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width) -> (Tensor, Tensor)"));
+      "torchvision::ps_roi_pool(Tensor input, Tensor rois, float spatial_scale, SymInt pooled_height, SymInt pooled_width) -> (Tensor, Tensor)"));
   m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::_ps_roi_pool_backward(Tensor grad, Tensor rois, Tensor channel_mapping, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width) -> Tensor"));
+      "torchvision::_ps_roi_pool_backward(Tensor grad, Tensor rois, Tensor channel_mapping, float spatial_scale, SymInt pooled_height, SymInt pooled_width, SymInt batch_size, SymInt channels, SymInt height, SymInt width) -> Tensor"));
 }
 
 } // namespace ops

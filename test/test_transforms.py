@@ -2,8 +2,6 @@ import math
 import os
 import random
 import re
-import textwrap
-import warnings
 from functools import partial
 
 import numpy as np
@@ -25,7 +23,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import assert_equal, assert_run_python_script, cycle_over, float_dtypes, int_dtypes
+from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes
 
 
 GRACE_HOPPER = get_file_path_2(
@@ -440,16 +438,6 @@ def test_resize_antialias_error():
         t(img)
 
 
-def test_resize_antialias_default_warning():
-
-    img = Image.new("RGB", size=(10, 10), color=127)
-    # We make sure we don't warn for PIL images since the default behaviour doesn't change
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        transforms.Resize((20, 20))(img)
-        transforms.RandomResizedCrop((20, 20))(img)
-
-
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
 def test_resize_size_equals_small_edge_size(height, width):
     # Non-regression test for https://github.com/pytorch/vision/issues/5405
@@ -672,7 +660,7 @@ class TestToPil:
     @pytest.mark.parametrize(
         "img_data, expected_mode",
         [
-            (torch.Tensor(4, 4, 1).uniform_().numpy(), "F"),
+            (torch.Tensor(4, 4, 1).uniform_().numpy(), "L"),
             (torch.ByteTensor(4, 4, 1).random_(0, 255).numpy(), "L"),
             (torch.ShortTensor(4, 4, 1).random_().numpy(), "I;16"),
             (torch.IntTensor(4, 4, 1).random_().numpy(), "I"),
@@ -682,6 +670,8 @@ class TestToPil:
         transform = transforms.ToPILImage(mode=expected_mode) if with_mode else transforms.ToPILImage()
         img = transform(img_data)
         assert img.mode == expected_mode
+        if np.issubdtype(img_data.dtype, np.floating):
+            img_data = (img_data * 255).astype(np.uint8)
         # note: we explicitly convert img's dtype because pytorch doesn't support uint16
         # and otherwise assert_close wouldn't be able to construct a tensor from the uint16 array
         torch.testing.assert_close(img_data[:, :, 0], np.asarray(img).astype(img_data.dtype))
@@ -752,7 +742,7 @@ class TestToPil:
     @pytest.mark.parametrize(
         "img_data, expected_mode",
         [
-            (torch.Tensor(4, 4).uniform_().numpy(), "F"),
+            (torch.Tensor(4, 4).uniform_().numpy(), "L"),
             (torch.ByteTensor(4, 4).random_(0, 255).numpy(), "L"),
             (torch.ShortTensor(4, 4).random_().numpy(), "I;16"),
             (torch.IntTensor(4, 4).random_().numpy(), "I"),
@@ -762,6 +752,8 @@ class TestToPil:
         transform = transforms.ToPILImage(mode=expected_mode) if with_mode else transforms.ToPILImage()
         img = transform(img_data)
         assert img.mode == expected_mode
+        if np.issubdtype(img_data.dtype, np.floating):
+            img_data = (img_data * 255).astype(np.uint8)
         np.testing.assert_allclose(img_data, img)
 
     @pytest.mark.parametrize("expected_mode", [None, "RGB", "HSV", "YCbCr"])
@@ -885,8 +877,6 @@ class TestToPil:
             trans(np.ones([4, 4, 1], np.uint16))
         with pytest.raises(TypeError, match=reg_msg):
             trans(np.ones([4, 4, 1], np.uint32))
-        with pytest.raises(TypeError, match=reg_msg):
-            trans(np.ones([4, 4, 1], np.float64))
 
         with pytest.raises(ValueError, match=r"pic should be 2/3 dimensional. Got \d+ dimensions."):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
@@ -2248,36 +2238,6 @@ def test_random_grayscale_with_grayscale_input():
     image_pil = F.to_pil_image(image_tensor)
     output_pil = transform(image_pil)
     torch.testing.assert_close(F.pil_to_tensor(output_pil), image_tensor)
-
-
-# TODO: remove in 0.17 when we can delete functional_pil.py and functional_tensor.py
-@pytest.mark.parametrize(
-    "import_statement",
-    (
-        "from torchvision.transforms import functional_pil",
-        "from torchvision.transforms import functional_tensor",
-        "from torchvision.transforms.functional_tensor import resize",
-        "from torchvision.transforms.functional_pil import resize",
-    ),
-)
-@pytest.mark.parametrize("from_private", (True, False))
-def test_functional_deprecation_warning(import_statement, from_private):
-    if from_private:
-        import_statement = import_statement.replace("functional", "_functional")
-        source = f"""
-        import warnings
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            {import_statement}
-        """
-    else:
-        source = f"""
-        import pytest
-        with pytest.warns(UserWarning, match="removed in 0.17"):
-            {import_statement}
-        """
-    assert_run_python_script(textwrap.dedent(source))
 
 
 if __name__ == "__main__":

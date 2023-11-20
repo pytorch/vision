@@ -16,16 +16,16 @@ class PSROIAlignFunction
       const torch::autograd::Variable& input,
       const torch::autograd::Variable& rois,
       double spatial_scale,
-      int64_t pooled_height,
-      int64_t pooled_width,
+      c10::SymInt pooled_height,
+      c10::SymInt pooled_width,
       int64_t sampling_ratio) {
     ctx->saved_data["spatial_scale"] = spatial_scale;
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["sampling_ratio"] = sampling_ratio;
-    ctx->saved_data["input_shape"] = input.sizes();
+    ctx->saved_data["input_shape"] = input.sym_sizes();
     at::AutoDispatchBelowADInplaceOrView g;
-    auto result = ps_roi_align(
+    auto result = ps_roi_align_symint(
         input,
         rois,
         spatial_scale,
@@ -48,19 +48,19 @@ class PSROIAlignFunction
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
     auto channel_mapping = saved[1];
-    auto input_shape = ctx->saved_data["input_shape"].toIntList();
-    auto grad_in = detail::_ps_roi_align_backward(
+    auto input_shape = ctx->saved_data["input_shape"].toList();
+    auto grad_in = detail::_ps_roi_align_backward_symint(
         grad_output[0],
         rois,
         channel_mapping,
         ctx->saved_data["spatial_scale"].toDouble(),
-        ctx->saved_data["pooled_height"].toInt(),
-        ctx->saved_data["pooled_width"].toInt(),
+        ctx->saved_data["pooled_height"].toSymInt(),
+        ctx->saved_data["pooled_width"].toSymInt(),
         ctx->saved_data["sampling_ratio"].toInt(),
-        input_shape[0],
-        input_shape[1],
-        input_shape[2],
-        input_shape[3]);
+        input_shape[0].get().toSymInt(),
+        input_shape[1].get().toSymInt(),
+        input_shape[2].get().toSymInt(),
+        input_shape[3].get().toSymInt());
 
     return {
         grad_in,
@@ -82,15 +82,15 @@ class PSROIAlignBackwardFunction
       const torch::autograd::Variable& rois,
       const torch::autograd::Variable& channel_mapping,
       double spatial_scale,
-      int64_t pooled_height,
-      int64_t pooled_width,
+      c10::SymInt pooled_height,
+      c10::SymInt pooled_width,
       int64_t sampling_ratio,
-      int64_t batch_size,
-      int64_t channels,
-      int64_t height,
-      int64_t width) {
+      c10::SymInt batch_size,
+      c10::SymInt channels,
+      c10::SymInt height,
+      c10::SymInt width) {
     at::AutoDispatchBelowADInplaceOrView g;
-    auto grad_in = detail::_ps_roi_align_backward(
+    auto grad_in = detail::_ps_roi_align_backward_symint(
         grad,
         rois,
         channel_mapping,
@@ -117,8 +117,8 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
-    int64_t pooled_height,
-    int64_t pooled_width,
+    c10::SymInt pooled_height,
+    c10::SymInt pooled_width,
     int64_t sampling_ratio) {
   auto result = PSROIAlignFunction::apply(
       input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio);
@@ -131,13 +131,13 @@ at::Tensor ps_roi_align_backward_autograd(
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
     double spatial_scale,
-    int64_t pooled_height,
-    int64_t pooled_width,
+    c10::SymInt pooled_height,
+    c10::SymInt pooled_width,
     int64_t sampling_ratio,
-    int64_t batch_size,
-    int64_t channels,
-    int64_t height,
-    int64_t width) {
+    c10::SymInt batch_size,
+    c10::SymInt channels,
+    c10::SymInt height,
+    c10::SymInt width) {
   return PSROIAlignBackwardFunction::apply(
       grad,
       rois,

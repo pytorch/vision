@@ -44,8 +44,6 @@ def smoke_test_compile() -> None:
     except RuntimeError:
         if sys.platform == "win32":
             print("Successfully caught torch.compile RuntimeError on win")
-        elif sys.version_info >= (3, 11, 0):
-            print("Successfully caught torch.compile RuntimeError on Python 3.11")
         else:
             raise
 
@@ -59,7 +57,7 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     model.eval()
 
     # Step 2: Initialize the inference transforms
-    preprocess = weights.transforms()
+    preprocess = weights.transforms(antialias=(device != "mps"))  # antialias not supported on MPS
 
     # Step 3: Apply inference preprocessing transforms
     batch = preprocess(img).unsqueeze(0)
@@ -78,6 +76,13 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
+
+    # Turn 1.11.0aHASH into 1.11 (major.minor only)
+    version = ".".join(torchvision.__version__.split(".")[:2])
+    if version >= "0.16":
+        print(f"{torch.ops.image._jpeg_version() = }")
+        assert torch.ops.image._is_compiled_against_turbo()
+
     smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()

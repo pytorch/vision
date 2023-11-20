@@ -40,10 +40,13 @@ conda create \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
-  libpng jpeg \
+  libpng \
   'ffmpeg<4.3'
 conda activate ci
+conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools
+# FIXME: remove this when https://github.com/pytorch/pytorch/pull/113154 is resolved
+pip install --progress-bar=off packaging
 
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
@@ -72,11 +75,21 @@ else
   CHANNEL=nightly
 fi
 
-pip install --progress-bar=off light-the-torch
-ltt install --progress-bar=off \
-  --pytorch-computation-backend="${GPU_ARCH_TYPE}${GPU_ARCH_VERSION}" \
-  --pytorch-channel="${CHANNEL}" \
-  torch
+case $GPU_ARCH_TYPE in
+  cpu)
+    GPU_ARCH_ID="cpu"
+    ;;
+  cuda)
+    VERSION_WITHOUT_DOT=$(echo "${GPU_ARCH_VERSION}" | sed 's/\.//')
+    GPU_ARCH_ID="cu${VERSION_WITHOUT_DOT}"
+    ;;
+  *)
+    echo "Unknown GPU_ARCH_TYPE=${GPU_ARCH_TYPE}"
+    exit 1
+    ;;
+esac
+PYTORCH_WHEEL_INDEX="https://download.pytorch.org/whl/${CHANNEL}/${GPU_ARCH_ID}"
+pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python -c "import torch; exit(not torch.cuda.is_available())"

@@ -8,9 +8,7 @@ from torchvision.transforms.v2 import Transform
 
 
 class Compose(Transform):
-    """[BETA] Composes several transforms together.
-
-    .. v2betastatus:: Compose transform
+    """Composes several transforms together.
 
     This transform does not support torchscript.
     Please, see the note below.
@@ -62,9 +60,7 @@ class Compose(Transform):
 
 
 class RandomApply(Transform):
-    """[BETA] Apply randomly a list of transformations with a given probability.
-
-    .. v2betastatus:: RandomApply transform
+    """Apply randomly a list of transformations with a given probability.
 
     .. note::
         In order to script the transformation, please use ``torch.nn.ModuleList`` as input instead of list/tuple of
@@ -100,14 +96,15 @@ class RandomApply(Transform):
         return {"transforms": self.transforms, "p": self.p}
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+        needs_unpacking = len(inputs) > 1
 
         if torch.rand(1) >= self.p:
-            return sample
+            return inputs if needs_unpacking else inputs[0]
 
         for transform in self.transforms:
-            sample = transform(sample)
-        return sample
+            outputs = transform(*inputs)
+            inputs = outputs if needs_unpacking else (outputs,)
+        return outputs
 
     def extra_repr(self) -> str:
         format_string = []
@@ -117,9 +114,7 @@ class RandomApply(Transform):
 
 
 class RandomChoice(Transform):
-    """[BETA] Apply single transformation randomly picked from a list.
-
-    .. v2betastatus:: RandomChoice transform
+    """Apply single transformation randomly picked from a list.
 
     This transform does not support torchscript.
 
@@ -156,9 +151,7 @@ class RandomChoice(Transform):
 
 
 class RandomOrder(Transform):
-    """[BETA] Apply a list of transformations in a random order.
-
-    .. v2betastatus:: RandomOrder transform
+    """Apply a list of transformations in a random order.
 
     This transform does not support torchscript.
 
@@ -173,8 +166,9 @@ class RandomOrder(Transform):
         self.transforms = transforms
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+        needs_unpacking = len(inputs) > 1
         for idx in torch.randperm(len(self.transforms)):
             transform = self.transforms[idx]
-            sample = transform(sample)
-        return sample
+            outputs = transform(*inputs)
+            inputs = outputs if needs_unpacking else (outputs,)
+        return outputs

@@ -3,49 +3,49 @@ import pytest
 
 import torch
 
-import torchvision.transforms.v2.utils
-from common_utils import make_bounding_box, make_detection_mask, make_image
+import torchvision.transforms.v2._utils
+from common_utils import DEFAULT_SIZE, make_bounding_boxes, make_detection_masks, make_image
 
-from torchvision import datapoints
-from torchvision.transforms.v2.functional import to_image_pil
-from torchvision.transforms.v2.utils import has_all, has_any
+from torchvision import tv_tensors
+from torchvision.transforms.v2._utils import has_all, has_any
+from torchvision.transforms.v2.functional import to_pil_image
 
 
-IMAGE = make_image(color_space="RGB")
-BOUNDING_BOX = make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=IMAGE.spatial_size)
-MASK = make_detection_mask(size=IMAGE.spatial_size)
+IMAGE = make_image(DEFAULT_SIZE, color_space="RGB")
+BOUNDING_BOX = make_bounding_boxes(DEFAULT_SIZE, format=tv_tensors.BoundingBoxFormat.XYXY)
+MASK = make_detection_masks(DEFAULT_SIZE)
 
 
 @pytest.mark.parametrize(
     ("sample", "types", "expected"),
     [
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BoundingBoxes,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Mask,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BoundingBoxes), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.Mask), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BoundingBoxes, datapoints.Mask), True),
-        ((MASK,), (datapoints.Image, datapoints.BoundingBoxes), False),
-        ((BOUNDING_BOX,), (datapoints.Image, datapoints.Mask), False),
-        ((IMAGE,), (datapoints.BoundingBoxes, datapoints.Mask), False),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.Image,), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.BoundingBoxes,), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.Mask,), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.Image, tv_tensors.BoundingBoxes), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.Image, tv_tensors.Mask), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.BoundingBoxes, tv_tensors.Mask), True),
+        ((MASK,), (tv_tensors.Image, tv_tensors.BoundingBoxes), False),
+        ((BOUNDING_BOX,), (tv_tensors.Image, tv_tensors.Mask), False),
+        ((IMAGE,), (tv_tensors.BoundingBoxes, tv_tensors.Mask), False),
         (
             (IMAGE, BOUNDING_BOX, MASK),
-            (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask),
+            (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask),
             True,
         ),
-        ((), (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask), False),
-        ((IMAGE, BOUNDING_BOX, MASK), (lambda obj: isinstance(obj, datapoints.Image),), True),
+        ((), (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask), False),
+        ((IMAGE, BOUNDING_BOX, MASK), (lambda obj: isinstance(obj, tv_tensors.Image),), True),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: False,), False),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: True,), True),
-        ((IMAGE,), (datapoints.Image, PIL.Image.Image, torchvision.transforms.v2.utils.is_simple_tensor), True),
+        ((IMAGE,), (tv_tensors.Image, PIL.Image.Image, torchvision.transforms.v2._utils.is_pure_tensor), True),
         (
             (torch.Tensor(IMAGE),),
-            (datapoints.Image, PIL.Image.Image, torchvision.transforms.v2.utils.is_simple_tensor),
+            (tv_tensors.Image, PIL.Image.Image, torchvision.transforms.v2._utils.is_pure_tensor),
             True,
         ),
         (
-            (to_image_pil(IMAGE),),
-            (datapoints.Image, PIL.Image.Image, torchvision.transforms.v2.utils.is_simple_tensor),
+            (to_pil_image(IMAGE),),
+            (tv_tensors.Image, PIL.Image.Image, torchvision.transforms.v2._utils.is_pure_tensor),
             True,
         ),
     ],
@@ -57,31 +57,31 @@ def test_has_any(sample, types, expected):
 @pytest.mark.parametrize(
     ("sample", "types", "expected"),
     [
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BoundingBoxes,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Mask,), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BoundingBoxes), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.Image, datapoints.Mask), True),
-        ((IMAGE, BOUNDING_BOX, MASK), (datapoints.BoundingBoxes, datapoints.Mask), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.Image,), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.BoundingBoxes,), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.Mask,), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.Image, tv_tensors.BoundingBoxes), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.Image, tv_tensors.Mask), True),
+        ((IMAGE, BOUNDING_BOX, MASK), (tv_tensors.BoundingBoxes, tv_tensors.Mask), True),
         (
             (IMAGE, BOUNDING_BOX, MASK),
-            (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask),
+            (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask),
             True,
         ),
-        ((BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BoundingBoxes), False),
-        ((BOUNDING_BOX, MASK), (datapoints.Image, datapoints.Mask), False),
-        ((IMAGE, MASK), (datapoints.BoundingBoxes, datapoints.Mask), False),
+        ((BOUNDING_BOX, MASK), (tv_tensors.Image, tv_tensors.BoundingBoxes), False),
+        ((BOUNDING_BOX, MASK), (tv_tensors.Image, tv_tensors.Mask), False),
+        ((IMAGE, MASK), (tv_tensors.BoundingBoxes, tv_tensors.Mask), False),
         (
             (IMAGE, BOUNDING_BOX, MASK),
-            (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask),
+            (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask),
             True,
         ),
-        ((BOUNDING_BOX, MASK), (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask), False),
-        ((IMAGE, MASK), (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask), False),
-        ((IMAGE, BOUNDING_BOX), (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask), False),
+        ((BOUNDING_BOX, MASK), (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask), False),
+        ((IMAGE, MASK), (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask), False),
+        ((IMAGE, BOUNDING_BOX), (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask), False),
         (
             (IMAGE, BOUNDING_BOX, MASK),
-            (lambda obj: isinstance(obj, (datapoints.Image, datapoints.BoundingBoxes, datapoints.Mask)),),
+            (lambda obj: isinstance(obj, (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask)),),
             True,
         ),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: False,), False),

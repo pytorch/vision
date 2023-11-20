@@ -10,13 +10,13 @@ from torchvision.transforms.v2 import Transform
 
 
 class ToTensor(Transform):
-    """[BETA] Convert a PIL Image or ndarray to tensor and scale the values accordingly.
+    """[DEPRECATED] Use ``v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`` instead.
 
-    .. v2betastatus:: ToTensor transform
+    Convert a PIL Image or ndarray to tensor and scale the values accordingly.
 
     .. warning::
         :class:`v2.ToTensor` is deprecated and will be removed in a future release.
-        Please use instead ``v2.Compose([transforms.ToImageTensor(), v2.ToDtype(torch.float32, scale=True)])``.
+        Please use instead ``v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])``.
 
     This transform does not support torchscript.
 
@@ -40,7 +40,7 @@ class ToTensor(Transform):
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
-            "Instead, please use `v2.Compose([transforms.ToImageTensor(), v2.ToDtype(torch.float32, scale=True)])`."
+            "Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`."
         )
         super().__init__()
 
