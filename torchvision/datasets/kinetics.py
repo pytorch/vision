@@ -42,12 +42,12 @@ class Kinetics(VisionDataset):
                 root/
                 ├── split
                 │   ├──  class1
-                │   │   ├──  clip1.mp4
-                │   │   ├──  clip2.mp4
-                │   │   ├──  clip3.mp4
+                │   │   ├──  vid1.mp4
+                │   │   ├──  vid2.mp4
+                │   │   ├──  vid3.mp4
                 │   │   ├──  ...
                 │   ├──  class2
-                │   │   ├──   clipx.mp4
+                │   │   ├──   vidx.mp4
                 │   │    └── ...
 
             Note: split is appended automatically using the split argument.
