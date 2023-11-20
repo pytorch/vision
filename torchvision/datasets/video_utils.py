@@ -135,8 +135,8 @@ class VideoClips:
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
     def _compute_frame_pts(self) -> None:
-        self.video_pts = []
-        self.video_fps: List[int] = []
+        self.video_pts = []  # len = num_videos. Each entry is a tensor of shape (num_frames_in_video,)
+        self.video_fps: List[int] = []  # len = num_videos
 
         # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
@@ -152,13 +152,13 @@ class VideoClips:
         with tqdm(total=len(dl)) as pbar:
             for batch in dl:
                 pbar.update(1)
-                clips, fps = list(zip(*batch))
+                batch_pts, batch_fps = list(zip(*batch))
                 # we need to specify dtype=torch.long because for empty list,
                 # torch.as_tensor will use torch.float as default dtype. This
                 # happens when decoding fails and no pts is returned in the list.
-                clips = [torch.as_tensor(c, dtype=torch.long) for c in clips]
-                self.video_pts.extend(clips)
-                self.video_fps.extend(fps)
+                batch_pts = [torch.as_tensor(pts, dtype=torch.long) for pts in batch_pts]
+                self.video_pts.extend(batch_pts)
+                self.video_fps.extend(batch_fps)
 
     def _init_from_metadata(self, metadata: Dict[str, Any]) -> None:
         self.video_paths = metadata["video_paths"]
