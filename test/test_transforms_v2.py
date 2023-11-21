@@ -4,6 +4,7 @@ import functools
 import inspect
 import itertools
 import math
+import os
 import pickle
 import random
 import re
@@ -112,13 +113,17 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
+DYNAMIC = os.environ["COMPILE_DYNAMIC"].lower() == "true"
+BACKEND = os.environ["COMPILE_BACKEND"].lower()
+
+
 def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     """Checks if the kernel can be compiled without graph breaks and if compiled output is close to the eager one."""
     if input.device.type != "cpu":
         return
 
     torch._dynamo.reset()
-    kernel_compiled = torch.compile(kernel, dynamic=True, fullgraph=True)
+    kernel_compiled = torch.compile(kernel, dynamic=DYNAMIC, backend=BACKEND, fullgraph=True)
 
     input = input.as_subclass(torch.Tensor)
     actual = kernel_compiled(input, *args, **kwargs)
