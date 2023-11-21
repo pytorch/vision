@@ -269,7 +269,7 @@ def main(args):
                 weight_decay_norm=0.0,
                 # TODO: Adjust num_layers for specific model. Currently this assumes ViT-B.
                 lr_factor_func=partial(get_vit_lr_decay_rate, num_layers=12, lr_decay_rate=0.7),
-                overrides={"pos_embed": {"weight_decay": 0.0}},
+                overrides={"pos_embedding": {"weight_decay": 0.0}},
             ),
             lr=args.lr,
             betas=(0.9, 0.999),
