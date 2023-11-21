@@ -1,7 +1,7 @@
 import io
 import warnings
 
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator
 
 import torch
 
@@ -102,8 +102,6 @@ class VideoReader:
             If Tensor, it is interpreted internally as byte buffer.
             It must be one-dimensional, of type ``torch.uint8``.
 
-
-
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
             Currently available options include ``['video', 'audio']``
@@ -111,31 +109,21 @@ class VideoReader:
         num_threads (int, optional): number of threads used by the codec to decode video.
             Default value (0) enables multithreading with codec-dependent heuristic. The performance
             will depend on the version of FFMPEG codecs supported.
-
-
-        path (str, optional):
-            .. warning:
-                This parameter was deprecated in ``0.15`` and will be removed in ``0.17``.
-                Please use ``src`` instead.
     """
 
     def __init__(
         self,
-        src: str = "",
+        src: str,
         stream: str = "video",
         num_threads: int = 0,
-        path: Optional[str] = None,
     ) -> None:
         _log_api_usage_once(self)
         from .. import get_video_backend
 
         self.backend = get_video_backend()
         if isinstance(src, str):
-            if src == "":
-                if path is None:
-                    raise TypeError("src cannot be empty")
-                src = path
-                warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
+            if not src:
+                raise ValueError("src cannot be empty")
         elif isinstance(src, bytes):
             if self.backend in ["cuda"]:
                 raise RuntimeError(
@@ -154,7 +142,7 @@ class VideoReader:
                     "VideoReader cannot be initialized from Tensor object when using cuda or pyav backend."
                 )
         else:
-            raise TypeError("`src` must be either string, Tensor or bytes object.")
+            raise ValueError(f"src must be either string, Tensor or bytes object. Got {type(src)}")
 
         if self.backend == "cuda":
             device = torch.device("cuda")
