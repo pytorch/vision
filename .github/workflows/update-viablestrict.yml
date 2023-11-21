@@ -1,0 +1,24 @@
+name: Update viable/strict
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/update-viablestrict.yml
+  schedule:
+    - cron: 10,40 * * * *
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  do_update_viablestrict:
+    uses: pytorch/test-infra/.github/workflows/update-viablestrict.yml@main
+    with:
+      repository: pytorch/vision
+      required_checks: "Build Linux,Build M1,Build Macos,Build Windows,Tests,CMake,Lint,Docs"
+      test-infra-ref: main
+    secrets:
+      ROCKSET_API_KEY: ${{ secrets.ROCKSET_API_KEY }}
+      GITHUB_DEPLOY_KEY : ${{ secrets.VISION_GITHUB_DEPLOY_KEY }}
