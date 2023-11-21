@@ -1,4 +1,4 @@
-name: Build M1 Wheels
+name: Build Linux Conda
 
 on:
   pull_request:
@@ -13,19 +13,12 @@ on:
         - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 
-<<<<<<< HEAD
-permissions:
-  id-token: write
-  contents: read
-
-=======
->>>>>>> 42a5ea580d (try reinstate other CI jobs)
 jobs:
   generate-matrix:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
-      package-type: wheel
-      os: macos-arm64
+      package-type: conda
+      os: linux
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
   build:
@@ -35,13 +28,15 @@ jobs:
       matrix:
         include:
           - repository: pytorch/vision
-            pre-script: packaging/pre_build_script.sh
-            post-script: packaging/post_build_script.sh
+            pre-script: ""
+            post-script: ""
+            conda-package-directory: packaging/torchvision
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_macos.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_conda_linux.yml@main
     with:
+      conda-package-directory: ${{ matrix.conda-package-directory }}
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: pytorch/test-infra
@@ -50,12 +45,8 @@ jobs:
       pre-script: ${{ matrix.pre-script }}
       post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
-      runner-type: macos-m1-12
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
-<<<<<<< HEAD
-=======
     secrets:
-      AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
-      AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY: ${{ secrets.AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY }}
->>>>>>> 42a5ea580d (try reinstate other CI jobs)
+      CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
+      CONDA_PYTORCHBOT_TOKEN_TEST: ${{ secrets.CONDA_PYTORCHBOT_TOKEN_TEST }}
