@@ -111,6 +111,21 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
+def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
+    """Checks if the kernel can be compiled without graph breaks and if compiled output is close to the eager one."""
+    if input.device.type != "cpu":
+        return
+
+    torch._dynamo.reset()
+    kernel_compiled = torch.compile(kernel, dynamic=True, fullgraph=True)
+
+    input = input.as_subclass(torch.Tensor)
+    actual = kernel_compiled(input, *args, **kwargs)
+    expected = kernel(input, *args, **kwargs)
+
+    assert_close(actual, expected, rtol=rtol, atol=atol)
+
+
 def _check_kernel_batched_vs_unbatched(kernel, input, *args, rtol, atol, **kwargs):
     """Checks if the kernel produces close results for batched and unbatched inputs."""
     unbatched_input = input.as_subclass(torch.Tensor)
@@ -150,6 +165,7 @@ def check_kernel(
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
     check_batched_vs_unbatched=True,
+    check_compiled_vs_eager=True,
     **kwargs,
 ):
     initial_input_version = input._version
@@ -174,6 +190,9 @@ def check_kernel(
 
     if check_batched_vs_unbatched:
         _check_kernel_batched_vs_unbatched(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_unbatched))
+
+    if check_compiled_vs_eager:
+        _check_kernel_compiled_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_compiled_vs_eager))
 
 
 def _check_functional_scripted_smoke(functional, input, *args, **kwargs):
