@@ -14,6 +14,7 @@ jobs:
           - eager
           - inductor
       fail-fast: false
+
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
@@ -29,7 +30,7 @@ jobs:
         export GPU_ARCH_TYPE='cpu'
         export GPU_ARCH_VERSION=''
         
-        export COMPILE_DYNAMIC=${{ matrix.dynamic }}
-        export COMPILE_BACKEND=${{ matrix.backend }}
+        export COMPILE_DYNAMIC='${{ matrix.dynamic }}'
+        export COMPILE_BACKEND='${{ matrix.backend }}'
 
         ./.github/scripts/unittest.sh
