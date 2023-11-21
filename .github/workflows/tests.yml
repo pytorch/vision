@@ -13,12 +13,14 @@ jobs:
         backend:
           - eager
           - inductor
+        runner: [ "linux.12xlarge" ]
+        gpu-arch-type: [ "cpu" ]
       fail-fast: false
 
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
-      runner: "linux.12xlarge"
+      runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
@@ -27,8 +29,8 @@ jobs:
         set -euo pipefail
 
         export PYTHON_VERSION='3.8'
-        export GPU_ARCH_TYPE='cpu'
-        export GPU_ARCH_VERSION=''
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
         
         export COMPILE_DYNAMIC='${{ matrix.dynamic }}'
         export COMPILE_BACKEND='${{ matrix.backend }}'
