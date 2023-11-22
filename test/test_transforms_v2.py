@@ -118,7 +118,7 @@ BACKEND = os.environ["COMPILE_BACKEND"].lower()
 
 def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     """Checks if the kernel can be compiled without graph breaks and if compiled output is close to the eager one."""
-    if input.device.type != "cpu":
+    if input.device.type != "cpu" or not type(input == torch.Tensor):
         return
 
     torch._dynamo.reset()
