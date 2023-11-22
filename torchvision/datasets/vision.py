@@ -37,7 +37,11 @@ class VisionDataset(data.Dataset):
         _log_api_usage_once(self)
         if isinstance(root, str):
             root = os.path.expanduser(root)
-        self.root = root
+        # This lines to please mypy
+        if root is not None:
+            self.root: str = root
+        else:
+            self.root = root  # type: ignore[assignment]
 
         has_transforms = transforms is not None
         has_separate_transform = transform is not None or target_transform is not None
