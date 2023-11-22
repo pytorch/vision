@@ -8,9 +8,7 @@ from torchvision.transforms.v2 import Transform
 
 
 class Compose(Transform):
-    """[BETA] Composes several transforms together.
-
-    .. v2betastatus:: Compose transform
+    """Composes several transforms together.
 
     This transform does not support torchscript.
     Please, see the note below.
@@ -62,9 +60,7 @@ class Compose(Transform):
 
 
 class RandomApply(Transform):
-    """[BETA] Apply randomly a list of transformations with a given probability.
-
-    .. v2betastatus:: RandomApply transform
+    """Apply randomly a list of transformations with a given probability.
 
     .. note::
         In order to script the transformation, please use ``torch.nn.ModuleList`` as input instead of list/tuple of
@@ -118,9 +114,7 @@ class RandomApply(Transform):
 
 
 class RandomChoice(Transform):
-    """[BETA] Apply single transformation randomly picked from a list.
-
-    .. v2betastatus:: RandomChoice transform
+    """Apply single transformation randomly picked from a list.
 
     This transform does not support torchscript.
 
@@ -157,9 +151,7 @@ class RandomChoice(Transform):
 
 
 class RandomOrder(Transform):
-    """[BETA] Apply a list of transformations in a random order.
-
-    .. v2betastatus:: RandomOrder transform
+    """Apply a list of transformations in a random order.
 
     This transform does not support torchscript.
 

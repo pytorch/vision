@@ -67,7 +67,7 @@ _BUILTIN_DATAPOINT_TYPES = {
 
 
 def register_kernel(functional, tv_tensor_cls):
-    """[BETA] Decorate a kernel to register it for a functional and a (custom) tv_tensor type.
+    """Decorate a kernel to register it for a functional and a (custom) tv_tensor type.
 
     See :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py` for usage
     details.
