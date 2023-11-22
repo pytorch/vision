@@ -25,7 +25,7 @@ Torchvision v2 transforms. Before continuing, make sure you have read
 
 .. GENERATED FROM PYTHON SOURCE LINES 17-21
 
-.. code-block:: default
+.. code-block:: Python
 
     import torch
     from torchvision import tv_tensors
@@ -49,7 +49,7 @@ to create a class that carries meta-data, take a look at how the
 
 .. GENERATED FROM PYTHON SOURCE LINES 28-37
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -86,7 +86,7 @@ operation of our MyTVTensor class, and register it to the functional API.
 
 .. GENERATED FROM PYTHON SOURCE LINES 46-57
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.transforms.v2 import functional as F
@@ -124,7 +124,7 @@ Now that we have registered our kernel, we can call the functional API on a
 
 .. GENERATED FROM PYTHON SOURCE LINES 71-75
 
-.. code-block:: default
+.. code-block:: Python
 
 
     my_dp = MyTVTensor(torch.rand(3, 256, 256))
@@ -150,7 +150,7 @@ And we can also use the
 
 .. GENERATED FROM PYTHON SOURCE LINES 78-81
 
-.. code-block:: default
+.. code-block:: Python
 
     t = v2.RandomHorizontalFlip(p=1)
     _ = t(my_dp)
@@ -195,7 +195,7 @@ already defined and registered your own kernel as
 
 .. GENERATED FROM PYTHON SOURCE LINES 104-111
 
-.. code-block:: default
+.. code-block:: Python
 
 
     def hflip_my_tv_tensor(my_dp):  # noqa
@@ -234,16 +234,13 @@ will be able to accept any new parameter that we may add in the future.
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_custom_tv_tensors.ipynb <plot_custom_tv_tensors.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_custom_tv_tensors.py <plot_custom_tv_tensors.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_custom_tv_tensors.ipynb <plot_custom_tv_tensors.ipynb>`
 
 
 .. only:: html

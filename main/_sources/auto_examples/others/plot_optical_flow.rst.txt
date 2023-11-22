@@ -31,7 +31,7 @@ predicted flows to RGB images for visualization.
 
 .. GENERATED FROM PYTHON SOURCE LINES 21-48
 
-.. code-block:: default
+.. code-block:: Python
 
 
     import numpy as np
@@ -80,7 +80,7 @@ credits go to `Pavel Danilyuk <https://www.pexels.com/@pavel-danilyuk>`_.
 
 .. GENERATED FROM PYTHON SOURCE LINES 58-69
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -112,7 +112,7 @@ single model input.
 
 .. GENERATED FROM PYTHON SOURCE LINES 77-86
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.io import read_video
@@ -153,7 +153,7 @@ required ``[-1, 1]`` interval.
 
 .. GENERATED FROM PYTHON SOURCE LINES 93-111
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.models.optical_flow import Raft_Large_Weights
@@ -198,7 +198,7 @@ builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
 .. GENERATED FROM PYTHON SOURCE LINES 119-132
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.models.optical_flow import raft_large
@@ -245,7 +245,7 @@ w.r.t. the dimensions of the images.
 
 .. GENERATED FROM PYTHON SOURCE LINES 145-151
 
-.. code-block:: default
+.. code-block:: Python
 
     predicted_flows = list_of_flows[-1]
     print(f"dtype = {predicted_flows.dtype}")
@@ -283,7 +283,7 @@ of the ball in the first image (going to the left) and in the second image
 
 .. GENERATED FROM PYTHON SOURCE LINES 162-173
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.utils import flow_to_image
@@ -321,7 +321,7 @@ too long to run it.
 
 .. GENERATED FROM PYTHON SOURCE LINES 182-194
 
-.. code-block:: default
+.. code-block:: Python
 
 
     # from torchvision.io import write_jpeg
@@ -352,7 +352,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 9.598 seconds)
+   **Total running time of the script:** (0 minutes 10.282 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_optical_flow.py:
@@ -361,16 +361,13 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_optical_flow.ipynb <plot_optical_flow.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_optical_flow.py <plot_optical_flow.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_optical_flow.ipynb <plot_optical_flow.ipynb>`
 
 
 .. only:: html

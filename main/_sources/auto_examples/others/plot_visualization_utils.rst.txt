@@ -23,7 +23,7 @@ visualizing images, bounding boxes, segmentation masks and keypoints.
 
 .. GENERATED FROM PYTHON SOURCE LINES 13-36
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -65,7 +65,7 @@ image of dtype ``uint8`` as input.
 
 .. GENERATED FROM PYTHON SOURCE LINES 43-55
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.utils import make_grid
@@ -101,7 +101,7 @@ The boxes are in ``(xmin, ymin, xmax, ymax)`` format.
 
 .. GENERATED FROM PYTHON SOURCE LINES 61-71
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.utils import draw_bounding_boxes
@@ -135,7 +135,7 @@ refer to :ref:`instance_seg_output`.
 
 .. GENERATED FROM PYTHON SOURCE LINES 77-92
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
@@ -176,7 +176,7 @@ score greater than a given threshold.
 
 .. GENERATED FROM PYTHON SOURCE LINES 95-103
 
-.. code-block:: default
+.. code-block:: Python
 
 
     score_threshold = .8
@@ -218,7 +218,7 @@ at the output of the model.
 
 .. GENERATED FROM PYTHON SOURCE LINES 119-132
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
@@ -260,7 +260,7 @@ boat class:
 
 .. GENERATED FROM PYTHON SOURCE LINES 141-154
 
-.. code-block:: default
+.. code-block:: Python
 
 
     sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
@@ -299,7 +299,7 @@ masks to be boolean masks, but our masks above contain probabilities in ``[0,
 
 .. GENERATED FROM PYTHON SOURCE LINES 162-169
 
-.. code-block:: default
+.. code-block:: Python
 
 
     class_dim = 1
@@ -343,7 +343,7 @@ original images:
 
 .. GENERATED FROM PYTHON SOURCE LINES 182-191
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.utils import draw_segmentation_masks
@@ -378,7 +378,7 @@ single image, and then we'll generalize to the batch
 
 .. GENERATED FROM PYTHON SOURCE LINES 199-211
 
-.. code-block:: default
+.. code-block:: Python
 
 
     num_classes = normalized_masks.shape[1]
@@ -428,7 +428,7 @@ but involves a bit more juggling with the dimensions.
 
 .. GENERATED FROM PYTHON SOURCE LINES 224-238
 
-.. code-block:: default
+.. code-block:: Python
 
 
     class_dim = 1
@@ -486,7 +486,7 @@ use the normalized batch.
 
 .. GENERATED FROM PYTHON SOURCE LINES 258-272
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.models.detection import maskrcnn_resnet50_fpn, MaskRCNN_ResNet50_FPN_Weights
@@ -579,7 +579,7 @@ models.
 
 .. GENERATED FROM PYTHON SOURCE LINES 289-295
 
-.. code-block:: default
+.. code-block:: Python
 
 
     dog1_output = output[0]
@@ -609,7 +609,7 @@ Let's see which labels were predicted for the instances of the first image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 300-304
 
-.. code-block:: default
+.. code-block:: Python
 
 
     print("For the first dog, the following instances were detected:")
@@ -641,7 +641,7 @@ those masks into boolean values is to threshold them with the 0.5 probability
 
 .. GENERATED FROM PYTHON SOURCE LINES 312-322
 
-.. code-block:: default
+.. code-block:: Python
 
 
     proba_threshold = 0.5
@@ -679,7 +679,7 @@ relevant masks:
 
 .. GENERATED FROM PYTHON SOURCE LINES 326-329
 
-.. code-block:: default
+.. code-block:: Python
 
 
     print(dog1_output['scores'])
@@ -706,7 +706,7 @@ here, and also plot the masks of the second dog.
 
 .. GENERATED FROM PYTHON SOURCE LINES 334-348
 
-.. code-block:: default
+.. code-block:: Python
 
 
     score_threshold = .75
@@ -754,7 +754,7 @@ We will first have a look at output of the model.
 
 .. GENERATED FROM PYTHON SOURCE LINES 363-380
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.models.detection import keypointrcnn_resnet50_fpn, KeypointRCNN_ResNet50_FPN_Weights
@@ -839,7 +839,7 @@ In our case above there are 2 instances detected in the image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 388-395
 
-.. code-block:: default
+.. code-block:: Python
 
 
     kpts = outputs[0]['keypoints']
@@ -907,7 +907,7 @@ Let us set a threshold of 0.75 and filter out the keypoints corresponding to the
 
 .. GENERATED FROM PYTHON SOURCE LINES 402-409
 
-.. code-block:: default
+.. code-block:: Python
 
 
     detect_threshold = 0.75
@@ -954,7 +954,7 @@ Note that the utility expects uint8 images.
 
 .. GENERATED FROM PYTHON SOURCE LINES 414-420
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.utils import draw_keypoints
@@ -981,7 +981,7 @@ The coco keypoints for a person are ordered and represent the following list.\
 
 .. GENERATED FROM PYTHON SOURCE LINES 423-431
 
-.. code-block:: default
+.. code-block:: Python
 
 
     coco_keypoints = [
@@ -1022,7 +1022,7 @@ We will create a list containing these keypoint ids to be connected.
 
 .. GENERATED FROM PYTHON SOURCE LINES 451-457
 
-.. code-block:: default
+.. code-block:: Python
 
 
     connect_skeleton = [
@@ -1044,7 +1044,7 @@ We pass the above list to the connectivity parameter to connect the keypoints.
 
 .. GENERATED FROM PYTHON SOURCE LINES 460-463
 
-.. code-block:: default
+.. code-block:: Python
 
 
     res = draw_keypoints(person_int, keypoints, connectivity=connect_skeleton, colors="blue", radius=4, width=3)
@@ -1064,7 +1064,7 @@ We pass the above list to the connectivity parameter to connect the keypoints.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 18.568 seconds)
+   **Total running time of the script:** (0 minutes 19.791 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_visualization_utils.py:
@@ -1073,16 +1073,13 @@ We pass the above list to the connectivity parameter to connect the keypoints.
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_visualization_utils.ipynb <plot_visualization_utils.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_visualization_utils.py <plot_visualization_utils.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_visualization_utils.ipynb <plot_visualization_utils.ipynb>`
 
 
 .. only:: html

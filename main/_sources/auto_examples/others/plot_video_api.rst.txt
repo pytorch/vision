@@ -47,7 +47,7 @@ Chosen video statistics:
 
 .. GENERATED FROM PYTHON SOURCE LINES 35-49
 
-.. code-block:: default
+.. code-block:: Python
 
 
     import torch
@@ -86,7 +86,7 @@ Firstly, let's get the metadata for our particular video:
 
 .. GENERATED FROM PYTHON SOURCE LINES 54-59
 
-.. code-block:: default
+.. code-block:: Python
 
 
     stream = "video"
@@ -128,7 +128,7 @@ The return fields are:
 
 .. GENERATED FROM PYTHON SOURCE LINES 76-92
 
-.. code-block:: default
+.. code-block:: Python
 
 
     metadata = video.get_metadata()
@@ -175,7 +175,7 @@ For example, if we wanted to read ten frames from second second:
 
 .. GENERATED FROM PYTHON SOURCE LINES 101-114
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -212,7 +212,7 @@ correct number of frames:
 
 .. GENERATED FROM PYTHON SOURCE LINES 119-132
 
-.. code-block:: default
+.. code-block:: Python
 
 
     video.set_current_stream("video")
@@ -251,7 +251,7 @@ the same API to the existing ``read_video`` function.
 
 .. GENERATED FROM PYTHON SOURCE LINES 137-177
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -320,7 +320,7 @@ Make sample dataset
 
 .. GENERATED FROM PYTHON SOURCE LINES 186-191
 
-.. code-block:: default
+.. code-block:: Python
 
     import os
     os.makedirs("./dataset", exist_ok=True)
@@ -340,7 +340,7 @@ Download the videos
 
 .. GENERATED FROM PYTHON SOURCE LINES 193-219
 
-.. code-block:: default
+.. code-block:: Python
 
     from torchvision.datasets.utils import download_url
     download_url(
@@ -396,7 +396,7 @@ Housekeeping and utilities
 
 .. GENERATED FROM PYTHON SOURCE LINES 221-239
 
-.. code-block:: default
+.. code-block:: Python
 
     import os
     import random
@@ -438,7 +438,7 @@ We assume the structure of the FolderDataset, and add the following parameters:
 
 .. GENERATED FROM PYTHON SOURCE LINES 250-294
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -510,7 +510,7 @@ We can generate a dataloader and test the dataset.
 
 .. GENERATED FROM PYTHON SOURCE LINES 309-316
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -528,7 +528,7 @@ We can generate a dataloader and test the dataset.
 
 .. GENERATED FROM PYTHON SOURCE LINES 317-328
 
-.. code-block:: default
+.. code-block:: Python
 
     from torch.utils.data import DataLoader
     loader = DataLoader(dataset, batch_size=12)
@@ -549,7 +549,7 @@ We can generate a dataloader and test the dataset.
 
  .. code-block:: none
 
-    {'video': ['./dataset/1/WUzgd7C1pWA.mp4', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi'], 'start': [7.14656598987369, 6.45764235302358, 7.265719506723104, 0.18024431451911965, 0.9819873164489228], 'end': [7.674333, 6.9736329999999995, 7.774432999999999, 0.7, 1.5], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+    {'video': ['./dataset/1/WUzgd7C1pWA.mp4', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi'], 'start': [9.612704484090191, 7.335171195953654, 0.3330556449844911, 7.090593034017613, 0.42940785035472595], 'end': [10.143467, 7.8411669999999996, 0.834167, 7.6076, 0.933333], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 
 
 
@@ -562,7 +562,7 @@ Example of visualized video
 
 .. GENERATED FROM PYTHON SOURCE LINES 332-341
 
-.. code-block:: default
+.. code-block:: Python
 
 
     import matplotlib.pyplot as plt
@@ -591,7 +591,7 @@ Cleanup the video and dataset:
 
 .. GENERATED FROM PYTHON SOURCE LINES 343-347
 
-.. code-block:: default
+.. code-block:: Python
 
     import os
     import shutil
@@ -607,7 +607,7 @@ Cleanup the video and dataset:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.831 seconds)
+   **Total running time of the script:** (0 minutes 4.469 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_video_api.py:
@@ -616,16 +616,13 @@ Cleanup the video and dataset:
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_video_api.ipynb <plot_video_api.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_video_api.py <plot_video_api.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_video_api.ipynb <plot_video_api.ipynb>`
 
 
 .. only:: html

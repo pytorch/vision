@@ -29,7 +29,7 @@ First, a bit of setup
 
 .. GENERATED FROM PYTHON SOURCE LINES 18-34
 
-.. code-block:: default
+.. code-block:: Python
 
     from pathlib import Path
     import torch
@@ -71,7 +71,7 @@ transformed output:
 
 .. GENERATED FROM PYTHON SOURCE LINES 41-47
 
-.. code-block:: default
+.. code-block:: Python
 
 
     transform = v2.RandomCrop(size=(224, 224))
@@ -101,7 +101,7 @@ classification pipeline may look like this:
 
 .. GENERATED FROM PYTHON SOURCE LINES 53-64
 
-.. code-block:: default
+.. code-block:: Python
 
 
     transforms = v2.Compose([
@@ -156,7 +156,7 @@ Let's briefly look at a detection example with bounding boxes.
 
 .. GENERATED FROM PYTHON SOURCE LINES 90-111
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision import tv_tensors  # we'll describe this a bit later, bare with us
@@ -227,7 +227,7 @@ or any ``torch.*`` operator will also work on a TVTensor:
 
 .. GENERATED FROM PYTHON SOURCE LINES 138-144
 
-.. code-block:: default
+.. code-block:: Python
 
 
     img_dp = tv_tensors.Image(torch.randint(0, 256, (3, 256, 256), dtype=torch.uint8))
@@ -274,7 +274,7 @@ we're getting the same structure as output:
 
 .. GENERATED FROM PYTHON SOURCE LINES 165-178
 
-.. code-block:: default
+.. code-block:: Python
 
 
     target = {
@@ -400,7 +400,7 @@ Either way, the logic will depend on your specific dataset.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.846 seconds)
+   **Total running time of the script:** (0 minutes 0.805 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py:
@@ -409,16 +409,13 @@ Either way, the logic will depend on your specific dataset.
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_transforms_getting_started.ipynb <plot_transforms_getting_started.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_transforms_getting_started.py <plot_transforms_getting_started.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_transforms_getting_started.ipynb <plot_transforms_getting_started.ipynb>`
 
 
 .. only:: html

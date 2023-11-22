@@ -230,7 +230,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+893b4ab) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.17.0a0+ab4c102) &#x25BC</a>
     </div>
     
 
@@ -357,39 +357,58 @@
               
   <section id="computation-times">
 <span id="sphx-glr-auto-examples-transforms-sg-execution-times"></span><h1>Computation times<a class="headerlink" href="#computation-times" title="Permalink to this heading">¶</a></h1>
-<p><strong>00:14.774</strong> total execution time for <strong>auto_examples_transforms</strong> files:</p>
-<table class="docutils align-default">
+<p><strong>00:14.679</strong> total execution time for 7 files <strong>from auto_examples/transforms</strong>:</p>
+<div class="docutils container">
+<style scoped>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+</style>
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" class="init">
+$(document).ready( function () {
+    $('table.sg-datatable').DataTable({order: [[1, 'desc']]});
+} );
+</script><table class="table table-striped sg-datatable docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Example</p></th>
+<th class="head"><p>Time</p></th>
+<th class="head"><p>Mem (MB)</p></th>
+</tr>
+</thead>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="plot_transforms_illustrations.html#sphx-glr-auto-examples-transforms-plot-transforms-illustrations-py"><span class="std std-ref">Illustration of transforms</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_transforms_illustrations.py</span></code>)</p></td>
-<td><p>00:08.830</p></td>
-<td><p>0.0 MB</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="plot_transforms_illustrations.html#sphx-glr-auto-examples-transforms-plot-transforms-illustrations-py"><span class="std std-ref">Illustration of transforms</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_transforms_illustrations.py</span></code>)</p></td>
+<td><p>00:08.792</p></td>
+<td><p>0.0</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="plot_transforms_e2e.html#sphx-glr-auto-examples-transforms-plot-transforms-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection/segmentation example</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_transforms_e2e.py</span></code>)</p></td>
-<td><p>00:04.919</p></td>
-<td><p>0.0 MB</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="plot_transforms_e2e.html#sphx-glr-auto-examples-transforms-plot-transforms-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection/segmentation example</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_transforms_e2e.py</span></code>)</p></td>
+<td><p>00:04.905</p></td>
+<td><p>0.0</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_transforms_getting_started.py</span></code>)</p></td>
-<td><p>00:00.846</p></td>
-<td><p>0.0 MB</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_transforms_getting_started.py</span></code>)</p></td>
+<td><p>00:00.805</p></td>
+<td><p>0.0</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="plot_cutmix_mixup.html#sphx-glr-auto-examples-transforms-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_cutmix_mixup.py</span></code>)</p></td>
-<td><p>00:00.161</p></td>
-<td><p>0.0 MB</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="plot_cutmix_mixup.html#sphx-glr-auto-examples-transforms-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_cutmix_mixup.py</span></code>)</p></td>
+<td><p>00:00.157</p></td>
+<td><p>0.0</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="plot_tv_tensors.html#sphx-glr-auto-examples-transforms-plot-tv-tensors-py"><span class="std std-ref">TVTensors FAQ</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_tv_tensors.py</span></code>)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="plot_tv_tensors.html#sphx-glr-auto-examples-transforms-plot-tv-tensors-py"><span class="std std-ref">TVTensors FAQ</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_tv_tensors.py</span></code>)</p></td>
 <td><p>00:00.009</p></td>
-<td><p>0.0 MB</p></td>
+<td><p>0.0</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="plot_custom_transforms.html#sphx-glr-auto-examples-transforms-plot-custom-transforms-py"><span class="std std-ref">How to write your own v2 transforms</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_custom_transforms.py</span></code>)</p></td>
-<td><p>00:00.006</p></td>
-<td><p>0.0 MB</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="plot_custom_transforms.html#sphx-glr-auto-examples-transforms-plot-custom-transforms-py"><span class="std std-ref">How to write your own v2 transforms</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_custom_transforms.py</span></code>)</p></td>
+<td><p>00:00.007</p></td>
+<td><p>0.0</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="plot_custom_tv_tensors.html#sphx-glr-auto-examples-transforms-plot-custom-tv-tensors-py"><span class="std std-ref">How to write your own TVTensor class</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_custom_tv_tensors.py</span></code>)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="plot_custom_tv_tensors.html#sphx-glr-auto-examples-transforms-plot-custom-tv-tensors-py"><span class="std std-ref">How to write your own TVTensor class</span></a> (<code class="docutils literal notranslate"><span class="pre">plot_custom_tv_tensors.py</span></code>)</p></td>
 <td><p>00:00.004</p></td>
-<td><p>0.0 MB</p></td>
+<td><p>0.0</p></td>
 </tr>
 </tbody>
 </table>
+</div>
 </section>
 
 
