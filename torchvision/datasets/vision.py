@@ -29,7 +29,7 @@ class VisionDataset(data.Dataset):
 
     def __init__(
         self,
-        root: Optional[str] = None,
+        root: str = None,  # type: ignore[assignment]
         transforms: Optional[Callable] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

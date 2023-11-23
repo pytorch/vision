@@ -31,7 +31,7 @@ class FakeData(VisionDataset):
         target_transform: Optional[Callable] = None,
         random_offset: int = 0,
     ) -> None:
-        super().__init__(None, transform=transform, target_transform=target_transform)  # type: ignore[arg-type]
+        super().__init__(transform=transform, target_transform=target_transform)
         self.size = size
         self.num_classes = num_classes
         self.image_size = image_size
