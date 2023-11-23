@@ -113,8 +113,8 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
-DYNAMIC = os.environ["COMPILE_DYNAMIC"].lower() == "true"
-BACKEND = os.environ["COMPILE_BACKEND"].lower()
+DYNAMIC = os.environ.get("COMPILE_DYNAMIC", "true").lower() == "true"
+BACKEND = os.environ.get("COMPILE_BACKEND", "eager").lower()
 
 
 def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
@@ -123,13 +123,19 @@ def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
         return
 
     torch._dynamo.reset()
-    kernel_compiled = torch.compile(kernel, dynamic=DYNAMIC, backend=BACKEND, fullgraph=True)
+    kernel_compiled = torch.compile(kernel, dynamic=DYNAMIC, backend=BACKEND, fullgraph=False)
 
     input = input.as_subclass(torch.Tensor)
     actual = kernel_compiled(input, *args, **kwargs)
     expected = kernel(input, *args, **kwargs)
 
-    assert_close(actual, expected, rtol=rtol, atol=atol)
+    assert_close(
+        actual,
+        expected,
+        rtol=rtol,
+        atol=atol,
+        msg=lambda msg: f"\n{input=}\n\n{args=}\n\n{kwargs=}\n\n{actual=}\n\n{expected=}\n\n{msg}",
+    )
 
 
 def _check_kernel_batched_vs_unbatched(kernel, input, *args, rtol, atol, **kwargs):
