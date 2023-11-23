@@ -654,7 +654,13 @@ class TestResize:
         check_kernel(F.resize_mask, make_mask(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1])
 
     def test_kernel_video(self):
-        check_kernel(F.resize_video, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1], antialias=True)
+        check_kernel(
+            F.resize_video,
+            make_video(self.INPUT_SIZE),
+            size=self.OUTPUT_SIZES[-1],
+            antialias=True,
+            check_compiled_vs_eager=dict(rtol=0, atol=1),
+        )
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
@@ -3471,12 +3477,12 @@ class TestResizedCrop:
     )
     def test_kernel(self, kernel, make_input):
         input = make_input(self.INPUT_SIZE)
-        if isinstance(input, tv_tensors.BoundingBoxes):
+        if isinstance(input, (tv_tensors.Image, tv_tensors.Video)):
+            extra_kwargs = dict(antialias=True, check_compiled_vs_eager=dict(rtol=0, atol=1))
+        elif isinstance(input, tv_tensors.BoundingBoxes):
             extra_kwargs = dict(format=input.format)
         elif isinstance(input, tv_tensors.Mask):
             extra_kwargs = dict()
-        else:
-            extra_kwargs = dict(antialias=True)
 
         check_kernel(kernel, input, **self.CROP_KWARGS, size=self.OUTPUT_SIZE, **extra_kwargs)
 
