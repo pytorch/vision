@@ -3641,7 +3641,7 @@ class TestPad:
     @pytest.mark.parametrize("fill", [[1], (0,), [1, 0, 1], (0, 1, 0)])
     def test_kernel_mask_errors(self, fill):
         with pytest.raises(ValueError, match="Non-scalar fill value is not supported"):
-            check_kernel(F.pad_mask, make_segmentation_mask(), padding=[1], fill=fill)
+            F.pad_mask(make_segmentation_mask(), padding=[1], fill=fill)
 
     def test_kernel_video(self):
         check_kernel(F.pad_video, make_video(), padding=[1])
