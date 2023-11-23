@@ -20,7 +20,7 @@ jobs:
 
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
-      job-name: ${{ format('{0}|{1}|graphbreaks-{2}allowed', matrix.dynamic && 'dynamic' || 'static', matrix.backend, matrix.fullgraph && 'dis') }}
+      job-name: ${{ format('dynamic={0},backend={1},fullgraph={2}', matrix.dynamic, matrix.backend, matrix.fullgraph) }}
       repository: pytorch/vision
       runner: "linux.12xlarge"
       gpu-arch-type: "cpu"
