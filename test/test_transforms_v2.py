@@ -620,6 +620,9 @@ class TestResize:
             antialias=antialias,
             check_cuda_vs_cpu=check_cuda_vs_cpu_tolerances,
             check_scripted_vs_eager=not isinstance(size, int),
+            check_compiled_vs_eager=dict(rtol=0, atol=1)
+            if (dtype is torch.uint8 and interpolation == transforms.InterpolationMode.BILINEAR)
+            else True,
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
