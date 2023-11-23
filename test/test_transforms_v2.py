@@ -115,6 +115,7 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
 
 DYNAMIC = os.environ.get("COMPILE_DYNAMIC", "true").lower() == "true"
 BACKEND = os.environ.get("COMPILE_BACKEND", "eager").lower()
+FULLGRAPH = os.environ.get("COMPILE_FULLGRAPH", "true").lower() == "true"
 
 
 def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
@@ -123,7 +124,7 @@ def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
         return
 
     torch._dynamo.reset()
-    kernel_compiled = torch.compile(kernel, dynamic=DYNAMIC, backend=BACKEND, fullgraph=False)
+    kernel_compiled = torch.compile(kernel, dynamic=DYNAMIC, backend=BACKEND, fullgraph=FULLGRAPH)
 
     input = input.as_subclass(torch.Tensor)
     actual = kernel_compiled(input, *args, **kwargs)

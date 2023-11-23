@@ -13,6 +13,9 @@ jobs:
         backend:
           - eager
           - inductor
+        fullgraph:
+          - true
+          - false
         runner: [ "linux.12xlarge" ]
         gpu-arch-type: [ "cpu" ]
       fail-fast: false
@@ -34,5 +37,6 @@ jobs:
         
         export COMPILE_DYNAMIC='${{ matrix.dynamic }}'
         export COMPILE_BACKEND='${{ matrix.backend }}'
+        export COMPILE_FULLGRAPH='${{ matrix.fullgraph }}'
 
         ./.github/scripts/unittest.sh
