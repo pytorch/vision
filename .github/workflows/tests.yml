@@ -16,25 +16,23 @@ jobs:
         fullgraph:
           - true
           - false
-        runner: [ "linux.12xlarge" ]
-        gpu-arch-type: [ "cpu" ]
       fail-fast: false
 
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
-      job-name: ${{ format('{0}-shapes|{1}-backend|graphbreaks-{2}allowed', matrix.dynamic && 'dynamic' || 'static', matrix.backend, matrix.fullgraph && 'dis') }}
+      job-name: ${{ format('{0}|{1}|graphbreaks-{2}allowed', matrix.dynamic && 'dynamic' || 'static', matrix.backend, matrix.fullgraph && 'dis') }}
       repository: pytorch/vision
-      runner: ${{ matrix.runner }}
-      gpu-arch-type: ${{ matrix.gpu-arch-type }}
-      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      runner: "linux.12xlarge"
+      gpu-arch-type: "cpu"
+      gpu-arch-version: ""
       timeout: 120
       test-infra-ref: main
       script: |
         set -euo pipefail
 
         export PYTHON_VERSION='3.8'
-        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
-        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        export GPU_ARCH_TYPE='cpu'
+        export GPU_ARCH_VERSION=''
         
         export COMPILE_DYNAMIC='${{ matrix.dynamic }}'
         export COMPILE_BACKEND='${{ matrix.backend }}'
