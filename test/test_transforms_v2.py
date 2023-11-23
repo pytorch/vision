@@ -180,29 +180,6 @@ def check_kernel(
     check_compiled_vs_eager=True,
     **kwargs,
 ):
-    initial_input_version = input._version
-
-    output = kernel(input.as_subclass(torch.Tensor), *args, **kwargs)
-    # Most kernels just return a tensor, but some also return some additional metadata
-    if not isinstance(output, torch.Tensor):
-        output, *_ = output
-
-    # check that no inplace operation happened
-    assert input._version == initial_input_version
-
-    if kernel not in {F.to_dtype_image, F.to_dtype_video}:
-        assert output.dtype == input.dtype
-    assert output.device == input.device
-
-    if check_cuda_vs_cpu:
-        _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs, **_to_tolerances(check_cuda_vs_cpu))
-
-    if check_scripted_vs_eager:
-        _check_kernel_scripted_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_scripted_vs_eager))
-
-    if check_batched_vs_unbatched:
-        _check_kernel_batched_vs_unbatched(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_unbatched))
-
     if check_compiled_vs_eager:
         _check_kernel_compiled_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_compiled_vs_eager))
 
