@@ -91,6 +91,7 @@ def main() -> None:
         smoke_test_torchvision_decode_jpeg("cuda")
         smoke_test_torchvision_resnet50_classify("cuda")
 
+        # TODO: remove once pytorch/pytorch#110436 is resolved
         if sys.version_info < (3, 12, 0):
             smoke_test_compile()
 
