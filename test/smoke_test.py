@@ -13,7 +13,7 @@ SCRIPT_DIR = Path(__file__).parent
 
 def smoke_test_torchvision() -> None:
     print(
-        "Is torchvision usable?",ƒ
+        "Is torchvision usable?",
         all(x is not None for x in [torch.ops.image.decode_png, torch.ops.torchvision.roi_align]),
     )
 
