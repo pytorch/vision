@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 
 class Imagenette(VisionDataset):
-    """`Imagenette <https://github.com/fastai/imagenette#imagenette-1`_ image classification dataset.
+    """`Imagenette <https://github.com/fastai/imagenette#imagenette-1>`_ image classification dataset.
 
     Args:
         root (string): Root directory of the Imagenette dataset.
