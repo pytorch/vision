@@ -124,6 +124,7 @@ def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
         return
 
     torch._dynamo.reset()
+    torch._dynamo.config.capture_scalar_outputs = True
     kernel_compiled = torch.compile(kernel, dynamic=DYNAMIC, backend=BACKEND, fullgraph=FULLGRAPH)
 
     input = input.as_subclass(torch.Tensor)
