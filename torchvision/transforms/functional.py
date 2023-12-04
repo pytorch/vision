@@ -277,7 +277,7 @@ def to_pil_image(pic, mode=None):
     npimg = pic
 
     if np.issubdtype(npimg.dtype, np.floating) and mode != "F":
-        npimg = (npimg * 255).astype(np.uint8)
+        npimg = (npimg * 255).round().astype(np.uint8)
 
     if npimg.shape[2] == 1:
         expected_mode = None
