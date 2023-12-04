@@ -48,7 +48,7 @@ class Label(_LabelBase):
         if self.categories is None:
             raise RuntimeError("Label does not have categories")
 
-        return tree_map(lambda idx: self.categories[idx], self.tolist())
+        return tree_map(lambda idx: self.categories[idx], self.tolist())  # type: ignore[index]
 
 
 class OneHotLabel(_LabelBase):
