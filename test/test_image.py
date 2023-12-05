@@ -34,6 +34,7 @@ ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 INTERLACED_PNG = os.path.join(IMAGE_ROOT, "interlaced_png")
 TOOSMALL_PNG = os.path.join(IMAGE_ROOT, "toosmall_png")
 IS_WINDOWS = sys.platform in ("win32", "cygwin")
+IS_MACOS = sys.platform == "darwin"
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 
 
@@ -419,6 +420,7 @@ def test_encode_jpeg_errors():
         encode_jpeg(torch.empty((100, 100), dtype=torch.uint8))
 
 
+@pytest.mark.skipif(IS_MACOS, reason="https://github.com/pytorch/vision/issues/8031")
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
@@ -437,6 +439,7 @@ def test_encode_jpeg(img_path):
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
 
+@pytest.mark.skipif(IS_MACOS, reason="https://github.com/pytorch/vision/issues/8031")
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
