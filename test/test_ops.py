@@ -610,15 +610,6 @@ class TestRoIAlign(RoIOpTester):
         self._helper_jit_boxes_list(model)
 
 
-optests.generate_opcheck_tests(
-    testcase=TestRoIAlign,
-    namespaces=["torchvision"],
-    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
-    additional_decorators=[],
-    test_utils=OPTESTS,
-)
-
-
 class TestPSRoIAlign(RoIOpTester):
     mps_backward_atol = 5e-2
 
@@ -674,6 +665,43 @@ class TestPSRoIAlign(RoIOpTester):
 
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_align)
+
+
+@pytest.mark.parametrize(
+    "op",
+    (
+        torch.ops.torchvision.roi_pool,
+        torch.ops.torchvision.ps_roi_pool,
+        torch.ops.torchvision.roi_align,
+        torch.ops.torchvision.ps_roi_align,
+    ),
+)
+@pytest.mark.parametrize("dtype", (torch.float16, torch.float32, torch.float64))
+@pytest.mark.parametrize("device", cpu_and_cuda())
+@pytest.mark.parametrize("requires_grad", (True, False))
+def test_roi_opcheck(op, dtype, device, requires_grad):
+    # This manually calls opcheck() on the roi ops. We do that instead of
+    # relying on opcheck.generate_opcheck_tests() as e.g. done for nms, because
+    # pytest and generate_opcheck_tests() don't interact very well when it comes
+    # to skipping tests - and these ops need to skip the MPS tests since MPS we
+    # don't support dynamic shapes yet for MPS.
+    rois = torch.tensor(
+        [[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]],
+        dtype=dtype,
+        device=device,
+        requires_grad=requires_grad,
+    )
+    pool_size = 5
+    num_channels = 2 * (pool_size**2)
+    x = torch.rand(2, num_channels, 10, 10, dtype=dtype, device=device)
+
+    kwargs = dict(rois=rois, spatial_scale=1, pooled_height=pool_size, pooled_width=pool_size)
+    if op in (torch.ops.torchvision.roi_align, torch.ops.torchvision.ps_roi_align):
+        kwargs["sampling_ratio"] = -1
+    if op is torch.ops.torchvision.roi_align:
+        kwargs["aligned"] = True
+
+    optests.opcheck(op, args=(x,), kwargs=kwargs)
 
 
 class TestMultiScaleRoIAlign:
