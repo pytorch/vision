@@ -12,7 +12,7 @@ class VisionDataset(data.Dataset):
     It is necessary to override the ``__getitem__`` and ``__len__`` method.
 
     Args:
-        root (string): Root directory of dataset.
+        root (string, optional): Root directory of dataset. Only used for `__repr__`.
         transforms (callable, optional): A function/transforms that takes in
             an image and a label and returns the transformed versions of both.
         transform (callable, optional): A function/transform that  takes in an PIL image
@@ -29,7 +29,7 @@ class VisionDataset(data.Dataset):
 
     def __init__(
         self,
-        root: str,
+        root: str = None,  # type: ignore[assignment]
         transforms: Optional[Callable] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

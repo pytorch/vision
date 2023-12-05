@@ -90,7 +90,10 @@ def main() -> None:
     if torch.cuda.is_available():
         smoke_test_torchvision_decode_jpeg("cuda")
         smoke_test_torchvision_resnet50_classify("cuda")
-        smoke_test_compile()
+
+        # TODO: remove once pytorch/pytorch#110436 is resolved
+        if sys.version_info < (3, 12, 0):
+            smoke_test_compile()
 
     if torch.backends.mps.is_available():
         smoke_test_torchvision_resnet50_classify("mps")
