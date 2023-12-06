@@ -1,5 +1,6 @@
 import math
 import numbers
+import sys
 import warnings
 from enum import Enum
 from typing import Any, List, Optional, Tuple, Union
@@ -162,7 +163,7 @@ def to_tensor(pic) -> Tensor:
         return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
-    mode_to_nptype = {"I": np.int32, "I;16": np.int16, "F": np.float32}
+    mode_to_nptype = {"I": np.int32, "I;16" if sys.byteorder == "little" else "I;16B": np.int16, "F": np.float32}
     img = torch.from_numpy(np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True))
 
     if pic.mode == "1":
@@ -285,7 +286,7 @@ def to_pil_image(pic, mode=None):
         if npimg.dtype == np.uint8:
             expected_mode = "L"
         elif npimg.dtype == np.int16:
-            expected_mode = "I;16"
+            expected_mode = "I;16" if sys.byteorder == "little" else "I;16B"
         elif npimg.dtype == np.int32:
             expected_mode = "I"
         elif npimg.dtype == np.float32:

@@ -2,6 +2,7 @@ import math
 import os
 import random
 import re
+import sys
 from functools import partial
 
 import numpy as np
@@ -614,7 +615,7 @@ class TestToPil:
 
         img_data_short = torch.ShortTensor(1, 4, 4).random_()
         expected_output = img_data_short.numpy()
-        yield img_data_short, expected_output, "I;16"
+        yield img_data_short, expected_output, "I;16" if sys.byteorder == "little" else "I;16B"
 
         img_data_int = torch.IntTensor(1, 4, 4).random_()
         expected_output = img_data_int.numpy()
@@ -631,7 +632,7 @@ class TestToPil:
 
         img_data_short = torch.ShortTensor(4, 4).random_()
         expected_output = img_data_short.numpy()
-        yield img_data_short, expected_output, "I;16"
+        yield img_data_short, expected_output, "I;16" if sys.byteorder == "little" else "I;16B"
 
         img_data_int = torch.IntTensor(4, 4).random_()
         expected_output = img_data_int.numpy()
@@ -662,7 +663,7 @@ class TestToPil:
         [
             (torch.Tensor(4, 4, 1).uniform_().numpy(), "L"),
             (torch.ByteTensor(4, 4, 1).random_(0, 255).numpy(), "L"),
-            (torch.ShortTensor(4, 4, 1).random_().numpy(), "I;16"),
+            (torch.ShortTensor(4, 4, 1).random_().numpy(), "I;16" if sys.byteorder == "little" else "I;16B"),
             (torch.IntTensor(4, 4, 1).random_().numpy(), "I"),
         ],
     )
@@ -744,7 +745,7 @@ class TestToPil:
         [
             (torch.Tensor(4, 4).uniform_().numpy(), "L"),
             (torch.ByteTensor(4, 4).random_(0, 255).numpy(), "L"),
-            (torch.ShortTensor(4, 4).random_().numpy(), "I;16"),
+            (torch.ShortTensor(4, 4).random_().numpy(), "I;16" if sys.byteorder == "little" else "I;16B"),
             (torch.IntTensor(4, 4).random_().numpy(), "I"),
         ],
     )
