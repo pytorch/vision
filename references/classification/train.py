@@ -127,7 +127,8 @@ def load_data(traindir, valdir, args):
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
         print(f"Loading dataset_train from {cache_path}")
-        dataset, _ = torch.load(cache_path, weights_only=True)
+        # TODO: this could probably be weights_only=True
+        dataset, _ = torch.load(cache_path, weights_only=False)
     else:
         # We need a default value for the variables below because args may come
         # from train_quantization.py which doesn't define them.
