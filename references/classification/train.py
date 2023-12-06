@@ -160,7 +160,8 @@ def load_data(traindir, valdir, args):
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
         print(f"Loading dataset_test from {cache_path}")
-        dataset_test, _ = torch.load(cache_path, weights_only=True)
+        # TODO: this could probably be weights_only=True
+        dataset_test, _ = torch.load(cache_path, weights_only=False)
     else:
         if args.weights and args.test_only:
             weights = torchvision.models.get_weight(args.weights)
