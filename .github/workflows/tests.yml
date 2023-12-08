@@ -26,14 +26,14 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.2
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: main
+      test-infra-ref: release/2.2
       script: |
         set -euo pipefail
 
@@ -56,14 +56,14 @@ jobs:
           - python-version: "3.8"
             runner: macos-m1-12
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@release/2.2
     with:
       repository: pytorch/vision
       # We need an increased timeout here, since the macos-12 runner is the free one from GH
       # and needs roughly 2 hours to just run the test suite
       timeout: 240
       runner: ${{ matrix.runner }}
-      test-infra-ref: main
+      test-infra-ref: release/2.2
       script: |
         set -euo pipefail
 
@@ -89,14 +89,14 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@release/2.2
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: main
+      test-infra-ref: release/2.2
       script: |
         set -euxo pipefail
 
@@ -109,10 +109,10 @@ jobs:
         ./.github/scripts/unittest.sh
 
   onnx:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.2
     with:
       repository: pytorch/vision
-      test-infra-ref: main
+      test-infra-ref: release/2.2
       script: |
         set -euo pipefail
 
@@ -140,10 +140,10 @@ jobs:
         echo '::endgroup::'
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.2
     with:
       repository: pytorch/vision
-      test-infra-ref: main
+      test-infra-ref: release/2.2
       script: |
         set -euo pipefail
 
