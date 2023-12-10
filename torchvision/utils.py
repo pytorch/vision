@@ -192,7 +192,7 @@ def draw_bounding_boxes(
         _log_api_usage_once(draw_bounding_boxes)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
-    elif image.dtype != torch.uint8 or image.dtype != torch.float32:
+    elif image.dtype not in {torch.uint8, torch.float32}:
         raise ValueError(f"Tensor uint8/float32 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
@@ -282,7 +282,7 @@ def draw_segmentation_masks(
         _log_api_usage_once(draw_segmentation_masks)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype != torch.uint8 or image.dtype != torch.float32:
+    elif image.dtype not in {torch.uint8, torch.float32}:
         raise ValueError(f"The image dtype must be uint8/float32, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
@@ -350,7 +350,7 @@ def draw_keypoints(
         _log_api_usage_once(draw_keypoints)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype != torch.uint8 or image.dtype != torch.float32:
+    elif image.dtype not in {torch.uint8, torch.float32}:
         raise ValueError(f"The image dtype must be uint8/float32, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
