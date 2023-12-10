@@ -164,11 +164,11 @@ def draw_bounding_boxes(
 
     """
     Draws bounding boxes on given image.
-    The values of the input image should be uint8/float32 between 0 and 255.
+    The image values should be in the uint8 or float32 that range between 0 and 255.
     If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W) and dtype uint8/float32.
+        image (Tensor): Tensor of shape (C x H x W) and dtype uint8 or float32.
         boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
@@ -185,7 +185,7 @@ def draw_bounding_boxes(
         font_size (int): The requested font size in points.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor of dtype uint8/float32 with bounding boxes plotted.
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 or float32 with bounding boxes plotted.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -193,7 +193,7 @@ def draw_bounding_boxes(
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
     elif image.dtype not in {torch.uint8, torch.float32}:
-        raise ValueError(f"Tensor uint8/float32 expected, got {image.dtype}")
+        raise ValueError(f"Tensor uint8 or float32 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
@@ -262,10 +262,10 @@ def draw_segmentation_masks(
 
     """
     Draws segmentation masks on given RGB image.
-    The values of the input image should be uint8/float32 between 0 and 255.
+    The image values should be in the uint8 or float32 that range between 0 and 255.
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8/float32.
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float32.
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
@@ -283,7 +283,7 @@ def draw_segmentation_masks(
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
     elif image.dtype not in {torch.uint8, torch.float32}:
-        raise ValueError(f"The image dtype must be uint8/float32, got {image.dtype}")
+        raise ValueError(f"The image dtype must be uint8 or float32, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
@@ -329,10 +329,10 @@ def draw_keypoints(
 
     """
     Draws Keypoints on given RGB image.
-    The values of the input image should be uint8/float32 between 0 and 255.
+    The image values should be in the uint8 or float32 that range between 0 and 255.
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8/float32.
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float32.
         keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
             in the format [x, y].
         connectivity (List[Tuple[int, int]]]): A List of tuple where,
@@ -343,7 +343,7 @@ def draw_keypoints(
         width (int): Integer denoting width of line connecting keypoints.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor of dtype uint8/float32 with keypoints drawn.
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 or float32 with keypoints drawn.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -351,7 +351,7 @@ def draw_keypoints(
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
     elif image.dtype not in {torch.uint8, torch.float32}:
-        raise ValueError(f"The image dtype must be uint8/float32, got {image.dtype}")
+        raise ValueError(f"The image dtype must be uint8 or float32, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
