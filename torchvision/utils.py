@@ -164,11 +164,11 @@ def draw_bounding_boxes(
 
     """
     Draws bounding boxes on given image.
-    The values of the input image should be uint8 between 0 and 255.
+    The values of the input image should be uint8/float32 between 0 and 255.
     If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W) and dtype uint8.
+        image (Tensor): Tensor of shape (C x H x W) and dtype uint8/float32.
         boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
@@ -185,15 +185,15 @@ def draw_bounding_boxes(
         font_size (int): The requested font size in points.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8/float32 with bounding boxes plotted.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(draw_bounding_boxes)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
-    elif image.dtype != torch.uint8:
-        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif image.dtype != torch.uint8 or image.dtype != torch.float32:
+        raise ValueError(f"Tensor uint8/float32 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
@@ -249,7 +249,7 @@ def draw_bounding_boxes(
             margin = width + 1
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=image.dtype)
 
 
 @torch.no_grad()
@@ -262,10 +262,10 @@ def draw_segmentation_masks(
 
     """
     Draws segmentation masks on given RGB image.
-    The values of the input image should be uint8 between 0 and 255.
+    The values of the input image should be uint8/float32 between 0 and 255.
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8/float32.
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
@@ -282,8 +282,8 @@ def draw_segmentation_masks(
         _log_api_usage_once(draw_segmentation_masks)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype != torch.uint8:
-        raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
+    elif image.dtype != torch.uint8 or image.dtype != torch.float32:
+        raise ValueError(f"The image dtype must be uint8/float32, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
@@ -303,7 +303,6 @@ def draw_segmentation_masks(
         warnings.warn("masks doesn't contain any mask. No mask was drawn")
         return image
 
-    out_dtype = torch.uint8
     colors = [
         torch.tensor(color, dtype=out_dtype, device=image.device)
         for color in _parse_colors(colors, num_objects=num_masks)
@@ -315,7 +314,7 @@ def draw_segmentation_masks(
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
-    return out.to(out_dtype)
+    return out.to(image.dtype)
 
 
 @torch.no_grad()
@@ -330,10 +329,10 @@ def draw_keypoints(
 
     """
     Draws Keypoints on given RGB image.
-    The values of the input image should be uint8 between 0 and 255.
+    The values of the input image should be uint8/float32 between 0 and 255.
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8/float32.
         keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
             in the format [x, y].
         connectivity (List[Tuple[int, int]]]): A List of tuple where,
@@ -344,15 +343,15 @@ def draw_keypoints(
         width (int): Integer denoting width of line connecting keypoints.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8/float32 with keypoints drawn.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(draw_keypoints)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype != torch.uint8:
-        raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
+    elif image.dtype != torch.uint8 or image.dtype != torch.float32:
+        raise ValueError(f"The image dtype must be uint8/float32, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
@@ -387,7 +386,7 @@ def draw_keypoints(
                     width=width,
                 )
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=image.dtype)
 
 
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
