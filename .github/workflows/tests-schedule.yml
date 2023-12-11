@@ -42,7 +42,7 @@ jobs:
         run: pip install pytest
 
       - name: Run tests
-        run: pytest -ra -v test/test_datasets_download.py
+        run: pytest -ra -v --color=no test/test_datasets_download.py
 
       - uses: JasonEtco/create-an-issue@v2.4.0
         name: Create issue if download tests failed
