@@ -164,7 +164,7 @@ def draw_bounding_boxes(
 
     """
     Draws bounding boxes on given image.
-    The image values should be uint8 in [0, 255] or float in [0, 1]
+    The image values should be uint8 in [0, 255] or float in [0, 1].
     If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
@@ -192,8 +192,8 @@ def draw_bounding_boxes(
         _log_api_usage_once(draw_bounding_boxes)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
-    elif image.dtype not in {torch.uint8, torch.float32}:
-        raise ValueError(f"Tensor uint8 or float32 expected, got {image.dtype}")
+    elif not (image.dtype == torch.uint8 or image.is_floating_point()):
+        raise ValueError(f"Tensor uint8 or float expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
@@ -262,7 +262,7 @@ def draw_segmentation_masks(
 
     """
     Draws segmentation masks on given RGB image.
-    The image values should be in the uint8 or float32 that range between 0 and 255.
+    The image values should be uint8 in [0, 255] or float in [0, 1].
 
     Args:
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float32.
@@ -282,8 +282,8 @@ def draw_segmentation_masks(
         _log_api_usage_once(draw_segmentation_masks)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype not in {torch.uint8, torch.float32}:
-        raise ValueError(f"The image dtype must be uint8 or float32, got {image.dtype}")
+    elif not (image.dtype == torch.uint8 or image.is_floating_point()):
+        raise ValueError(f"The image dtype must be uint8 or float, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
@@ -329,7 +329,7 @@ def draw_keypoints(
 
     """
     Draws Keypoints on given RGB image.
-    The image values should be in the uint8 or float32 that range between 0 and 255.
+    The image values should be uint8 in [0, 255] or float in [0, 1].
 
     Args:
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float32.
@@ -350,8 +350,8 @@ def draw_keypoints(
         _log_api_usage_once(draw_keypoints)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype not in {torch.uint8, torch.float32}:
-        raise ValueError(f"The image dtype must be uint8 or float32, got {image.dtype}")
+    elif not (image.dtype == torch.uint8 or image.is_floating_point()):
+        raise ValueError(f"The image dtype must be uint8 or float, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
