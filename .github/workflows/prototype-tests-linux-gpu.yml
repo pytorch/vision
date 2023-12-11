@@ -48,7 +48,7 @@ jobs:
         # `test/test_prototype*.py` takes the highest priority, neither `--ignore` nor `--ignore-glob` can help us here.
         rm test/test_prototype_datasets*.py
         pytest \
-          -v --durations=25 \
+          -v color no --durations=25 \
           --cov=torchvision/prototype --cov-report=term-missing \
           --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" \
           test/test_prototype_*.py
