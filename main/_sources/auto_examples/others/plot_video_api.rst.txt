@@ -549,7 +549,7 @@ We can generate a dataloader and test the dataset.
 
  .. code-block:: none
 
-    {'video': ['./dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/2/SOX5yA1l24A.mp4', './dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi'], 'start': [6.010805055351388, 1.0356042750830299, 6.680997320969601, 4.079057837717726, 1.2474527814499181], 'end': [6.539867, 1.568233, 7.207199999999999, 4.6046, 1.766667], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+    {'video': ['./dataset/2/SOX5yA1l24A.mp4', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/2/v_SoccerJuggling_g24_c01.avi'], 'start': [3.268749416855494, 1.3335955085408426, 4.403821639209332, 0.34570777949173853, 7.172763713906225], 'end': [3.7704329999999997, 1.8666669999999999, 4.9049, 0.866667, 7.674333], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 
 
 
@@ -607,7 +607,7 @@ Cleanup the video and dataset:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 3.754 seconds)
+   **Total running time of the script:** (0 minutes 4.767 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_video_api.py:
