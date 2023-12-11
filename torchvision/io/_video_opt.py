@@ -1,4 +1,5 @@
 import math
+import os
 import warnings
 from fractions import Fraction
 from typing import Dict, List, Optional, Tuple, Union
@@ -11,8 +12,11 @@ from ..extension import _load_library
 try:
     _load_library("video_reader")
     _HAS_VIDEO_OPT = True
-except (ImportError, OSError):
+except (ImportError, OSError) as e:
     _HAS_VIDEO_OPT = False
+
+    if "SHOULD_HAVE_VIDEO_EXTENSION" in os.environ:
+        warnings.warn(f"Failed to load video Python extension: '{e}'")
 
 default_timebase = Fraction(0, 1)
 
