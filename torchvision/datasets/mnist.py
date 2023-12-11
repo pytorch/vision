@@ -510,14 +510,24 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     # read
     with open(path, "rb") as f:
         data = f.read()
+
     # parse
-    magic = get_int(data[0:4])
-    nd = magic % 256
-    ty = magic // 256
+    if sys.byteorder == "little":
+        magic = get_int(data[0:4])
+        nd = magic % 256
+        ty = magic // 256
+    else:
+        nd = get_int(data[0:1])
+        ty = get_int(data[1:2]) + get_int(data[2:3]) * 256 + get_int(data[3:4]) * 256 * 256
+
     assert 1 <= nd <= 3
     assert 8 <= ty <= 14
     torch_type = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
+
+    if sys.byteorder == "big":
+        for i in range(len(s)):
+            s[i] = int.from_bytes(s[i].to_bytes(4, byteorder="little"), byteorder="big", signed=False)
 
     parsed = torch.frombuffer(bytearray(data), dtype=torch_type, offset=(4 * (nd + 1)))
 

@@ -8,8 +8,12 @@ from ._tv_tensor import TVTensor
 from ._video import Video
 
 
+# TODO: Fix this. We skip this method as it leads to
+# RecursionError: maximum recursion depth exceeded while calling a Python object
+# Until `disable` is removed, there will be graph breaks after all calls to functional transforms
+@torch.compiler.disable
 def wrap(wrappee, *, like, **kwargs):
-    """[BETA] Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
+    """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
 
     If ``like`` is a :class:`~torchvision.tv_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
     ``like`` are assigned to ``wrappee``, unless they are passed as ``kwargs``.

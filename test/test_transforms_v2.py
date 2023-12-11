@@ -599,7 +599,7 @@ class TestResize:
 
         # In contrast to CPU, there is no native `InterpolationMode.BICUBIC` implementation for uint8 images on CUDA.
         # Internally, it uses the float path. Thus, we need to test with an enormous tolerance here to account for that.
-        atol = 30 if transforms.InterpolationMode.BICUBIC and dtype is torch.uint8 else 1
+        atol = 30 if (interpolation is transforms.InterpolationMode.BICUBIC and dtype is torch.uint8) else 1
         check_cuda_vs_cpu_tolerances = dict(rtol=0, atol=atol / 255 if dtype.is_floating_point else atol)
 
         check_kernel(
@@ -3641,7 +3641,7 @@ class TestPad:
     @pytest.mark.parametrize("fill", [[1], (0,), [1, 0, 1], (0, 1, 0)])
     def test_kernel_mask_errors(self, fill):
         with pytest.raises(ValueError, match="Non-scalar fill value is not supported"):
-            check_kernel(F.pad_mask, make_segmentation_mask(), padding=[1], fill=fill)
+            F.pad_mask(make_segmentation_mask(), padding=[1], fill=fill)
 
     def test_kernel_video(self):
         check_kernel(F.pad_video, make_video(), padding=[1])
