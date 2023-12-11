@@ -552,7 +552,7 @@ if __name__ == "__main__":
         license="BSD",
         # Package info
         packages=find_packages(exclude=("test",)),
-        package_data={package_name: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
+        package_data={package_name: ["*.dll", "*.dylib", "*.so"]},
         zip_safe=False,
         install_requires=requirements,
         extras_require={
