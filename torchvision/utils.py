@@ -164,7 +164,7 @@ def draw_bounding_boxes(
 
     """
     Draws bounding boxes on given image.
-    The image values should be in the uint8 or float32 that range between 0 and 255.
+    The image values should be uint8 in [0, 255] or float in [0, 1]
     If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
