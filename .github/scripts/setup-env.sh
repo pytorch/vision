@@ -46,6 +46,11 @@ conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools
 
+# See https://github.com/pytorch/vision/issues/6790
+if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
+  pip install --progress-bar=off av!=10.0.0
+fi
+
 echo '::endgroup::'
 
 if [[ "${OS_TYPE}" == windows && "${GPU_ARCH_TYPE}" == cuda ]]; then
