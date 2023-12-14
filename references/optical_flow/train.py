@@ -226,7 +226,7 @@ def main(args):
         model_without_ddp = model
 
     if args.resume is not None:
-        checkpoint = torch.load(args.resume, map_location="cpu")
+        checkpoint = torch.load(args.resume, map_location="cpu", weights_only=True)
         model_without_ddp.load_state_dict(checkpoint["model"])
 
     if args.test_only:
