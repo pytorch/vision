@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:47.988** total execution time for 12 files **from all galleries**:
+**00:49.310** total execution time for 12 files **from all galleries**:
 
 .. container::
 
@@ -33,37 +33,37 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``../../gallery/others/plot_visualization_utils.py``)
-     - 00:14.533
+     - 00:16.188
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``../../gallery/others/plot_optical_flow.py``)
-     - 00:09.701
+     - 00:09.588
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``../../gallery/transforms/plot_transforms_illustrations.py``)
-     - 00:08.947
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``../../gallery/transforms/plot_transforms_e2e.py``)
-     - 00:04.991
+     - 00:08.680
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_video_api.py` (``../../gallery/others/plot_video_api.py``)
-     - 00:04.625
+     - 00:05.003
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``../../gallery/transforms/plot_transforms_e2e.py``)
+     - 00:04.855
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``../../gallery/others/plot_repurposing_annotations.py``)
-     - 00:02.500
+     - 00:02.405
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``../../gallery/others/plot_scripted_tensor_transforms.py``)
-     - 00:01.673
+     - 00:01.604
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``../../gallery/transforms/plot_transforms_getting_started.py``)
-     - 00:00.821
+     - 00:00.800
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``../../gallery/transforms/plot_cutmix_mixup.py``)
-     - 00:00.178
+     - 00:00.169
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py` (``../../gallery/transforms/plot_tv_tensors.py``)
      - 00:00.009
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` (``../../gallery/transforms/plot_custom_transforms.py``)
-     - 00:00.007
+     - 00:00.006
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py` (``../../gallery/transforms/plot_custom_tv_tensors.py``)
      - 00:00.004
