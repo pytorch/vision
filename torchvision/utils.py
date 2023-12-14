@@ -339,7 +339,7 @@ def draw_keypoints(
     The image values should be uint8 in [0, 255] or float in [0, 1].
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float32.
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float.
         keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
             in the format [x, y].
         connectivity (List[Tuple[int, int]]]): A List of tuple where,

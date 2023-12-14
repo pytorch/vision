@@ -152,7 +152,7 @@ def test_draw_boxes_grayscale():
 
 def test_draw_invalid_boxes():
     img_tp = ((1, 1, 1), (1, 2, 3))
-    img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
+    img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.long)
     img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
     img_correct = torch.zeros((3, 10, 10), dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
@@ -162,7 +162,7 @@ def test_draw_invalid_boxes():
 
     with pytest.raises(TypeError, match="Tensor expected"):
         utils.draw_bounding_boxes(img_tp, boxes)
-    with pytest.raises(ValueError, match="Tensor uint8 expected"):
+    with pytest.raises(ValueError, match="Tensor uint8 or float expected"):
         utils.draw_bounding_boxes(img_wrong1, boxes)
     with pytest.raises(ValueError, match="Pass individual images, not batches"):
         utils.draw_bounding_boxes(img_wrong2, boxes)
@@ -258,7 +258,7 @@ def test_draw_segmentation_masks_dtypes():
     assert img_uint8 is not out_uint8
     assert out_uint8.dtype == torch.uint8
 
-    img_float = to_dtype(img_uint8, torch.float32, scale=True)
+    img_float = to_dtype(img_uint8, torch.float, scale=True)
     out_float = utils.draw_segmentation_masks(img_float, masks)
 
     assert img_float is not out_float
