@@ -42,3 +42,5 @@ xcuserdata/
 # direnv
 .direnv
 .envrc
+
+.DS_Store
