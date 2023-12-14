@@ -9,7 +9,7 @@ import pytest
 import torch
 import torchvision.utils as utils
 import torchvision.transforms.functional as F
-from torchvision.transforms.v2.functional import to_type
+from torchvision.transforms.v2.functional import to_dtype
 from common_utils import assert_equal, cpu_and_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageColor
 
@@ -208,10 +208,8 @@ def test_draw_no_boxes():
 def test_draw_segmentation_masks(colors, alpha, device):
     """This test makes sure that masks draw their corresponding color where they should"""
     num_masks, h, w = 2, 100, 100
-
-    img_uint8 = torch.randint(0, 256, size=(3, h, w), dtype=dtype, device=device)
-    img_float = to_dtype(img_uint8, torch.float32, scale=True)
-
+    dtype = torch.uint8
+    img = torch.randint(0, 256, size=(3, h, w), dtype=dtype, device=device)
     masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool, device=device)
 
     # For testing we enforce that there's no overlap between the masks. The
@@ -221,25 +219,13 @@ def test_draw_segmentation_masks(colors, alpha, device):
     overlap = masks[0] & masks[1]
     masks[:, overlap] = False
 
-    # Test for uint8 input
-    out_uint8 = utils.draw_segmentation_masks(img_uint8, masks, colors=colors, alpha=alpha)
-    assert out_uint8.dtype == torch.uint8
-    assert out_uint8 is not img_uint8
-
-    # Test for float input
-    out_float = utils.draw_segmentation_masks(img_float, masks, colors=colors, alpha=alpha)
-    assert torch.is_floating_point(out_float)
-    assert out_float is not img_float
-
-    # Converting the float output to uint8 with scaling and asserting the 
-    # uint8 output is close to the converted float output.
-    out_float_uint8 = to_dtype(out_float, torch.uint8, scale=True)
-    torch.testing.assert_close(out_uint8, out_float_uint8, rtol=1e-5)
+    out = utils.draw_segmentation_masks(img, masks, colors=colors, alpha=alpha)
+    assert out.dtype == dtype
+    assert out is not img
 
     # Make sure the image didn't change where there's no mask
     masked_pixels = masks[0] | masks[1]
-    assert_equal(img_uint8[:, ~masked_pixels], out_uint8[:, ~masked_pixels])
-    torch.testing.assert_close(img_float[:, ~masked_pixels], out_float[:, ~masked_pixels], rtol=1e-5)
+    assert_equal(img[:, ~masked_pixels], out[:, ~masked_pixels])
 
     if colors is None:
         colors = utils._generate_color_palette(num_masks)
@@ -250,20 +236,35 @@ def test_draw_segmentation_masks(colors, alpha, device):
     for mask, color in zip(masks, colors):
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
-        color = torch.tensor(color, dtype=torch.uint8, device=device)
+        color = torch.tensor(color, dtype=dtype, device=device)
 
         if alpha == 1:
-            assert (out_uint8[:, mask] == color[:, None]).all()
-            torch.testing.assert_close(out_float_uint8[:, mask], color[:, None].to(out_float_uint8.dtype), rtol=1e-5)
+            assert (out[:, mask] == color[:, None]).all()
         elif alpha == 0:
-            assert (out_uint8[:, mask] == img_uint8[:, mask]).all()
-            torch.testing.assert_close(out_float_uint8[:, mask], out_float[:, mask], rtol=1e-5)
+            assert (out[:, mask] == img[:, mask]).all()
 
-        interpolated_color = (img_uint8[:, mask].float() * (1 - alpha) + color[:, None] * alpha).to(torch.uint8)
-        torch.testing.assert_close(out_uint8[:, mask], interpolated_color, rtol=0.0, atol=1.0)
-        interpolated_color_float = (out_float[:, mask] * (1 - alpha) + color[:, None] * alpha)
-        torch.testing.assert_close(out_float_uint8[:, mask], interpolated_color_float, rtol=1e-5)
+        interpolated_color = (img[:, mask] * (1 - alpha) + color[:, None] * alpha).to(dtype)
+        torch.testing.assert_close(out[:, mask], interpolated_color, rtol=0.0, atol=1.0)
 
+
+def test_draw_segmentation_masks_dtypes():
+    num_masks, h, w = 2, 100, 100
+
+    masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool)
+
+    img_uint8 = torch.randint(0, 256, size=(3, h, w), dtype=torch.uint8)
+    out_uint8 = utils.draw_segmentation_masks(img_uint8, masks)
+
+    assert img_uint8 is not out_uint8
+    assert out_uint8.dtype == torch.uint8
+
+    img_float = to_dtype(img_uint8, torch.float32, scale=True)
+    out_float = utils.draw_segmentation_masks(img_float, masks)
+
+    assert img_float is not out_float
+    assert out_float.is_floating_point ()
+
+    torch.testing.assert_close(out_uint8, to_dtype(out_float, torch.uint8, scale=True), rtol=0, atol=1.0)
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 def test_draw_segmentation_masks_errors(device):

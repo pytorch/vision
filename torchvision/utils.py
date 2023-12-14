@@ -265,7 +265,7 @@ def draw_segmentation_masks(
     The image values should be uint8 in [0, 255] or float in [0, 1].
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float32.
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float.
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
@@ -297,6 +297,10 @@ def draw_segmentation_masks(
     if masks.shape[-2:] != image.shape[-2:]:
         raise ValueError("The image and the masks must have the same height and width")
 
+    original_dtype = image.dtype
+    if image.is_floating_point():
+        image = (image * 255).to(torch.uint8)
+
     num_masks = masks.size()[0]
 
     if num_masks == 0:
@@ -304,7 +308,7 @@ def draw_segmentation_masks(
         return image
 
     colors = [
-        torch.tensor(color, dtype=out_dtype, device=image.device)
+        torch.tensor(color, dtype=torch.uint8, device=image.device)
         for color in _parse_colors(colors, num_objects=num_masks)
     ]
 
@@ -314,7 +318,10 @@ def draw_segmentation_masks(
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
-    return out.to(image.dtype)
+    if original_dtype in {torch.float16, torch.float32, torch.float64}:
+        out = out.float() / 255.0
+
+    return out.to(original_dtype)
 
 
 @torch.no_grad()
