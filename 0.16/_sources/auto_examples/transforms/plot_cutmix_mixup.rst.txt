@@ -30,7 +30,7 @@ function.
 
 .. GENERATED FROM PYTHON SOURCE LINES 23-30
 
-.. code-block:: default
+.. code-block:: Python
 
     import torch
     from torchvision.datasets import FakeData
@@ -55,7 +55,7 @@ We'll use a simple but typical image classification pipeline:
 
 .. GENERATED FROM PYTHON SOURCE LINES 35-49
 
-.. code-block:: default
+.. code-block:: Python
 
 
     preproc = v2.Compose([
@@ -93,7 +93,7 @@ would look like if we weren't using CutMix or MixUp:
 
 .. GENERATED FROM PYTHON SOURCE LINES 55-65
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torch.utils.data import DataLoader
@@ -133,7 +133,7 @@ and this is exactly what these transforms expect as input:
 
 .. GENERATED FROM PYTHON SOURCE LINES 77-91
 
-.. code-block:: default
+.. code-block:: Python
 
 
     dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
@@ -182,7 +182,7 @@ more about collation).
 
 .. GENERATED FROM PYTHON SOURCE LINES 107-123
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torch.utils.data import default_collate
@@ -229,7 +229,7 @@ by passing a callable to the ``labels_getter`` parameter. For example:
 
 .. GENERATED FROM PYTHON SOURCE LINES 135-151
 
-.. code-block:: default
+.. code-block:: Python
 
 
     batch = {
@@ -263,7 +263,7 @@ by passing a callable to the ``labels_getter`` parameter. For example:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.166 seconds)
+   **Total running time of the script:** (0 minutes 0.163 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_cutmix_mixup.py:
@@ -272,16 +272,13 @@ by passing a callable to the ``labels_getter`` parameter. For example:
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_cutmix_mixup.ipynb <plot_cutmix_mixup.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_cutmix_mixup.py <plot_cutmix_mixup.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_cutmix_mixup.ipynb <plot_cutmix_mixup.ipynb>`
 
 
 .. only:: html

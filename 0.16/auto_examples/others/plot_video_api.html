@@ -92,7 +92,7 @@
           <li>
           <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
               <a class="resource-option with-down-arrow">
-                PyTorch Edge
+                Edge
               </a>
               <div class="resources-dropdown-menu">
                 <a class="nav-dropdown-item" href="https://pytorch.org/edge">
@@ -408,7 +408,7 @@ To create it, we need to define the path and the stream we want to use.</p>
 </dl>
 </li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torchvision</span>
 <span class="kn">from</span> <span class="nn">torchvision.datasets.utils</span> <span class="kn">import</span> <span class="n">download_url</span>
 <span class="n">torchvision</span><span class="o">.</span><span class="n">set_video_backend</span><span class="p">(</span><span class="s2">&quot;video_reader&quot;</span><span class="p">)</span>
@@ -458,7 +458,7 @@ To create it, we need to define the path and the stream we want to use.</p>
 of <code class="docutils literal notranslate"><span class="pre">stream_type:stream_id</span></code> where <code class="docutils literal notranslate"><span class="pre">stream_type</span></code> is a string and <code class="docutils literal notranslate"><span class="pre">stream_id</span></code> a long int.
 The constructor accepts passing a <code class="docutils literal notranslate"><span class="pre">stream_type</span></code> only, in which case the stream is auto-discovered.
 Firstly, let’s get the metadata for our particular video:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">stream</span></a> <span class="o">=</span> <span class="s2">&quot;video&quot;</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">stream</span></a> <span class="o">=</span> <span class="s2">&quot;video&quot;</span>
 <span class="n">video</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">VideoReader</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">video_path</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">stream</span></a><span class="p">)</span>
 <span class="n">video</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span>
 </pre></div>
@@ -480,7 +480,7 @@ If only stream type is passed, the decoder auto-detects first stream of that typ
 <li><p><code class="docutils literal notranslate"><span class="pre">data</span></code>: containing a torch.tensor</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">pts</span></code>: containing a float timestamp of this particular frame</p></li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">metadata</span></a> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">metadata</span></a> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span>
 <span class="n">video</span><span class="o">.</span><span class="n">set_current_stream</span><span class="p">(</span><span class="s2">&quot;audio&quot;</span><span class="p">)</span>
 
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">frames</span></a> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># we are going to save the frames here.</span>
@@ -508,7 +508,7 @@ to next returns the presentation timestamp of the returned frame in seconds.</p>
 <p>Given that our implementation relies on python iterators,
 we can leverage itertools to simplify the process and make it more pythonic.</p>
 <p>For example, if we wanted to read ten frames from second second:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span>
 <span class="n">video</span><span class="o">.</span><span class="n">set_current_stream</span><span class="p">(</span><span class="s2">&quot;video&quot;</span><span class="p">)</span>
 
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">frames</span></a> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># we are going to save the frames here.</span>
@@ -527,7 +527,7 @@ we can leverage itertools to simplify the process and make it more pythonic.</p>
 We seek into a second second of the video,
 then we utilize the itertools takewhile to get the
 correct number of frames:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">video</span><span class="o">.</span><span class="n">set_current_stream</span><span class="p">(</span><span class="s2">&quot;video&quot;</span><span class="p">)</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">video</span><span class="o">.</span><span class="n">set_current_stream</span><span class="p">(</span><span class="s2">&quot;video&quot;</span><span class="p">)</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">frames</span></a> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># we are going to save the frames here.</span>
 <span class="n">video</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 
@@ -550,7 +550,7 @@ Tensor size:  torch.Size([3, 256, 340])
 <h2>2. Building a sample read_video function<a class="headerlink" href="#building-a-sample-read-video-function" title="Permalink to this heading">¶</a></h2>
 <p>We can utilize the methods above to build the read video function that follows
 the same API to the existing <code class="docutils literal notranslate"><span class="pre">read_video</span></code> function.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">example_read_video</span><span class="p">(</span><span class="n">video_object</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read_video</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">read_audio</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">example_read_video</span><span class="p">(</span><span class="n">video_object</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read_video</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">read_audio</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">end</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;</span> <span class="n">start</span><span class="p">:</span>
@@ -599,14 +599,14 @@ the same API to the existing <code class="docutils literal notranslate"><span cl
 We suggest trying out iterable dataset for this purpose.
 Here, we are going to build an example dataset that reads randomly selected 10 frames of video.</p>
 <p>Make sample dataset</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <a href="https://docs.python.org/3/library/os.html#os.makedirs" title="os.makedirs" class="sphx-glr-backref-module-os sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span></a><span class="p">(</span><span class="s2">&quot;./dataset&quot;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a href="https://docs.python.org/3/library/os.html#os.makedirs" title="os.makedirs" class="sphx-glr-backref-module-os sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span></a><span class="p">(</span><span class="s2">&quot;./dataset/1&quot;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a href="https://docs.python.org/3/library/os.html#os.makedirs" title="os.makedirs" class="sphx-glr-backref-module-os sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span></a><span class="p">(</span><span class="s2">&quot;./dataset/2&quot;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Download the videos</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.datasets.utils</span> <span class="kn">import</span> <span class="n">download_url</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.datasets.utils</span> <span class="kn">import</span> <span class="n">download_url</span>
 <span class="n">download_url</span><span class="p">(</span>
     <span class="s2">&quot;https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true&quot;</span><span class="p">,</span>
     <span class="s2">&quot;./dataset/1&quot;</span><span class="p">,</span> <span class="s2">&quot;WUzgd7C1pWA.mp4&quot;</span>
@@ -737,7 +737,7 @@ Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/vi
 </pre></div>
 </div>
 <p>Housekeeping and utilities</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">random</span>
 
 <span class="kn">from</span> <span class="nn">torchvision.datasets.folder</span> <span class="kn">import</span> <span class="n">make_dataset</span>
@@ -768,7 +768,7 @@ We assume the structure of the FolderDataset, and add the following parameters:<
 <p>We actually add epoch size as using <code class="xref py py-func docutils literal notranslate"><span class="pre">IterableDataset()</span></code>
 class allows us to naturally oversample clips or images from each video if needed.</p>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RandomDataset</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset" title="torch.utils.data.IterableDataset" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">IterableDataset</span></a><span class="p">):</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RandomDataset</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset" title="torch.utils.data.IterableDataset" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">IterableDataset</span></a><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">epoch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">frame_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">video_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clip_len</span><span class="o">=</span><span class="mi">16</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset" title="torch.utils.data.IterableDataset" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">RandomDataset</span></a><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -840,13 +840,13 @@ class allows us to naturally oversample clips or images from each video if neede
 </li>
 </ul>
 <p>We can generate a dataloader and test the dataset.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">transforms</span></a> <span class="o">=</span> <span class="p">[</span><a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">t</span><span class="o">.</span><span class="n">Resize</span></a><span class="p">((</span><span class="mi">112</span><span class="p">,</span> <span class="mi">112</span><span class="p">))]</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">transforms</span></a> <span class="o">=</span> <span class="p">[</span><a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">t</span><span class="o">.</span><span class="n">Resize</span></a><span class="p">((</span><span class="mi">112</span><span class="p">,</span> <span class="mi">112</span><span class="p">))]</span>
 <span class="n">frame_transform</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">transforms</span></a><span class="p">)</span>
 
 <span class="n">dataset</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset" title="torch.utils.data.IterableDataset" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">RandomDataset</span></a><span class="p">(</span><span class="s2">&quot;./dataset&quot;</span><span class="p">,</span> <span class="n">epoch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">frame_transform</span><span class="o">=</span><span class="n">frame_transform</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">DataLoader</span></a>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">DataLoader</span></a>
 <a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">loader</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">DataLoader</span></a><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">data</span></a> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;end&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;tensorsize&#39;</span><span class="p">:</span> <span class="p">[]}</span>
 <span class="k">for</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch</span></a> <span class="ow">in</span> <a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">loader</span></a><span class="p">:</span>
@@ -860,14 +860,14 @@ class allows us to naturally oversample clips or images from each video if neede
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/pytorch/vision/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
   warnings.warn(
-{&#39;video&#39;: [&#39;./dataset/2/v_SoccerJuggling_g23_c01.avi&#39;, &#39;./dataset/2/v_SoccerJuggling_g24_c01.avi&#39;, &#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/1/WUzgd7C1pWA.mp4&#39;], &#39;start&#39;: [4.608961938654843, 1.2014087681523253, 0.19253719218919402, 0.33459936179948085, 2.982084631777307], &#39;end&#39;: [5.1384669999999995, 1.735067, 0.7, 0.866667, 3.5035], &#39;tensorsize&#39;: [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+{&#39;video&#39;: [&#39;./dataset/2/v_SoccerJuggling_g24_c01.avi&#39;, &#39;./dataset/2/v_SoccerJuggling_g24_c01.avi&#39;, &#39;./dataset/1/WUzgd7C1pWA.mp4&#39;, &#39;./dataset/2/v_SoccerJuggling_g23_c01.avi&#39;, &#39;./dataset/2/v_SoccerJuggling_g24_c01.avi&#39;], &#39;start&#39;: [1.5647790467859324, 0.492901085738305, 9.27611533808283, 5.252395209042925, 5.160205812673545], &#39;end&#39;: [2.068733, 1.001, 9.8098, 5.7724329999999995, 5.672333], &#39;tensorsize&#39;: [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 </pre></div>
 </div>
 </section>
 <section id="data-visualization">
 <h2>4. Data Visualization<a class="headerlink" href="#data-visualization" title="Permalink to this heading">¶</a></h2>
 <p>Example of visualized video</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib.pyplot.figure" title="matplotlib.pyplot.figure" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">figure</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
 <span class="k">for</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
@@ -877,19 +877,19 @@ class allows us to naturally oversample clips or images from each video if neede
 </pre></div>
 </div>
 <img src="../../_images/sphx_glr_plot_video_api_001.png" srcset="../../_images/sphx_glr_plot_video_api_001.png" alt="plot video api" class = "sphx-glr-single-img"/><p>Cleanup the video and dataset:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 <a href="https://docs.python.org/3/library/os.html#os.remove" title="os.remove" class="sphx-glr-backref-module-os sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">remove</span></a><span class="p">(</span><span class="s2">&quot;./WUzgd7C1pWA.mp4&quot;</span><span class="p">)</span>
 <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" title="shutil.rmtree" class="sphx-glr-backref-module-shutil sphx-glr-backref-type-py-function"><span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span></a><span class="p">(</span><span class="s2">&quot;./dataset&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 4.859 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 4.740 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-others-plot-video-api-py">
-<div class="sphx-glr-download sphx-glr-download-python docutils container">
-<p><a class="reference download internal" download="" href="../../_downloads/175e3bb1b03a25b015d65842a3b8a883/plot_video_api.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_video_api.py</span></code></a></p>
-</div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/4b3151295a1f6b75ffd88837fb31f719/plot_video_api.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_video_api.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/175e3bb1b03a25b015d65842a3b8a883/plot_video_api.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_video_api.py</span></code></a></p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>

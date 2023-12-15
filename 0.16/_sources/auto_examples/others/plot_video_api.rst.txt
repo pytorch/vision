@@ -47,7 +47,7 @@ Chosen video statistics:
 
 .. GENERATED FROM PYTHON SOURCE LINES 35-49
 
-.. code-block:: default
+.. code-block:: Python
 
 
     import torch
@@ -86,7 +86,7 @@ Firstly, let's get the metadata for our particular video:
 
 .. GENERATED FROM PYTHON SOURCE LINES 54-59
 
-.. code-block:: default
+.. code-block:: Python
 
 
     stream = "video"
@@ -128,7 +128,7 @@ The return fields are:
 
 .. GENERATED FROM PYTHON SOURCE LINES 76-92
 
-.. code-block:: default
+.. code-block:: Python
 
 
     metadata = video.get_metadata()
@@ -175,7 +175,7 @@ For example, if we wanted to read ten frames from second second:
 
 .. GENERATED FROM PYTHON SOURCE LINES 101-114
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -212,7 +212,7 @@ correct number of frames:
 
 .. GENERATED FROM PYTHON SOURCE LINES 119-132
 
-.. code-block:: default
+.. code-block:: Python
 
 
     video.set_current_stream("video")
@@ -251,7 +251,7 @@ the same API to the existing ``read_video`` function.
 
 .. GENERATED FROM PYTHON SOURCE LINES 137-177
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -320,7 +320,7 @@ Make sample dataset
 
 .. GENERATED FROM PYTHON SOURCE LINES 186-191
 
-.. code-block:: default
+.. code-block:: Python
 
     import os
     os.makedirs("./dataset", exist_ok=True)
@@ -340,7 +340,7 @@ Download the videos
 
 .. GENERATED FROM PYTHON SOURCE LINES 193-219
 
-.. code-block:: default
+.. code-block:: Python
 
     from torchvision.datasets.utils import download_url
     download_url(
@@ -396,7 +396,7 @@ Housekeeping and utilities
 
 .. GENERATED FROM PYTHON SOURCE LINES 221-239
 
-.. code-block:: default
+.. code-block:: Python
 
     import os
     import random
@@ -438,7 +438,7 @@ We assume the structure of the FolderDataset, and add the following parameters:
 
 .. GENERATED FROM PYTHON SOURCE LINES 250-294
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -510,7 +510,7 @@ We can generate a dataloader and test the dataset.
 
 .. GENERATED FROM PYTHON SOURCE LINES 309-316
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -528,7 +528,7 @@ We can generate a dataloader and test the dataset.
 
 .. GENERATED FROM PYTHON SOURCE LINES 317-328
 
-.. code-block:: default
+.. code-block:: Python
 
     from torch.utils.data import DataLoader
     loader = DataLoader(dataset, batch_size=12)
@@ -551,7 +551,7 @@ We can generate a dataloader and test the dataset.
 
     /pytorch/vision/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
       warnings.warn(
-    {'video': ['./dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/1/WUzgd7C1pWA.mp4'], 'start': [4.608961938654843, 1.2014087681523253, 0.19253719218919402, 0.33459936179948085, 2.982084631777307], 'end': [5.1384669999999995, 1.735067, 0.7, 0.866667, 3.5035], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+    {'video': ['./dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/2/v_SoccerJuggling_g24_c01.avi'], 'start': [1.5647790467859324, 0.492901085738305, 9.27611533808283, 5.252395209042925, 5.160205812673545], 'end': [2.068733, 1.001, 9.8098, 5.7724329999999995, 5.672333], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 
 
 
@@ -564,7 +564,7 @@ Example of visualized video
 
 .. GENERATED FROM PYTHON SOURCE LINES 332-341
 
-.. code-block:: default
+.. code-block:: Python
 
 
     import matplotlib.pyplot as plt
@@ -593,7 +593,7 @@ Cleanup the video and dataset:
 
 .. GENERATED FROM PYTHON SOURCE LINES 343-347
 
-.. code-block:: default
+.. code-block:: Python
 
     import os
     import shutil
@@ -609,7 +609,7 @@ Cleanup the video and dataset:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.859 seconds)
+   **Total running time of the script:** (0 minutes 4.740 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_video_api.py:
@@ -618,16 +618,13 @@ Cleanup the video and dataset:
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_video_api.ipynb <plot_video_api.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_video_api.py <plot_video_api.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_video_api.ipynb <plot_video_api.ipynb>`
 
 
 .. only:: html

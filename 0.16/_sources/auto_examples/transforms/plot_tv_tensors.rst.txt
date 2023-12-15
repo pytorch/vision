@@ -35,7 +35,7 @@ and how they behave.
 
 .. GENERATED FROM PYTHON SOURCE LINES 27-33
 
-.. code-block:: default
+.. code-block:: Python
 
     import PIL.Image
 
@@ -59,7 +59,7 @@ TVTensors are zero-copy tensor subclasses:
 
 .. GENERATED FROM PYTHON SOURCE LINES 38-45
 
-.. code-block:: default
+.. code-block:: Python
 
 
     tensor = torch.rand(3, 256, 256)
@@ -109,7 +109,7 @@ Each TVTensor class takes any tensor-like data that can be turned into a :class:
 
 .. GENERATED FROM PYTHON SOURCE LINES 74-79
 
-.. code-block:: default
+.. code-block:: Python
 
 
     image = tv_tensors.Image([[[[0, 1], [1, 0]]]])
@@ -137,7 +137,7 @@ parameters.
 
 .. GENERATED FROM PYTHON SOURCE LINES 82-87
 
-.. code-block:: default
+.. code-block:: Python
 
 
     float_image = tv_tensors.Image([[[0, 1], [1, 0]]], dtype=torch.float32, requires_grad=True)
@@ -165,7 +165,7 @@ In addition, :class:`~torchvision.tv_tensors.Image` and :class:`~torchvision.tv_
 
 .. GENERATED FROM PYTHON SOURCE LINES 90-94
 
-.. code-block:: default
+.. code-block:: Python
 
 
     image = tv_tensors.Image(PIL.Image.open("../assets/astronaut.jpg"))
@@ -193,7 +193,7 @@ metadata are required to properly transform the bounding boxes.
 
 .. GENERATED FROM PYTHON SOURCE LINES 99-107
 
-.. code-block:: default
+.. code-block:: Python
 
 
     bboxes = tv_tensors.BoundingBoxes(
@@ -229,7 +229,7 @@ to wrap the output like the input.
 
 .. GENERATED FROM PYTHON SOURCE LINES 115-121
 
-.. code-block:: default
+.. code-block:: Python
 
 
     new_bboxes = torch.tensor([0, 20, 30, 40])
@@ -259,7 +259,7 @@ will return a pure Tensor:
 
 .. GENERATED FROM PYTHON SOURCE LINES 132-142
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -298,7 +298,7 @@ constructor, or by using the :func:`~torchvision.tv_tensors.wrap` function
 
 .. GENERATED FROM PYTHON SOURCE LINES 157-162
 
-.. code-block:: default
+.. code-block:: Python
 
 
     new_bboxes = bboxes + 3
@@ -320,7 +320,7 @@ as a global config setting for the whole program, or as a context manager
 
 .. GENERATED FROM PYTHON SOURCE LINES 166-171
 
-.. code-block:: default
+.. code-block:: Python
 
 
     with tv_tensors.set_return_type("TVTensor"):
@@ -378,7 +378,7 @@ tensor:
 
 .. GENERATED FROM PYTHON SOURCE LINES 211-225
 
-.. code-block:: default
+.. code-block:: Python
 
 
     image = tv_tensors.Image([[[0, 1], [1, 0]]])
@@ -411,7 +411,7 @@ tensor:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.008 seconds)
+   **Total running time of the script:** (0 minutes 0.009 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_tv_tensors.py:
@@ -420,16 +420,13 @@ tensor:
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_tv_tensors.ipynb <plot_tv_tensors.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_tv_tensors.py <plot_tv_tensors.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_tv_tensors.ipynb <plot_tv_tensors.ipynb>`
 
 
 .. only:: html

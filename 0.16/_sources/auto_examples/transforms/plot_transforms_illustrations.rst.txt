@@ -23,7 +23,7 @@ torchvision.transforms.v2 module <transforms>`.
 
 .. GENERATED FROM PYTHON SOURCE LINES 14-34
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -68,7 +68,7 @@ pads all image borders with some pixel values.
 
 .. GENERATED FROM PYTHON SOURCE LINES 47-50
 
-.. code-block:: default
+.. code-block:: Python
 
     padded_imgs = [v2.Pad(padding=padding)(orig_img) for padding in (3, 10, 30, 50)]
     plot([orig_img] + padded_imgs)
@@ -95,7 +95,7 @@ resizes an image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 56-59
 
-.. code-block:: default
+.. code-block:: Python
 
     resized_imgs = [v2.Resize(size=size)(orig_img) for size in (30, 50, 100, orig_img.size)]
     plot([orig_img] + resized_imgs)
@@ -122,7 +122,7 @@ crops the given image at the center.
 
 .. GENERATED FROM PYTHON SOURCE LINES 65-68
 
-.. code-block:: default
+.. code-block:: Python
 
     center_crops = [v2.CenterCrop(size=size)(orig_img) for size in (30, 50, 100, orig_img.size)]
     plot([orig_img] + center_crops)
@@ -149,7 +149,7 @@ crops the given image into four corners and the central crop.
 
 .. GENERATED FROM PYTHON SOURCE LINES 74-77
 
-.. code-block:: default
+.. code-block:: Python
 
     (top_left, top_right, bottom_left, bottom_right, center) = v2.FiveCrop(size=(100, 100))(orig_img)
     plot([orig_img] + [top_left, top_right, bottom_left, bottom_right, center])
@@ -176,7 +176,7 @@ performs random perspective transform on an image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 83-87
 
-.. code-block:: default
+.. code-block:: Python
 
     perspective_transformer = v2.RandomPerspective(distortion_scale=0.6, p=1.0)
     perspective_imgs = [perspective_transformer(orig_img) for _ in range(4)]
@@ -204,7 +204,7 @@ rotates an image with random angle.
 
 .. GENERATED FROM PYTHON SOURCE LINES 93-97
 
-.. code-block:: default
+.. code-block:: Python
 
     rotater = v2.RandomRotation(degrees=(0, 180))
     rotated_imgs = [rotater(orig_img) for _ in range(4)]
@@ -232,7 +232,7 @@ performs random affine transform on an image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 103-107
 
-.. code-block:: default
+.. code-block:: Python
 
     affine_transfomer = v2.RandomAffine(degrees=(30, 70), translate=(0.1, 0.3), scale=(0.5, 0.75))
     affine_imgs = [affine_transfomer(orig_img) for _ in range(4)]
@@ -261,7 +261,7 @@ see-through-water-like effect.
 
 .. GENERATED FROM PYTHON SOURCE LINES 114-118
 
-.. code-block:: default
+.. code-block:: Python
 
     elastic_transformer = v2.ElasticTransform(alpha=250.0)
     transformed_imgs = [elastic_transformer(orig_img) for _ in range(2)]
@@ -289,7 +289,7 @@ crops an image at a random location.
 
 .. GENERATED FROM PYTHON SOURCE LINES 124-128
 
-.. code-block:: default
+.. code-block:: Python
 
     cropper = v2.RandomCrop(size=(128, 128))
     crops = [cropper(orig_img) for _ in range(4)]
@@ -318,7 +318,7 @@ size.
 
 .. GENERATED FROM PYTHON SOURCE LINES 135-139
 
-.. code-block:: default
+.. code-block:: Python
 
     resize_cropper = v2.RandomResizedCrop(size=(32, 32))
     resized_crops = [resize_cropper(orig_img) for _ in range(4)]
@@ -357,7 +357,7 @@ converts an image to grayscale
 
 .. GENERATED FROM PYTHON SOURCE LINES 156-159
 
-.. code-block:: default
+.. code-block:: Python
 
     gray_img = v2.Grayscale()(orig_img)
     plot([orig_img, gray_img], cmap='gray')
@@ -383,7 +383,7 @@ randomly changes the brightness, contrast, saturation, hue, and other properties
 
 .. GENERATED FROM PYTHON SOURCE LINES 164-168
 
-.. code-block:: default
+.. code-block:: Python
 
     jitter = v2.ColorJitter(brightness=.5, hue=.3)
     jittered_imgs = [jitter(orig_img) for _ in range(4)]
@@ -411,7 +411,7 @@ performs gaussian blur transform on an image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 174-178
 
-.. code-block:: default
+.. code-block:: Python
 
     blurrer = v2.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.))
     blurred_imgs = [blurrer(orig_img) for _ in range(4)]
@@ -439,7 +439,7 @@ randomly inverts the colors of the given image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 184-188
 
-.. code-block:: default
+.. code-block:: Python
 
     inverter = v2.RandomInvert()
     invertered_imgs = [inverter(orig_img) for _ in range(4)]
@@ -468,7 +468,7 @@ of each color channel.
 
 .. GENERATED FROM PYTHON SOURCE LINES 195-199
 
-.. code-block:: default
+.. code-block:: Python
 
     posterizer = v2.RandomPosterize(bits=2)
     posterized_imgs = [posterizer(orig_img) for _ in range(4)]
@@ -497,7 +497,7 @@ the threshold.
 
 .. GENERATED FROM PYTHON SOURCE LINES 206-210
 
-.. code-block:: default
+.. code-block:: Python
 
     solarizer = v2.RandomSolarize(threshold=192.0)
     solarized_imgs = [solarizer(orig_img) for _ in range(4)]
@@ -525,7 +525,7 @@ randomly adjusts the sharpness of the given image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 216-220
 
-.. code-block:: default
+.. code-block:: Python
 
     sharpness_adjuster = v2.RandomAdjustSharpness(sharpness_factor=2)
     sharpened_imgs = [sharpness_adjuster(orig_img) for _ in range(4)]
@@ -553,7 +553,7 @@ randomly applies autocontrast to the given image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 226-230
 
-.. code-block:: default
+.. code-block:: Python
 
     autocontraster = v2.RandomAutocontrast()
     autocontrasted_imgs = [autocontraster(orig_img) for _ in range(4)]
@@ -581,7 +581,7 @@ randomly equalizes the histogram of the given image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 236-240
 
-.. code-block:: default
+.. code-block:: Python
 
     equalizer = v2.RandomEqualize()
     equalized_imgs = [equalizer(orig_img) for _ in range(4)]
@@ -614,7 +614,7 @@ See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policie
 
 .. GENERATED FROM PYTHON SOURCE LINES 251-260
 
-.. code-block:: default
+.. code-block:: Python
 
     policies = [v2.AutoAugmentPolicy.CIFAR10, v2.AutoAugmentPolicy.IMAGENET, v2.AutoAugmentPolicy.SVHN]
     augmenters = [v2.AutoAugment(policy) for policy in policies]
@@ -645,7 +645,7 @@ The :class:`~torchvision.transforms.RandAugment` is an alternate version of Auto
 
 .. GENERATED FROM PYTHON SOURCE LINES 264-268
 
-.. code-block:: default
+.. code-block:: Python
 
     augmenter = v2.RandAugment()
     imgs = [augmenter(orig_img) for _ in range(4)]
@@ -673,7 +673,7 @@ using a random transform from a given list with a random strength number.
 
 .. GENERATED FROM PYTHON SOURCE LINES 274-278
 
-.. code-block:: default
+.. code-block:: Python
 
     augmenter = v2.TrivialAugmentWide()
     imgs = [augmenter(orig_img) for _ in range(4)]
@@ -699,7 +699,7 @@ The :class:`~torchvision.transforms.AugMix` transform interpolates between augme
 
 .. GENERATED FROM PYTHON SOURCE LINES 282-286
 
-.. code-block:: default
+.. code-block:: Python
 
     augmenter = v2.AugMix()
     imgs = [augmenter(orig_img) for _ in range(4)]
@@ -734,7 +734,7 @@ performs horizontal flip of an image, with a given probability.
 
 .. GENERATED FROM PYTHON SOURCE LINES 299-303
 
-.. code-block:: default
+.. code-block:: Python
 
     hflipper = v2.RandomHorizontalFlip(p=0.5)
     transformed_imgs = [hflipper(orig_img) for _ in range(4)]
@@ -762,7 +762,7 @@ performs vertical flip of an image, with a given probability.
 
 .. GENERATED FROM PYTHON SOURCE LINES 309-313
 
-.. code-block:: default
+.. code-block:: Python
 
     vflipper = v2.RandomVerticalFlip(p=0.5)
     transformed_imgs = [vflipper(orig_img) for _ in range(4)]
@@ -789,7 +789,7 @@ randomly applies a list of transforms, with a given probability.
 
 .. GENERATED FROM PYTHON SOURCE LINES 318-321
 
-.. code-block:: default
+.. code-block:: Python
 
     applier = v2.RandomApply(transforms=[v2.RandomCrop(size=(64, 64))], p=0.5)
     transformed_imgs = [applier(orig_img) for _ in range(4)]
@@ -809,7 +809,7 @@ randomly applies a list of transforms, with a given probability.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.600 seconds)
+   **Total running time of the script:** (0 minutes 8.249 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_illustrations.py:
@@ -818,16 +818,13 @@ randomly applies a list of transforms, with a given probability.
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_transforms_illustrations.ipynb <plot_transforms_illustrations.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_transforms_illustrations.py <plot_transforms_illustrations.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_transforms_illustrations.ipynb <plot_transforms_illustrations.ipynb>`
 
 
 .. only:: html

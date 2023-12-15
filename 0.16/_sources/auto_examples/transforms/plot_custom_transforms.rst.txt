@@ -23,7 +23,7 @@ torchvision transforms V2 API.
 
 .. GENERATED FROM PYTHON SOURCE LINES 15-20
 
-.. code-block:: default
+.. code-block:: Python
 
     import torch
     from torchvision import tv_tensors
@@ -66,7 +66,7 @@ where our samples are just images, bounding boxes and labels:
 
 .. GENERATED FROM PYTHON SOURCE LINES 45-73
 
-.. code-block:: default
+.. code-block:: Python
 
 
     class MyCustomTransform(torch.nn.Module):
@@ -113,7 +113,7 @@ where our samples are just images, bounding boxes and labels:
 
 .. GENERATED FROM PYTHON SOURCE LINES 74-75
 
-.. code-block:: default
+.. code-block:: Python
 
     print(f"Output image shape: {out_img.shape}\nout_bboxes = {out_bboxes}\n{out_label = }")
 
@@ -154,7 +154,7 @@ tuple of ``(img, label)``, or an arbitrary nested dictionary as input:
 
 .. GENERATED FROM PYTHON SOURCE LINES 93-105
 
-.. code-block:: default
+.. code-block:: Python
 
 
     structured_input = {
@@ -214,16 +214,13 @@ an issue on our `GitHub repo <https://github.com/pytorch/vision/issues>`_.
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_custom_transforms.ipynb <plot_custom_transforms.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_custom_transforms.py <plot_custom_transforms.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_custom_transforms.ipynb <plot_custom_transforms.ipynb>`
 
 
 .. only:: html

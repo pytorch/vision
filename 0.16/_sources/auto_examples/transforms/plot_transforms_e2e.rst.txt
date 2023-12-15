@@ -29,7 +29,7 @@ to object detection or semantic segmentation tasks.
 
 .. GENERATED FROM PYTHON SOURCE LINES 21-41
 
-.. code-block:: default
+.. code-block:: Python
 
     import pathlib
 
@@ -68,7 +68,7 @@ returns.
 
 .. GENERATED FROM PYTHON SOURCE LINES 47-55
 
-.. code-block:: default
+.. code-block:: Python
 
 
     dataset = datasets.CocoDetection(IMAGES_PATH, ANNOTATIONS_PATH)
@@ -111,7 +111,7 @@ structure to a single dictionary of lists:
 
 .. GENERATED FROM PYTHON SOURCE LINES 64-72
 
-.. code-block:: default
+.. code-block:: Python
 
 
     dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys=("boxes", "labels", "masks"))
@@ -158,7 +158,7 @@ As baseline, let's have a look at a sample without transformations:
 
 .. GENERATED FROM PYTHON SOURCE LINES 87-91
 
-.. code-block:: default
+.. code-block:: Python
 
 
     plot([dataset[0], dataset[1]])
@@ -190,7 +190,7 @@ dataset so that they can leverage multi-processing from the
 
 .. GENERATED FROM PYTHON SOURCE LINES 101-117
 
-.. code-block:: default
+.. code-block:: Python
 
 
     transforms = v2.Compose(
@@ -243,7 +243,7 @@ Let's look how the sample looks like with our augmentation pipeline in place:
 
 .. GENERATED FROM PYTHON SOURCE LINES 132-136
 
-.. code-block:: default
+.. code-block:: Python
 
 
     plot([dataset[0], dataset[1]])
@@ -275,7 +275,7 @@ semantic segmentation tasks.
 
 .. GENERATED FROM PYTHON SOURCE LINES 147-170
 
-.. code-block:: default
+.. code-block:: Python
 
 
     data_loader = torch.utils.data.DataLoader(
@@ -336,7 +336,7 @@ v2). So don't be afraid to simplify and only keep what you need.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.872 seconds)
+   **Total running time of the script:** (0 minutes 4.541 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py:
@@ -345,16 +345,13 @@ v2). So don't be afraid to simplify and only keep what you need.
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_transforms_e2e.ipynb <plot_transforms_e2e.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_transforms_e2e.py <plot_transforms_e2e.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_transforms_e2e.ipynb <plot_transforms_e2e.ipynb>`
 
 
 .. only:: html

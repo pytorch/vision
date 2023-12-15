@@ -26,7 +26,7 @@ methods into bounding boxes used by object detection methods).
 
 .. GENERATED FROM PYTHON SOURCE LINES 16-42
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -90,7 +90,7 @@ We will take images and masks from the `PenFudan Dataset <https://www.cis.upenn.
 
 .. GENERATED FROM PYTHON SOURCE LINES 67-77
 
-.. code-block:: default
+.. code-block:: Python
 
 
 
@@ -117,7 +117,7 @@ Notice that the spatial dimensions of image and mask match.
 
 .. GENERATED FROM PYTHON SOURCE LINES 81-86
 
-.. code-block:: default
+.. code-block:: Python
 
 
     print(mask.size())
@@ -147,7 +147,7 @@ Notice that the spatial dimensions of image and mask match.
 
 .. GENERATED FROM PYTHON SOURCE LINES 87-98
 
-.. code-block:: default
+.. code-block:: Python
 
 
     # We get the unique colors, as these would be the object ids.
@@ -177,7 +177,7 @@ belongs to the segmentation mask of the image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 104-108
 
-.. code-block:: default
+.. code-block:: Python
 
 
     print(masks.size())
@@ -226,7 +226,7 @@ We will use the :func:`~torchvision.utils.draw_segmentation_masks` to draw the s
 
 .. GENERATED FROM PYTHON SOURCE LINES 111-120
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.utils import draw_segmentation_masks
@@ -257,7 +257,7 @@ It returns the boxes in ``(xmin, ymin, xmax, ymax)`` format.
 
 .. GENERATED FROM PYTHON SOURCE LINES 124-131
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.ops import masks_to_boxes
@@ -290,7 +290,7 @@ provided in :ref:`torchvision.utils <utils>`.
 
 .. GENERATED FROM PYTHON SOURCE LINES 135-141
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.utils import draw_bounding_boxes
@@ -318,7 +318,7 @@ Here is demo with a Faster R-CNN model loaded from
 
 .. GENERATED FROM PYTHON SOURCE LINES 145-160
 
-.. code-block:: default
+.. code-block:: Python
 
 
     from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
@@ -362,7 +362,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. GENERATED FROM PYTHON SOURCE LINES 169-212
 
-.. code-block:: default
+.. code-block:: Python
 
 
     class SegmentationToDetectionDataset(torch.utils.data.Dataset):
@@ -417,7 +417,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.468 seconds)
+   **Total running time of the script:** (0 minutes 2.558 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_repurposing_annotations.py:
@@ -426,16 +426,13 @@ Here is an example where we re-purpose the dataset from the
 
   .. container:: sphx-glr-footer sphx-glr-footer-example
 
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
+      :download:`Download Jupyter notebook: plot_repurposing_annotations.ipynb <plot_repurposing_annotations.ipynb>`
 
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_repurposing_annotations.py <plot_repurposing_annotations.py>`
-
-    .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-      :download:`Download Jupyter notebook: plot_repurposing_annotations.ipynb <plot_repurposing_annotations.ipynb>`
 
 
 .. only:: html
