@@ -297,10 +297,11 @@ def draw_segmentation_masks(
         raise ValueError(f"The masks must be of dtype bool. Got {masks.dtype}")
     if masks.shape[-2:] != image.shape[-2:]:
         raise ValueError("The image and the masks must have the same height and width")
+    from torchvision.transforms.v2.functional import to_dtype
 
     original_dtype = image.dtype
     if image.is_floating_point():
-        image = (image * 255).to(torch.uint8)
+        image = to_dtype(image, torch.uint8, scale=True)
 
     num_masks = masks.size()[0]
 
@@ -320,7 +321,7 @@ def draw_segmentation_masks(
 
     out = image * (1 - alpha) + img_to_draw * alpha
     if torch.tensor(0, dtype=original_dtype).is_floating_point():
-        out = out.float() / 255.0
+        out = to_dtype(out, torch.float) / 255.0
 
     return out.to(original_dtype)
 
