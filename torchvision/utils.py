@@ -10,6 +10,8 @@ import numpy as np
 import torch
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
+# from .transforms.v2.functional import to_dtype
+
 __all__ = [
     "make_grid",
     "save_image",
@@ -297,7 +299,7 @@ def draw_segmentation_masks(
     if masks.shape[-2:] != image.shape[-2:]:
         raise ValueError("The image and the masks must have the same height and width")
 
-    original_dtype = image.dtype
+    original_image = image
     if image.is_floating_point():
         image = (image * 255).to(torch.uint8)
 
@@ -318,10 +320,10 @@ def draw_segmentation_masks(
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
-    if original_dtype in {torch.float16, torch.float32, torch.float64}:
+    if original_image.is_floating_point():
         out = out.float() / 255.0
 
-    return out.to(original_dtype)
+    return out.to(original_image.dtype)
 
 
 @torch.no_grad()
