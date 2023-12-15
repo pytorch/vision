@@ -264,7 +264,7 @@ def test_draw_segmentation_masks_dtypes():
     assert img_float is not out_float
     assert out_float.is_floating_point()
 
-    torch.testing.assert_close(out_uint8, to_dtype(out_float, torch.uint8, scale=True), rtol=0, atol=1.0)
+    torch.testing.assert_close(out_uint8, to_dtype(out_float, torch.uint8, scale=True), rtol=0, atol=1)
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 def test_draw_segmentation_masks_errors(device):
