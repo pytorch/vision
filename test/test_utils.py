@@ -7,11 +7,11 @@ from io import BytesIO
 import numpy as np
 import pytest
 import torch
-import torchvision.utils as utils
 import torchvision.transforms.functional as F
-from torchvision.transforms.v2.functional import to_dtype
+import torchvision.utils as utils
 from common_utils import assert_equal, cpu_and_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageColor
+from torchvision.transforms.v2.functional import to_dtype
 
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
@@ -152,7 +152,7 @@ def test_draw_boxes_grayscale():
 
 def test_draw_invalid_boxes():
     img_tp = ((1, 1, 1), (1, 2, 3))
-    img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.long)
+    img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
     img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
     img_correct = torch.zeros((3, 10, 10), dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
@@ -162,7 +162,7 @@ def test_draw_invalid_boxes():
 
     with pytest.raises(TypeError, match="Tensor expected"):
         utils.draw_bounding_boxes(img_tp, boxes)
-    with pytest.raises(ValueError, match="Tensor uint8 or float expected"):
+    with pytest.raises(ValueError, match="Tensor uint8 expected"):
         utils.draw_bounding_boxes(img_wrong1, boxes)
     with pytest.raises(ValueError, match="Pass individual images, not batches"):
         utils.draw_bounding_boxes(img_wrong2, boxes)
@@ -265,6 +265,7 @@ def test_draw_segmentation_masks_dtypes():
     assert out_float.is_floating_point()
 
     torch.testing.assert_close(out_uint8, to_dtype(out_float, torch.uint8, scale=True), rtol=0, atol=1)
+
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 def test_draw_segmentation_masks_errors(device):
