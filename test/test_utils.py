@@ -375,7 +375,7 @@ def test_flow_to_image(batch):
     assert img.shape == (2, 3, h, w) if batch else (3, h, w)
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "expected_flow.pt")
-    expected_img = torch.load(path, map_location="cpu")
+    expected_img = torch.load(path, map_location="cpu", weights_only=True)
 
     if batch:
         expected_img = torch.stack([expected_img, expected_img])

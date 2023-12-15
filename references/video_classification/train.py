@@ -164,7 +164,7 @@ def main(args):
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_train from {cache_path}")
-        dataset, _ = torch.load(cache_path)
+        dataset, _ = torch.load(cache_path, weights_only=True)
         dataset.transform = transform_train
     else:
         if args.distributed:
@@ -201,7 +201,7 @@ def main(args):
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
-        dataset_test, _ = torch.load(cache_path)
+        dataset_test, _ = torch.load(cache_path, weights_only=True)
         dataset_test.transform = transform_test
     else:
         if args.distributed:
@@ -295,7 +295,7 @@ def main(args):
         model_without_ddp = model.module
 
     if args.resume:
-        checkpoint = torch.load(args.resume, map_location="cpu")
+        checkpoint = torch.load(args.resume, map_location="cpu", weights_only=True)
         model_without_ddp.load_state_dict(checkpoint["model"])
         optimizer.load_state_dict(checkpoint["optimizer"])
         lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
