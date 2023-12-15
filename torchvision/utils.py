@@ -298,7 +298,7 @@ def draw_segmentation_masks(
     if masks.shape[-2:] != image.shape[-2:]:
         raise ValueError("The image and the masks must have the same height and width")
 
-    original_image = image
+    original_dtype = image.dtype
     if image.is_floating_point():
         image = (image * 255).to(torch.uint8)
 
@@ -319,10 +319,10 @@ def draw_segmentation_masks(
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
-    if original_image.is_floating_point():
+    if torch.tensor(0, dtype=original_dtype).is_floating_point():
         out = out.float() / 255.0
 
-    return out.to(original_image.dtype)
+    return out.to(original_dtype)
 
 
 @torch.no_grad()
