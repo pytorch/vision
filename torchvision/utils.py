@@ -10,7 +10,6 @@ import numpy as np
 import torch
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
-# from .transforms.v2.functional import to_dtype
 
 __all__ = [
     "make_grid",
