@@ -1394,6 +1394,28 @@ class TestAffine:
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
 
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    def test_bilinear_no_blend_artifacts(self, dtype):
+        # Regression test for https://github.com/pytorch/vision/issues/8083
+        value = 0.5
+        if not dtype.is_floating_point:
+            value = int(value * get_max_value(dtype))
+
+        input = torch.full((1, 200, 200), value, dtype=dtype)
+
+        output = F.affine(
+            input,
+            angle=30.0,
+            translate=(0, 0),
+            scale=1.0,
+            shear=(0, 0),
+            interpolation=F.InterpolationMode.BILINEAR,
+            fill=value,
+        )
+
+        # Since the fill color is the same as the input, affine should be a no-op
+        assert_equal(output, input)
+
 
 class TestVerticalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
