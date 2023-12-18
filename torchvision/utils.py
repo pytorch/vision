@@ -186,7 +186,7 @@ def draw_bounding_boxes(
         font_size (int): The requested font size in points.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor of dtype uint8 or float32 with bounding boxes plotted.
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -346,7 +346,7 @@ def draw_keypoints(
         width (int): Integer denoting width of line connecting keypoints.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor of dtype uint8 or float32 with keypoints drawn.
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -389,7 +389,7 @@ def draw_keypoints(
                     width=width,
                 )
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=image.dtype)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
