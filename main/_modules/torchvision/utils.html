@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+c35d385) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+6c2e0ae) &#x25BC</a>
     </div>
     
 
@@ -366,6 +366,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageColor</span><span class="p">,</span> <span class="n">ImageDraw</span><span class="p">,</span> <span class="n">ImageFont</span>
+
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;make_grid&quot;</span><span class="p">,</span>
@@ -619,10 +620,10 @@
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Draws segmentation masks on given RGB image.</span>
-<span class="sd">    The values of the input image should be uint8 between 0 and 255.</span>
+<span class="sd">    The image values should be uint8 in [0, 255] or float in [0, 1].</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.</span>
+<span class="sd">        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float.</span>
 <span class="sd">        masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.</span>
 <span class="sd">        alpha (float): Float number between 0 and 1 denoting the transparency of the masks.</span>
 <span class="sd">            0 means full transparency, 1 means no transparency.</span>
@@ -639,8 +640,8 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">draw_segmentation_masks</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The image must be a tensor, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The image dtype must be uint8, got </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span> <span class="ow">or</span> <span class="n">image</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The image dtype must be uint8 or float, got </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pass individual images, not batches&quot;</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
@@ -660,10 +661,10 @@
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;masks doesn&#39;t contain any mask. No mask was drawn&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">image</span>
 
-    <span class="n">out_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span>
+    <span class="n">original_dtype</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span>
     <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">out_dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="n">_parse_colors</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span> <span class="n">num_objects</span><span class="o">=</span><span class="n">num_masks</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">original_dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="n">_parse_colors</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span> <span class="n">num_objects</span><span class="o">=</span><span class="n">num_masks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">original_dtype</span><span class="p">)</span>
     <span class="p">]</span>
 
     <span class="n">img_to_draw</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
@@ -672,7 +673,8 @@
         <span class="n">img_to_draw</span><span class="p">[:,</span> <span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="n">image</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="n">img_to_draw</span> <span class="o">*</span> <span class="n">alpha</span>
-    <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">out_dtype</span><span class="p">)</span></div>
+    <span class="c1"># Note: at this point, out is a float tensor in [0, 1] or [0, 255] depending on original_dtype</span>
+    <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_dtype</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="draw_keypoints"><a class="viewcode-back" href="../../generated/torchvision.utils.draw_keypoints.html#torchvision.utils.draw_keypoints">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
@@ -873,6 +875,7 @@
     <span class="n">colors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">num_objects</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parses a specification of colors for a set of objects.</span>
@@ -909,7 +912,10 @@
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># colors specifies a single color for all objects</span>
         <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">colors</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_objects</span>
 
-    <span class="k">return</span> <span class="p">[</span><span class="n">ImageColor</span><span class="o">.</span><span class="n">getrgb</span><span class="p">(</span><span class="n">color</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">color</span> <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="n">colors</span><span class="p">]</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">ImageColor</span><span class="o">.</span><span class="n">getrgb</span><span class="p">(</span><span class="n">color</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">color</span> <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="n">colors</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">dtype</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">:</span>  <span class="c1"># [0, 255] -&gt; [0, 1]</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">v</span> <span class="o">/</span> <span class="mi">255</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">color</span><span class="p">)</span> <span class="k">for</span> <span class="n">color</span> <span class="ow">in</span> <span class="n">colors</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">colors</span>
 
 
 <span class="k">def</span> <span class="nf">_log_api_usage_once</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

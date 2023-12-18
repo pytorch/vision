@@ -205,7 +205,7 @@ an issue on our `GitHub repo <https://github.com/pytorch/vision/issues>`_.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.008 seconds)
+   **Total running time of the script:** (0 minutes 0.006 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_custom_transforms.py:
