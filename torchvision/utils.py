@@ -297,11 +297,6 @@ def draw_segmentation_masks(
         raise ValueError(f"The masks must be of dtype bool. Got {masks.dtype}")
     if masks.shape[-2:] != image.shape[-2:]:
         raise ValueError("The image and the masks must have the same height and width")
-    from torchvision.transforms.v2.functional import to_dtype
-
-    original_dtype = image.dtype
-    if image.is_floating_point():
-        image = to_dtype(image, torch.uint8, scale=True)
 
     num_masks = masks.size()[0]
 
@@ -309,9 +304,10 @@ def draw_segmentation_masks(
         warnings.warn("masks doesn't contain any mask. No mask was drawn")
         return image
 
+    original_dtype = image.dtype
     colors = [
-        torch.tensor(color, dtype=torch.uint8, device=image.device)
-        for color in _parse_colors(colors, num_objects=num_masks)
+        torch.tensor(color, dtype=original_dtype, device=image.device)
+        for color in _parse_colors(colors, num_objects=num_masks, dtype=original_dtype)
     ]
 
     img_to_draw = image.detach().clone()
@@ -320,9 +316,7 @@ def draw_segmentation_masks(
         img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
-    if torch.tensor(0, dtype=original_dtype).is_floating_point():
-        out = to_dtype(out, torch.float) / 255.0
-
+    # Note: at this point, out is a float tensor in [0, 1] or [0, 255] depending on original_dtype
     return out.to(original_dtype)
 
 
@@ -524,6 +518,7 @@ def _parse_colors(
     colors: Union[None, str, Tuple[int, int, int], List[Union[str, Tuple[int, int, int]]]],
     *,
     num_objects: int,
+    dtype: torch.dtype = torch.uint8,
 ) -> List[Tuple[int, int, int]]:
     """
     Parses a specification of colors for a set of objects.
@@ -560,7 +555,10 @@ def _parse_colors(
     else:  # colors specifies a single color for all objects
         colors = [colors] * num_objects
 
-    return [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
+    colors = [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
+    if dtype.is_floating_point:  # [0, 255] -> [0, 1]
+        colors = [tuple(v / 255 for v in color) for color in colors]
+    return colors
 
 
 def _log_api_usage_once(obj: Any) -> None:
