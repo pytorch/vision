@@ -498,7 +498,7 @@ def main(args):
     # load them from checkpoint if needed
     args.start_step = 0
     if args.resume_path is not None:
-        checkpoint = torch.load(args.resume_path, map_location="cpu")
+        checkpoint = torch.load(args.resume_path, map_location="cpu", weights_only=True)
         if "model" in checkpoint:
             # this means the user requested to resume from a training checkpoint
             model_without_ddp.load_state_dict(checkpoint["model"])

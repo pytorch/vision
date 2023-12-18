@@ -101,7 +101,7 @@ def main(args):
 
     model = EmbeddingNet()
     if args.resume:
-        model.load_state_dict(torch.load(args.resume))
+        model.load_state_dict(torch.load(args.resume, weights_only=True))
 
     model.to(device)
 
