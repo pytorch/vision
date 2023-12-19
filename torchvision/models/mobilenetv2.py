@@ -114,7 +114,7 @@ class MobileNetV2(nn.Module):
             ]
 
         # only check the first element, assuming user knows t,c,n,s are required
-        if len(inverted_residual_setting) == 0 or len(inverted_residual_setting[0]) != 4:
+        if len(inverted_residual_setting) == 0 or len(inverted_residual_setting) != 4: 
             raise ValueError(
                 f"inverted_residual_setting should be non-empty or a 4-element list, got {inverted_residual_setting}"
             )
