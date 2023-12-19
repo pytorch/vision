@@ -136,7 +136,7 @@ def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
         expected,
         rtol=rtol,
         atol=atol,
-        msg=lambda msg: f"\n{input=}\n\n{args=}\n\n{kwargs=}\n\n{actual=}\n\n{expected=}\n\n{msg}",
+        # msg=lambda msg: f"\n{input=}\n\n{args=}\n\n{kwargs=}\n\n{actual=}\n\n{expected=}\n\n{msg}",
     )
 
 

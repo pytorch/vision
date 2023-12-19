@@ -12,5 +12,4 @@ pip install --progress-bar=off pytest pytest-mock pytest-cov expecttest!=0.2.0
 echo '::endgroup::'
 
 python test/smoke_test.py
-pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 \
-  test/test_transforms_v2.py -k kernel
+pytest --color no --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" test/test_transforms_v2.py -k kernel
