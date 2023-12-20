@@ -215,7 +215,7 @@ class TestCommon:
         with io.BytesIO() as buffer:
             torch.save(sample, buffer)
             buffer.seek(0)
-            assert_samples_equal(torch.load(buffer), sample)
+            assert_samples_equal(torch.load(buffer, weights_only=True), sample)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_infinite_buffer_size(self, dataset_mock, config):
