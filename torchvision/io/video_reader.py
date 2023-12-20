@@ -192,9 +192,9 @@ class VideoReader:
                 frame = next(self._c)
                 pts = float(frame.pts * frame.time_base)
                 if "video" in self.pyav_stream:
-                    frame = torch.tensor(frame.to_rgb().to_ndarray()).permute(2, 0, 1)
+                    frame = torch.as_tensor(frame.to_rgb().to_ndarray()).permute(2, 0, 1)
                 elif "audio" in self.pyav_stream:
-                    frame = torch.tensor(frame.to_ndarray()).permute(1, 0)
+                    frame = torch.as_tensor(frame.to_ndarray()).permute(1, 0)
                 else:
                     frame = None
             except av.error.EOFError:
