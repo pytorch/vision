@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+ffc58ef) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+6640e49) &#x25BC</a>
     </div>
     
 
@@ -549,9 +549,9 @@
                 <span class="n">frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="p">)</span>
                 <span class="n">pts</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">pts</span> <span class="o">*</span> <span class="n">frame</span><span class="o">.</span><span class="n">time_base</span><span class="p">)</span>
                 <span class="k">if</span> <span class="s2">&quot;video&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span><span class="p">:</span>
-                    <span class="n">frame</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">to_rgb</span><span class="p">()</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">())</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">frame</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">to_rgb</span><span class="p">()</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">())</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="s2">&quot;audio&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span><span class="p">:</span>
-                    <span class="n">frame</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">())</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">frame</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">())</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">frame</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">except</span> <span class="n">av</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">EOFError</span><span class="p">:</span>
