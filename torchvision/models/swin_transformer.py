@@ -113,6 +113,55 @@ class PatchMergingV2(nn.Module):
         return x
 
 
+def get_attention_mask_for_widow_shift(
+    img_size: List[int],
+    window_size: List[int],
+    shift_size: List[int],
+    num_windows: int,
+    dtype: torch.dtype,
+    device: torch.device,
+) -> Tensor:
+    """
+    get mask for attention based on window shift
+    Args:
+        img_size (List[int]): image size [h, w]
+        window_size (List[int]): window size [h, w]
+        shift_size (List[int]): window size [h, w]
+        num_windows (int): number of windows
+        dtype:  (torch.dtype): data type for attention mask
+        device: (torch.device): device for attention mask
+    Returns:
+        Tensor with layout of [..., H/2, W/2, 2*C]
+    """
+    attn_mask = torch.zeros(img_size, dtype=dtype, device=device)
+    h_slices = (
+        (0, -window_size[0]),
+        (-window_size[0], -shift_size[0]),
+        (-shift_size[0], None),
+    )
+    w_slices = (
+        (0, -window_size[1]),
+        (-window_size[1], -shift_size[1]),
+        (-shift_size[1], None),
+    )
+    count = 0
+    for h in h_slices:
+        for w in w_slices:
+            attn_mask[h[0] : h[1], w[0] : w[1]] = count
+            count += 1
+    attn_mask = attn_mask.view(
+        img_size[0] // window_size[0],
+        window_size[0],
+        img_size[1] // window_size[1],
+        window_size[1],
+    )
+    attn_mask = attn_mask.permute(0, 2, 1, 3).reshape(num_windows, window_size[0] * window_size[1])
+    attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
+    attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
+
+    return attn_mask
+
+
 def shifted_window_attention(
     input: Tensor,
     qkv_weight: Tensor,
@@ -127,6 +176,7 @@ def shifted_window_attention(
     proj_bias: Optional[Tensor] = None,
     logit_scale: Optional[torch.Tensor] = None,
     training: bool = True,
+    use_efficient_attention: bool = False,
 ) -> Tensor:
     """
     Window based multi-head self attention (W-MSA) module with relative position bias.
@@ -145,6 +195,7 @@ def shifted_window_attention(
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
         logit_scale (Tensor[out_dim], optional): Logit scale of cosine attention for Swin Transformer V2. Default: None.
         training (bool, optional): Training flag used by the dropout parameters. Default: True.
+        use_efficient_attention (bool, optional): use efficient attention. Default: False.
     Returns:
         Tensor[N, H, W, C]: The output tensor after shifted window attention.
     """
@@ -179,39 +230,78 @@ def shifted_window_attention(
     qkv = F.linear(x, qkv_weight, qkv_bias)
     qkv = qkv.reshape(x.size(0), x.size(1), 3, num_heads, C // num_heads).permute(2, 0, 3, 1, 4)
     q, k, v = qkv[0], qkv[1], qkv[2]
-    if logit_scale is not None:
-        # cosine attention
-        attn = F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1)
-        logit_scale = torch.clamp(logit_scale, max=math.log(100.0)).exp()
-        attn = attn * logit_scale
+
+    if use_efficient_attention:
+        if logit_scale is not None:
+            assert (
+                False
+            ), "Currently scaled_dot_product_attention doesn't support Tensor type for attn_mask. Set use_efficient_attention=False or logit_scale=None"
+            q_norm = F.normalize(q, dim=-1)
+            k_norm = F.normalize(k, dim=-1)
+            scale = torch.clamp(logit_scale, max=math.log(100.0)).exp()
+        else:
+            q_norm = q * (C // num_heads) ** -0.5
+            k_norm = k
+            scale = 1.0
+
+        if sum(shift_size) > 0:
+            attn_mask = get_attention_mask_for_widow_shift(
+                img_size=[pad_H, pad_W],
+                window_size=window_size,
+                shift_size=shift_size,
+                num_windows=num_windows,
+                dtype=x.dtype,
+                device=x.device,
+            )
+            attn_mask = attn_mask.unsqueeze(1)
+            attn_mask = attn_mask.repeat(B, relative_position_bias.shape[1], 1, 1)
+            attn_mask += relative_position_bias
+        else:
+            attn_mask = relative_position_bias
+
+        # NOTE! To get same results with standard attention, set enable_mem_efficient=False
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
+            attn = torch.nn.functional.scaled_dot_product_attention(
+                q_norm,
+                k_norm,
+                v,
+                attn_mask=attn_mask,
+                dropout_p=attention_dropout if training else 0.0,
+                is_causal=False,
+                scale=scale,
+            )
+        attn = attn.transpose(1, 2).reshape(x.size(0), x.size(1), C)
     else:
-        q = q * (C // num_heads) ** -0.5
-        attn = q.matmul(k.transpose(-2, -1))
-    # add relative position bias
-    attn = attn + relative_position_bias
+        if logit_scale is not None:
+            # cosine attention
+            attn_weight = F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1)
+            logit_scale = torch.clamp(logit_scale, max=math.log(100.0)).exp()
+            attn_weight = attn_weight * logit_scale
+        else:
+            q_norm = q * (C // num_heads) ** -0.5
+            attn_weight = q_norm.matmul(k.transpose(-2, -1))
 
-    if sum(shift_size) > 0:
-        # generate attention mask
-        attn_mask = x.new_zeros((pad_H, pad_W))
-        h_slices = ((0, -window_size[0]), (-window_size[0], -shift_size[0]), (-shift_size[0], None))
-        w_slices = ((0, -window_size[1]), (-window_size[1], -shift_size[1]), (-shift_size[1], None))
-        count = 0
-        for h in h_slices:
-            for w in w_slices:
-                attn_mask[h[0] : h[1], w[0] : w[1]] = count
-                count += 1
-        attn_mask = attn_mask.view(pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1])
-        attn_mask = attn_mask.permute(0, 2, 1, 3).reshape(num_windows, window_size[0] * window_size[1])
-        attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
-        attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
-        attn = attn.view(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1))
-        attn = attn + attn_mask.unsqueeze(1).unsqueeze(0)
-        attn = attn.view(-1, num_heads, x.size(1), x.size(1))
+        attn_weight = attn_weight + relative_position_bias
 
-    attn = F.softmax(attn, dim=-1)
-    attn = F.dropout(attn, p=attention_dropout, training=training)
+        if sum(shift_size) > 0:
+            attn_mask = get_attention_mask_for_widow_shift(
+                img_size=[pad_H, pad_W],
+                window_size=window_size,
+                shift_size=shift_size,
+                num_windows=num_windows,
+                dtype=x.dtype,
+                device=x.device,
+            )
+            attn_weight = attn_weight.view(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1))
+            attn_weight = attn_weight + attn_mask.unsqueeze(1).unsqueeze(0)
+            attn_weight = attn_weight.view(-1, num_heads, x.size(1), x.size(1))
 
-    x = attn.matmul(v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
+        attn_weight = F.softmax(attn_weight, dim=-1)
+        attn_weight = F.dropout(attn_weight, p=attention_dropout, training=training)
+        attn = attn_weight.matmul(v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
+
+    x = attn
+
     x = F.linear(x, proj_weight, proj_bias)
     x = F.dropout(x, p=dropout, training=training)
 
@@ -309,6 +399,7 @@ class ShiftedWindowAttention(nn.Module):
             qkv_bias=self.qkv.bias,
             proj_bias=self.proj.bias,
             training=self.training,
+            use_efficient_attention=True,
         )
 
 
@@ -395,6 +486,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             proj_bias=self.proj.bias,
             logit_scale=self.logit_scale,
             training=self.training,
+            use_efficient_attention=False,
         )
 
 
