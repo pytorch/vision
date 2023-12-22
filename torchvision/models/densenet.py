@@ -61,7 +61,7 @@ class _DenseLayer(nn.Module):
         def closure(*inputs):
             return self.bn_function(inputs)
 
-        return cp.checkpoint(closure, *input)
+        return cp.checkpoint(closure, *input, use_reentrant=False)
 
     @torch.jit._overload_method  # noqa: F811
     def forward(self, input: List[Tensor]) -> Tensor:  # noqa: F811
