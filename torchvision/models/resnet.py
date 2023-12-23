@@ -83,12 +83,10 @@ class BasicBlock(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv3x3(planes, planes)
         self.bn2 = norm_layer(planes)
-        self.downsample = downsample
+        self.downsample = downsample if downsample != None else nn.Identity()
         self.stride = stride
 
     def forward(self, x: Tensor) -> Tensor:
-        identity = x
-
         out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
@@ -96,10 +94,7 @@ class BasicBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
+        out += self.downsample(x)
         out = self.relu(out)
 
         return out
@@ -137,12 +132,10 @@ class Bottleneck(nn.Module):
         self.conv3 = conv1x1(width, planes * self.expansion)
         self.bn3 = norm_layer(planes * self.expansion)
         self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
+        self.downsample = downsample if downsample != None else nn.Identity()
         self.stride = stride
 
     def forward(self, x: Tensor) -> Tensor:
-        identity = x
-
         out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
@@ -154,10 +147,7 @@ class Bottleneck(nn.Module):
         out = self.conv3(out)
         out = self.bn3(out)
 
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
+        out += self.downsample(x)
         out = self.relu(out)
 
         return out
