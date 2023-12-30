@@ -299,6 +299,14 @@ class TestVideoApi:
                 for i in range(len(av_keyframes)):
                     assert av_keyframes[i] == approx(vr_keyframes[i], rel=0.001)
 
+    def test_src(self):
+        with pytest.raises(ValueError, match="src cannot be empty"):
+            VideoReader(src="")
+        with pytest.raises(ValueError, match="src must be either string"):
+            VideoReader(src=2)
+        with pytest.raises(TypeError, match="unexpected keyword argument"):
+            VideoReader(path="path")
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

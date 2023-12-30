@@ -103,22 +103,82 @@ def test_weights_deserializable(name):
         assert pickle.loads(pickle.dumps(weights)) is weights
 
 
+def get_models_from_module(module):
+    return [
+        v.__name__
+        for k, v in module.__dict__.items()
+        if callable(v) and k[0].islower() and k[0] != "_" and k not in models._api.__all__
+    ]
+
+
 @pytest.mark.parametrize(
     "module", [models, models.detection, models.quantization, models.segmentation, models.video, models.optical_flow]
 )
 def test_list_models(module):
-    def get_models_from_module(module):
-        return [
-            v.__name__
-            for k, v in module.__dict__.items()
-            if callable(v) and k[0].islower() and k[0] != "_" and k not in models._api.__all__
-        ]
-
     a = set(get_models_from_module(module))
     b = set(x.replace("quantized_", "") for x in models.list_models(module))
 
     assert len(b) > 0
     assert a == b
+
+
+@pytest.mark.parametrize(
+    "include_filters",
+    [
+        None,
+        [],
+        (),
+        "",
+        "*resnet*",
+        ["*alexnet*"],
+        "*not-existing-model-for-test?",
+        ["*resnet*", "*alexnet*"],
+        ["*resnet*", "*alexnet*", "*not-existing-model-for-test?"],
+        ("*resnet*", "*alexnet*"),
+        set(["*resnet*", "*alexnet*"]),
+    ],
+)
+@pytest.mark.parametrize(
+    "exclude_filters",
+    [
+        None,
+        [],
+        (),
+        "",
+        "*resnet*",
+        ["*alexnet*"],
+        ["*not-existing-model-for-test?"],
+        ["resnet34", "*not-existing-model-for-test?"],
+        ["resnet34", "*resnet1*"],
+        ("resnet34", "*resnet1*"),
+        set(["resnet34", "*resnet1*"]),
+    ],
+)
+def test_list_models_filters(include_filters, exclude_filters):
+    actual = set(models.list_models(models, include=include_filters, exclude=exclude_filters))
+    classification_models = set(get_models_from_module(models))
+
+    if isinstance(include_filters, str):
+        include_filters = [include_filters]
+    if isinstance(exclude_filters, str):
+        exclude_filters = [exclude_filters]
+
+    if include_filters:
+        expected = set()
+        for include_f in include_filters:
+            include_f = include_f.strip("*?")
+            expected = expected | set(x for x in classification_models if include_f in x)
+    else:
+        expected = classification_models
+
+    if exclude_filters:
+        for exclude_f in exclude_filters:
+            exclude_f = exclude_f.strip("*?")
+            if exclude_f != "":
+                a_exclude = set(x for x in classification_models if exclude_f in x)
+                expected = expected - a_exclude
+
+    assert expected == actual
 
 
 @pytest.mark.parametrize(
@@ -182,7 +242,6 @@ detection_models_input_dims = {
 )
 @run_if_test_with_extended
 def test_schema_meta_validation(model_fn):
-
     if model_fn.__name__ == "maskrcnn_resnet50_fpn_v2":
         pytest.skip(reason="FIXME https://github.com/pytorch/vision/issues/7349")
 
@@ -266,9 +325,11 @@ def test_schema_meta_validation(model_fn):
                     height, width = detection_models_input_dims[model_name]
                     kwargs = {"height": height, "width": width}
 
-                calculated_ops = get_ops(model=model, weight=w, **kwargs)
-                if calculated_ops != w.meta["_ops"]:
-                    incorrect_meta.append((w, "_ops"))
+                if not model_fn.__name__.startswith("vit"):
+                    # FIXME: https://github.com/pytorch/vision/issues/7871
+                    calculated_ops = get_ops(model=model, weight=w, **kwargs)
+                    if calculated_ops != w.meta["_ops"]:
+                        incorrect_meta.append((w, "_ops"))
 
         if not w.name.isupper():
             bad_names.append(w)

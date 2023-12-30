@@ -30,6 +30,7 @@ from .food101 import Food101
 from .gtsrb import GTSRB
 from .hmdb51 import HMDB51
 from .imagenet import ImageNet
+from .imagenette import Imagenette
 from .inaturalist import INaturalist
 from .kinetics import Kinetics
 from .kitti import Kitti
@@ -127,18 +128,18 @@ __all__ = (
     "SintelStereo",
     "InStereo2k",
     "ETH3DStereo",
+    "wrap_dataset_for_transforms_v2",
+    "Imagenette",
 )
 
 
 # We override current module's attributes to handle the import:
 # from torchvision.datasets import wrap_dataset_for_transforms_v2
-# with beta state v2 warning from torchvision.datapoints
-# We also want to avoid raising the warning when importing other attributes
-# from torchvision.datasets
+# without a cyclic error.
 # Ref: https://peps.python.org/pep-0562/
 def __getattr__(name):
     if name in ("wrap_dataset_for_transforms_v2",):
-        from torchvision.datapoints._dataset_wrapper import wrap_dataset_for_transforms_v2
+        from torchvision.tv_tensors._dataset_wrapper import wrap_dataset_for_transforms_v2
 
         return wrap_dataset_for_transforms_v2
 

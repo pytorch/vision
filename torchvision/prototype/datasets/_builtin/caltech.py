@@ -6,8 +6,6 @@ import numpy as np
 
 import torch
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper
-from torchvision.datapoints import BoundingBox
-from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
@@ -16,6 +14,8 @@ from torchvision.prototype.datasets.utils._internal import (
     read_categories_file,
     read_mat,
 )
+from torchvision.prototype.tv_tensors import Label
+from torchvision.tv_tensors import BoundingBoxes
 
 from .._api import register_dataset, register_info
 
@@ -112,7 +112,7 @@ class Caltech101(Dataset):
             image_path=image_path,
             image=image,
             ann_path=ann_path,
-            bounding_box=BoundingBox(
+            bounding_boxes=BoundingBoxes(
                 ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]],
                 format="xyxy",
                 spatial_size=image.spatial_size,

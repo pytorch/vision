@@ -262,7 +262,7 @@ def load_checkpoint(args):
     utils.setup_ddp(args)
 
     if not args.weights:
-        checkpoint = torch.load(args.checkpoint, map_location=torch.device("cpu"))
+        checkpoint = torch.load(args.checkpoint, map_location=torch.device("cpu"), weights_only=True)
         if "model" in checkpoint:
             experiment_args = checkpoint["args"]
             model = torchvision.prototype.models.depth.stereo.__dict__[experiment_args.model](weights=None)

@@ -8,22 +8,30 @@ vision.
 
 ## Installation
 
-We recommend Anaconda as Python package management system. Please refer to [pytorch.org](https://pytorch.org/) for the
-detail of PyTorch (`torch`) installation. The following is the corresponding `torchvision` versions and supported Python
+Please refer to the [official
+instructions](https://pytorch.org/get-started/locally/) to install the stable
+versions of `torch` and `torchvision` on your system.
+
+To build source, refer to our [contributing
+page](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation).
+
+The following is the corresponding `torchvision` versions and supported Python
 versions.
 
 | `torch`            | `torchvision`      | Python              |
 | ------------------ | ------------------ | ------------------- |
 | `main` / `nightly` | `main` / `nightly` | `>=3.8`, `<=3.11`   |
+| `2.2`              | `0.17`             | `>=3.8`, `<=3.11`   |
+| `2.1`              | `0.16`             | `>=3.8`, `<=3.11`   |
 | `2.0`              | `0.15`             | `>=3.8`, `<=3.11`   |
-| `1.13`             | `0.14`             | `>=3.7.2`, `<=3.10` |
-| `1.12`             | `0.13`             | `>=3.7`, `<=3.10`   |
 
 <details>
     <summary>older versions</summary>
 
 | `torch` | `torchvision`     | Python                    |
 |---------|-------------------|---------------------------|
+| `1.13`  | `0.14`            | `>=3.7.2`, `<=3.10`       |
+| `1.12`  | `0.13`            | `>=3.7`, `<=3.10`         |
 | `1.11`  | `0.12`            | `>=3.7`, `<=3.10`         |
 | `1.10`  | `0.11`            | `>=3.6`, `<=3.9`          |
 | `1.9`   | `0.10`            | `>=3.6`, `<=3.9`          |
@@ -39,54 +47,18 @@ versions.
 
 </details>
 
-Anaconda:
-
-```
-conda install torchvision -c pytorch
-```
-
-pip:
-
-```
-pip install torchvision
-```
-
-From source:
-
-```
-python setup.py install
-# or, for OSX
-# MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
-```
-
-We don't officially support building from source using `pip`, but _if_ you do, you'll need to use the
-`--no-build-isolation` flag. In case building TorchVision from source fails, install the nightly version of PyTorch
-following the linked guide on the
-[contributing page](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation) and retry the
-install.
-
-By default, GPU support is built if CUDA is found and `torch.cuda.is_available()` is true. It's possible to force
-building GPU support by setting `FORCE_CUDA=1` environment variable, which is useful when building a docker image.
-
-## Image Backend
+## Image Backends
 
 Torchvision currently supports the following image backends:
 
-- [Pillow](https://python-pillow.org/) (default)
-- [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
-  If installed will be used as the default.
-- [accimage](https://github.com/pytorch/accimage) - if installed can be activated by calling
-  `torchvision.set_image_backend('accimage')`
-- [libpng](http://www.libpng.org/pub/png/libpng.html) - can be installed via conda `conda install libpng` or any of the
-  package managers for debian-based and RHEL-based Linux distributions.
-- [libjpeg](http://ijg.org/) - can be installed via conda `conda install jpeg` or any of the package managers for
-  debian-based and RHEL-based Linux distributions. [libjpeg-turbo](https://libjpeg-turbo.org/) can be used as well.
+- torch tensors
+- PIL images:
+    - [Pillow](https://python-pillow.org/)
+    - [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
 
-**Notes:** `libpng` and `libjpeg` must be available at compilation time in order to be available. Make sure that it is
-available on the standard library locations, otherwise, add the include and library paths in the environment variables
-`TORCHVISION_INCLUDE` and `TORCHVISION_LIBRARY`, respectively.
+Read more in in our [docs](https://pytorch.org/vision/stable/transforms.html).
 
-## Video Backend
+## [UNSTABLE] Video Backend
 
 Torchvision currently supports the following video backends:
 
@@ -95,7 +67,7 @@ Torchvision currently supports the following video backends:
   conflicting version of ffmpeg installed. Currently, this is only supported on Linux.
 
 ```
-conda install -c conda-forge ffmpeg
+conda install -c conda-forge 'ffmpeg<4.3'
 python setup.py install
 ```
 
