@@ -104,7 +104,11 @@ def _get_google_drive_file_id(url: str) -> Optional[str]:
 
 
 def download_url(
-    url: str, root: Union[str, bytes, os.PathLike], filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 3
+    url: str,
+    root: Union[str, bytes, os.PathLike],
+    filename: Optional[str] = None,
+    md5: Optional[str] = None,
+    max_redirect_hops: int = 3,
 ) -> None:
     """Download a file from a url and place it in root.
 
@@ -203,7 +207,9 @@ def _extract_gdrive_api_response(response, chunk_size: int = 32 * 1024) -> Tuple
     return api_response, content
 
 
-def download_file_from_google_drive(file_id: str, root: Union[str, bytes, os.PathLike], filename: Optional[str] = None, md5: Optional[str] = None):
+def download_file_from_google_drive(
+    file_id: str, root: Union[str, bytes, os.PathLike], filename: Optional[str] = None, md5: Optional[str] = None
+):
     """Download a Google Drive file from  and place it in root.
 
     Args:
