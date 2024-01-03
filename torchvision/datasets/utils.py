@@ -15,7 +15,7 @@ import urllib.error
 import urllib.request
 import warnings
 import zipfile
-from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union
 from urllib.parse import urlparse
 
 import numpy as np
@@ -104,7 +104,7 @@ def _get_google_drive_file_id(url: str) -> Optional[str]:
 
 
 def download_url(
-    url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 3
+    url: str, root: Union[str, bytes, os.PathLike], filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 3
 ) -> None:
     """Download a file from a url and place it in root.
 
@@ -118,7 +118,7 @@ def download_url(
     root = os.path.expanduser(root)
     if not filename:
         filename = os.path.basename(url)
-    fpath = os.path.join(root, filename)
+    fpath = os.fpath(os.path.join(root, filename))
 
     os.makedirs(root, exist_ok=True)
 
@@ -203,7 +203,7 @@ def _extract_gdrive_api_response(response, chunk_size: int = 32 * 1024) -> Tuple
     return api_response, content
 
 
-def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):
+def download_file_from_google_drive(file_id: str, root: Union[str, bytes, os.PathLike], filename: Optional[str] = None, md5: Optional[str] = None):
     """Download a Google Drive file from  and place it in root.
 
     Args:
@@ -217,7 +217,7 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
     root = os.path.expanduser(root)
     if not filename:
         filename = file_id
-    fpath = os.path.join(root, filename)
+    fpath = os.fspath(os.path.join(root, filename))
 
     os.makedirs(root, exist_ok=True)
 
