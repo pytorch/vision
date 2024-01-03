@@ -260,7 +260,6 @@ def get_extensions():
 
     # Locating libPNG
     libpng = shutil.which("libpng-config")
-
     pngfix = shutil.which("pngfix")
     png_found = libpng is not None or pngfix is not None
 
