@@ -34,7 +34,9 @@ clear and has sufficient instructions to be able to reproduce the issue.
 ### Dependencies
 
 Start by installing the **nightly** build of PyTorch following the [official
-instructions](https://pytorch.org/get-started/locally/).
+instructions](https://pytorch.org/get-started/locally/). Note that the official
+instructions may ask you to install torchvision itself. If you are doing development
+on torchvision, you should not install prebuilt torchvision packages.
 
 **Optionally**, install `libpng` and `libjpeg-turbo` if you want to enable
 support for
@@ -69,10 +71,10 @@ building GPU support by setting `FORCE_CUDA=1` environment variable, which is us
 We don't officially support building from source using `pip`, but _if_ you do, you'll need to use the
 `--no-build-isolation` flag.
 
-Other development dependencies include:
+#### Other development dependencies (some of these are needed to run tests):
 
 ```
-pip install flake8 typing mypy pytest pytest-mock scipy
+pip expecttest install flake8 typing mypy pytest pytest-mock scipy
 ```
 
 ## Development Process
@@ -144,6 +146,8 @@ mypy --config-file mypy.ini
 ```
 
 ### Unit tests
+
+Before running tests make sure to install [test dependencies](#other-development-dependencies-some-of-these-are-needed-to-run-tests).
 
 If you have modified the code by adding a new feature or a bug-fix, please add unit tests for that. To run a specific
 test:
