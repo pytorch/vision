@@ -166,18 +166,25 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
 
 
 def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
-    """
-    Converts boxes from given in_fmt to out_fmt.
-    Supported in_fmt and out_fmt are:
+    """    
+    Converts :class:`torch.Tensor` boxes from given in_fmt to out_fmt.
+
+    .. warning::
+        For converting a :class:`torch.Tensor` or a :class:`~tv_tensors.BoundingBoxes` object 
+        between different :class:`~torchvision.tv_tensors.BoundingBoxFormat`s,
+        consider using :func:`~torchvision.transforms.v2.functional.convert_bounding_box_format` instead. 
+        Or see the corresponding transform :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat`.
+    
+    Supported in_fmt and out_fmt strings are:
 
     'xyxy': boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
     This is the format that torchvision utilities expect.
 
-    'xywh' : boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
+    'xywh': boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
 
-    'cxcywh' : boxes are represented via centre, width and height, cx, cy being center of box, w, h
+    'cxcywh': boxes are represented via centre, width and height, cx, cy being center of box, w, h
     being width and height.
-
+    
     Args:
         boxes (Tensor[N, 4]): boxes which will be converted.
         in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh'].
