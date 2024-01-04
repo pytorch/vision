@@ -16,7 +16,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     to their intersection-over-union (IoU).
 
     NMS iteratively removes lower scoring boxes which have an
-    IoU greater than iou_threshold with another (higher scoring)
+    IoU greater than :attr:`iou_threshold` with another (higher scoring)
     box.
 
     If multiple boxes have the exact same score and satisfy the IoU
@@ -114,7 +114,12 @@ def _batched_nms_vanilla(
 
 def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
-    Remove boxes which contains at least one side smaller than min_size.
+    Remove every box from :attr:`boxes` which contains at least one side length
+    that is smaller than :attr:`min_size`.
+
+    .. warning::
+        For sanitizing a :class:`~tv_tensors.BoundingBoxes` object, consider using 
+        the transform :func:`~torchvision.transforms.v2.SanitizeBoundingBoxes` instead.
 
     Args:
         boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
@@ -123,7 +128,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
 
     Returns:
         Tensor[K]: indices of the boxes that have both sides
-        larger than min_size
+        larger than :attr:`min_size`
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(remove_small_boxes)
@@ -135,7 +140,11 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
 
 def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     """
-    Clip boxes so that they lie inside an image of size `size`.
+    Clip boxes so that they lie inside an image of size :attr:`size`.
+
+    .. warning::
+        For clipping a :class:`~tv_tensors.BoundingBoxes` object, consider using 
+        the transform :func:`~torchvision.transforms.v2.ClampBoundingBoxes` instead.
 
     Args:
         boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
@@ -167,7 +176,7 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
 
 def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     """    
-    Converts :class:`torch.Tensor` boxes from given in_fmt to out_fmt.
+    Converts :class:`torch.Tensor` boxes from a given :attr:`in_fmt` to :attr:`out_fmt`.
 
     .. warning::
         For converting a :class:`torch.Tensor` or a :class:`~tv_tensors.BoundingBoxes` object 
@@ -175,14 +184,14 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         consider using :func:`~torchvision.transforms.v2.functional.convert_bounding_box_format` instead. 
         Or see the corresponding transform :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat`.
     
-    Supported in_fmt and out_fmt strings are:
+    Supported :attr:`in_fmt` and :attr:`out_fmt` strings are:
 
-    'xyxy': boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
+    ``'xyxy'``: boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
     This is the format that torchvision utilities expect.
 
-    'xywh': boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
+    ``'xywh'``: boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
 
-    'cxcywh': boxes are represented via centre, width and height, cx, cy being center of box, w, h
+    ``'cxcywh'``: boxes are represented via centre, width and height, cx, cy being center of box, w, h
     being width and height.
     
     Args:
@@ -227,6 +236,10 @@ def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by their
     (x1, y1, x2, y2) coordinates.
+
+    .. warning::
+        For computing the area of a :class:`~tv_tensors.BoundingBoxes` object 
+        consider using :func:`~torchvision.transforms.v2.functional.get_size` instead.
 
     Args:
         boxes (Tensor[N, 4]): boxes for which the area will be computed. They
