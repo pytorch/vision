@@ -16,7 +16,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     to their intersection-over-union (IoU).
 
     NMS iteratively removes lower scoring boxes which have an
-    IoU greater than :attr:`iou_threshold` with another (higher scoring)
+    IoU greater than ``iou_threshold`` with another (higher scoring)
     box.
 
     If multiple boxes have the exact same score and satisfy the IoU
@@ -114,11 +114,11 @@ def _batched_nms_vanilla(
 
 def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
-    Remove every box from :attr:`boxes` which contains at least one side length
-    that is smaller than :attr:`min_size`.
+    Remove every box from ``boxes`` which contains at least one side length
+    that is smaller than ``min_size``.
 
     .. warning::
-        For sanitizing a :class:`~tv_tensors.BoundingBoxes` object, consider using
+        For sanitizing a :class:`~torchvision.tv_tensors.BoundingBoxes` object, consider using
         the transform :func:`~torchvision.transforms.v2.SanitizeBoundingBoxes` instead.
 
     Args:
@@ -128,7 +128,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
 
     Returns:
         Tensor[K]: indices of the boxes that have both sides
-        larger than :attr:`min_size`
+        larger than ``min_size``
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(remove_small_boxes)
