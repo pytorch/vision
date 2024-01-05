@@ -117,7 +117,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     Remove every box from ``boxes`` which contains at least one side length
     that is smaller than ``min_size``.
 
-    .. warning::
+    .. note::
         For sanitizing a :class:`~torchvision.tv_tensors.BoundingBoxes` object, consider using
         the transform :func:`~torchvision.transforms.v2.SanitizeBoundingBoxes` instead.
 
@@ -140,10 +140,10 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
 
 def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     """
-    Clip boxes so that they lie inside an image of size :attr:`size`.
+    Clip boxes so that they lie inside an image of size ``size``.
 
-    .. warning::
-        For clipping a :class:`~tv_tensors.BoundingBoxes` object, consider using
+    .. note::
+        For clipping a :class:`~torchvision.tv_tensors.BoundingBoxes` object, consider using
         the transform :func:`~torchvision.transforms.v2.ClampBoundingBoxes` instead.
 
     Args:
@@ -176,15 +176,15 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
 
 def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     """
-    Converts :class:`torch.Tensor` boxes from a given :attr:`in_fmt` to :attr:`out_fmt`.
+    Converts :class:`torch.Tensor` boxes from a given ``in_fmt`` to ``out_fmt``.
 
-    .. warning::
-        For converting a :class:`torch.Tensor` or a :class:`~tv_tensors.BoundingBoxes` object
+    .. note::
+        For converting a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.BoundingBoxes` object
         between different :class:`~torchvision.tv_tensors.BoundingBoxFormat`s,
         consider using :func:`~torchvision.transforms.v2.functional.convert_bounding_box_format` instead.
         Or see the corresponding transform :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat`.
 
-    Supported :attr:`in_fmt` and :attr:`out_fmt` strings are:
+    Supported ``in_fmt`` and ``out_fmt`` strings are:
 
     ``'xyxy'``: boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
     This is the format that torchvision utilities expect.
@@ -236,10 +236,6 @@ def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by their
     (x1, y1, x2, y2) coordinates.
-
-    .. warning::
-        For computing the area of a :class:`~tv_tensors.BoundingBoxes` object
-        consider using :func:`~torchvision.transforms.v2.functional.get_size` instead.
 
     Args:
         boxes (Tensor[N, 4]): boxes for which the area will be computed. They
