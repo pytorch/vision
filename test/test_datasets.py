@@ -90,22 +90,22 @@ class STL10TestCase(datasets_utils.ImageDatasetTestCase):
 
         return sum(num_images_in_split[part] for part in config["split"].split("+"))
 
-    def test_folds(self):
+    def test_folds(self) -> None:
         for fold in range(10):
             with self.create_dataset(split="train", folds=fold) as (dataset, _):
                 assert len(dataset) == fold + 1
 
-    def test_unlabeled(self):
+    def test_unlabeled(self) -> None:
         with self.create_dataset(split="unlabeled") as (dataset, _):
             labels = [dataset[idx][1] for idx in range(len(dataset))]
             assert all(label == -1 for label in labels)
 
-    def test_invalid_folds1(self):
+    def test_invalid_folds1(self) -> None:
         with pytest.raises(ValueError):
             with self.create_dataset(folds=10):
                 pass
 
-    def test_invalid_folds2(self):
+    def test_invalid_folds2(self) -> None:
         with pytest.raises(ValueError):
             with self.create_dataset(folds="0"):
                 pass
@@ -156,7 +156,7 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
         mdict = dict(obj_contour=torch.rand((2, torch.randint(3, 6, size=())), dtype=torch.float64).numpy())
         datasets_utils.lazy_importer.scipy.io.savemat(str(pathlib.Path(root) / name), mdict)
 
-    def test_combined_targets(self):
+    def test_combined_targets(self) -> None:
         target_types = ["category", "annotation"]
 
         individual_targets = []
@@ -184,7 +184,7 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
                 ), "Type of the combined target does not match the type of the corresponding individual target: "
                 f"{actual} is not {expected}",
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(target_type="category", transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -264,7 +264,7 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
 
         return split_to_num_examples[config["split"]]
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -367,7 +367,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
             info["expected_polygon_target"] = polygon_target
         return info
 
-    def test_combined_targets(self):
+    def test_combined_targets(self) -> None:
         target_types = ["semantic", "polygon", "color"]
 
         with self.create_dataset(target_type=target_types) as (dataset, _):
@@ -381,19 +381,19 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
             assert isinstance(output[1][1], dict)  # polygon
             assert isinstance(output[1][2], PIL.Image.Image)  # color
 
-    def test_feature_types_target_color(self):
+    def test_feature_types_target_color(self) -> None:
         with self.create_dataset(target_type="color") as (dataset, _):
             color_img, color_target = dataset[0]
             assert isinstance(color_img, PIL.Image.Image)
             assert np.array(color_target).shape[2] == 4
 
-    def test_feature_types_target_polygon(self):
+    def test_feature_types_target_polygon(self) -> None:
         with self.create_dataset(target_type="polygon") as (dataset, info):
             polygon_img, polygon_target = dataset[0]
             assert isinstance(polygon_img, PIL.Image.Image)
             (polygon_target, info["expected_polygon_target"])
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         for target_type in ["instance", "semantic", ["instance", "semantic"]]:
             with self.create_dataset(target_type=target_type, transform=v2.Resize(size=expected_size)) as (dataset, _):
@@ -430,7 +430,7 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
         torch.save((wnid_to_classes, None), tmpdir / "meta.bin")
         return num_examples
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -486,7 +486,7 @@ class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
         with open(pathlib.Path(root) / name, "wb") as fh:
             pickle.dump(content, fh)
 
-    def test_class_to_idx(self):
+    def test_class_to_idx(self) -> None:
         with self.create_dataset() as (dataset, info):
             expected = {category: label for label, category in enumerate(info["categories"])}
             actual = dataset.class_to_idx
@@ -580,7 +580,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
             for idx, line in enumerate(data, 1):
                 fh.write(f"{' '.join((f'{idx:06d}.jpg', *[str(value) for value in line]))}\n")
 
-    def test_combined_targets(self):
+    def test_combined_targets(self) -> None:
         target_types = ["attr", "identity", "bbox", "landmarks"]
 
         individual_targets = []
@@ -608,17 +608,17 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
                 ), "Type of the combined target does not match the type of the corresponding individual target: "
                 f"{actual} is not {expected}",
 
-    def test_no_target(self):
+    def test_no_target(self) -> None:
         with self.create_dataset(target_type=[]) as (dataset, _):
             _, target = dataset[0]
 
         assert target is None
 
-    def test_attr_names(self):
+    def test_attr_names(self) -> None:
         with self.create_dataset() as (dataset, info):
             assert tuple(dataset.attr_names) == info["attr_names"]
 
-    def test_images_names_split(self):
+    def test_images_names_split(self) -> None:
         with self.create_dataset(split="all") as (dataset, _):
             all_imgs_names = set(dataset.filename)
 
@@ -629,7 +629,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
 
         assert merged_imgs_names == all_imgs_names
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         for target_type in ["identity", "bbox", ["identity", "bbox"]]:
             with self.create_dataset(target_type=target_type, transform=v2.Resize(size=expected_size)) as (dataset, _):
@@ -722,7 +722,7 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
 
         return data
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -732,7 +732,7 @@ class VOCDetectionTestCase(VOCSegmentationTestCase):
     DATASET_CLASS = datasets.VOCDetection
     FEATURE_TYPES = (PIL.Image.Image, dict)
 
-    def test_annotations(self):
+    def test_annotations(self) -> None:
         with self.create_dataset() as (dataset, info):
             _, target = dataset[0]
 
@@ -747,7 +747,7 @@ class VOCDetectionTestCase(VOCSegmentationTestCase):
 
             assert object == info["annotation"]
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -822,7 +822,7 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
             json.dump(content, fh)
         return file
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -838,12 +838,12 @@ class CocoCaptionsTestCase(CocoDetectionTestCase):
             annotation["id"] = id
         return annotations, dict(captions=captions)
 
-    def test_captions(self):
+    def test_captions(self) -> None:
         with self.create_dataset() as (dataset, info):
             _, captions = dataset[0]
             assert tuple(captions) == tuple(info["captions"])
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         # We need to define this method, because otherwise the test from the super class will
         # be run
         pytest.skip("CocoCaptions is currently not supported by the v2 wrapper.")
@@ -989,7 +989,7 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_images
 
-    def test_not_found_or_corrupted(self):
+    def test_not_found_or_corrupted(self) -> None:
         # LSUN does not raise built-in exception, but a custom one. It is expressive enough to not 'cast' it to
         # RuntimeError or FileNotFoundError that are normally checked by this test.
         with pytest.raises(datasets_utils.lazy_importer.lmdb.Error):
@@ -1015,7 +1015,7 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
         return num_videos_per_class * len(classes)
 
     @pytest.mark.xfail(reason="FIXME")
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(output_format="TCHW", transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -1247,7 +1247,7 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
     def _file_stem(self, idx):
         return f"2008_{idx:06d}"
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(mode="segmentation", transforms=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -1263,7 +1263,7 @@ class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
     def inject_fake_data(self, tmpdir, config):
         return config["size"]
 
-    def test_not_found_or_corrupted(self):
+    def test_not_found_or_corrupted(self) -> None:
         self.skipTest("The data is generated at creation and thus cannot be non-existent or corrupted.")
 
 
@@ -1408,7 +1408,7 @@ class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
     def _create_captions(self, num_captions_per_image):
         return [str(idx) for idx in range(num_captions_per_image)]
 
-    def test_captions(self):
+    def test_captions(self) -> None:
         with self.create_dataset() as (dataset, info):
             _, captions = dataset[0]
             assert len(captions) == len(info["captions"])
@@ -1552,7 +1552,7 @@ class QMNISTTestCase(MNISTTestCase):
 
         return f"qmnist-{what}"
 
-    def test_num_examples_test50k(self):
+    def test_num_examples_test50k(self) -> None:
         with self.create_dataset(what="test50k") as (dataset, info):
             # Since the split 'test50k' selects all images beginning from the index 10000, we subtract the number of
             # created examples by this.
@@ -1701,7 +1701,7 @@ class KittiTestCase(datasets_utils.ImageDatasetTestCase):
 
         return split_to_num_examples[config["train"]]
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -1803,17 +1803,17 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         self._make_devkit_archive(tmpdir, config["split"])
         return len(self._make_images_archive(tmpdir, config["split"], config["small"]))
 
-    def test_classes(self):
+    def test_classes(self) -> None:
         classes = list(map(lambda x: x[0], self._CATEGORIES_CONTENT))
         with self.create_dataset() as (dataset, _):
             assert dataset.classes == classes
 
-    def test_class_to_idx(self):
+    def test_class_to_idx(self) -> None:
         class_to_idx = dict(self._CATEGORIES_CONTENT)
         with self.create_dataset() as (dataset, _):
             assert dataset.class_to_idx == class_to_idx
 
-    def test_images_download_preexisting(self):
+    def test_images_download_preexisting(self) -> None:
         with pytest.raises(RuntimeError):
             with self.create_dataset({"download": True}):
                 pass
@@ -1846,7 +1846,7 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_images_per_category * len(categories)
 
-    def test_targets(self):
+    def test_targets(self) -> None:
         target_types = ["kingdom", "phylum", "class", "order", "family", "genus", "full"]
 
         with self.create_dataset(target_type=target_types, version="2021_valid") as (dataset, _):
@@ -1976,7 +1976,7 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
         num_examples = (num_images_per_scene - 1) * num_scenes * num_passes
         return num_examples
 
-    def test_flow(self):
+    def test_flow(self) -> None:
         # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
         h, w = self.FLOW_H, self.FLOW_W
         expected_flow = np.arange(2 * h * w).reshape(h, w, 2).transpose(2, 0, 1)
@@ -1992,7 +1992,7 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
             for _, _, flow in dataset:
                 assert flow is None
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
@@ -2039,7 +2039,7 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_examples
 
-    def test_flow_and_valid(self):
+    def test_flow_and_valid(self) -> None:
         # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
         # Also assert flow and valid are of the expected shape
         with self.create_dataset(split="train") as (dataset, _):
@@ -2056,7 +2056,7 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
                 assert flow is None
                 assert valid is None
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
@@ -2175,7 +2175,7 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
                 assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
                 np.testing.assert_allclose(flow, expected_flow)
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
@@ -2580,7 +2580,7 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         breed_id = "-1"
         return (image_id, class_id, species, breed_id)
 
-    def test_transforms_v2_wrapper_spawn(self):
+    def test_transforms_v2_wrapper_spawn(self) -> None:
         expected_size = (123, 321)
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
@@ -2779,14 +2779,14 @@ class Kitti2012StereoTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_examples
 
-    def test_train_splits(self):
+    def test_train_splits(self) -> None:
         for split in ["train"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, mask in dataset:
                     assert mask is None
                     datasets_utils.shape_test_for_stereo(left, right, disparity)
 
-    def test_test_split(self):
+    def test_test_split(self) -> None:
         for split in ["test"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, mask in dataset:
@@ -2794,7 +2794,7 @@ class Kitti2012StereoTestCase(datasets_utils.ImageDatasetTestCase):
                     assert disparity is None
                     datasets_utils.shape_test_for_stereo(left, right)
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
@@ -2850,14 +2850,14 @@ class Kitti2015StereoTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_examples
 
-    def test_train_splits(self):
+    def test_train_splits(self) -> None:
         for split in ["train"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, mask in dataset:
                     assert mask is None
                     datasets_utils.shape_test_for_stereo(left, right, disparity)
 
-    def test_test_split(self):
+    def test_test_split(self) -> None:
         for split in ["test"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, mask in dataset:
@@ -2865,7 +2865,7 @@ class Kitti2015StereoTestCase(datasets_utils.ImageDatasetTestCase):
                     assert disparity is None
                     datasets_utils.shape_test_for_stereo(left, right)
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
@@ -2901,7 +2901,7 @@ class CarlaStereoTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_examples
 
-    def test_train_splits(self):
+    def test_train_splits(self) -> None:
         with self.create_dataset() as (dataset, _):
             for left, right, disparity in dataset:
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
@@ -2931,7 +2931,7 @@ class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
 
         return sum(examples.values())
 
-    def test_splits(self):
+    def test_splits(self) -> None:
         with self.create_dataset() as (dataset, _):
             for left, right, disparity, mask in dataset:
                 assert mask is None
@@ -3000,13 +3000,13 @@ class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples *= 2
         return num_examples
 
-    def test_splits(self):
+    def test_splits(self) -> None:
         for variant_name in ["single", "mixed"]:
             with self.create_dataset(variant=variant_name) as (dataset, _):
                 for left, right, disparity in dataset:
                     datasets_utils.shape_test_for_stereo(left, right, disparity)
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument variant"):
             with self.create_dataset(variant="bad"):
                 pass
@@ -3086,13 +3086,13 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples *= 2
         return num_examples
 
-    def test_splits(self):
+    def test_splits(self) -> None:
         for variant_name, pass_name in itertools.product(["FlyingThings3D", "Driving", "Monkaa"], ["clean", "final"]):
             with self.create_dataset(variant=variant_name, pass_name=pass_name) as (dataset, _):
                 for left, right, disparity in dataset:
                     datasets_utils.shape_test_for_stereo(left, right, disparity)
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument variant"):
             with self.create_dataset(variant="bad"):
                 pass
@@ -3127,13 +3127,13 @@ class InStereo2k(datasets_utils.ImageDatasetTestCase):
 
         return num_examples
 
-    def test_splits(self):
+    def test_splits(self) -> None:
         for split_name in ["train", "test"]:
             with self.create_dataset(split=split_name) as (dataset, _):
                 for left, right, disparity in dataset:
                     datasets_utils.shape_test_for_stereo(left, right, disparity)
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(
             ValueError, match="Unknown value 'bad' for argument split. Valid values are {'train', 'test'}."
         ):
@@ -3205,13 +3205,13 @@ class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_examples
 
-    def test_splits(self):
+    def test_splits(self) -> None:
         for pass_name in ["final", "clean", "both"]:
             with self.create_dataset(pass_name=pass_name) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
                     datasets_utils.shape_test_for_stereo(left, right, disparity, valid_mask)
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
             with self.create_dataset(pass_name="bad"):
                 pass
@@ -3266,19 +3266,19 @@ class ETH3DStereoestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_examples
 
-    def test_training_splits(self):
+    def test_training_splits(self) -> None:
         with self.create_dataset(split="train") as (dataset, _):
             for left, right, disparity, valid_mask in dataset:
                 datasets_utils.shape_test_for_stereo(left, right, disparity, valid_mask)
 
-    def test_testing_splits(self):
+    def test_testing_splits(self) -> None:
         with self.create_dataset(split="test") as (dataset, _):
             assert all(d == (None, None) for d in dataset._disparities)
             for left, right, disparity, valid_mask in dataset:
                 assert valid_mask is None
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
@@ -3332,24 +3332,24 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples *= 2
         return num_examples
 
-    def test_train_splits(self):
+    def test_train_splits(self) -> None:
         for split, calibration in itertools.product(["train", "additional"], ["perfect", "imperfect", "both"]):
             with self.create_dataset(split=split, calibration=calibration) as (dataset, _):
                 for left, right, disparity, mask in dataset:
                     datasets_utils.shape_test_for_stereo(left, right, disparity, mask)
 
-    def test_test_split(self):
+    def test_test_split(self) -> None:
         for split in ["test"]:
             with self.create_dataset(split=split, calibration=None) as (dataset, _):
                 for left, right, disparity, mask in dataset:
                     datasets_utils.shape_test_for_stereo(left, right)
 
-    def test_augmented_view_usage(self):
+    def test_augmented_view_usage(self) -> None:
         with self.create_dataset(split="train", use_ambient_views=True) as (dataset, _):
             for left, right, disparity, mask in dataset:
                 datasets_utils.shape_test_for_stereo(left, right, disparity, mask)
 
-    def test_value_err_train(self):
+    def test_value_err_train(self) -> None:
         # train set invalid
         split = "train"
         calibration = None
@@ -3361,7 +3361,7 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
             with self.create_dataset(split=split, calibration=calibration):
                 pass
 
-    def test_value_err_test(self):
+    def test_value_err_test(self) -> None:
         # test set invalid
         split = "test"
         calibration = "perfect"
@@ -3371,21 +3371,21 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
             with self.create_dataset(split=split, calibration=calibration):
                 pass
 
-    def test_bad_input(self):
+    def test_bad_input(self) -> None:
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
 
 
 class TestDatasetWrapper:
-    def test_unknown_type(self):
+    def test_unknown_type(self) -> None:
         unknown_object = object()
         with pytest.raises(
             TypeError, match=re.escape("is meant for subclasses of `torchvision.datasets.VisionDataset`")
         ):
             datasets.wrap_dataset_for_transforms_v2(unknown_object)
 
-    def test_unknown_dataset(self):
+    def test_unknown_dataset(self) -> None:
         class MyVisionDataset(datasets.VisionDataset):
             pass
 
@@ -3394,7 +3394,7 @@ class TestDatasetWrapper:
         with pytest.raises(TypeError, match="No wrapper exist"):
             datasets.wrap_dataset_for_transforms_v2(dataset)
 
-    def test_missing_wrapper(self):
+    def test_missing_wrapper(self) -> None:
         dataset = datasets.FakeData()
 
         with pytest.raises(TypeError, match="please open an issue"):

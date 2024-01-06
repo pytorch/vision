@@ -422,7 +422,7 @@ class TestONNXExporter:
             [self.get_image("fakedata/logos/rgb_pytorch.png", (250, 380))],
         )
 
-    def test_faster_rcnn(self):
+    def test_faster_rcnn(self) -> None:
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(
@@ -450,7 +450,7 @@ class TestONNXExporter:
     # Verify that paste_mask_in_image beahves the same in tracing.
     # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
     # (since jit_trace witll call _onnx_paste_masks_in_image).
-    def test_paste_mask_in_image(self):
+    def test_paste_mask_in_image(self) -> None:
         masks = torch.rand(10, 1, 26, 26)
         boxes = torch.rand(10, 4)
         boxes[:, 2:] += torch.rand(10, 2)
@@ -478,7 +478,7 @@ class TestONNXExporter:
 
         assert torch.all(out2.eq(out_trace2))
 
-    def test_mask_rcnn(self):
+    def test_mask_rcnn(self) -> None:
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(
@@ -518,7 +518,7 @@ class TestONNXExporter:
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
     # (since jit_trace witll call _heatmaps_to_keypoints).
-    def test_heatmaps_to_keypoints(self):
+    def test_heatmaps_to_keypoints(self) -> None:
         maps = torch.rand(10, 1, 26, 26)
         rois = torch.rand(10, 4)
         from torchvision.models.detection.roi_heads import heatmaps_to_keypoints
@@ -540,7 +540,7 @@ class TestONNXExporter:
         assert_equal(out2[0], out_trace2[0])
         assert_equal(out2[1], out_trace2[1])
 
-    def test_keypoint_rcnn(self):
+    def test_keypoint_rcnn(self) -> None:
         images, test_images = self.get_test_images()
         dummy_images = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
@@ -564,7 +564,7 @@ class TestONNXExporter:
             dynamic_axes={"images_tensors": [0, 1, 2]},
         )
 
-    def test_shufflenet_v2_dynamic_axes(self):
+    def test_shufflenet_v2_dynamic_axes(self) -> None:
         model = models.shufflenet_v2_x0_5(weights=models.ShuffleNet_V2_X0_5_Weights.DEFAULT)
         dummy_input = torch.randn(1, 3, 224, 224, requires_grad=True)
         test_inputs = torch.cat([dummy_input, dummy_input, dummy_input], 0)

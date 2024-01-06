@@ -933,7 +933,7 @@ class TestResize:
 
         self._check_stride(output, memory_format=memory_format)
 
-    def test_float16_no_rounding(self):
+    def test_float16_no_rounding(self) -> None:
         # Make sure Resize() doesn't round float16 images
         # Non-regression test for https://github.com/pytorch/vision/issues/7667
 
@@ -1371,7 +1371,7 @@ class TestAffine:
         ):
             transforms.RandomAffine(**kwargs)
 
-    def test_transform_negative_degrees_error(self):
+    def test_transform_negative_degrees_error(self) -> None:
         with pytest.raises(ValueError, match="If degrees is a single number, it must be positive"):
             transforms.RandomAffine(degrees=-1)
 
@@ -1385,11 +1385,11 @@ class TestAffine:
         with pytest.raises(ValueError, match="scale values should be positive"):
             transforms.RandomAffine(degrees=0, scale=scale)
 
-    def test_transform_negative_shear_error(self):
+    def test_transform_negative_shear_error(self) -> None:
         with pytest.raises(ValueError, match="If shear is a single number, it must be positive"):
             transforms.RandomAffine(degrees=0, shear=-1)
 
-    def test_transform_unknown_fill_error(self):
+    def test_transform_unknown_fill_error(self) -> None:
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
 
@@ -1768,11 +1768,11 @@ class TestRotate:
         ):
             transforms.RandomRotation(**kwargs)
 
-    def test_transform_negative_degrees_error(self):
+    def test_transform_negative_degrees_error(self) -> None:
         with pytest.raises(ValueError, match="If degrees is a single number, it must be positive"):
             transforms.RandomAffine(degrees=-1)
 
-    def test_transform_unknown_fill_error(self):
+    def test_transform_unknown_fill_error(self) -> None:
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
 
@@ -1840,7 +1840,7 @@ class TestContainerTransforms:
             assert output[0] is image
             assert output[1] is label
 
-    def test_compose(self):
+    def test_compose(self) -> None:
         transform = transforms.Compose(
             [
                 transforms.RandomHorizontalFlip(p=1),
@@ -1897,7 +1897,7 @@ class TestContainerTransforms:
         else:
             assert_equal(output, F.vertical_flip(input))
 
-    def test_random_order(self):
+    def test_random_order(self) -> None:
         transform = transforms.Compose(
             [
                 transforms.RandomHorizontalFlip(p=1),
@@ -1915,7 +1915,7 @@ class TestContainerTransforms:
 
         assert_equal(actual, expected)
 
-    def test_errors(self):
+    def test_errors(self) -> None:
         for cls in [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder]:
             with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
                 cls(lambda x: x)
@@ -2404,7 +2404,7 @@ class TestRegisterKernel:
         t(torch.rand(3, 10, 10)).shape == (3, 224, 224)
         t(tv_tensors.Image(torch.rand(3, 10, 10))).shape == (3, 224, 224)
 
-    def test_errors(self):
+    def test_errors(self) -> None:
         with pytest.raises(ValueError, match="Could not find functional with name"):
             F.register_kernel("bad_name", tv_tensors.Image)
 
@@ -2446,7 +2446,7 @@ class TestGetKernel:
         with pytest.raises(TypeError, match="supports inputs of type"):
             _get_kernel(F.resize, input_type)
 
-    def test_exact_match(self):
+    def test_exact_match(self) -> None:
         # We cannot use F.resize together with self.KERNELS mapping here directly here, since this is only the
         # ideal wrapping. Practically, we have an intermediate wrapper layer. Thus, we create a new resize functional
         # here, register the kernels without wrapper, and check the exact matching afterwards.
@@ -2458,7 +2458,7 @@ class TestGetKernel:
 
             assert _get_kernel(resize_with_pure_kernels, input_type) is kernel
 
-    def test_builtin_tv_tensor_subclass(self):
+    def test_builtin_tv_tensor_subclass(self) -> None:
         # We cannot use F.resize together with self.KERNELS mapping here directly here, since this is only the
         # ideal wrapping. Practically, we have an intermediate wrapper layer. Thus, we create a new resize functional
         # here, register the kernels without wrapper, and check if subclasses of our builtin tv_tensors get dispatched
@@ -2492,7 +2492,7 @@ class TestGetKernel:
 
             assert _get_kernel(resize_with_pure_kernels, custom_tv_tensor_subclass) is builtin_tv_tensor_kernel
 
-    def test_tv_tensor_subclass(self):
+    def test_tv_tensor_subclass(self) -> None:
         class MyTVTensor(tv_tensors.TVTensor):
             pass
 
@@ -2506,7 +2506,7 @@ class TestGetKernel:
 
         assert _get_kernel(F.resize, MyTVTensor) is resize_my_tv_tensor
 
-    def test_pil_image_subclass(self):
+    def test_pil_image_subclass(self) -> None:
         opened_image = PIL.Image.open(Path(__file__).parent / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg")
         loaded_image = opened_image.convert("RGB")
 
@@ -2622,7 +2622,7 @@ class TestElastic:
         mask = make_mask()
         check_kernel(F.elastic_mask, mask, displacement=self._make_displacement(mask))
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         video = make_video()
         check_kernel(F.elastic_video, video, displacement=self._make_displacement(video))
 
@@ -2678,7 +2678,7 @@ class TestElastic:
 
 
 class TestToPureTensor:
-    def test_correctness(self):
+    def test_correctness(self) -> None:
         input = {
             "img": make_image(),
             "img_tensor": make_image_tensor(),
@@ -2914,7 +2914,7 @@ class TestCrop:
         assert_equal(actual, expected)
         assert_equal(F.get_size(actual), F.get_size(expected))
 
-    def test_errors(self):
+    def test_errors(self) -> None:
         with pytest.raises(ValueError, match="Please provide only two dimensions"):
             transforms.RandomCrop([10, 12, 14])
 
@@ -3045,7 +3045,7 @@ class TestErase:
 
         assert_equal(actual, expected)
 
-    def test_transform_errors(self):
+    def test_transform_errors(self) -> None:
         with pytest.raises(TypeError, match="Argument value should be either a number or str or a sequence"):
             transforms.RandomErasing(value={})
 
@@ -3079,7 +3079,7 @@ class TestGaussianBlur:
             check_scripted_vs_eager=not (isinstance(kernel_size, int) or isinstance(sigma, (float, int))),
         )
 
-    def test_kernel_image_errors(self):
+    def test_kernel_image_errors(self) -> None:
         image = make_image_tensor()
 
         with pytest.raises(ValueError, match="kernel_size is a sequence its length should be 2"):
@@ -3098,7 +3098,7 @@ class TestGaussianBlur:
         with pytest.raises(ValueError, match="sigma should have positive values"):
             F.gaussian_blur_image(image, kernel_size=1, sigma=-1)
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.gaussian_blur_video, make_video(), kernel_size=(3, 3))
 
     @pytest.mark.parametrize(
@@ -3129,7 +3129,7 @@ class TestGaussianBlur:
     def test_transform(self, make_input, device, sigma):
         check_transform(transforms.GaussianBlur(kernel_size=3, sigma=sigma), make_input(device=device))
 
-    def test_assertions(self):
+    def test_assertions(self) -> None:
         with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
             transforms.GaussianBlur([10, 12, 14])
 
@@ -3328,7 +3328,7 @@ class TestAutoAugmentTransforms:
             if type(input) is torch.Tensor and dtype is torch.uint8:
                 _script(transform)(input)
 
-    def test_auto_augment_policy_error(self):
+    def test_auto_augment_policy_error(self) -> None:
         with pytest.raises(ValueError, match="provided policy"):
             transforms.AutoAugment(policy=None)
 
@@ -3420,7 +3420,7 @@ class TestConvertBoundingBoxFormat:
 
         assert_equal(actual, expected)
 
-    def test_errors(self):
+    def test_errors(self) -> None:
         input_tv_tensor = make_bounding_boxes()
         input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
 
@@ -3555,7 +3555,7 @@ class TestResizedCrop:
         assert_equal(actual, expected)
         assert_equal(F.get_size(actual), F.get_size(expected))
 
-    def test_transform_errors_warnings(self):
+    def test_transform_errors_warnings(self) -> None:
         with pytest.raises(ValueError, match="provide only two dimensions"):
             transforms.RandomResizedCrop(size=(1, 2, 3))
 
@@ -4101,7 +4101,7 @@ class TestEqualize:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.equalize_image, make_image(dtype=dtype, device=device))
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.equalize_image, make_video())
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
@@ -4304,7 +4304,7 @@ class TestClampBoundingBoxes:
     def test_functional(self, format):
         check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format))
 
-    def test_errors(self):
+    def test_errors(self) -> None:
         input_tv_tensor = make_bounding_boxes()
         input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
         format, canvas_size = input_tv_tensor.format, input_tv_tensor.canvas_size
@@ -4321,7 +4321,7 @@ class TestClampBoundingBoxes:
             ):
                 F.clamp_bounding_boxes(input_tv_tensor, format=format_, canvas_size=canvas_size_)
 
-    def test_transform(self):
+    def test_transform(self) -> None:
         check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
 
 
@@ -4331,7 +4331,7 @@ class TestInvert:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.invert_image, make_image(dtype=dtype, device=device))
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.invert_video, make_video())
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
@@ -4370,7 +4370,7 @@ class TestPosterize:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.posterize_image, make_image(dtype=dtype, device=device), bits=1)
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.posterize_video, make_video(), bits=1)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
@@ -4415,7 +4415,7 @@ class TestSolarize:
         image = make_image(dtype=dtype, device=device)
         check_kernel(F.solarize_image, image, threshold=self._make_threshold(image))
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         video = make_video()
         check_kernel(F.solarize_video, video, threshold=self._make_threshold(video))
 
@@ -4464,7 +4464,7 @@ class TestAutocontrast:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.autocontrast_image, make_image(dtype=dtype, device=device))
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.autocontrast_video, make_video())
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
@@ -4503,7 +4503,7 @@ class TestAdjustSharpness:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.adjust_sharpness_image, make_image(dtype=dtype, device=device), sharpness_factor=0.5)
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.adjust_sharpness_video, make_video(), sharpness_factor=0.5)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
@@ -4526,7 +4526,7 @@ class TestAdjustSharpness:
     def test_transform(self, make_input):
         check_transform(transforms.RandomAdjustSharpness(sharpness_factor=0.5, p=1), make_input())
 
-    def test_functional_error(self):
+    def test_functional_error(self) -> None:
         with pytest.raises(TypeError, match="can have 1 or 3 channels"):
             F.adjust_sharpness(make_image(color_space="RGBA"), sharpness_factor=0.5)
 
@@ -4552,7 +4552,7 @@ class TestAdjustContrast:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.adjust_contrast_image, make_image(dtype=dtype, device=device), contrast_factor=0.5)
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.adjust_contrast_video, make_video(), contrast_factor=0.5)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
@@ -4571,7 +4571,7 @@ class TestAdjustContrast:
     def test_functional_signature(self, kernel, input_type):
         check_functional_kernel_signature_match(F.adjust_contrast, kernel=kernel, input_type=input_type)
 
-    def test_functional_error(self):
+    def test_functional_error(self) -> None:
         with pytest.raises(TypeError, match="permitted channel values are 1 or 3"):
             F.adjust_contrast(make_image(color_space="RGBA"), contrast_factor=0.5)
 
@@ -4594,7 +4594,7 @@ class TestAdjustGamma:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.adjust_gamma_image, make_image(dtype=dtype, device=device), gamma=0.5)
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.adjust_gamma_video, make_video(), gamma=0.5)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
@@ -4613,7 +4613,7 @@ class TestAdjustGamma:
     def test_functional_signature(self, kernel, input_type):
         check_functional_kernel_signature_match(F.adjust_gamma, kernel=kernel, input_type=input_type)
 
-    def test_functional_error(self):
+    def test_functional_error(self) -> None:
         with pytest.raises(ValueError, match="Gamma should be a non-negative real number"):
             F.adjust_gamma(make_image(), gamma=-1)
 
@@ -4634,7 +4634,7 @@ class TestAdjustHue:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.adjust_hue_image, make_image(dtype=dtype, device=device), hue_factor=0.25)
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.adjust_hue_video, make_video(), hue_factor=0.25)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
@@ -4653,7 +4653,7 @@ class TestAdjustHue:
     def test_functional_signature(self, kernel, input_type):
         check_functional_kernel_signature_match(F.adjust_hue, kernel=kernel, input_type=input_type)
 
-    def test_functional_error(self):
+    def test_functional_error(self) -> None:
         with pytest.raises(TypeError, match="permitted channel values are 1 or 3"):
             F.adjust_hue(make_image(color_space="RGBA"), hue_factor=0.25)
 
@@ -4678,7 +4678,7 @@ class TestAdjustSaturation:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.adjust_saturation_image, make_image(dtype=dtype, device=device), saturation_factor=0.5)
 
-    def test_kernel_video(self):
+    def test_kernel_video(self) -> None:
         check_kernel(F.adjust_saturation_video, make_video(), saturation_factor=0.5)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
@@ -4697,7 +4697,7 @@ class TestAdjustSaturation:
     def test_functional_signature(self, kernel, input_type):
         check_functional_kernel_signature_match(F.adjust_saturation, kernel=kernel, input_type=input_type)
 
-    def test_functional_error(self):
+    def test_functional_error(self) -> None:
         with pytest.raises(TypeError, match="permitted channel values are 1 or 3"):
             F.adjust_saturation(make_image(color_space="RGBA"), saturation_factor=0.5)
 
@@ -4857,7 +4857,7 @@ class TestColorJitter:
             make_input(dtype=dtype, device=device),
         )
 
-    def test_transform_noop(self):
+    def test_transform_noop(self) -> None:
         input = make_image()
         input_version = input._version
 
@@ -4868,7 +4868,7 @@ class TestColorJitter:
         assert output.data_ptr() == input.data_ptr()
         assert output._version == input_version
 
-    def test_transform_error(self):
+    def test_transform_error(self) -> None:
         with pytest.raises(ValueError, match="must be non negative"):
             transforms.ColorJitter(brightness=-1)
 
@@ -4975,7 +4975,7 @@ class TestRandomZoomOut:
     def test_transform(self, make_input):
         check_transform(transforms.RandomZoomOut(p=1), make_input())
 
-    def test_transform_error(self):
+    def test_transform_error(self) -> None:
         for side_range in [None, 1, [1, 2, 3]]:
             with pytest.raises(
                 ValueError if isinstance(side_range, list) else TypeError, match="should be a sequence of length 2"
@@ -5063,7 +5063,7 @@ class TestScaleJitter:
 
         check_transform(transforms.ScaleJitter(self.TARGET_SIZE), make_input(self.INPUT_SIZE, device=device))
 
-    def test__get_params(self):
+    def test__get_params(self) -> None:
         input_size = self.INPUT_SIZE
         target_size = self.TARGET_SIZE
         scale_range = (0.5, 1.5)
@@ -5106,7 +5106,7 @@ class TestLinearTransform:
             check_sample_input=self._sample_input_adapter,
         )
 
-    def test_transform_error(self):
+    def test_transform_error(self) -> None:
         with pytest.raises(ValueError, match="transformation_matrix should be square"):
             transforms.LinearTransformation(transformation_matrix=torch.rand(2, 3), mean_vector=torch.rand(2))
 
@@ -5130,7 +5130,7 @@ class TestLinearTransform:
             transform(F.to_pil_image(image))
 
     @needs_cuda
-    def test_transform_error_cuda(self):
+    def test_transform_error_cuda(self) -> None:
         for matrix_device, vector_device in [("cuda", "cpu"), ("cpu", "cuda")]:
             with pytest.raises(ValueError, match="Input tensors should be on the same device"):
                 transforms.LinearTransformation(
@@ -5167,7 +5167,7 @@ class TestToImage:
         if isinstance(input, torch.Tensor):
             assert output.data_ptr() == input.data_ptr()
 
-    def test_functional_error(self):
+    def test_functional_error(self) -> None:
         with pytest.raises(TypeError, match="Input can either be a pure Tensor, a numpy array, or a PIL image"):
             F.to_image(object())
 
@@ -5185,7 +5185,7 @@ class TestToPILImage:
         input_size = list(input.shape[:2]) if isinstance(input, np.ndarray) else F.get_size(input)
         assert F.get_size(output) == input_size
 
-    def test_functional_error(self):
+    def test_functional_error(self) -> None:
         with pytest.raises(TypeError, match="pic should be Tensor or ndarray"):
             F.to_pil_image(object())
 
@@ -5221,7 +5221,7 @@ class TestPILToTensor:
         assert isinstance(output, torch.Tensor) and not isinstance(output, tv_tensors.TVTensor)
         assert F.get_size(output) == F.get_size(input)
 
-    def test_functional_error(self):
+    def test_functional_error(self) -> None:
         with pytest.raises(TypeError, match="pic should be PIL Image"):
             F.pil_to_tensor(object())
 
@@ -5375,7 +5375,7 @@ class TestRandomIoUCrop:
         output = transform(sample)
         torch.testing.assert_close(output, sample)
 
-    def test_forward_assertion(self):
+    def test_forward_assertion(self) -> None:
         transform = transforms.RandomIoUCrop()
         with pytest.raises(
             TypeError,
@@ -5433,7 +5433,7 @@ class TestRandomShortestSize:
 
 
 class TestRandomResize:
-    def test__get_params(self):
+    def test__get_params(self) -> None:
         min_size = 3
         max_size = 6
 
@@ -5710,7 +5710,7 @@ class TestSanitizeBoundingBoxes:
             # This works because we conveniently set labels to arange(num_boxes)
             assert out_labels.tolist() == valid_indices
 
-    def test_no_label(self):
+    def test_no_label(self) -> None:
         # Non-regression test for https://github.com/pytorch/vision/issues/7878
 
         img = make_image()
@@ -5723,7 +5723,7 @@ class TestSanitizeBoundingBoxes:
         assert isinstance(out_img, tv_tensors.Image)
         assert isinstance(out_boxes, tv_tensors.BoundingBoxes)
 
-    def test_errors(self):
+    def test_errors(self) -> None:
         good_bbox = tv_tensors.BoundingBoxes(
             [[0, 0, 10, 10]],
             format=tv_tensors.BoundingBoxFormat.XYXY,

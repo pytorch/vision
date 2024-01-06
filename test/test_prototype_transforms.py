@@ -257,7 +257,7 @@ class TestFixedSizeCrop:
 
 
 class TestLabelToOneHot:
-    def test__transform(self):
+    def test__transform(self) -> None:
         categories = ["apple", "pear", "pineapple"]
         labels = tv_tensors.Label(torch.tensor([0, 1, 2, 1]), categories=categories)
         transform = transforms.LabelToOneHot()
@@ -305,7 +305,7 @@ class TestPermuteDimensions:
                 assert transformed_value is value
 
     @pytest.mark.filterwarnings("error")
-    def test_plain_tensor_call(self):
+    def test_plain_tensor_call(self) -> None:
         tensor = torch.empty((2, 3, 4))
         transform = transforms.PermuteDimensions(dims=(1, 2, 0))
 
@@ -350,7 +350,7 @@ class TestTransposeDimensions:
                 assert transformed_value is value
 
     @pytest.mark.filterwarnings("error")
-    def test_plain_tensor_call(self):
+    def test_plain_tensor_call(self) -> None:
         tensor = torch.empty((2, 3, 4))
         transform = transforms.TransposeDimensions(dims=(0, 2))
 

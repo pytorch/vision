@@ -1214,7 +1214,7 @@ class TestVideoReader:
         )
         # FUTURE: check value of video / audio frames
 
-    def test_invalid_file(self):
+    def test_invalid_file(self) -> None:
         set_video_backend("video_reader")
         with pytest.raises(RuntimeError):
             io.read_video("foo.mp4")

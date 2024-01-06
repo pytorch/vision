@@ -153,7 +153,7 @@ class TestConvertImageDtype:
 
 @pytest.mark.skipif(accimage is None, reason="accimage not available")
 class TestAccImage:
-    def test_accimage_to_tensor(self):
+    def test_accimage_to_tensor(self) -> None:
         trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert("RGB"))
@@ -161,7 +161,7 @@ class TestAccImage:
 
         torch.testing.assert_close(output, expected_output)
 
-    def test_accimage_pil_to_tensor(self):
+    def test_accimage_pil_to_tensor(self) -> None:
         trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert("RGB"))
@@ -170,7 +170,7 @@ class TestAccImage:
         assert expected_output.size() == output.size()
         torch.testing.assert_close(output, expected_output)
 
-    def test_accimage_resize(self):
+    def test_accimage_resize(self) -> None:
         trans = transforms.Compose(
             [
                 transforms.Resize(256, interpolation=Image.LINEAR),
@@ -191,7 +191,7 @@ class TestAccImage:
         # note the high absolute tolerance
         torch.testing.assert_close(output.numpy(), expected_output.numpy(), rtol=1e-5, atol=5e-2)
 
-    def test_accimage_crop(self):
+    def test_accimage_crop(self) -> None:
         trans = transforms.Compose(
             [transforms.CenterCrop(256), transforms.PILToTensor(), transforms.ConvertImageDtype(dtype=torch.float)]
         )
@@ -234,7 +234,7 @@ class TestToTensor:
         output = trans(img)
         torch.testing.assert_close(input_data, output, check_dtype=False)
 
-    def test_to_tensor_errors(self):
+    def test_to_tensor_errors(self) -> None:
         height, width = 4, 4
         trans = transforms.ToTensor()
         np_rng = np.random.RandomState(0)
@@ -292,7 +292,7 @@ class TestToTensor:
         output = trans(img).view(torch.uint8).bool().to(torch.uint8)
         torch.testing.assert_close(input_data, output)
 
-    def test_pil_to_tensor_errors(self):
+    def test_pil_to_tensor_errors(self) -> None:
         height, width = 4, 4
         trans = transforms.PILToTensor()
         np_rng = np.random.RandomState(0)
@@ -485,7 +485,7 @@ class TestPad:
         torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill), rtol=0.0, atol=0.0)
         pytest.raises(ValueError, transforms.Pad(padding, fill=(1, 2)), transforms.ToPILImage()(img))
 
-    def test_pad_with_tuple_of_pad_values(self):
+    def test_pad_with_tuple_of_pad_values(self) -> None:
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
         img = transforms.ToPILImage()(torch.ones(3, height, width))
@@ -502,7 +502,7 @@ class TestPad:
         # Checking if Padding can be printed as string
         transforms.Pad(padding).__repr__()
 
-    def test_pad_with_non_constant_padding_modes(self):
+    def test_pad_with_non_constant_padding_modes(self) -> None:
         """Unit tests for edge, reflect, symmetric padding"""
         img = torch.zeros(3, 27, 27).byte()
         img[:, :, 0] = 1  # Constant value added to leftmost edge
@@ -543,7 +543,7 @@ class TestPad:
         assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8))
         assert transforms.PILToTensor()(symmetric_padded_img_neg).size() == (3, 28, 31)
 
-    def test_pad_raises_with_invalid_pad_sequence_len(self):
+    def test_pad_raises_with_invalid_pad_sequence_len(self) -> None:
         with pytest.raises(ValueError):
             transforms.Pad(())
 
@@ -553,7 +553,7 @@ class TestPad:
         with pytest.raises(ValueError):
             transforms.Pad((1, 2, 3, 4, 5))
 
-    def test_pad_with_mode_F_images(self):
+    def test_pad_with_mode_F_images(self) -> None:
         pad = 2
         transform = transforms.Pad(pad)
 
@@ -647,7 +647,7 @@ class TestToPil:
         assert img.mode == expected_mode
         torch.testing.assert_close(expected_output, to_tensor(img).numpy())
 
-    def test_1_channel_float_tensor_to_pil_image(self):
+    def test_1_channel_float_tensor_to_pil_image(self) -> None:
         img_data = torch.Tensor(1, 4, 4).uniform_()
         # 'F' mode for torch.FloatTensor
         img_F_mode = transforms.ToPILImage(mode="F")(img_data)
@@ -690,7 +690,7 @@ class TestToPil:
         for i in range(2):
             torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]))
 
-    def test_2_channel_ndarray_to_pil_image_error(self):
+    def test_2_channel_ndarray_to_pil_image_error(self) -> None:
         img_data = torch.ByteTensor(4, 4, 2).random_(0, 255).numpy()
         transforms.ToPILImage().__repr__()
 
@@ -717,7 +717,7 @@ class TestToPil:
         for i in range(2):
             torch.testing.assert_close(expected_output[i].numpy(), F.to_tensor(split[i]).squeeze(0).numpy())
 
-    def test_2_channel_tensor_to_pil_image_error(self):
+    def test_2_channel_tensor_to_pil_image_error(self) -> None:
         img_data = torch.Tensor(2, 4, 4).uniform_()
 
         # should raise if we try a mode for 4 or 1 or 3 channel images
@@ -771,7 +771,7 @@ class TestToPil:
         for i in range(3):
             torch.testing.assert_close(expected_output[i].numpy(), F.to_tensor(split[i]).squeeze(0).numpy())
 
-    def test_3_channel_tensor_to_pil_image_error(self):
+    def test_3_channel_tensor_to_pil_image_error(self) -> None:
         img_data = torch.Tensor(3, 4, 4).uniform_()
         error_message_3d = r"Only modes \['RGB', 'YCbCr', 'HSV'\] are supported for 3D inputs"
         # should raise if we try a mode for 4 or 1 or 2 channel images
@@ -799,7 +799,7 @@ class TestToPil:
         for i in range(3):
             torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]))
 
-    def test_3_channel_ndarray_to_pil_image_error(self):
+    def test_3_channel_ndarray_to_pil_image_error(self) -> None:
         img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
 
         # Checking if ToPILImage can be printed as string
@@ -830,7 +830,7 @@ class TestToPil:
         for i in range(4):
             torch.testing.assert_close(expected_output[i].numpy(), F.to_tensor(split[i]).squeeze(0).numpy())
 
-    def test_4_channel_tensor_to_pil_image_error(self):
+    def test_4_channel_tensor_to_pil_image_error(self) -> None:
         img_data = torch.Tensor(4, 4, 4).uniform_()
 
         error_message_4d = r"Only modes \['RGBA', 'CMYK', 'RGBX'\] are supported for 4D inputs"
@@ -856,7 +856,7 @@ class TestToPil:
         for i in range(4):
             torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]))
 
-    def test_4_channel_ndarray_to_pil_image_error(self):
+    def test_4_channel_ndarray_to_pil_image_error(self) -> None:
         img_data = torch.ByteTensor(4, 4, 4).random_(0, 255).numpy()
 
         error_message_4d = r"Only modes \['RGBA', 'CMYK', 'RGBX'\] are supported for 4D inputs"
@@ -868,7 +868,7 @@ class TestToPil:
         with pytest.raises(ValueError, match=error_message_4d):
             transforms.ToPILImage(mode="LA")(img_data)
 
-    def test_ndarray_bad_types_to_pil_image(self):
+    def test_ndarray_bad_types_to_pil_image(self) -> None:
         trans = transforms.ToPILImage()
         reg_msg = r"Input type \w+ is not supported"
         with pytest.raises(TypeError, match=reg_msg):
@@ -883,7 +883,7 @@ class TestToPil:
         with pytest.raises(ValueError, match=r"pic should not have > 4 channels. Got \d+ channels."):
             transforms.ToPILImage()(np.ones([4, 4, 6]))
 
-    def test_tensor_bad_types_to_pil_image(self):
+    def test_tensor_bad_types_to_pil_image(self) -> None:
         with pytest.raises(ValueError, match=r"pic should be 2/3 dimensional. Got \d+ dimensions."):
             transforms.ToPILImage()(torch.ones(1, 3, 4, 4))
         with pytest.raises(ValueError, match=r"pic should not have > 4 channels. Got \d+ channels."):

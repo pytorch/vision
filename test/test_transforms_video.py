@@ -139,7 +139,7 @@ class TestVideoTransforms:
 
         transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True).__repr__()
 
-    def test_to_tensor_video(self):
+    def test_to_tensor_video(self) -> None:
         numFrames, height, width = 64, 4, 4
         trans = transforms.ToTensorVideo()
 

@@ -9,7 +9,7 @@ from torchvision.datasets import FakeData
 
 
 class Tester(unittest.TestCase):
-    def test_pksampler(self):
+    def test_pksampler(self) -> None:
         p, k = 16, 4
 
         # Ensure sampler does not allow p to be greater than num_classes

@@ -517,12 +517,12 @@ class DatasetTestCase(unittest.TestCase):
                     mocks[patcher.target] = stack.enter_context(patcher)
             yield mocks
 
-    def test_not_found_or_corrupted(self):
+    def test_not_found_or_corrupted(self) -> None:
         with pytest.raises((FileNotFoundError, RuntimeError)):
             with self.create_dataset(inject_fake_data=False):
                 pass
 
-    def test_smoke(self):
+    def test_smoke(self) -> None:
         with self.create_dataset() as (dataset, _):
             assert isinstance(dataset, torchvision.datasets.VisionDataset)
 
@@ -684,7 +684,7 @@ class VideoDatasetTestCase(DatasetTestCase):
 
         return wrapper
 
-    def test_output_format(self):
+    def test_output_format(self) -> None:
         for output_format in ["TCHW", "THWC"]:
             with self.create_dataset(output_format=output_format) as (dataset, _):
                 for video, *_ in dataset:
