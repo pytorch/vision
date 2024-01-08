@@ -180,7 +180,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
 
     .. note::
         For converting a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.BoundingBoxes` object
-        between different :class:`~torchvision.tv_tensors.BoundingBoxFormat`s,
+        between different formats,
         consider using :func:`~torchvision.transforms.v2.functional.convert_bounding_box_format` instead.
         Or see the corresponding transform :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat`.
 
