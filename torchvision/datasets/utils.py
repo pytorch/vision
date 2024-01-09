@@ -362,7 +362,7 @@ def _decompress(
     from_path: Union[str, pathlib.Path],
     to_path: Optional[Union[str, pathlib.Path]] = None,
     remove_finished: bool = False,
-) -> str:
+) -> pathlib.Path:
     r"""Decompress a file.
 
     The compression is automatically detected from the file name.
@@ -391,14 +391,14 @@ def _decompress(
     if remove_finished:
         os.remove(from_path)
 
-    return to_path
+    return pathlib.Path(to_path)
 
 
 def extract_archive(
     from_path: Union[str, pathlib.Path],
     to_path: Optional[Union[str, pathlib.Path]] = None,
     remove_finished: bool = False,
-) -> Union[str, pathlib.Path]:
+) -> pathlib.Path:
     """Extract an archive.
 
     The archive type and a possible compression is automatically detected from the file name. If the file is compressed
@@ -431,7 +431,7 @@ def extract_archive(
     if remove_finished:
         os.remove(from_path)
 
-    return to_path
+    return pathlib.Path(to_path)
 
 
 def download_and_extract_archive(
