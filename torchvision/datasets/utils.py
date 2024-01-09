@@ -281,7 +281,9 @@ def download_file_from_google_drive(
         )
 
 
-def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> None:
+def _extract_tar(
+    from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
+) -> None:
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
         tar.extractall(to_path)
 
@@ -292,7 +294,9 @@ _ZIP_COMPRESSION_MAP: Dict[str, int] = {
 }
 
 
-def _extract_zip(from_path: str, to_path: str, compression: Optional[str]) -> None:
+def _extract_zip(
+    from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
+) -> None:
     with zipfile.ZipFile(
         from_path, "r", compression=_ZIP_COMPRESSION_MAP[compression] if compression else zipfile.ZIP_STORED
     ) as zip:
