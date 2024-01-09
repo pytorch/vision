@@ -395,8 +395,10 @@ def _decompress(
 
 
 def extract_archive(
-    from_path: Union[str, pathlib.Path], to_path: Optional[str] = None, remove_finished: bool = False
-) -> str:
+    from_path: Union[str, pathlib.Path],
+    to_path: Optional[Union[str, pathlib.Path]] = None,
+    remove_finished: bool = False,
+) -> Union[str, pathlib.Path]:
     """Extract an archive.
 
     The archive type and a possible compression is automatically detected from the file name. If the file is compressed
