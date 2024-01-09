@@ -30,7 +30,7 @@ USER_AGENT = "pytorch/vision"
 
 def _save_response_content(
     content: Iterator[bytes],
-    destination: str,
+    destination: Union[str, pathlib.Path],
     length: Optional[int] = None,
 ) -> None:
     with open(destination, "wb") as fh, tqdm(total=length) as pbar:
@@ -43,12 +43,12 @@ def _save_response_content(
             pbar.update(len(chunk))
 
 
-def _urlretrieve(url: str, filename: str, chunk_size: int = 1024 * 32) -> None:
+def _urlretrieve(url: str, filename: Union[str, pathlib.Path], chunk_size: int = 1024 * 32) -> None:
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
         _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
 
 
-def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
+def calculate_md5(fpath: Union[str, pathlib.Path], chunk_size: int = 1024 * 1024) -> str:
     # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
     # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
     # it torchvision.datasets is unusable in these environments since we perform a MD5 check everywhere.
@@ -62,11 +62,11 @@ def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
     return md5.hexdigest()
 
 
-def check_md5(fpath: str, md5: str, **kwargs: Any) -> bool:
+def check_md5(fpath: Union[str, pathlib.Path], md5: str, **kwargs: Any) -> bool:
     return md5 == calculate_md5(fpath, **kwargs)
 
 
-def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
+def check_integrity(fpath: Union[str, pathlib.Path], md5: Optional[str] = None) -> bool:
     if not os.path.isfile(fpath):
         return False
     if md5 is None:
@@ -106,7 +106,7 @@ def _get_google_drive_file_id(url: str) -> Optional[str]:
 def download_url(
     url: str,
     root: Union[str, pathlib.Path],
-    filename: Optional[str] = None,
+    filename: Optional[Union[str, pathlib.Path]] = None,
     md5: Optional[str] = None,
     max_redirect_hops: int = 3,
 ) -> None:
@@ -159,7 +159,7 @@ def download_url(
         raise RuntimeError("File not found or corrupted.")
 
 
-def list_dir(root: str, prefix: bool = False) -> List[str]:
+def list_dir(root: Union[str, pathlib.Path], prefix: bool = False) -> List[str]:
     """List all directories at a given root
 
     Args:
@@ -174,7 +174,7 @@ def list_dir(root: str, prefix: bool = False) -> List[str]:
     return directories
 
 
-def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
+def list_files(root: Union[str, pathlib.Path], suffix: str, prefix: bool = False) -> List[str]:
     """List all files ending with a suffix at a given root
 
     Args:
@@ -312,7 +312,7 @@ _FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
 }
 
 
-def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
+def _detect_file_type(file: Union[str, pathlib.Path]) -> Tuple[str, Optional[str], Optional[str]]:
     """Detect the archive type and/or compression of a file.
 
     Args:
@@ -355,7 +355,11 @@ def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
     raise RuntimeError(f"Unknown compression or archive type: '{suffix}'.\nKnown suffixes are: '{valid_suffixes}'.")
 
 
-def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+def _decompress(
+    from_path: Union[str, pathlib.Path],
+    to_path: Optional[Union[str, pathlib.Path]] = None,
+    remove_finished: bool = False,
+) -> str:
     r"""Decompress a file.
 
     The compression is automatically detected from the file name.
@@ -373,7 +377,7 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
         raise RuntimeError(f"Couldn't detect a compression from suffix {suffix}.")
 
     if to_path is None:
-        to_path = from_path.replace(suffix, archive_type if archive_type is not None else "")
+        to_path = pathlib.Path(os.fspath(from_path).replace(suffix, archive_type if archive_type is not None else ""))
 
     # We don't need to check for a missing key here, since this was already done in _detect_file_type()
     compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
@@ -387,7 +391,9 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
     return to_path
 
 
-def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+def extract_archive(
+    from_path: Union[str, pathlib.Path], to_path: Optional[str] = None, remove_finished: bool = False
+) -> str:
     """Extract an archive.
 
     The archive type and a possible compression is automatically detected from the file name. If the file is compressed
@@ -425,9 +431,9 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
 
 def download_and_extract_archive(
     url: str,
-    download_root: str,
-    extract_root: Optional[str] = None,
-    filename: Optional[str] = None,
+    download_root: Union[str, pathlib.Path],
+    extract_root: Optional[Union[str, pathlib.Path]] = None,
+    filename: Optional[Union[str, pathlib.Path]] = None,
     md5: Optional[str] = None,
     remove_finished: bool = False,
 ) -> None:
@@ -479,7 +485,7 @@ def verify_str_arg(
     return value
 
 
-def _read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
+def _read_pfm(file_name: Union[str, pathlib.Path], slice_channels: int = 2) -> np.ndarray:
     """Read file in .pfm format. Might contain either 1 or 3 channels of data.
 
     Args:
