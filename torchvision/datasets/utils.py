@@ -208,7 +208,10 @@ def _extract_gdrive_api_response(response, chunk_size: int = 32 * 1024) -> Tuple
 
 
 def download_file_from_google_drive(
-    file_id: str, root: Union[str, pathlib.Path], filename: Optional[str] = None, md5: Optional[str] = None
+    file_id: str,
+    root: Union[str, pathlib.Path],
+    filename: Optional[Union[str, pathlib.Path]] = None,
+    md5: Optional[str] = None,
 ):
     """Download a Google Drive file from  and place it in root.
 
