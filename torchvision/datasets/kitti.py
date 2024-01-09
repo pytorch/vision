@@ -66,7 +66,6 @@ class Kitti(VisionDataset):
         )
         self.images = []
         self.targets = []
-        self.root = root
         self.train = train
         self._location = "training" if self.train else "testing"
 

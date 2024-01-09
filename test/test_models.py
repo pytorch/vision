@@ -149,7 +149,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         if binary_size > MAX_PICKLE_SIZE:
             raise RuntimeError(f"The output for {filename}, is larger than 50kb - got {binary_size}kb")
     else:
-        expected = torch.load(expected_file)
+        expected = torch.load(expected_file, weights_only=True)
         rtol = rtol or prec  # keeping prec param for legacy reason, but could be removed ideally
         atol = atol or prec
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False, check_device=False)
@@ -747,7 +747,7 @@ def test_segmentation_model(model_fn, dev):
             # so instead of validating the probability scores, check that the class
             # predictions match.
             expected_file = _get_expected_file(model_name)
-            expected = torch.load(expected_file)
+            expected = torch.load(expected_file, weights_only=True)
             torch.testing.assert_close(
                 out.argmax(dim=1), expected.argmax(dim=1), rtol=prec, atol=prec, check_device=False
             )
@@ -847,7 +847,7 @@ def test_detection_model(model_fn, dev):
             # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
             # scores.
             expected_file = _get_expected_file(model_name)
-            expected = torch.load(expected_file)
+            expected = torch.load(expected_file, weights_only=True)
             torch.testing.assert_close(
                 output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec, check_device=False, check_dtype=False
             )
