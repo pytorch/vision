@@ -303,7 +303,7 @@ def _extract_zip(
         zip.extractall(to_path)
 
 
-_ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
+_ARCHIVE_EXTRACTORS: Dict[str, Callable[[Union[str, pathlib.Path], Union[str, pathlib.Path], Optional[str]], None]] = {
     ".tar": _extract_tar,
     ".zip": _extract_zip,
 }
