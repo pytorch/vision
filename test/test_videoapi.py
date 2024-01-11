@@ -248,7 +248,7 @@ class TestVideoApi:
             ub = duration / 2 + 1 / md[stream]["fps"][0]
             assert (lb <= frame["pts"]) and (ub >= frame["pts"])
 
-    def test_fate_suite(self) -> None:
+    def test_fate_suite(self):
         # TODO: remove the try-except statement once the connectivity issues are resolved
         try:
             video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)

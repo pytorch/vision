@@ -144,7 +144,7 @@ class TestRotate:
         center = (20, 22)
         _test_fn_on_batch(batch_tensors, F.rotate, angle=32, interpolation=NEAREST, expand=True, center=center)
 
-    def test_rotate_interpolation_type(self) -> None:
+    def test_rotate_interpolation_type(self):
         tensor, _ = _create_data(26, 26)
         res1 = F.rotate(tensor, 45, interpolation=PIL.Image.BILINEAR)
         res2 = F.rotate(tensor, 45, interpolation=BILINEAR)

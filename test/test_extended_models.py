@@ -451,7 +451,7 @@ class TestHandleLegacyInterface:
         with pytest.warns(UserWarning, match=f"weights={self.ModelWeights.Sentinel if pretrained else None}"):
             builder(*args, **kwargs)
 
-    def test_multi_params(self) -> None:
+    def test_multi_params(self):
         weights_params = ("weights", "weights_other")
         pretrained_params = [param.replace("weights", "pretrained") for param in weights_params]
 
@@ -468,7 +468,7 @@ class TestHandleLegacyInterface:
             with pytest.warns(UserWarning, match="deprecated"):
                 builder(**{pretrained_param: True})
 
-    def test_default_callable(self) -> None:
+    def test_default_callable(self):
         @handle_legacy_interface(
             weights=(
                 "pretrained",

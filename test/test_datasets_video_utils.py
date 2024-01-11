@@ -6,7 +6,7 @@ from torchvision.datasets.video_utils import unfold, VideoClips
 
 
 class TestVideo:
-    def test_unfold(self) -> None:
+    def test_unfold(self):
         a = torch.arange(7)
 
         r = unfold(a, 3, 3, 1)
@@ -67,7 +67,7 @@ class TestVideo:
                 assert info["video_fps"] == fps
                 # TODO add tests checking that the content is right
 
-    def test_compute_clips_for_video(self) -> None:
+    def test_compute_clips_for_video(self):
         video_pts = torch.arange(30)
         # case 1: single clip
         num_frames = 13

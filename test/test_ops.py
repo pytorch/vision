@@ -35,7 +35,7 @@ class DeterministicGuard:
         self.deterministic = deterministic
         self.warn_only = warn_only
 
-    def __enter__(self) -> None:
+    def __enter__(self):
         self.deterministic_restore = torch.are_deterministic_algorithms_enabled()
         self.warn_only_restore = torch.is_deterministic_algorithms_warn_only_enabled()
         torch.use_deterministic_algorithms(self.deterministic, warn_only=self.warn_only)
@@ -312,10 +312,10 @@ class TestRoiPool(RoIOpTester):
                         y[roi_idx, :, i, j] = bin_x.reshape(n_channels, -1).max(dim=1)[0]
         return y
 
-    def test_boxes_shape(self) -> None:
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
 
-    def test_jit_boxes_list(self) -> None:
+    def test_jit_boxes_list(self):
         model = PoolWrapper(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
         self._helper_jit_boxes_list(model)
 
@@ -367,7 +367,7 @@ class TestPSRoIPool(RoIOpTester):
                             y[roi_idx, c_out, i, j] = t / area
         return y
 
-    def test_boxes_shape(self) -> None:
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_pool)
 
 
@@ -596,7 +596,7 @@ class TestRoIAlign(RoIOpTester):
             t_scale = torch.full_like(abs_diff, fill_value=scale)
             torch.testing.assert_close(abs_diff, t_scale, rtol=1e-5, atol=1e-5)
 
-    def test_qroi_align_multiple_images(self) -> None:
+    def test_qroi_align_multiple_images(self):
         dtype = torch.float
         x = torch.randint(50, 100, size=(2, 3, 10, 10)).to(dtype)
         qx = torch.quantize_per_tensor(x, scale=1, zero_point=0, dtype=torch.qint8)
@@ -605,7 +605,7 @@ class TestRoIAlign(RoIOpTester):
         with pytest.raises(RuntimeError, match="Only one image per batch is allowed"):
             ops.roi_align(qx, qrois, output_size=5)
 
-    def test_jit_boxes_list(self) -> None:
+    def test_jit_boxes_list(self):
         model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
         self._helper_jit_boxes_list(model)
 
@@ -672,7 +672,7 @@ class TestPSRoIAlign(RoIOpTester):
                         out_data[r, c_out, i, j] = val
         return out_data
 
-    def test_boxes_shape(self) -> None:
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
@@ -683,7 +683,7 @@ class TestMultiScaleRoIAlign:
         obj = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
         return MultiScaleRoIAlignModuleWrapper(obj) if wrap else obj
 
-    def test_msroialign_repr(self) -> None:
+    def test_msroialign_repr(self):
         fmap_names = ["0"]
         output_size = (7, 7)
         sampling_ratio = 2
@@ -760,7 +760,7 @@ class TestNMS:
         keep = ops.nms(boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, msg=err_msg.format(iou))
 
-    def test_nms_input_errors(self) -> None:
+    def test_nms_input_errors(self):
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(4), torch.rand(3), 0.5)
         with pytest.raises(RuntimeError):
@@ -1162,7 +1162,7 @@ class TestDeformConv:
         with torch.cuda.amp.autocast():
             self.test_forward(torch.device("cuda"), contiguous=False, batch_sz=batch_sz, dtype=dtype)
 
-    def test_forward_scriptability(self) -> None:
+    def test_forward_scriptability(self):
         # Non-regression test for https://github.com/pytorch/vision/issues/4078
         torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
@@ -1177,7 +1177,7 @@ optests.generate_opcheck_tests(
 
 
 class TestFrozenBNT:
-    def test_frozenbatchnorm2d_repr(self) -> None:
+    def test_frozenbatchnorm2d_repr(self):
         num_features = 32
         eps = 1e-5
         t = ops.misc.FrozenBatchNorm2d(num_features, eps=eps)
@@ -1242,7 +1242,7 @@ class TestBoxConversionToRoi:
 
 
 class TestBoxConvert:
-    def test_bbox_same(self) -> None:
+    def test_bbox_same(self):
         box_tensor = torch.tensor(
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float
         )
@@ -1254,7 +1254,7 @@ class TestBoxConvert:
         assert_equal(ops.box_convert(box_tensor, in_fmt="xywh", out_fmt="xywh"), exp_xyxy)
         assert_equal(ops.box_convert(box_tensor, in_fmt="cxcywh", out_fmt="cxcywh"), exp_xyxy)
 
-    def test_bbox_xyxy_xywh(self) -> None:
+    def test_bbox_xyxy_xywh(self):
         # Simple test convert boxes to xywh and back. Make sure they are same.
         # box_tensor is in x1 y1 x2 y2 format.
         box_tensor = torch.tensor(
@@ -1270,7 +1270,7 @@ class TestBoxConvert:
         box_xyxy = ops.box_convert(box_xywh, in_fmt="xywh", out_fmt="xyxy")
         assert_equal(box_xyxy, box_tensor)
 
-    def test_bbox_xyxy_cxcywh(self) -> None:
+    def test_bbox_xyxy_cxcywh(self):
         # Simple test convert boxes to cxcywh and back. Make sure they are same.
         # box_tensor is in x1 y1 x2 y2 format.
         box_tensor = torch.tensor(
@@ -1288,7 +1288,7 @@ class TestBoxConvert:
         box_xyxy = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xyxy")
         assert_equal(box_xyxy, box_tensor)
 
-    def test_bbox_xywh_cxcywh(self) -> None:
+    def test_bbox_xywh_cxcywh(self):
         box_tensor = torch.tensor(
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float
         )
@@ -1315,7 +1315,7 @@ class TestBoxConvert:
         with pytest.raises(ValueError):
             ops.box_convert(box_tensor, inv_infmt, inv_outfmt)
 
-    def test_bbox_convert_jit(self) -> None:
+    def test_bbox_convert_jit(self):
         box_tensor = torch.tensor(
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float
         )
@@ -1348,7 +1348,7 @@ class TestBoxArea:
         expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=dtype)
         self.area_check(box_tensor, expected)
 
-    def test_float16_box(self) -> None:
+    def test_float16_box(self):
         box_tensor = torch.tensor(
             [[2.825, 1.8625, 3.90, 4.85], [2.825, 4.875, 19.20, 5.10], [2.925, 1.80, 8.90, 4.90]], dtype=torch.float16
         )
@@ -1356,7 +1356,7 @@ class TestBoxArea:
         expected = torch.tensor([3.2170, 3.7108, 18.5071], dtype=torch.float16)
         self.area_check(box_tensor, expected, atol=0.01)
 
-    def test_box_area_jit(self) -> None:
+    def test_box_area_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
         expected = ops.box_area(box_tensor)
         scripted_fn = torch.jit.script(ops.box_area)
@@ -1431,10 +1431,10 @@ class TestBoxIou(TestIouBase):
     def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
         self._run_test(ops.box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
-    def test_iou_jit(self) -> None:
+    def test_iou_jit(self):
         self._run_jit_test(ops.box_iou, INT_BOXES)
 
-    def test_iou_cartesian(self) -> None:
+    def test_iou_cartesian(self):
         self._run_cartesian_test(ops.box_iou)
 
 
@@ -1453,10 +1453,10 @@ class TestGeneralizedBoxIou(TestIouBase):
     def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
         self._run_test(ops.generalized_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
-    def test_iou_jit(self) -> None:
+    def test_iou_jit(self):
         self._run_jit_test(ops.generalized_box_iou, INT_BOXES)
 
-    def test_iou_cartesian(self) -> None:
+    def test_iou_cartesian(self):
         self._run_cartesian_test(ops.generalized_box_iou)
 
 
@@ -1480,10 +1480,10 @@ class TestDistanceBoxIoU(TestIouBase):
     def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
         self._run_test(ops.distance_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
-    def test_iou_jit(self) -> None:
+    def test_iou_jit(self):
         self._run_jit_test(ops.distance_box_iou, INT_BOXES)
 
-    def test_iou_cartesian(self) -> None:
+    def test_iou_cartesian(self):
         self._run_cartesian_test(ops.distance_box_iou)
 
 
@@ -1507,10 +1507,10 @@ class TestCompleteBoxIou(TestIouBase):
     def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
         self._run_test(ops.complete_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
-    def test_iou_jit(self) -> None:
+    def test_iou_jit(self):
         self._run_jit_test(ops.complete_box_iou, INT_BOXES)
 
-    def test_iou_cartesian(self) -> None:
+    def test_iou_cartesian(self):
         self._run_cartesian_test(ops.complete_box_iou)
 
 

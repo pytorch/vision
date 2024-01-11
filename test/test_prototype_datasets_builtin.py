@@ -111,7 +111,7 @@ class TestCommon:
         assert len(list(dataset)) == mock_info["num_samples"]
 
     @pytest.fixture
-    def log_session_streams(self) -> None:
+    def log_session_streams(self):
         debug_unclosed_streams = StreamWrapper.debug_unclosed_streams
         try:
             StreamWrapper.debug_unclosed_streams = True

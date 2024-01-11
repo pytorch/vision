@@ -8,7 +8,7 @@ from torchvision.models.detection.transform import GeneralizedRCNNTransform
 
 
 class TestModelsDetectionUtils:
-    def test_balanced_positive_negative_sampler(self) -> None:
+    def test_balanced_positive_negative_sampler(self):
         sampler = _utils.BalancedPositiveNegativeSampler(4, 0.25)
         # keep all 6 negatives first, then add 3 positives, last two are ignore
         matched_idxs = [torch.tensor([0, 0, 0, 0, 0, 0, 1, 1, 1, -1, -1])]
@@ -21,7 +21,7 @@ class TestModelsDetectionUtils:
         assert neg[0].sum() == 3
         assert neg[0][0:6].sum() == 3
 
-    def test_box_linear_coder(self) -> None:
+    def test_box_linear_coder(self):
         box_coder = _utils.BoxLinearCoder(normalize_by_size=True)
         # Generate a random 10x4 boxes tensor, with coordinates < 50.
         boxes = torch.rand(10, 4) * 50
@@ -46,7 +46,7 @@ class TestModelsDetectionUtils:
         # check that expected initial number of layers are frozen
         assert all(is_frozen[:exp_froz_params])
 
-    def test_validate_resnet_inputs_detection(self) -> None:
+    def test_validate_resnet_inputs_detection(self):
         # default number of backbone layers to train
         ret = backbone_utils._validate_trainable_layers(
             is_trained=True, trainable_backbone_layers=None, max_value=5, default_value=3
@@ -64,7 +64,7 @@ class TestModelsDetectionUtils:
             )
         assert ret == 5
 
-    def test_transform_copy_targets(self) -> None:
+    def test_transform_copy_targets(self):
         transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
         image = [torch.rand(3, 200, 300), torch.rand(3, 200, 200)]
         targets = [{"boxes": torch.rand(3, 4)}, {"boxes": torch.rand(2, 4)}]
@@ -73,7 +73,7 @@ class TestModelsDetectionUtils:
         assert_equal(targets[0]["boxes"], targets_copy[0]["boxes"])
         assert_equal(targets[1]["boxes"], targets_copy[1]["boxes"])
 
-    def test_not_float_normalize(self) -> None:
+    def test_not_float_normalize(self):
         transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
         image = [torch.randint(0, 255, (3, 200, 300), dtype=torch.uint8)]
         targets = [{"boxes": torch.rand(3, 4)}]

@@ -7,7 +7,7 @@ from torchvision.models.maxvit import SwapAxes, WindowDepartition, WindowPartiti
 
 
 class MaxvitTester(unittest.TestCase):
-    def test_maxvit_window_partition(self) -> None:
+    def test_maxvit_window_partition(self):
         input_shape = (1, 3, 224, 224)
         partition_size = 7
         n_partitions = input_shape[3] // partition_size
@@ -22,7 +22,7 @@ class MaxvitTester(unittest.TestCase):
 
         torch.testing.assert_close(x, x_hat)
 
-    def test_maxvit_grid_partition(self) -> None:
+    def test_maxvit_grid_partition(self):
         input_shape = (1, 3, 224, 224)
         partition_size = 7
         n_partitions = input_shape[3] // partition_size

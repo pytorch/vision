@@ -29,7 +29,7 @@ class TestModelsDetectionNegativeSamples:
         targets = [negative_target]
         return images, targets
 
-    def test_targets_to_anchors(self) -> None:
+    def test_targets_to_anchors(self):
         _, targets = self._make_empty_sample()
         anchors = [torch.randint(-50, 50, (3, 4), dtype=torch.float32)]
 
@@ -50,7 +50,7 @@ class TestModelsDetectionNegativeSamples:
         assert matched_gt_boxes[0].shape == anchors[0].shape
         assert matched_gt_boxes[0].dtype == torch.float32
 
-    def test_assign_targets_to_proposals(self) -> None:
+    def test_assign_targets_to_proposals(self):
 
         proposals = [torch.randint(-50, 50, (20, 4), dtype=torch.float32)]
         gt_boxes = [torch.zeros((0, 4), dtype=torch.float32)]
@@ -109,7 +109,7 @@ class TestModelsDetectionNegativeSamples:
         assert_equal(loss_dict["loss_box_reg"], torch.tensor(0.0))
         assert_equal(loss_dict["loss_rpn_box_reg"], torch.tensor(0.0))
 
-    def test_forward_negative_sample_mrcnn(self) -> None:
+    def test_forward_negative_sample_mrcnn(self):
         model = torchvision.models.detection.maskrcnn_resnet50_fpn(
             weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
@@ -121,7 +121,7 @@ class TestModelsDetectionNegativeSamples:
         assert_equal(loss_dict["loss_rpn_box_reg"], torch.tensor(0.0))
         assert_equal(loss_dict["loss_mask"], torch.tensor(0.0))
 
-    def test_forward_negative_sample_krcnn(self) -> None:
+    def test_forward_negative_sample_krcnn(self):
         model = torchvision.models.detection.keypointrcnn_resnet50_fpn(
             weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
@@ -133,7 +133,7 @@ class TestModelsDetectionNegativeSamples:
         assert_equal(loss_dict["loss_rpn_box_reg"], torch.tensor(0.0))
         assert_equal(loss_dict["loss_keypoint"], torch.tensor(0.0))
 
-    def test_forward_negative_sample_retinanet(self) -> None:
+    def test_forward_negative_sample_retinanet(self):
         model = torchvision.models.detection.retinanet_resnet50_fpn(
             weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
@@ -143,7 +143,7 @@ class TestModelsDetectionNegativeSamples:
 
         assert_equal(loss_dict["bbox_regression"], torch.tensor(0.0))
 
-    def test_forward_negative_sample_fcos(self) -> None:
+    def test_forward_negative_sample_fcos(self):
         model = torchvision.models.detection.fcos_resnet50_fpn(
             weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
@@ -154,7 +154,7 @@ class TestModelsDetectionNegativeSamples:
         assert_equal(loss_dict["bbox_regression"], torch.tensor(0.0))
         assert_equal(loss_dict["bbox_ctrness"], torch.tensor(0.0))
 
-    def test_forward_negative_sample_ssd(self) -> None:
+    def test_forward_negative_sample_ssd(self):
         model = torchvision.models.detection.ssd300_vgg16(weights=None, weights_backbone=None, num_classes=2)
 
         images, targets = self._make_empty_sample()
