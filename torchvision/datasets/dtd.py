@@ -21,7 +21,7 @@ class DTD(VisionDataset):
                 The partition only changes which split each image belongs to. Thus, regardless of the selected
                 partition, combining all splits will result in all images.
 
-        transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and

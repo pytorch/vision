@@ -101,7 +101,7 @@ class LFWPeople(_LFW):
             ``10fold`` (default).
         image_set (str, optional): Type of image funneling to use, ``original``, ``funneled`` or
             ``deepfunneled``. Defaults to ``funneled``.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomRotation``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -183,7 +183,7 @@ class LFWPairs(_LFW):
             ``10fold``. Defaults to ``10fold``.
         image_set (str, optional): Type of image funneling to use, ``original``, ``funneled`` or
             ``deepfunneled``. Defaults to ``funneled``.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomRotation``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.

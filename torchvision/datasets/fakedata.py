@@ -13,7 +13,7 @@ class FakeData(VisionDataset):
         size (int, optional): Size of the dataset. Default: 1000 images
         image_size(tuple, optional): Size if the returned images. Default: (3, 224, 224)
         num_classes(int, optional): Number of classes in the dataset. Default: 10
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.

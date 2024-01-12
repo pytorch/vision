@@ -56,7 +56,7 @@ class Kinetics(VisionDataset):
         split (str): split of the dataset to consider; supports ``"train"`` (default) ``"val"`` ``"test"``
         frame_rate (float): If omitted, interpolate different frame rate for each clip.
         step_between_clips (int): number of frames between each clip
-        transform (callable, optional): A function/transform that  takes in a TxHxWxC video
+        transform (callable, optional): A function/transform that takes in a TxHxWxC video
             and returns a transformed version.
         download (bool): Download the official version of the dataset to root folder.
         num_workers (int): Use multiple workers for VideoClips creation

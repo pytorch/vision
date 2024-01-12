@@ -14,7 +14,7 @@ class CocoDetection(VisionDataset):
     Args:
         root (string): Root directory where images are downloaded to.
         annFile (string): Path to json annotation file.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -65,7 +65,7 @@ class CocoCaptions(CocoDetection):
     Args:
         root (string): Root directory where images are downloaded to.
         annFile (string): Path to json annotation file.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
