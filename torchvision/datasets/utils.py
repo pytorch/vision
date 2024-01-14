@@ -443,7 +443,7 @@ def extract_archive(
     if remove_finished:
         os.remove(from_path)
 
-    return path_or_str(to_path)
+    return path_or_str(pathlib.Path(to_path))
 
 
 def download_and_extract_archive(
