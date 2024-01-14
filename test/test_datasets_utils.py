@@ -158,13 +158,20 @@ class TestDatasetsUtils:
             return compressed, file, content
 
         compressed, file, content = create_compressed(tmpdir)
+        print(f"{type(compressed)=}")
         if use_pathlib:
             compressed = pathlib.Path(compressed)
             tmpdir = pathlib.Path(tmpdir)
 
-        utils.extract_archive(compressed, tmpdir, remove_finished=True)
+        extracted_dir = utils.extract_archive(compressed, tmpdir, remove_finished=True)
 
         assert not os.path.exists(compressed)
+        if use_pathlib:
+            assert isinstance(extracted_dir, pathlib.Path)
+            assert isinstance(compressed, pathlib.Path)
+        else:
+            assert isinstance(extracted_dir, str)
+            assert isinstance(compressed, str)
 
     @pytest.mark.parametrize("extension", [".gz", ".xz"])
     @pytest.mark.parametrize("remove_finished", [True, False])

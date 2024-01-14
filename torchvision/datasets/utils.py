@@ -402,7 +402,7 @@ def extract_archive(
     from_path: Union[str, pathlib.Path],
     to_path: Optional[Union[str, pathlib.Path]] = None,
     remove_finished: bool = False,
-) -> pathlib.Path:
+) -> Union[str, pathlib.Path]:
     """Extract an archive.
 
     The archive type and a possible compression is automatically detected from the file name. If the file is compressed
@@ -417,16 +417,24 @@ def extract_archive(
     Returns:
         (str): Path to the directory the file was extracted to.
     """
+
+    def path_or_str(ret_path: pathlib.Path) -> Union[str, pathlib.Path]:
+        if isinstance(from_path, str):
+            return os.fspath(ret_path)
+        else:
+            return ret_path
+
     if to_path is None:
         to_path = os.path.dirname(from_path)
 
     suffix, archive_type, compression = _detect_file_type(from_path)
     if not archive_type:
-        return _decompress(
+        ret_path = _decompress(
             from_path,
             os.path.join(to_path, os.path.basename(from_path).replace(suffix, "")),
             remove_finished=remove_finished,
         )
+        return path_or_str(ret_path)
 
     # We don't need to check for a missing key here, since this was already done in _detect_file_type()
     extractor = _ARCHIVE_EXTRACTORS[archive_type]
@@ -435,7 +443,7 @@ def extract_archive(
     if remove_finished:
         os.remove(from_path)
 
-    return pathlib.Path(to_path)
+    return path_or_str(to_path)
 
 
 def download_and_extract_archive(
