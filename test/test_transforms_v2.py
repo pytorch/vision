@@ -7,6 +7,7 @@ import math
 import pickle
 import random
 import re
+import sys
 from copy import deepcopy
 from pathlib import Path
 from unittest import mock
@@ -2669,11 +2670,15 @@ class TestElastic:
     @pytest.mark.parametrize("size", [(163, 163), (72, 333), (313, 95)])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, size, device):
+        # We have to skip that test on M1 because it's flaky: Mismatched elements: 35 / 89205 (0.0%)
+        # See https://github.com/pytorch/vision/issues/8154
+        # All other platforms are fine, so the differences do not come from something we own in torchvision
+        check_v1_compatibility = False if sys.platform == "darwin" else dict(rtol=0, atol=1)
+
         check_transform(
             transforms.ElasticTransform(),
             make_input(size, device=device),
-            # We updated gaussian blur kernel generation with a faster and numerically more stable version
-            check_v1_compatibility=dict(rtol=0, atol=1),
+            check_v1_compatibility=check_v1_compatibility,
         )
 
 
@@ -3171,7 +3176,8 @@ class TestGaussianBlur:
     #     "26_28_1__23_23_1.7": cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7),
     # }
     REFERENCE_GAUSSIAN_BLUR_IMAGE_RESULTS = torch.load(
-        Path(__file__).parent / "assets" / "gaussian_blur_opencv_results.pt"
+        Path(__file__).parent / "assets" / "gaussian_blur_opencv_results.pt",
+        weights_only=False,
     )
 
     @pytest.mark.parametrize(

@@ -27,7 +27,7 @@ class MNIST(VisionDataset):
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -116,7 +116,7 @@ class MNIST(VisionDataset):
         # This is for BC only. We no longer cache the data in a custom binary, but simply read from the raw data
         # directly.
         data_file = self.training_file if self.train else self.test_file
-        return torch.load(os.path.join(self.processed_folder, data_file))
+        return torch.load(os.path.join(self.processed_folder, data_file), weights_only=True)
 
     def _load_data(self):
         image_file = f"{'train' if self.train else 't10k'}-images-idx3-ubyte"
@@ -210,7 +210,7 @@ class FashionMNIST(MNIST):
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -238,7 +238,7 @@ class KMNIST(MNIST):
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -269,7 +269,7 @@ class EMNIST(MNIST):
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -360,7 +360,7 @@ class QMNIST(MNIST):
             the internet and puts it in root directory. If dataset is
             already downloaded, it is not downloaded again.
         transform (callable, optional): A function/transform that
-            takes in an PIL image and returns a transformed
+            takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform
             that takes in the target and transforms it.

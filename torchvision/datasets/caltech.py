@@ -23,7 +23,7 @@ class Caltech101(VisionDataset):
             target types.  ``category`` represents the target class, and
             ``annotation`` is a list of points from a hand-generated outline.
             Defaults to ``category``.
-        transform (callable, optional): A function/transform that takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -151,7 +151,7 @@ class Caltech256(VisionDataset):
     Args:
         root (string): Root directory of dataset where directory
             ``caltech256`` exists or will be saved to if download is set to True.
-        transform (callable, optional): A function/transform that takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.

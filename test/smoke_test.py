@@ -53,7 +53,7 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
 
     # Step 1: Initialize model with the best available weights
     weights = ResNet50_Weights.DEFAULT
-    model = resnet50(weights=weights).to(device)
+    model = resnet50(weights=weights, progress=False).to(device)
     model.eval()
 
     # Step 2: Initialize the inference transforms

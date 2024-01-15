@@ -17,7 +17,7 @@ class FER2013(VisionDataset):
         root (string): Root directory of dataset where directory
             ``root/fer2013`` exists.
         split (string, optional): The dataset split, supports ``"train"`` (default), or ``"test"``.
-        transform (callable, optional): A function/transform that takes in an PIL image and returns a transformed
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
     """
