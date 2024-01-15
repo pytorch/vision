@@ -40,10 +40,10 @@ conda create \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
-  libpng \
-  'ffmpeg<4.3'
+  libpng
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
+conda install --quiet --yes "ffmpeg>=6.0" -c conda-forge
 pip install --progress-bar=off --upgrade setuptools
 
 # See https://github.com/pytorch/vision/issues/6790
