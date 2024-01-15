@@ -13,4 +13,4 @@ echo '::endgroup::'
 
 python test/smoke_test.py
 
-pytest  --ignore-glob="*test_dataset*" --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25
+pytest  --ignore-glob="*test_dataset*" --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_video*
