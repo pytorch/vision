@@ -402,8 +402,8 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     if masks.numel() == 0:
         return torch.zeros((0, 4), device=masks.device, dtype=torch.float)
 
-    non_zero_ys = torch.any(masks, axis=1).float()
-    non_zero_xs = torch.any(masks, axis=2).float()
+    non_zero_xs = torch.any(masks, axis=1).float()
+    non_zero_ys = torch.any(masks, axis=2).float()
 
     y1 = non_zero_ys.argmax(dim=1)
     x1 = non_zero_xs.argmax(dim=1)
