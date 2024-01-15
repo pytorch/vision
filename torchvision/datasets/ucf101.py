@@ -36,7 +36,7 @@ class UCF101(VisionDataset):
         fold (int, optional): which fold to use. Should be between 1 and 3.
         train (bool, optional): if ``True``, creates a dataset from the train split,
             otherwise from the ``test`` split.
-        transform (callable, optional): A function/transform that  takes in a TxHxWxC video
+        transform (callable, optional): A function/transform that takes in a TxHxWxC video
             and returns a transformed version.
         output_format (str, optional): The format of the output video tensors (before transforms).
             Can be either "THWC" (default) or "TCHW".
