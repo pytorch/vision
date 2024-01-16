@@ -420,20 +420,20 @@ bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
     if (it->stream == -2 || // all streams of this type are welcome
         (!stream && (it->stream == -1 || it->stream == i))) { // new stream
       VLOG(1) << "Stream type: " << format.type << " found, at index: " << i;
-      auto stream = createStream(
+      auto stream_2 = createStream(
           format.type,
           inputCtx_,
           i,
           params_.convertPtsToWallTime,
           it->format,
           params_.loggingUuid);
-      CHECK(stream);
-      if (stream->openCodec(metadata, params_.numThreads) < 0) {
+      CHECK(stream_2);
+      if (stream_2->openCodec(metadata, params_.numThreads) < 0) {
         LOG(ERROR) << "uuid=" << params_.loggingUuid
                    << " open codec failed, stream_idx=" << i;
         return false;
       }
-      streams_.emplace(i, std::move(stream));
+      streams_.emplace(i, std::move(stream_2));
       inRange_.set(i, true);
     }
   }
