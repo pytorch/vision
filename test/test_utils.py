@@ -213,7 +213,7 @@ def test_draw_segmentation_masks(colors, alpha, device):
     masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool, device=device)
 
     # For testing we enforce that there's no overlap between the masks. The
-    # current behaviour is that the last mask's color will take priority when
+    # current behaviour is that masks will be multiplicatively blended when
     # masks overlap, but this makes testing slightly harder, so we don't really
     # care
     overlap = masks[0] & masks[1]
