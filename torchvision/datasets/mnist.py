@@ -116,7 +116,7 @@ class MNIST(VisionDataset):
         # This is for BC only. We no longer cache the data in a custom binary, but simply read from the raw data
         # directly.
         data_file = self.training_file if self.train else self.test_file
-        return torch.load(os.path.join(self.processed_folder, data_file))
+        return torch.load(os.path.join(self.processed_folder, data_file), weights_only=True)
 
     def _load_data(self):
         image_file = f"{'train' if self.train else 't10k'}-images-idx3-ubyte"

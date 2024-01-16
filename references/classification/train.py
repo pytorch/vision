@@ -127,7 +127,8 @@ def load_data(traindir, valdir, args):
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
         print(f"Loading dataset_train from {cache_path}")
-        dataset, _ = torch.load(cache_path)
+        # TODO: this could probably be weights_only=True
+        dataset, _ = torch.load(cache_path, weights_only=False)
     else:
         # We need a default value for the variables below because args may come
         # from train_quantization.py which doesn't define them.
@@ -159,7 +160,8 @@ def load_data(traindir, valdir, args):
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
         print(f"Loading dataset_test from {cache_path}")
-        dataset_test, _ = torch.load(cache_path)
+        # TODO: this could probably be weights_only=True
+        dataset_test, _ = torch.load(cache_path, weights_only=False)
     else:
         if args.weights and args.test_only:
             weights = torchvision.models.get_weight(args.weights)
@@ -337,7 +339,7 @@ def main(args):
         model_ema = utils.ExponentialMovingAverage(model_without_ddp, device=device, decay=1.0 - alpha)
 
     if args.resume:
-        checkpoint = torch.load(args.resume, map_location="cpu")
+        checkpoint = torch.load(args.resume, map_location="cpu", weights_only=True)
         model_without_ddp.load_state_dict(checkpoint["model"])
         if not args.test_only:
             optimizer.load_state_dict(checkpoint["optimizer"])
