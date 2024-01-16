@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Callable, cast, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -241,10 +241,8 @@ class RandomResizedCrop(Transform):
 
         if not isinstance(scale, Sequence):
             raise TypeError("Scale should be a sequence")
-        scale = cast(Tuple[float, float], scale)
         if not isinstance(ratio, Sequence):
             raise TypeError("Ratio should be a sequence")
-        ratio = cast(Tuple[float, float], ratio)
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
 
