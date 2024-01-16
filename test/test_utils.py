@@ -11,6 +11,7 @@ import torchvision.transforms.functional as F
 import torchvision.utils as utils
 from common_utils import assert_equal, cpu_and_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageColor
+from torchvision.transforms.v2.functional import to_dtype
 
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
@@ -244,6 +245,26 @@ def test_draw_segmentation_masks(colors, alpha, device):
 
         interpolated_color = (img[:, mask] * (1 - alpha) + color[:, None] * alpha).to(dtype)
         torch.testing.assert_close(out[:, mask], interpolated_color, rtol=0.0, atol=1.0)
+
+
+def test_draw_segmentation_masks_dtypes():
+    num_masks, h, w = 2, 100, 100
+
+    masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool)
+
+    img_uint8 = torch.randint(0, 256, size=(3, h, w), dtype=torch.uint8)
+    out_uint8 = utils.draw_segmentation_masks(img_uint8, masks)
+
+    assert img_uint8 is not out_uint8
+    assert out_uint8.dtype == torch.uint8
+
+    img_float = to_dtype(img_uint8, torch.float, scale=True)
+    out_float = utils.draw_segmentation_masks(img_float, masks)
+
+    assert img_float is not out_float
+    assert out_float.is_floating_point()
+
+    torch.testing.assert_close(out_uint8, to_dtype(out_float, torch.uint8, scale=True), rtol=0, atol=1)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
