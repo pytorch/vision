@@ -30,6 +30,7 @@ from .food101 import Food101
 from .gtsrb import GTSRB
 from .hmdb51 import HMDB51
 from .imagenet import ImageNet
+from .imagenette import Imagenette
 from .inaturalist import INaturalist
 from .kinetics import Kinetics
 from .kitti import Kitti
@@ -128,6 +129,7 @@ __all__ = (
     "InStereo2k",
     "ETH3DStereo",
     "wrap_dataset_for_transforms_v2",
+    "Imagenette",
 )
 
 

@@ -3377,6 +3377,41 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
+class ImagenetteTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Imagenette
+    ADDITIONAL_CONFIGS = combinations_grid(split=["train", "val"], size=["full", "320px", "160px"])
+
+    _WNIDS = [
+        "n01440764",
+        "n02102040",
+        "n02979186",
+        "n03000684",
+        "n03028079",
+        "n03394916",
+        "n03417042",
+        "n03425413",
+        "n03445777",
+        "n03888257",
+    ]
+
+    def inject_fake_data(self, tmpdir, config):
+        archive_root = "imagenette2"
+        if config["size"] != "full":
+            archive_root += f"-{config['size'].replace('px', '')}"
+        image_root = pathlib.Path(tmpdir) / archive_root / config["split"]
+
+        num_images_per_class = 3
+        for wnid in self._WNIDS:
+            datasets_utils.create_image_folder(
+                root=image_root,
+                name=wnid,
+                file_name_fn=lambda idx: f"{wnid}_{idx}.JPEG",
+                num_examples=num_images_per_class,
+            )
+
+        return num_images_per_class * len(self._WNIDS)
+
+
 class TestDatasetWrapper:
     def test_unknown_type(self):
         unknown_object = object()
