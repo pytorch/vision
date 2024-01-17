@@ -238,12 +238,13 @@ def test_draw_segmentation_masks(colors, alpha, device):
         if alpha == 1:
             assert (out[:, mask & ~overlap] == color[:, None]).all()
         elif alpha == 0:
-            assert (out[:, mask & ~overlap] == img[:, mask]).all()
+            assert (out[:, mask & ~overlap] == img[:, mask & ~overlap]).all()
 
         interpolated_color = (img[:, mask & ~overlap] * (1 - alpha) + color[:, None] * alpha).to(dtype)
         torch.testing.assert_close(out[:, mask & ~overlap], interpolated_color, rtol=0.0, atol=1.0)
 
-    torch.testing.assert_close(out[:, overlap], 0, rtol=0.0, atol=1.0)
+    interpolated_overlap = (img[:, overlap] * (1 - alpha)).to(dtype)
+    torch.testing.assert_close(out[:, overlap], interpolated_overlap, rtol=0.0, atol=1.0)
 
 
 def test_draw_segmentation_masks_dtypes():
