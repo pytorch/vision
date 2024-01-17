@@ -299,7 +299,7 @@ def draw_segmentation_masks(
         raise ValueError("The image and the masks must have the same height and width")
 
     num_masks = masks.size()[0]
-    masks_coverage = masks.sum(dim=0) >= 1
+    overlapping_masks = masks.sum(dim=0) > 1
 
     if num_masks == 0:
         warnings.warn("masks doesn't contain any mask. No mask was drawn")
@@ -311,12 +311,12 @@ def draw_segmentation_masks(
         for color in _parse_colors(colors, num_objects=num_masks, dtype=original_dtype)
     ]
 
-    img_to_draw = torch.ones_like(image, dtype=original_dtype)
+    img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
     for mask, color in zip(masks, colors):
-        img_to_draw[:, mask] *= color[:, None]
+        img_to_draw[:, mask] = color[:, None]
 
-    img_to_draw[:, ~masks_coverage] = image[:, ~masks_coverage]
+    img_to_draw[:, overlapping_masks] = 0
 
     out = image * (1 - alpha) + img_to_draw * alpha
     # Note: at this point, out is a float tensor in [0, 1] or [0, 255] depending on original_dtype
