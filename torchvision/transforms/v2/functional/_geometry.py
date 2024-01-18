@@ -525,6 +525,13 @@ def _get_inverse_affine_matrix(
 
 
 def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
+    if torch._dynamo.is_compiling() and not torch.jit.is_scripting():
+        return _compute_affine_output_size_python(matrix, w, h)
+    else:
+        return _compute_affine_output_size_tensor(matrix, w, h)
+
+
+def _compute_affine_output_size_tensor(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
     # Inspired of PIL implementation:
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
 
@@ -557,6 +564,29 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
     cmin = min_vals.mul_(inv_tol).trunc_().mul_(tol).floor_()
     size = cmax.sub_(cmin)
     return int(size[0]), int(size[1])  # w, h
+
+
+def _compute_affine_output_size_python(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
+    # Mostly copied from PIL implementation:
+    # The only difference is with transformed points as input matrix has zero translation part here and
+    # PIL has a centered translation part.
+    # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
+
+    a, b, c, d, e, f = matrix
+    xx = []
+    yy = []
+
+    half_w = 0.5 * w
+    half_h = 0.5 * h
+    for x, y in ((-half_w, -half_h), (half_w, -half_h), (half_w, half_h), (-half_w, half_h)):
+        nx = a * x + b * y + c
+        ny = d * x + e * y + f
+        xx.append(nx + half_w)
+        yy.append(ny + half_h)
+
+    nw = math.ceil(max(xx)) - math.floor(min(xx))
+    nh = math.ceil(max(yy)) - math.floor(min(yy))
+    return int(nw), int(nh)  # w, h
 
 
 def _apply_grid_transform(img: torch.Tensor, grid: torch.Tensor, mode: str, fill: _FillTypeJIT) -> torch.Tensor:
