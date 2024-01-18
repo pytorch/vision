@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+1de7a74) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+6a9b549) &#x25BC</a>
     </div>
     
 
@@ -882,6 +882,13 @@
 
 
 <span class="k">def</span> <span class="nf">_compute_affine_output_size</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">_dynamo</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">_compute_affine_output_size_python</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_compute_affine_output_size_tensor</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_compute_affine_output_size_tensor</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="c1"># Inspired of PIL implementation:</span>
     <span class="c1"># https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054</span>
 
@@ -914,6 +921,29 @@
     <span class="n">cmin</span> <span class="o">=</span> <span class="n">min_vals</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">inv_tol</span><span class="p">)</span><span class="o">.</span><span class="n">trunc_</span><span class="p">()</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">tol</span><span class="p">)</span><span class="o">.</span><span class="n">floor_</span><span class="p">()</span>
     <span class="n">size</span> <span class="o">=</span> <span class="n">cmax</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">cmin</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># w, h</span>
+
+
+<span class="k">def</span> <span class="nf">_compute_affine_output_size_python</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="c1"># Mostly copied from PIL implementation:</span>
+    <span class="c1"># The only difference is with transformed points as input matrix has zero translation part here and</span>
+    <span class="c1"># PIL has a centered translation part.</span>
+    <span class="c1"># https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054</span>
+
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">f</span> <span class="o">=</span> <span class="n">matrix</span>
+    <span class="n">xx</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">yy</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">half_w</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">w</span>
+    <span class="n">half_h</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">h</span>
+    <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="p">((</span><span class="o">-</span><span class="n">half_w</span><span class="p">,</span> <span class="o">-</span><span class="n">half_h</span><span class="p">),</span> <span class="p">(</span><span class="n">half_w</span><span class="p">,</span> <span class="o">-</span><span class="n">half_h</span><span class="p">),</span> <span class="p">(</span><span class="n">half_w</span><span class="p">,</span> <span class="n">half_h</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="n">half_w</span><span class="p">,</span> <span class="n">half_h</span><span class="p">)):</span>
+        <span class="n">nx</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">y</span> <span class="o">+</span> <span class="n">c</span>
+        <span class="n">ny</span> <span class="o">=</span> <span class="n">d</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">e</span> <span class="o">*</span> <span class="n">y</span> <span class="o">+</span> <span class="n">f</span>
+        <span class="n">xx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="n">half_w</span><span class="p">)</span>
+        <span class="n">yy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="n">half_h</span><span class="p">)</span>
+
+    <span class="n">nw</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">xx</span><span class="p">))</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">xx</span><span class="p">))</span>
+    <span class="n">nh</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">yy</span><span class="p">))</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">yy</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">nw</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">nh</span><span class="p">)</span>  <span class="c1"># w, h</span>
 
 
 <span class="k">def</span> <span class="nf">_apply_grid_transform</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">grid</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
