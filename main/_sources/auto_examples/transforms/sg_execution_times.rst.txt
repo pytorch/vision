@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:14.368** total execution time for 7 files **from auto_examples/transforms**:
+**00:14.456** total execution time for 7 files **from auto_examples/transforms**:
 
 .. container::
 
@@ -33,13 +33,13 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``plot_transforms_illustrations.py``)
-     - 00:08.547
+     - 00:08.596
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``plot_transforms_e2e.py``)
-     - 00:04.857
+     - 00:04.845
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``plot_transforms_getting_started.py``)
-     - 00:00.788
+     - 00:00.839
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``plot_cutmix_mixup.py``)
      - 00:00.158
