@@ -418,7 +418,7 @@ res = draw_keypoints(person_int, keypoints, colors="blue", radius=3)
 show(res)
 
 # %%
-# As we see the keypoints appear as colored circles over the image.
+# As we see, the keypoints appear as colored circles over the image.
 # The coco keypoints for a person are ordered and represent the following list.\
 
 coco_keypoints = [
@@ -460,3 +460,63 @@ connect_skeleton = [
 
 res = draw_keypoints(person_int, keypoints, connectivity=connect_skeleton, colors="blue", radius=4, width=3)
 show(res)
+
+# %%
+# That looks pretty good.
+#
+# .. _draw_keypoints_with_visibility:
+#
+# Keypoint Visibility
+# ^^^^^^^^^^^^^^^^^^^
+# Let's have a look at the results, another keypoint prediction module produced, and show the connectivity:
+
+prediction = torch.tensor(
+    [[[208.0176, 214.2409,   1.0000],
+      [  0.0000,   0.0000,   0.0000],
+      [197.8246, 210.6392,   1.0000],
+      [  0.0000,   0.0000,   0.0000],
+      [178.6378, 217.8425,   1.0000],
+      [221.2086, 253.8591,   1.0000],
+      [160.6502, 269.4662,   1.0000],
+      [243.9929, 304.2822,   1.0000],
+      [138.4654, 328.8935,   1.0000],
+      [277.5698, 340.8990,   1.0000],
+      [153.4551, 374.5145,   1.0000],
+      [  0.0000,   0.0000,   0.0000],
+      [226.0053, 370.3125,   1.0000],
+      [221.8081, 455.5516,   1.0000],
+      [273.9723, 448.9486,   1.0000],
+      [193.6275, 546.1933,   1.0000],
+      [273.3727, 545.5930,   1.0000]]]
+)
+
+res = draw_keypoints(person_int, prediction, connectivity=connect_skeleton, colors="blue", radius=4, width=3)
+show(res)
+
+# %%
+# What happened there?
+# The model, which predicted the new keypoints,
+# can't detect the three points that are hidden on the upper left body of the skateboarder.
+# More precisely, the model predicted that `(x, y, vis) = (0, 0, 0)` for the left_eye, left_ear, and left_hip.
+# So we definitely don't want to display those keypoints and connections, and you don't have to.
+# Looking at the parameters of :func:`~torchvision.utils.draw_keypoints`,
+# we can see that we can pass a visibility tensor as an additional argument.
+# Given the models' prediction, we have the visibility as the third keypoint dimension, we just need to extract it.
+# Let's split the ``prediction`` into the keypoint coordinates and their respective visibility,
+# and pass both of them as arguments to :func:`~torchvision.utils.draw_keypoints`.
+
+coordinates, visibility = prediction.split([2, 1], dim=-1)
+visibility = visibility.bool()
+
+res = draw_keypoints(
+    person_int, coordinates, visibility=visibility, connectivity=connect_skeleton, colors="blue", radius=4, width=3
+)
+show(res)
+
+# %%
+# We can see that the undetected keypoints are not draw and the invisible keypoint connections were skipped.
+# This can reduce the noise on images with multiple detections, or in cases like ours,
+# when the keypoint-prediction model missed some detections.
+# Most torch keypoint-prediction models return the visibility for every prediction, ready for you to use it.
+# The :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn` model,
+# which we used in the first case, does so too.

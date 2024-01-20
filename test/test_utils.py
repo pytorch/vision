@@ -361,6 +361,42 @@ def test_draw_keypoints_colored(colors):
     assert_equal(img, img_cp)
 
 
+@pytest.mark.parametrize("connectivity", [None, [(0, 1)], [(0, 1), (1, 2)]])
+@pytest.mark.parametrize(
+    "vis",
+    [
+        None,
+        torch.ones((2, 3), dtype=torch.bool),
+        torch.ones((2, 3), dtype=torch.int),
+        torch.ones((2, 3, 1), dtype=torch.float)
+    ]
+)
+def test_draw_keypoints_visibility(connectivity, vis):
+    # Keypoints is declared on top as global variable
+    keypoints_cp = keypoints.clone()
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    img_cp = img.clone()
+    if vis is None:
+        vis_cp = vis
+    else:
+        vis_cp = vis.clone()
+
+    result = utils.draw_keypoints(
+        image=img,
+        keypoints=keypoints,
+        visibility=vis,
+        connectivity=connectivity,
+    )
+    assert result.size(0) == 3
+    assert_equal(keypoints, keypoints_cp)
+    assert_equal(img, img_cp)
+    if vis_cp is None:
+        assert vis is None
+    else:
+        assert_equal(vis, vis_cp.squeeze_(-1))
+        assert vis.dtype == vis_cp.dtype
+
+
 def test_draw_keypoints_errors():
     h, w = 10, 10
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
@@ -379,6 +415,18 @@ def test_draw_keypoints_errors():
     with pytest.raises(ValueError, match="keypoints must be of shape"):
         invalid_keypoints = torch.tensor([[10, 10, 10, 10], [5, 6, 7, 8]], dtype=torch.float)
         utils.draw_keypoints(image=img, keypoints=invalid_keypoints)
+    with pytest.raises(ValueError, match=re.escape("visibility must be of shape (num_instances, K)")):
+        one_dim_visibility = torch.tensor([True, True, True], dtype=torch.bool)
+        utils.draw_keypoints(image=img, keypoints=keypoints, visibility=one_dim_visibility)
+    with pytest.raises(ValueError, match=re.escape("visibility must be of shape (num_instances, K)")):
+        three_dim_visibility = torch.ones((2, 3, 4), dtype=torch.bool)
+        utils.draw_keypoints(image=img, keypoints=keypoints, visibility=three_dim_visibility)
+    with pytest.raises(ValueError, match="keypoints and visibility must have the same dimensionality"):
+        vis_wrong_n = torch.ones((3, 3), dtype=torch.bool)
+        utils.draw_keypoints(image=img, keypoints=keypoints, visibility=vis_wrong_n)
+    with pytest.raises(ValueError, match="keypoints and visibility must have the same dimensionality"):
+        vis_wrong_k = torch.ones((2, 4), dtype=torch.bool)
+        utils.draw_keypoints(image=img, keypoints=keypoints, visibility=vis_wrong_k)
 
 
 @pytest.mark.parametrize("batch", (True, False))

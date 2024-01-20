@@ -324,6 +324,7 @@ def draw_segmentation_masks(
 def draw_keypoints(
     image: torch.Tensor,
     keypoints: torch.Tensor,
+    visibility: Optional[torch.Tensor] = None,
     connectivity: Optional[List[Tuple[int, int]]] = None,
     colors: Optional[Union[str, Tuple[int, int, int]]] = None,
     radius: int = 2,
@@ -333,13 +334,25 @@ def draw_keypoints(
     """
     Draws Keypoints on given RGB image.
     The values of the input image should be uint8 between 0 and 255.
+    Keypoints can be drawn for multiple instances at a time.
+
+    This method allows that keypoints and their connectivity are drawn based on the visibility of this keypoint.
 
     Args:
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
-        keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
+        keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoint locations for each of the N instances,
             in the format [x, y].
-        connectivity (List[Tuple[int, int]]]): A List of tuple where,
-            each tuple contains pair of keypoints to be connected.
+        visibility (Tensor): Tensor of shape (num_instances, K) specifying the visibility of the K
+            keypoints for each of the N instances.
+            True means that the respective keypoint is visible and should be drawn.
+            False means invisible, so neither the point nor possible connections containing it are drawn.
+            The input tensor will be cast to bool.
+            Default ``None`` means that all the keypoints are visible.
+        connectivity (List[Tuple[int, int]]]): A List of tuple where each tuple contains a pair of keypoints
+            to be connected.
+            If at least one of the two connected keypoints has a ``visibility`` of False,
+            this specific connection is not drawn.
+            Exclusions due to invisibility are computed per-instance.
         colors (str, Tuple): The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         radius (int): Integer denoting radius of keypoint.
@@ -351,6 +364,7 @@ def draw_keypoints(
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(draw_keypoints)
+    # validate image
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
     elif image.dtype != torch.uint8:
@@ -360,24 +374,43 @@ def draw_keypoints(
     elif image.size()[0] != 3:
         raise ValueError("Pass an RGB image. Other Image formats are not supported")
 
+    # validate keypoints
     if keypoints.ndim != 3:
         raise ValueError("keypoints must be of shape (num_instances, K, 2)")
+
+    # validate visibility
+    if visibility is None:  # set default
+        visibility = torch.ones(keypoints.shape[:-1], dtype=torch.bool)
+    # If the last dimension is 1, e.g., after calling split([2, 1], dim=-1) on the output of a keypoint-prediction
+    # model, make sure visibility has shape (num_instances, K).
+    # Iff K = 1, this has unwanted behavior, but K=1 does not really make sense in the first place.
+    visibility.squeeze_(-1)
+    if visibility.ndim != 2:
+        raise ValueError("visibility must be of shape (num_instances, K)")
+    if visibility.shape != keypoints.shape[:-1]:
+        raise ValueError("keypoints and visibility must have the same dimensionality for num_instances and K.")
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
     draw = ImageDraw.Draw(img_to_draw)
     img_kpts = keypoints.to(torch.int64).tolist()
+    img_vis = visibility.cpu().bool().tolist()
 
-    for kpt_id, kpt_inst in enumerate(img_kpts):
-        for inst_id, kpt in enumerate(kpt_inst):
-            x1 = kpt[0] - radius
-            x2 = kpt[0] + radius
-            y1 = kpt[1] - radius
-            y2 = kpt[1] + radius
+    for kpt_id, (kpt_inst, vis_inst) in enumerate(zip(img_kpts, img_vis)):
+        for inst_id, (kpt_coord, kp_vis) in enumerate(zip(kpt_inst, vis_inst)):
+            if not kp_vis:  # skip drawing ellipse if the current keypoint is invisible
+                continue
+            x1 = kpt_coord[0] - radius
+            x2 = kpt_coord[0] + radius
+            y1 = kpt_coord[1] - radius
+            y2 = kpt_coord[1] + radius
             draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
 
         if connectivity:
             for connection in connectivity:
+                # connection is skipped if one of the keypoints is not visible
+                if not vis_inst[connection[0]] or not vis_inst[connection[1]]:
+                    continue
                 start_pt_x = kpt_inst[connection[0]][0]
                 start_pt_y = kpt_inst[connection[0]][1]
 
