@@ -26,7 +26,7 @@ class WIDERFace(VisionDataset):
                         └── WIDER_test ('WIDER_test.zip' if compressed)
         split (string): The dataset split to use. One of {``train``, ``val``, ``test``}.
             Defaults to ``train``.
-        transform (callable, optional): A function/transform that  takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
