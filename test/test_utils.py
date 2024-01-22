@@ -368,8 +368,8 @@ def test_draw_keypoints_colored(colors):
         None,
         torch.ones((2, 3), dtype=torch.bool),
         torch.ones((2, 3), dtype=torch.int),
-        torch.ones((2, 3, 1), dtype=torch.float)
-    ]
+        torch.ones((2, 3, 1), dtype=torch.float),
+    ],
 )
 def test_draw_keypoints_visibility(connectivity, vis):
     # Keypoints is declared on top as global variable
