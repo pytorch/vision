@@ -21,7 +21,7 @@ jobs:
 
       - name: Process commit and find merger responsible for labeling
         id: commit
-        run: echo "::set-output name=merger::$(python .github/process_commit.py ${{ github.sha }})"
+        run: echo "merger=$(python .github/process_commit.py ${{ github.sha }})" >> $GITHUB_OUTPUT
 
       - name: Ping merger responsible for labeling if necessary
         if: ${{ steps.commit.outputs.merger != '' }}
