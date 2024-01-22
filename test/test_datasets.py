@@ -827,6 +827,11 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
+    def test_slice_error(self):
+        with self.create_dataset() as (dataset, _):
+            with pytest.raises(ValueError, match="Index must be of type integer"):
+                dataset[:2]
+
 
 class CocoCaptionsTestCase(CocoDetectionTestCase):
     DATASET_CLASS = datasets.CocoCaptions
