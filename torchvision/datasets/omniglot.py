@@ -15,7 +15,7 @@ class Omniglot(VisionDataset):
             ``omniglot-py`` exists.
         background (bool, optional): If True, creates dataset from the "background" set, otherwise
             creates from the "evaluation" set. This terminology is defined by the authors.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.

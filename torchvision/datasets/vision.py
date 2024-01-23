@@ -15,7 +15,7 @@ class VisionDataset(data.Dataset):
         root (string, optional): Root directory of dataset. Only used for `__repr__`.
         transforms (callable, optional): A function/transforms that takes in
             an image and a label and returns the transformed versions of both.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
