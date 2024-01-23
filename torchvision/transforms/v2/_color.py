@@ -22,10 +22,12 @@ class Grayscale(Transform):
     _v1_transform_cls = _transforms.Grayscale
 
     def __init__(self, num_output_channels: int = 1):
+        print("Ahmad here in init functional library 32")
         super().__init__()
         self.num_output_channels = num_output_channels
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        print("Ahmad here outside functional")
         return self._call_kernel(F.rgb_to_grayscale, inpt, num_output_channels=self.num_output_channels)
 
 

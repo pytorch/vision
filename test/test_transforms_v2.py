@@ -4935,12 +4935,15 @@ class TestRgbToGrayscale:
         check_transform(transform, make_input())
 
     @pytest.mark.parametrize("num_output_channels", [1, 3])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
     @pytest.mark.parametrize("fn", [F.rgb_to_grayscale, transform_cls_to_functional(transforms.Grayscale)])
-    def test_image_correctness(self, num_output_channels, fn):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    def test_image_correctness(self, num_output_channels, color_space, fn):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space=color_space)
 
         actual = fn(image, num_output_channels=num_output_channels)
         expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_output_channels))
+        print(f"Ahmad test {num_output_channels=} {image.shape=} {actual.shape=}")
+        #assert_equal(True, False)
 
         assert_equal(actual, expected, rtol=0, atol=1)
 

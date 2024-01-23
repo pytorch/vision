@@ -33,22 +33,36 @@ to_grayscale = rgb_to_grayscale
 def _rgb_to_grayscale_image(
     image: torch.Tensor, num_output_channels: int = 1, preserve_dtype: bool = True
 ) -> torch.Tensor:
-    if image.shape[-3] == 1:
+    if num_output_channels not in (1, 3):
+        raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
+    print(f"Finally ahmad here aa {num_output_channels=} {image.shape=}")
+    if image.shape[-3] == 1 and num_output_channels == 1:
+        print("ahmad cloning")
         return image.clone()
+
+    if image.shape[-3] == 1 and num_output_channels == 3:
+        s = [-1] * len(image.shape)
+        s[-3] = 3
+        image = image.expand(s)
+
+    print(f"Finally ahmad here bb {num_output_channels=} {image.shape=}")
 
     r, g, b = image.unbind(dim=-3)
     l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
     l_img = l_img.unsqueeze(dim=-3)
     if preserve_dtype:
         l_img = l_img.to(image.dtype)
+    print(f"ahmad: {l_img.shape=}")
     if num_output_channels == 3:
         l_img = l_img.expand(image.shape)
+        print(f"ahmad: {l_img.shape=}")
     return l_img
 
 
 @_register_kernel_internal(rgb_to_grayscale, torch.Tensor)
 @_register_kernel_internal(rgb_to_grayscale, tv_tensors.Image)
 def rgb_to_grayscale_image(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
+    print("ahmad here 4")
     if num_output_channels not in (1, 3):
         raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
     return _rgb_to_grayscale_image(image, num_output_channels=num_output_channels, preserve_dtype=True)
