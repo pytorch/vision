@@ -54,7 +54,6 @@ def _rgb_to_grayscale_image(
 @_register_kernel_internal(rgb_to_grayscale, torch.Tensor)
 @_register_kernel_internal(rgb_to_grayscale, tv_tensors.Image)
 def rgb_to_grayscale_image(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
-    print("ahmad here 4")
     if num_output_channels not in (1, 3):
         raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
     return _rgb_to_grayscale_image(image, num_output_channels=num_output_channels, preserve_dtype=True)

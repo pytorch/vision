@@ -332,7 +332,6 @@ def perspective(
 
 @torch.jit.unused
 def to_grayscale(img: Image.Image, num_output_channels: int) -> Image.Image:
-    print("Ahmad here3")
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
