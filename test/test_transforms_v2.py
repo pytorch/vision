@@ -4942,8 +4942,6 @@ class TestRgbToGrayscale:
 
         actual = fn(image, num_output_channels=num_output_channels)
         expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_output_channels))
-        print(f"Ahmad test {num_output_channels=} {image.shape=} {actual.shape=}")
-        #assert_equal(True, False)
 
         assert_equal(actual, expected, rtol=0, atol=1)
 
