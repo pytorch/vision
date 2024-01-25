@@ -37,9 +37,9 @@ def _rgb_to_grayscale_image(
     if image.shape[-3] == 1 and num_output_channels == 1:
         return image.clone()
     if image.shape[-3] == 1 and num_output_channels == 3:
-        s = [-1] * len(image.shape)
+        s = [1] * len(image.shape)
         s[-3] = 3
-        return image.expand(s)
+        return image.repeat(s)
     r, g, b = image.unbind(dim=-3)
     l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
     l_img = l_img.unsqueeze(dim=-3)
