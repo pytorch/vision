@@ -4963,6 +4963,32 @@ class TestRgbToGrayscale:
         assert_equal(actual, expected, rtol=0, atol=1)
 
 
+class TestGrayscaleToRgb:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.grayscale_to_rgb_image, make_image(dtype=dtype, device=device))
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_functional(self, make_input):
+        check_functional(F.grayscale_to_rgb, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.rgb_to_grayscale_image, torch.Tensor),
+            (F._rgb_to_grayscale_image_pil, PIL.Image.Image),
+            (F.rgb_to_grayscale_image, tv_tensors.Image),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.grayscale_to_rgb, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_transform(self, make_input):
+        check_transform(transforms.GrayscaleToRgb(), make_input(color_space="GRAY"))
+
+
 class TestRandomZoomOut:
     # Tests are light because this largely relies on the already tested `pad` kernels.
 

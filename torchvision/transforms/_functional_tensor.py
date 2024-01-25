@@ -166,6 +166,19 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     return l_img
 
 
+def grayscale_to_rgb(img: Tensor) -> Tensor:
+    if img.ndim < 3:
+        raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
+    _assert_channels(img, [1, 3])
+
+    if img.shape[-3] != 1:
+        raise ValueError("Expected last dimension of input image tensor to be 1, got {}".format(img.shape[-3]))
+
+    s = [-1] * len(img.shape)
+    s[-3] = 3
+    return img.expand(s)
+
+
 def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     if brightness_factor < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")

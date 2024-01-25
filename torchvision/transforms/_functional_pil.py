@@ -348,6 +348,13 @@ def to_grayscale(img: Image.Image, num_output_channels: int) -> Image.Image:
     return img
 
 
+def grayscale_to_rgb(img: Image.Image) -> Image.Image:
+    if not _is_pil_image(img):
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
+
+    return img.convert("RGB")
+
+
 @torch.jit.unused
 def invert(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):

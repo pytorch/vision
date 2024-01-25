@@ -42,6 +42,7 @@ __all__ = [
     "RandomRotation",
     "RandomAffine",
     "Grayscale",
+    "GrayscaleToRgb",
     "RandomGrayscale",
     "RandomPerspective",
     "RandomErasing",
@@ -1574,6 +1575,33 @@ class Grayscale(torch.nn.Module):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(num_output_channels={self.num_output_channels})"
+
+
+class GrayscaleToRgb(torch.nn.Module):
+    """Converts grayscale image to 3 channel RGB image.
+    If the image is torch Tensor, it is expected
+    to have [..., 1, H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    Returns:
+        PIL Image: RGB version of the input image.
+    """
+
+    def __init__(self):
+        super().__init__()
+        _log_api_usage_once(self)
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be converted to grayscale.
+
+        Returns:
+            PIL Image or Tensor: Grayscaled image.
+        """
+        return F.grayscale_to_rgb(img)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
 
 
 class RandomGrayscale(torch.nn.Module):

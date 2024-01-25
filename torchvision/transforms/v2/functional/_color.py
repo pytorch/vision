@@ -61,6 +61,28 @@ def _rgb_to_grayscale_image_pil(image: PIL.Image.Image, num_output_channels: int
     return _FP.to_grayscale(image, num_output_channels=num_output_channels)
 
 
+def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
+    """See :class:`~torchvision.transforms.v2.GrayscaleToRgb` for details."""
+    if torch.jit.is_scripting():
+        return grayscale_to_rgb_image(inpt)
+
+    _log_api_usage_once(grayscale_to_rgb)
+
+    kernel = _get_kernel(rgb_to_grayscale, type(inpt))
+    return kernel(inpt)
+
+
+@_register_kernel_internal(grayscale_to_rgb, torch.Tensor)
+@_register_kernel_internal(grayscale_to_rgb, tv_tensors.Image)
+def grayscale_to_rgb_image(image: torch.Tensor) -> torch.Tensor:
+    return _rgb_to_grayscale_image(image, num_output_channels=3, preserve_dtype=True)
+
+
+@_register_kernel_internal(grayscale_to_rgb, PIL.Image.Image)
+def grayscale_to_rgb_image(image: PIL.Image.Image) -> PIL.Image.Image:
+    return _FP.to_grayscale(image, num_output_channels=3)
+
+
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
     ratio = float(ratio)
     fp = image1.is_floating_point()

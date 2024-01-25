@@ -9,6 +9,7 @@ from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
 from ._color import (
     ColorJitter,
     Grayscale,
+    GrayscaleToRgb,
     RandomAdjustSharpness,
     RandomAutocontrast,
     RandomChannelPermutation,
