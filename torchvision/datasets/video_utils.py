@@ -89,7 +89,7 @@ class VideoClips:
         video_paths (List[str]): paths to the video files
         clip_length_in_frames (int): size of a clip in number of frames
         frames_between_clips (int): step (in frames) between each clip
-        frame_rate (int, optional): if specified, it will resample the video
+        frame_rate (float, optional): if specified, it will resample the video
             so that it has `frame_rate`, and then the clips will be defined
             on the resampled video
         num_workers (int): how many subprocesses to use for data loading.
@@ -102,7 +102,7 @@ class VideoClips:
         video_paths: List[str],
         clip_length_in_frames: int = 16,
         frames_between_clips: int = 1,
-        frame_rate: Optional[int] = None,
+        frame_rate: Optional[float] = None,
         _precomputed_metadata: Optional[Dict[str, Any]] = None,
         num_workers: int = 0,
         _video_width: int = 0,
@@ -136,7 +136,7 @@ class VideoClips:
 
     def _compute_frame_pts(self) -> None:
         self.video_pts = []  # len = num_videos. Each entry is a tensor of shape (num_frames_in_video,)
-        self.video_fps: List[int] = []  # len = num_videos
+        self.video_fps: List[float] = []  # len = num_videos
 
         # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
