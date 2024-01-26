@@ -203,8 +203,7 @@ class VideoClips:
 
     @staticmethod
     def compute_clips_for_video(
-        video_pts: torch.Tensor, num_frames: int, step: int, fps: Union[int, float, None],
-        frame_rate: Union[int, float, None] = None
+        video_pts: torch.Tensor, num_frames: int, step: int, fps: Optional[float], frame_rate: Optional[float] = None
     ) -> Tuple[torch.Tensor, Union[List[slice], torch.Tensor]]:
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
@@ -228,7 +227,7 @@ class VideoClips:
             idxs = unfold(_idxs, num_frames, step)
         return clips, idxs
 
-    def compute_clips(self, num_frames: int, step: int, frame_rate: Union[int, float, None] = None) -> None:
+    def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[float] = None) -> None:
         """
         Compute all consecutive sequences of clips from video_pts.
         Always returns clips of size `num_frames`, meaning that the
@@ -276,9 +275,7 @@ class VideoClips:
         return video_idx, clip_idx
 
     @staticmethod
-    def _resample_video_idx(
-        num_frames: int, original_fps: Union[int, float], new_fps: Union[int, float]
-    ) -> Union[slice, torch.Tensor]:
+    def _resample_video_idx(num_frames: int, original_fps: float, new_fps: float) -> Union[slice, torch.Tensor]:
         step = original_fps / new_fps
         if step.is_integer():
             # optimization: if step is integer, don't need to perform
