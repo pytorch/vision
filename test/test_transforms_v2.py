@@ -4935,14 +4935,23 @@ class TestRgbToGrayscale:
         check_transform(transform, make_input())
 
     @pytest.mark.parametrize("num_output_channels", [1, 3])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
     @pytest.mark.parametrize("fn", [F.rgb_to_grayscale, transform_cls_to_functional(transforms.Grayscale)])
-    def test_image_correctness(self, num_output_channels, fn):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    def test_image_correctness(self, num_output_channels, color_space, fn):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space=color_space)
 
         actual = fn(image, num_output_channels=num_output_channels)
         expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_output_channels))
 
         assert_equal(actual, expected, rtol=0, atol=1)
+
+    def test_expanded_channels_are_not_views_into_the_same_underlying_tensor(self):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
+
+        output_image = F.rgb_to_grayscale(image, num_output_channels=3)
+        assert_equal(output_image[0][0][0], output_image[1][0][0])
+        output_image[0][0][0] = output_image[0][0][0] + 1
+        assert output_image[0][0][0] != output_image[1][0][0]
 
     @pytest.mark.parametrize("num_input_channels", [1, 3])
     def test_random_transform_correctness(self, num_input_channels):
