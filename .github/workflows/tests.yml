@@ -164,7 +164,7 @@ jobs:
         echo '::endgroup::'
 
         echo '::group::Install testing utilities'
-        pip install --progress-bar=off pytest
+        pip install --progress-bar=off "pytest<8"
         echo '::endgroup::'
 
         echo '::group::Run extended unittests'
