@@ -1,0 +1,1655 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Transforming and augmenting images &mdash; Torchvision 0.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Resize" href="generated/torchvision.transforms.v2.Resize.html" />
+    <link rel="prev" title="torchvision" href="index.html" />
+  <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T8XT4PS');</script>
+    <!-- End Google Tag Manager -->
+  
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch">
+                  <span class="dropdown-title">ExecuTorch</span>
+                </a>
+              </div>
+            </div>  
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="active docs-active">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torcharrow">
+                  <span class="dropdown-title">torcharrow</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/data">
+                  <span class="dropdown-title">TorchData</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchrec">
+                  <span class="dropdown-title">TorchRec</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchx/">
+                  <span class="dropdown-title">TorchX</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/foundation">
+                  <span class="dropdown-title">PyTorch Foundation</span>
+                  <p>Learn about the PyTorch foundation</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/community-stories">
+                  <span class="dropdown-title">Community Stories</span>
+                  <p>Learn how our community solves real, everyday machine learning problems with PyTorch.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/events">
+                  <span class="dropdown-title">Events</span>
+                  <p>Find events, webinars, and podcasts</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">GitHub</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='https://pytorch.org/vision/versions.html'>0.17 &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tv_tensors.html">TVTensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Examples and tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_references.html">Training references</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/text">torchtext</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/vision">torchvision</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/elastic/">TorchElastic</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/serve">TorchServe</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://pytorch.org/xla/">PyTorch on XLA Devices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>Transforming and augmenting images</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/transforms.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          <!-- Google Tag Manager (noscript) -->
+          <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T8XT4PS"
+          height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+          <!-- End Google Tag Manager (noscript) -->
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <section id="transforming-and-augmenting-images">
+<span id="transforms"></span><h1>Transforming and augmenting images<a class="headerlink" href="#transforming-and-augmenting-images" title="Permalink to this heading">¶</a></h1>
+<p>Torchvision supports common computer vision transformations in the
+<code class="docutils literal notranslate"><span class="pre">torchvision.transforms</span></code> and <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> modules. Transforms
+can be used to transform or augment data for training or inference of different
+tasks (image classification, detection, segmentation, video classification).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Image Classification</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">v2</span>
+
+<span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+<span class="n">transforms</span> <span class="o">=</span> <span class="n">v2</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">RandomResizedCrop</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span> <span class="n">antialias</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">ToDtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="p">[</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="p">[</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">]),</span>
+<span class="p">])</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Detection (re-using imports and transforms from above)</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
+
+<span class="n">img</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">H</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">(</span><span class="n">boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;XYXY&quot;</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span>
+
+<span class="c1"># The same transforms can be used!</span>
+<span class="n">img</span><span class="p">,</span> <span class="n">boxes</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">boxes</span><span class="p">)</span>
+<span class="c1"># And you can pass arbitrary input structures</span>
+<span class="n">output_dict</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">({</span><span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">img</span><span class="p">,</span> <span class="s2">&quot;boxes&quot;</span><span class="p">:</span> <span class="n">boxes</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>Transforms are typically passed as the <code class="docutils literal notranslate"><span class="pre">transform</span></code> or <code class="docutils literal notranslate"><span class="pre">transforms</span></code> argument
+to the <a class="reference internal" href="datasets.html#datasets"><span class="std std-ref">Datasets</span></a>.</p>
+<section id="start-here">
+<h2>Start here<a class="headerlink" href="#start-here" title="Permalink to this heading">¶</a></h2>
+<p>Whether you’re new to Torchvision transforms, or you’re already experienced with
+them, we encourage you to start with
+<a class="reference internal" href="auto_examples/transforms/plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a> in
+order to learn more about what can be done with the new v2 transforms.</p>
+<p>Then, browse the sections in below this page for general information and
+performance tips. The available transforms and functionals are listed in the
+<a class="reference internal" href="#v2-api-ref"><span class="std std-ref">API reference</span></a>.</p>
+<p>More information and tutorials can also be found in our <a class="reference internal" href="auto_examples/index.html#gallery"><span class="std std-ref">example gallery</span></a>, e.g. <a class="reference internal" href="auto_examples/transforms/plot_transforms_e2e.html#sphx-glr-auto-examples-transforms-plot-transforms-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection/segmentation example</span></a>
+or <a class="reference internal" href="auto_examples/transforms/plot_custom_transforms.html#sphx-glr-auto-examples-transforms-plot-custom-transforms-py"><span class="std std-ref">How to write your own v2 transforms</span></a>.</p>
+</section>
+<section id="supported-input-types-and-conventions">
+<span id="conventions"></span><h2>Supported input types and conventions<a class="headerlink" href="#supported-input-types-and-conventions" title="Permalink to this heading">¶</a></h2>
+<p>Most transformations accept both <a class="reference external" href="https://pillow.readthedocs.io">PIL</a> images
+and tensor inputs. Both CPU and CUDA tensors are supported.
+The result of both backends (PIL or Tensors) should be very
+close. In general, we recommend relying on the tensor backend <a class="reference internal" href="#transforms-perf"><span class="std std-ref">for
+performance</span></a>.  The <a class="reference internal" href="#conversion-transforms"><span class="std std-ref">conversion transforms</span></a> may be used to convert to and from PIL images, or for
+converting dtypes and ranges.</p>
+<p>Tensor image are expected to be of shape <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>, where <code class="docutils literal notranslate"><span class="pre">C</span></code> is the
+number of channels, and <code class="docutils literal notranslate"><span class="pre">H</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code> refer to height and width. Most
+transforms support batched tensor input. A batch of Tensor images is a tensor of
+shape <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>, where <code class="docutils literal notranslate"><span class="pre">N</span></code> is a number of images in the batch. The
+<a class="reference internal" href="#v1-or-v2"><span class="std std-ref">v2</span></a> transforms generally accept an arbitrary number of leading
+dimensions <code class="docutils literal notranslate"><span class="pre">(...,</span> <span class="pre">C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> and can handle batched images or batched videos.</p>
+<section id="dtype-and-expected-value-range">
+<span id="range-and-dtype"></span><h3>Dtype and expected value range<a class="headerlink" href="#dtype-and-expected-value-range" title="Permalink to this heading">¶</a></h3>
+<p>The expected range of the values of a tensor image is implicitly defined by
+the tensor dtype. Tensor images with a float dtype are expected to have
+values in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>. Tensor images with an integer dtype are expected to
+have values in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">MAX_DTYPE]</span></code> where <code class="docutils literal notranslate"><span class="pre">MAX_DTYPE</span></code> is the largest value
+that can be represented in that dtype. Typically, images of dtype
+<code class="docutils literal notranslate"><span class="pre">torch.uint8</span></code> are expected to have values in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">255]</span></code>.</p>
+<p>Use <a class="reference internal" href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype" title="torchvision.transforms.v2.ToDtype"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToDtype</span></code></a> to convert both the dtype and
+range of the inputs.</p>
+</section>
+</section>
+<section id="v1-or-v2-which-one-should-i-use">
+<span id="v1-or-v2"></span><h2>V1 or V2? Which one should I use?<a class="headerlink" href="#v1-or-v2-which-one-should-i-use" title="Permalink to this heading">¶</a></h2>
+<p><strong>TL;DR</strong> We recommending using the <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> transforms
+instead of those in <code class="docutils literal notranslate"><span class="pre">torchvision.transforms</span></code>. They’re faster and they can do
+more things. Just change the import and you should be good to go. Moving
+forward, new features and improvements will only be considered for the v2
+transforms.</p>
+<p>In Torchvision 0.15 (March 2023), we released a new set of transforms available
+in the <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> namespace. These transforms have a lot of
+advantages compared to the v1 ones (in <code class="docutils literal notranslate"><span class="pre">torchvision.transforms</span></code>):</p>
+<ul class="simple">
+<li><p>They can transform images <strong>but also</strong> bounding boxes, masks, or videos. This
+provides support for tasks beyond image classification: detection, segmentation,
+video classification, etc. See
+<a class="reference internal" href="auto_examples/transforms/plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a>
+and <a class="reference internal" href="auto_examples/transforms/plot_transforms_e2e.html#sphx-glr-auto-examples-transforms-plot-transforms-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection/segmentation example</span></a>.</p></li>
+<li><p>They support more transforms like <a class="reference internal" href="generated/torchvision.transforms.v2.CutMix.html#torchvision.transforms.v2.CutMix" title="torchvision.transforms.v2.CutMix"><code class="xref py py-class docutils literal notranslate"><span class="pre">CutMix</span></code></a>
+and <a class="reference internal" href="generated/torchvision.transforms.v2.MixUp.html#torchvision.transforms.v2.MixUp" title="torchvision.transforms.v2.MixUp"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixUp</span></code></a>. See
+<a class="reference internal" href="auto_examples/transforms/plot_cutmix_mixup.html#sphx-glr-auto-examples-transforms-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a>.</p></li>
+<li><p>They’re <a class="reference internal" href="#transforms-perf"><span class="std std-ref">faster</span></a>.</p></li>
+<li><p>They support arbitrary input structures (dicts, lists, tuples, etc.).</p></li>
+<li><p>Future improvements and features will be added to the v2 transforms only.</p></li>
+</ul>
+<p>These transforms are <strong>fully backward compatible</strong> with the v1 ones, so if
+you’re already using tranforms from <code class="docutils literal notranslate"><span class="pre">torchvision.transforms</span></code>, all you need to
+do to is to update the import to <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code>. In terms of
+output, there might be negligible differences due to implementation differences.</p>
+</section>
+<section id="performance-considerations">
+<span id="transforms-perf"></span><h2>Performance considerations<a class="headerlink" href="#performance-considerations" title="Permalink to this heading">¶</a></h2>
+<p>We recommend the following guidelines to get the best performance out of the
+transforms:</p>
+<ul class="simple">
+<li><p>Rely on the v2 transforms from <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code></p></li>
+<li><p>Use tensors instead of PIL images</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">torch.uint8</span></code> dtype, especially for resizing</p></li>
+<li><p>Resize with bilinear or bicubic mode</p></li>
+</ul>
+<p>This is what a typical transform pipeline could look like:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">v2</span>
+<span class="n">transforms</span> <span class="o">=</span> <span class="n">v2</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">ToImage</span><span class="p">(),</span>  <span class="c1"># Convert to tensor, only needed if you had a PIL image</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">ToDtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>  <span class="c1"># optional, most input are already uint8 at this point</span>
+    <span class="c1"># ...</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">RandomResizedCrop</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span> <span class="n">antialias</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>  <span class="c1"># Or Resize(antialias=True)</span>
+    <span class="c1"># ...</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">ToDtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>  <span class="c1"># Normalize expects float input</span>
+    <span class="n">v2</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="p">[</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="p">[</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">]),</span>
+<span class="p">])</span>
+</pre></div>
+</div>
+<p>The above should give you the best performance in a typical training environment
+that relies on the <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code></a> with <code class="docutils literal notranslate"><span class="pre">num_workers</span> <span class="pre">&gt;</span>
+<span class="pre">0</span></code>.</p>
+<p>Transforms tend to be sensitive to the input strides / memory format. Some
+transforms will be faster with channels-first images while others prefer
+channels-last. Like <code class="docutils literal notranslate"><span class="pre">torch</span></code> operators, most transforms will preserve the
+memory format of the input, but this may not always be respected due to
+implementation details. You may want to experiment a bit if you’re chasing the
+very best performance.  Using <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.2)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> on individual transforms may
+also help factoring out the memory format variable (e.g. on
+<a class="reference internal" href="generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize" title="torchvision.transforms.v2.Normalize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normalize</span></code></a>). Note that we’re talking about
+<strong>memory format</strong>, not <a class="reference internal" href="#conventions"><span class="std std-ref">tensor shape</span></a>.</p>
+<p>Note that resize transforms like <a class="reference internal" href="generated/torchvision.transforms.v2.Resize.html#torchvision.transforms.v2.Resize" title="torchvision.transforms.v2.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a>
+and <a class="reference internal" href="generated/torchvision.transforms.v2.RandomResizedCrop.html#torchvision.transforms.v2.RandomResizedCrop" title="torchvision.transforms.v2.RandomResizedCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a> typically prefer
+channels-last input and tend <strong>not</strong> to benefit from <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.compile.html#torch.compile" title="(in PyTorch v2.2)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> at
+this time.</p>
+</section>
+<section id="transform-classes-functionals-and-kernels">
+<span id="functional-transforms"></span><h2>Transform classes, functionals, and kernels<a class="headerlink" href="#transform-classes-functionals-and-kernels" title="Permalink to this heading">¶</a></h2>
+<p>Transforms are available as classes like
+<a class="reference internal" href="generated/torchvision.transforms.v2.Resize.html#torchvision.transforms.v2.Resize" title="torchvision.transforms.v2.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a>, but also as functionals like
+<a class="reference internal" href="generated/torchvision.transforms.v2.functional.resize.html#torchvision.transforms.v2.functional.resize" title="torchvision.transforms.v2.functional.resize"><code class="xref py py-func docutils literal notranslate"><span class="pre">resize()</span></code></a> in the
+<code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2.functional</span></code> namespace.
+This is very much like the <a class="reference external" href="https://pytorch.org/docs/stable/nn.html#module-torch.nn" title="(in PyTorch v2.2)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn</span></code></a> package which defines both classes
+and functional equivalents in <a class="reference external" href="https://pytorch.org/docs/stable/nn.html#module-torch.nn.functional" title="(in PyTorch v2.2)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.nn.functional</span></code></a>.</p>
+<p>The functionals support PIL images, pure tensors, or <a class="reference internal" href="tv_tensors.html#tv-tensors"><span class="std std-ref">TVTensors</span></a>, e.g. both <code class="docutils literal notranslate"><span class="pre">resize(image_tensor)</span></code> and <code class="docutils literal notranslate"><span class="pre">resize(boxes)</span></code> are
+valid.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Random transforms like <a class="reference internal" href="generated/torchvision.transforms.v2.RandomCrop.html#torchvision.transforms.v2.RandomCrop" title="torchvision.transforms.v2.RandomCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomCrop</span></code></a> will
+randomly sample some parameter each time they’re called. Their functional
+counterpart (<a class="reference internal" href="generated/torchvision.transforms.v2.functional.crop.html#torchvision.transforms.v2.functional.crop" title="torchvision.transforms.v2.functional.crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">crop()</span></code></a>) does not do
+any kind of random sampling and thus have a slighlty different
+parametrization. The <code class="docutils literal notranslate"><span class="pre">get_params()</span></code> class method of the transforms class
+can be used to perform parameter sampling when using the functional APIs.</p>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2.functional</span></code> namespace also contains what we
+call the “kernels”. These are the low-level functions that implement the
+core functionalities for specific types, e.g. <code class="docutils literal notranslate"><span class="pre">resize_bounding_boxes</span></code> or
+<code class="docutils literal notranslate"><span class="pre">`resized_crop_mask</span></code>. They are public, although not documented. Check the
+<a class="reference external" href="https://github.com/pytorch/vision/blob/main/torchvision/transforms/v2/functional/__init__.py">code</a>
+to see which ones are available (note that those starting with a leading
+underscore are <strong>not</strong> public!). Kernels are only really useful if you want
+<a class="reference internal" href="#transforms-torchscript"><span class="std std-ref">torchscript support</span></a> for types like bounding
+boxes or masks.</p>
+</section>
+<section id="torchscript-support">
+<span id="transforms-torchscript"></span><h2>Torchscript support<a class="headerlink" href="#torchscript-support" title="Permalink to this heading">¶</a></h2>
+<p>Most transform classes and functionals support torchscript. For composing
+transforms, use <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="(in PyTorch v2.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a> instead of
+<a class="reference internal" href="generated/torchvision.transforms.v2.Compose.html#torchvision.transforms.v2.Compose" title="torchvision.transforms.v2.Compose"><code class="xref py py-class docutils literal notranslate"><span class="pre">Compose</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">transforms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+    <span class="n">CenterCrop</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span>
+    <span class="n">Normalize</span><span class="p">((</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">)),</span>
+<span class="p">)</span>
+<span class="n">scripted_transforms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span><span class="p">(</span><span class="n">transforms</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>v2 transforms support torchscript, but if you call <code class="docutils literal notranslate"><span class="pre">torch.jit.script()</span></code> on
+a v2 <strong>class</strong> transform, you’ll actually end up with its (scripted) v1
+equivalent.  This may lead to slightly different results between the
+scripted and eager executions due to implementation differences between v1
+and v2.</p>
+<p>If you really need torchscript support for the v2 transforms, we recommend
+scripting the <strong>functionals</strong> from the
+<code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2.functional</span></code> namespace to avoid surprises.</p>
+</div>
+<p>Also note that the functionals only support torchscript for pure tensors, which
+are always treated as images. If you need torchscript support for other types
+like bounding boxes or masks, you can rely on the <a class="reference internal" href="#functional-transforms"><span class="std std-ref">low-level kernels</span></a>.</p>
+<p>For any custom transformations to be used with <code class="docutils literal notranslate"><span class="pre">torch.jit.script</span></code>, they should
+be derived from <code class="docutils literal notranslate"><span class="pre">torch.nn.Module</span></code>.</p>
+<p>See also: <a class="reference internal" href="auto_examples/others/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-others-plot-scripted-tensor-transforms-py"><span class="std std-ref">Torchscript support</span></a>.</p>
+</section>
+<section id="v2-api-reference-recommended">
+<span id="v2-api-ref"></span><h2>V2 API reference - Recommended<a class="headerlink" href="#v2-api-reference-recommended" title="Permalink to this heading">¶</a></h2>
+<section id="geometry">
+<h3>Geometry<a class="headerlink" href="#geometry" title="Permalink to this heading">¶</a></h3>
+<section id="resizing">
+<h4>Resizing<a class="headerlink" href="#resizing" title="Permalink to this heading">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Resize.html#torchvision.transforms.v2.Resize" title="torchvision.transforms.v2.Resize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Resize</span></code></a>(size[, interpolation, max_size, ...])</p></td>
+<td><p>Resize the input to the given size.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ScaleJitter.html#torchvision.transforms.v2.ScaleJitter" title="torchvision.transforms.v2.ScaleJitter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ScaleJitter</span></code></a>(target_size[, scale_range, ...])</p></td>
+<td><p>Perform Large Scale Jitter on the input according to <a class="reference external" href="https://arxiv.org/abs/2012.07177">&quot;Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation&quot;</a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomShortestSize.html#torchvision.transforms.v2.RandomShortestSize" title="torchvision.transforms.v2.RandomShortestSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomShortestSize</span></code></a>(min_size[, max_size, ...])</p></td>
+<td><p>Randomly resize the input.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomResize.html#torchvision.transforms.v2.RandomResize" title="torchvision.transforms.v2.RandomResize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomResize</span></code></a>(min_size, max_size[, ...])</p></td>
+<td><p>Randomly resize the input.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Functionals</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.resize.html#torchvision.transforms.v2.functional.resize" title="torchvision.transforms.v2.functional.resize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.resize</span></code></a>(inpt, size[, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.Resize.html#torchvision.transforms.v2.Resize" title="torchvision.transforms.v2.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a> for details.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cropping">
+<h4>Cropping<a class="headerlink" href="#cropping" title="Permalink to this heading">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomCrop.html#torchvision.transforms.v2.RandomCrop" title="torchvision.transforms.v2.RandomCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomCrop</span></code></a>(size[, padding, ...])</p></td>
+<td><p>Crop the input at a random location.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomResizedCrop.html#torchvision.transforms.v2.RandomResizedCrop" title="torchvision.transforms.v2.RandomResizedCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomResizedCrop</span></code></a>(size[, scale, ratio, ...])</p></td>
+<td><p>Crop a random portion of the input and resize it to a given size.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomIoUCrop.html#torchvision.transforms.v2.RandomIoUCrop" title="torchvision.transforms.v2.RandomIoUCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomIoUCrop</span></code></a>([min_scale, max_scale, ...])</p></td>
+<td><p>Random IoU crop transformation from <a class="reference external" href="https://arxiv.org/abs/1512.02325">&quot;SSD: Single Shot MultiBox Detector&quot;</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.CenterCrop.html#torchvision.transforms.v2.CenterCrop" title="torchvision.transforms.v2.CenterCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.CenterCrop</span></code></a>(size)</p></td>
+<td><p>Crop the input at the center.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.FiveCrop.html#torchvision.transforms.v2.FiveCrop" title="torchvision.transforms.v2.FiveCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.FiveCrop</span></code></a>(size)</p></td>
+<td><p>Crop the image or video into four corners and the central crop.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.TenCrop.html#torchvision.transforms.v2.TenCrop" title="torchvision.transforms.v2.TenCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.TenCrop</span></code></a>(size[, vertical_flip])</p></td>
+<td><p>Crop the image or video into four corners and the central crop plus the flipped version of these (horizontal flipping is used by default).</p></td>
+</tr>
+</tbody>
+</table>
+<p>Functionals</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.crop.html#torchvision.transforms.v2.functional.crop" title="torchvision.transforms.v2.functional.crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.crop</span></code></a>(inpt, top, left, height, ...)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomCrop.html#torchvision.transforms.v2.RandomCrop" title="torchvision.transforms.v2.RandomCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomCrop</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.resized_crop.html#torchvision.transforms.v2.functional.resized_crop" title="torchvision.transforms.v2.functional.resized_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.resized_crop</span></code></a>(inpt, top, left, ...)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomResizedCrop.html#torchvision.transforms.v2.RandomResizedCrop" title="torchvision.transforms.v2.RandomResizedCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.ten_crop.html#torchvision.transforms.v2.functional.ten_crop" title="torchvision.transforms.v2.functional.ten_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.ten_crop</span></code></a>(inpt, size[, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.TenCrop.html#torchvision.transforms.v2.TenCrop" title="torchvision.transforms.v2.TenCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">TenCrop</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.center_crop.html#torchvision.transforms.v2.functional.center_crop" title="torchvision.transforms.v2.functional.center_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.center_crop</span></code></a>(inpt, output_size)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomCrop.html#torchvision.transforms.v2.RandomCrop" title="torchvision.transforms.v2.RandomCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomCrop</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.five_crop.html#torchvision.transforms.v2.functional.five_crop" title="torchvision.transforms.v2.functional.five_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.five_crop</span></code></a>(inpt, size)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.FiveCrop.html#torchvision.transforms.v2.FiveCrop" title="torchvision.transforms.v2.FiveCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">FiveCrop</span></code></a> for details.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="others">
+<h4>Others<a class="headerlink" href="#others" title="Permalink to this heading">¶</a></h4>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomHorizontalFlip.html#torchvision.transforms.v2.RandomHorizontalFlip" title="torchvision.transforms.v2.RandomHorizontalFlip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomHorizontalFlip</span></code></a>([p])</p></td>
+<td><p>Horizontally flip the input with a given probability.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomVerticalFlip.html#torchvision.transforms.v2.RandomVerticalFlip" title="torchvision.transforms.v2.RandomVerticalFlip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomVerticalFlip</span></code></a>([p])</p></td>
+<td><p>Vertically flip the input with a given probability.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Pad.html#torchvision.transforms.v2.Pad" title="torchvision.transforms.v2.Pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Pad</span></code></a>(padding[, fill, padding_mode])</p></td>
+<td><p>Pad the input on all sides with the given &quot;pad&quot; value.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomZoomOut.html#torchvision.transforms.v2.RandomZoomOut" title="torchvision.transforms.v2.RandomZoomOut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomZoomOut</span></code></a>([fill, side_range, p])</p></td>
+<td><p><p>&quot;Zoom out&quot; transformation from <a class="reference external" href="https://arxiv.org/abs/1512.02325">&quot;SSD: Single Shot MultiBox Detector&quot;</a>.</p>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomRotation.html#torchvision.transforms.v2.RandomRotation" title="torchvision.transforms.v2.RandomRotation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomRotation</span></code></a>(degrees[, interpolation, ...])</p></td>
+<td><p>Rotate the input by angle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomAffine.html#torchvision.transforms.v2.RandomAffine" title="torchvision.transforms.v2.RandomAffine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomAffine</span></code></a>(degrees[, translate, scale, ...])</p></td>
+<td><p>Random affine transformation the input keeping center invariant.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomPerspective.html#torchvision.transforms.v2.RandomPerspective" title="torchvision.transforms.v2.RandomPerspective"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomPerspective</span></code></a>([distortion_scale, p, ...])</p></td>
+<td><p>Perform a random perspective transformation of the input with a given probability.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ElasticTransform.html#torchvision.transforms.v2.ElasticTransform" title="torchvision.transforms.v2.ElasticTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ElasticTransform</span></code></a>([alpha, sigma, ...])</p></td>
+<td><p>Transform the input with elastic transformations.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Functionals</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.horizontal_flip.html#torchvision.transforms.v2.functional.horizontal_flip" title="torchvision.transforms.v2.functional.horizontal_flip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.horizontal_flip</span></code></a>(inpt)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomHorizontalFlip.html#torchvision.transforms.v2.RandomHorizontalFlip" title="torchvision.transforms.v2.RandomHorizontalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomHorizontalFlip</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.vertical_flip.html#torchvision.transforms.v2.functional.vertical_flip" title="torchvision.transforms.v2.functional.vertical_flip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.vertical_flip</span></code></a>(inpt)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomVerticalFlip.html#torchvision.transforms.v2.RandomVerticalFlip" title="torchvision.transforms.v2.RandomVerticalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomVerticalFlip</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.pad.html#torchvision.transforms.v2.functional.pad" title="torchvision.transforms.v2.functional.pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.pad</span></code></a>(inpt, padding[, fill, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.Pad.html#torchvision.transforms.v2.Pad" title="torchvision.transforms.v2.Pad"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pad</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.rotate.html#torchvision.transforms.v2.functional.rotate" title="torchvision.transforms.v2.functional.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.rotate</span></code></a>(inpt, angle[, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomRotation.html#torchvision.transforms.v2.RandomRotation" title="torchvision.transforms.v2.RandomRotation"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomRotation</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.affine.html#torchvision.transforms.v2.functional.affine" title="torchvision.transforms.v2.functional.affine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.affine</span></code></a>(inpt, angle, translate, ...)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomAffine.html#torchvision.transforms.v2.RandomAffine" title="torchvision.transforms.v2.RandomAffine"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAffine</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.perspective.html#torchvision.transforms.v2.functional.perspective" title="torchvision.transforms.v2.functional.perspective"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.perspective</span></code></a>(inpt, startpoints, ...)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomPerspective.html#torchvision.transforms.v2.RandomPerspective" title="torchvision.transforms.v2.RandomPerspective"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomPerspective</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.elastic.html#torchvision.transforms.v2.functional.elastic" title="torchvision.transforms.v2.functional.elastic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.elastic</span></code></a>(inpt, displacement[, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.ElasticTransform.html#torchvision.transforms.v2.ElasticTransform" title="torchvision.transforms.v2.ElasticTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElasticTransform</span></code></a> for details.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="color">
+<h3>Color<a class="headerlink" href="#color" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ColorJitter.html#torchvision.transforms.v2.ColorJitter" title="torchvision.transforms.v2.ColorJitter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ColorJitter</span></code></a>([brightness, contrast, ...])</p></td>
+<td><p>Randomly change the brightness, contrast, saturation and hue of an image or video.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomChannelPermutation.html#torchvision.transforms.v2.RandomChannelPermutation" title="torchvision.transforms.v2.RandomChannelPermutation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomChannelPermutation</span></code></a>()</p></td>
+<td><p>Randomly permute the channels of an image or video</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomPhotometricDistort.html#torchvision.transforms.v2.RandomPhotometricDistort" title="torchvision.transforms.v2.RandomPhotometricDistort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomPhotometricDistort</span></code></a>([brightness, ...])</p></td>
+<td><p>Randomly distorts the image or video as used in <a class="reference external" href="https://arxiv.org/abs/1512.02325">SSD: Single Shot MultiBox Detector</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Grayscale.html#torchvision.transforms.v2.Grayscale" title="torchvision.transforms.v2.Grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Grayscale</span></code></a>([num_output_channels])</p></td>
+<td><p>Convert images or videos to grayscale.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomGrayscale.html#torchvision.transforms.v2.RandomGrayscale" title="torchvision.transforms.v2.RandomGrayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomGrayscale</span></code></a>([p])</p></td>
+<td><p>Randomly convert image or videos to grayscale with a probability of p (default 0.1).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.GaussianBlur.html#torchvision.transforms.v2.GaussianBlur" title="torchvision.transforms.v2.GaussianBlur"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.GaussianBlur</span></code></a>(kernel_size[, sigma])</p></td>
+<td><p>Blurs image with randomly chosen Gaussian blur.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomInvert.html#torchvision.transforms.v2.RandomInvert" title="torchvision.transforms.v2.RandomInvert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomInvert</span></code></a>([p])</p></td>
+<td><p>Inverts the colors of the given image or video with a given probability.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomPosterize.html#torchvision.transforms.v2.RandomPosterize" title="torchvision.transforms.v2.RandomPosterize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomPosterize</span></code></a>(bits[, p])</p></td>
+<td><p>Posterize the image or video with a given probability by reducing the number of bits for each color channel.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomSolarize.html#torchvision.transforms.v2.RandomSolarize" title="torchvision.transforms.v2.RandomSolarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomSolarize</span></code></a>(threshold[, p])</p></td>
+<td><p>Solarize the image or video with a given probability by inverting all pixel values above a threshold.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomAdjustSharpness.html#torchvision.transforms.v2.RandomAdjustSharpness" title="torchvision.transforms.v2.RandomAdjustSharpness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomAdjustSharpness</span></code></a>(sharpness_factor[, p])</p></td>
+<td><p>Adjust the sharpness of the image or video with a given probability.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomAutocontrast.html#torchvision.transforms.v2.RandomAutocontrast" title="torchvision.transforms.v2.RandomAutocontrast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomAutocontrast</span></code></a>([p])</p></td>
+<td><p>Autocontrast the pixels of the given image or video with a given probability.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomEqualize.html#torchvision.transforms.v2.RandomEqualize" title="torchvision.transforms.v2.RandomEqualize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomEqualize</span></code></a>([p])</p></td>
+<td><p>Equalize the histogram of the given image or video with a given probability.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Functionals</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.permute_channels.html#torchvision.transforms.v2.functional.permute_channels" title="torchvision.transforms.v2.functional.permute_channels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.permute_channels</span></code></a>(inpt, permutation)</p></td>
+<td><p>Permute the channels of the input according to the given permutation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.rgb_to_grayscale.html#torchvision.transforms.v2.functional.rgb_to_grayscale" title="torchvision.transforms.v2.functional.rgb_to_grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.rgb_to_grayscale</span></code></a>(inpt[, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.Grayscale.html#torchvision.transforms.v2.Grayscale" title="torchvision.transforms.v2.Grayscale"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grayscale</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.to_grayscale.html#torchvision.transforms.v2.functional.to_grayscale" title="torchvision.transforms.v2.functional.to_grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.to_grayscale</span></code></a>(inpt[, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.Grayscale.html#torchvision.transforms.v2.Grayscale" title="torchvision.transforms.v2.Grayscale"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grayscale</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.gaussian_blur.html#torchvision.transforms.v2.functional.gaussian_blur" title="torchvision.transforms.v2.functional.gaussian_blur"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.gaussian_blur</span></code></a>(inpt, kernel_size)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.GaussianBlur.html#torchvision.transforms.v2.GaussianBlur" title="torchvision.transforms.v2.GaussianBlur"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianBlur</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.invert.html#torchvision.transforms.v2.functional.invert" title="torchvision.transforms.v2.functional.invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.invert</span></code></a>(inpt)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomInvert.html#torchvision.transforms.v2.RandomInvert" title="torchvision.transforms.v2.RandomInvert"><code class="xref py py-func docutils literal notranslate"><span class="pre">RandomInvert()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.posterize.html#torchvision.transforms.v2.functional.posterize" title="torchvision.transforms.v2.functional.posterize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.posterize</span></code></a>(inpt, bits)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomPosterize.html#torchvision.transforms.v2.RandomPosterize" title="torchvision.transforms.v2.RandomPosterize"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomPosterize</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.solarize.html#torchvision.transforms.v2.functional.solarize" title="torchvision.transforms.v2.functional.solarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.solarize</span></code></a>(inpt, threshold)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomSolarize.html#torchvision.transforms.v2.RandomSolarize" title="torchvision.transforms.v2.RandomSolarize"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomSolarize</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.adjust_sharpness.html#torchvision.transforms.v2.functional.adjust_sharpness" title="torchvision.transforms.v2.functional.adjust_sharpness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.adjust_sharpness</span></code></a>(inpt, ...)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.RandomAdjustSharpness.html#torchvision.transforms.RandomAdjustSharpness" title="torchvision.transforms.RandomAdjustSharpness"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAdjustSharpness</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.autocontrast.html#torchvision.transforms.v2.functional.autocontrast" title="torchvision.transforms.v2.functional.autocontrast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.autocontrast</span></code></a>(inpt)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomAutocontrast.html#torchvision.transforms.v2.RandomAutocontrast" title="torchvision.transforms.v2.RandomAutocontrast"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAutocontrast</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.adjust_contrast.html#torchvision.transforms.v2.functional.adjust_contrast" title="torchvision.transforms.v2.functional.adjust_contrast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.adjust_contrast</span></code></a>(inpt, ...)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.RandomAutocontrast.html#torchvision.transforms.RandomAutocontrast" title="torchvision.transforms.RandomAutocontrast"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAutocontrast</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.equalize.html#torchvision.transforms.v2.functional.equalize" title="torchvision.transforms.v2.functional.equalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.equalize</span></code></a>(inpt)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.RandomEqualize.html#torchvision.transforms.v2.RandomEqualize" title="torchvision.transforms.v2.RandomEqualize"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomEqualize</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.adjust_brightness.html#torchvision.transforms.v2.functional.adjust_brightness" title="torchvision.transforms.v2.functional.adjust_brightness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.adjust_brightness</span></code></a>(inpt, ...)</p></td>
+<td><p>Adjust brightness.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.adjust_saturation.html#torchvision.transforms.v2.functional.adjust_saturation" title="torchvision.transforms.v2.functional.adjust_saturation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.adjust_saturation</span></code></a>(inpt, ...)</p></td>
+<td><p>Adjust saturation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.adjust_hue.html#torchvision.transforms.v2.functional.adjust_hue" title="torchvision.transforms.v2.functional.adjust_hue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.adjust_hue</span></code></a>(inpt, hue_factor)</p></td>
+<td><p>Adjust hue</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.adjust_gamma.html#torchvision.transforms.v2.functional.adjust_gamma" title="torchvision.transforms.v2.functional.adjust_gamma"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.adjust_gamma</span></code></a>(inpt, gamma[, gain])</p></td>
+<td><p>Adjust gamma.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="composition">
+<h3>Composition<a class="headerlink" href="#composition" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Compose.html#torchvision.transforms.v2.Compose" title="torchvision.transforms.v2.Compose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Compose</span></code></a>(transforms)</p></td>
+<td><p>Composes several transforms together.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomApply.html#torchvision.transforms.v2.RandomApply" title="torchvision.transforms.v2.RandomApply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomApply</span></code></a>(transforms[, p])</p></td>
+<td><p>Apply randomly a list of transformations with a given probability.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomChoice.html#torchvision.transforms.v2.RandomChoice" title="torchvision.transforms.v2.RandomChoice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomChoice</span></code></a>(transforms[, p])</p></td>
+<td><p>Apply single transformation randomly picked from a list.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomOrder.html#torchvision.transforms.v2.RandomOrder" title="torchvision.transforms.v2.RandomOrder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomOrder</span></code></a>(transforms)</p></td>
+<td><p>Apply a list of transformations in a random order.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="miscellaneous">
+<h3>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.LinearTransformation.html#torchvision.transforms.v2.LinearTransformation" title="torchvision.transforms.v2.LinearTransformation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.LinearTransformation</span></code></a>(...)</p></td>
+<td><p>Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize" title="torchvision.transforms.v2.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Normalize</span></code></a>(mean, std[, inplace])</p></td>
+<td><p>Normalize a tensor image or video with mean and standard deviation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandomErasing.html#torchvision.transforms.v2.RandomErasing" title="torchvision.transforms.v2.RandomErasing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandomErasing</span></code></a>([p, scale, ratio, value, ...])</p></td>
+<td><p>Randomly select a rectangle region in the input image or video and erase its pixels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.Lambda.html#torchvision.transforms.v2.Lambda" title="torchvision.transforms.v2.Lambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.Lambda</span></code></a>(lambd, *types)</p></td>
+<td><p>Apply a user-defined function as a transform.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.SanitizeBoundingBoxes.html#torchvision.transforms.v2.SanitizeBoundingBoxes" title="torchvision.transforms.v2.SanitizeBoundingBoxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.SanitizeBoundingBoxes</span></code></a>([min_size, ...])</p></td>
+<td><p>Remove degenerate/invalid bounding boxes and their corresponding labels and masks.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ClampBoundingBoxes.html#torchvision.transforms.v2.ClampBoundingBoxes" title="torchvision.transforms.v2.ClampBoundingBoxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ClampBoundingBoxes</span></code></a>()</p></td>
+<td><p>Clamp bounding boxes to their corresponding image dimensions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.UniformTemporalSubsample.html#torchvision.transforms.v2.UniformTemporalSubsample" title="torchvision.transforms.v2.UniformTemporalSubsample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.UniformTemporalSubsample</span></code></a>(num_samples)</p></td>
+<td><p>Uniformly subsample <code class="docutils literal notranslate"><span class="pre">num_samples</span></code> indices from the temporal dimension of the video.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Functionals</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.normalize.html#torchvision.transforms.v2.functional.normalize" title="torchvision.transforms.v2.functional.normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.normalize</span></code></a>(inpt, mean, std[, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize" title="torchvision.transforms.v2.Normalize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normalize</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.erase.html#torchvision.transforms.v2.functional.erase" title="torchvision.transforms.v2.functional.erase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.erase</span></code></a>(inpt, i, j, h, w, v[, ...])</p></td>
+<td><p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">RandomErase</span></code> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.clamp_bounding_boxes.html#torchvision.transforms.v2.functional.clamp_bounding_boxes" title="torchvision.transforms.v2.functional.clamp_bounding_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.clamp_bounding_boxes</span></code></a>(inpt[, ...])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.ClampBoundingBoxes.html#torchvision.transforms.v2.ClampBoundingBoxes" title="torchvision.transforms.v2.ClampBoundingBoxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">ClampBoundingBoxes()</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.uniform_temporal_subsample.html#torchvision.transforms.v2.functional.uniform_temporal_subsample" title="torchvision.transforms.v2.functional.uniform_temporal_subsample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.uniform_temporal_subsample</span></code></a>(...)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.UniformTemporalSubsample.html#torchvision.transforms.v2.UniformTemporalSubsample" title="torchvision.transforms.v2.UniformTemporalSubsample"><code class="xref py py-class docutils literal notranslate"><span class="pre">UniformTemporalSubsample</span></code></a> for details.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="conversion">
+<span id="conversion-transforms"></span><h3>Conversion<a class="headerlink" href="#conversion" title="Permalink to this heading">¶</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Beware, some of these conversion transforms below will scale the values
+while performing the conversion, while some may not do any scaling. By
+scaling, we mean e.g. that a <code class="docutils literal notranslate"><span class="pre">uint8</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">float32</span></code> would map the [0,
+255] range into [0, 1] (and vice-versa). See <a class="reference internal" href="#range-and-dtype"><span class="std std-ref">Dtype and expected value range</span></a>.</p>
+</div>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToImage.html#torchvision.transforms.v2.ToImage" title="torchvision.transforms.v2.ToImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToImage</span></code></a>()</p></td>
+<td><p>Convert a tensor, ndarray, or PIL Image to <a class="reference internal" href="generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> ; this does not scale values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToPureTensor.html#torchvision.transforms.v2.ToPureTensor" title="torchvision.transforms.v2.ToPureTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToPureTensor</span></code></a>()</p></td>
+<td><p>Convert all TVTensors to pure tensors, removing associated metadata (if any).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.PILToTensor.html#torchvision.transforms.v2.PILToTensor" title="torchvision.transforms.v2.PILToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.PILToTensor</span></code></a>()</p></td>
+<td><p>Convert a PIL Image to a tensor of the same type - this does not scale values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToPILImage.html#torchvision.transforms.v2.ToPILImage" title="torchvision.transforms.v2.ToPILImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToPILImage</span></code></a>([mode])</p></td>
+<td><p>Convert a tensor or an ndarray to PIL Image</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype" title="torchvision.transforms.v2.ToDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToDtype</span></code></a>(dtype[, scale])</p></td>
+<td><p>Converts the input to a specific dtype, optionally scaling the values for images or videos.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertBoundingBoxFormat.html#torchvision.transforms.v2.ConvertBoundingBoxFormat" title="torchvision.transforms.v2.ConvertBoundingBoxFormat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertBoundingBoxFormat</span></code></a>(format)</p></td>
+<td><p>Convert bounding box coordinates to the given <code class="docutils literal notranslate"><span class="pre">format</span></code>, eg from &quot;CXCYWH&quot; to &quot;XYXY&quot;.</p></td>
+</tr>
+</tbody>
+</table>
+<p>functionals</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.to_image.html#torchvision.transforms.v2.functional.to_image" title="torchvision.transforms.v2.functional.to_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.to_image</span></code></a>(inpt)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.ToImage.html#torchvision.transforms.v2.ToImage" title="torchvision.transforms.v2.ToImage"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToImage</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.pil_to_tensor.html#torchvision.transforms.v2.functional.pil_to_tensor" title="torchvision.transforms.v2.functional.pil_to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.pil_to_tensor</span></code></a>(pic)</p></td>
+<td><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> to a tensor of the same type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.to_pil_image.html#torchvision.transforms.v2.functional.to_pil_image" title="torchvision.transforms.v2.functional.to_pil_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.to_pil_image</span></code></a>(pic[, mode])</p></td>
+<td><p>Convert a tensor or an ndarray to PIL Image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.to_dtype.html#torchvision.transforms.v2.functional.to_dtype" title="torchvision.transforms.v2.functional.to_dtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.to_dtype</span></code></a>(inpt[, dtype, scale])</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype" title="torchvision.transforms.v2.ToDtype"><code class="xref py py-func docutils literal notranslate"><span class="pre">ToDtype()</span></code></a> for details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.convert_bounding_box_format.html#torchvision.transforms.v2.functional.convert_bounding_box_format" title="torchvision.transforms.v2.functional.convert_bounding_box_format"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.convert_bounding_box_format</span></code></a>(inpt)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.transforms.v2.ConvertBoundingBoxFormat.html#torchvision.transforms.v2.ConvertBoundingBoxFormat" title="torchvision.transforms.v2.ConvertBoundingBoxFormat"><code class="xref py py-func docutils literal notranslate"><span class="pre">ConvertBoundingBoxFormat()</span></code></a> for details.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Deprecated</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToTensor.html#torchvision.transforms.v2.ToTensor" title="torchvision.transforms.v2.ToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToTensor</span></code></a>()</p></td>
+<td><p>[DEPRECATED] Use <code class="docutils literal notranslate"><span class="pre">v2.Compose([v2.ToImage(),</span> <span class="pre">v2.ToDtype(torch.float32,</span> <span class="pre">scale=True)])</span></code> instead.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.to_tensor.html#torchvision.transforms.v2.functional.to_tensor" title="torchvision.transforms.v2.functional.to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.to_tensor</span></code></a>(inpt)</p></td>
+<td><p>[DEPREACTED] Use to_image() and to_dtype() instead.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertImageDtype.html#torchvision.transforms.v2.ConvertImageDtype" title="torchvision.transforms.v2.ConvertImageDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertImageDtype</span></code></a>([dtype])</p></td>
+<td><p>[DEPRECATED] Use <code class="docutils literal notranslate"><span class="pre">v2.ToDtype(dtype,</span> <span class="pre">scale=True)</span></code> instead.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.convert_image_dtype.html#torchvision.transforms.v2.functional.convert_image_dtype" title="torchvision.transforms.v2.functional.convert_image_dtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.convert_image_dtype</span></code></a>(image[, dtype])</p></td>
+<td><p>[DEPRECATED] Use to_dtype() instead.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="auto-augmentation">
+<h3>Auto-Augmentation<a class="headerlink" href="#auto-augmentation" title="Permalink to this heading">¶</a></h3>
+<p><a class="reference external" href="https://arxiv.org/pdf/1805.09501.pdf">AutoAugment</a> is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
+Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
+ImageNet policies provide significant improvements when applied to other datasets.
+In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFAR10 and SVHN.
+The new transform can be used standalone or mixed-and-matched with existing transforms:</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.AutoAugment.html#torchvision.transforms.v2.AutoAugment" title="torchvision.transforms.v2.AutoAugment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.AutoAugment</span></code></a>([policy, interpolation, fill])</p></td>
+<td><p>AutoAugment data augmentation method based on <a class="reference external" href="https://arxiv.org/pdf/1805.09501.pdf">&quot;AutoAugment: Learning Augmentation Strategies from Data&quot;</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.RandAugment.html#torchvision.transforms.v2.RandAugment" title="torchvision.transforms.v2.RandAugment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.RandAugment</span></code></a>([num_ops, magnitude, ...])</p></td>
+<td><p>RandAugment data augmentation method based on <a class="reference external" href="https://arxiv.org/abs/1909.13719">&quot;RandAugment: Practical automated data augmentation with a reduced search space&quot;</a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.TrivialAugmentWide.html#torchvision.transforms.v2.TrivialAugmentWide" title="torchvision.transforms.v2.TrivialAugmentWide"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.TrivialAugmentWide</span></code></a>([num_magnitude_bins, ...])</p></td>
+<td><p>Dataset-independent data-augmentation with TrivialAugment Wide, as described in <a class="reference external" href="https://arxiv.org/abs/2103.10158">&quot;TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation&quot;</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.AugMix.html#torchvision.transforms.v2.AugMix" title="torchvision.transforms.v2.AugMix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.AugMix</span></code></a>([severity, mixture_width, ...])</p></td>
+<td><p>AugMix data augmentation method based on <a class="reference external" href="https://arxiv.org/abs/1912.02781">&quot;AugMix: A Simple Data Processing Method to Improve Robustness and Uncertainty&quot;</a>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cutmix-mixup">
+<h3>CutMix - MixUp<a class="headerlink" href="#cutmix-mixup" title="Permalink to this heading">¶</a></h3>
+<p>CutMix and MixUp are special transforms that
+are meant to be used on batches rather than on individual images, because they
+are combining pairs of images together. These can be used after the dataloader
+(once the samples are batched), or part of a collation function. See
+<a class="reference internal" href="auto_examples/transforms/plot_cutmix_mixup.html#sphx-glr-auto-examples-transforms-plot-cutmix-mixup-py"><span class="std std-ref">How to use CutMix and MixUp</span></a> for detailed usage examples.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.CutMix.html#torchvision.transforms.v2.CutMix" title="torchvision.transforms.v2.CutMix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.CutMix</span></code></a>(*[, alpha, labels_getter])</p></td>
+<td><p>Apply CutMix to the provided batch of images and labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.MixUp.html#torchvision.transforms.v2.MixUp" title="torchvision.transforms.v2.MixUp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.MixUp</span></code></a>(*[, alpha, labels_getter])</p></td>
+<td><p>Apply MixUp to the provided batch of images and labels.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="developer-tools">
+<h3>Developer tools<a class="headerlink" href="#developer-tools" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.functional.register_kernel.html#torchvision.transforms.v2.functional.register_kernel" title="torchvision.transforms.v2.functional.register_kernel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.functional.register_kernel</span></code></a>(functional, ...)</p></td>
+<td><p>Decorate a kernel to register it for a functional and a (custom) tv_tensor type.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v1-api-reference">
+<h2>V1 API Reference<a class="headerlink" href="#v1-api-reference" title="Permalink to this heading">¶</a></h2>
+<section id="id3">
+<h3>Geometry<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.Resize.html#torchvision.transforms.Resize" title="torchvision.transforms.Resize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Resize</span></code></a>(size[, interpolation, max_size, ...])</p></td>
+<td><p>Resize the input image to the given size.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomCrop.html#torchvision.transforms.RandomCrop" title="torchvision.transforms.RandomCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomCrop</span></code></a>(size[, padding, pad_if_needed, ...])</p></td>
+<td><p>Crop the given image at a random location.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomResizedCrop.html#torchvision.transforms.RandomResizedCrop" title="torchvision.transforms.RandomResizedCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a>(size[, scale, ratio, ...])</p></td>
+<td><p>Crop a random portion of image and resize it to a given size.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.CenterCrop.html#torchvision.transforms.CenterCrop" title="torchvision.transforms.CenterCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CenterCrop</span></code></a>(size)</p></td>
+<td><p>Crops the given image at the center.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.FiveCrop.html#torchvision.transforms.FiveCrop" title="torchvision.transforms.FiveCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FiveCrop</span></code></a>(size)</p></td>
+<td><p>Crop the given image into four corners and the central crop.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.TenCrop.html#torchvision.transforms.TenCrop" title="torchvision.transforms.TenCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TenCrop</span></code></a>(size[, vertical_flip])</p></td>
+<td><p>Crop the given image into four corners and the central crop plus the flipped version of these (horizontal flipping is used by default).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.Pad.html#torchvision.transforms.Pad" title="torchvision.transforms.Pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pad</span></code></a>(padding[, fill, padding_mode])</p></td>
+<td><p>Pad the given image on all sides with the given &quot;pad&quot; value.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation" title="torchvision.transforms.RandomRotation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomRotation</span></code></a>(degrees[, interpolation, ...])</p></td>
+<td><p>Rotate the image by angle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomAffine.html#torchvision.transforms.RandomAffine" title="torchvision.transforms.RandomAffine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomAffine</span></code></a>(degrees[, translate, scale, ...])</p></td>
+<td><p>Random affine transformation of the image keeping center invariant.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomPerspective.html#torchvision.transforms.RandomPerspective" title="torchvision.transforms.RandomPerspective"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomPerspective</span></code></a>([distortion_scale, p, ...])</p></td>
+<td><p>Performs a random perspective transformation of the given image with a given probability.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.ElasticTransform.html#torchvision.transforms.ElasticTransform" title="torchvision.transforms.ElasticTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ElasticTransform</span></code></a>([alpha, sigma, ...])</p></td>
+<td><p>Transform a tensor image with elastic transformations.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomHorizontalFlip.html#torchvision.transforms.RandomHorizontalFlip" title="torchvision.transforms.RandomHorizontalFlip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomHorizontalFlip</span></code></a>([p])</p></td>
+<td><p>Horizontally flip the given image randomly with a given probability.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomVerticalFlip.html#torchvision.transforms.RandomVerticalFlip" title="torchvision.transforms.RandomVerticalFlip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomVerticalFlip</span></code></a>([p])</p></td>
+<td><p>Vertically flip the given image randomly with a given probability.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id4">
+<h3>Color<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter" title="torchvision.transforms.ColorJitter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ColorJitter</span></code></a>([brightness, contrast, ...])</p></td>
+<td><p>Randomly change the brightness, contrast, saturation and hue of an image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.Grayscale.html#torchvision.transforms.Grayscale" title="torchvision.transforms.Grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Grayscale</span></code></a>([num_output_channels])</p></td>
+<td><p>Convert image to grayscale.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomGrayscale.html#torchvision.transforms.RandomGrayscale" title="torchvision.transforms.RandomGrayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomGrayscale</span></code></a>([p])</p></td>
+<td><p>Randomly convert image to grayscale with a probability of p (default 0.1).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.GaussianBlur.html#torchvision.transforms.GaussianBlur" title="torchvision.transforms.GaussianBlur"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GaussianBlur</span></code></a>(kernel_size[, sigma])</p></td>
+<td><p>Blurs image with randomly chosen Gaussian blur.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomInvert.html#torchvision.transforms.RandomInvert" title="torchvision.transforms.RandomInvert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomInvert</span></code></a>([p])</p></td>
+<td><p>Inverts the colors of the given image randomly with a given probability.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomPosterize.html#torchvision.transforms.RandomPosterize" title="torchvision.transforms.RandomPosterize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomPosterize</span></code></a>(bits[, p])</p></td>
+<td><p>Posterize the image randomly with a given probability by reducing the number of bits for each color channel.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomSolarize.html#torchvision.transforms.RandomSolarize" title="torchvision.transforms.RandomSolarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomSolarize</span></code></a>(threshold[, p])</p></td>
+<td><p>Solarize the image randomly with a given probability by inverting all pixel values above a threshold.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomAdjustSharpness.html#torchvision.transforms.RandomAdjustSharpness" title="torchvision.transforms.RandomAdjustSharpness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomAdjustSharpness</span></code></a>(sharpness_factor[, p])</p></td>
+<td><p>Adjust the sharpness of the image randomly with a given probability.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomAutocontrast.html#torchvision.transforms.RandomAutocontrast" title="torchvision.transforms.RandomAutocontrast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomAutocontrast</span></code></a>([p])</p></td>
+<td><p>Autocontrast the pixels of the given image randomly with a given probability.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomEqualize.html#torchvision.transforms.RandomEqualize" title="torchvision.transforms.RandomEqualize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomEqualize</span></code></a>([p])</p></td>
+<td><p>Equalize the histogram of the given image randomly with a given probability.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id5">
+<h3>Composition<a class="headerlink" href="#id5" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.Compose.html#torchvision.transforms.Compose" title="torchvision.transforms.Compose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compose</span></code></a>(transforms)</p></td>
+<td><p>Composes several transforms together.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomApply.html#torchvision.transforms.RandomApply" title="torchvision.transforms.RandomApply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomApply</span></code></a>(transforms[, p])</p></td>
+<td><p>Apply randomly a list of transformations with a given probability.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomChoice.html#torchvision.transforms.RandomChoice" title="torchvision.transforms.RandomChoice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomChoice</span></code></a>(transforms[, p])</p></td>
+<td><p>Apply single transformation randomly picked from a list.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomOrder.html#torchvision.transforms.RandomOrder" title="torchvision.transforms.RandomOrder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomOrder</span></code></a>(transforms)</p></td>
+<td><p>Apply a list of transformations in a random order.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id6">
+<h3>Miscellaneous<a class="headerlink" href="#id6" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.LinearTransformation.html#torchvision.transforms.LinearTransformation" title="torchvision.transforms.LinearTransformation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LinearTransformation</span></code></a>(transformation_matrix, ...)</p></td>
+<td><p>Transform a tensor image with a square transformation matrix and a mean_vector computed offline.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.Normalize.html#torchvision.transforms.Normalize" title="torchvision.transforms.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(mean, std[, inplace])</p></td>
+<td><p>Normalize a tensor image with mean and standard deviation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandomErasing.html#torchvision.transforms.RandomErasing" title="torchvision.transforms.RandomErasing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomErasing</span></code></a>([p, scale, ratio, value, inplace])</p></td>
+<td><p>Randomly selects a rectangle region in a torch.Tensor image and erases its pixels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.Lambda.html#torchvision.transforms.Lambda" title="torchvision.transforms.Lambda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Lambda</span></code></a>(lambd)</p></td>
+<td><p>Apply a user-defined lambda as a transform.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id7">
+<h3>Conversion<a class="headerlink" href="#id7" title="Permalink to this heading">¶</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Beware, some of these conversion transforms below will scale the values
+while performing the conversion, while some may not do any scaling. By
+scaling, we mean e.g. that a <code class="docutils literal notranslate"><span class="pre">uint8</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">float32</span></code> would map the [0,
+255] range into [0, 1] (and vice-versa). See <a class="reference internal" href="#range-and-dtype"><span class="std std-ref">Dtype and expected value range</span></a>.</p>
+</div>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.ToPILImage.html#torchvision.transforms.ToPILImage" title="torchvision.transforms.ToPILImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToPILImage</span></code></a>([mode])</p></td>
+<td><p>Convert a tensor or an ndarray to PIL Image</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.ToTensor.html#torchvision.transforms.ToTensor" title="torchvision.transforms.ToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToTensor</span></code></a>()</p></td>
+<td><p>Convert a PIL Image or ndarray to tensor and scale the values accordingly.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.PILToTensor.html#torchvision.transforms.PILToTensor" title="torchvision.transforms.PILToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PILToTensor</span></code></a>()</p></td>
+<td><p>Convert a PIL Image to a tensor of the same type - this does not scale values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.ConvertImageDtype.html#torchvision.transforms.ConvertImageDtype" title="torchvision.transforms.ConvertImageDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvertImageDtype</span></code></a>(dtype)</p></td>
+<td><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id8">
+<h3>Auto-Augmentation<a class="headerlink" href="#id8" title="Permalink to this heading">¶</a></h3>
+<p><a class="reference external" href="https://arxiv.org/pdf/1805.09501.pdf">AutoAugment</a> is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
+Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
+ImageNet policies provide significant improvements when applied to other datasets.
+In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFAR10 and SVHN.
+The new transform can be used standalone or mixed-and-matched with existing transforms:</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.AutoAugmentPolicy.html#torchvision.transforms.AutoAugmentPolicy" title="torchvision.transforms.AutoAugmentPolicy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AutoAugmentPolicy</span></code></a>(value)</p></td>
+<td><p>AutoAugment policies learned on different datasets.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.AutoAugment.html#torchvision.transforms.AutoAugment" title="torchvision.transforms.AutoAugment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AutoAugment</span></code></a>([policy, interpolation, fill])</p></td>
+<td><p><p>AutoAugment data augmentation method based on <a class="reference external" href="https://arxiv.org/pdf/1805.09501.pdf">&quot;AutoAugment: Learning Augmentation Strategies from Data&quot;</a>.</p>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.RandAugment.html#torchvision.transforms.RandAugment" title="torchvision.transforms.RandAugment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandAugment</span></code></a>([num_ops, magnitude, ...])</p></td>
+<td><p><p>RandAugment data augmentation method based on <a class="reference external" href="https://arxiv.org/abs/1909.13719">&quot;RandAugment: Practical automated data augmentation with a reduced search space&quot;</a>.</p>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide" title="torchvision.transforms.TrivialAugmentWide"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrivialAugmentWide</span></code></a>([num_magnitude_bins, ...])</p></td>
+<td><p><p>Dataset-independent data-augmentation with TrivialAugment Wide, as described in <a class="reference external" href="https://arxiv.org/abs/2103.10158">&quot;TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation&quot;</a>.</p>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.AugMix.html#torchvision.transforms.AugMix" title="torchvision.transforms.AugMix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AugMix</span></code></a>([severity, mixture_width, ...])</p></td>
+<td><p><p>AugMix data augmentation method based on <a class="reference external" href="https://arxiv.org/abs/1912.02781">&quot;AugMix: A Simple Data Processing Method to Improve Robustness and Uncertainty&quot;</a>.</p>
+</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id14">
+<h3>Functional Transforms<a class="headerlink" href="#id14" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.adjust_brightness.html#torchvision.transforms.functional.adjust_brightness" title="torchvision.transforms.functional.adjust_brightness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjust_brightness</span></code></a>(img, brightness_factor)</p></td>
+<td><p>Adjust brightness of an image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.adjust_contrast.html#torchvision.transforms.functional.adjust_contrast" title="torchvision.transforms.functional.adjust_contrast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjust_contrast</span></code></a>(img, contrast_factor)</p></td>
+<td><p>Adjust contrast of an image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.adjust_gamma.html#torchvision.transforms.functional.adjust_gamma" title="torchvision.transforms.functional.adjust_gamma"><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjust_gamma</span></code></a>(img, gamma[, gain])</p></td>
+<td><p>Perform gamma correction on an image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.adjust_hue.html#torchvision.transforms.functional.adjust_hue" title="torchvision.transforms.functional.adjust_hue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjust_hue</span></code></a>(img, hue_factor)</p></td>
+<td><p>Adjust hue of an image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.adjust_saturation.html#torchvision.transforms.functional.adjust_saturation" title="torchvision.transforms.functional.adjust_saturation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjust_saturation</span></code></a>(img, saturation_factor)</p></td>
+<td><p>Adjust color saturation of an image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.adjust_sharpness.html#torchvision.transforms.functional.adjust_sharpness" title="torchvision.transforms.functional.adjust_sharpness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjust_sharpness</span></code></a>(img, sharpness_factor)</p></td>
+<td><p>Adjust the sharpness of an image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.affine.html#torchvision.transforms.functional.affine" title="torchvision.transforms.functional.affine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">affine</span></code></a>(img, angle, translate, scale, shear)</p></td>
+<td><p>Apply affine transformation on the image keeping image center invariant.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.autocontrast.html#torchvision.transforms.functional.autocontrast" title="torchvision.transforms.functional.autocontrast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">autocontrast</span></code></a>(img)</p></td>
+<td><p>Maximize contrast of an image by remapping its pixels per channel so that the lowest becomes black and the lightest becomes white.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.center_crop.html#torchvision.transforms.functional.center_crop" title="torchvision.transforms.functional.center_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">center_crop</span></code></a>(img, output_size)</p></td>
+<td><p>Crops the given image at the center.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.convert_image_dtype.html#torchvision.transforms.functional.convert_image_dtype" title="torchvision.transforms.functional.convert_image_dtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_image_dtype</span></code></a>(image[, dtype])</p></td>
+<td><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly This function does not support PIL Image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.crop.html#torchvision.transforms.functional.crop" title="torchvision.transforms.functional.crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop</span></code></a>(img, top, left, height, width)</p></td>
+<td><p>Crop the given image at specified location and output size.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.equalize.html#torchvision.transforms.functional.equalize" title="torchvision.transforms.functional.equalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">equalize</span></code></a>(img)</p></td>
+<td><p>Equalize the histogram of an image by applying a non-linear mapping to the input in order to create a uniform distribution of grayscale values in the output.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.erase.html#torchvision.transforms.functional.erase" title="torchvision.transforms.functional.erase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">erase</span></code></a>(img, i, j, h, w, v[, inplace])</p></td>
+<td><p>Erase the input Tensor Image with given value.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.five_crop.html#torchvision.transforms.functional.five_crop" title="torchvision.transforms.functional.five_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">five_crop</span></code></a>(img, size)</p></td>
+<td><p>Crop the given image into four corners and the central crop.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.gaussian_blur.html#torchvision.transforms.functional.gaussian_blur" title="torchvision.transforms.functional.gaussian_blur"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_blur</span></code></a>(img, kernel_size[, sigma])</p></td>
+<td><p>Performs Gaussian blurring on the image by given kernel.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.get_dimensions.html#torchvision.transforms.functional.get_dimensions" title="torchvision.transforms.functional.get_dimensions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_dimensions</span></code></a>(img)</p></td>
+<td><p>Returns the dimensions of an image as [channels, height, width].</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.get_image_num_channels.html#torchvision.transforms.functional.get_image_num_channels" title="torchvision.transforms.functional.get_image_num_channels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_image_num_channels</span></code></a>(img)</p></td>
+<td><p>Returns the number of channels of an image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.get_image_size.html#torchvision.transforms.functional.get_image_size" title="torchvision.transforms.functional.get_image_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_image_size</span></code></a>(img)</p></td>
+<td><p>Returns the size of an image as [width, height].</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.hflip.html#torchvision.transforms.functional.hflip" title="torchvision.transforms.functional.hflip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hflip</span></code></a>(img)</p></td>
+<td><p>Horizontally flip the given image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.invert.html#torchvision.transforms.functional.invert" title="torchvision.transforms.functional.invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">invert</span></code></a>(img)</p></td>
+<td><p>Invert the colors of an RGB/grayscale image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.normalize.html#torchvision.transforms.functional.normalize" title="torchvision.transforms.functional.normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize</span></code></a>(tensor, mean, std[, inplace])</p></td>
+<td><p>Normalize a float tensor image with mean and standard deviation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.pad.html#torchvision.transforms.functional.pad" title="torchvision.transforms.functional.pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad</span></code></a>(img, padding[, fill, padding_mode])</p></td>
+<td><p>Pad the given image on all sides with the given &quot;pad&quot; value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.perspective.html#torchvision.transforms.functional.perspective" title="torchvision.transforms.functional.perspective"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perspective</span></code></a>(img, startpoints, endpoints[, ...])</p></td>
+<td><p>Perform perspective transform of the given image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.pil_to_tensor.html#torchvision.transforms.functional.pil_to_tensor" title="torchvision.transforms.functional.pil_to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pil_to_tensor</span></code></a>(pic)</p></td>
+<td><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> to a tensor of the same type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.posterize.html#torchvision.transforms.functional.posterize" title="torchvision.transforms.functional.posterize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterize</span></code></a>(img, bits)</p></td>
+<td><p>Posterize an image by reducing the number of bits for each color channel.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.resize.html#torchvision.transforms.functional.resize" title="torchvision.transforms.functional.resize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code></a>(img, size[, interpolation, max_size, ...])</p></td>
+<td><p>Resize the input image to the given size.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.resized_crop.html#torchvision.transforms.functional.resized_crop" title="torchvision.transforms.functional.resized_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resized_crop</span></code></a>(img, top, left, height, width, size)</p></td>
+<td><p>Crop the given image and resize it to desired size.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.rgb_to_grayscale.html#torchvision.transforms.functional.rgb_to_grayscale" title="torchvision.transforms.functional.rgb_to_grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rgb_to_grayscale</span></code></a>(img[, num_output_channels])</p></td>
+<td><p>Convert RGB image to grayscale version of image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.rotate.html#torchvision.transforms.functional.rotate" title="torchvision.transforms.functional.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate</span></code></a>(img, angle[, interpolation, expand, ...])</p></td>
+<td><p>Rotate the image by angle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.solarize.html#torchvision.transforms.functional.solarize" title="torchvision.transforms.functional.solarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solarize</span></code></a>(img, threshold)</p></td>
+<td><p>Solarize an RGB/grayscale image by inverting all pixel values above a threshold.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.ten_crop.html#torchvision.transforms.functional.ten_crop" title="torchvision.transforms.functional.ten_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ten_crop</span></code></a>(img, size[, vertical_flip])</p></td>
+<td><p>Generate ten cropped images from the given image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_grayscale.html#torchvision.transforms.functional.to_grayscale" title="torchvision.transforms.functional.to_grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_grayscale</span></code></a>(img[, num_output_channels])</p></td>
+<td><p>Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_pil_image.html#torchvision.transforms.functional.to_pil_image" title="torchvision.transforms.functional.to_pil_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pil_image</span></code></a>(pic[, mode])</p></td>
+<td><p>Convert a tensor or an ndarray to PIL Image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_tensor.html#torchvision.transforms.functional.to_tensor" title="torchvision.transforms.functional.to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_tensor</span></code></a>(pic)</p></td>
+<td><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> or <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> to tensor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.vflip.html#torchvision.transforms.functional.vflip" title="torchvision.transforms.functional.vflip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vflip</span></code></a>(img)</p></td>
+<td><p>Vertically flip the given image.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="generated/torchvision.transforms.v2.Resize.html" class="btn btn-neutral float-right" title="Resize" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="torchvision" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-present, Torch Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">Transforming and augmenting images</a><ul>
+<li><a class="reference internal" href="#start-here">Start here</a></li>
+<li><a class="reference internal" href="#supported-input-types-and-conventions">Supported input types and conventions</a><ul>
+<li><a class="reference internal" href="#dtype-and-expected-value-range">Dtype and expected value range</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-or-v2-which-one-should-i-use">V1 or V2? Which one should I use?</a></li>
+<li><a class="reference internal" href="#performance-considerations">Performance considerations</a></li>
+<li><a class="reference internal" href="#transform-classes-functionals-and-kernels">Transform classes, functionals, and kernels</a></li>
+<li><a class="reference internal" href="#torchscript-support">Torchscript support</a></li>
+<li><a class="reference internal" href="#v2-api-reference-recommended">V2 API reference - Recommended</a><ul>
+<li><a class="reference internal" href="#geometry">Geometry</a><ul>
+<li><a class="reference internal" href="#resizing">Resizing</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#cropping">Cropping</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#others">Others</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#color">Color</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#composition">Composition</a></li>
+<li><a class="reference internal" href="#miscellaneous">Miscellaneous</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#conversion">Conversion</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#auto-augmentation">Auto-Augmentation</a></li>
+<li><a class="reference internal" href="#cutmix-mixup">CutMix - MixUp</a></li>
+<li><a class="reference internal" href="#developer-tools">Developer tools</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v1-api-reference">V1 API Reference</a><ul>
+<li><a class="reference internal" href="#id3">Geometry</a></li>
+<li><a class="reference internal" href="#id4">Color</a></li>
+<li><a class="reference internal" href="#id5">Composition</a></li>
+<li><a class="reference internal" href="#id6">Miscellaneous</a></li>
+<li><a class="reference internal" href="#id7">Conversion</a></li>
+<li><a class="reference internal" href="#id8">Auto-Augmentation</a></li>
+<li><a class="reference internal" href="#id14">Functional Transforms</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+         <script src="_static/jquery.js"></script>
+         <script src="_static/underscore.js"></script>
+         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+         <script src="_static/doctools.js"></script>
+         <script src="_static/clipboard.min.js"></script>
+         <script src="_static/copybutton.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">Stay up to date</li>
+            <li><a href="https://www.facebook.com/pytorch" target="_blank">Facebook</a></li>
+            <li><a href="https://twitter.com/pytorch" target="_blank">Twitter</a></li>
+            <li><a href="https://www.youtube.com/pytorch" target="_blank">YouTube</a></li>
+            <li><a href="https://www.linkedin.com/company/pytorch" target="_blank">LinkedIn</a></li>
+          </ul>  
+          </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">PyTorch Podcasts</li>
+            <li><a href="https://open.spotify.com/show/6UzHKeiy368jKfQMKKvJY5" target="_blank">Spotify</a></li>
+            <li><a href="https://podcasts.apple.com/us/podcast/pytorch-developer-podcast/id1566080008" target="_blank">Apple</a></li>
+            <li><a href="https://www.google.com/podcasts?feed=aHR0cHM6Ly9mZWVkcy5zaW1wbGVjYXN0LmNvbS9PQjVGa0lsOA%3D%3D" target="_blank">Google</a></li>
+            <li><a href="https://music.amazon.com/podcasts/7a4e6f0e-26c2-49e9-a478-41bd244197d0/PyTorch-Developer-Podcast?" target="_blank">Amazon</a></li>
+          </ul>
+         </div>
+        </div>
+        
+        <div class="privacy-policy">
+          <ul>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/terms/" target="_blank">Terms</a></li>
+            <li class="privacy-policy-links">|</li>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/privacy-policy/" target="_blank">Privacy</a></li>
+          </ul>
+        </div>
+        <div class="copyright">
+        <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
+          For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+      </div>
+     </div>
+
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+            
+          <li>
+            <a href="">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torcharrow">torcharrow</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/data">TorchData</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torchrec">TorchRec</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/torchx/">TorchX</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
+          </li>
+            
+           <ul class="resources-mobile-menu-items">
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/foundation">PyTorch Foundation</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/community-stories">Community Stories</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/events">Events</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+          </ul>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

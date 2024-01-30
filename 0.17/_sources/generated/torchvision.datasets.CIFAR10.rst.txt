@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+CIFAR10
+=======
+
+.. autoclass:: CIFAR10
+    :members:
+        __getitem__,
+        
+    :special-members:
