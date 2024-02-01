@@ -164,8 +164,7 @@ jobs:
         echo '::endgroup::'
 
         echo '::group::Install testing utilities'
-        # TODO: remove the <8 constraint on pytest when https://github.com/pytorch/vision/issues/8238 is closed
-        pip install --progress-bar=off "pytest<8"
+        pip install --progress-bar=off pytest
         echo '::endgroup::'
 
         echo '::group::Run extended unittests'
