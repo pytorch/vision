@@ -33,9 +33,13 @@ to_grayscale = rgb_to_grayscale
 def _rgb_to_grayscale_image(
     image: torch.Tensor, num_output_channels: int = 1, preserve_dtype: bool = True
 ) -> torch.Tensor:
-    if image.shape[-3] == 1:
+    # TODO: Maybe move the validation that num_output_channels is 1 or 3 to this function instead of callers.
+    if image.shape[-3] == 1 and num_output_channels == 1:
         return image.clone()
-
+    if image.shape[-3] == 1 and num_output_channels == 3:
+        s = [1] * len(image.shape)
+        s[-3] = 3
+        return image.repeat(s)
     r, g, b = image.unbind(dim=-3)
     l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
     l_img = l_img.unsqueeze(dim=-3)

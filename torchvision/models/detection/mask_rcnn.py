@@ -84,8 +84,7 @@ class MaskRCNN(FasterRCNN):
             for computing the loss
         rpn_positive_fraction (float): proportion of positive anchors in a mini-batch during training
             of the RPN
-        rpn_score_thresh (float): during inference, only return proposals with a classification score
-            greater than rpn_score_thresh
+        rpn_score_thresh (float): only return proposals with an objectness score greater than rpn_score_thresh
         box_roi_pool (MultiScaleRoIAlign): the module which crops and resizes the feature maps in
             the locations indicated by the bounding boxes
         box_head (nn.Module): module that takes the cropped feature maps as input
