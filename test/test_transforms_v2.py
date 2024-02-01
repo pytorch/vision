@@ -5001,9 +5001,10 @@ class TestGrayscaleToRgb:
     def test_image_correctness(self, fn):
         image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
 
-        actual = fn(image, num_output_channels=num_output_channels)
+        actual = fn(image)
         expected = F.to_image(F.grayscale_to_rgb(F.to_pil_image(image)))
 
+        print(f"ahmad: {expected.shape=} {actual.shape=}")
         assert_equal(actual, expected, rtol=0, atol=1)
 
 

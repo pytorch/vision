@@ -72,7 +72,7 @@ def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
 
     _log_api_usage_once(grayscale_to_rgb)
 
-    kernel = _get_kernel(rgb_to_grayscale, type(inpt))
+    kernel = _get_kernel(grayscale_to_rgb, type(inpt))
     return kernel(inpt)
 
 
