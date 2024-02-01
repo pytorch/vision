@@ -83,7 +83,7 @@ def grayscale_to_rgb_image(image: torch.Tensor) -> torch.Tensor:
 
 
 @_register_kernel_internal(grayscale_to_rgb, PIL.Image.Image)
-def grayscale_to_rgb_image(image: PIL.Image.Image) -> PIL.Image.Image:
+def grayscale_to_rgb_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.to_grayscale(image, num_output_channels=3)
 
 
