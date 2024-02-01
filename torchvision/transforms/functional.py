@@ -1295,7 +1295,6 @@ def grayscale_to_rgb(img: Tensor) -> Tensor:
     return F_t.grayscale_to_rgb(img)
 
 
-
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
     """Erase the input Tensor Image with given value.
     This transform does not support PIL Image.
