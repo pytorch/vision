@@ -4997,6 +4997,15 @@ class TestGrayscaleToRgb:
     def test_transform(self, make_input):
         check_transform(transforms.GrayscaleToRgb(), make_input(color_space="GRAY"))
 
+    @pytest.mark.parametrize("fn", [F.grayscale_to_rgb, transform_cls_to_functional(transforms.GrayscaleToRgb)])
+    def test_image_correctness(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
+
+        actual = fn(image, num_output_channels=num_output_channels)
+        expected = F.to_image(F.grayscale_to_rgb(F.to_pil_image(image)))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
+
 
 class TestRandomZoomOut:
     # Tests are light because this largely relies on the already tested `pad` kernels.
