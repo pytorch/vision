@@ -676,6 +676,7 @@ def _get_perspective_coeffs(startpoints: List[List[int]], endpoints: List[List[i
     Returns:
         octuple (a, b, c, d, e, f, g, h) for transforming each pixel.
     """
+    # TODO: this should raise an error if < 4 points are provided (and probably also if more than 4) //Parskatt
     a_matrix = torch.zeros(2 * len(startpoints), 8, dtype=torch.float)
 
     for i, (p1, p2) in enumerate(zip(endpoints, startpoints)):
@@ -683,7 +684,8 @@ def _get_perspective_coeffs(startpoints: List[List[int]], endpoints: List[List[i
         a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
     b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.linalg.lstsq(a_matrix, b_matrix, driver="gels").solution
+    # do least squares in double precision to prevent numerical issues
+    res = torch.linalg.lstsq(a_matrix.double(), b_matrix.double(), driver="gels").solution.to(torch.float32)
 
     output: List[float] = res.tolist()
     return output
