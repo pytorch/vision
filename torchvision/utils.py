@@ -389,7 +389,7 @@ def draw_keypoints(
     # Iff K = 1, this has unwanted behavior, but K=1 does not really make sense in the first place.
     visibility.squeeze_(-1)
     if visibility.ndim != 2:
-        raise ValueError("visibility must be of shape (num_instances, K)")
+        raise ValueError(f"visibility must be of shape (num_instances, K). Got ndim={visibility.ndim}")
     if visibility.shape != keypoints.shape[:-1]:
         raise ValueError("keypoints and visibility must have the same dimensionality for num_instances and K.")
 
