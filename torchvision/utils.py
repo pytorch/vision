@@ -391,7 +391,10 @@ def draw_keypoints(
     if visibility.ndim != 2:
         raise ValueError(f"visibility must be of shape (num_instances, K). Got ndim={visibility.ndim}")
     if visibility.shape != keypoints.shape[:-1]:
-        raise ValueError("keypoints and visibility must have the same dimensionality for num_instances and K.")
+        raise ValueError(
+            "keypoints and visibility must have the same dimensionality for num_instances and K. "
+            f"Got {visibility.shape = } and {keypoints.shape = }"
+        )
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
