@@ -402,8 +402,8 @@ def draw_keypoints(
     img_kpts = keypoints.to(torch.int64).tolist()
     img_vis = visibility.cpu().bool().tolist()
 
-    for kpt_id, (kpt_inst, vis_inst) in enumerate(zip(img_kpts, img_vis)):
-        for inst_id, (kpt_coord, kp_vis) in enumerate(zip(kpt_inst, vis_inst)):
+    for kpt_inst, vis_inst in zip(img_kpts, img_vis):
+        for kpt_coord, kp_vis in zip(kpt_inst, vis_inst):
             if not kp_vis:  # skip drawing ellipse if the current keypoint is invisible
                 continue
             x1 = kpt_coord[0] - radius
