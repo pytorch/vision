@@ -466,8 +466,8 @@ show(res)
 #
 # .. _draw_keypoints_with_visibility:
 #
-# Keypoint Visibility
-# ^^^^^^^^^^^^^^^^^^^
+# Drawing Keypoints with Visibility
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Let's have a look at the results, another keypoint prediction module produced, and show the connectivity:
 
 prediction = torch.tensor(

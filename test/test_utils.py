@@ -361,40 +361,75 @@ def test_draw_keypoints_colored(colors):
     assert_equal(img, img_cp)
 
 
-@pytest.mark.parametrize("connectivity", [None, [(0, 1)], [(0, 1), (1, 2)]])
+@pytest.mark.parametrize("connectivity", [[(0, 1)], [(0, 1), (1, 2)]])
 @pytest.mark.parametrize(
     "vis",
     [
-        None,
-        torch.ones((2, 3), dtype=torch.bool),
-        torch.ones((2, 3), dtype=torch.int),
-        torch.ones((2, 3, 1), dtype=torch.float),
+        torch.tensor([[1, 1, 0], [1, 1, 0]], dtype=torch.bool),
+        torch.tensor([[1, 1, 0], [1, 1, 0]], dtype=torch.float).unsqueeze_(-1),
     ],
 )
 def test_draw_keypoints_visibility(connectivity, vis):
     # Keypoints is declared on top as global variable
     keypoints_cp = keypoints.clone()
+
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
-    if vis is None:
-        vis_cp = vis
-    else:
-        vis_cp = vis.clone()
+
+    vis_cp = vis if vis is None else vis.clone()
 
     result = utils.draw_keypoints(
         image=img,
         keypoints=keypoints,
-        visibility=vis,
         connectivity=connectivity,
+        colors="red",
+        visibility=vis,
     )
     assert result.size(0) == 3
     assert_equal(keypoints, keypoints_cp)
     assert_equal(img, img_cp)
+
+    # compare with a fakedata image
+    # connect the key points 0 to 1 for both skeletons and do not show the other key points
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoints_visibility.png"
+    )
+    if not os.path.exists(path):
+        res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+        res.save(path)
+
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
+
     if vis_cp is None:
         assert vis is None
     else:
-        assert_equal(vis, vis_cp.squeeze_(-1))
+        assert_equal(vis, vis_cp)
         assert vis.dtype == vis_cp.dtype
+
+
+def test_draw_keypoints_visibility_default():
+    # Keypoints is declared on top as global variable
+    keypoints_cp = keypoints.clone()
+
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    img_cp = img.clone()
+
+    result = utils.draw_keypoints(
+        image=img,
+        keypoints=keypoints,
+        connectivity=[(0, 1)],
+        colors="red",
+        visibility=None,
+    )
+    assert result.size(0) == 3
+    assert_equal(keypoints, keypoints_cp)
+    assert_equal(img, img_cp)
+
+    # compare against fakedata image, which connects 0->1 for both key-point skeletons
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoint_vanilla.png")
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
 
 
 def test_draw_keypoints_errors():

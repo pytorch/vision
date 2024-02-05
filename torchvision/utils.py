@@ -327,11 +327,11 @@ def draw_segmentation_masks(
 def draw_keypoints(
     image: torch.Tensor,
     keypoints: torch.Tensor,
-    visibility: Optional[torch.Tensor] = None,
     connectivity: Optional[List[Tuple[int, int]]] = None,
     colors: Optional[Union[str, Tuple[int, int, int]]] = None,
     radius: int = 2,
     width: int = 3,
+    visibility: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
 
     """
@@ -351,6 +351,7 @@ def draw_keypoints(
             False means invisible, so neither the point nor possible connections containing it are drawn.
             The input tensor will be cast to bool.
             Default ``None`` means that all the keypoints are visible.
+            For more details, see :ref:`draw_keypoints_with_visibility`.
         connectivity (List[Tuple[int, int]]]): A List of tuple where each tuple contains a pair of keypoints
             to be connected.
             If at least one of the two connected keypoints has a ``visibility`` of False,
@@ -387,7 +388,7 @@ def draw_keypoints(
     # If the last dimension is 1, e.g., after calling split([2, 1], dim=-1) on the output of a keypoint-prediction
     # model, make sure visibility has shape (num_instances, K).
     # Iff K = 1, this has unwanted behavior, but K=1 does not really make sense in the first place.
-    visibility.squeeze_(-1)
+    visibility = visibility.squeeze(-1)
     if visibility.ndim != 2:
         raise ValueError(f"visibility must be of shape (num_instances, K). Got ndim={visibility.ndim}")
     if visibility.shape != keypoints.shape[:-1]:
@@ -404,7 +405,7 @@ def draw_keypoints(
 
     for kpt_inst, vis_inst in zip(img_kpts, img_vis):
         for kpt_coord, kp_vis in zip(kpt_inst, vis_inst):
-            if not kp_vis:  # skip drawing ellipse if the current keypoint is invisible
+            if not kp_vis:
                 continue
             x1 = kpt_coord[0] - radius
             x2 = kpt_coord[0] + radius
@@ -414,8 +415,7 @@ def draw_keypoints(
 
         if connectivity:
             for connection in connectivity:
-                # connection is skipped if one of the keypoints is not visible
-                if not vis_inst[connection[0]] or not vis_inst[connection[1]]:
+                if (not vis_inst[connection[0]]) or (not vis_inst[connection[1]]):
                     continue
                 start_pt_x = kpt_inst[connection[0]][0]
                 start_pt_y = kpt_inst[connection[0]][1]
