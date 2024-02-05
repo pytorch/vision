@@ -345,13 +345,6 @@ def draw_keypoints(
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
         keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoint locations for each of the N instances,
             in the format [x, y].
-        visibility (Tensor): Tensor of shape (num_instances, K) specifying the visibility of the K
-            keypoints for each of the N instances.
-            True means that the respective keypoint is visible and should be drawn.
-            False means invisible, so neither the point nor possible connections containing it are drawn.
-            The input tensor will be cast to bool.
-            Default ``None`` means that all the keypoints are visible.
-            For more details, see :ref:`draw_keypoints_with_visibility`.
         connectivity (List[Tuple[int, int]]]): A List of tuple where each tuple contains a pair of keypoints
             to be connected.
             If at least one of the two connected keypoints has a ``visibility`` of False,
@@ -361,6 +354,13 @@ def draw_keypoints(
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         radius (int): Integer denoting radius of keypoint.
         width (int): Integer denoting width of line connecting keypoints.
+        visibility (Tensor): Tensor of shape (num_instances, K) specifying the visibility of the K
+            keypoints for each of the N instances.
+            True means that the respective keypoint is visible and should be drawn.
+            False means invisible, so neither the point nor possible connections containing it are drawn.
+            The input tensor will be cast to bool.
+            Default ``None`` means that all the keypoints are visible.
+            For more details, see :ref:`draw_keypoints_with_visibility`.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
