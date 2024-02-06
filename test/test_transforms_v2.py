@@ -5182,6 +5182,11 @@ class TestToImage:
         if isinstance(input, torch.Tensor):
             assert output.data_ptr() == input.data_ptr()
 
+    def test_2d_np_array(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8255
+        input = np.random.rand(10, 10)
+        assert F.to_image(input).shape == (1, 10, 10)
+
     def test_functional_error(self):
         with pytest.raises(TypeError, match="Input can either be a pure Tensor, a numpy array, or a PIL image"):
             F.to_image(object())
