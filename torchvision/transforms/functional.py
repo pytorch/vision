@@ -679,7 +679,7 @@ def _get_perspective_coeffs(startpoints: List[List[int]], endpoints: List[List[i
     if len(startpoints) != 4 or len(endpoints) != 4:
         raise ValueError(
             f"Please provide exactly four corners, got {len(startpoints)} startpoints and {len(endpoints)} endpoints."
-            )
+        )
     a_matrix = torch.zeros(2 * len(startpoints), 8, dtype=torch.float64)
 
     for i, (p1, p2) in enumerate(zip(endpoints, startpoints)):
