@@ -232,7 +232,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+36d0e3e) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+ae14789) &#x25BC</a>
     </div>
     
 
@@ -918,7 +918,7 @@ Note that the utility expects uint8 images.</p>
 <span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_plot_visualization_utils_011.png" srcset="../../_images/sphx_glr_plot_visualization_utils_011.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>As we see the keypoints appear as colored circles over the image.
+<img src="../../_images/sphx_glr_plot_visualization_utils_011.png" srcset="../../_images/sphx_glr_plot_visualization_utils_011.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>As we see, the keypoints appear as colored circles over the image.
 The coco keypoints for a person are ordered and represent the following list.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coco_keypoints</span></a> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;nose&quot;</span><span class="p">,</span> <span class="s2">&quot;left_eye&quot;</span><span class="p">,</span> <span class="s2">&quot;right_eye&quot;</span><span class="p">,</span> <span class="s2">&quot;left_ear&quot;</span><span class="p">,</span> <span class="s2">&quot;right_ear&quot;</span><span class="p">,</span>
@@ -951,7 +951,60 @@ order to construct human skeleton.</p>
 <span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_plot_visualization_utils_012.png" srcset="../../_images/sphx_glr_plot_visualization_utils_012.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 14.266 seconds)</p>
+<img src="../../_images/sphx_glr_plot_visualization_utils_012.png" srcset="../../_images/sphx_glr_plot_visualization_utils_012.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>That looks pretty good.</p>
+<section id="drawing-keypoints-with-visibility">
+<span id="draw-keypoints-with-visibility"></span><h3>Drawing Keypoints with Visibility<a class="headerlink" href="#drawing-keypoints-with-visibility" title="Permalink to this heading">¶</a></h3>
+<p>Let’s have a look at the results, another keypoint prediction module produced, and show the connectivity:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">prediction</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">(</span>
+    <span class="p">[[[</span><span class="mf">208.0176</span><span class="p">,</span> <span class="mf">214.2409</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">000.0000</span><span class="p">,</span> <span class="mf">000.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">197.8246</span><span class="p">,</span> <span class="mf">210.6392</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">000.0000</span><span class="p">,</span> <span class="mf">000.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">178.6378</span><span class="p">,</span> <span class="mf">217.8425</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">221.2086</span><span class="p">,</span> <span class="mf">253.8591</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">160.6502</span><span class="p">,</span> <span class="mf">269.4662</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">243.9929</span><span class="p">,</span> <span class="mf">304.2822</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">138.4654</span><span class="p">,</span> <span class="mf">328.8935</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">277.5698</span><span class="p">,</span> <span class="mf">340.8990</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">153.4551</span><span class="p">,</span> <span class="mf">374.5145</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">000.0000</span><span class="p">,</span> <span class="mf">000.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">226.0053</span><span class="p">,</span> <span class="mf">370.3125</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">221.8081</span><span class="p">,</span> <span class="mf">455.5516</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">273.9723</span><span class="p">,</span> <span class="mf">448.9486</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">193.6275</span><span class="p">,</span> <span class="mf">546.1933</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+      <span class="p">[</span><span class="mf">273.3727</span><span class="p">,</span> <span class="mf">545.5930</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">]]]</span>
+<span class="p">)</span>
+
+<a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a> <span class="o">=</span> <span class="n">draw_keypoints</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">person_int</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">prediction</span></a><span class="p">,</span> <span class="n">connectivity</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">connect_skeleton</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">colors</span></a><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_plot_visualization_utils_013.png" srcset="../../_images/sphx_glr_plot_visualization_utils_013.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>What happened there?
+The model, which predicted the new keypoints,
+can’t detect the three points that are hidden on the upper left body of the skateboarder.
+More precisely, the model predicted that <cite>(x, y, vis) = (0, 0, 0)</cite> for the left_eye, left_ear, and left_hip.
+So we definitely don’t want to display those keypoints and connections, and you don’t have to.
+Looking at the parameters of <a class="reference internal" href="../../generated/torchvision.utils.draw_keypoints.html#torchvision.utils.draw_keypoints" title="torchvision.utils.draw_keypoints"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_keypoints()</span></code></a>,
+we can see that we can pass a visibility tensor as an additional argument.
+Given the models’ prediction, we have the visibility as the third keypoint dimension, we just need to extract it.
+Let’s split the <code class="docutils literal notranslate"><span class="pre">prediction</span></code> into the keypoint coordinates and their respective visibility,
+and pass both of them as arguments to <a class="reference internal" href="../../generated/torchvision.utils.draw_keypoints.html#torchvision.utils.draw_keypoints" title="torchvision.utils.draw_keypoints"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_keypoints()</span></code></a>.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">visibility</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.Tensor.split.html#torch.Tensor.split" title="torch.Tensor.split" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-method"><span class="n">prediction</span><span class="o">.</span><span class="n">split</span></a><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">visibility</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">visibility</span></a><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
+
+<a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a> <span class="o">=</span> <span class="n">draw_keypoints</span><span class="p">(</span>
+    <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">person_int</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">visibility</span></a><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">visibility</span></a><span class="p">,</span> <span class="n">connectivity</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">connect_skeleton</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">colors</span></a><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span>
+<span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_plot_visualization_utils_014.png" srcset="../../_images/sphx_glr_plot_visualization_utils_014.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>We can see that the undetected keypoints are not draw and the invisible keypoint connections were skipped.
+This can reduce the noise on images with multiple detections, or in cases like ours,
+when the keypoint-prediction model missed some detections.
+Most torch keypoint-prediction models return the visibility for every prediction, ready for you to use it.
+The <a class="reference internal" href="../../models/generated/torchvision.models.detection.keypointrcnn_resnet50_fpn.html#torchvision.models.detection.keypointrcnn_resnet50_fpn" title="torchvision.models.detection.keypointrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">keypointrcnn_resnet50_fpn()</span></code></a> model,
+which we used in the first case, does so too.</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 14.368 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-others-plot-visualization-utils-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/95e7320166df5d4ddcbdd5ea64a5c98b/plot_visualization_utils.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_visualization_utils.ipynb</span></code></a></p>
@@ -961,6 +1014,7 @@ order to construct human skeleton.</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
 </section>
 </section>
 
@@ -1015,7 +1069,10 @@ order to construct human skeleton.</p>
 <li><a class="reference internal" href="#instance-segmentation-models">Instance segmentation models</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#visualizing-keypoints">Visualizing keypoints</a></li>
+<li><a class="reference internal" href="#visualizing-keypoints">Visualizing keypoints</a><ul>
+<li><a class="reference internal" href="#drawing-keypoints-with-visibility">Drawing Keypoints with Visibility</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

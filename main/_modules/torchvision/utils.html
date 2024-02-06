@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+36d0e3e) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+ae14789) &#x25BC</a>
     </div>
     
 
@@ -688,22 +688,36 @@
     <span class="n">colors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
     <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">visibility</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Draws Keypoints on given RGB image.</span>
 <span class="sd">    The values of the input image should be uint8 between 0 and 255.</span>
+<span class="sd">    Keypoints can be drawn for multiple instances at a time.</span>
+
+<span class="sd">    This method allows that keypoints and their connectivity are drawn based on the visibility of this keypoint.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.</span>
-<span class="sd">        keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,</span>
+<span class="sd">        keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoint locations for each of the N instances,</span>
 <span class="sd">            in the format [x, y].</span>
-<span class="sd">        connectivity (List[Tuple[int, int]]]): A List of tuple where,</span>
-<span class="sd">            each tuple contains pair of keypoints to be connected.</span>
+<span class="sd">        connectivity (List[Tuple[int, int]]]): A List of tuple where each tuple contains a pair of keypoints</span>
+<span class="sd">            to be connected.</span>
+<span class="sd">            If at least one of the two connected keypoints has a ``visibility`` of False,</span>
+<span class="sd">            this specific connection is not drawn.</span>
+<span class="sd">            Exclusions due to invisibility are computed per-instance.</span>
 <span class="sd">        colors (str, Tuple): The color can be represented as</span>
 <span class="sd">            PIL strings e.g. &quot;red&quot; or &quot;#FF00FF&quot;, or as RGB tuples e.g. ``(240, 10, 157)``.</span>
 <span class="sd">        radius (int): Integer denoting radius of keypoint.</span>
 <span class="sd">        width (int): Integer denoting width of line connecting keypoints.</span>
+<span class="sd">        visibility (Tensor): Tensor of shape (num_instances, K) specifying the visibility of the K</span>
+<span class="sd">            keypoints for each of the N instances.</span>
+<span class="sd">            True means that the respective keypoint is visible and should be drawn.</span>
+<span class="sd">            False means invisible, so neither the point nor possible connections containing it are drawn.</span>
+<span class="sd">            The input tensor will be cast to bool.</span>
+<span class="sd">            Default ``None`` means that all the keypoints are visible.</span>
+<span class="sd">            For more details, see :ref:`draw_keypoints_with_visibility`.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.</span>
@@ -711,6 +725,7 @@
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">draw_keypoints</span><span class="p">)</span>
+    <span class="c1"># validate image</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The image must be a tensor, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
@@ -720,24 +735,45 @@
     <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pass an RGB image. Other Image formats are not supported&quot;</span><span class="p">)</span>
 
+    <span class="c1"># validate keypoints</span>
     <span class="k">if</span> <span class="n">keypoints</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;keypoints must be of shape (num_instances, K, 2)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># validate visibility</span>
+    <span class="k">if</span> <span class="n">visibility</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># set default</span>
+        <span class="n">visibility</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">keypoints</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="c1"># If the last dimension is 1, e.g., after calling split([2, 1], dim=-1) on the output of a keypoint-prediction</span>
+    <span class="c1"># model, make sure visibility has shape (num_instances, K).</span>
+    <span class="c1"># Iff K = 1, this has unwanted behavior, but K=1 does not really make sense in the first place.</span>
+    <span class="n">visibility</span> <span class="o">=</span> <span class="n">visibility</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">visibility</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;visibility must be of shape (num_instances, K). Got ndim=</span><span class="si">{</span><span class="n">visibility</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">visibility</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">keypoints</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;keypoints and visibility must have the same dimensionality for num_instances and K. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">visibility</span><span class="o">.</span><span class="n">shape</span><span class="w"> </span><span class="si">= }</span><span class="s2"> and </span><span class="si">{</span><span class="n">keypoints</span><span class="o">.</span><span class="n">shape</span><span class="w"> </span><span class="si">= }</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
 
     <span class="n">ndarr</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
     <span class="n">img_to_draw</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">ndarr</span><span class="p">)</span>
     <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">)</span>
     <span class="n">img_kpts</span> <span class="o">=</span> <span class="n">keypoints</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">img_vis</span> <span class="o">=</span> <span class="n">visibility</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
-    <span class="k">for</span> <span class="n">kpt_id</span><span class="p">,</span> <span class="n">kpt_inst</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">img_kpts</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">inst_id</span><span class="p">,</span> <span class="n">kpt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kpt_inst</span><span class="p">):</span>
-            <span class="n">x1</span> <span class="o">=</span> <span class="n">kpt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">radius</span>
-            <span class="n">x2</span> <span class="o">=</span> <span class="n">kpt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">radius</span>
-            <span class="n">y1</span> <span class="o">=</span> <span class="n">kpt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">radius</span>
-            <span class="n">y2</span> <span class="o">=</span> <span class="n">kpt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">radius</span>
+    <span class="k">for</span> <span class="n">kpt_inst</span><span class="p">,</span> <span class="n">vis_inst</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">img_kpts</span><span class="p">,</span> <span class="n">img_vis</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">kpt_coord</span><span class="p">,</span> <span class="n">kp_vis</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">kpt_inst</span><span class="p">,</span> <span class="n">vis_inst</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">kp_vis</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">x1</span> <span class="o">=</span> <span class="n">kpt_coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">radius</span>
+            <span class="n">x2</span> <span class="o">=</span> <span class="n">kpt_coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">radius</span>
+            <span class="n">y1</span> <span class="o">=</span> <span class="n">kpt_coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">radius</span>
+            <span class="n">y2</span> <span class="o">=</span> <span class="n">kpt_coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">radius</span>
             <span class="n">draw</span><span class="o">.</span><span class="n">ellipse</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">],</span> <span class="n">fill</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">connectivity</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">connection</span> <span class="ow">in</span> <span class="n">connectivity</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">vis_inst</span><span class="p">[</span><span class="n">connection</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">vis_inst</span><span class="p">[</span><span class="n">connection</span><span class="p">[</span><span class="mi">1</span><span class="p">]]):</span>
+                    <span class="k">continue</span>
                 <span class="n">start_pt_x</span> <span class="o">=</span> <span class="n">kpt_inst</span><span class="p">[</span><span class="n">connection</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">start_pt_y</span> <span class="o">=</span> <span class="n">kpt_inst</span><span class="p">[</span><span class="n">connection</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">1</span><span class="p">]</span>
 
