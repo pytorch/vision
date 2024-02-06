@@ -102,6 +102,10 @@ def test_draw_boxes():
     result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, fill=True)
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_util.png")
+    if not os.path.exists(path):
+        res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+        res.save(path)
+
     if PILLOW_VERSION >= (10, 1):
         # The reference image is only valid for new PIL versions
         expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
@@ -128,6 +132,10 @@ def test_draw_boxes_vanilla():
     result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors="white")
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_vanilla.png")
+    if not os.path.exists(path):
+        res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+        res.save(path)
+
     expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
     assert_equal(result, expected)
     # Check if modification is not in place
@@ -321,6 +329,10 @@ def test_draw_keypoints_vanilla():
         ],
     )
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoint_vanilla.png")
+    if not os.path.exists(path):
+        res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+        res.save(path)
+
     expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
     assert_equal(result, expected)
     # Check that keypoints are not modified inplace
@@ -382,6 +394,10 @@ def test_draw_keypoints_visibility(connectivity, vis):
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoints_visibility.png"
     )
+    if not os.path.exists(path):
+        res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+        res.save(path)
+
     expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
     assert_equal(result, expected)
 
