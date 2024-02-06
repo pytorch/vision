@@ -62,6 +62,8 @@ void roi_align_forward_kernel_impl(
 
     // we want to precalculate indices and weights shared by all channels,
     // this is the key point of optimization
+    roi_bin_grid_h = std::max(roi_bin_grid_h, 0);
+    roi_bin_grid_w = std::max(roi_bin_grid_w, 0);
     std::vector<detail::PreCalc<T>> pre_calc(
         roi_bin_grid_h * roi_bin_grid_w * pooled_width * pooled_height);
     detail::pre_calc_for_bilinear_interpolate(
