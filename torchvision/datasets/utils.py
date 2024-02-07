@@ -201,7 +201,12 @@ def download_file_from_google_drive(
         filename (str, optional): Name to save the file under. If None, use the id of the file.
         md5 (str, optional): MD5 checksum of the download. If None, do not check
     """
-    import gdown
+    try:
+        import gdown
+    except ModuleNotFoundError:
+        raise RuntimeError(
+            "To download files from GDrive, 'gdown' is required. You can install it with 'pip install gdown'."
+        )
 
     root = os.path.expanduser(root)
     if not filename:

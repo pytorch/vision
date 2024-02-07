@@ -36,7 +36,7 @@ jobs:
         run: pip install --no-build-isolation --editable .
 
       - name: Install all optional dataset requirements
-        run: pip install scipy pycocotools lmdb requests "git+https://github.com/pmeier/gdown@virus-scan"
+        run: pip install scipy pycocotools lmdb gdown
 
       - name: Install tests requirements
         run: pip install pytest
