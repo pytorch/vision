@@ -17,8 +17,6 @@ class ConvertBoundingBoxFormat(Transform):
 
     def __init__(self, format: Union[str, tv_tensors.BoundingBoxFormat]) -> None:
         super().__init__()
-        if isinstance(format, str):
-            format = tv_tensors.BoundingBoxFormat[format]
         self.format = format
 
     def _transform(self, inpt: tv_tensors.BoundingBoxes, params: Dict[str, Any]) -> tv_tensors.BoundingBoxes:
