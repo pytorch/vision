@@ -20,7 +20,7 @@ class ConvertBoundingBoxFormat(Transform):
         self.format = format
 
     def _transform(self, inpt: tv_tensors.BoundingBoxes, params: Dict[str, Any]) -> tv_tensors.BoundingBoxes:
-        return F.convert_bounding_box_format(inpt, new_format=self.format)  # type: ignore[return-value]
+        return F.convert_bounding_box_format(inpt, new_format=self.format)  # type: ignore[return-value, arg-type]
 
 
 class ClampBoundingBoxes(Transform):
