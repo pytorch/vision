@@ -1276,25 +1276,6 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     return F_t.rgb_to_grayscale(img, num_output_channels)
 
 
-def grayscale_to_rgb(img: Tensor) -> Tensor:
-    """Converts grayscale image to 3-channel image by duplicating the value in all three channels.
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
-
-    Note:
-        Please, note that this method supports only grayscale images as input. For inputs in other color spaces,
-        please, consider using :meth:`~torchvision.transforms.functional.to_grayscale` with PIL Image.
-
-    Returns:
-        PIL Image or Tensor: RGB Image.
-    """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(grayscale_to_rgb)
-    if not isinstance(img, torch.Tensor):
-        return F_pil.grayscale_to_rgb(img)
-    return F_t.grayscale_to_rgb(img)
-
-
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
     """Erase the input Tensor Image with given value.
     This transform does not support PIL Image.

@@ -61,8 +61,6 @@ class GrayscaleToRgb(Transform):
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions
     """
 
-    _v1_transform_cls = _transforms.GrayscaleToRgb
-
     def __init__(self):
         super().__init__()
 
