@@ -79,14 +79,16 @@ def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(grayscale_to_rgb, torch.Tensor)
 @_register_kernel_internal(grayscale_to_rgb, tv_tensors.Image)
 def grayscale_to_rgb_image(image: torch.Tensor) -> torch.Tensor:
+    if image.shape[-3] >= 3:
+        # Image already has RGB channels. We don't need to do anything.
+        return image
     # rgb_to_grayscale can be used to add channels so we reuse that function.
     return _rgb_to_grayscale_image(image, num_output_channels=3, preserve_dtype=True)
 
 
 @_register_kernel_internal(grayscale_to_rgb, PIL.Image.Image)
 def grayscale_to_rgb_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
-    # to_grayscale can expand channels from 1 to 3 so we reuse that function.
-    return _FP.to_grayscale(image, num_output_channels=3)
+    return image.convert(mode="RGB")
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:

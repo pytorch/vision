@@ -5004,7 +5004,6 @@ class TestGrayscaleToRgb:
         actual = fn(image)
         expected = F.to_image(F.grayscale_to_rgb(F.to_pil_image(image)))
 
-        print(f"ahmad: {expected.shape=} {actual.shape=}")
         assert_equal(actual, expected, rtol=0, atol=1)
 
     def test_expanded_channels_are_not_views_into_the_same_underlying_tensor(self):
@@ -5014,6 +5013,19 @@ class TestGrayscaleToRgb:
         assert_equal(output_image[0][0][0], output_image[1][0][0])
         output_image[0][0][0] = output_image[0][0][0] + 1
         assert output_image[0][0][0] != output_image[1][0][0]
+
+    def test_rgb_image_is_unchanged(self):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="RGB")
+        assert_equal(image.shape[-3], 3)
+        image[0][0][0] = 0
+        image[1][0][0] = 100
+        image[2][0][0] = 200
+        output_image = F.grayscale_to_rgb(image)
+        assert output_image[0][0][0] == 0
+        assert output_image[1][0][0] == 100
+        assert output_image[2][0][0] == 200
+        print(image)
+        print(output_image)
 
 
 class TestRandomZoomOut:
