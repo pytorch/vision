@@ -3,9 +3,11 @@ from warnings import warn
 
 import torch
 
+from PIL import Image
+from PIL.ExifTags import TAGS
+
 from ..extension import _load_library
 from ..utils import _log_api_usage_once
-
 
 try:
     _load_library("image")
@@ -237,7 +239,7 @@ def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     return output
 
 
-def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED, process_exif: bool = False) -> torch.Tensor:
     """
     Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
@@ -249,6 +251,7 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torc
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
             available modes.
+        process_exif(bool): Process the EXIF data of the image or not. Default: False
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -256,7 +259,33 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torc
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_image)
     data = read_file(path)
+    if process_exif:
+        process_exif_metadata(path)
     return decode_image(data, mode)
+
+
+def process_exif_metadata(image_path):
+    try:
+        with Image.open(image_path) as img:
+            if hasattr(img, "_getexif"):
+                exif_data = img._getexif()
+                if exif_data:
+                    img_width = exif_data.get(256)
+                    img_height = exif_data.get(257)
+                    if img_width is not None and img_height is not None:
+                        print(f"Image Dimensions: Width={img_width}, Height={img_height}")
+                    else:
+                        print("Image dimensions not found in EXIF data.")
+                    for tag, value in exif_data.items():
+                        tag_name = TAGS.get(tag, tag)
+                        if tag_name not in ["ImageWidth", "ImageLength"]:
+                            print(f"{tag_name}: {value}")
+                else:
+                    print("No EXIF metadata found in the image.")
+            else:
+                print("EXIF data not supported in this image format.")
+    except Exception as e:
+        print(f"Error processing EXIF metadata: {e}")
 
 
 def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
