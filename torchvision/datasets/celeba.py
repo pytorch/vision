@@ -31,13 +31,17 @@ class CelebA(VisionDataset):
 
             Defaults to ``attr``. If empty, ``None`` will be returned as target.
 
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+
+            .. warning::
+
+                To download the dataset `gdown <https://github.com/wkentaro/gdown>`_ is required.
     """
 
     base_folder = "celeba"

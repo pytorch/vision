@@ -210,14 +210,11 @@ def test_draw_segmentation_masks(colors, alpha, device):
     num_masks, h, w = 2, 100, 100
     dtype = torch.uint8
     img = torch.randint(0, 256, size=(3, h, w), dtype=dtype, device=device)
-    masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool, device=device)
+    masks = torch.zeros((num_masks, h, w), dtype=torch.bool, device=device)
+    masks[0, 10:20, 10:20] = True
+    masks[1, 15:25, 15:25] = True
 
-    # For testing we enforce that there's no overlap between the masks. The
-    # current behaviour is that the last mask's color will take priority when
-    # masks overlap, but this makes testing slightly harder, so we don't really
-    # care
     overlap = masks[0] & masks[1]
-    masks[:, overlap] = False
 
     out = utils.draw_segmentation_masks(img, masks, colors=colors, alpha=alpha)
     assert out.dtype == dtype
@@ -239,12 +236,15 @@ def test_draw_segmentation_masks(colors, alpha, device):
         color = torch.tensor(color, dtype=dtype, device=device)
 
         if alpha == 1:
-            assert (out[:, mask] == color[:, None]).all()
+            assert (out[:, mask & ~overlap] == color[:, None]).all()
         elif alpha == 0:
-            assert (out[:, mask] == img[:, mask]).all()
+            assert (out[:, mask & ~overlap] == img[:, mask & ~overlap]).all()
 
-        interpolated_color = (img[:, mask] * (1 - alpha) + color[:, None] * alpha).to(dtype)
-        torch.testing.assert_close(out[:, mask], interpolated_color, rtol=0.0, atol=1.0)
+        interpolated_color = (img[:, mask & ~overlap] * (1 - alpha) + color[:, None] * alpha).to(dtype)
+        torch.testing.assert_close(out[:, mask & ~overlap], interpolated_color, rtol=0.0, atol=1.0)
+
+    interpolated_overlap = (img[:, overlap] * (1 - alpha)).to(dtype)
+    torch.testing.assert_close(out[:, overlap], interpolated_overlap, rtol=0.0, atol=1.0)
 
 
 def test_draw_segmentation_masks_dtypes():
@@ -361,6 +361,77 @@ def test_draw_keypoints_colored(colors):
     assert_equal(img, img_cp)
 
 
+@pytest.mark.parametrize("connectivity", [[(0, 1)], [(0, 1), (1, 2)]])
+@pytest.mark.parametrize(
+    "vis",
+    [
+        torch.tensor([[1, 1, 0], [1, 1, 0]], dtype=torch.bool),
+        torch.tensor([[1, 1, 0], [1, 1, 0]], dtype=torch.float).unsqueeze_(-1),
+    ],
+)
+def test_draw_keypoints_visibility(connectivity, vis):
+    # Keypoints is declared on top as global variable
+    keypoints_cp = keypoints.clone()
+
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    img_cp = img.clone()
+
+    vis_cp = vis if vis is None else vis.clone()
+
+    result = utils.draw_keypoints(
+        image=img,
+        keypoints=keypoints,
+        connectivity=connectivity,
+        colors="red",
+        visibility=vis,
+    )
+    assert result.size(0) == 3
+    assert_equal(keypoints, keypoints_cp)
+    assert_equal(img, img_cp)
+
+    # compare with a fakedata image
+    # connect the key points 0 to 1 for both skeletons and do not show the other key points
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoints_visibility.png"
+    )
+    if not os.path.exists(path):
+        res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+        res.save(path)
+
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
+
+    if vis_cp is None:
+        assert vis is None
+    else:
+        assert_equal(vis, vis_cp)
+        assert vis.dtype == vis_cp.dtype
+
+
+def test_draw_keypoints_visibility_default():
+    # Keypoints is declared on top as global variable
+    keypoints_cp = keypoints.clone()
+
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    img_cp = img.clone()
+
+    result = utils.draw_keypoints(
+        image=img,
+        keypoints=keypoints,
+        connectivity=[(0, 1)],
+        colors="red",
+        visibility=None,
+    )
+    assert result.size(0) == 3
+    assert_equal(keypoints, keypoints_cp)
+    assert_equal(img, img_cp)
+
+    # compare against fakedata image, which connects 0->1 for both key-point skeletons
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoint_vanilla.png")
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
+
+
 def test_draw_keypoints_errors():
     h, w = 10, 10
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
@@ -379,6 +450,18 @@ def test_draw_keypoints_errors():
     with pytest.raises(ValueError, match="keypoints must be of shape"):
         invalid_keypoints = torch.tensor([[10, 10, 10, 10], [5, 6, 7, 8]], dtype=torch.float)
         utils.draw_keypoints(image=img, keypoints=invalid_keypoints)
+    with pytest.raises(ValueError, match=re.escape("visibility must be of shape (num_instances, K)")):
+        one_dim_visibility = torch.tensor([True, True, True], dtype=torch.bool)
+        utils.draw_keypoints(image=img, keypoints=keypoints, visibility=one_dim_visibility)
+    with pytest.raises(ValueError, match=re.escape("visibility must be of shape (num_instances, K)")):
+        three_dim_visibility = torch.ones((2, 3, 4), dtype=torch.bool)
+        utils.draw_keypoints(image=img, keypoints=keypoints, visibility=three_dim_visibility)
+    with pytest.raises(ValueError, match="keypoints and visibility must have the same dimensionality"):
+        vis_wrong_n = torch.ones((3, 3), dtype=torch.bool)
+        utils.draw_keypoints(image=img, keypoints=keypoints, visibility=vis_wrong_n)
+    with pytest.raises(ValueError, match="keypoints and visibility must have the same dimensionality"):
+        vis_wrong_k = torch.ones((2, 4), dtype=torch.bool)
+        utils.draw_keypoints(image=img, keypoints=keypoints, visibility=vis_wrong_k)
 
 
 @pytest.mark.parametrize("batch", (True, False))

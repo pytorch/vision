@@ -16,7 +16,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     to their intersection-over-union (IoU).
 
     NMS iteratively removes lower scoring boxes which have an
-    IoU greater than iou_threshold with another (higher scoring)
+    IoU greater than ``iou_threshold`` with another (higher scoring)
     box.
 
     If multiple boxes have the exact same score and satisfy the IoU
@@ -114,7 +114,12 @@ def _batched_nms_vanilla(
 
 def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
-    Remove boxes which contains at least one side smaller than min_size.
+    Remove every box from ``boxes`` which contains at least one side length
+    that is smaller than ``min_size``.
+
+    .. note::
+        For sanitizing a :class:`~torchvision.tv_tensors.BoundingBoxes` object, consider using
+        the transform :func:`~torchvision.transforms.v2.SanitizeBoundingBoxes` instead.
 
     Args:
         boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
@@ -123,7 +128,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
 
     Returns:
         Tensor[K]: indices of the boxes that have both sides
-        larger than min_size
+        larger than ``min_size``
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(remove_small_boxes)
@@ -135,7 +140,11 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
 
 def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     """
-    Clip boxes so that they lie inside an image of size `size`.
+    Clip boxes so that they lie inside an image of size ``size``.
+
+    .. note::
+        For clipping a :class:`~torchvision.tv_tensors.BoundingBoxes` object, consider using
+        the transform :func:`~torchvision.transforms.v2.ClampBoundingBoxes` instead.
 
     Args:
         boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
@@ -167,15 +176,22 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
 
 def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     """
-    Converts boxes from given in_fmt to out_fmt.
-    Supported in_fmt and out_fmt are:
+    Converts :class:`torch.Tensor` boxes from a given ``in_fmt`` to ``out_fmt``.
 
-    'xyxy': boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
+    .. note::
+        For converting a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.BoundingBoxes` object
+        between different formats,
+        consider using :func:`~torchvision.transforms.v2.functional.convert_bounding_box_format` instead.
+        Or see the corresponding transform :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat`.
+
+    Supported ``in_fmt`` and ``out_fmt`` strings are:
+
+    ``'xyxy'``: boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
     This is the format that torchvision utilities expect.
 
-    'xywh' : boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
+    ``'xywh'``: boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
 
-    'cxcywh' : boxes are represented via centre, width and height, cx, cy being center of box, w, h
+    ``'cxcywh'``: boxes are represented via centre, width and height, cx, cy being center of box, w, h
     being width and height.
 
     Args:

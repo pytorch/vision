@@ -19,7 +19,7 @@ class Places365(VisionDataset):
             high resolution ones.
         download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already
             downloaded archives are not downloaded again.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.

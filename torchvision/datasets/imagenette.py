@@ -17,7 +17,7 @@ class Imagenette(VisionDataset):
         size (string, optional): The image size. Supports ``"full"`` (default), ``"320px"``, and ``"160px"``.
         download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already
             downloaded archives are not downloaded again.
-        transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version, e.g. ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
 
