@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 from abc import ABC, abstractmethod
@@ -7,12 +8,13 @@ from typing import Callable, List, Tuple
 
 import numpy as np
 import pytest
+import scipy.ndimage
 import torch
 import torch.fx
 import torch.nn.functional as F
 import torch.testing._internal.optests as optests
 from common_utils import assert_equal, cpu_and_cuda, cpu_and_cuda_and_mps, needs_cuda, needs_mps
-from PIL import Image
+from PIL import Image, ImageDraw
 from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
@@ -734,31 +736,110 @@ class TestMultiScaleRoIAlign:
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
-class TestMasksToBoundaries(ABC):
 
-    @pytest.mark.parametrize("device", ['cpu', 'cuda'])  
-    def test_masks_to_boundaries(self, device):
-        # Create masks
-        mask = torch.zeros(4, 32, 32, dtype=torch.bool)
-        mask[0, 1:10, 1:10] = True
-        mask[0, 12:20, 12:20] = True
-        mask[0, 15:18, 20:32] = True
-        mask[1, 15:23, 15:23] = True
-        mask[1, 22:33, 22:33] = True
-        mask[2, 1:5, 22:30] = True
-        mask[2, 5:14, 25:27] = True
-        pil_img = Image.new("L", (32, 32))
-        draw = ImageDraw.Draw(pil_img)
-        draw.ellipse([2, 7, 26, 26], fill=1, outline=1, width=1)
-        mask[3, ...] = torch.from_numpy(np.asarray(pil_img))
+import matplotlib.pyplot as plt
+
+
+class TestMasksToBoundaries(ABC):
+    def save_and_images(
+        self, original_masks, expected_boundaries, actual_boundaries, diff, filename_prefix, visualize=True
+    ):
+        """
+        Saves images separately for original masks, expected boundaries, actual boundaries, and their difference.
+
+        Parameters:
+        - original_masks: The starting binary masks tensor.
+        - expected_boundaries: The expected boundaries tensor.
+        - actual_boundaries: The actual boundaries tensor calculated by the function.
+        - diff: The absolute difference between expected and actual boundaries.
+        - filename_prefix: Prefix for the saved filename.
+        - visualize: Flag to enable or disable visualization.
+        """
+        # Ensure directory exists
+        output_dir = "test_outputs"
+        os.makedirs(output_dir, exist_ok=True)
+        filepath_prefix = os.path.join(output_dir, filename_prefix)
+
+        num_images = original_masks.shape[0]
+
+        original_masks = original_masks.cpu().numpy() if original_masks.is_cuda else original_masks.numpy()
+        expected_boundaries = (
+            expected_boundaries.cpu().numpy() if expected_boundaries.is_cuda else expected_boundaries.numpy()
+        )
+        actual_boundaries = actual_boundaries.cpu().numpy() if actual_boundaries.is_cuda else actual_boundaries.numpy()
+        diff = diff.cpu().numpy() if diff.is_cuda else diff.numpy()
+
+        # Plot and save each image separately
+        for i in range(num_images):
+            original = original_masks[i].squeeze()
+            expected = expected_boundaries[i].squeeze()
+            actual = actual_boundaries[i].squeeze()
+            difference = diff[i].squeeze()
+
+            if visualize:
+                # Plotting
+                fig, axes = plt.subplots(1, 4, figsize=(20, 5))
+                titles = ["Original Mask", "Expected Boundaries", "Actual Boundaries", "Absolute Difference"]
+                images = [original, expected, actual, difference]
+
+                for ax, img, title in zip(axes, images, titles):
+                    ax.imshow(img, cmap="gray", interpolation="nearest")
+                    ax.axis("off")
+                    ax.set_title(title)
+
+                plt.subplots_adjust(top=0.85)
+
+                # Save the figure
+                fig.tight_layout()
+                plt.savefig(f"{filepath_prefix}_image_{i}.png", bbox_inches="tight")
+                plt.close(fig)
+
+    @pytest.mark.parametrize("device", ["cpu", "cuda"])
+    @pytest.mark.parametrize("kernel_size", [3, 5])  # Example kernel sizes
+    @pytest.mark.parametrize("canvas_size", [32, 64])  # Example canvas sizes
+    @pytest.mark.parametrize("batch_size", [1, 4])  # Parametrizing over batch sizes, e.g., 1 and 4
+    def test_masks_to_boundaries(self, request, tmpdir, device, kernel_size, canvas_size, batch_size):
+        if device == "cuda" and not torch.cuda.is_available():
+            pytest.skip("CUDA is not available on this system.")
+        debug_mode = request.config.getoption("--debug-images")
+        # Create masks with the specified canvas size and batch size
+        mask = torch.zeros(batch_size, canvas_size, canvas_size, dtype=torch.bool)
+
+        for b in range(batch_size):
+            if b % 4 == 0:
+                mask[b, 1:10, 1:10] = True
+            elif b % 4 == 1:
+                mask[b, 15:23, 15:23] = True
+            elif b % 4 == 2:
+                mask[b, 1:5, 22:30] = True
+            elif b % 4 == 3:
+                pil_img = Image.new("L", (canvas_size, canvas_size))
+                draw = ImageDraw.Draw(pil_img)
+                draw.ellipse([2, 7, min(26, canvas_size - 6), min(26, canvas_size - 6)], fill=1, outline=1, width=1)
+                ellipse_mask = torch.from_numpy(np.array(pil_img, dtype=np.uint8)).bool()
+                mask[b, ...] = ellipse_mask
         mask = mask.to(device)
-        dilation_ratio = 0.02
-        boundaries = ops.masks_to_boundaries(mask, dilation_ratio)
-        # Generate expected output
-        # TODO: How we generate handle the expected output?
-        # replace with actual code to generate expected output
-        expected_boundaries = torch.zeros_like(mask)  
-        torch.testing.assert_close(expected_boundaries, boundaries)
+        actual_boundaries = ops.masks_to_boundaries(mask, kernel_size)
+        expected_boundaries = torch.zeros_like(mask)
+        struct = np.ones((kernel_size, kernel_size), dtype=np.uint8)
+
+        # Calculate expected boundaries using scipy's binary_erosion
+        for i in range(batch_size):
+            single_mask = mask[i].cpu().numpy()
+            eroded_mask = scipy.ndimage.binary_erosion(single_mask, structure=struct, border_value=0)
+            single_expected_boundary = single_mask ^ eroded_mask
+            expected_boundaries[i] = torch.from_numpy(single_expected_boundary).to(device)
+
+        if debug_mode:
+            diff = torch.abs(expected_boundaries.float() - actual_boundaries.float())
+            filename_prefix = f"kernel_{kernel_size}_canvas_{canvas_size}_batch_{batch_size}"
+            output_file_path = tmpdir.join(f"{filename_prefix}.png")
+            # Log the path where the debug image will be saved
+            logging.info(f"Debug image saved at: {output_file_path}")
+
+            self.save_and_images(mask, expected_boundaries, actual_boundaries, diff, str(output_file_path))
+
+        torch.testing.assert_close(actual_boundaries, expected_boundaries)
 
 
 class TestNMS:
