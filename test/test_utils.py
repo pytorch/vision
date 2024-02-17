@@ -247,6 +247,24 @@ def test_draw_segmentation_masks(colors, alpha, device):
     torch.testing.assert_close(out[:, overlap], interpolated_overlap, rtol=0.0, atol=1.0)
 
 
+def test_draw_keypoints_dtypes():
+    image_uint8 = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    image_float = to_dtype(image_uint8, torch.float, scale=True)
+    
+    keypoints_cp = keypoints.clone()
+    
+    out_uint8 = utils.draw_keypoints(image_uint8, keypoints)
+    out_float = utils.draw_keypoints(image_float, keypoints)
+    
+    assert out_uint8.dtype == torch.uint8
+    assert out_uint8 is not image_uint8
+    
+    assert out_float.is_floating_point()
+    assert out_float is not image_float
+    
+    torch.testing.assert_close(out_uint8, to_dtype(out_float, torch.uint8, scale=True), rtol=0, atol=1)
+
+
 def test_draw_segmentation_masks_dtypes():
     num_masks, h, w = 2, 100, 100
 

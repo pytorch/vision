@@ -371,8 +371,8 @@ def draw_keypoints(
     # validate image
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype != torch.uint8:
-        raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
+    elif not (image.dtype == torch.uint8 or image.is_floating_point()):
+        raise ValueError(f"The image dtype must be uint8 or float, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
@@ -396,6 +396,10 @@ def draw_keypoints(
             "keypoints and visibility must have the same dimensionality for num_instances and K. "
             f"Got {visibility.shape = } and {keypoints.shape = }"
         )
+
+    original_dtype = image.dtype
+    if image.is_floating_point():
+        image = (image * 255).to(dtype=torch.uint8)
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
@@ -428,7 +432,7 @@ def draw_keypoints(
                     width=width,
                 )
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=original_dtype)
 
 
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
