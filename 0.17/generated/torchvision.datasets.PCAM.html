@@ -378,8 +378,13 @@ metastatic tissue.</p>
 <li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that  takes in a PIL image and returns a transformed
 version. E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomCrop</span></code>.</p></li>
 <li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in the target and transforms it.</p></li>
-<li><p><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, downloads the dataset from the internet and puts it into <code class="docutils literal notranslate"><span class="pre">root/pcam</span></code>. If
-dataset is already downloaded, it is not downloaded again.</p></li>
+<li><p><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – <p>If True, downloads the dataset from the internet and puts it into <code class="docutils literal notranslate"><span class="pre">root/pcam</span></code>. If
+dataset is already downloaded, it is not downloaded again.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>To download the dataset <a class="reference external" href="https://github.com/wkentaro/gdown">gdown</a> is required.</p>
+</div>
+</p></li>
 </ul>
 </dd>
 </dl>

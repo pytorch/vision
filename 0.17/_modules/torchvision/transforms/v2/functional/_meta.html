@@ -571,6 +571,11 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">convert_bounding_box_format</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">old_format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">old_format</span> <span class="o">=</span> <span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="n">old_format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">new_format</span> <span class="o">=</span> <span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="n">new_format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">or</span> <span class="n">is_pure_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">old_format</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For pure tensor inputs, `old_format` has to be passed.&quot;</span><span class="p">)</span>
