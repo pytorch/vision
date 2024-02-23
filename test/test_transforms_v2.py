@@ -3416,6 +3416,23 @@ class TestConvertBoundingBoxFormat:
             make_bounding_boxes(format=old_format),
         )
 
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    def test_strings(self, old_format, new_format):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8258
+        input = tv_tensors.BoundingBoxes(torch.tensor([[10, 10, 20, 20]]), format=old_format, canvas_size=(50, 50))
+        expected = self._reference_convert_bounding_box_format(input, new_format)
+
+        old_format = old_format.name
+        new_format = new_format.name
+
+        out_functional = F.convert_bounding_box_format(input, new_format=new_format)
+        out_functional_tensor = F.convert_bounding_box_format(
+            input.as_subclass(torch.Tensor), old_format=old_format, new_format=new_format
+        )
+        out_transform = transforms.ConvertBoundingBoxFormat(new_format)(input)
+        for out in (out_functional, out_functional_tensor, out_transform):
+            assert_equal(out, expected)
+
     def _reference_convert_bounding_box_format(self, bounding_boxes, new_format):
         return tv_tensors.wrap(
             torchvision.ops.box_convert(
@@ -4953,14 +4970,23 @@ class TestRgbToGrayscale:
         check_transform(transform, make_input())
 
     @pytest.mark.parametrize("num_output_channels", [1, 3])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
     @pytest.mark.parametrize("fn", [F.rgb_to_grayscale, transform_cls_to_functional(transforms.Grayscale)])
-    def test_image_correctness(self, num_output_channels, fn):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    def test_image_correctness(self, num_output_channels, color_space, fn):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space=color_space)
 
         actual = fn(image, num_output_channels=num_output_channels)
         expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_output_channels))
 
         assert_equal(actual, expected, rtol=0, atol=1)
+
+    def test_expanded_channels_are_not_views_into_the_same_underlying_tensor(self):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
+
+        output_image = F.rgb_to_grayscale(image, num_output_channels=3)
+        assert_equal(output_image[0][0][0], output_image[1][0][0])
+        output_image[0][0][0] = output_image[0][0][0] + 1
+        assert output_image[0][0][0] != output_image[1][0][0]
 
     @pytest.mark.parametrize("num_input_channels", [1, 3])
     def test_random_transform_correctness(self, num_input_channels):
@@ -5190,6 +5216,11 @@ class TestToImage:
 
         if isinstance(input, torch.Tensor):
             assert output.data_ptr() == input.data_ptr()
+
+    def test_2d_np_array(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8255
+        input = np.random.rand(10, 10)
+        assert F.to_image(input).shape == (1, 10, 10)
 
     def test_functional_error(self):
         with pytest.raises(TypeError, match="Input can either be a pure Tensor, a numpy array, or a PIL image"):

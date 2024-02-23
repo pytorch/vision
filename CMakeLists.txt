@@ -96,6 +96,12 @@ ENDFOREACH()
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 
+if(WITH_MPS)
+  find_library(metal NAMES Metal)
+  find_library(foundation NAMES Foundation)
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${metal} ${foundation})
+endif()
+
 if (WITH_PNG)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARY})
 endif()
