@@ -1,5 +1,6 @@
 #include "decode_jpeg.h"
 #include "common_jpeg.h"
+#include "exif.h"
 
 namespace vision {
 namespace image {
@@ -12,6 +13,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
 #else
 
 using namespace detail;
+using namespace exif_private;
 
 namespace {
 
@@ -65,6 +67,8 @@ static void torch_jpeg_set_source_mgr(
   src->len = len;
   src->pub.bytes_in_buffer = len;
   src->pub.next_input_byte = src->data;
+
+  jpeg_save_markers(cinfo, APP1, 0xffff);
 }
 
 inline unsigned char clamped_cmyk_rgb_convert(
@@ -121,7 +125,10 @@ void convert_line_cmyk_to_gray(
 
 } // namespace
 
-torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool apply_exif_orientation) {
   C10_LOG_API_USAGE_ONCE(
       "torchvision.csrc.io.image.cpu.decode_jpeg.decode_jpeg");
   // Check that the input tensor dtype is uint8
@@ -191,6 +198,54 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
     jpeg_calc_output_dimensions(&cinfo);
   }
 
+  int exif_orientation = 0;
+  if (apply_exif_orientation) {
+    // Check for Exif marker APP1
+    jpeg_saved_marker_ptr exif_marker = 0;
+    jpeg_saved_marker_ptr cmarker = cinfo.marker_list;
+    while (cmarker && exif_marker == 0) {
+      if (cmarker->marker == APP1) {
+        exif_marker = cmarker;
+      }
+      cmarker = cmarker->next;
+    }
+
+    if (exif_marker) {
+      // Code below is inspired from OpenCV
+      // https://github.dev/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/modules/imgcodecs/src/exif.cpp
+
+      // Bytes from Exif size field to the first TIFF header
+      constexpr size_t start_offset = 6;
+      if (exif_marker->data_length > start_offset) {
+        auto* exif_data_ptr = exif_marker->data + start_offset;
+        auto size = exif_marker->data_length - start_offset;
+        std::vector<unsigned char> exif_data_vec(
+            exif_data_ptr, exif_data_ptr + size);
+
+        auto endianness = get_endianness(exif_data_vec);
+
+        // Checking whether Tag Mark (0x002A) correspond to one contained in the
+        // Jpeg file
+        uint16_t tag_mark = get_uint16(exif_data_vec, endianness, 2);
+        if (tag_mark == REQ_EXIF_TAG_MARK) {
+          auto offset = get_uint32(exif_data_vec, endianness, 4);
+          size_t num_entry = get_uint16(exif_data_vec, endianness, offset);
+          offset += 2; // go to start of tag fields
+          constexpr size_t tiff_field_size = 12;
+          for (size_t entry = 0; entry < num_entry; entry++) {
+            // Here we just search for orientation tag and parse it
+            auto tag_num = get_uint16(exif_data_vec, endianness, offset);
+            if (tag_num == ORIENTATION_EXIF_TAG) {
+              exif_orientation =
+                  get_uint16(exif_data_vec, endianness, offset + 8);
+            }
+            offset += tiff_field_size;
+          }
+        }
+      }
+    }
+  }
+
   jpeg_start_decompress(&cinfo);
 
   int height = cinfo.output_height;
@@ -227,7 +282,12 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  return tensor.permute({2, 0, 1});
+  auto output = tensor.permute({2, 0, 1});
+
+  if (apply_exif_orientation) {
+    return exif_orientation_transform(output, exif_orientation);
+  }
+  return output;
 }
 #endif // #if !JPEG_FOUND
 

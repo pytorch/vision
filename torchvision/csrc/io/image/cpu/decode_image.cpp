@@ -6,7 +6,10 @@
 namespace vision {
 namespace image {
 
-torch::Tensor decode_image(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_image(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool apply_exif_orientation) {
   // Check that tensor is a CPU tensor
   TORCH_CHECK(data.device() == torch::kCPU, "Expected a CPU tensor");
   // Check that the input tensor dtype is uint8
@@ -22,8 +25,11 @@ torch::Tensor decode_image(const torch::Tensor& data, ImageReadMode mode) {
   const uint8_t png_signature[4] = {137, 80, 78, 71}; // == "\211PNG"
 
   if (memcmp(jpeg_signature, datap, 3) == 0) {
-    return decode_jpeg(data, mode);
+    return decode_jpeg(data, mode, apply_exif_orientation);
   } else if (memcmp(png_signature, datap, 4) == 0) {
+    TORCH_CHECK(
+        !apply_exif_orientation,
+        "Unsupported option apply_exif_orientation=true for PNG")
     return decode_png(data, mode);
   } else {
     TORCH_CHECK(
