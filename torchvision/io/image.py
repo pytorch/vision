@@ -130,7 +130,10 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
 
 
 def decode_jpeg(
-    input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, device: str = "cpu"
+    input: torch.Tensor,
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
+    device: str = "cpu",
+    apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
@@ -157,6 +160,8 @@ def decode_jpeg(
             .. warning::
                 There is a memory leak in the nvjpeg library for CUDA versions < 11.6.
                 Make sure to rely on CUDA 11.6 or above before using ``device="cuda"``.
+        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
+            Default: False. Only implemented for JPEG format on CPU.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -167,7 +172,7 @@ def decode_jpeg(
     if device.type == "cuda":
         output = torch.ops.image.decode_jpeg_cuda(input, mode.value, device)
     else:
-        output = torch.ops.image.decode_jpeg(input, mode.value)
+        output = torch.ops.image.decode_jpeg(input, mode.value, apply_exif_orientation)
     return output
 
 

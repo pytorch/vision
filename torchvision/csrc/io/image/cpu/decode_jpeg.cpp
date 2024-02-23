@@ -212,7 +212,7 @@ torch::Tensor decode_jpeg(
 
     if (exif_marker) {
       // Code below is inspired from OpenCV
-      // https://github.dev/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/modules/imgcodecs/src/exif.cpp
+      // https://github.com/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/modules/imgcodecs/src/exif.cpp
 
       // Bytes from Exif size field to the first TIFF header
       constexpr size_t start_offset = 6;
