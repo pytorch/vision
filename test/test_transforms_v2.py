@@ -3398,6 +3398,23 @@ class TestConvertBoundingBoxFormat:
             make_bounding_boxes(format=old_format),
         )
 
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    def test_strings(self, old_format, new_format):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8258
+        input = tv_tensors.BoundingBoxes(torch.tensor([[10, 10, 20, 20]]), format=old_format, canvas_size=(50, 50))
+        expected = self._reference_convert_bounding_box_format(input, new_format)
+
+        old_format = old_format.name
+        new_format = new_format.name
+
+        out_functional = F.convert_bounding_box_format(input, new_format=new_format)
+        out_functional_tensor = F.convert_bounding_box_format(
+            input.as_subclass(torch.Tensor), old_format=old_format, new_format=new_format
+        )
+        out_transform = transforms.ConvertBoundingBoxFormat(new_format)(input)
+        for out in (out_functional, out_functional_tensor, out_transform):
+            assert_equal(out, expected)
+
     def _reference_convert_bounding_box_format(self, bounding_boxes, new_format):
         return tv_tensors.wrap(
             torchvision.ops.box_convert(
@@ -5229,6 +5246,11 @@ class TestToImage:
 
         if isinstance(input, torch.Tensor):
             assert output.data_ptr() == input.data_ptr()
+
+    def test_2d_np_array(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8255
+        input = np.random.rand(10, 10)
+        assert F.to_image(input).shape == (1, 10, 10)
 
     def test_functional_error(self):
         with pytest.raises(TypeError, match="Input can either be a pure Tensor, a numpy array, or a PIL image"):
