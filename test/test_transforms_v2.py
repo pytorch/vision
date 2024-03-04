@@ -5017,15 +5017,7 @@ class TestGrayscaleToRgb:
     def test_rgb_image_is_unchanged(self):
         image = make_image(dtype=torch.uint8, device="cpu", color_space="RGB")
         assert_equal(image.shape[-3], 3)
-        image[0][0][0] = 0
-        image[1][0][0] = 100
-        image[2][0][0] = 200
-        output_image = F.grayscale_to_rgb(image)
-        assert output_image[0][0][0] == 0
-        assert output_image[1][0][0] == 100
-        assert output_image[2][0][0] == 200
-        print(image)
-        print(output_image)
+        assert_equal(F.grayscale_to_rgb(image), image)
 
 
 class TestRandomZoomOut:
