@@ -87,7 +87,7 @@ case $GPU_ARCH_TYPE in
     ;;
 esac
 PYTORCH_WHEEL_INDEX="https://download.pytorch.org/whl/${CHANNEL}/${GPU_ARCH_ID}"
-pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
+pip install --progress-bar=off "mpmath<1.4" --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python -c "import torch; exit(not torch.cuda.is_available())"
