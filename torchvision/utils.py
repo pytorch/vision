@@ -398,8 +398,10 @@ def draw_keypoints(
         )
 
     original_dtype = image.dtype
-    if image.is_floating_point():
-        image = (image * 255).to(dtype=torch.uint8)
+    if original_dtype.is_floating_point:
+        from torchvision.transforms.v2.functional import to_dtype  # noqa
+
+        image = to_dtype(image, dtype=torch.uint8, scale=True)
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
@@ -432,7 +434,10 @@ def draw_keypoints(
                     width=width,
                 )
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=original_dtype)
+    out = torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
+    if original_dtype.is_floating_point:
+        out = to_dtype(out, dtype=original_dtype, scale=True)
+    return out
 
 
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
