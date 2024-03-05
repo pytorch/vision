@@ -1,5 +1,6 @@
 #include "decode_jpeg.h"
 #include "common_jpeg.h"
+#include "exif.h"
 
 namespace vision {
 namespace image {
@@ -12,6 +13,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
 #else
 
 using namespace detail;
+using namespace exif_private;
 
 namespace {
 
@@ -65,6 +67,8 @@ static void torch_jpeg_set_source_mgr(
   src->len = len;
   src->pub.bytes_in_buffer = len;
   src->pub.next_input_byte = src->data;
+
+  jpeg_save_markers(cinfo, APP1, 0xffff);
 }
 
 inline unsigned char clamped_cmyk_rgb_convert(
@@ -121,7 +125,10 @@ void convert_line_cmyk_to_gray(
 
 } // namespace
 
-torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool apply_exif_orientation) {
   C10_LOG_API_USAGE_ONCE(
       "torchvision.csrc.io.image.cpu.decode_jpeg.decode_jpeg");
   // Check that the input tensor dtype is uint8
@@ -191,6 +198,11 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
     jpeg_calc_output_dimensions(&cinfo);
   }
 
+  int exif_orientation = -1;
+  if (apply_exif_orientation) {
+    exif_orientation = fetch_exif_orientation(&cinfo);
+  }
+
   jpeg_start_decompress(&cinfo);
 
   int height = cinfo.output_height;
@@ -227,7 +239,12 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  return tensor.permute({2, 0, 1});
+  auto output = tensor.permute({2, 0, 1});
+
+  if (apply_exif_orientation) {
+    return exif_orientation_transform(output, exif_orientation);
+  }
+  return output;
 }
 #endif // #if !JPEG_FOUND
 
