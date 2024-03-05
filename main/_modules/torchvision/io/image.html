@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+bca7a49) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+f3298dc) &#x25BC</a>
     </div>
     
 
@@ -487,7 +487,10 @@
 
 
 <div class="viewcode-block" id="decode_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg">[docs]</a><span class="k">def</span> <span class="nf">decode_jpeg</span><span class="p">(</span>
-    <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.</span>
@@ -514,6 +517,8 @@
 <span class="sd">            .. warning::</span>
 <span class="sd">                There is a memory leak in the nvjpeg library for CUDA versions &lt; 11.6.</span>
 <span class="sd">                Make sure to rely on CUDA 11.6 or above before using ``device=&quot;cuda&quot;``.</span>
+<span class="sd">        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.</span>
+<span class="sd">            Default: False. Only implemented for JPEG format on CPU.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
@@ -524,7 +529,7 @@
     <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpeg_cuda</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">output</span></div>
 
 
@@ -569,7 +574,9 @@
     <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="decode_image"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_image.html#torchvision.io.decode_image">[docs]</a><span class="k">def</span> <span class="nf">decode_image</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="decode_image"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_image.html#torchvision.io.decode_image">[docs]</a><span class="k">def</span> <span class="nf">decode_image</span><span class="p">(</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Detects whether an image is a JPEG or PNG and performs the appropriate</span>
 <span class="sd">    operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</span>
@@ -584,17 +591,21 @@
 <span class="sd">            Default: ``ImageReadMode.UNCHANGED``.</span>
 <span class="sd">            See ``ImageReadMode`` class for more information on various</span>
 <span class="sd">            available modes.</span>
+<span class="sd">        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.</span>
+<span class="sd">            Default: False. Only implemented for JPEG format</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_image</span><span class="p">)</span>
-    <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_image</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_image</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">output</span></div>
 
 
-<div class="viewcode-block" id="read_image"><a class="viewcode-back" href="../../../generated/torchvision.io.read_image.html#torchvision.io.read_image">[docs]</a><span class="k">def</span> <span class="nf">read_image</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="read_image"><a class="viewcode-back" href="../../../generated/torchvision.io.read_image.html#torchvision.io.read_image">[docs]</a><span class="k">def</span> <span class="nf">read_image</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.</span>
 <span class="sd">    Optionally converts the image to the desired format.</span>
@@ -606,6 +617,8 @@
 <span class="sd">            Default: ``ImageReadMode.UNCHANGED``.</span>
 <span class="sd">            See ``ImageReadMode`` class for more information on various</span>
 <span class="sd">            available modes.</span>
+<span class="sd">        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.</span>
+<span class="sd">            Default: False. Only implemented for JPEG format</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
@@ -613,7 +626,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">read_image</span><span class="p">)</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">read_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">decode_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">decode_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="o">=</span><span class="n">apply_exif_orientation</span><span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">_read_png_16</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
