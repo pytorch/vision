@@ -27,9 +27,6 @@ torch::Tensor decode_image(
   if (memcmp(jpeg_signature, datap, 3) == 0) {
     return decode_jpeg(data, mode, apply_exif_orientation);
   } else if (memcmp(png_signature, datap, 4) == 0) {
-    TORCH_CHECK(
-        !apply_exif_orientation,
-        "Unsupported option apply_exif_orientation=true for PNG")
     return decode_png(data, mode);
   } else {
     TORCH_CHECK(
