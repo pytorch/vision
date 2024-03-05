@@ -25,16 +25,16 @@ class PILToTensor(Transform):
 
 
 class ToImage(Transform):
-    """Convert a tensor, ndarray, PIL Image, or string representing image path to
-    :class:`~torchvision.tv_tensors.Image`; this does not scale values.
+    """Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.tv_tensors.Image`
+    ; this does not scale values.
 
     This transform does not support torchscript.
     """
 
-    _transformed_types = (is_pure_tensor, PIL.Image.Image, np.ndarray, str)
+    _transformed_types = (is_pure_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(
-        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray, str], params: Dict[str, Any]
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> tv_tensors.Image:
         return F.to_image(inpt)
 
