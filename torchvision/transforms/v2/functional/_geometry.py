@@ -1003,9 +1003,12 @@ def rotate_image(
     if expand or center is None:
         if angle == 0:
             return image.clone()
-
-        if angle in (90, 180, 270):
-            return torch.rot90(image, k=angle // 90, dims=(-1, -2))
+        if angle == 90:
+            return torch.rot90(image, k=1, dims=(-1, -2))
+        if angle == 180:
+            return torch.rot90(image, k=2, dims=(-1, -2))
+        if angle == 270:
+            return torch.rot90(image, k=3, dims=(-1, -2))
 
     interpolation = _check_interpolation(interpolation)
 
