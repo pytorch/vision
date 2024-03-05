@@ -1,3 +1,4 @@
+import math
 import numbers
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
 
@@ -309,6 +310,19 @@ def rotate(
 
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
+
+    angle = angle - math.floor(angle / 360) * 360  # shift angle to [0, 360) range
+
+    # fast path: transpose without affine transform
+    if expand or center is None:
+        if angle == 0:
+            return img
+        elif angle == 90:
+            return img.transpose(Image.ROTATE_90)
+        elif angle == 180:
+            return img.transpose(Image.ROTATE_180)
+        elif angle == 270:
+            return img.transpose(Image.ROTATE_270)
 
     opts = _parse_fill(fill, img)
     return img.rotate(angle, interpolation, expand, center, **opts)
