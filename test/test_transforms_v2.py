@@ -8,7 +8,6 @@ import pickle
 import random
 import re
 import sys
-import tempfile
 from copy import deepcopy
 from pathlib import Path
 from unittest import mock
@@ -1107,11 +1106,9 @@ class TestAffine:
             make_image(dtype=dtype, device=device),
             **{param: value},
             check_scripted_vs_eager=not (param in {"shear", "fill"} and isinstance(value, (int, float))),
-            check_cuda_vs_cpu=(
-                dict(atol=1, rtol=0)
-                if dtype is torch.uint8 and param == "interpolation" and value is transforms.InterpolationMode.BILINEAR
-                else True
-            ),
+            check_cuda_vs_cpu=dict(atol=1, rtol=0)
+            if dtype is torch.uint8 and param == "interpolation" and value is transforms.InterpolationMode.BILINEAR
+            else True,
         )
 
     @param_value_parametrization(
@@ -5202,28 +5199,13 @@ class TestToImage:
         if isinstance(input, torch.Tensor):
             assert output.data_ptr() == input.data_ptr()
 
-    @pytest.mark.parametrize("fn", [F.to_image, transform_cls_to_functional(transforms.ToImage)])
-    def test_image_file(self, fn):
-        # Non-regression test for https://github.com/pytorch/vision/issues/8261
-        img_np = np.random.randint(0, 256, (10, 10, 3), dtype=np.uint8)
-        temp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=True)
-        PIL.Image.fromarray(img_np).save(temp_file.name)
-
-        output = fn(temp_file.name)
-        assert isinstance(output, tv_tensors.Image)
-        assert F.get_size(output) == list(img_np.shape[:2])
-
-        temp_file.close()
-
     def test_2d_np_array(self):
         # Non-regression test for https://github.com/pytorch/vision/issues/8255
         input = np.random.rand(10, 10)
         assert F.to_image(input).shape == (1, 10, 10)
 
     def test_functional_error(self):
-        with pytest.raises(
-            TypeError, match="Input can either be a pure Tensor, a numpy array, a PIL image, or a string path"
-        ):
+        with pytest.raises(TypeError, match="Input can either be a pure Tensor, a numpy array, or a PIL image"):
             F.to_image(object())
 
 
