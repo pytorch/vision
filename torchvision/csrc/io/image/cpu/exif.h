@@ -122,7 +122,6 @@ inline int fetch_exif_orientation(j_decompress_ptr cinfo) {
   }
 
   if (exif_marker) {
-
     // Exif binary structure looks like this
     // First 6 bytes: [E, x, i, f, 0, 0]
     // Endianness, 2 bytes : [M, M] or [I, I]
@@ -130,7 +129,8 @@ inline int fetch_exif_orientation(j_decompress_ptr cinfo) {
     // Offset, 4 bytes
     // Num entries, 2 bytes
     // Tag entries and data, tag has 2 bytes and its data has 10 bytes
-    // For more details: http://www.media.mit.edu/pia/Research/deepview/exif.html
+    // For more details:
+    // http://www.media.mit.edu/pia/Research/deepview/exif.html
 
     // Bytes from Exif size field to the first TIFF header
     constexpr size_t start_offset = 6;
