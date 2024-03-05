@@ -997,11 +997,15 @@ def rotate_image(
     center: Optional[List[float]] = None,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
-    angle = angle - math.floor(angle / 360) * 360  # shift angle to [0, 360) range
+    angle = angle % 360  # shift angle to [0, 360) range
 
     # fast path: transpose without affine transform
-    if (expand or center is None) and angle in (0, 90, 180, 270):
-        return torch.rot90(image, k=angle // 90, dims=(-1, -2))
+    if expand or center is None:
+        if angle == 0:
+            return image.clone()
+
+        if angle in (90, 180, 270):
+            return torch.rot90(image, k=angle // 90, dims=(-1, -2))
 
     interpolation = _check_interpolation(interpolation)
 
