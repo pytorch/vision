@@ -124,6 +124,14 @@ inline int fetch_exif_orientation(j_decompress_ptr cinfo) {
     // Code below is inspired from OpenCV
     // https://github.com/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/imgcodecs/src/exif.cpp
 
+    // Exif binary structure looks like this
+    // First 6 bytes: [E, x, i, f, 0, 0]
+    // Endianness, 2 bytes : [M, M] or [I, I]
+    // Tag mark, 2 bytes: [0, 42]
+    // Offset, 4 bytes
+    // Num entries, 2 bytes
+    // Tag entries, each tag has 2 bytes
+
     // Bytes from Exif size field to the first TIFF header
     constexpr size_t start_offset = 6;
     if (exif_marker->data_length > start_offset) {
