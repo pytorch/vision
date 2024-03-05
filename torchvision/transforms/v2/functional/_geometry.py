@@ -1000,7 +1000,7 @@ def rotate_image(
     angle = angle % 360  # shift angle to [0, 360) range
 
     # fast path: transpose without affine transform
-    if expand or center is None:
+    if center is None:
         if angle == 0:
             return image.clone()
         if angle == 90:
