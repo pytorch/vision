@@ -9,7 +9,7 @@ import pytest
 import torch
 import torchvision.transforms.functional as F
 from common_utils import assert_equal, needs_cuda
-from PIL import __version__ as PILLOW_VERSION, Image
+from PIL import __version__ as PILLOW_VERSION, Image, ImageOps
 from torchvision.io.image import (
     _read_png_16,
     decode_image,
@@ -98,6 +98,44 @@ def test_decode_jpeg(img_path, pil_mode, mode):
     # differences between Pillow and LibJPEG.
     abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
     assert abs_mean_diff < 2
+
+
+@pytest.mark.parametrize("orientation", [1, 2, 3, 4, 5, 6, 7, 8, 0])
+def test_decode_jpeg_with_exif_orientation(tmpdir, orientation):
+    fp = os.path.join(tmpdir, f"exif_oriented_{orientation}.jpg")
+    t = torch.randint(0, 256, size=(3, 256, 257), dtype=torch.uint8)
+    im = F.to_pil_image(t)
+    exif = im.getexif()
+    exif[0x0112] = orientation  # set exif orientation
+    im.save(fp, "JPEG", exif=exif.tobytes())
+
+    data = read_file(fp)
+    output = decode_image(data, apply_exif_orientation=True)
+
+    pimg = Image.open(fp)
+    pimg = ImageOps.exif_transpose(pimg)
+
+    expected = F.pil_to_tensor(pimg)
+    torch.testing.assert_close(expected, output)
+
+
+@pytest.mark.parametrize("size", [65533, 1, 7, 10, 23, 33])
+def test_invalid_exif(tmpdir, size):
+    # Inspired from a PIL test:
+    # https://github.com/python-pillow/Pillow/blob/8f63748e50378424628155994efd7e0739a4d1d1/Tests/test_file_jpeg.py#L299
+    fp = os.path.join(tmpdir, "invalid_exif.jpg")
+    t = torch.randint(0, 256, size=(3, 256, 257), dtype=torch.uint8)
+    im = F.to_pil_image(t)
+    im.save(fp, "JPEG", exif=b"1" * size)
+
+    data = read_file(fp)
+    output = decode_image(data, apply_exif_orientation=True)
+
+    pimg = Image.open(fp)
+    pimg = ImageOps.exif_transpose(pimg)
+
+    expected = F.pil_to_tensor(pimg)
+    torch.testing.assert_close(expected, output)
 
 
 def test_decode_jpeg_errors():
