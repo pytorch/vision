@@ -106,7 +106,7 @@ def test_decode_jpeg_with_exif_orientation(tmpdir, orientation):
     t = torch.randint(0, 256, size=(3, 256, 257), dtype=torch.uint8)
     im = F.to_pil_image(t)
     exif = im.getexif()
-    exif[274] = orientation  # set exif orientation
+    exif[0x0112] = orientation  # set exif orientation
     im.save(fp, "JPEG", exif=exif.tobytes())
 
     data = read_file(fp)

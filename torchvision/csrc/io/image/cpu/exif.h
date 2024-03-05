@@ -47,6 +47,9 @@ direct,
 //
 //M*/
 #pragma once
+// Functions in this module are taken from OpenCV
+// https://github.com/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/imgcodecs/src/exif.cpp
+
 #include <jpeglib.h>
 #include <torch/types.h>
 #include <vector>
@@ -62,8 +65,6 @@ constexpr uint16_t REQ_EXIF_TAG_MARK = 0x2a;
 constexpr uint16_t ORIENTATION_EXIF_TAG = 0x0112;
 constexpr uint16_t INCORRECT_TAG = -1;
 
-// Functions in this module are taken from OpenCV
-// https://github.com/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/imgcodecs/src/exif.cpp
 inline uint16_t get_endianness(const std::vector<unsigned char>& exif_data) {
   if ((exif_data.size() < 1) ||
       (exif_data.size() > 1 && exif_data[0] != exif_data[1])) {
@@ -121,22 +122,23 @@ inline int fetch_exif_orientation(j_decompress_ptr cinfo) {
   }
 
   if (exif_marker) {
-    // Code below is inspired from OpenCV
-    // https://github.com/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/imgcodecs/src/exif.cpp
 
     // Exif binary structure looks like this
     // First 6 bytes: [E, x, i, f, 0, 0]
     // Endianness, 2 bytes : [M, M] or [I, I]
-    // Tag mark, 2 bytes: [0, 42]
+    // Tag mark, 2 bytes: [0, 0x2a]
     // Offset, 4 bytes
     // Num entries, 2 bytes
-    // Tag entries, each tag has 2 bytes
+    // Tag entries and data, tag has 2 bytes and its data has 10 bytes
+    // For more details: http://www.media.mit.edu/pia/Research/deepview/exif.html
 
     // Bytes from Exif size field to the first TIFF header
     constexpr size_t start_offset = 6;
     if (exif_marker->data_length > start_offset) {
       auto* exif_data_ptr = exif_marker->data + start_offset;
       auto size = exif_marker->data_length - start_offset;
+      // Here we copy the data into the vector structure
+      // TODO: we can avoid copying the data and read directly from the pointer
       std::vector<unsigned char> exif_data_vec(
           exif_data_ptr, exif_data_ptr + size);
 
