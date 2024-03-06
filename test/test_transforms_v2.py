@@ -1777,6 +1777,15 @@ class TestRotate:
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
 
+    @pytest.mark.parametrize("angle", [0, 90, 180, 270])
+    def test_functional_image_fast_path_correctness(self, angle):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
+        actual = F.rotate(image, angle=angle)
+        expected = F.to_image(F.rotate(F.to_pil_image(image), angle=angle))
+
+        torch.testing.assert_close(actual, expected)
+
 
 class TestContainerTransforms:
     class BuiltinTransform(transforms.Transform):
