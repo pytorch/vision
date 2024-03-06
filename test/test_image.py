@@ -100,14 +100,15 @@ def test_decode_jpeg(img_path, pil_mode, mode):
     assert abs_mean_diff < 2
 
 
+@pytest.mark.parametrize("codec", [("png", "PNG"), ("jpg", "JPEG")])
 @pytest.mark.parametrize("orientation", [1, 2, 3, 4, 5, 6, 7, 8, 0])
-def test_decode_jpeg_with_exif_orientation(tmpdir, orientation):
-    fp = os.path.join(tmpdir, f"exif_oriented_{orientation}.jpg")
+def test_decode_with_exif_orientation(tmpdir, codec, orientation):
+    fp = os.path.join(tmpdir, f"exif_oriented_{orientation}.{codec[0]}")
     t = torch.randint(0, 256, size=(3, 256, 257), dtype=torch.uint8)
     im = F.to_pil_image(t)
     exif = im.getexif()
     exif[0x0112] = orientation  # set exif orientation
-    im.save(fp, "JPEG", exif=exif.tobytes())
+    im.save(fp, codec[1], exif=exif.tobytes())
 
     data = read_file(fp)
     output = decode_image(data, apply_exif_orientation=True)
