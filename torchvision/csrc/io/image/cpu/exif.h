@@ -50,6 +50,8 @@ direct,
 // Functions in this module are taken from OpenCV
 // https://github.com/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/imgcodecs/src/exif.cpp
 
+#if JPEG_FOUND
+
 #include <jpeglib.h>
 #include <torch/types.h>
 #include <vector>
@@ -210,3 +212,5 @@ inline torch::Tensor exif_orientation_transform(
 } // namespace exif_private
 } // namespace image
 } // namespace vision
+
+#endif

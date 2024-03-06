@@ -6,7 +6,10 @@ namespace vision {
 namespace image {
 
 #if !JPEG_FOUND
-torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool apply_exif_orientation) {
   TORCH_CHECK(
       false, "decode_jpeg: torchvision not compiled with libjpeg support");
 }
