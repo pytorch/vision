@@ -54,7 +54,6 @@ direct,
 
 #include <jpeglib.h>
 #include <torch/types.h>
-#include <vector>
 
 namespace vision {
 namespace image {
