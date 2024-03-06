@@ -67,7 +67,22 @@ constexpr uint16_t REQ_EXIF_TAG_MARK = 0x2a;
 constexpr uint16_t ORIENTATION_EXIF_TAG = 0x0112;
 constexpr uint16_t INCORRECT_TAG = -1;
 
-inline uint16_t get_endianness(const std::vector<unsigned char>& exif_data) {
+class ExifDataReader {
+ public:
+  ExifDataReader(unsigned char* p, size_t s) : _ptr(p), _size(s) {}
+  size_t size() const {
+    return _size;
+  }
+  const unsigned char& operator[](size_t index) const {
+    return _ptr[index];
+  }
+
+ protected:
+  unsigned char* _ptr;
+  size_t _size;
+};
+
+inline uint16_t get_endianness(const ExifDataReader& exif_data) {
   if ((exif_data.size() < 1) ||
       (exif_data.size() > 1 && exif_data[0] != exif_data[1])) {
     return 0;
@@ -82,7 +97,7 @@ inline uint16_t get_endianness(const std::vector<unsigned char>& exif_data) {
 }
 
 inline uint16_t get_uint16(
-    const std::vector<unsigned char>& exif_data,
+    const ExifDataReader& exif_data,
     uint16_t endianness,
     const size_t offset) {
   if (offset + 1 >= exif_data.size()) {
@@ -96,7 +111,7 @@ inline uint16_t get_uint16(
 }
 
 inline uint32_t get_uint32(
-    const std::vector<unsigned char>& exif_data,
+    const ExifDataReader& exif_data,
     uint16_t endianness,
     const size_t offset) {
   if (offset + 3 >= exif_data.size()) {
@@ -139,30 +154,26 @@ inline int fetch_exif_orientation(j_decompress_ptr cinfo) {
     if (exif_marker->data_length > start_offset) {
       auto* exif_data_ptr = exif_marker->data + start_offset;
       auto size = exif_marker->data_length - start_offset;
-      // Here we copy the data into the vector structure
-      // TODO: we can avoid copying the data and read directly from the pointer
-      std::vector<unsigned char> exif_data_vec(
-          exif_data_ptr, exif_data_ptr + size);
 
-      auto endianness = get_endianness(exif_data_vec);
+      ExifDataReader exif_data(exif_data_ptr, size);
+      auto endianness = get_endianness(exif_data);
 
       // Checking whether Tag Mark (0x002A) correspond to one contained in the
       // Jpeg file
-      uint16_t tag_mark = get_uint16(exif_data_vec, endianness, 2);
+      uint16_t tag_mark = get_uint16(exif_data, endianness, 2);
       if (tag_mark == REQ_EXIF_TAG_MARK) {
-        auto offset = get_uint32(exif_data_vec, endianness, 4);
-        size_t num_entry = get_uint16(exif_data_vec, endianness, offset);
+        auto offset = get_uint32(exif_data, endianness, 4);
+        size_t num_entry = get_uint16(exif_data, endianness, offset);
         offset += 2; // go to start of tag fields
         constexpr size_t tiff_field_size = 12;
         for (size_t entry = 0; entry < num_entry; entry++) {
           // Here we just search for orientation tag and parse it
-          auto tag_num = get_uint16(exif_data_vec, endianness, offset);
+          auto tag_num = get_uint16(exif_data, endianness, offset);
           if (tag_num == INCORRECT_TAG) {
             break;
           }
           if (tag_num == ORIENTATION_EXIF_TAG) {
-            exif_orientation =
-                get_uint16(exif_data_vec, endianness, offset + 8);
+            exif_orientation = get_uint16(exif_data, endianness, offset + 8);
             break;
           }
           offset += tiff_field_size;
