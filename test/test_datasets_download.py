@@ -1,12 +1,12 @@
 import contextlib
 import itertools
+import shutil
 import tempfile
 import time
 import traceback
 import unittest.mock
 import warnings
 from datetime import datetime
-from distutils import dir_util
 from os import path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
@@ -180,7 +180,7 @@ ROOT = tempfile.mkdtemp()
 @pytest.fixture(scope="module", autouse=True)
 def root():
     yield ROOT
-    dir_util.remove_tree(ROOT)
+    shutil.rmtree(ROOT)
 
 
 def places365():
