@@ -367,22 +367,14 @@ class SanitizeBoundingBoxes(Transform):
                 f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
             )
 
-        boxes = cast(
-            tv_tensors.BoundingBoxes,
-            F.convert_bounding_box_format(
-                boxes,
-                new_format=tv_tensors.BoundingBoxFormat.XYXY,
-            ),
+        # TODO: or use boxes, valid = F.sanitize_bouding_boxes(...) and add both to the params dict???
+        valid = F._misc._get_sanitize_bounding_boxes_mask(
+            boxes,
+            format=boxes.format,
+            canvas_size=boxes.canvas_size,
+            min_size=self.min_size,
         )
-        ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
-        valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
-        # TODO: Do we really need to check for out of bounds here? All
-        # transforms should be clamping anyway, so this should never happen?
-        image_h, image_w = boxes.canvas_size
-        valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
-        valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
-
-        params = dict(valid=valid.as_subclass(torch.Tensor), labels=labels)
+        params = dict(valid=valid, labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
             # _transform() will only care about BoundingBoxeses and the labels

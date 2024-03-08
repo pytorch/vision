@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import PIL.Image
 import torch
@@ -11,7 +11,9 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_kernel_internal
+from ._meta import _convert_bounding_box_format
+
+from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
 
 
 def normalize(
@@ -275,3 +277,63 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
 def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
     # We don't need to unwrap and rewrap here, since TVTensor.to() preserves the type
     return inpt.to(dtype)
+
+
+def sanitize_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: Optional[tv_tensors.BoundingBoxFormat] = None,
+    canvas_size: Optional[Tuple[int, int]] = None,
+    min_size: float = 1.0,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    # if torch.jit.is_scripting():
+    #     if format is None or canvas_size is None:
+    #         raise ValueError(
+    #             f"format and canvas_size cannot be None in scripting mode. Got {format=} and {canvas_size=}."
+    #         )
+    #     return _sanitize_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size)
+
+    if torch.jit.is_scripting() or is_pure_tensor(bounding_boxes):
+        if format is None or canvas_size is None:
+            raise ValueError(
+                "format and canvas_size cannot be None if bounding_boxes is a pure tensor. "
+                # f"Got {format=} and {canvas_size=}."
+                # "Set those to appropriate values or pass bounding_boxes as a tv_tensors.BoundingBoxes object."
+            )
+        valid = _get_sanitize_bounding_boxes_mask(bounding_boxes, format=format, canvas_size=canvas_size, min_size=min_size)
+        bounding_boxes = bounding_boxes[valid]
+    else:
+        if not isinstance(bounding_boxes, tv_tensors.BoundingBoxes):
+            raise ValueError("")
+        if format is not None or canvas_size is not None:
+            raise ValueError(
+                "format and canvas_size must be None when bounding_boxes is a tv_tensors.BoundingBoxes instance. "
+                # f"Got {format=} and {canvas_size=}. "
+                # "Leave those to None or pass bouding_boxes as a pure tensor."
+            )
+        valid = _get_sanitize_bounding_boxes_mask(bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size)
+        bounding_boxes = tv_tensors.wrap(bounding_boxes[valid], like=bounding_boxes)
+
+    return bounding_boxes, valid
+
+
+def _get_sanitize_bounding_boxes_mask(
+    bounding_boxes: torch.Tensor,
+    format: tv_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+    min_size: float = 1.0,
+) -> torch.Tensor:
+
+    bounding_boxes = _convert_bounding_box_format(
+        bounding_boxes, new_format=tv_tensors.BoundingBoxFormat.XYXY, old_format=format
+    )
+
+    image_h, image_w = canvas_size
+    ws, hs = bounding_boxes[:, 2] - bounding_boxes[:, 0], bounding_boxes[:, 3] - bounding_boxes[:, 1]
+    valid = (ws >= min_size) & (hs >= min_size) & (bounding_boxes >= 0).all(dim=-1)
+    # TODO: Do we really need to check for out of bounds here? All
+    # transforms should be clamping anyway, so this should never happen?
+    image_h, image_w = canvas_size
+    valid &= (bounding_boxes[:, 0] <= image_w) & (bounding_boxes[:, 2] <= image_w)
+    valid &= (bounding_boxes[:, 1] <= image_h) & (bounding_boxes[:, 3] <= image_h)
+    #valid = valid.as_subclass(torch.Tensor)  # TODO: remove this and see?
+    return valid

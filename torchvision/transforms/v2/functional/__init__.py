@@ -167,6 +167,7 @@ from ._misc import (
     normalize,
     normalize_image,
     normalize_video,
+    sanitize_bounding_boxes,
     to_dtype,
     to_dtype_image,
     to_dtype_video,
