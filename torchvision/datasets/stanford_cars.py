@@ -31,7 +31,7 @@ class StanfordCars(VisionDataset):
             download the dataset, since the original URL is not available anymore. The dataset
             seems to be available on Kaggle so you can try to manually download it using
             `these instructions <https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616>`_.
-        """
+    """
 
     def __init__(
         self,
