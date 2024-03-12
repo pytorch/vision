@@ -285,32 +285,59 @@ def sanitize_bounding_boxes(
     canvas_size: Optional[Tuple[int, int]] = None,
     min_size: float = 1.0,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    # if torch.jit.is_scripting():
-    #     if format is None or canvas_size is None:
-    #         raise ValueError(
-    #             f"format and canvas_size cannot be None in scripting mode. Got {format=} and {canvas_size=}."
-    #         )
-    #     return _sanitize_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size)
+    """Remove degenerate/invalid bounding boxes and return the corresponding indexing mask.
 
+    This removes bounding boxes that:
+
+    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - have any coordinate outside of their corresponding image. You may want to
+      call :func:`~torchvision.transforms.v2.functional.clamp_bounding_boxes` first to avoid undesired removals.
+
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models. It is critical to call this transform if
+    :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.
+    If you want to be extra careful, you may call it after all transforms that
+    may modify bounding boxes but once at the end should be enough in most
+    cases.
+
+    Args:
+        bounding_boxes (Tensor or :class:`~torchvision.tv_tensors.BoundingBoxes`): The bounding boxes to be sanitized.
+        format (str or :class:`~torchvision.tv_tensors.BoundingBoxFormat`, optional): The format of the bounding boxes.
+            Must be left to none if ``bounding_boxes`` is a :class:`~torchvision.tv_tensors.BoundingBoxes` object.
+        canvas_size (tuple of int, optional): The canvas_size of the bounding boxes
+            (size of the corresponding image/video).
+            Must be left to none if ``bounding_boxes`` is a :class:`~torchvision.tv_tensors.BoundingBoxes` object.
+        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
+
+    Returns:
+        out (tuple of Tensors): The subset of valid bounding boxes, and the corresponding indexing mask.
+        The mask can then be used to subset other tensors (e.g. labels) that are associated with the bounding boxes.
+    """
     if torch.jit.is_scripting() or is_pure_tensor(bounding_boxes):
         if format is None or canvas_size is None:
             raise ValueError(
                 "format and canvas_size cannot be None if bounding_boxes is a pure tensor. "
-                # f"Got {format=} and {canvas_size=}."
-                # "Set those to appropriate values or pass bounding_boxes as a tv_tensors.BoundingBoxes object."
+                f"Got format={format} and canvas_size={canvas_size}."
+                "Set those to appropriate values or pass bounding_boxes as a tv_tensors.BoundingBoxes object."
             )
-        valid = _get_sanitize_bounding_boxes_mask(bounding_boxes, format=format, canvas_size=canvas_size, min_size=min_size)
+        if isinstance(format, str):
+            format = tv_tensors.BoundingBoxFormat[format.upper()]
+        valid = _get_sanitize_bounding_boxes_mask(
+            bounding_boxes, format=format, canvas_size=canvas_size, min_size=min_size
+        )
         bounding_boxes = bounding_boxes[valid]
     else:
         if not isinstance(bounding_boxes, tv_tensors.BoundingBoxes):
-            raise ValueError("")
+            raise ValueError("bouding_boxes must be a tv_tensors.BoundingBoxes instance or a pure tensor.")
         if format is not None or canvas_size is not None:
             raise ValueError(
                 "format and canvas_size must be None when bounding_boxes is a tv_tensors.BoundingBoxes instance. "
-                # f"Got {format=} and {canvas_size=}. "
-                # "Leave those to None or pass bouding_boxes as a pure tensor."
+                f"Got format={format} and canvas_size={canvas_size}. "
+                "Leave those to None or pass bouding_boxes as a pure tensor."
             )
-        valid = _get_sanitize_bounding_boxes_mask(bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size)
+        valid = _get_sanitize_bounding_boxes_mask(
+            bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size
+        )
         bounding_boxes = tv_tensors.wrap(bounding_boxes[valid], like=bounding_boxes)
 
     return bounding_boxes, valid
@@ -335,5 +362,4 @@ def _get_sanitize_bounding_boxes_mask(
     image_h, image_w = canvas_size
     valid &= (bounding_boxes[:, 0] <= image_w) & (bounding_boxes[:, 2] <= image_w)
     valid &= (bounding_boxes[:, 1] <= image_h) & (bounding_boxes[:, 3] <= image_h)
-    #valid = valid.as_subclass(torch.Tensor)  # TODO: remove this and see?
     return valid

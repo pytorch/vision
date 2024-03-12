@@ -5749,9 +5749,10 @@ class TestSanitizeBoundingBoxes:
             # This works because we conveniently set labels to arange(num_boxes)
             assert out_labels.tolist() == valid_indices
 
-    # @pytest.mark.parametrize("input_type", (torch.Tensor, tv_tensors.BoundingBoxes))
-    @pytest.mark.parametrize("input_type", (torch.Tensor, ))#tv_tensors.BoundingBoxes))
+    @pytest.mark.parametrize("input_type", (torch.Tensor, tv_tensors.BoundingBoxes))
     def test_functional(self, input_type):
+        # Note: the "functional" F.sanitize_bounding_boxes was added after the class, so there is some
+        # redundancy with test_transform() in terms of correctness checks. But that's OK.
 
         H, W, min_size = 256, 128, 10
 
@@ -5760,18 +5761,31 @@ class TestSanitizeBoundingBoxes:
         if input_type is tv_tensors.BoundingBoxes:
             format = canvas_size = None
         else:
-            format, canvas_size = boxes.format, boxes.canvas_size
+            # just passing "XYXY" explicitly to make sure we support strings
+            format, canvas_size = "XYXY", boxes.canvas_size
             boxes = boxes.as_subclass(torch.Tensor)
 
-        # boxes, valid = F.sanitize_bounding_boxes(boxes, format=format, canvas_size=canvas_size, min_size=min_size)
-        assert type(boxes) == torch.Tensor
-        f = torch.jit.script(F.sanitize_bounding_boxes)
-        boxes, valid = f(boxes, format=format, canvas_size=canvas_size, min_size=min_size)
+        boxes, valid = F.sanitize_bounding_boxes(boxes, format=format, canvas_size=canvas_size, min_size=min_size)
 
         assert_equal(valid, torch.tensor(expected_valid_mask))
         assert type(valid) == torch.Tensor
         assert boxes.shape[0] == sum(valid)
         assert isinstance(boxes, input_type)
+
+    def test_kernel(self):
+        H, W, min_size = 256, 128, 10
+        boxes, _ = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size)
+
+        format, canvas_size = boxes.format, boxes.canvas_size
+        boxes = boxes.as_subclass(torch.Tensor)
+
+        check_kernel(
+            F.sanitize_bounding_boxes,
+            input=boxes,
+            format=format,
+            canvas_size=canvas_size,
+            check_batched_vs_unbatched=False,
+        )
 
     def test_no_label(self):
         # Non-regression test for https://github.com/pytorch/vision/issues/7878
@@ -5809,3 +5823,18 @@ class TestSanitizeBoundingBoxes:
         with pytest.raises(ValueError, match="Number of boxes"):
             different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
             transforms.SanitizeBoundingBoxes()(different_sizes)
+
+        with pytest.raises(ValueError, match="canvas_size cannot be None if bounding_boxes is a pure tensor"):
+            F.sanitize_bounding_boxes(good_bbox.as_subclass(torch.Tensor), format="XYXY", canvas_size=None)
+
+        with pytest.raises(ValueError, match="canvas_size cannot be None if bounding_boxes is a pure tensor"):
+            F.sanitize_bounding_boxes(good_bbox.as_subclass(torch.Tensor), format=None, canvas_size=(10, 10))
+
+        with pytest.raises(ValueError, match="canvas_size must be None when bounding_boxes is a tv_tensors"):
+            F.sanitize_bounding_boxes(good_bbox, format="XYXY", canvas_size=None)
+
+        with pytest.raises(ValueError, match="canvas_size must be None when bounding_boxes is a tv_tensors"):
+            F.sanitize_bounding_boxes(good_bbox, format="XYXY", canvas_size=None)
+
+        with pytest.raises(ValueError, match="bouding_boxes must be a tv_tensors.BoundingBoxes instance or a"):
+            F.sanitize_bounding_boxes(good_bbox.tolist())
