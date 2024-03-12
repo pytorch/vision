@@ -196,15 +196,14 @@ inline int fetch_jpeg_exif_orientation(j_decompress_ptr cinfo) {
 
   return fetch_exif_orientation(exif_data_ptr, size);
 }
-#else
+#else // #if JPEG_FOUND
 inline int fetch_jpeg_exif_orientation(j_decompress_ptr cinfo) {
   return -1;
 }
 #endif // #if JPEG_FOUND
 
-#if PNG_FOUND
+#if PNG_FOUND && defined(PNG_eXIf_SUPPORTED)
 inline int fetch_png_exif_orientation(png_structp png_ptr, png_infop info_ptr) {
-#ifdef PNG_eXIf_SUPPORTED
   png_uint_32 num_exif = 0;
   png_bytep exif = 0;
 
@@ -216,14 +215,12 @@ inline int fetch_png_exif_orientation(png_structp png_ptr, png_infop info_ptr) {
   if (exif && num_exif > 0) {
     return fetch_exif_orientation(exif, num_exif);
   }
-#endif // #ifdef PNG_eXIf_SUPPORTED
+}
+#else // #if PNG_FOUND && defined(PNG_eXIf_SUPPORTED)
+inline int fetch_png_exif_orientation(png_structp png_ptr, png_infop info_ptr) {
   return -1;
 }
-#else
-inline int fetch_png_exif_orientation(j_decompress_ptr cinfo) {
-  return -1;
-}
-#endif // #if PNG_FOUND
+#endif // #if PNG_FOUND && defined(PNG_eXIf_SUPPORTED)
 
 constexpr uint16_t IMAGE_ORIENTATION_TL = 1; // normal orientation
 constexpr uint16_t IMAGE_ORIENTATION_TR = 2; // needs horizontal flip
