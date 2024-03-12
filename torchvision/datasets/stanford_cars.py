@@ -98,7 +98,7 @@ class StanfordCars(VisionDataset):
 
     def download(self) -> None:
         # The original URL is broken so this is never called.
-        # Keeping it for posterity or in th unlikely event that this starst working again.
+        # Keeping it for posterity or in the unlikely event that this starts working again.
         if self._check_exists():
             return
 
