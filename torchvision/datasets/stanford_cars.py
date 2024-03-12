@@ -8,11 +8,13 @@ from .vision import VisionDataset
 
 
 class StanfordCars(VisionDataset):
-    """`Stanford Cars <https://ai.stanford.edu/~jkrause/cars/car_dataset.html>`_ Dataset
+    """Stanford Cars  Dataset
 
     The Cars dataset contains 16,185 images of 196 classes of cars. The data is
     split into 8,144 training images and 8,041 testing images, where each class
     has been split roughly in a 50-50 split
+
+    The original URL is https://ai.stanford.edu/~jkrause/cars/car_dataset.html, but it is broken.
 
     .. note::
 
@@ -25,9 +27,11 @@ class StanfordCars(VisionDataset):
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again."""
+        download (bool, optional): This parameter exists for backward compatibility but it does not
+            download the dataset, since the original URL is not available anymore. The dataset
+            seems to be available on Kaggle so you can try to manually download it using
+            `these instructions <https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616>`_.
+        """
 
     def __init__(
         self,
@@ -57,7 +61,12 @@ class StanfordCars(VisionDataset):
             self._images_base_path = self._base_folder / "cars_test"
 
         if download:
-            self.download()
+            raise ValueError(
+                "The original URL is broken so the StanfordCars dataset is not available for automatic "
+                "download anymore. You can try to download it manually following "
+                "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616, "
+                "and set download=False to avoid this error."
+            )
 
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
@@ -88,6 +97,8 @@ class StanfordCars(VisionDataset):
         return pil_image, target
 
     def download(self) -> None:
+        # The original URL is broken so this is never called.
+        # Keeping it for posterity or in th unlikely event that this starst working again.
         if self._check_exists():
             return
 
