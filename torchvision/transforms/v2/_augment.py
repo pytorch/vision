@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
@@ -317,3 +317,25 @@ class CutMix(_BaseMixUpCutMix):
             return output
         else:
             return inpt
+
+
+class JPEG(Transform):
+    """Apply JPEG compression to the given images.
+
+    If the input is a :class:`torch.Tensor`, it is expected
+    to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    Args:
+        quality (int): JPEG quality, from 1 to 100. Lower means more compression.
+    """
+
+    # TODO: support quality as tuple
+    def __init__(self, quality: Union[int, Sequence[int]]):
+        super().__init__()
+        self.quality = quality
+
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        return self.quality
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.jpeg, inpt, quality=params["quality"])
