@@ -42,14 +42,14 @@ def read_file(path: str) -> torch.Tensor:
     with one dimension.
 
     Args:
-        path (str): the path to the file to be read
+        path (str or ``pathlib.Path``): the path to the file to be read
 
     Returns:
         data (Tensor)
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_file)
-    data = torch.ops.image.read_file(path)
+    data = torch.ops.image.read_file(str(path))
     return data
 
 
@@ -59,12 +59,12 @@ def write_file(filename: str, data: torch.Tensor) -> None:
     file.
 
     Args:
-        filename (str): the path to the file to be written
+        filename (str or ``pathlib.Path``): the path to the file to be written
         data (Tensor): the contents to be written to the output file
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_file)
-    torch.ops.image.write_file(filename, data)
+    torch.ops.image.write_file(str(filename), data)
 
 
 def decode_png(
@@ -123,7 +123,7 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     Args:
         input (Tensor[channels, image_height, image_width]): int8 image tensor of
             ``c`` channels, where ``c`` must be 1 or 3.
-        filename (str): Path to save the image.
+        filename (str or ``pathlib.Path``): Path to save the image.
         compression_level (int): Compression factor for the resulting file, it must be a number
             between 0 and 9. Default: 6
     """
@@ -211,7 +211,7 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     Args:
         input (Tensor[channels, image_height, image_width]): int8 image tensor of ``c``
             channels, where ``c`` must be 1 or 3.
-        filename (str): Path to save the image.
+        filename (str or ``pathlib.Path``): Path to save the image.
         quality (int): Quality of the resulting JPEG file, it must be a number
             between 1 and 100. Default: 75
     """
@@ -259,7 +259,7 @@ def read_image(
     The values of the output tensor are uint8 in [0, 255].
 
     Args:
-        path (str): path of the JPEG or PNG image.
+        path (str or ``pathlib.Path``): path of the JPEG or PNG image.
         mode (ImageReadMode): the read mode used for optionally converting the image.
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
