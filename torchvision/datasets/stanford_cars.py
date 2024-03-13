@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Tuple
 
 from PIL import Image
 
-from .utils import download_and_extract_archive, download_url, verify_str_arg
+from .utils import verify_str_arg
 from .vision import VisionDataset
 
 
@@ -69,7 +69,10 @@ class StanfordCars(VisionDataset):
             )
 
         if not self._check_exists():
-            raise RuntimeError("Dataset not found. You can use download=True to download it")
+            raise RuntimeError(
+                "Dataset not found. Try to manually download following the instructions in "
+                "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616."
+            )
 
         self._samples = [
             (
@@ -95,35 +98,6 @@ class StanfordCars(VisionDataset):
         if self.target_transform is not None:
             target = self.target_transform(target)
         return pil_image, target
-
-    def download(self) -> None:
-        # The original URL is broken so this is never called.
-        # Keeping it for posterity or in the unlikely event that this starts working again.
-        if self._check_exists():
-            return
-
-        download_and_extract_archive(
-            url="https://ai.stanford.edu/~jkrause/cars/car_devkit.tgz",
-            download_root=str(self._base_folder),
-            md5="c3b158d763b6e2245038c8ad08e45376",
-        )
-        if self._split == "train":
-            download_and_extract_archive(
-                url="https://ai.stanford.edu/~jkrause/car196/cars_train.tgz",
-                download_root=str(self._base_folder),
-                md5="065e5b463ae28d29e77c1b4b166cfe61",
-            )
-        else:
-            download_and_extract_archive(
-                url="https://ai.stanford.edu/~jkrause/car196/cars_test.tgz",
-                download_root=str(self._base_folder),
-                md5="4ce7ebf6a94d07f1952d94dd34c4d501",
-            )
-            download_url(
-                url="https://ai.stanford.edu/~jkrause/car196/cars_test_annos_withlabels.mat",
-                root=str(self._base_folder),
-                md5="b0a2b23655a3edd16d84508592a98d10",
-            )
 
     def _check_exists(self) -> bool:
         if not (self._base_folder / "devkit").is_dir():
