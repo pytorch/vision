@@ -25,6 +25,10 @@ class PCAM(VisionDataset):
          target_transform (callable, optional): A function/transform that takes in the target and transforms it.
          download (bool, optional): If True, downloads the dataset from the internet and puts it into ``root/pcam``. If
              dataset is already downloaded, it is not downloaded again.
+
+             .. warning::
+
+                To download the dataset `gdown <https://github.com/wkentaro/gdown>`_ is required.
     """
 
     _FILES = {
