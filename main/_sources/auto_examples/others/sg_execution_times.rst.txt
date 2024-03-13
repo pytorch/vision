@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:31.870** total execution time for 5 files **from auto_examples/others**:
+**00:30.691** total execution time for 5 files **from auto_examples/others**:
 
 .. container::
 
@@ -33,17 +33,17 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``plot_visualization_utils.py``)
-     - 00:14.333
+     - 00:14.146
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``plot_optical_flow.py``)
-     - 00:09.495
+     - 00:09.322
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_video_api.py` (``plot_video_api.py``)
-     - 00:04.065
+     - 00:03.381
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``plot_repurposing_annotations.py``)
-     - 00:02.387
+     - 00:02.299
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``plot_scripted_tensor_transforms.py``)
-     - 00:01.590
+     - 00:01.543
      - 0.0
