@@ -54,7 +54,12 @@ from torchvision.transforms.v2.functional._utils import _get_kernel, _register_k
 
 
 # turns all warnings into errors for this module
-pytestmark = pytest.mark.filterwarnings("error")
+pytestmark = [pytest.mark.filterwarnings("error")]
+
+if sys.version_info[:2] >= (3, 12):
+    # torchscript relies on some AST stuff that got deprecated in 3.12,
+    # so we have to explicitly ignore those otherwise we'd error on warnings due to the pytestmark filter above.
+    pytestmark.append(pytest.mark.filterwarnings("ignore::DeprecationWarning"))
 
 
 @pytest.fixture(autouse=True)

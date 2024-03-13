@@ -18,6 +18,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:
@@ -51,6 +52,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         runner: ["macos-12"]
         include:
           - python-version: "3.8"
@@ -81,6 +83,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
         include:
