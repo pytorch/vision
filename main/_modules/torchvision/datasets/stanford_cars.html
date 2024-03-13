@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+423a1b0) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+6c10d08) &#x25BC</a>
     </div>
     
 
@@ -360,16 +360,18 @@
 
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
 
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">download_url</span><span class="p">,</span> <span class="n">verify_str_arg</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">verify_str_arg</span>
 <span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
 <div class="viewcode-block" id="StanfordCars"><a class="viewcode-back" href="../../../generated/torchvision.datasets.StanfordCars.html#torchvision.datasets.StanfordCars">[docs]</a><span class="k">class</span> <span class="nc">StanfordCars</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`Stanford Cars &lt;https://ai.stanford.edu/~jkrause/cars/car_dataset.html&gt;`_ Dataset</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stanford Cars  Dataset</span>
 
 <span class="sd">    The Cars dataset contains 16,185 images of 196 classes of cars. The data is</span>
 <span class="sd">    split into 8,144 training images and 8,041 testing images, where each class</span>
 <span class="sd">    has been split roughly in a 50-50 split</span>
+
+<span class="sd">    The original URL is https://ai.stanford.edu/~jkrause/cars/car_dataset.html, but it is broken.</span>
 
 <span class="sd">    .. note::</span>
 
@@ -382,9 +384,11 @@
 <span class="sd">            and returns a transformed version. E.g, ``transforms.RandomCrop``</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the</span>
 <span class="sd">            target and transforms it.</span>
-<span class="sd">        download (bool, optional): If True, downloads the dataset from the internet and</span>
-<span class="sd">            puts it in root directory. If dataset is already downloaded, it is not</span>
-<span class="sd">            downloaded again.&quot;&quot;&quot;</span>
+<span class="sd">        download (bool, optional): This parameter exists for backward compatibility but it does not</span>
+<span class="sd">            download the dataset, since the original URL is not available anymore. The dataset</span>
+<span class="sd">            seems to be available on Kaggle so you can try to manually download it using</span>
+<span class="sd">            `these instructions &lt;https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616&gt;`_.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -414,10 +418,18 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_images_base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">&quot;cars_test&quot;</span>
 
         <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The original URL is broken so the StanfordCars dataset is not available for automatic &quot;</span>
+                <span class="s2">&quot;download anymore. You can try to download it manually following &quot;</span>
+                <span class="s2">&quot;https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616, &quot;</span>
+                <span class="s2">&quot;and set download=False to avoid this error.&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found. You can use download=True to download it&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Dataset not found. Try to manually download following the instructions in &quot;</span>
+                <span class="s2">&quot;https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616.&quot;</span>
+            <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">(</span>
@@ -443,33 +455,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">pil_image</span><span class="p">,</span> <span class="n">target</span></div>
-
-    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
-            <span class="k">return</span>
-
-        <span class="n">download_and_extract_archive</span><span class="p">(</span>
-            <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://ai.stanford.edu/~jkrause/cars/car_devkit.tgz&quot;</span><span class="p">,</span>
-            <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span>
-            <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;c3b158d763b6e2245038c8ad08e45376&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
-            <span class="n">download_and_extract_archive</span><span class="p">(</span>
-                <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://ai.stanford.edu/~jkrause/car196/cars_train.tgz&quot;</span><span class="p">,</span>
-                <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span>
-                <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;065e5b463ae28d29e77c1b4b166cfe61&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">download_and_extract_archive</span><span class="p">(</span>
-                <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://ai.stanford.edu/~jkrause/car196/cars_test.tgz&quot;</span><span class="p">,</span>
-                <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span>
-                <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;4ce7ebf6a94d07f1952d94dd34c4d501&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">download_url</span><span class="p">(</span>
-                <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://ai.stanford.edu/~jkrause/car196/cars_test_annos_withlabels.mat&quot;</span><span class="p">,</span>
-                <span class="n">root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span>
-                <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;b0a2b23655a3edd16d84508592a98d10&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">&quot;devkit&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
