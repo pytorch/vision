@@ -167,7 +167,6 @@ class Normalize(Transform):
 
 class GaussianBlur(Transform):
     """Blurs image with randomly chosen Gaussian blur kernel.
-    
     The convolution will be using reflection padding corresponding to the kernel size, to maintain the input shape.
 
     If the input is a Tensor, it is expected
