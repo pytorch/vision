@@ -1,14 +1,18 @@
 #include "decode_png.h"
 #include "common_png.h"
+#include "exif.h"
 
 namespace vision {
 namespace image {
+
+using namespace exif_private;
 
 #if !PNG_FOUND
 torch::Tensor decode_png(
     const torch::Tensor& data,
     ImageReadMode mode,
-    bool allow_16_bits) {
+    bool allow_16_bits,
+    bool apply_exif_orientation) {
   TORCH_CHECK(
       false, "decode_png: torchvision not compiled with libPNG support");
 }
@@ -22,7 +26,8 @@ bool is_little_endian() {
 torch::Tensor decode_png(
     const torch::Tensor& data,
     ImageReadMode mode,
-    bool allow_16_bits) {
+    bool allow_16_bits,
+    bool apply_exif_orientation) {
   C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.decode_png.decode_png");
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
@@ -234,8 +239,19 @@ torch::Tensor decode_png(
       t_ptr = tensor.accessor<int32_t, 3>().data();
     }
   }
+
+  int exif_orientation = -1;
+  if (apply_exif_orientation) {
+    exif_orientation = fetch_png_exif_orientation(png_ptr, info_ptr);
+  }
+
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-  return tensor.permute({2, 0, 1});
+
+  auto output = tensor.permute({2, 0, 1});
+  if (apply_exif_orientation) {
+    return exif_orientation_transform(output, exif_orientation);
+  }
+  return output;
 }
 #endif
 

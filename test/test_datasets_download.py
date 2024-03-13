@@ -327,12 +327,6 @@ def kitti():
     )
 
 
-def stanford_cars():
-    return itertools.chain.from_iterable(
-        [collect_urls(datasets.StanfordCars, ROOT, split=split, download=True) for split in ["train", "test"]]
-    )
-
-
 def url_parametrization(*dataset_urls_and_ids_fns):
     return pytest.mark.parametrize(
         "url",
@@ -378,9 +372,9 @@ def test_url_is_accessible(url):
     retry(lambda: assert_url_is_accessible(url))
 
 
-@url_parametrization(
-    stanford_cars,  # https://github.com/pytorch/vision/issues/7545
-)
+# TODO: if e.g. caltech101 starts failing, remove the pytest.mark.parametrize below and use
+# @url_parametrization(caltech101)
+@pytest.mark.parametrize("url", ("http://url_that_doesnt_exist.com",))  # here until we actually have a failing dataset
 @pytest.mark.xfail
 def test_url_is_not_accessible(url):
     """
