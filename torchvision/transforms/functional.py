@@ -1308,6 +1308,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 
 def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
     """Performs Gaussian blurring on the image by given kernel
+
     The convolution will be using reflection padding corresponding to the kernel size, to maintain the input shape.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means at most one leading dimension.
