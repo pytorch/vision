@@ -1625,6 +1625,10 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples_total += num_examples
             classes.append(cls)
 
+        if config.pop("make_empty_class", False):
+            os.makedirs(pathlib.Path(tmpdir) / "empty_class")
+            classes.append("empty_class")
+
         return dict(num_examples=num_examples_total, classes=classes)
 
     def _file_name_fn(self, cls, ext, idx):
@@ -1648,6 +1652,23 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(config) as (dataset, info):
             assert len(dataset.classes) == len(info["classes"])
             assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
+
+    def test_allow_empty(self):
+        config = {
+            "extensions": self._EXTENSIONS,
+            "make_empty_class": True,
+        }
+
+        config["allow_empty"] = True
+        with self.create_dataset(config) as (dataset, info):
+            assert "empty_class" in dataset.classes
+            assert len(dataset.classes) == len(info["classes"])
+            assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
+
+        config["allow_empty"] = False
+        with pytest.raises(FileNotFoundError, match="Found no valid file"):
+            with self.create_dataset(config) as (dataset, info):
+                pass
 
 
 class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
