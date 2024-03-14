@@ -340,7 +340,7 @@ class JPEG(Transform):
     Args:
         quality (sequence or number): JPEG quality, from 1 to 100. Lower means more compression.
             If quality is a sequence like (min, max), it will be the range of JPEG quality to
-            select from.
+            select from (inclusive of both ends).
     """
 
     def __init__(self, quality: Union[int, Sequence[int]]):
@@ -348,7 +348,7 @@ class JPEG(Transform):
         self.quality = _setup_quality(quality)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        quality = torch.empty(1, dtype=torch.long).uniform_(self.quality[0], self.quality[1]).item()
+        quality = torch.randint(self.quality[0], self.quality[1] + 1, ()).item()
         return dict(quality=quality)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:

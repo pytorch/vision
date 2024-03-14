@@ -5788,3 +5788,111 @@ class TestSanitizeBoundingBoxes:
         with pytest.raises(ValueError, match="Number of boxes"):
             different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
             transforms.SanitizeBoundingBoxes()(different_sizes)
+
+
+class TestJPEG:
+    @pytest.mark.parametrize("quality", [5, 75])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    def test_kernel_image(self, quality, color_space):
+        check_kernel(
+            F.jpeg_image,
+            make_image(color_space=color_space),
+            quality=quality
+        )
+
+    def test_kernel_video(self):
+        check_kernel(F.jpeg_image, make_video(), quality=5)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.jpeg, make_input(), quality=5)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.jpeg_image, torch.Tensor),
+            (F._jpeg_image_pil, PIL.Image.Image),
+            (F.jpeg_image, tv_tensors.Image),
+            (F.jpeg_image, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.jpeg, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image_pil, make_image, make_video],
+    )
+    @pytest.mark.parametrize("quality", [5, (10, 20)])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    def test_transform(self, make_input, quality, color_space):
+        check_transform(
+            transforms.JPEG(quality=quality), make_input(color_space=color_space)
+        )
+
+    @pytest.mark.parametrize("quality", [5, 75])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    def test_functional_image_correctness(self, quality, color_space):
+        image = make_image(color_space=color_space)
+
+        actual = F.jpeg(image, quality=quality)
+        expected = F.to_image(F.jpeg(F.to_pil_image(image), quality=quality))
+
+        # NOTE: this may fail if torchvision and Pillow use different JPEG encoder?
+        torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+
+    # def test_transform_image_correctness(self, center, interpolation, expand, fill, seed):
+    #     image = make_image(dtype=torch.uint8, device="cpu")
+
+    #     fill = adapt_fill(fill, dtype=torch.uint8)
+
+    #     transform = transforms.RandomRotation(
+    #         **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES,
+    #         center=center,
+    #         interpolation=interpolation,
+    #         expand=expand,
+    #         fill=fill,
+    #     )
+
+    #     torch.manual_seed(seed)
+    #     actual = transform(image)
+
+    #     torch.manual_seed(seed)
+    #     expected = F.to_image(transform(F.to_pil_image(image)))
+
+    #     mae = (actual.float() - expected.float()).abs().mean()
+    #     assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
+
+    # @pytest.mark.parametrize("seed", list(range(10)))
+    # def test_transform_get_params_bounds(self, degrees, seed):
+    #     transform = transforms.RandomRotation(degrees=degrees)
+
+    #     torch.manual_seed(seed)
+    #     params = transform._get_params([])
+
+    #     if isinstance(degrees, (int, float)):
+    #         assert -degrees <= params["angle"] <= degrees
+    #     else:
+    #         assert degrees[0] <= params["angle"] <= degrees[1]
+
+    # @pytest.mark.parametrize("param", ["degrees", "center"])
+    # @pytest.mark.parametrize("value", [0, [0], [0, 0, 0]])
+    # def test_transform_sequence_len_errors(self, param, value):
+    #     if param == "degrees" and not isinstance(value, list):
+    #         return
+
+    #     kwargs = {param: value}
+    #     if param != "degrees":
+    #         kwargs["degrees"] = 0
+
+    #     with pytest.raises(
+    #         ValueError if isinstance(value, list) else TypeError, match=f"{param} should be a sequence of length 2"
+    #     ):
+    #         transforms.RandomRotation(**kwargs)
+
+    # def test_transform_negative_degrees_error(self):
+    #     with pytest.raises(ValueError, match="If degrees is a single number, it must be positive"):
+    #         transforms.RandomAffine(degrees=-1)
