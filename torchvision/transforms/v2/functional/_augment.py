@@ -71,11 +71,12 @@ def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
 
 @_register_kernel_internal(jpeg, torch.Tensor)
 @_register_kernel_internal(jpeg, tv_tensors.Image)
+@_register_kernel_internal(erase, tv_tensors.Video)
 def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
-    leading_dims = image.shape[:-3]
+    original_shape = image.shape
     image = image.reshape(-1, *image.shape[-3:])
     image = [decode_jpeg(encode_jpeg(x, quality=quality)) for x in image]
-    image = torch.stack(image, dim=0).unflatten(0, leading_dims)
+    image = torch.stack(image, dim=0).reshape(original_shape)
     return image
 
 

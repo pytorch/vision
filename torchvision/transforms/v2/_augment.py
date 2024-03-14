@@ -11,7 +11,7 @@ from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F
 
 from ._transform import _RandomApplyTransform, Transform
-from ._utils import _parse_labels_getter, has_any, is_pure_tensor, query_chw, query_size
+from ._utils import _check_sequence_input, _parse_labels_getter, has_any, is_pure_tensor, query_chw, query_size
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -319,6 +319,18 @@ class CutMix(_BaseMixUpCutMix):
             return inpt
 
 
+def _setup_quality(quality: Union[int, Sequence[int]]):
+    if isinstance(quality, int):
+        quality = [quality, quality]
+    else:
+        _check_sequence_input(quality, "quality", (2,))
+
+    if not (1 <= quality[0] <= quality[1] <= 100 and isinstance(quality[0], int) and isinstance(quality[1], int)):
+        raise ValueError("quality must be an integer from 1 to 100")
+
+    return quality
+
+
 class JPEG(Transform):
     """Apply JPEG compression to the given images.
 
@@ -326,16 +338,18 @@ class JPEG(Transform):
     to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        quality (int): JPEG quality, from 1 to 100. Lower means more compression.
+        quality (sequence or number): JPEG quality, from 1 to 100. Lower means more compression.
+            If quality is a sequence like (min, max), it will be the range of JPEG quality to
+            select from.
     """
 
-    # TODO: support quality as tuple
     def __init__(self, quality: Union[int, Sequence[int]]):
         super().__init__()
-        self.quality = quality
+        self.quality = _setup_quality(quality)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        return self.quality
+        quality = torch.empty(1, dtype=torch.long).uniform_(self.quality[0], self.quality[1]).item()
+        return dict(quality=quality)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.jpeg, inpt, quality=params["quality"])
