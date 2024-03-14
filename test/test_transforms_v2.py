@@ -5843,55 +5843,41 @@ class TestJPEG:
         # NOTE: this may fail if torchvision and Pillow use different JPEG encoder?
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
-    # def test_transform_image_correctness(self, center, interpolation, expand, fill, seed):
-    #     image = make_image(dtype=torch.uint8, device="cpu")
+    @pytest.mark.parametrize("quality", [5, (10, 20)])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_image_correctness(self, quality, color_space, seed):
+        image = make_image(color_space=color_space)
 
-    #     fill = adapt_fill(fill, dtype=torch.uint8)
+        transform = transforms.JPEG(quality=quality)
 
-    #     transform = transforms.RandomRotation(
-    #         **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES,
-    #         center=center,
-    #         interpolation=interpolation,
-    #         expand=expand,
-    #         fill=fill,
-    #     )
+        torch.manual_seed(seed)
+        actual = transform(image)
 
-    #     torch.manual_seed(seed)
-    #     actual = transform(image)
+        torch.manual_seed(seed)
+        expected = F.to_image(transform(F.to_pil_image(image)))
 
-    #     torch.manual_seed(seed)
-    #     expected = F.to_image(transform(F.to_pil_image(image)))
+        torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
-    #     mae = (actual.float() - expected.float()).abs().mean()
-    #     assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
+    @pytest.mark.parametrize("quality", [5, (10, 20)])
+    @pytest.mark.parametrize("seed", list(range(10)))
+    def test_transform_get_params_bounds(self, quality, seed):
+        transform = transforms.JPEG(quality=quality)
 
-    # @pytest.mark.parametrize("seed", list(range(10)))
-    # def test_transform_get_params_bounds(self, degrees, seed):
-    #     transform = transforms.RandomRotation(degrees=degrees)
+        torch.manual_seed(seed)
+        params = transform._get_params([])
 
-    #     torch.manual_seed(seed)
-    #     params = transform._get_params([])
+        if isinstance(quality, int):
+            assert params["quality"] == quality
+        else:
+            assert quality[0] <= params["quality"] <= quality[1]
 
-    #     if isinstance(degrees, (int, float)):
-    #         assert -degrees <= params["angle"] <= degrees
-    #     else:
-    #         assert degrees[0] <= params["angle"] <= degrees[1]
+    @pytest.mark.parametrize("quality", [[0], [0, 0, 0]])
+    def test_transform_sequence_len_error(self, quality):
+        with pytest.raises(ValueError, match="quality should be a sequence of length 2"):
+            transforms.JPEG(quality=quality)
 
-    # @pytest.mark.parametrize("param", ["degrees", "center"])
-    # @pytest.mark.parametrize("value", [0, [0], [0, 0, 0]])
-    # def test_transform_sequence_len_errors(self, param, value):
-    #     if param == "degrees" and not isinstance(value, list):
-    #         return
-
-    #     kwargs = {param: value}
-    #     if param != "degrees":
-    #         kwargs["degrees"] = 0
-
-    #     with pytest.raises(
-    #         ValueError if isinstance(value, list) else TypeError, match=f"{param} should be a sequence of length 2"
-    #     ):
-    #         transforms.RandomRotation(**kwargs)
-
-    # def test_transform_negative_degrees_error(self):
-    #     with pytest.raises(ValueError, match="If degrees is a single number, it must be positive"):
-    #         transforms.RandomAffine(degrees=-1)
+    @pytest.mark.parametrize("quality", [-1, 0, 150])
+    def test_transform_invalid_quality_error(self, quality):
+        with pytest.raises(ValueError, match="quality must be an integer from 1 to 100"):
+            transforms.JPEG(quality=quality)
