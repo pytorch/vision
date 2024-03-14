@@ -5794,19 +5794,12 @@ class TestJPEG:
     @pytest.mark.parametrize("quality", [5, 75])
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
     def test_kernel_image(self, quality, color_space):
-        check_kernel(
-            F.jpeg_image,
-            make_image(color_space=color_space),
-            quality=quality
-        )
+        check_kernel(F.jpeg_image, make_image(color_space=color_space), quality=quality)
 
     def test_kernel_video(self):
         check_kernel(F.jpeg_image, make_video(), quality=5)
 
-    @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
-    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
     def test_functional(self, make_input):
         check_functional(F.jpeg, make_input(), quality=5)
 
@@ -5822,16 +5815,11 @@ class TestJPEG:
     def test_functional_signature(self, kernel, input_type):
         check_functional_kernel_signature_match(F.jpeg, kernel=kernel, input_type=input_type)
 
-    @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
-    )
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
     @pytest.mark.parametrize("quality", [5, (10, 20)])
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
     def test_transform(self, make_input, quality, color_space):
-        check_transform(
-            transforms.JPEG(quality=quality), make_input(color_space=color_space)
-        )
+        check_transform(transforms.JPEG(quality=quality), make_input(color_space=color_space))
 
     @pytest.mark.parametrize("quality", [5, 75])
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
