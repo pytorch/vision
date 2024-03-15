@@ -232,7 +232,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+53869eb) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+fa82fd3) &#x25BC</a>
     </div>
     
 
@@ -363,7 +363,7 @@
 <h1>SanitizeBoundingBoxes<a class="headerlink" href="#sanitizeboundingboxes" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchvision.transforms.v2.SanitizeBoundingBoxes">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.transforms.v2.</span></span><span class="sig-name descname"><span class="pre">SanitizeBoundingBoxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_getter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.12)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.12)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.12)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.2)"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/transforms/v2/_misc.html#SanitizeBoundingBoxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.v2.SanitizeBoundingBoxes" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.transforms.v2.</span></span><span class="sig-name descname"><span class="pre">SanitizeBoundingBoxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_getter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.12)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.12)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/transforms/v2/_misc.html#SanitizeBoundingBoxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.v2.SanitizeBoundingBoxes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove degenerate/invalid bounding boxes and their corresponding labels and masks.</p>
 <p>This transform removes bounding boxes and their associated labels/masks that:</p>
 <ul class="simple">
@@ -371,6 +371,8 @@
 <li><p>have any coordinate outside of their corresponding image. You may want to
 call <a class="reference internal" href="torchvision.transforms.v2.ClampBoundingBoxes.html#torchvision.transforms.v2.ClampBoundingBoxes" title="torchvision.transforms.v2.ClampBoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClampBoundingBoxes</span></code></a> first to avoid undesired removals.</p></li>
 </ul>
+<p>It can also sanitize other tensors like the “iscrowd” or “area” properties from COCO
+(see <code class="docutils literal notranslate"><span class="pre">labels_getter</span></code> parameter).</p>
 <p>It is recommended to call it at the end of a pipeline, before passing the
 input to the models. It is critical to call this transform if
 <a class="reference internal" href="torchvision.transforms.v2.RandomIoUCrop.html#torchvision.transforms.v2.RandomIoUCrop" title="torchvision.transforms.v2.RandomIoUCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomIoUCrop</span></code></a> was called.
@@ -381,12 +383,20 @@ cases.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>min_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – </p></li>
-<li><p><strong>labels_getter</strong> (<em>callable</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – indicates how to identify the labels in the input.
+<li><p><strong>labels_getter</strong> (<em>callable</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – <p>indicates how to identify the labels in the input
+(or anything else that needs to be sanitized along with the bounding boxes).
 By default, this will try to find a “labels” key in the input (case-insensitive), if
 the input is a dict or it is a tuple whose second element is a dict.
-This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
-It can also be a callable that takes the same input
-as the transform, and returns the labels.</p></li>
+This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.</p>
+<p>It can also be a callable that takes the same input as the transform, and returns either:</p>
+<ul>
+<li><p>A single tensor (the labels)</p></li>
+<li><p>A tuple/list of tensors, each of which will be subject to the same sanitization as the bounding boxes.
+This is useful to sanitize multiple tensors like the labels, and the “iscrowd” or “area” properties
+from COCO.</p></li>
+</ul>
+<p>If <code class="docutils literal notranslate"><span class="pre">labels_getter</span></code> is None then only bounding boxes are sanitized.</p>
+</p></li>
 </ul>
 </dd>
 </dl>

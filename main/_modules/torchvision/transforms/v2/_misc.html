@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+53869eb) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+fa82fd3) &#x25BC</a>
     </div>
     
 
@@ -678,6 +678,9 @@
 <span class="sd">    - have any coordinate outside of their corresponding image. You may want to</span>
 <span class="sd">      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.</span>
 
+<span class="sd">    It can also sanitize other tensors like the &quot;iscrowd&quot; or &quot;area&quot; properties from COCO</span>
+<span class="sd">    (see ``labels_getter`` parameter).</span>
+
 <span class="sd">    It is recommended to call it at the end of a pipeline, before passing the</span>
 <span class="sd">    input to the models. It is critical to call this transform if</span>
 <span class="sd">    :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.</span>
@@ -687,18 +690,26 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.</span>
-<span class="sd">        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.</span>
+<span class="sd">        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input</span>
+<span class="sd">            (or anything else that needs to be sanitized along with the bounding boxes).</span>
 <span class="sd">            By default, this will try to find a &quot;labels&quot; key in the input (case-insensitive), if</span>
 <span class="sd">            the input is a dict or it is a tuple whose second element is a dict.</span>
 <span class="sd">            This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.</span>
-<span class="sd">            It can also be a callable that takes the same input</span>
-<span class="sd">            as the transform, and returns the labels.</span>
+
+<span class="sd">            It can also be a callable that takes the same input as the transform, and returns either:</span>
+
+<span class="sd">            - A single tensor (the labels)</span>
+<span class="sd">            - A tuple/list of tensors, each of which will be subject to the same sanitization as the bounding boxes.</span>
+<span class="sd">              This is useful to sanitize multiple tensors like the labels, and the &quot;iscrowd&quot; or &quot;area&quot; properties</span>
+<span class="sd">              from COCO.</span>
+
+<span class="sd">            If ``labels_getter`` is None then only bounding boxes are sanitized.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">labels_getter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="n">labels_getter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -713,18 +724,28 @@
         <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels_getter</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The labels in the input to forward() must be a tensor or None, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead.&quot;</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;The labels in the input to forward() must be a tensor or None, got </span><span class="si">{type}</span><span class="s2"> instead.&quot;</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="p">(</span><span class="n">labels</span><span class="p">,)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                        <span class="c1"># TODO: we don&#39;t need to enforce tensors, just that entries are indexable as t[bool_mask]</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">entry</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span>
 
         <span class="n">flat_inputs</span><span class="p">,</span> <span class="n">spec</span> <span class="o">=</span> <span class="n">tree_flatten</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
         <span class="n">boxes</span> <span class="o">=</span> <span class="n">get_bounding_boxes</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Number of boxes (shape=</span><span class="si">{</span><span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) and number of labels (shape=</span><span class="si">{</span><span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) do not match.&quot;</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Number of boxes (shape=</span><span class="si">{</span><span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) and must match the number of labels.&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Found labels with shape=</span><span class="si">{</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">).&quot;</span>
+                    <span class="p">)</span>
 
         <span class="n">valid</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">_misc</span><span class="o">.</span><span class="n">_get_sanitize_bounding_boxes_mask</span><span class="p">(</span>
             <span class="n">boxes</span><span class="p">,</span>
@@ -738,7 +759,7 @@
         <span class="k">return</span> <span class="n">tree_unflatten</span><span class="p">(</span><span class="n">flat_outputs</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="n">is_label</span> <span class="o">=</span> <span class="n">inpt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">inpt</span> <span class="ow">is</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span>
+        <span class="n">is_label</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">inpt</span> <span class="ow">is</span> <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">])</span>
         <span class="n">is_bounding_boxes_or_mask</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="p">(</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_label</span> <span class="ow">or</span> <span class="n">is_bounding_boxes_or_mask</span><span class="p">):</span>
@@ -748,8 +769,8 @@
 
         <span class="k">if</span> <span class="n">is_label</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">output</span>
-
-        <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span></div>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span></div>
 </pre></div>
 
              </article>
