@@ -44,6 +44,10 @@ class CocoDetection(VisionDataset):
         return self.coco.loadAnns(self.coco.getAnnIds(id))
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
+
+        if not isinstance(index, int):
+            raise ValueError(f"Index must be of type integer, got {type(index)} instead.")
+
         id = self.ids[index]
         image = self._load_image(id)
         target = self._load_target(id)
