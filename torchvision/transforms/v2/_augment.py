@@ -323,24 +323,24 @@ def _setup_quality(quality: Union[int, Sequence[int]]):
     if isinstance(quality, int):
         quality = [quality, quality]
     else:
-        _check_sequence_input(quality, "quality", (2,))
+        _check_sequence_input(quality, "quality", req_sizes=(2,))
 
     if not (1 <= quality[0] <= quality[1] <= 100 and isinstance(quality[0], int) and isinstance(quality[1], int)):
-        raise ValueError("quality must be an integer from 1 to 100")
+        raise ValueError(f"quality must be an integer from 1 to 100, got {quality =}")
 
     return quality
 
 
 class JPEG(Transform):
-    """Apply JPEG compression to the given images.
+    """Apply JPEG compression and decompression to the given images.
 
     If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         quality (sequence or number): JPEG quality, from 1 to 100. Lower means more compression.
-            If quality is a sequence like (min, max), it will be the range of JPEG quality to
-            select from (inclusive of both ends).
+            If quality is a sequence like (min, max), it specifies the range of JPEG quality to
+            randomly select from (inclusive of both ends).
 
     Returns:
         image with JPEG compression.

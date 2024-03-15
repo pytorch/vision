@@ -5902,7 +5902,7 @@ class TestJPEG:
         actual = F.jpeg(image, quality=quality)
         expected = F.to_image(F.jpeg(F.to_pil_image(image), quality=quality))
 
-        # NOTE: this may fail if torchvision and Pillow use different JPEG encoder?
+        # NOTE: this will fail if torchvision and Pillow use different JPEG encoder/decoder
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
     @pytest.mark.parametrize("quality", [5, (10, 20)])
@@ -5913,11 +5913,12 @@ class TestJPEG:
 
         transform = transforms.JPEG(quality=quality)
 
-        torch.manual_seed(seed)
-        actual = transform(image)
-
-        torch.manual_seed(seed)
-        expected = F.to_image(transform(F.to_pil_image(image)))
+        with freeze_rng_state():
+	        torch.manual_seed(seed)
+	        actual = transform(image)
+	
+	        torch.manual_seed(seed)
+	        expected = F.to_image(transform(F.to_pil_image(image)))
 
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
@@ -5926,8 +5927,9 @@ class TestJPEG:
     def test_transform_get_params_bounds(self, quality, seed):
         transform = transforms.JPEG(quality=quality)
 
-        torch.manual_seed(seed)
-        params = transform._get_params([])
+        with freeze_rng_state():    
+            torch.manual_seed(seed)
+            params = transform._get_params([])
 
         if isinstance(quality, int):
             assert params["quality"] == quality

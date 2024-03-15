@@ -60,7 +60,6 @@ def erase_video(
 
 def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.JPEG` for details."""
-    # TODO: this is probably not torchscript-compatible?
     if torch.jit.is_scripting():
         return jpeg_image(image, quality=quality)
 
@@ -75,7 +74,7 @@ def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
 @_register_kernel_internal(jpeg, tv_tensors.Video)
 def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
     original_shape = image.shape
-    image = image.reshape((-1,) + image.shape[-3:])
+    image = image.view((-1,) + image.shape[-3:])
 
     if image.shape[0] == 0:  # degenerate
         return image.reshape(original_shape).clone()
