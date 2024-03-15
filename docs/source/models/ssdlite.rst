@@ -15,9 +15,9 @@ Model builders
 
 The following model builders can be used to instantiate a SSD Lite model, with or
 without pre-trained weights. All the model builders internally rely on the
-``torchvision.models.detection.ssd.SSD`` base class. Please refer to the `source
+``torchvision.models.detection.ssdlite`` base class. Please refer to the `source
 code
-<https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_ for
+<https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssdlite.py>`_ for
 more details about this class.
 
 .. autosummary::
