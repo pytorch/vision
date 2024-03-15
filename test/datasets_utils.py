@@ -297,7 +297,7 @@ class DatasetTestCase(unittest.TestCase):
         Returns:
             (Tuple[str]): ``tmpdir`` which corresponds to ``root`` for most datasets.
         """
-        return (tmpdir,)
+        return (pathlib.Path(tmpdir),)
 
     def inject_fake_data(self, tmpdir: str, config: Dict[str, Any]) -> Union[int, Dict[str, Any]]:
         """Inject fake data for dataset into a temporary directory.
