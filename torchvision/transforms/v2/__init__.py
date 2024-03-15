@@ -9,7 +9,6 @@ from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
 from ._color import (
     ColorJitter,
     Grayscale,
-    RGB,
     RandomAdjustSharpness,
     RandomAutocontrast,
     RandomChannelPermutation,
@@ -19,6 +18,7 @@ from ._color import (
     RandomPhotometricDistort,
     RandomPosterize,
     RandomSolarize,
+    RGB,
 )
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
