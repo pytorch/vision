@@ -5012,9 +5012,9 @@ class TestGrayscaleToRgb:
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
     def test_transform(self, make_input):
-        check_transform(transforms.GrayscaleToRgb(), make_input(color_space="GRAY"))
+        check_transform(transforms.RGB(), make_input(color_space="GRAY"))
 
-    @pytest.mark.parametrize("fn", [F.grayscale_to_rgb, transform_cls_to_functional(transforms.GrayscaleToRgb)])
+    @pytest.mark.parametrize("fn", [F.grayscale_to_rgb, transform_cls_to_functional(transforms.RGB)])
     def test_image_correctness(self, fn):
         image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
 

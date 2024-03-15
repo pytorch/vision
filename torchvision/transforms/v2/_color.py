@@ -54,7 +54,7 @@ class RandomGrayscale(_RandomApplyTransform):
         return self._call_kernel(F.rgb_to_grayscale, inpt, num_output_channels=params["num_input_channels"])
 
 
-class GrayscaleToRgb(Transform):
+class RGB(Transform):
     """Converts grayscale images to RGB images.
 
     If the input is a :class:`torch.Tensor`, it is expected
