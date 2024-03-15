@@ -28,7 +28,7 @@ class HMDB51(VisionDataset):
     Internally, it uses a VideoClips object to handle clip creation.
 
     Args:
-        root (string): Root directory of the HMDB51 Dataset.
+        root (str or ``pathlib.Path``): Root directory of the HMDB51 Dataset.
         annotation_path (str): Path to the folder containing the split files.
         frames_per_clip (int): Number of frames in a clip.
         step_between_clips (int): Number of frames between each clip.

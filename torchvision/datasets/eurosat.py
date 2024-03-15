@@ -9,7 +9,7 @@ class EuroSAT(ImageFolder):
     """RGB version of the `EuroSAT <https://github.com/phelber/eurosat>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``root/eurosat`` exists.
+        root (str or ``pathlib.Path``): Root directory of dataset where ``root/eurosat`` exists.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the

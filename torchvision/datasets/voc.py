@@ -121,7 +121,7 @@ class VOCSegmentation(_VOCBase):
     """`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ Segmentation Dataset.
 
     Args:
-        root (string): Root directory of the VOC Dataset.
+        root (str or ``pathlib.Path``): Root directory of the VOC Dataset.
         year (string, optional): The dataset year, supports years ``"2007"`` to ``"2012"``.
         image_set (string, optional): Select the image_set to use, ``"train"``, ``"trainval"`` or ``"val"``. If
             ``year=="2007"``, can also be ``"test"``.
@@ -165,7 +165,7 @@ class VOCDetection(_VOCBase):
     """`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ Detection Dataset.
 
     Args:
-        root (string): Root directory of the VOC Dataset.
+        root (str or ``pathlib.Path``): Root directory of the VOC Dataset.
         year (string, optional): The dataset year, supports years ``"2007"`` to ``"2012"``.
         image_set (string, optional): Select the image_set to use, ``"train"``, ``"trainval"`` or ``"val"``. If
             ``year=="2007"``, can also be ``"test"``.

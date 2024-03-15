@@ -159,7 +159,7 @@ class CarlaStereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory where `carla-highres` is located.
+        root (str or ``pathlib.Path``): Root directory where `carla-highres` is located.
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
@@ -233,7 +233,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
                     calib
 
     Args:
-        root (string): Root directory where `Kitti2012` is located.
+        root (str or ``pathlib.Path``): Root directory where `Kitti2012` is located.
         split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
@@ -321,7 +321,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
                     calib
 
     Args:
-        root (string): Root directory where `Kitti2015` is located.
+        root (str or ``pathlib.Path``): Root directory where `Kitti2015` is located.
         split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
@@ -420,7 +420,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory of the Middleburry 2014 Dataset.
+        root (str or ``pathlib.Path``): Root directory of the Middleburry 2014 Dataset.
         split (string, optional): The dataset split of scenes, either "train" (default), "test", or "additional"
         use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible.
             The dataset samples with equal probability between ``[im1.png, im1E.png, im1L.png]``.
@@ -757,7 +757,7 @@ class FallingThingsStereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory where FallingThings is located.
+        root (str or ``pathlib.Path``): Root directory where FallingThings is located.
         variant (string): Which variant to use. Either "single", "mixed", or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
@@ -868,7 +868,7 @@ class SceneFlowStereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory where SceneFlow is located.
+        root (str or ``pathlib.Path``): Root directory where SceneFlow is located.
         variant (string): Which dataset variant to user, "FlyingThings3D" (default), "Monkaa" or "Driving".
         pass_name (string): Which pass to use, "clean" (default), "final" or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
@@ -973,7 +973,7 @@ class SintelStereo(StereoMatchingDataset):
                         ...
 
     Args:
-        root (string): Root directory where Sintel Stereo is located.
+        root (str or ``pathlib.Path``): Root directory where Sintel Stereo is located.
         pass_name (string): The name of the pass to use, either "final", "clean" or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
@@ -1082,7 +1082,7 @@ class InStereo2k(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory where InStereo2k is located.
+        root (str or ``pathlib.Path``): Root directory where InStereo2k is located.
         split (string): Either "train" or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
@@ -1169,7 +1169,7 @@ class ETH3DStereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory of the ETH3D Dataset.
+        root (str or ``pathlib.Path``): Root directory of the ETH3D Dataset.
         split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """

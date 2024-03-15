@@ -11,7 +11,7 @@ class SBU(VisionDataset):
     """`SBU Captioned Photo <http://www.cs.virginia.edu/~vicente/sbucaptions/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where tarball
+        root (str or ``pathlib.Path``): Root directory of dataset where tarball
             ``SBUCaptionedPhotoDataset.tar.gz`` exists.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``

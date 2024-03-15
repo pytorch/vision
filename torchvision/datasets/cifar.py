@@ -13,7 +13,7 @@ class CIFAR10(VisionDataset):
     """`CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``cifar-10-batches-py`` exists or will be saved to if download is set to True.
         train (bool, optional): If True, creates dataset from training set, otherwise
             creates from test set.

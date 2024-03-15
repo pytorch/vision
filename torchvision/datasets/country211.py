@@ -14,7 +14,7 @@ class Country211(ImageFolder):
     100 test images for each country.
 
     Args:
-        root (string): Root directory of the dataset.
+        root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"valid"`` and ``"test"``.
         transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.

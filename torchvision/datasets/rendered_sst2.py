@@ -20,7 +20,7 @@ class RenderedSST2(VisionDataset):
     (444 positive and 428 negative), and a test split containing 1821 images (909 positive and 912 negative).
 
     Args:
-        root (string): Root directory of the dataset.
+        root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), `"val"` and ``"test"``.
         transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.

@@ -11,7 +11,7 @@ class MovingMNIST(VisionDataset):
     """`MovingMNIST <http://www.cs.toronto.edu/~nitish/unsupervised_video/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``MovingMNIST/mnist_test_seq.npy`` exists.
+        root (str or ``pathlib.Path``): Root directory of dataset where ``MovingMNIST/mnist_test_seq.npy`` exists.
         split (string, optional): The dataset split, supports ``None`` (default), ``"train"`` and ``"test"``.
             If ``split=None``, the full data is returned.
         split_ratio (int, optional): The split ratio of number of frames. If ``split="train"``, the first split

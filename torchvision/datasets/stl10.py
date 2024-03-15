@@ -12,7 +12,7 @@ class STL10(VisionDataset):
     """`STL10 <https://cs.stanford.edu/~acoates/stl10/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``stl10_binary`` exists.
         split (string): One of {'train', 'test', 'unlabeled', 'train+unlabeled'}.
             Accordingly, dataset is selected.

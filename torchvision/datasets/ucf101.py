@@ -28,7 +28,7 @@ class UCF101(VisionDataset):
     Internally, it uses a VideoClips object to handle clip creation.
 
     Args:
-        root (string): Root directory of the UCF101 Dataset.
+        root (str or ``pathlib.Path``): Root directory of the UCF101 Dataset.
         annotation_path (str): path to the folder containing the split files;
             see docstring above for download instructions of these files
         frames_per_clip (int): number of frames in a clip.

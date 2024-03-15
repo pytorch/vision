@@ -16,7 +16,7 @@ class Caltech101(VisionDataset):
         This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``caltech101`` exists or will be saved to if download is set to True.
         target_type (string or list, optional): Type of target to use, ``category`` or
             ``annotation``. Can also be a list to output a tuple with all specified
@@ -153,7 +153,7 @@ class Caltech256(VisionDataset):
     """`Caltech 256 <https://data.caltech.edu/records/20087>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``caltech256`` exists or will be saved to if download is set to True.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``

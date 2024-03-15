@@ -23,7 +23,7 @@ class FGVCAircraft(VisionDataset):
     - ``manufacturer``, e.g. Boeing. The dataset comprises 30 different manufacturers.
 
     Args:
-        root (string): Root directory of the FGVC Aircraft dataset.
+        root (str or ``pathlib.Path``): Root directory of the FGVC Aircraft dataset.
         split (string, optional): The dataset split, supports ``train``, ``val``,
             ``trainval`` and ``test``.
         annotation_level (str, optional): The annotation level, supports ``variant``,

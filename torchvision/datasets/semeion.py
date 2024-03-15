@@ -12,7 +12,7 @@ class SEMEION(VisionDataset):
     r"""`SEMEION <http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``semeion.py`` exists.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``

@@ -35,7 +35,7 @@ class Kinetics(VisionDataset):
     frames in a video might be present.
 
     Args:
-        root (string): Root directory of the Kinetics Dataset.
+        root (str or ``pathlib.Path``): Root directory of the Kinetics Dataset.
             Directory should be structured as follows:
             .. code::
 

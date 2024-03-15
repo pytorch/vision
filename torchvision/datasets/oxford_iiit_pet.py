@@ -13,7 +13,7 @@ class OxfordIIITPet(VisionDataset):
     """`Oxford-IIIT Pet Dataset   <https://www.robots.ox.ac.uk/~vgg/data/pets/>`_.
 
     Args:
-        root (string): Root directory of the dataset.
+        root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"trainval"`` (default) or ``"test"``.
         target_types (string, sequence of strings, optional): Types of target to use. Can be ``category`` (default) or
             ``segmentation``. Can also be a list to output a tuple with all specified target types. The types represent:

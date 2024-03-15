@@ -28,7 +28,7 @@ class ImageNet(ImageFolder):
         or ``ILSVRC2012_img_val.tar`` based on ``split`` in the root directory.
 
     Args:
-        root (string): Root directory of the ImageNet Dataset.
+        root (str or ``pathlib.Path``): Root directory of the ImageNet Dataset.
         split (string, optional): The dataset split, supports ``train``, or ``val``.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``

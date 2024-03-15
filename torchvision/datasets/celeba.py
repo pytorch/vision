@@ -16,7 +16,7 @@ class CelebA(VisionDataset):
     """`Large-scale CelebFaces Attributes (CelebA) Dataset <http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         split (string): One of {'train', 'valid', 'test', 'all'}.
             Accordingly dataset is selected.
         target_type (string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,

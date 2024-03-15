@@ -20,7 +20,7 @@ class MNIST(VisionDataset):
     """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``MNIST/raw/train-images-idx3-ubyte``
+        root (str or ``pathlib.Path``): Root directory of dataset where ``MNIST/raw/train-images-idx3-ubyte``
             and  ``MNIST/raw/t10k-images-idx3-ubyte`` exist.
         train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
             otherwise from ``t10k-images-idx3-ubyte``.
@@ -203,7 +203,7 @@ class FashionMNIST(MNIST):
     """`Fashion-MNIST <https://github.com/zalandoresearch/fashion-mnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``FashionMNIST/raw/train-images-idx3-ubyte``
+        root (str or ``pathlib.Path``): Root directory of dataset where ``FashionMNIST/raw/train-images-idx3-ubyte``
             and  ``FashionMNIST/raw/t10k-images-idx3-ubyte`` exist.
         train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
             otherwise from ``t10k-images-idx3-ubyte``.
@@ -231,7 +231,7 @@ class KMNIST(MNIST):
     """`Kuzushiji-MNIST <https://github.com/rois-codh/kmnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``KMNIST/raw/train-images-idx3-ubyte``
+        root (str or ``pathlib.Path``): Root directory of dataset where ``KMNIST/raw/train-images-idx3-ubyte``
             and  ``KMNIST/raw/t10k-images-idx3-ubyte`` exist.
         train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
             otherwise from ``t10k-images-idx3-ubyte``.
@@ -259,7 +259,7 @@ class EMNIST(MNIST):
     """`EMNIST <https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``EMNIST/raw/train-images-idx3-ubyte``
+        root (str or ``pathlib.Path``): Root directory of dataset where ``EMNIST/raw/train-images-idx3-ubyte``
             and  ``EMNIST/raw/t10k-images-idx3-ubyte`` exist.
         split (string): The dataset has 6 different splits: ``byclass``, ``bymerge``,
             ``balanced``, ``letters``, ``digits`` and ``mnist``. This argument specifies
@@ -343,7 +343,7 @@ class QMNIST(MNIST):
     """`QMNIST <https://github.com/facebookresearch/qmnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset whose ``raw``
+        root (str or ``pathlib.Path``): Root directory of dataset whose ``raw``
             subdir contains binary files of the datasets.
         what (string,optional): Can be 'train', 'test', 'test10k',
             'test50k', or 'nist' for respectively the mnist compatible

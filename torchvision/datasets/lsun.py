@@ -60,7 +60,7 @@ class LSUN(VisionDataset):
     ``pip install lmdb``
 
     Args:
-        root (string): Root directory for the database files.
+        root (str or ``pathlib.Path``): Root directory for the database files.
         classes (string or list): One of {'train', 'val', 'test'} or a list of
             categories to load. e,g. ['bedroom_train', 'church_outdoor_train'].
         transform (callable, optional): A function/transform that takes in a PIL image

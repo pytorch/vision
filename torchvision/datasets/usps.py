@@ -15,7 +15,7 @@ class USPS(VisionDataset):
     and make pixel values in ``[0, 255]``.
 
     Args:
-        root (string): Root directory of dataset to store``USPS`` data files.
+        root (str or ``pathlib.Path``): Root directory of dataset to store``USPS`` data files.
         train (bool, optional): If True, creates dataset from ``usps.bz2``,
             otherwise from ``usps.t.bz2``.
         transform (callable, optional): A function/transform that takes in a PIL image

@@ -12,7 +12,7 @@ class DTD(VisionDataset):
     """`Describable Textures Dataset (DTD) <https://www.robots.ox.ac.uk/~vgg/data/dtd/>`_.
 
     Args:
-        root (string): Root directory of the dataset.
+        root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.
         partition (int, optional): The dataset partition. Should be ``1 <= partition <= 10``. Defaults to ``1``.
 

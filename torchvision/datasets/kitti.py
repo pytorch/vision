@@ -14,7 +14,7 @@ class Kitti(VisionDataset):
     It corresponds to the "left color images of object" dataset, for object detection.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
             Expects the following folder structure if download=False:
 
             .. code::

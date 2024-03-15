@@ -113,7 +113,7 @@ class Sintel(FlowDataset):
                         ...
 
     Args:
-        root (string): Root directory of the Sintel Dataset.
+        root (str or ``pathlib.Path``): Root directory of the Sintel Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         pass_name (string, optional): The pass to use, either "clean" (default), "final", or "both". See link above for
             details on the different passes.
@@ -183,7 +183,7 @@ class KittiFlow(FlowDataset):
                     flow_occ
 
     Args:
-        root (string): Root directory of the KittiFlow Dataset.
+        root (str or ``pathlib.Path``): Root directory of the KittiFlow Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.
@@ -248,7 +248,7 @@ class FlyingChairs(FlowDataset):
 
 
     Args:
-        root (string): Root directory of the FlyingChairs Dataset.
+        root (str or ``pathlib.Path``): Root directory of the FlyingChairs Dataset.
         split (string, optional): The dataset split, either "train" (default) or "val"
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.
@@ -316,7 +316,7 @@ class FlyingThings3D(FlowDataset):
                     TRAIN
 
     Args:
-        root (string): Root directory of the intel FlyingThings3D Dataset.
+        root (str or ``pathlib.Path``): Root directory of the intel FlyingThings3D Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         pass_name (string, optional): The pass to use, either "clean" (default) or "final" or "both". See link above for
             details on the different passes.
@@ -411,7 +411,7 @@ class HD1K(FlowDataset):
                     image_2
 
     Args:
-        root (string): Root directory of the HD1K Dataset.
+        root (str or ``pathlib.Path``): Root directory of the HD1K Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.

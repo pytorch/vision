@@ -56,7 +56,7 @@ class Flickr8k(VisionDataset):
     """`Flickr8k Entities <http://hockenmaier.cs.illinois.edu/8k-pictures.html>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
@@ -112,7 +112,7 @@ class Flickr30k(VisionDataset):
     """`Flickr30k Entities <https://bryanplummer.com/Flickr30kEntities/>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``

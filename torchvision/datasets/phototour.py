@@ -24,7 +24,7 @@ class PhotoTour(VisionDataset):
 
 
     Args:
-        root (string): Root directory where images are.
+        root (str or ``pathlib.Path``): Root directory where images are.
         name (string): Name of the dataset to load.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version.

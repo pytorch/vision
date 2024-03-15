@@ -13,7 +13,7 @@ class WIDERFace(VisionDataset):
     """`WIDERFace <http://shuoyang1213.me/WIDERFACE/>`_ Dataset.
 
     Args:
-        root (string): Root directory where images and annotations are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images and annotations are downloaded to.
             Expects the following folder structure if download=False:
 
             .. code::

@@ -112,7 +112,7 @@ class DatasetFolder(VisionDataset):
     :meth:`find_classes` method.
 
     Args:
-        root (string): Root directory path.
+        root (str or ``pathlib.Path``): Root directory path.
         loader (callable): A function to load a sample given its path.
         extensions (tuple[string]): A list of allowed extensions.
             both extensions and is_valid_file should not be passed.
@@ -298,7 +298,7 @@ class ImageFolder(DatasetFolder):
     the same methods can be overridden to customize the dataset.
 
     Args:
-        root (string): Root directory path.
+        root (str or ``pathlib.Path``): Root directory path.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the

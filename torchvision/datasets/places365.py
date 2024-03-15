@@ -12,7 +12,7 @@ class Places365(VisionDataset):
     r"""`Places365 <http://places2.csail.mit.edu/index.html>`_ classification dataset.
 
     Args:
-        root (string): Root directory of the Places365 dataset.
+        root (str or ``pathlib.Path``): Root directory of the Places365 dataset.
         split (string, optional): The dataset split. Can be one of ``train-standard`` (default), ``train-challenge``,
             ``val``.
         small (bool, optional): If ``True``, uses the small images, i.e. resized to 256 x 256 pixels, instead of the

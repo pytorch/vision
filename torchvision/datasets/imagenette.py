@@ -12,7 +12,7 @@ class Imagenette(VisionDataset):
     """`Imagenette <https://github.com/fastai/imagenette#imagenette-1>`_ image classification dataset.
 
     Args:
-        root (string): Root directory of the Imagenette dataset.
+        root (str or ``pathlib.Path``): Root directory of the Imagenette dataset.
         split (string, optional): The dataset split. Supports ``"train"`` (default), and ``"val"``.
         size (string, optional): The image size. Supports ``"full"`` (default), ``"320px"``, and ``"160px"``.
         download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already

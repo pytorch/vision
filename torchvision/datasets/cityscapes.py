@@ -13,7 +13,7 @@ class Cityscapes(VisionDataset):
     """`Cityscapes <http://www.cityscapes-dataset.com/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory ``leftImg8bit``
+        root (str or ``pathlib.Path``): Root directory of dataset where directory ``leftImg8bit``
             and ``gtFine`` or ``gtCoarse`` are located.
         split (string, optional): The image split to use, ``train``, ``test`` or ``val`` if mode="fine"
             otherwise ``train``, ``train_extra`` or ``val``

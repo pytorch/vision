@@ -32,7 +32,7 @@ class INaturalist(VisionDataset):
     """`iNaturalist <https://github.com/visipedia/inat_comp>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where the image files are stored.
+        root (str or ``pathlib.Path``): Root directory of dataset where the image files are stored.
             This class does not require/use annotation files.
         version (string, optional): Which version of the dataset to download/use. One of
             '2017', '2018', '2019', '2021_train', '2021_train_mini', '2021_valid'.
