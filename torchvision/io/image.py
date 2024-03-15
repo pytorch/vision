@@ -67,7 +67,9 @@ def write_file(filename: str, data: torch.Tensor) -> None:
     torch.ops.image.write_file(filename, data)
 
 
-def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+def decode_png(
+    input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
+) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
@@ -80,13 +82,15 @@ def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGE
             converting the image. Default: ``ImageReadMode.UNCHANGED``.
             See `ImageReadMode` class for more information on various
             available modes.
+        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
+            Default: False.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_png)
-    output = torch.ops.image.decode_png(input, mode.value, False)
+    output = torch.ops.image.decode_png(input, mode.value, False, apply_exif_orientation)
     return output
 
 
@@ -235,7 +239,7 @@ def decode_image(
             See ``ImageReadMode`` class for more information on various
             available modes.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
-            Default: False. Only implemented for JPEG format
+            Default: False.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -261,7 +265,7 @@ def read_image(
             See ``ImageReadMode`` class for more information on various
             available modes.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
-            Default: False. Only implemented for JPEG format
+            Default: False.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])

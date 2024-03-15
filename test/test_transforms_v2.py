@@ -54,7 +54,12 @@ from torchvision.transforms.v2.functional._utils import _get_kernel, _register_k
 
 
 # turns all warnings into errors for this module
-pytestmark = pytest.mark.filterwarnings("error")
+pytestmark = [pytest.mark.filterwarnings("error")]
+
+if sys.version_info[:2] >= (3, 12):
+    # torchscript relies on some AST stuff that got deprecated in 3.12,
+    # so we have to explicitly ignore those otherwise we'd error on warnings due to the pytestmark filter above.
+    pytestmark.append(pytest.mark.filterwarnings("ignore::DeprecationWarning"))
 
 
 @pytest.fixture(autouse=True)
@@ -1776,6 +1781,17 @@ class TestRotate:
     def test_transform_unknown_fill_error(self):
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
+
+    @pytest.mark.parametrize("size", [(11, 17), (16, 16)])
+    @pytest.mark.parametrize("angle", [0, 90, 180, 270])
+    @pytest.mark.parametrize("expand", [False, True])
+    def test_functional_image_fast_path_correctness(self, size, angle, expand):
+        image = make_image(size, dtype=torch.uint8, device="cpu")
+
+        actual = F.rotate(image, angle=angle, expand=expand)
+        expected = F.to_image(F.rotate(F.to_pil_image(image), angle=angle, expand=expand))
+
+        torch.testing.assert_close(actual, expected)
 
 
 class TestContainerTransforms:
