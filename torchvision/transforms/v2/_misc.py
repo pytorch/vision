@@ -367,7 +367,6 @@ class SanitizeBoundingBoxes(Transform):
                 f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
             )
 
-        # Alternatively we could use `boxes, valid = F.sanitize_bouding_boxes(...)` and pass both to the params dict?
         valid = F._misc._get_sanitize_bounding_boxes_mask(
             boxes,
             format=boxes.format,
@@ -375,12 +374,7 @@ class SanitizeBoundingBoxes(Transform):
             min_size=self.min_size,
         )
         params = dict(valid=valid, labels=labels)
-        flat_outputs = [
-            # Even-though it may look like we're transforming all inputs, we don't:
-            # _transform() will only care about BoundingBoxes and the labels
-            self._transform(inpt, params)
-            for inpt in flat_inputs
-        ]
+        flat_outputs = [self._transform(inpt, params) for inpt in flat_inputs]
 
         return tree_unflatten(flat_outputs, spec)
 

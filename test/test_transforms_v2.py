@@ -5800,7 +5800,7 @@ class TestSanitizeBoundingBoxes:
         assert isinstance(out_img, tv_tensors.Image)
         assert isinstance(out_boxes, tv_tensors.BoundingBoxes)
 
-    def test_errors(self):
+    def test_errors_transform(self):
         good_bbox = tv_tensors.BoundingBoxes(
             [[0, 0, 10, 10]],
             format=tv_tensors.BoundingBoxFormat.XYXY,
@@ -5823,6 +5823,14 @@ class TestSanitizeBoundingBoxes:
         with pytest.raises(ValueError, match="Number of boxes"):
             different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
             transforms.SanitizeBoundingBoxes()(different_sizes)
+
+    def test_errors_functional(self):
+
+        good_bbox = tv_tensors.BoundingBoxes(
+            [[0, 0, 10, 10]],
+            format=tv_tensors.BoundingBoxFormat.XYXY,
+            canvas_size=(20, 20),
+        )
 
         with pytest.raises(ValueError, match="canvas_size cannot be None if bounding_boxes is a pure tensor"):
             F.sanitize_bounding_boxes(good_bbox.as_subclass(torch.Tensor), format="XYXY", canvas_size=None)
