@@ -416,6 +416,7 @@ Functionals
 
     v2.functional.normalize
     v2.functional.erase
+    v2.functional.sanitize_bounding_boxes
     v2.functional.clamp_bounding_boxes
     v2.functional.uniform_temporal_subsample
 

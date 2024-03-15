@@ -827,6 +827,11 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
             datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
+    def test_slice_error(self):
+        with self.create_dataset() as (dataset, _):
+            with pytest.raises(ValueError, match="Index must be of type integer"):
+                dataset[:2]
+
 
 class CocoCaptionsTestCase(CocoDetectionTestCase):
     DATASET_CLASS = datasets.CocoCaptions
@@ -1620,6 +1625,10 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples_total += num_examples
             classes.append(cls)
 
+        if config.pop("make_empty_class", False):
+            os.makedirs(pathlib.Path(tmpdir) / "empty_class")
+            classes.append("empty_class")
+
         return dict(num_examples=num_examples_total, classes=classes)
 
     def _file_name_fn(self, cls, ext, idx):
@@ -1643,6 +1652,23 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(config) as (dataset, info):
             assert len(dataset.classes) == len(info["classes"])
             assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
+
+    def test_allow_empty(self):
+        config = {
+            "extensions": self._EXTENSIONS,
+            "make_empty_class": True,
+        }
+
+        config["allow_empty"] = True
+        with self.create_dataset(config) as (dataset, info):
+            assert "empty_class" in dataset.classes
+            assert len(dataset.classes) == len(info["classes"])
+            assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
+
+        config["allow_empty"] = False
+        with pytest.raises(FileNotFoundError, match="Found no valid file"):
+            with self.create_dataset(config) as (dataset, info):
+                pass
 
 
 class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
