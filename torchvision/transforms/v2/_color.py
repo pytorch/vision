@@ -55,7 +55,7 @@ class RandomGrayscale(_RandomApplyTransform):
 
 
 class RGB(Transform):
-    """Converts grayscale images to RGB images.
+    """Converts images or videos to RGB (if they are already not RGB)
 
     If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions
