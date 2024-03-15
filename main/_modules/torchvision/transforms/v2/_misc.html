@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+d1f3a7b) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+53869eb) &#x25BC</a>
     </div>
     
 
@@ -356,7 +356,7 @@
               
   <h1>Source code for torchvision.transforms.v2._misc</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">PIL.Image</span>
 
@@ -726,28 +726,14 @@
                 <span class="sa">f</span><span class="s2">&quot;Number of boxes (shape=</span><span class="si">{</span><span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) and number of labels (shape=</span><span class="si">{</span><span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) do not match.&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">boxes</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-            <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">convert_bounding_box_format</span><span class="p">(</span>
-                <span class="n">boxes</span><span class="p">,</span>
-                <span class="n">new_format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
-            <span class="p">),</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">_misc</span><span class="o">.</span><span class="n">_get_sanitize_bounding_boxes_mask</span><span class="p">(</span>
+            <span class="n">boxes</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="n">boxes</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+            <span class="n">canvas_size</span><span class="o">=</span><span class="n">boxes</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span>
+            <span class="n">min_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_size</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">ws</span><span class="p">,</span> <span class="n">hs</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
-        <span class="n">valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">ws</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_size</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hs</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_size</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">boxes</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># TODO: Do we really need to check for out of bounds here? All</span>
-        <span class="c1"># transforms should be clamping anyway, so this should never happen?</span>
-        <span class="n">image_h</span><span class="p">,</span> <span class="n">image_w</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">canvas_size</span>
-        <span class="n">valid</span> <span class="o">&amp;=</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">image_w</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">image_w</span><span class="p">)</span>
-        <span class="n">valid</span> <span class="o">&amp;=</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">image_h</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">image_h</span><span class="p">)</span>
-
-        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">valid</span><span class="o">=</span><span class="n">valid</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
-        <span class="n">flat_outputs</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="c1"># Even-though it may look like we&#39;re transforming all inputs, we don&#39;t:</span>
-            <span class="c1"># _transform() will only care about BoundingBoxeses and the labels</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_transform</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span>
-        <span class="p">]</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">valid</span><span class="o">=</span><span class="n">valid</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+        <span class="n">flat_outputs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_transform</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span> <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">tree_unflatten</span><span class="p">(</span><span class="n">flat_outputs</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span></div>
 
