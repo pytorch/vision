@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -352,9 +352,7 @@ class SanitizeBoundingBoxes(Transform):
     def __init__(
         self,
         min_size: float = 1.0,
-        labels_getter: Union[
-            Callable[[Any], Optional[Union[torch.Tensor, Tuple[torch.tensor]]]], str, None
-        ] = "default",
+        labels_getter: Union[Callable[[Any], Any], str, None] = "default",
     ) -> None:
         super().__init__()
 
