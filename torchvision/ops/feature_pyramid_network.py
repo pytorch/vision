@@ -53,6 +53,7 @@ class FeaturePyramidNetwork(nn.Module):
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names
         norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
+        activation_layer (callable, optional): Module specifying the activation layer to use. Default: None
 
     Examples::
 
@@ -80,6 +81,7 @@ class FeaturePyramidNetwork(nn.Module):
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        activation_layer: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -89,10 +91,10 @@ class FeaturePyramidNetwork(nn.Module):
             if in_channels == 0:
                 raise ValueError("in_channels=0 is currently not supported")
             inner_block_module = Conv2dNormActivation(
-                in_channels, out_channels, kernel_size=1, padding=0, norm_layer=norm_layer, activation_layer=None
+                in_channels, out_channels, kernel_size=1, padding=0, norm_layer=norm_layer, activation_layer=activation_layer
             )
             layer_block_module = Conv2dNormActivation(
-                out_channels, out_channels, kernel_size=3, norm_layer=norm_layer, activation_layer=None
+                out_channels, out_channels, kernel_size=3, norm_layer=norm_layer, activation_layer=activation_layer
             )
             self.inner_blocks.append(inner_block_module)
             self.layer_blocks.append(layer_block_module)
