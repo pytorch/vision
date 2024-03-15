@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
@@ -345,12 +345,16 @@ class SanitizeBoundingBoxes(Transform):
             - A tuple/list of tensors, each of which will be subject to the same sanitization as the bounding boxes.
               This is useful to sanitize multiple tensors like the labels, and the "iscrowd" or "area" properties
               from COCO.
+
+            If ``labels_getter`` is None then only bounding boxes are sanitized.
     """
 
     def __init__(
         self,
         min_size: float = 1.0,
-        labels_getter: Union[Callable[[Any], Optional[Union[torch.Tensor, Tuple[torch.tensor]]]], str, None] = "default",
+        labels_getter: Union[
+            Callable[[Any], Optional[Union[torch.Tensor, Tuple[torch.tensor]]]], str, None
+        ] = "default",
     ) -> None:
         super().__init__()
 
@@ -370,7 +374,6 @@ class SanitizeBoundingBoxes(Transform):
             if isinstance(labels, torch.Tensor):
                 labels = (labels,)
             elif isinstance(labels, (tuple, list)):
-                labels = tuple(labels)
                 for entry in labels:
                     if not isinstance(entry, torch.Tensor):
                         # TODO: we don't need to enforce tensors, just that entries are indexable as t[bool_mask]

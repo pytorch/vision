@@ -5712,6 +5712,7 @@ class TestSanitizeBoundingBoxes:
             "default",
             lambda inputs: inputs["labels"],
             lambda inputs: (inputs["labels"], inputs["other_labels"]),
+            lambda inputs: [inputs["labels"], inputs["other_labels"]],
             None,
             lambda inputs: None,
         ),
@@ -5781,7 +5782,7 @@ class TestSanitizeBoundingBoxes:
             # This works because we conveniently set labels to arange(num_boxes)
             assert out_labels.tolist() == valid_indices
 
-            if callable(labels_getter) and type(labels_getter(sample)) is tuple:
+            if callable(labels_getter) and isinstance(labels_getter(sample), (tuple, list)):
                 assert_equal(out_other_labels, out_labels)
             else:
                 assert_equal(out_other_labels, other_labels)
