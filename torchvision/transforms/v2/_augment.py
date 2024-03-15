@@ -341,6 +341,9 @@ class JPEG(Transform):
         quality (sequence or number): JPEG quality, from 1 to 100. Lower means more compression.
             If quality is a sequence like (min, max), it will be the range of JPEG quality to
             select from (inclusive of both ends).
+
+    Returns:
+        image with JPEG compression.
     """
 
     def __init__(self, quality: Union[int, Sequence[int]]):

@@ -405,6 +405,7 @@ Miscellaneous
     v2.SanitizeBoundingBoxes
     v2.ClampBoundingBoxes
     v2.UniformTemporalSubsample
+    v2.JPEG
 
 Functionals
 
@@ -416,6 +417,7 @@ Functionals
     v2.functional.erase
     v2.functional.clamp_bounding_boxes
     v2.functional.uniform_temporal_subsample
+    v2.functional.jpeg
 
 .. _conversion_transforms:
 
