@@ -319,18 +319,6 @@ class CutMix(_BaseMixUpCutMix):
             return inpt
 
 
-def _setup_quality(quality: Union[int, Sequence[int]]):
-    if isinstance(quality, int):
-        quality = [quality, quality]
-    else:
-        _check_sequence_input(quality, "quality", req_sizes=(2,))
-
-    if not (1 <= quality[0] <= quality[1] <= 100 and isinstance(quality[0], int) and isinstance(quality[1], int)):
-        raise ValueError(f"quality must be an integer from 1 to 100, got {quality =}")
-
-    return quality
-
-
 class JPEG(Transform):
     """Apply JPEG compression and decompression to the given images.
 
@@ -348,7 +336,15 @@ class JPEG(Transform):
 
     def __init__(self, quality: Union[int, Sequence[int]]):
         super().__init__()
-        self.quality = _setup_quality(quality)
+        if isinstance(quality, int):
+            quality = [quality, quality]
+        else:
+            _check_sequence_input(quality, "quality", req_sizes=(2,))
+
+        if not (1 <= quality[0] <= quality[1] <= 100 and isinstance(quality[0], int) and isinstance(quality[1], int)):
+            raise ValueError(f"quality must be an integer from 1 to 100, got {quality =}")
+
+        self.quality = quality
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         quality = torch.randint(self.quality[0], self.quality[1] + 1, ()).item()

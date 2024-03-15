@@ -71,7 +71,6 @@ def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
 
 @_register_kernel_internal(jpeg, torch.Tensor)
 @_register_kernel_internal(jpeg, tv_tensors.Image)
-@_register_kernel_internal(jpeg, tv_tensors.Video)
 def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
     original_shape = image.shape
     image = image.view((-1,) + image.shape[-3:])
@@ -80,8 +79,13 @@ def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
         return image.reshape(original_shape).clone()
 
     image = [decode_jpeg(encode_jpeg(image[i], quality=quality)) for i in range(image.shape[0])]
-    image = torch.stack(image, dim=0).reshape(original_shape)
+    image = torch.stack(image, dim=0).view(original_shape)
     return image
+
+
+@_register_kernel_internal(jpeg, tv_tensors.Video)
+def jpeg_video(video: torch.Tensor, quality: int) -> torch.Tensor:
+    return jpeg_image(video, quality=quality)
 
 
 @_register_kernel_internal(jpeg, PIL.Image.Image)
