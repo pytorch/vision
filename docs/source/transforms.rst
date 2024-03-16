@@ -347,6 +347,7 @@ Color
     v2.RandomChannelPermutation
     v2.RandomPhotometricDistort
     v2.Grayscale
+    v2.RGB
     v2.RandomGrayscale
     v2.GaussianBlur
     v2.RandomInvert
@@ -364,6 +365,7 @@ Functionals
 
     v2.functional.permute_channels
     v2.functional.rgb_to_grayscale
+    v2.functional.grayscale_to_rgb
     v2.functional.to_grayscale
     v2.functional.gaussian_blur
     v2.functional.invert
@@ -586,7 +588,7 @@ Conversion
     while performing the conversion, while some may not do any scaling. By
     scaling, we mean e.g. that a ``uint8`` -> ``float32`` would map the [0,
     255] range into [0, 1] (and vice-versa). See :ref:`range_and_dtype`.
-    
+
 .. autosummary::
     :toctree: generated/
     :template: class.rst
