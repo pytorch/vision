@@ -5933,6 +5933,7 @@ class TestSanitizeBoundingBoxes:
         with pytest.raises(ValueError, match="bouding_boxes must be a tv_tensors.BoundingBoxes instance or a"):
             F.sanitize_bounding_boxes(good_bbox.tolist())
 
+
 class TestJPEG:
     @pytest.mark.parametrize("quality", [5, 75])
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
@@ -5996,7 +5997,7 @@ class TestJPEG:
     def test_transform_get_params_bounds(self, quality, seed):
         transform = transforms.JPEG(quality=quality)
 
-        with freeze_rng_state():    
+        with freeze_rng_state():
             torch.manual_seed(seed)
             params = transform._get_params([])
 
