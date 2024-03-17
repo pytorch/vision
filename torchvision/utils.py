@@ -164,12 +164,12 @@ def draw_bounding_boxes(
 ) -> torch.Tensor:
 
     """
-    Draws bounding boxes on given image.
-    The values of the input image should be uint8 between 0 and 255.
+    Draws bounding boxes on given RGB image.
+    The image values should be uint8 in [0, 255] or float in [0, 1].
     If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W) and dtype uint8.
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float.
         boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
@@ -193,8 +193,8 @@ def draw_bounding_boxes(
         _log_api_usage_once(draw_bounding_boxes)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
-    elif image.dtype != torch.uint8:
-        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif not (image.dtype == torch.uint8 or image.is_floating_point()):
+        raise ValueError(f"The image dtype must be uint8 or float, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
@@ -217,7 +217,11 @@ def draw_bounding_boxes(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
-    colors = _parse_colors(colors, num_objects=num_boxes)
+    original_dtype = image.dtype
+    colors = [
+        torch.tensor(color, dtype=original_dtype, device=image.device)
+        for color in _parse_colors(colors, num_objects=num_boxes, dtype=original_dtype)
+    ]
 
     if font is None:
         if font_size is not None:
@@ -250,7 +254,7 @@ def draw_bounding_boxes(
             margin = width + 1
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=original_dtype)
 
 
 @torch.no_grad()
