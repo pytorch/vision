@@ -116,6 +116,22 @@ def test_draw_boxes():
     assert_equal(img, img_cp)
 
 
+def test_draw_boxes_dtypes():
+    img_uint8 = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+    out_uint8 = utils.draw_bounding_boxes(img_uint8, boxes)
+
+    assert img_uint8 is not out_uint8
+    assert out_uint8.dtype == torch.uint8
+
+    img_float = to_dtype(img_uint8, torch.float, scale=True)
+    out_float = utils.draw_bounding_boxes(img_float, boxes)
+
+    assert img_float is not out_float
+    assert out_float.is_floating_point()
+
+    torch.testing.assert_close(out_uint8, to_dtype(out_float, torch.uint8, scale=True), rtol=0, atol=1)
+
+
 @pytest.mark.parametrize("colors", [None, ["red", "blue", "#FF00FF", (1, 34, 122)], "red", "#FF00FF", (1, 34, 122)])
 def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
