@@ -5005,6 +5005,54 @@ class TestRgbToGrayscale:
         assert_equal(actual, expected, rtol=0, atol=1)
 
 
+class TestGrayscaleToRgb:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.grayscale_to_rgb_image, make_image(dtype=dtype, device=device))
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_functional(self, make_input):
+        check_functional(F.grayscale_to_rgb, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.rgb_to_grayscale_image, torch.Tensor),
+            (F._rgb_to_grayscale_image_pil, PIL.Image.Image),
+            (F.rgb_to_grayscale_image, tv_tensors.Image),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.grayscale_to_rgb, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    def test_transform(self, make_input):
+        check_transform(transforms.RGB(), make_input(color_space="GRAY"))
+
+    @pytest.mark.parametrize("fn", [F.grayscale_to_rgb, transform_cls_to_functional(transforms.RGB)])
+    def test_image_correctness(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
+
+        actual = fn(image)
+        expected = F.to_image(F.grayscale_to_rgb(F.to_pil_image(image)))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
+
+    def test_expanded_channels_are_not_views_into_the_same_underlying_tensor(self):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
+
+        output_image = F.grayscale_to_rgb(image)
+        assert_equal(output_image[0][0][0], output_image[1][0][0])
+        output_image[0][0][0] = output_image[0][0][0] + 1
+        assert output_image[0][0][0] != output_image[1][0][0]
+
+    def test_rgb_image_is_unchanged(self):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="RGB")
+        assert_equal(image.shape[-3], 3)
+        assert_equal(F.grayscale_to_rgb(image), image)
+
+
 class TestRandomZoomOut:
     # Tests are light because this largely relies on the already tested `pad` kernels.
 
@@ -5706,7 +5754,17 @@ class TestSanitizeBoundingBoxes:
         return boxes, expected_valid_mask
 
     @pytest.mark.parametrize("min_size", (1, 10))
-    @pytest.mark.parametrize("labels_getter", ("default", lambda inputs: inputs["labels"], None, lambda inputs: None))
+    @pytest.mark.parametrize(
+        "labels_getter",
+        (
+            "default",
+            lambda inputs: inputs["labels"],
+            lambda inputs: (inputs["labels"], inputs["other_labels"]),
+            lambda inputs: [inputs["labels"], inputs["other_labels"]],
+            None,
+            lambda inputs: None,
+        ),
+    )
     @pytest.mark.parametrize("sample_type", (tuple, dict))
     def test_transform(self, min_size, labels_getter, sample_type):
 
@@ -5721,12 +5779,16 @@ class TestSanitizeBoundingBoxes:
 
         labels = torch.arange(boxes.shape[0])
         masks = tv_tensors.Mask(torch.randint(0, 2, size=(boxes.shape[0], H, W)))
+        # other_labels corresponds to properties from COCO like iscrowd, area...
+        # We only sanitize it when labels_getter returns a tuple
+        other_labels = torch.arange(boxes.shape[0])
         whatever = torch.rand(10)
         input_img = torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8)
         sample = {
             "image": input_img,
             "labels": labels,
             "boxes": boxes,
+            "other_labels": other_labels,
             "whatever": whatever,
             "None": None,
             "masks": masks,
@@ -5741,12 +5803,14 @@ class TestSanitizeBoundingBoxes:
         if sample_type is tuple:
             out_image = out[0]
             out_labels = out[1]["labels"]
+            out_other_labels = out[1]["other_labels"]
             out_boxes = out[1]["boxes"]
             out_masks = out[1]["masks"]
             out_whatever = out[1]["whatever"]
         else:
             out_image = out["image"]
             out_labels = out["labels"]
+            out_other_labels = out["other_labels"]
             out_boxes = out["boxes"]
             out_masks = out["masks"]
             out_whatever = out["whatever"]
@@ -5757,13 +5821,19 @@ class TestSanitizeBoundingBoxes:
         assert isinstance(out_boxes, tv_tensors.BoundingBoxes)
         assert isinstance(out_masks, tv_tensors.Mask)
 
-        if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
+        if labels_getter is None or (callable(labels_getter) and labels_getter(sample) is None):
             assert out_labels is labels
+            assert out_other_labels is other_labels
         else:
             assert isinstance(out_labels, torch.Tensor)
             assert out_boxes.shape[0] == out_labels.shape[0] == out_masks.shape[0]
             # This works because we conveniently set labels to arange(num_boxes)
             assert out_labels.tolist() == valid_indices
+
+            if callable(labels_getter) and isinstance(labels_getter(sample), (tuple, list)):
+                assert_equal(out_other_labels, out_labels)
+            else:
+                assert_equal(out_other_labels, other_labels)
 
     @pytest.mark.parametrize("input_type", (torch.Tensor, tv_tensors.BoundingBoxes))
     def test_functional(self, input_type):
