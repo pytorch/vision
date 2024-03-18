@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -21,7 +21,7 @@ class StanfordCars(VisionDataset):
         This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
 
     Args:
-        root (string): Root directory of dataset
+        root (str or ``pathlib.Path``): Root directory of dataset
         split (string, optional): The dataset split, supports ``"train"`` (default) or ``"test"``.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
@@ -35,7 +35,7 @@ class StanfordCars(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -61,12 +61,7 @@ class StanfordCars(VisionDataset):
             self._images_base_path = self._base_folder / "cars_test"
 
         if download:
-            raise ValueError(
-                "The original URL is broken so the StanfordCars dataset is not available for automatic "
-                "download anymore. You can try to download it manually following "
-                "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616, "
-                "and set download=False to avoid this error."
-            )
+            self.download()
 
         if not self._check_exists():
             raise RuntimeError(
@@ -104,3 +99,11 @@ class StanfordCars(VisionDataset):
             return False
 
         return self._annotations_mat_path.exists() and self._images_base_path.is_dir()
+
+    def download(self):
+        raise ValueError(
+            "The original URL is broken so the StanfordCars dataset is not available for automatic "
+            "download anymore. You can try to download it manually following "
+            "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616, "
+            "and set download=False to avoid this error."
+        )
