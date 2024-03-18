@@ -27,7 +27,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
     _has_built_in_disparity_mask = False
 
-    def __init__(self, root: str, transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], transforms: Optional[Callable] = None) -> None:
         """
         Args:
             root(str): Root directory of the dataset.
@@ -159,11 +159,11 @@ class CarlaStereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory where `carla-highres` is located.
+        root (str or ``pathlib.Path``): Root directory where `carla-highres` is located.
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         root = Path(root) / "carla-highres"
@@ -233,14 +233,14 @@ class Kitti2012Stereo(StereoMatchingDataset):
                     calib
 
     Args:
-        root (string): Root directory where `Kitti2012` is located.
+        root (str or ``pathlib.Path``): Root directory where `Kitti2012` is located.
         split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -321,14 +321,14 @@ class Kitti2015Stereo(StereoMatchingDataset):
                     calib
 
     Args:
-        root (string): Root directory where `Kitti2015` is located.
+        root (str or ``pathlib.Path``): Root directory where `Kitti2015` is located.
         split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -420,7 +420,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory of the Middleburry 2014 Dataset.
+        root (str or ``pathlib.Path``): Root directory of the Middleburry 2014 Dataset.
         split (string, optional): The dataset split of scenes, either "train" (default), "test", or "additional"
         use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible.
             The dataset samples with equal probability between ``[im1.png, im1E.png, im1L.png]``.
@@ -480,7 +480,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         calibration: Optional[str] = "perfect",
         use_ambient_views: bool = False,
@@ -576,7 +576,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
         valid_mask = (disparity_map > 0).squeeze(0)  # mask out invalid disparities
         return disparity_map, valid_mask
 
-    def _download_dataset(self, root: str) -> None:
+    def _download_dataset(self, root: Union[str, Path]) -> None:
         base_url = "https://vision.middlebury.edu/stereo/data/scenes2014/zip"
         # train and additional splits have 2 different calibration settings
         root = Path(root) / "Middlebury2014"
@@ -675,7 +675,7 @@ class CREStereo(StereoMatchingDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         transforms: Optional[Callable] = None,
     ) -> None:
         super().__init__(root, transforms)
@@ -757,12 +757,12 @@ class FallingThingsStereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory where FallingThings is located.
+        root (str or ``pathlib.Path``): Root directory where FallingThings is located.
         variant (string): Which variant to use. Either "single", "mixed", or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, variant: str = "single", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], variant: str = "single", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         root = Path(root) / "FallingThings"
@@ -868,7 +868,7 @@ class SceneFlowStereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory where SceneFlow is located.
+        root (str or ``pathlib.Path``): Root directory where SceneFlow is located.
         variant (string): Which dataset variant to user, "FlyingThings3D" (default), "Monkaa" or "Driving".
         pass_name (string): Which pass to use, "clean" (default), "final" or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
@@ -877,7 +877,7 @@ class SceneFlowStereo(StereoMatchingDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         variant: str = "FlyingThings3D",
         pass_name: str = "clean",
         transforms: Optional[Callable] = None,
@@ -973,14 +973,14 @@ class SintelStereo(StereoMatchingDataset):
                         ...
 
     Args:
-        root (string): Root directory where Sintel Stereo is located.
+        root (str or ``pathlib.Path``): Root directory where Sintel Stereo is located.
         pass_name (string): The name of the pass to use, either "final", "clean" or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, pass_name: str = "final", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], pass_name: str = "final", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(pass_name, "pass_name", valid_values=("final", "clean", "both"))
@@ -1082,12 +1082,12 @@ class InStereo2k(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory where InStereo2k is located.
+        root (str or ``pathlib.Path``): Root directory where InStereo2k is located.
         split (string): Either "train" or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         root = Path(root) / "InStereo2k" / split
@@ -1169,14 +1169,14 @@ class ETH3DStereo(StereoMatchingDataset):
                     ...
 
     Args:
-        root (string): Root directory of the ETH3D Dataset.
+        root (str or ``pathlib.Path``): Root directory of the ETH3D Dataset.
         split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))

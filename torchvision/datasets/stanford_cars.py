@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -21,7 +21,7 @@ class StanfordCars(VisionDataset):
         This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
 
     Args:
-        root (string): Root directory of dataset
+        root (str or ``pathlib.Path``): Root directory of dataset
         split (string, optional): The dataset split, supports ``"train"`` (default) or ``"test"``.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
@@ -35,7 +35,7 @@ class StanfordCars(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

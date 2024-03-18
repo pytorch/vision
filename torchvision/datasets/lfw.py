@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -31,7 +32,7 @@ class _LFW(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str,
         image_set: str,
         view: str,
@@ -95,7 +96,7 @@ class LFWPeople(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
         split (string, optional): The image split to use. Can be one of ``train``, ``test``,
             ``10fold`` (default).
@@ -177,7 +178,7 @@ class LFWPairs(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
         split (string, optional): The image split to use. Can be one of ``train``, ``test``,
             ``10fold``. Defaults to ``10fold``.
