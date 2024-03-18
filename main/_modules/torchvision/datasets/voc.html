@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+0325175) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+2ba586d) &#x25BC</a>
     </div>
     
 
@@ -357,19 +357,19 @@
   <h1>Source code for torchvision.datasets.voc</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 <span class="kn">from</span> <span class="nn">xml.etree.ElementTree</span> <span class="kn">import</span> <span class="n">Element</span> <span class="k">as</span> <span class="n">ET_Element</span>
-
-<span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">defusedxml.ElementTree</span> <span class="kn">import</span> <span class="n">parse</span> <span class="k">as</span> <span class="n">ET_parse</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">xml.etree.ElementTree</span> <span class="kn">import</span> <span class="n">parse</span> <span class="k">as</span> <span class="n">ET_parse</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
 
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
+<span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 <span class="n">DATASET_YEAR_DICT</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;2012&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -424,7 +424,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
         <span class="n">year</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;2012&quot;</span><span class="p">,</span>
         <span class="n">image_set</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
         <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -478,7 +478,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`Pascal VOC &lt;http://host.robots.ox.ac.uk/pascal/VOC/&gt;`_ Segmentation Dataset.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        root (string): Root directory of the VOC Dataset.</span>
+<span class="sd">        root (str or ``pathlib.Path``): Root directory of the VOC Dataset.</span>
 <span class="sd">        year (string, optional): The dataset year, supports years ``&quot;2007&quot;`` to ``&quot;2012&quot;``.</span>
 <span class="sd">        image_set (string, optional): Select the image_set to use, ``&quot;train&quot;``, ``&quot;trainval&quot;`` or ``&quot;val&quot;``. If</span>
 <span class="sd">            ``year==&quot;2007&quot;``, can also be ``&quot;test&quot;``.</span>
@@ -522,7 +522,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`Pascal VOC &lt;http://host.robots.ox.ac.uk/pascal/VOC/&gt;`_ Detection Dataset.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        root (string): Root directory of the VOC Dataset.</span>
+<span class="sd">        root (str or ``pathlib.Path``): Root directory of the VOC Dataset.</span>
 <span class="sd">        year (string, optional): The dataset year, supports years ``&quot;2007&quot;`` to ``&quot;2012&quot;``.</span>
 <span class="sd">        image_set (string, optional): Select the image_set to use, ``&quot;train&quot;``, ``&quot;trainval&quot;`` or ``&quot;val&quot;``. If</span>
 <span class="sd">            ``year==&quot;2007&quot;``, can also be ``&quot;test&quot;``.</span>

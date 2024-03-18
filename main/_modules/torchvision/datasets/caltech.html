@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+0325175) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.18.0a0+2ba586d) &#x25BC</a>
     </div>
     
 
@@ -357,6 +357,7 @@
   <h1>Source code for torchvision.datasets.caltech</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
@@ -373,7 +374,7 @@
 <span class="sd">        This class needs `scipy &lt;https://docs.scipy.org/doc/&gt;`_ to load target files from `.mat` format.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        root (string): Root directory of dataset where directory</span>
+<span class="sd">        root (str or ``pathlib.Path``): Root directory of dataset where directory</span>
 <span class="sd">            ``caltech101`` exists or will be saved to if download is set to True.</span>
 <span class="sd">        target_type (string or list, optional): Type of target to use, ``category`` or</span>
 <span class="sd">            ``annotation``. Can also be a list to output a tuple with all specified</span>
@@ -395,7 +396,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
         <span class="n">target_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;category&quot;</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -510,7 +511,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`Caltech 256 &lt;https://data.caltech.edu/records/20087&gt;`_ Dataset.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        root (string): Root directory of dataset where directory</span>
+<span class="sd">        root (str or ``pathlib.Path``): Root directory of dataset where directory</span>
 <span class="sd">            ``caltech256`` exists or will be saved to if download is set to True.</span>
 <span class="sd">        transform (callable, optional): A function/transform that takes in a PIL image</span>
 <span class="sd">            and returns a transformed version. E.g, ``transforms.RandomCrop``</span>
