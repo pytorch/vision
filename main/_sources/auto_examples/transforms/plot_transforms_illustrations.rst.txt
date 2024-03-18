@@ -599,7 +599,36 @@ randomly equalizes the histogram of the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 241-251
+.. GENERATED FROM PYTHON SOURCE LINES 241-247
+
+JPEG
+~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.v2.JPEG` transform
+(see also :func:`~torchvision.transforms.v2.functional.jpeg`)
+applies JPEG compression to the given image with random
+degree of compression.
+
+.. GENERATED FROM PYTHON SOURCE LINES 247-251
+
+.. code-block:: Python
+
+    jpeg = v2.JPEG((5, 50))
+    jpeg_imgs = [jpeg(orig_img) for _ in range(4)]
+    plot([orig_img] + jpeg_imgs)
+
+
+
+
+.. image-sg:: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_020.png
+   :alt: plot transforms illustrations
+   :srcset: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_020.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 252-262
 
 Augmentation Transforms
 -----------------------
@@ -612,7 +641,7 @@ The :class:`~torchvision.transforms.AutoAugment` transform
 automatically augments data based on a given auto-augmentation policy.
 See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policies.
 
-.. GENERATED FROM PYTHON SOURCE LINES 251-260
+.. GENERATED FROM PYTHON SOURCE LINES 262-271
 
 .. code-block:: Python
 
@@ -628,32 +657,6 @@ See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policie
 
 
 
-.. image-sg:: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_020.png
-   :alt: plot transforms illustrations
-   :srcset: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_020.png
-   :class: sphx-glr-single-img
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 261-264
-
-RandAugment
-~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandAugment` is an alternate version of AutoAugment.
-
-.. GENERATED FROM PYTHON SOURCE LINES 264-268
-
-.. code-block:: Python
-
-    augmenter = v2.RandAugment()
-    imgs = [augmenter(orig_img) for _ in range(4)]
-    plot([orig_img] + imgs)
-
-
-
-
 .. image-sg:: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_021.png
    :alt: plot transforms illustrations
    :srcset: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_021.png
@@ -663,19 +666,17 @@ The :class:`~torchvision.transforms.RandAugment` is an alternate version of Auto
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 269-274
+.. GENERATED FROM PYTHON SOURCE LINES 272-275
 
-TrivialAugmentWide
-~~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.TrivialAugmentWide` is an alternate implementation of AutoAugment.
-However, instead of transforming an image multiple times, it transforms an image only once
-using a random transform from a given list with a random strength number.
+RandAugment
+~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandAugment` is an alternate version of AutoAugment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 274-278
+.. GENERATED FROM PYTHON SOURCE LINES 275-279
 
 .. code-block:: Python
 
-    augmenter = v2.TrivialAugmentWide()
+    augmenter = v2.RandAugment()
     imgs = [augmenter(orig_img) for _ in range(4)]
     plot([orig_img] + imgs)
 
@@ -691,17 +692,19 @@ using a random transform from a given list with a random strength number.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 279-282
+.. GENERATED FROM PYTHON SOURCE LINES 280-285
 
-AugMix
-~~~~~~
-The :class:`~torchvision.transforms.AugMix` transform interpolates between augmented versions of an image.
+TrivialAugmentWide
+~~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.TrivialAugmentWide` is an alternate implementation of AutoAugment.
+However, instead of transforming an image multiple times, it transforms an image only once
+using a random transform from a given list with a random strength number.
 
-.. GENERATED FROM PYTHON SOURCE LINES 282-286
+.. GENERATED FROM PYTHON SOURCE LINES 285-289
 
 .. code-block:: Python
 
-    augmenter = v2.AugMix()
+    augmenter = v2.TrivialAugmentWide()
     imgs = [augmenter(orig_img) for _ in range(4)]
     plot([orig_img] + imgs)
 
@@ -717,7 +720,33 @@ The :class:`~torchvision.transforms.AugMix` transform interpolates between augme
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 287-299
+.. GENERATED FROM PYTHON SOURCE LINES 290-293
+
+AugMix
+~~~~~~
+The :class:`~torchvision.transforms.AugMix` transform interpolates between augmented versions of an image.
+
+.. GENERATED FROM PYTHON SOURCE LINES 293-297
+
+.. code-block:: Python
+
+    augmenter = v2.AugMix()
+    imgs = [augmenter(orig_img) for _ in range(4)]
+    plot([orig_img] + imgs)
+
+
+
+
+.. image-sg:: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_024.png
+   :alt: plot transforms illustrations
+   :srcset: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_024.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 298-310
 
 Randomly-applied Transforms
 ---------------------------
@@ -732,40 +761,12 @@ The :class:`~torchvision.transforms.RandomHorizontalFlip` transform
 (see also :func:`~torchvision.transforms.functional.hflip`)
 performs horizontal flip of an image, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 299-303
+.. GENERATED FROM PYTHON SOURCE LINES 310-314
 
 .. code-block:: Python
 
     hflipper = v2.RandomHorizontalFlip(p=0.5)
     transformed_imgs = [hflipper(orig_img) for _ in range(4)]
-    plot([orig_img] + transformed_imgs)
-
-
-
-
-.. image-sg:: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_024.png
-   :alt: plot transforms illustrations
-   :srcset: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_024.png
-   :class: sphx-glr-single-img
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 304-309
-
-RandomVerticalFlip
-~~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomVerticalFlip` transform
-(see also :func:`~torchvision.transforms.functional.vflip`)
-performs vertical flip of an image, with a given probability.
-
-.. GENERATED FROM PYTHON SOURCE LINES 309-313
-
-.. code-block:: Python
-
-    vflipper = v2.RandomVerticalFlip(p=0.5)
-    transformed_imgs = [vflipper(orig_img) for _ in range(4)]
     plot([orig_img] + transformed_imgs)
 
 
@@ -780,20 +781,22 @@ performs vertical flip of an image, with a given probability.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 314-318
+.. GENERATED FROM PYTHON SOURCE LINES 315-320
 
-RandomApply
-~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomApply` transform
-randomly applies a list of transforms, with a given probability.
+RandomVerticalFlip
+~~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomVerticalFlip` transform
+(see also :func:`~torchvision.transforms.functional.vflip`)
+performs vertical flip of an image, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 318-321
+.. GENERATED FROM PYTHON SOURCE LINES 320-324
 
 .. code-block:: Python
 
-    applier = v2.RandomApply(transforms=[v2.RandomCrop(size=(64, 64))], p=0.5)
-    transformed_imgs = [applier(orig_img) for _ in range(4)]
+    vflipper = v2.RandomVerticalFlip(p=0.5)
+    transformed_imgs = [vflipper(orig_img) for _ in range(4)]
     plot([orig_img] + transformed_imgs)
+
 
 
 
@@ -806,10 +809,36 @@ randomly applies a list of transforms, with a given probability.
 
 
 
+.. GENERATED FROM PYTHON SOURCE LINES 325-329
+
+RandomApply
+~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomApply` transform
+randomly applies a list of transforms, with a given probability.
+
+.. GENERATED FROM PYTHON SOURCE LINES 329-332
+
+.. code-block:: Python
+
+    applier = v2.RandomApply(transforms=[v2.RandomCrop(size=(64, 64))], p=0.5)
+    transformed_imgs = [applier(orig_img) for _ in range(4)]
+    plot([orig_img] + transformed_imgs)
+
+
+
+.. image-sg:: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_027.png
+   :alt: plot transforms illustrations
+   :srcset: /auto_examples/transforms/images/sphx_glr_plot_transforms_illustrations_027.png
+   :class: sphx-glr-single-img
+
+
+
+
+
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.495 seconds)
+   **Total running time of the script:** (0 minutes 9.176 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_illustrations.py:
