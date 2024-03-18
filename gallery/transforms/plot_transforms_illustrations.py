@@ -238,6 +238,17 @@ equalized_imgs = [equalizer(orig_img) for _ in range(4)]
 plot([orig_img] + equalized_imgs)
 
 # %%
+# JPEG
+# ~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.v2.JPEG` transform
+# (see also :func:`~torchvision.transforms.v2.functional.jpeg`)
+# applies JPEG compression to the given image with random
+# degree of compression.
+jpeg = v2.JPEG((5, 50))
+jpeg_imgs = [jpeg(orig_img) for _ in range(4)]
+plot([orig_img] + jpeg_imgs)
+
+# %%
 # Augmentation Transforms
 # -----------------------
 # The following transforms are combinations of multiple transforms,
