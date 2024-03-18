@@ -1,6 +1,6 @@
 import json
 import pathlib
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 from PIL import Image
@@ -30,7 +30,7 @@ class CLEVRClassification(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

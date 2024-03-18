@@ -1,5 +1,6 @@
 import os
-from typing import Any, Callable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -43,7 +44,7 @@ class USPS(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         train: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

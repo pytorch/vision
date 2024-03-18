@@ -1,5 +1,6 @@
 import os.path
-from typing import Any, Callable, cast, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, cast, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -45,7 +46,7 @@ class STL10(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         folds: Optional[int] = None,
         transform: Optional[Callable] = None,

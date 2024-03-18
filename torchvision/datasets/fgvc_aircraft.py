@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 import PIL.Image
 
@@ -41,7 +42,7 @@ class FGVCAircraft(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "trainval",
         annotation_level: str = "variant",
         transform: Optional[Callable] = None,

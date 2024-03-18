@@ -1,6 +1,7 @@
 import glob
 import os
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from torch import Tensor
 
@@ -59,7 +60,7 @@ class HMDB51(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         annotation_path: str,
         frames_per_clip: int,
         step_between_clips: int = 1,

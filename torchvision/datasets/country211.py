@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 from .folder import ImageFolder
 from .utils import download_and_extract_archive, verify_str_arg
@@ -28,7 +28,7 @@ class Country211(ImageFolder):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

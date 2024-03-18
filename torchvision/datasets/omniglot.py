@@ -1,5 +1,6 @@
 from os.path import join
-from typing import Any, Callable, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -33,7 +34,7 @@ class Omniglot(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         background: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

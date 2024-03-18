@@ -1,5 +1,6 @@
 import os.path
-from typing import Callable, Optional
+from pathlib import Path
+from typing import Callable, Optional, Union
 
 import numpy as np
 import torch
@@ -28,7 +29,7 @@ class MovingMNIST(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: Optional[str] = None,
         split_ratio: int = 10,
         download: bool = False,

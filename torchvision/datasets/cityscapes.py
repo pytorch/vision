@@ -1,6 +1,7 @@
 import json
 import os
 from collections import namedtuple
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -103,7 +104,7 @@ class Cityscapes(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         mode: str = "fine",
         target_type: Union[List[str], str] = "instance",

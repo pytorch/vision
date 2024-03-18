@@ -3,6 +3,7 @@ import os.path
 import pickle
 import string
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any, Callable, cast, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -71,7 +72,7 @@ class LSUN(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         classes: Union[str, List[str]] = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

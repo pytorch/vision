@@ -1,5 +1,7 @@
 import os
 from os.path import abspath, expanduser
+from pathlib import Path
+
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -55,7 +57,7 @@ class WIDERFace(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

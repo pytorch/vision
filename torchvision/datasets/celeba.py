@@ -1,6 +1,7 @@
 import csv
 import os
 from collections import namedtuple
+from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import PIL
@@ -63,7 +64,7 @@ class CelebA(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         target_type: Union[List[str], str] = "attr",
         transform: Optional[Callable] = None,

@@ -1,5 +1,6 @@
 import os
 import os.path
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -65,7 +66,7 @@ class INaturalist(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         version: str = "2021_train",
         target_type: Union[List[str], str] = "full",
         transform: Optional[Callable] = None,

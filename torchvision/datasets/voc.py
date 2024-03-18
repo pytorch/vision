@@ -1,18 +1,18 @@
 import collections
 import os
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from xml.etree.ElementTree import Element as ET_Element
-
-from .vision import VisionDataset
 
 try:
     from defusedxml.ElementTree import parse as ET_parse
 except ImportError:
     from xml.etree.ElementTree import parse as ET_parse
-from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from PIL import Image
 
 from .utils import download_and_extract_archive, verify_str_arg
+from .vision import VisionDataset
 
 DATASET_YEAR_DICT = {
     "2012": {
@@ -67,7 +67,7 @@ class _VOCBase(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         year: str = "2012",
         image_set: str = "train",
         download: bool = False,

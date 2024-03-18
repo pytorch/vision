@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -31,7 +32,7 @@ class _LFW(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str,
         image_set: str,
         view: str,

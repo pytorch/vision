@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 import PIL.Image
 
@@ -34,7 +34,7 @@ class DTD(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         partition: int = 1,
         transform: Optional[Callable] = None,

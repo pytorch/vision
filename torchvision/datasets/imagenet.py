@@ -2,7 +2,6 @@ import os
 import shutil
 import tempfile
 from contextlib import contextmanager
-
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
@@ -47,7 +46,7 @@ class ImageNet(ImageFolder):
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root: str, split: str = "train", **kwargs: Any) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", **kwargs: Any) -> None:
         root = self.root = os.path.expanduser(root)
         self.split = verify_str_arg(split, "split", ("train", "val"))
 

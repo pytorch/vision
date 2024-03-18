@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
@@ -87,7 +88,12 @@ class PhotoTour(VisionDataset):
     matches_files = "m50_100000_100000_0.txt"
 
     def __init__(
-        self, root: str, name: str, train: bool = True, transform: Optional[Callable] = None, download: bool = False
+        self,
+        root: Union[str, Path],
+        name: str,
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         super().__init__(root, transform=transform)
         self.name = name

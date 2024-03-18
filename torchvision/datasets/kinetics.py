@@ -5,7 +5,8 @@ import urllib
 from functools import partial
 from multiprocessing import Pool
 from os import path
-from typing import Any, Callable, Dict, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 from torch import Tensor
 
@@ -90,7 +91,7 @@ class Kinetics(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         frames_per_clip: int,
         num_classes: str = "400",
         split: str = "train",

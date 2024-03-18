@@ -2,7 +2,6 @@ import glob
 import os
 from collections import defaultdict
 from html.parser import HTMLParser
-
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -68,7 +67,7 @@ class Flickr8k(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         ann_file: str,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

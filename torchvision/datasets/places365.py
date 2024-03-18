@@ -1,6 +1,7 @@
 import os
 from os import path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 from .folder import default_loader
@@ -62,7 +63,7 @@ class Places365(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train-standard",
         small: bool = False,
         download: bool = False,

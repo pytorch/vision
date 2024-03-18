@@ -27,7 +27,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
     _has_built_in_disparity_mask = False
 
-    def __init__(self, root: str, transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], transforms: Optional[Callable] = None) -> None:
         """
         Args:
             root(str): Root directory of the dataset.
@@ -163,7 +163,7 @@ class CarlaStereo(StereoMatchingDataset):
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         root = Path(root) / "carla-highres"
@@ -240,7 +240,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -328,7 +328,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -480,7 +480,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         calibration: Optional[str] = "perfect",
         use_ambient_views: bool = False,
@@ -576,7 +576,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
         valid_mask = (disparity_map > 0).squeeze(0)  # mask out invalid disparities
         return disparity_map, valid_mask
 
-    def _download_dataset(self, root: str) -> None:
+    def _download_dataset(self, root: Union[str, Path]) -> None:
         base_url = "https://vision.middlebury.edu/stereo/data/scenes2014/zip"
         # train and additional splits have 2 different calibration settings
         root = Path(root) / "Middlebury2014"
@@ -675,7 +675,7 @@ class CREStereo(StereoMatchingDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         transforms: Optional[Callable] = None,
     ) -> None:
         super().__init__(root, transforms)
@@ -762,7 +762,7 @@ class FallingThingsStereo(StereoMatchingDataset):
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, variant: str = "single", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], variant: str = "single", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         root = Path(root) / "FallingThings"
@@ -877,7 +877,7 @@ class SceneFlowStereo(StereoMatchingDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         variant: str = "FlyingThings3D",
         pass_name: str = "clean",
         transforms: Optional[Callable] = None,
@@ -980,7 +980,7 @@ class SintelStereo(StereoMatchingDataset):
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, pass_name: str = "final", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], pass_name: str = "final", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(pass_name, "pass_name", valid_values=("final", "clean", "both"))
@@ -1087,7 +1087,7 @@ class InStereo2k(StereoMatchingDataset):
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         root = Path(root) / "InStereo2k" / split
@@ -1176,7 +1176,7 @@ class ETH3DStereo(StereoMatchingDataset):
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))

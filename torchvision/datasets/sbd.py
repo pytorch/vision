@@ -1,6 +1,7 @@
 import os
 import shutil
-from typing import Any, Callable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -51,7 +52,7 @@ class SBDataset(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         image_set: str = "train",
         mode: str = "boundaries",
         download: bool = False,

@@ -1,5 +1,6 @@
 import os
 import os.path
+from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -38,7 +39,7 @@ class Caltech101(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         target_type: Union[List[str], str] = "category",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
