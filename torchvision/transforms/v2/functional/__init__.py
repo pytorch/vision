@@ -63,6 +63,8 @@ from ._color import (
     equalize,
     equalize_image,
     equalize_video,
+    grayscale_to_rgb,
+    grayscale_to_rgb_image,
     invert,
     invert_image,
     invert_video,
