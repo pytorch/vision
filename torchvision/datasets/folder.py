@@ -1,5 +1,6 @@
 import os
 import os.path
+from pathlib import Path
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -32,7 +33,7 @@ def is_image_file(filename: str) -> bool:
     return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
 
-def find_classes(directory: str) -> Tuple[List[str], Dict[str, int]]:
+def find_classes(directory: Union[str, Path]) -> Tuple[List[str], Dict[str, int]]:
     """Finds the class folders in a dataset.
 
     See :class:`DatasetFolder` for details.
@@ -46,7 +47,7 @@ def find_classes(directory: str) -> Tuple[List[str], Dict[str, int]]:
 
 
 def make_dataset(
-    directory: str,
+    directory: Union[str, Path],
     class_to_idx: Optional[Dict[str, int]] = None,
     extensions: Optional[Union[str, Tuple[str, ...]]] = None,
     is_valid_file: Optional[Callable[[str], bool]] = None,
@@ -112,7 +113,7 @@ class DatasetFolder(VisionDataset):
     :meth:`find_classes` method.
 
     Args:
-        root (string): Root directory path.
+        root (str or ``pathlib.Path``): Root directory path.
         loader (callable): A function to load a sample given its path.
         extensions (tuple[string]): A list of allowed extensions.
             both extensions and is_valid_file should not be passed.
@@ -136,7 +137,7 @@ class DatasetFolder(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         loader: Callable[[str], Any],
         extensions: Optional[Tuple[str, ...]] = None,
         transform: Optional[Callable] = None,
@@ -164,7 +165,7 @@ class DatasetFolder(VisionDataset):
 
     @staticmethod
     def make_dataset(
-        directory: str,
+        directory: Union[str, Path],
         class_to_idx: Dict[str, int],
         extensions: Optional[Tuple[str, ...]] = None,
         is_valid_file: Optional[Callable[[str], bool]] = None,
@@ -203,7 +204,7 @@ class DatasetFolder(VisionDataset):
             directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file, allow_empty=allow_empty
         )
 
-    def find_classes(self, directory: str) -> Tuple[List[str], Dict[str, int]]:
+    def find_classes(self, directory: Union[str, Path]) -> Tuple[List[str], Dict[str, int]]:
         """Find the class folders in a dataset structured as follows::
 
             directory/
@@ -298,7 +299,7 @@ class ImageFolder(DatasetFolder):
     the same methods can be overridden to customize the dataset.
 
     Args:
-        root (string): Root directory path.
+        root (str or ``pathlib.Path``): Root directory path.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the

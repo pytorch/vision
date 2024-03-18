@@ -532,5 +532,21 @@ def test_write_jpeg(img_path, tmpdir, scripted):
     assert_equal(torch_bytes, pil_bytes)
 
 
+def test_pathlib_support(tmpdir):
+    # Just make sure pathlib.Path is supported where relevant
+
+    jpeg_path = Path(next(get_images(ENCODE_JPEG, ".jpg")))
+
+    read_file(jpeg_path)
+    read_image(jpeg_path)
+
+    write_path = Path(tmpdir) / "whatever"
+    img = torch.randint(0, 10, size=(3, 4, 4), dtype=torch.uint8)
+
+    write_file(write_path, data=img.flatten())
+    write_jpeg(img, write_path)
+    write_png(img, write_path)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

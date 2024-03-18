@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -321,6 +321,9 @@ class SanitizeBoundingBoxes(Transform):
     - have any coordinate outside of their corresponding image. You may want to
       call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
 
+    It can also sanitize other tensors like the "iscrowd" or "area" properties from COCO
+    (see ``labels_getter`` parameter).
+
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
     :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.
@@ -330,18 +333,26 @@ class SanitizeBoundingBoxes(Transform):
 
     Args:
         min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
-        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.
+        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input
+            (or anything else that needs to be sanitized along with the bounding boxes).
             By default, this will try to find a "labels" key in the input (case-insensitive), if
             the input is a dict or it is a tuple whose second element is a dict.
             This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
-            It can also be a callable that takes the same input
-            as the transform, and returns the labels.
+
+            It can also be a callable that takes the same input as the transform, and returns either:
+
+            - A single tensor (the labels)
+            - A tuple/list of tensors, each of which will be subject to the same sanitization as the bounding boxes.
+              This is useful to sanitize multiple tensors like the labels, and the "iscrowd" or "area" properties
+              from COCO.
+
+            If ``labels_getter`` is None then only bounding boxes are sanitized.
     """
 
     def __init__(
         self,
         min_size: float = 1.0,
-        labels_getter: Union[Callable[[Any], Optional[torch.Tensor]], str, None] = "default",
+        labels_getter: Union[Callable[[Any], Any], str, None] = "default",
     ) -> None:
         super().__init__()
 
@@ -356,46 +367,42 @@ class SanitizeBoundingBoxes(Transform):
         inputs = inputs if len(inputs) > 1 else inputs[0]
 
         labels = self._labels_getter(inputs)
-        if labels is not None and not isinstance(labels, torch.Tensor):
-            raise ValueError(
-                f"The labels in the input to forward() must be a tensor or None, got {type(labels)} instead."
-            )
+        if labels is not None:
+            msg = "The labels in the input to forward() must be a tensor or None, got {type} instead."
+            if isinstance(labels, torch.Tensor):
+                labels = (labels,)
+            elif isinstance(labels, (tuple, list)):
+                for entry in labels:
+                    if not isinstance(entry, torch.Tensor):
+                        # TODO: we don't need to enforce tensors, just that entries are indexable as t[bool_mask]
+                        raise ValueError(msg.format(type=type(entry)))
+            else:
+                raise ValueError(msg.format(type=type(labels)))
 
         flat_inputs, spec = tree_flatten(inputs)
         boxes = get_bounding_boxes(flat_inputs)
 
-        if labels is not None and boxes.shape[0] != labels.shape[0]:
-            raise ValueError(
-                f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
-            )
+        if labels is not None:
+            for label in labels:
+                if boxes.shape[0] != label.shape[0]:
+                    raise ValueError(
+                        f"Number of boxes (shape={boxes.shape}) and must match the number of labels."
+                        f"Found labels with shape={label.shape})."
+                    )
 
-        boxes = cast(
-            tv_tensors.BoundingBoxes,
-            F.convert_bounding_box_format(
-                boxes,
-                new_format=tv_tensors.BoundingBoxFormat.XYXY,
-            ),
+        valid = F._misc._get_sanitize_bounding_boxes_mask(
+            boxes,
+            format=boxes.format,
+            canvas_size=boxes.canvas_size,
+            min_size=self.min_size,
         )
-        ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
-        valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
-        # TODO: Do we really need to check for out of bounds here? All
-        # transforms should be clamping anyway, so this should never happen?
-        image_h, image_w = boxes.canvas_size
-        valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
-        valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
-
-        params = dict(valid=valid.as_subclass(torch.Tensor), labels=labels)
-        flat_outputs = [
-            # Even-though it may look like we're transforming all inputs, we don't:
-            # _transform() will only care about BoundingBoxeses and the labels
-            self._transform(inpt, params)
-            for inpt in flat_inputs
-        ]
+        params = dict(valid=valid, labels=labels)
+        flat_outputs = [self._transform(inpt, params) for inpt in flat_inputs]
 
         return tree_unflatten(flat_outputs, spec)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        is_label = inpt is not None and inpt is params["labels"]
+        is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
         is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
 
         if not (is_label or is_bounding_boxes_or_mask):
@@ -405,5 +412,5 @@ class SanitizeBoundingBoxes(Transform):
 
         if is_label:
             return output
-
-        return tv_tensors.wrap(output, like=inpt)
+        else:
+            return tv_tensors.wrap(output, like=inpt)

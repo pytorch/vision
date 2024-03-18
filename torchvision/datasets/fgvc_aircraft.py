@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 import PIL.Image
 
@@ -23,7 +24,7 @@ class FGVCAircraft(VisionDataset):
     - ``manufacturer``, e.g. Boeing. The dataset comprises 30 different manufacturers.
 
     Args:
-        root (string): Root directory of the FGVC Aircraft dataset.
+        root (str or ``pathlib.Path``): Root directory of the FGVC Aircraft dataset.
         split (string, optional): The dataset split, supports ``train``, ``val``,
             ``trainval`` and ``test``.
         annotation_level (str, optional): The annotation level, supports ``variant``,
@@ -41,7 +42,7 @@ class FGVCAircraft(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "trainval",
         annotation_level: str = "variant",
         transform: Optional[Callable] = None,

@@ -18,6 +18,7 @@ from ._color import (
     RandomPhotometricDistort,
     RandomPosterize,
     RandomSolarize,
+    RGB,
 )
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
