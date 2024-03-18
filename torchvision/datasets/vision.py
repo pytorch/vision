@@ -1,5 +1,6 @@
 import os
-from typing import Any, Callable, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch.utils.data as data
 
@@ -29,7 +30,7 @@ class VisionDataset(data.Dataset):
 
     def __init__(
         self,
-        root: str = None,  # type: ignore[assignment]
+        root: Union[str, Path] = None,  # type: ignore[assignment]
         transforms: Optional[Callable] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

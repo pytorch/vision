@@ -2,7 +2,9 @@ import glob
 import os
 from collections import defaultdict
 from html.parser import HTMLParser
-from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -12,7 +14,7 @@ from .vision import VisionDataset
 class Flickr8kParser(HTMLParser):
     """Parser for extracting captions from the Flickr8k dataset web page."""
 
-    def __init__(self, root: str) -> None:
+    def __init__(self, root: Union[str, Path]) -> None:
         super().__init__()
 
         self.root = root
