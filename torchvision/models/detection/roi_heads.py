@@ -204,7 +204,7 @@ def _onnx_heatmaps_to_keypoints(
     ind = torch.arange(num_keypoints)
     ind = ind.to(dtype=torch.int64) * base
     end_scores_i = (
-        roi_map.index_select(1, y_int.to(dtype=torch.int64))
+        torch.nn.functional.softmax(roi_map, 0).index_select(1, y_int.to(dtype=torch.int64))
         .index_select(2, x_int.to(dtype=torch.int64))
         .view(-1)
         .index_select(0, ind.to(dtype=torch.int64))
