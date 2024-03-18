@@ -668,7 +668,7 @@ class TestResize:
         ("kernel", "input_type"),
         [
             (F.resize_image, torch.Tensor),
-            (F._resize_image_pil, PIL.Image.Image),
+            (F._geometry._resize_image_pil, PIL.Image.Image),
             (F.resize_image, tv_tensors.Image),
             (F.resize_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.resize_mask, tv_tensors.Mask),
@@ -986,7 +986,7 @@ class TestHorizontalFlip:
         ("kernel", "input_type"),
         [
             (F.horizontal_flip_image, torch.Tensor),
-            (F._horizontal_flip_image_pil, PIL.Image.Image),
+            (F._geometry._horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image, tv_tensors.Image),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.horizontal_flip_mask, tv_tensors.Mask),
@@ -1154,7 +1154,7 @@ class TestAffine:
         ("kernel", "input_type"),
         [
             (F.affine_image, torch.Tensor),
-            (F._affine_image_pil, PIL.Image.Image),
+            (F._geometry._affine_image_pil, PIL.Image.Image),
             (F.affine_image, tv_tensors.Image),
             (F.affine_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.affine_mask, tv_tensors.Mask),
@@ -1436,7 +1436,7 @@ class TestVerticalFlip:
         ("kernel", "input_type"),
         [
             (F.vertical_flip_image, torch.Tensor),
-            (F._vertical_flip_image_pil, PIL.Image.Image),
+            (F._geometry._vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image, tv_tensors.Image),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.vertical_flip_mask, tv_tensors.Mask),
@@ -1578,7 +1578,7 @@ class TestRotate:
         ("kernel", "input_type"),
         [
             (F.rotate_image, torch.Tensor),
-            (F._rotate_image_pil, PIL.Image.Image),
+            (F._geometry._rotate_image_pil, PIL.Image.Image),
             (F.rotate_image, tv_tensors.Image),
             (F.rotate_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.rotate_mask, tv_tensors.Mask),
@@ -2149,7 +2149,7 @@ class TestAdjustBrightness:
         ("kernel", "input_type"),
         [
             (F.adjust_brightness_image, torch.Tensor),
-            (F._adjust_brightness_image_pil, PIL.Image.Image),
+            (F._color._adjust_brightness_image_pil, PIL.Image.Image),
             (F.adjust_brightness_image, tv_tensors.Image),
             (F.adjust_brightness_video, tv_tensors.Video),
         ],
@@ -2311,7 +2311,7 @@ class TestShapeGetters:
         ("kernel", "make_input"),
         [
             (F.get_dimensions_image, make_image_tensor),
-            (F._get_dimensions_image_pil, make_image_pil),
+            (F._meta._get_dimensions_image_pil, make_image_pil),
             (F.get_dimensions_image, make_image),
             (F.get_dimensions_video, make_video),
         ],
@@ -2328,7 +2328,7 @@ class TestShapeGetters:
         ("kernel", "make_input"),
         [
             (F.get_num_channels_image, make_image_tensor),
-            (F._get_num_channels_image_pil, make_image_pil),
+            (F._meta._get_num_channels_image_pil, make_image_pil),
             (F.get_num_channels_image, make_image),
             (F.get_num_channels_video, make_video),
         ],
@@ -2344,7 +2344,7 @@ class TestShapeGetters:
         ("kernel", "make_input"),
         [
             (F.get_size_image, make_image_tensor),
-            (F._get_size_image_pil, make_image_pil),
+            (F._meta._get_size_image_pil, make_image_pil),
             (F.get_size_image, make_image),
             (F.get_size_bounding_boxes, make_bounding_boxes),
             (F.get_size_mask, make_detection_masks),
@@ -2451,7 +2451,7 @@ class TestGetKernel:
     # would also be fine
     KERNELS = {
         torch.Tensor: F.resize_image,
-        PIL.Image.Image: F._resize_image_pil,
+        PIL.Image.Image: F._geometry._resize_image_pil,
         tv_tensors.Image: F.resize_image,
         tv_tensors.BoundingBoxes: F.resize_bounding_boxes,
         tv_tensors.Mask: F.resize_mask,
@@ -2568,7 +2568,7 @@ class TestPermuteChannels:
         ("kernel", "input_type"),
         [
             (F.permute_channels_image, torch.Tensor),
-            (F._permute_channels_image_pil, PIL.Image.Image),
+            (F._color._permute_channels_image_pil, PIL.Image.Image),
             (F.permute_channels_image, tv_tensors.Image),
             (F.permute_channels_video, tv_tensors.Video),
         ],
@@ -2655,7 +2655,7 @@ class TestElastic:
         ("kernel", "input_type"),
         [
             (F.elastic_image, torch.Tensor),
-            (F._elastic_image_pil, PIL.Image.Image),
+            (F._geometry._elastic_image_pil, PIL.Image.Image),
             (F.elastic_image, tv_tensors.Image),
             (F.elastic_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.elastic_mask, tv_tensors.Mask),
@@ -2772,7 +2772,7 @@ class TestCrop:
         ("kernel", "input_type"),
         [
             (F.crop_image, torch.Tensor),
-            (F._crop_image_pil, PIL.Image.Image),
+            (F._geometry._crop_image_pil, PIL.Image.Image),
             (F.crop_image, tv_tensors.Image),
             (F.crop_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.crop_mask, tv_tensors.Mask),
@@ -2994,7 +2994,7 @@ class TestErase:
         ("kernel", "input_type"),
         [
             (F.erase_image, torch.Tensor),
-            (F._erase_image_pil, PIL.Image.Image),
+            (F._augment._erase_image_pil, PIL.Image.Image),
             (F.erase_image, tv_tensors.Image),
             (F.erase_video, tv_tensors.Video),
         ],
@@ -3133,7 +3133,7 @@ class TestGaussianBlur:
         ("kernel", "input_type"),
         [
             (F.gaussian_blur_image, torch.Tensor),
-            (F._gaussian_blur_image_pil, PIL.Image.Image),
+            (F._misc._gaussian_blur_image_pil, PIL.Image.Image),
             (F.gaussian_blur_image, tv_tensors.Image),
             (F.gaussian_blur_video, tv_tensors.Video),
         ],
@@ -3515,7 +3515,7 @@ class TestResizedCrop:
         ("kernel", "input_type"),
         [
             (F.resized_crop_image, torch.Tensor),
-            (F._resized_crop_image_pil, PIL.Image.Image),
+            (F._geometry._resized_crop_image_pil, PIL.Image.Image),
             (F.resized_crop_image, tv_tensors.Image),
             (F.resized_crop_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.resized_crop_mask, tv_tensors.Mask),
@@ -3700,7 +3700,7 @@ class TestPad:
             # Since the whole fill story is already really inconsistent, we won't introduce yet another case to allow
             # for this test to pass.
             # See https://github.com/pytorch/vision/issues/6623 for a discussion.
-            # (F._pad_image_pil, PIL.Image.Image),
+            # (F._geometry._pad_image_pil, PIL.Image.Image),
             (F.pad_image, tv_tensors.Image),
             (F.pad_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.pad_mask, tv_tensors.Mask),
@@ -3828,7 +3828,7 @@ class TestCenterCrop:
         ("kernel", "input_type"),
         [
             (F.center_crop_image, torch.Tensor),
-            (F._center_crop_image_pil, PIL.Image.Image),
+            (F._geometry._center_crop_image_pil, PIL.Image.Image),
             (F.center_crop_image, tv_tensors.Image),
             (F.center_crop_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.center_crop_mask, tv_tensors.Mask),
@@ -3994,7 +3994,7 @@ class TestPerspective:
         ("kernel", "input_type"),
         [
             (F.perspective_image, torch.Tensor),
-            (F._perspective_image_pil, PIL.Image.Image),
+            (F._geometry._perspective_image_pil, PIL.Image.Image),
             (F.perspective_image, tv_tensors.Image),
             (F.perspective_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.perspective_mask, tv_tensors.Mask),
@@ -4151,7 +4151,7 @@ class TestEqualize:
         ("kernel", "input_type"),
         [
             (F.equalize_image, torch.Tensor),
-            (F._equalize_image_pil, PIL.Image.Image),
+            (F._color._equalize_image_pil, PIL.Image.Image),
             (F.equalize_image, tv_tensors.Image),
             (F.equalize_video, tv_tensors.Video),
         ],
@@ -4381,7 +4381,7 @@ class TestInvert:
         ("kernel", "input_type"),
         [
             (F.invert_image, torch.Tensor),
-            (F._invert_image_pil, PIL.Image.Image),
+            (F._color._invert_image_pil, PIL.Image.Image),
             (F.invert_image, tv_tensors.Image),
             (F.invert_video, tv_tensors.Video),
         ],
@@ -4420,7 +4420,7 @@ class TestPosterize:
         ("kernel", "input_type"),
         [
             (F.posterize_image, torch.Tensor),
-            (F._posterize_image_pil, PIL.Image.Image),
+            (F._color._posterize_image_pil, PIL.Image.Image),
             (F.posterize_image, tv_tensors.Image),
             (F.posterize_video, tv_tensors.Video),
         ],
@@ -4467,7 +4467,7 @@ class TestSolarize:
         ("kernel", "input_type"),
         [
             (F.solarize_image, torch.Tensor),
-            (F._solarize_image_pil, PIL.Image.Image),
+            (F._color._solarize_image_pil, PIL.Image.Image),
             (F.solarize_image, tv_tensors.Image),
             (F.solarize_video, tv_tensors.Video),
         ],
@@ -4514,7 +4514,7 @@ class TestAutocontrast:
         ("kernel", "input_type"),
         [
             (F.autocontrast_image, torch.Tensor),
-            (F._autocontrast_image_pil, PIL.Image.Image),
+            (F._color._autocontrast_image_pil, PIL.Image.Image),
             (F.autocontrast_image, tv_tensors.Image),
             (F.autocontrast_video, tv_tensors.Video),
         ],
@@ -4553,7 +4553,7 @@ class TestAdjustSharpness:
         ("kernel", "input_type"),
         [
             (F.adjust_sharpness_image, torch.Tensor),
-            (F._adjust_sharpness_image_pil, PIL.Image.Image),
+            (F._color._adjust_sharpness_image_pil, PIL.Image.Image),
             (F.adjust_sharpness_image, tv_tensors.Image),
             (F.adjust_sharpness_video, tv_tensors.Video),
         ],
@@ -4602,7 +4602,7 @@ class TestAdjustContrast:
         ("kernel", "input_type"),
         [
             (F.adjust_contrast_image, torch.Tensor),
-            (F._adjust_contrast_image_pil, PIL.Image.Image),
+            (F._color._adjust_contrast_image_pil, PIL.Image.Image),
             (F.adjust_contrast_image, tv_tensors.Image),
             (F.adjust_contrast_video, tv_tensors.Video),
         ],
@@ -4644,7 +4644,7 @@ class TestAdjustGamma:
         ("kernel", "input_type"),
         [
             (F.adjust_gamma_image, torch.Tensor),
-            (F._adjust_gamma_image_pil, PIL.Image.Image),
+            (F._color._adjust_gamma_image_pil, PIL.Image.Image),
             (F.adjust_gamma_image, tv_tensors.Image),
             (F.adjust_gamma_video, tv_tensors.Video),
         ],
@@ -4684,7 +4684,7 @@ class TestAdjustHue:
         ("kernel", "input_type"),
         [
             (F.adjust_hue_image, torch.Tensor),
-            (F._adjust_hue_image_pil, PIL.Image.Image),
+            (F._color._adjust_hue_image_pil, PIL.Image.Image),
             (F.adjust_hue_image, tv_tensors.Image),
             (F.adjust_hue_video, tv_tensors.Video),
         ],
@@ -4728,7 +4728,7 @@ class TestAdjustSaturation:
         ("kernel", "input_type"),
         [
             (F.adjust_saturation_image, torch.Tensor),
-            (F._adjust_saturation_image_pil, PIL.Image.Image),
+            (F._color._adjust_saturation_image_pil, PIL.Image.Image),
             (F.adjust_saturation_image, tv_tensors.Image),
             (F.adjust_saturation_video, tv_tensors.Video),
         ],
@@ -4799,11 +4799,11 @@ class TestFiveTenCrop:
         ("functional", "kernel", "input_type"),
         [
             (F.five_crop, F.five_crop_image, torch.Tensor),
-            (F.five_crop, F._five_crop_image_pil, PIL.Image.Image),
+            (F.five_crop, F._geometry._five_crop_image_pil, PIL.Image.Image),
             (F.five_crop, F.five_crop_image, tv_tensors.Image),
             (F.five_crop, F.five_crop_video, tv_tensors.Video),
             (F.ten_crop, F.ten_crop_image, torch.Tensor),
-            (F.ten_crop, F._ten_crop_image_pil, PIL.Image.Image),
+            (F.ten_crop, F._geometry._ten_crop_image_pil, PIL.Image.Image),
             (F.ten_crop, F.ten_crop_image, tv_tensors.Image),
             (F.ten_crop, F.ten_crop_video, tv_tensors.Video),
         ],
@@ -4955,7 +4955,7 @@ class TestRgbToGrayscale:
         ("kernel", "input_type"),
         [
             (F.rgb_to_grayscale_image, torch.Tensor),
-            (F._rgb_to_grayscale_image_pil, PIL.Image.Image),
+            (F._color._rgb_to_grayscale_image_pil, PIL.Image.Image),
             (F.rgb_to_grayscale_image, tv_tensors.Image),
         ],
     )
@@ -5019,7 +5019,7 @@ class TestGrayscaleToRgb:
         ("kernel", "input_type"),
         [
             (F.rgb_to_grayscale_image, torch.Tensor),
-            (F._rgb_to_grayscale_image_pil, PIL.Image.Image),
+            (F._color._rgb_to_grayscale_image_pil, PIL.Image.Image),
             (F.rgb_to_grayscale_image, tv_tensors.Image),
         ],
     )
