@@ -15,7 +15,7 @@ on:
 
 jobs:
   generate-matrix:
-    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
+    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@release/2.3
     with:
       package-type: conda
       os: linux
@@ -34,7 +34,7 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_conda_linux.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_conda_linux.yml@release/2.3
     with:
       conda-package-directory: ${{ matrix.conda-package-directory }}
       repository: ${{ matrix.repository }}
