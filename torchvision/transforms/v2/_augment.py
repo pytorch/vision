@@ -323,7 +323,8 @@ class JPEG(Transform):
     """Apply JPEG compression and decompression to the given images.
 
     If the input is a :class:`torch.Tensor`, it is expected
-    to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
+    to be of dtype uint8, on CPU, and have [..., 3 or 1, H, W] shape,
+    where ... means an arbitrary number of leading dimensions.
 
     Args:
         quality (sequence or number): JPEG quality, from 1 to 100. Lower means more compression.
