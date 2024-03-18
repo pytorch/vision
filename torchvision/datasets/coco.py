@@ -1,5 +1,6 @@
 import os.path
-from typing import Any, Callable, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -12,7 +13,7 @@ class CocoDetection(VisionDataset):
     It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         annFile (string): Path to json annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
@@ -24,7 +25,7 @@ class CocoDetection(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         annFile: str,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -67,7 +68,7 @@ class CocoCaptions(CocoDetection):
     It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         annFile (string): Path to json annotation file.
         transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
