@@ -5932,3 +5932,86 @@ class TestSanitizeBoundingBoxes:
 
         with pytest.raises(ValueError, match="bouding_boxes must be a tv_tensors.BoundingBoxes instance or a"):
             F.sanitize_bounding_boxes(good_bbox.tolist())
+
+
+class TestJPEG:
+    @pytest.mark.parametrize("quality", [5, 75])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    def test_kernel_image(self, quality, color_space):
+        check_kernel(F.jpeg_image, make_image(color_space=color_space), quality=quality)
+
+    def test_kernel_video(self):
+        check_kernel(F.jpeg_video, make_video(), quality=5)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    def test_functional(self, make_input):
+        check_functional(F.jpeg, make_input(), quality=5)
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.jpeg_image, torch.Tensor),
+            (F._augment._jpeg_image_pil, PIL.Image.Image),
+            (F.jpeg_image, tv_tensors.Image),
+            (F.jpeg_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.jpeg, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize("quality", [5, (10, 20)])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    def test_transform(self, make_input, quality, color_space):
+        check_transform(transforms.JPEG(quality=quality), make_input(color_space=color_space))
+
+    @pytest.mark.parametrize("quality", [5])
+    def test_functional_image_correctness(self, quality):
+        image = make_image()
+
+        actual = F.jpeg(image, quality=quality)
+        expected = F.to_image(F.jpeg(F.to_pil_image(image), quality=quality))
+
+        # NOTE: this will fail if torchvision and Pillow use different JPEG encoder/decoder
+        torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+
+    @pytest.mark.parametrize("quality", [5, (10, 20)])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_image_correctness(self, quality, color_space, seed):
+        image = make_image(color_space=color_space)
+
+        transform = transforms.JPEG(quality=quality)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            actual = transform(image)
+
+            torch.manual_seed(seed)
+            expected = F.to_image(transform(F.to_pil_image(image)))
+
+        torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+
+    @pytest.mark.parametrize("quality", [5, (10, 20)])
+    @pytest.mark.parametrize("seed", list(range(10)))
+    def test_transform_get_params_bounds(self, quality, seed):
+        transform = transforms.JPEG(quality=quality)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            params = transform._get_params([])
+
+        if isinstance(quality, int):
+            assert params["quality"] == quality
+        else:
+            assert quality[0] <= params["quality"] <= quality[1]
+
+    @pytest.mark.parametrize("quality", [[0], [0, 0, 0]])
+    def test_transform_sequence_len_error(self, quality):
+        with pytest.raises(ValueError, match="quality should be a sequence of length 2"):
+            transforms.JPEG(quality=quality)
+
+    @pytest.mark.parametrize("quality", [-1, 0, 150])
+    def test_transform_invalid_quality_error(self, quality):
+        with pytest.raises(ValueError, match="quality must be an integer from 1 to 100"):
+            transforms.JPEG(quality=quality)
