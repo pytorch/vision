@@ -34,7 +34,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: main
+      test-infra-ref: release/2.3
       script: |
         set -euo pipefail
 
@@ -65,7 +65,7 @@ jobs:
       # and needs roughly 2 hours to just run the test suite
       timeout: 240
       runner: ${{ matrix.runner }}
-      test-infra-ref: main
+      test-infra-ref: release/2.3
       script: |
         set -euo pipefail
 
@@ -99,7 +99,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: main
+      test-infra-ref: release/2.3
       script: |
         set -euxo pipefail
 
@@ -115,7 +115,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.3
     with:
       repository: pytorch/vision
-      test-infra-ref: main
+      test-infra-ref: release/2.3
       script: |
         set -euo pipefail
 
@@ -146,7 +146,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.3
     with:
       repository: pytorch/vision
-      test-infra-ref: main
+      test-infra-ref: release/2.3
       script: |
         set -euo pipefail
 
