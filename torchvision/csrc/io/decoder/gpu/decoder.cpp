@@ -59,7 +59,7 @@ void Decoder::release() {
   if (decoder) {
     cuvidDestroyDecoder(decoder);
   }
-  cuCtxPopCurrent(NULL);
+  cuCtxPopCurrent(nullptr);
 }
 
 /* Trigger video decoding.
@@ -100,7 +100,7 @@ int Decoder::handle_picture_decode(CUVIDPICPARAMS* pic_params) {
   check_for_cuda_errors(cuCtxPushCurrent(cu_context), __LINE__, __FILE__);
   check_for_cuda_errors(
       cuvidDecodePicture(decoder, pic_params), __LINE__, __FILE__);
-  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__, __FILE__);
+  check_for_cuda_errors(cuCtxPopCurrent(nullptr), __LINE__, __FILE__);
   return 1;
 }
 
@@ -159,7 +159,7 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* disp_info) {
 
   check_for_cuda_errors(cuStreamSynchronize(cuvidStream), __LINE__, __FILE__);
   decoded_frames.push(decoded_frame);
-  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__, __FILE__);
+  check_for_cuda_errors(cuCtxPopCurrent(nullptr), __LINE__, __FILE__);
 
   check_for_cuda_errors(
       cuvidUnmapVideoFrame(decoder, source_frame), __LINE__, __FILE__);
@@ -177,7 +177,7 @@ void Decoder::query_hardware(CUVIDEOFORMAT* video_format) {
 
   check_for_cuda_errors(cuCtxPushCurrent(cu_context), __LINE__, __FILE__);
   check_for_cuda_errors(cuvidGetDecoderCaps(&decode_caps), __LINE__, __FILE__);
-  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__, __FILE__);
+  check_for_cuda_errors(cuCtxPopCurrent(nullptr), __LINE__, __FILE__);
 
   if (!decode_caps.bIsSupported) {
     TORCH_CHECK(false, "Codec not supported on this GPU");
@@ -319,7 +319,7 @@ int Decoder::handle_video_sequence(CUVIDEOFORMAT* video_format) {
       cuvidCreateDecoder(&decoder, &video_decode_create_info),
       __LINE__,
       __FILE__);
-  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__, __FILE__);
+  check_for_cuda_errors(cuCtxPopCurrent(nullptr), __LINE__, __FILE__);
   return decode_surface;
 }
 
@@ -389,7 +389,7 @@ int Decoder::reconfigure_decoder(CUVIDEOFORMAT* video_format) {
   check_for_cuda_errors(cuCtxPushCurrent(cu_context), __LINE__, __FILE__);
   check_for_cuda_errors(
       cuvidReconfigureDecoder(decoder, &reconfig_params), __LINE__, __FILE__);
-  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__, __FILE__);
+  check_for_cuda_errors(cuCtxPopCurrent(nullptr), __LINE__, __FILE__);
 
   return decode_surface;
 }
