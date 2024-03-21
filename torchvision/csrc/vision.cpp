@@ -21,7 +21,7 @@
 #ifdef USE_PYTHON
 PyMODINIT_FUNC PyInit__C(void) {
   // No need to do anything.
-  return NULL;
+  return nullptr;
 }
 #endif // USE_PYTHON
 #endif // !defined(MOBILE) && defined(_WIN32)

@@ -11,7 +11,7 @@
 #ifdef _WIN32
 PyMODINIT_FUNC PyInit_image(void) {
   // No need to do anything.
-  return NULL;
+  return nullptr;
 }
 #endif
 #endif // USE_PYTHON
