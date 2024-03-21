@@ -24,7 +24,7 @@ from ._meta import (
     get_size,
 )  # usort: skip
 
-from ._augment import _erase_image_pil, erase, erase_image, erase_video
+from ._augment import _erase_image_pil, _jpeg_image_pil, erase, erase_image, erase_video, jpeg, jpeg_image, jpeg_video
 from ._color import (
     _adjust_brightness_image_pil,
     _adjust_contrast_image_pil,

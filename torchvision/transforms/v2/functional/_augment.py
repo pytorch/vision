@@ -1,7 +1,10 @@
+import io
+
 import PIL.Image
 
 import torch
 from torchvision import tv_tensors
+from torchvision.io import decode_jpeg, encode_jpeg
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 from torchvision.utils import _log_api_usage_once
 
@@ -53,3 +56,43 @@ def erase_video(
     video: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> torch.Tensor:
     return erase_image(video, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+
+
+def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
+    """See :class:`~torchvision.transforms.v2.JPEG` for details."""
+    if torch.jit.is_scripting():
+        return jpeg_image(image, quality=quality)
+
+    _log_api_usage_once(jpeg)
+
+    kernel = _get_kernel(jpeg, type(image))
+    return kernel(image, quality=quality)
+
+
+@_register_kernel_internal(jpeg, torch.Tensor)
+@_register_kernel_internal(jpeg, tv_tensors.Image)
+def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
+    original_shape = image.shape
+    image = image.view((-1,) + image.shape[-3:])
+
+    if image.shape[0] == 0:  # degenerate
+        return image.reshape(original_shape).clone()
+
+    image = [decode_jpeg(encode_jpeg(image[i], quality=quality)) for i in range(image.shape[0])]
+    image = torch.stack(image, dim=0).view(original_shape)
+    return image
+
+
+@_register_kernel_internal(jpeg, tv_tensors.Video)
+def jpeg_video(video: torch.Tensor, quality: int) -> torch.Tensor:
+    return jpeg_image(video, quality=quality)
+
+
+@_register_kernel_internal(jpeg, PIL.Image.Image)
+def _jpeg_image_pil(image: PIL.Image.Image, quality: int) -> PIL.Image.Image:
+    raw_jpeg = io.BytesIO()
+    image.save(raw_jpeg, format="JPEG", quality=quality)
+
+    # we need to copy since PIL.Image.open() will return PIL.JpegImagePlugin.JpegImageFile
+    # which is a sub-class of PIL.Image.Image. this will fail check_transform() test.
+    return PIL.Image.open(raw_jpeg).copy()
