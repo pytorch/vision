@@ -1,6 +1,7 @@
 import csv
 import os
-from typing import Any, Callable, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -14,7 +15,7 @@ class Kitti(VisionDataset):
     It corresponds to the "left color images of object" dataset, for object detection.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
             Expects the following folder structure if download=False:
 
             .. code::
@@ -51,7 +52,7 @@ class Kitti(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         train: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
