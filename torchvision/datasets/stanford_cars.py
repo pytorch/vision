@@ -61,12 +61,7 @@ class StanfordCars(VisionDataset):
             self._images_base_path = self._base_folder / "cars_test"
 
         if download:
-            raise ValueError(
-                "The original URL is broken so the StanfordCars dataset is not available for automatic "
-                "download anymore. You can try to download it manually following "
-                "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616, "
-                "and set download=False to avoid this error."
-            )
+            self.download()
 
         if not self._check_exists():
             raise RuntimeError(
@@ -104,3 +99,11 @@ class StanfordCars(VisionDataset):
             return False
 
         return self._annotations_mat_path.exists() and self._images_base_path.is_dir()
+
+    def download(self):
+        raise ValueError(
+            "The original URL is broken so the StanfordCars dataset is not available for automatic "
+            "download anymore. You can try to download it manually following "
+            "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616, "
+            "and set download=False to avoid this error."
+        )
