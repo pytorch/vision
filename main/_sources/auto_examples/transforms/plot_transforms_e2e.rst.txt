@@ -284,8 +284,8 @@ semantic segmentation tasks.
         # We need a custom collation function here, since the object detection
         # models expect a sequence of images and target dictionaries. The default
         # collation function tries to torch.stack() the individual elements,
-        # which fails in general for object detection, because the number of bouding
-        # boxes varies between the images of a same batch.
+        # which fails in general for object detection, because the number of bounding
+        # boxes varies between the images of the same batch.
         collate_fn=lambda batch: tuple(zip(*batch)),
     )
 
@@ -336,7 +336,7 @@ v2). So don't be afraid to simplify and only keep what you need.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 5.026 seconds)
+   **Total running time of the script:** (0 minutes 4.898 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py:
