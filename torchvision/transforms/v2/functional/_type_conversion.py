@@ -4,6 +4,7 @@ import numpy as np
 import PIL.Image
 import torch
 from torchvision import tv_tensors
+from torchvision.io import read_image
 from torchvision.transforms import functional as _F
 
 
