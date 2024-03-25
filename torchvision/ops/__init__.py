@@ -9,6 +9,7 @@ from .boxes import (
     distance_box_iou,
     generalized_box_iou,
     masks_to_boxes,
+    masks_to_boundaries,
     nms,
     remove_small_boxes,
 )
@@ -32,6 +33,7 @@ _register_custom_op()
 
 __all__ = [
     "masks_to_boxes",
+    "masks_to_boundaries",
     "deform_conv2d",
     "DeformConv2d",
     "nms",
