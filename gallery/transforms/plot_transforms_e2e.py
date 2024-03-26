@@ -151,8 +151,8 @@ data_loader = torch.utils.data.DataLoader(
     # We need a custom collation function here, since the object detection
     # models expect a sequence of images and target dictionaries. The default
     # collation function tries to torch.stack() the individual elements,
-    # which fails in general for object detection, because the number of bouding
-    # boxes varies between the images of a same batch.
+    # which fails in general for object detection, because the number of bounding
+    # boxes varies between the images of the same batch.
     collate_fn=lambda batch: tuple(zip(*batch)),
 )
 
