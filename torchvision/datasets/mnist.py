@@ -277,7 +277,7 @@ class EMNIST(MNIST):
     """
 
     url = "https://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip"
-    md5 = "58c8d27c78d21e728a6bc7b3cc06412e"
+    md5 = "da27c6aef6e4d594e7b406fd036ab412"
     splits = ("byclass", "bymerge", "balanced", "letters", "digits", "mnist")
     # Merged Classes assumes Same structure for both uppercase and lowercase version
     _merged_classes = {"c", "i", "j", "k", "l", "m", "o", "p", "s", "u", "v", "w", "x", "y", "z"}
