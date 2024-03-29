@@ -203,7 +203,7 @@ torch::Tensor decode_jpeg(
 
   int exif_orientation = -1;
   if (apply_exif_orientation) {
-    exif_orientation = fetch_exif_orientation(&cinfo);
+    exif_orientation = fetch_jpeg_exif_orientation(&cinfo);
   }
 
   jpeg_start_decompress(&cinfo);
