@@ -1,6 +1,6 @@
-import ssl
 import os.path
 import pickle
+import ssl
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
@@ -62,7 +62,6 @@ class CIFAR10(VisionDataset):
         super().__init__(root, transform=transform, target_transform=target_transform)
 
         self.train = train  # training set or test set
-
 
         if download:
             try:
