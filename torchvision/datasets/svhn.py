@@ -1,10 +1,12 @@
-from __future__ import print_function
-from .vision import VisionDataset
-from PIL import Image
-import os
 import os.path
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
+
 import numpy as np
-from .utils import download_url, check_integrity
+from PIL import Image
+
+from .utils import check_integrity, download_url, verify_str_arg
+from .vision import VisionDataset
 
 
 class SVHN(VisionDataset):
@@ -13,12 +15,15 @@ class SVHN(VisionDataset):
     we assign the label `0` to the digit `0` to be compatible with PyTorch loss functions which
     expect the class labels to be in the range `[0, C-1]`
 
+    .. warning::
+
+        This class needs `scipy <https://docs.scipy.org/doc/>`_ to load data from `.mat` format.
+
     Args:
-        root (string): Root directory of dataset where directory
-            ``SVHN`` exists.
+        root (str or ``pathlib.Path``): Root directory of the dataset where the data is stored.
         split (string): One of {'train', 'test', 'extra'}.
             Accordingly dataset is selected. 'extra' is Extra training set.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -27,29 +32,35 @@ class SVHN(VisionDataset):
             downloaded again.
 
     """
-    url = ""
-    filename = ""
-    file_md5 = ""
 
     split_list = {
-        'train': ["http://ufldl.stanford.edu/housenumbers/train_32x32.mat",
-                  "train_32x32.mat", "e26dedcc434d2e4c54c9b2d4a06d8373"],
-        'test': ["http://ufldl.stanford.edu/housenumbers/test_32x32.mat",
-                 "test_32x32.mat", "eb5a983be6a315427106f1b164d9cef3"],
-        'extra': ["http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
-                  "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]}
+        "train": [
+            "http://ufldl.stanford.edu/housenumbers/train_32x32.mat",
+            "train_32x32.mat",
+            "e26dedcc434d2e4c54c9b2d4a06d8373",
+        ],
+        "test": [
+            "http://ufldl.stanford.edu/housenumbers/test_32x32.mat",
+            "test_32x32.mat",
+            "eb5a983be6a315427106f1b164d9cef3",
+        ],
+        "extra": [
+            "http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
+            "extra_32x32.mat",
+            "a93ce644f1a588dc4d68dda5feec44a7",
+        ],
+    }
 
-    def __init__(self, root, split='train',
-                 transform=None, target_transform=None, download=False):
-        super(SVHN, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
-        self.split = split  # training set or test set or extra set
-
-        if self.split not in self.split_list:
-            raise ValueError('Wrong split entered! Please use split="train" '
-                             'or split="extra" or split="test"')
-
+    def __init__(
+        self,
+        root: Union[str, Path],
+        split: str = "train",
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
+    ) -> None:
+        super().__init__(root, transform=transform, target_transform=target_transform)
+        self.split = verify_str_arg(split, "split", tuple(self.split_list.keys()))
         self.url = self.split_list[split][0]
         self.filename = self.split_list[split][1]
         self.file_md5 = self.split_list[split][2]
@@ -58,8 +69,7 @@ class SVHN(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError('Dataset not found or corrupted.' +
-                               ' You can use download=True to download it')
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         # import here rather than at top of file because this is
         # an optional dependency for torchvision
@@ -68,12 +78,12 @@ class SVHN(VisionDataset):
         # reading(loading) mat file as array
         loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
 
-        self.data = loaded_mat['X']
-        # loading from the .mat file gives an np array of type np.uint8
+        self.data = loaded_mat["X"]
+        # loading from the .mat file gives an np.ndarray of type np.uint8
         # converting to np.int64, so that we have a LongTensor after
         # the conversion from the numpy array
         # the squeeze is needed to obtain a 1D tensor
-        self.labels = loaded_mat['y'].astype(np.int64).squeeze()
+        self.labels = loaded_mat["y"].astype(np.int64).squeeze()
 
         # the svhn dataset assigns the class label "10" to the digit 0
         # this makes it inconsistent with several loss functions
@@ -81,7 +91,7 @@ class SVHN(VisionDataset):
         np.place(self.labels, self.labels == 10, 0)
         self.data = np.transpose(self.data, (3, 2, 0, 1))
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -103,18 +113,18 @@ class SVHN(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
-    def _check_integrity(self):
+    def _check_integrity(self) -> bool:
         root = self.root
         md5 = self.split_list[self.split][2]
         fpath = os.path.join(root, self.filename)
         return check_integrity(fpath, md5)
 
-    def download(self):
+    def download(self) -> None:
         md5 = self.split_list[self.split][2]
         download_url(self.url, self.root, self.filename, md5)
 
-    def extra_repr(self):
+    def extra_repr(self) -> str:
         return "Split: {split}".format(**self.__dict__)

@@ -1,15 +1,22 @@
 import bisect
-from collections import defaultdict
 import copy
-import numpy as np
+import math
+from collections import defaultdict
+from itertools import chain, repeat
 
+import numpy as np
 import torch
 import torch.utils.data
+import torchvision
+from PIL import Image
 from torch.utils.data.sampler import BatchSampler, Sampler
 from torch.utils.model_zoo import tqdm
-import torchvision
 
-from PIL import Image
+
+def _repeat_to_at_least(iterable, n):
+    repeat_times = math.ceil(n / len(iterable))
+    repeated = chain.from_iterable(repeat(iterable, repeat_times))
+    return list(repeated)
 
 
 class GroupedBatchSampler(BatchSampler):
@@ -18,7 +25,7 @@ class GroupedBatchSampler(BatchSampler):
     It enforces that the batch only contain elements from the same group.
     It also tries to provide mini-batches which follows an ordering which is
     as close as possible to the ordering from the original sampler.
-    Arguments:
+    Args:
         sampler (Sampler): Base sampler.
         group_ids (list[int]): If the sampler produces indices in range [0, N),
             `group_ids` must be a list of `N` ints which contains the group id of each sample.
@@ -26,12 +33,10 @@ class GroupedBatchSampler(BatchSampler):
             0, i.e. they must be in the range [0, num_groups).
         batch_size (int): Size of mini-batch.
     """
+
     def __init__(self, sampler, group_ids, batch_size):
         if not isinstance(sampler, Sampler):
-            raise ValueError(
-                "sampler should be an instance of "
-                "torch.utils.data.Sampler, but got sampler={}".format(sampler)
-            )
+            raise ValueError(f"sampler should be an instance of torch.utils.data.Sampler, but got sampler={sampler}")
         self.sampler = sampler
         self.group_ids = group_ids
         self.batch_size = batch_size
@@ -58,13 +63,12 @@ class GroupedBatchSampler(BatchSampler):
         expected_num_batches = len(self)
         num_remaining = expected_num_batches - num_batches
         if num_remaining > 0:
-            # for the remaining batches, take first the buffers with largest number
+            # for the remaining batches, take first the buffers with the largest number
             # of elements
-            for group_id, _ in sorted(buffer_per_group.items(),
-                                      key=lambda x: len(x[1]), reverse=True):
+            for group_id, _ in sorted(buffer_per_group.items(), key=lambda x: len(x[1]), reverse=True):
                 remaining = self.batch_size - len(buffer_per_group[group_id])
-                buffer_per_group[group_id].extend(
-                    samples_per_group[group_id][:remaining])
+                samples_from_group_id = _repeat_to_at_least(samples_per_group[group_id], remaining)
+                buffer_per_group[group_id].extend(samples_from_group_id[:remaining])
                 assert len(buffer_per_group[group_id]) == self.batch_size
                 yield buffer_per_group[group_id]
                 num_remaining -= 1
@@ -77,10 +81,12 @@ class GroupedBatchSampler(BatchSampler):
 
 
 def _compute_aspect_ratios_slow(dataset, indices=None):
-    print("Your dataset doesn't support the fast path for "
-          "computing the aspect ratios, so will iterate over "
-          "the full dataset and load every image instead. "
-          "This might take some time...")
+    print(
+        "Your dataset doesn't support the fast path for "
+        "computing the aspect ratios, so will iterate over "
+        "the full dataset and load every image instead. "
+        "This might take some time..."
+    )
     if indices is None:
         indices = range(len(dataset))
 
@@ -96,15 +102,18 @@ def _compute_aspect_ratios_slow(dataset, indices=None):
 
     sampler = SubsetSampler(indices)
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=1, sampler=sampler,
+        dataset,
+        batch_size=1,
+        sampler=sampler,
         num_workers=14,  # you might want to increase it for faster processing
-        collate_fn=lambda x: x[0])
+        collate_fn=lambda x: x[0],
+    )
     aspect_ratios = []
     with tqdm(total=len(dataset)) as pbar:
-        for i, (img, _) in enumerate(data_loader):
+        for _i, (img, _) in enumerate(data_loader):
             pbar.update(1)
             height, width = img.shape[-2:]
-            aspect_ratio = float(height) / float(width)
+            aspect_ratio = float(width) / float(height)
             aspect_ratios.append(aspect_ratio)
     return aspect_ratios
 
@@ -115,7 +124,7 @@ def _compute_aspect_ratios_custom_dataset(dataset, indices=None):
     aspect_ratios = []
     for i in indices:
         height, width = dataset.get_height_and_width(i)
-        aspect_ratio = float(height) / float(width)
+        aspect_ratio = float(width) / float(height)
         aspect_ratios.append(aspect_ratio)
     return aspect_ratios
 
@@ -126,7 +135,7 @@ def _compute_aspect_ratios_coco_dataset(dataset, indices=None):
     aspect_ratios = []
     for i in indices:
         img_info = dataset.coco.imgs[dataset.ids[i]]
-        aspect_ratio = float(img_info["height"]) / float(img_info["width"])
+        aspect_ratio = float(img_info["width"]) / float(img_info["height"])
         aspect_ratios.append(aspect_ratio)
     return aspect_ratios
 
@@ -138,7 +147,7 @@ def _compute_aspect_ratios_voc_dataset(dataset, indices=None):
     for i in indices:
         # this doesn't load the data into memory, because PIL loads it lazily
         width, height = Image.open(dataset.images[i]).size
-        aspect_ratio = float(height) / float(width)
+        aspect_ratio = float(width) / float(height)
         aspect_ratios.append(aspect_ratio)
     return aspect_ratios
 
@@ -182,6 +191,6 @@ def create_aspect_ratio_groups(dataset, k=0):
     # count number of elements per group
     counts = np.unique(groups, return_counts=True)[1]
     fbins = [0] + bins + [np.inf]
-    print("Using {} as bins for aspect ratio quantization".format(fbins))
-    print("Count of instances per bin: {}".format(counts))
+    print(f"Using {fbins} as bins for aspect ratio quantization")
+    print(f"Count of instances per bin: {counts}")
     return groups

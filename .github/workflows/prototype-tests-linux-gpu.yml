@@ -1,0 +1,55 @@
+name: Prototype tests on Linux
+
+on:
+  pull_request:
+
+jobs:
+  unittests-prototype:
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+        runner: ["linux.12xlarge"]
+        gpu-arch-type: ["cpu"]
+        include:
+          - python-version: "3.8"
+            runner: linux.g5.4xlarge.nvidia.gpu
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.8"
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      runner: ${{ matrix.runner }}
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      timeout: 120
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        ./.github/scripts/setup-env.sh
+        
+        # Prepare conda
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda activate ci
+
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off pytest pytest-mock pytest-cov
+        echo '::endgroup::'
+
+        # We don't want to run the prototype datasets tests. Since the positional glob into `pytest`, i.e.
+        # `test/test_prototype*.py` takes the highest priority, neither `--ignore` nor `--ignore-glob` can help us here.
+        rm test/test_prototype_datasets*.py
+        pytest \
+          -v --durations=25 \
+          --cov=torchvision/prototype --cov-report=term-missing \
+          --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" \
+          test/test_prototype_*.py

@@ -1,0 +1,18 @@
+[tool.usort]
+
+first_party_detection = false
+
+[tool.black]
+
+line-length = 120
+target-version = ["py38"]
+
+[tool.ufmt]
+
+excludes = [
+    "gallery",
+]
+
+[build-system]
+
+requires = ["setuptools", "torch", "wheel"]

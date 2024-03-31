@@ -1,0 +1,93 @@
+apply plugin: 'com.android.library'
+apply plugin: 'maven'
+
+repositories {
+  mavenCentral()
+  maven {
+    url "https://oss.sonatype.org/content/repositories/snapshots"
+  }
+  flatDir {
+    dirs 'aars'
+  }
+}
+
+android {
+    configurations {
+        extractForNativeBuild
+    }
+    compileSdkVersion rootProject.compileSdkVersion
+    buildToolsVersion rootProject.buildToolsVersion
+
+
+    defaultConfig {
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+        versionCode 0
+        versionName "0.1"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters ABI_FILTERS.split(",")
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            debuggable true
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+
+    useLibrary 'android.test.runner'
+    useLibrary 'android.test.base'
+    useLibrary 'android.test.mock'
+}
+
+dependencies {
+    implementation 'com.android.support:appcompat-v7:' + rootProject.androidSupportAppCompatV7Version
+
+    extractForNativeBuild "org.pytorch:pytorch_android:$pytorchAndroidVersion"
+
+    // For testing: deps on local aar files
+    //implementation(name: 'pytorch_android-release', ext: 'aar')
+    //extractForNativeBuild(name: 'pytorch_android-release', ext: 'aar')
+    //implementation 'com.facebook.fbjni:fbjni-java-only:0.0.3'
+}
+
+task extractAARForNativeBuild {
+  doLast {
+    configurations.extractForNativeBuild.files.each {
+      def file = it.absoluteFile
+      copy {
+        from zipTree(file)
+        into "$buildDir/$file.name"
+        include "headers/**"
+        include "jni/**"
+      }
+    }
+  }
+}
+
+tasks.whenTaskAdded { task ->
+  if (task.name.contains('externalNativeBuild')) {
+    task.dependsOn(extractAARForNativeBuild)
+  }
+}
+
+apply from: rootProject.file('gradle_scripts/release.gradle')
+
+task sourcesJar(type: Jar) {
+  from android.sourceSets.main.java.srcDirs
+  classifier = 'sources'
+}
+
+artifacts.add('archives', sourcesJar)

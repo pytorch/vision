@@ -1,3 +1,8 @@
-sphinx
-sphinxcontrib-googleanalytics
--e git://github.com/snide/sphinx_rtd_theme.git#egg=sphinx_rtd_theme
+matplotlib
+numpy
+sphinx-copybutton>=0.3.1
+sphinx-gallery>=0.11.1
+sphinx==5.0.0
+tabulate
+-e git+https://github.com/pytorch/pytorch_sphinx_theme.git#egg=pytorch_sphinx_theme
+pycocotools

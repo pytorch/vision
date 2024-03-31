@@ -1,0 +1,32 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-docstring-first
+      - id: check-toml
+      - id: check-yaml
+        exclude: packaging/.*
+        args:
+          - --allow-multiple-documents
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: end-of-file-fixer
+
+  - repo: https://github.com/omnilib/ufmt
+    rev: v1.3.3
+    hooks:
+      - id: ufmt
+        additional_dependencies:
+          - black == 22.3.0
+          - usort == 1.0.2
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 5.0.4
+    hooks:
+      - id: flake8
+        args: [--config=setup.cfg]
+
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.1.1
+    hooks:
+      - id: pydocstyle

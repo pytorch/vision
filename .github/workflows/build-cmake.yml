@@ -1,0 +1,86 @@
+name: CMake
+
+on:
+  pull_request:
+  push:
+    branches:
+      - nightly
+      - main
+      - release/*
+  workflow_dispatch:
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        include:
+          - runner: linux.12xlarge
+            gpu-arch-type: cpu
+          - runner: linux.g5.4xlarge.nvidia.gpu
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.8"
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      repository: pytorch/vision
+      runner: ${{ matrix.runner }}
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      test-infra-ref: main
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=3.8
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+
+        ./.github/scripts/cmake.sh
+
+  macos:
+    strategy:
+      matrix:
+        include:
+          - runner: macos-12
+          - runner: macos-m1-stable
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    with:
+      repository: pytorch/vision
+      runner: ${{ matrix.runner }}
+      test-infra-ref: main
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=3.8
+        export GPU_ARCH_TYPE=cpu
+        export GPU_ARCH_VERSION=''
+
+        ./.github/scripts/cmake.sh
+
+  windows:
+    strategy:
+      matrix:
+        include:
+          - runner: windows.4xlarge
+            gpu-arch-type: cpu
+          - runner: windows.g5.4xlarge.nvidia.gpu
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.8"
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    with:
+      repository: pytorch/vision
+      runner: ${{ matrix.runner }}
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      test-infra-ref: main
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=3.8
+        export VC_YEAR=2022
+        export VSDEVCMD_ARGS=""
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+
+        ./.github/scripts/cmake.sh

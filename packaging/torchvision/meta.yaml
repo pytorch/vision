@@ -1,0 +1,72 @@
+{% set build_variant = environ.get('CONDA_BUILD_VARIANT', 'cpu') %}
+package:
+  name: torchvision
+  version: "{{ environ.get('BUILD_VERSION') }}"
+
+source:
+ path: "{{ environ.get('SOURCE_ROOT_DIR') }}"
+
+requirements:
+  build:
+    - {{ compiler('c') }} # [win]
+    - libpng
+    - libjpeg-turbo
+    - ffmpeg >=4.2  # [linux]
+
+  host:
+    - python
+    - setuptools
+    - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
+    {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
+    {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT', '') }}
+
+  run:
+    - python
+    - defaults::numpy >=1.11 # [py <= 310]
+    - numpy >=1.23.5 # [py >= 311]
+    - requests
+    - libpng
+    - ffmpeg >=4.2  # [linux]
+    - libjpeg-turbo
+    - pillow >=5.3.0, !=8.3.*
+    - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
+    {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
+    {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT', '') }}
+
+  {% if build_variant == 'cpu' %}
+  run_constrained:
+    - cpuonly
+  {% elif not osx %}
+  run_constrained:
+     - cpuonly <0
+  {% endif %}
+
+build:
+  string: py{{py}}_{{ environ['CU_VERSION'] }}
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+  script_env:
+    - CUDA_HOME
+    - FORCE_CUDA
+    - BUILD_VERSION
+    - TORCH_CUDA_ARCH_LIST
+    - MACOSX_DEPLOYMENT_TARGET
+
+test:
+  imports:
+    - torchvision
+    - torchvision.datasets
+    - torchvision.transforms
+  source_files:
+    - test
+  requires:
+    - pytest
+    - scipy
+    - libjpeg-turbo
+    - ca-certificates
+
+
+about:
+  home: https://github.com/pytorch/vision
+  license: BSD
+  license_file: LICENSE
+  summary: 'image and video datasets and models for torch deep learning'

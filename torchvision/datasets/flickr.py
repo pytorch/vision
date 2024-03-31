@@ -1,71 +1,78 @@
-from collections import defaultdict
-from PIL import Image
-from six.moves import html_parser
-
 import glob
 import os
+from collections import defaultdict
+from html.parser import HTMLParser
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+from PIL import Image
+
 from .vision import VisionDataset
 
 
-class Flickr8kParser(html_parser.HTMLParser):
+class Flickr8kParser(HTMLParser):
     """Parser for extracting captions from the Flickr8k dataset web page."""
 
-    def __init__(self, root):
-        super(Flickr8kParser, self).__init__()
+    def __init__(self, root: Union[str, Path]) -> None:
+        super().__init__()
 
         self.root = root
 
         # Data structure to store captions
-        self.annotations = {}
+        self.annotations: Dict[str, List[str]] = {}
 
         # State variables
         self.in_table = False
-        self.current_tag = None
-        self.current_img = None
+        self.current_tag: Optional[str] = None
+        self.current_img: Optional[str] = None
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
         self.current_tag = tag
 
-        if tag == 'table':
+        if tag == "table":
             self.in_table = True
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         self.current_tag = None
 
-        if tag == 'table':
+        if tag == "table":
             self.in_table = False
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         if self.in_table:
-            if data == 'Image Not Found':
+            if data == "Image Not Found":
                 self.current_img = None
-            elif self.current_tag == 'a':
-                img_id = data.split('/')[-2]
-                img_id = os.path.join(self.root, img_id + '_*.jpg')
+            elif self.current_tag == "a":
+                img_id = data.split("/")[-2]
+                img_id = os.path.join(self.root, img_id + "_*.jpg")
                 img_id = glob.glob(img_id)[0]
                 self.current_img = img_id
                 self.annotations[img_id] = []
-            elif self.current_tag == 'li' and self.current_img:
+            elif self.current_tag == "li" and self.current_img:
                 img_id = self.current_img
                 self.annotations[img_id].append(data.strip())
 
 
 class Flickr8k(VisionDataset):
-    """`Flickr8k Entities <http://nlp.cs.illinois.edu/HockenmaierGroup/8k-pictures.html>`_ Dataset.
+    """`Flickr8k Entities <http://hockenmaier.cs.illinois.edu/8k-pictures.html>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
 
-    def __init__(self, root, ann_file, transform=None, target_transform=None):
-        super(Flickr8k, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+    def __init__(
+        self,
+        root: Union[str, Path],
+        ann_file: str,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+    ) -> None:
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 
         # Read annotations and store in a dict
@@ -76,7 +83,7 @@ class Flickr8k(VisionDataset):
 
         self.ids = list(sorted(self.annotations.keys()))
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -87,7 +94,7 @@ class Flickr8k(VisionDataset):
         img_id = self.ids[index]
 
         # Image
-        img = Image.open(img_id).convert('RGB')
+        img = Image.open(img_id).convert("RGB")
         if self.transform is not None:
             img = self.transform(img)
 
@@ -98,38 +105,42 @@ class Flickr8k(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ids)
 
 
 class Flickr30k(VisionDataset):
-    """`Flickr30k Entities <http://web.engr.illinois.edu/~bplumme2/Flickr30kEntities/>`_ Dataset.
+    """`Flickr30k Entities <https://bryanplummer.com/Flickr30kEntities/>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
 
-    def __init__(self, root, ann_file, transform=None, target_transform=None):
-        super(Flickr30k, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+    def __init__(
+        self,
+        root: str,
+        ann_file: str,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+    ) -> None:
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 
         # Read annotations and store in a dict
         self.annotations = defaultdict(list)
         with open(self.ann_file) as fh:
             for line in fh:
-                img_id, caption = line.strip().split('\t')
+                img_id, caption = line.strip().split("\t")
                 self.annotations[img_id[:-2]].append(caption)
 
         self.ids = list(sorted(self.annotations.keys()))
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -141,7 +152,7 @@ class Flickr30k(VisionDataset):
 
         # Image
         filename = os.path.join(self.root, img_id)
-        img = Image.open(filename).convert('RGB')
+        img = Image.open(filename).convert("RGB")
         if self.transform is not None:
             img = self.transform(img)
 
@@ -152,5 +163,5 @@ class Flickr30k(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ids)

@@ -1,0 +1,3 @@
+apply from: rootProject.file('gradle_scripts/android_tasks.gradle')
+
+apply plugin: 'com.vanniktech.maven.publish'
