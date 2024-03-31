@@ -1,3 +1,4 @@
+import ssl
 import os.path
 import pickle
 from pathlib import Path
@@ -62,8 +63,15 @@ class CIFAR10(VisionDataset):
 
         self.train = train  # training set or test set
 
+
         if download:
-            self.download()
+            try:
+                self.download()
+            except:
+                original_https_context = ssl._create_default_https_context
+                ssl._create_default_https_context = ssl._create_unverified_context
+                self.download()
+                ssl._create_default_https_context = original_https_context
 
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
