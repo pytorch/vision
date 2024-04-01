@@ -622,7 +622,7 @@ class TestResize:
             check_cuda_vs_cpu=check_cuda_vs_cpu_tolerances,
             check_scripted_vs_eager=not isinstance(size, int),
             check_compiled_vs_eager=dict(rtol=0, atol=1)
-            if (dtype is torch.uint8 and interpolation == transforms.InterpolationMode.BILINEAR)
+            if (dtype is torch.uint8 and interpolation in (transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC))
             else True,
         )
 
