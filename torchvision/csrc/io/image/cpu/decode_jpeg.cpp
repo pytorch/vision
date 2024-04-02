@@ -6,7 +6,10 @@ namespace vision {
 namespace image {
 
 #if !JPEG_FOUND
-torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool apply_exif_orientation) {
   TORCH_CHECK(
       false, "decode_jpeg: torchvision not compiled with libjpeg support");
 }
@@ -200,7 +203,7 @@ torch::Tensor decode_jpeg(
 
   int exif_orientation = -1;
   if (apply_exif_orientation) {
-    exif_orientation = fetch_exif_orientation(&cinfo);
+    exif_orientation = fetch_jpeg_exif_orientation(&cinfo);
   }
 
   jpeg_start_decompress(&cinfo);

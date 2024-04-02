@@ -2,7 +2,8 @@ import glob
 import os
 from collections import defaultdict
 from html.parser import HTMLParser
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -12,7 +13,7 @@ from .vision import VisionDataset
 class Flickr8kParser(HTMLParser):
     """Parser for extracting captions from the Flickr8k dataset web page."""
 
-    def __init__(self, root: str) -> None:
+    def __init__(self, root: Union[str, Path]) -> None:
         super().__init__()
 
         self.root = root
@@ -56,7 +57,7 @@ class Flickr8k(VisionDataset):
     """`Flickr8k Entities <http://hockenmaier.cs.illinois.edu/8k-pictures.html>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
@@ -66,7 +67,7 @@ class Flickr8k(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         ann_file: str,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -112,7 +113,7 @@ class Flickr30k(VisionDataset):
     """`Flickr30k Entities <https://bryanplummer.com/Flickr30kEntities/>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``

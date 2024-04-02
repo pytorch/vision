@@ -33,7 +33,7 @@ jobs:
         export PYTHON_VERSION='3.8'
         export GPU_ARCH_TYPE='cpu'
         export GPU_ARCH_VERSION=''
-        
+
         export COMPILE_DYNAMIC='${{ matrix.dynamic }}'
         export COMPILE_BACKEND='${{ matrix.backend }}'
         export COMPILE_FULLGRAPH='${{ matrix.fullgraph }}'

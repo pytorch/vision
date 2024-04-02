@@ -1,5 +1,6 @@
 import os.path
-from typing import Callable, Optional
+from pathlib import Path
+from typing import Callable, Optional, Union
 
 import numpy as np
 import torch
@@ -11,7 +12,7 @@ class MovingMNIST(VisionDataset):
     """`MovingMNIST <http://www.cs.toronto.edu/~nitish/unsupervised_video/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``MovingMNIST/mnist_test_seq.npy`` exists.
+        root (str or ``pathlib.Path``): Root directory of dataset where ``MovingMNIST/mnist_test_seq.npy`` exists.
         split (string, optional): The dataset split, supports ``None`` (default), ``"train"`` and ``"test"``.
             If ``split=None``, the full data is returned.
         split_ratio (int, optional): The split ratio of number of frames. If ``split="train"``, the first split
@@ -28,7 +29,7 @@ class MovingMNIST(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: Optional[str] = None,
         split_ratio: int = 10,
         download: bool = False,
