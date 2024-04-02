@@ -23,8 +23,8 @@ class FER2013(VisionDataset):
     """
 
     _RESOURCES = {
-        "train": ("train.csv", "3f0dfb3d3fd99c811a1299cb947e3131"),
-        "test": ("test.csv", "b02c2298636a634e8c2faabbf3ea9a23"),
+        "train": ("icml_face_data.csv", "b114b9e04e6949e5fe8b6a98b3892b1d"),
+        "test": ("icml_face_data.csv", "b114b9e04e6949e5fe8b6a98b3892b1d"),
     }
 
     def __init__(
@@ -48,13 +48,19 @@ class FER2013(VisionDataset):
             )
 
         with open(data_file, "r", newline="") as file:
-            self._samples = [
-                (
-                    torch.tensor([int(idx) for idx in row["pixels"].split()], dtype=torch.uint8).reshape(48, 48),
-                    int(row["emotion"]) if "emotion" in row else None,
-                )
-                for row in csv.DictReader(file)
-            ]
+            reader = csv.DictReader(file)
+            self._samples = []
+            for row in reader:
+                cleaned_row = {name.strip(): value for name, value in row.items()}
+                if self._split in cleaned_row["Usage"].lower():
+                    self._samples.append(
+                        (
+                            torch.tensor(
+                                [int(idx) for idx in cleaned_row["pixels"].split()], dtype=torch.uint8
+                            ).reshape(48, 48),
+                            int(cleaned_row["emotion"]) if "emotion" in cleaned_row else None,
+                        )
+                    )
 
     def __len__(self) -> int:
         return len(self._samples)
