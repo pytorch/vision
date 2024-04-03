@@ -5327,6 +5327,18 @@ class TestPILToTensor:
             F.pil_to_tensor(object())
 
 
+@pytest.mark.parametrize("f", [F.to_tensor, F.pil_to_tensor])
+def test_I16_to_tensor(f):
+    # See https://github.com/pytorch/vision/issues/8359
+    I16_pil_img = PIL.Image.fromarray(np.random.randint(0, 2 ** 16, (10, 10), dtype=np.uint16))
+    assert I16_pil_img.mode == "I;16"
+
+    cm = pytest.warns(UserWarning, match="deprecated") if f is F.to_tensor else contextlib.nullcontext()
+    with cm:
+        out = f(I16_pil_img)
+    assert out.dtype == torch.uint16
+
+
 class TestLambda:
     @pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
     @pytest.mark.parametrize("types", [(), (torch.Tensor, np.ndarray)])
