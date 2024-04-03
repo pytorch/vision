@@ -5330,7 +5330,7 @@ class TestPILToTensor:
 @pytest.mark.parametrize("f", [F.to_tensor, F.pil_to_tensor])
 def test_I16_to_tensor(f):
     # See https://github.com/pytorch/vision/issues/8359
-    I16_pil_img = PIL.Image.fromarray(np.random.randint(0, 2 ** 16, (10, 10), dtype=np.uint16))
+    I16_pil_img = PIL.Image.fromarray(np.random.randint(0, 2**16, (10, 10), dtype=np.uint16))
     assert I16_pil_img.mode == "I;16"
 
     cm = pytest.warns(UserWarning, match="deprecated") if f is F.to_tensor else contextlib.nullcontext()
