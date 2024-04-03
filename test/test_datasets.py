@@ -2443,22 +2443,26 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
         os.makedirs(base_folder)
 
         num_samples = 5
-        with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
+        with open(os.path.join(base_folder, "icml_face_data.csv"), "w", newline="") as file:
             writer = csv.DictWriter(
                 file,
-                fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
+                fieldnames=("emotion", "pixels","Usage"),
                 quoting=csv.QUOTE_NONNUMERIC,
                 quotechar='"',
             )
             writer.writeheader()
-            for _ in range(num_samples):
+            for i in range(num_samples):
                 row = dict(
                     pixels=" ".join(
                         str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
                     )
                 )
-                if config["split"] == "train":
-                    row["emotion"] = str(int(torch.randint(0, 7, ())))
+                row["emotion"] = str(int(torch.randint(0, 7, ())))
+
+                if config["split"] == "test":
+                    row["Usage"] = "PublicTest" if i % 2 == 0 else "PrivateTest"
+                else:
+                    row["Usage"] = "Training"
 
                 writer.writerow(row)
 

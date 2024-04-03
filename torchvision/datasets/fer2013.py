@@ -51,8 +51,8 @@ class FER2013(VisionDataset):
             reader = csv.DictReader(file)
             self._samples = []
             for row in reader:
-                cleaned_row = {name.strip(): value for name, value in row.items()}
-                if self._split in cleaned_row["Usage"].lower():
+                cleaned_row = {name.strip().lower(): value for name, value in row.items()}
+                if self._split in cleaned_row["usage"].lower():
                     self._samples.append(
                         (
                             torch.tensor(
