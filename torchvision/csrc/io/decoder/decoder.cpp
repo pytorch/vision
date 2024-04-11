@@ -548,6 +548,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       continue;
     }
 
+
     size_t numConsecutiveNoBytes = 0;
     // it can be only partial decoding of the package bytes
     do {
@@ -590,6 +591,17 @@ int Decoder::getFrame(size_t workingTimeInMs) {
     result = 0;
 
     av_packet_unref(avPacket);
+
+    if (++kFramesDecoded_ == params_.uniformSampling) {
+      result = ENODATA;
+      flushStreams();
+      break;
+    }
+
+    int64_t stepTs = static_cast<int64_t>((params_.expectedDuration * AV_TIME_BASE) / (params_.uniformSampling - 1));
+    while (kFramesDecoded_ < params_.uniformSampling && avformat_seek_file(inputCtx_, -1, stepTs * (kFramesDecoded_ - 1) + 1, stepTs * kFramesDecoded_, stepTs * kFramesDecoded_, 0) < 0) {
+      ++kFramesDecoded_;
+    }
   }
 
   av_packet_free(&avPacket);

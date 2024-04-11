@@ -89,5 +89,6 @@ class Decoder : public MediaDecoder {
   AVIOContext* avioCtx_{nullptr};
   std::unordered_map<ssize_t, std::unique_ptr<Stream>> streams_;
   std::bitset<64> inRange_;
+  int kFramesDecoded_{0};
 };
 } // namespace ffmpeg
