@@ -1,4 +1,4 @@
-#include "decode_jpeg_cuda.h"
+#include "encode_decode_jpeg_cuda.h"
 
 #include <ATen/ATen.h>
 
@@ -24,10 +24,6 @@ torch::Tensor decode_jpeg_cuda(
 }
 
 #else
-
-namespace {
-static nvjpegHandle_t nvjpeg_handle = nullptr;
-}
 
 torch::Tensor decode_jpeg_cuda(
     const torch::Tensor& data,
@@ -71,23 +67,7 @@ torch::Tensor decode_jpeg_cuda(
   at::cuda::CUDAGuard device_guard(device);
 
   // Create global nvJPEG handle
-  static std::once_flag nvjpeg_handle_creation_flag;
-  std::call_once(nvjpeg_handle_creation_flag, []() {
-    if (nvjpeg_handle == nullptr) {
-      nvjpegStatus_t create_status = nvjpegCreateSimple(&nvjpeg_handle);
-
-      if (create_status != NVJPEG_STATUS_SUCCESS) {
-        // Reset handle so that one can still call the function again in the
-        // same process if there was a failure
-        free(nvjpeg_handle);
-        nvjpeg_handle = nullptr;
-      }
-      TORCH_CHECK(
-          create_status == NVJPEG_STATUS_SUCCESS,
-          "nvjpegCreateSimple failed: ",
-          create_status);
-    }
-  });
+  std::call_once(::nvjpeg_handle_creation_flag, nvjpeg_init);
 
   // Create the jpeg state
   nvjpegJpegState_t jpeg_state;

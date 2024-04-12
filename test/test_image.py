@@ -24,6 +24,7 @@ from torchvision.io.image import (
     write_jpeg,
     write_png,
 )
+import re
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
@@ -65,6 +66,110 @@ def normalize_dimensions(img_pil):
     else:
         img_pil = img_pil.unsqueeze(0)
     return img_pil
+
+
+@needs_cuda
+@pytest.mark.parametrize(
+    "img_path",
+    [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(IMAGE_ROOT, ".jpg")],
+)
+@pytest.mark.parametrize("scripted", (False, True))
+@pytest.mark.parametrize("contiguous", (False, True))
+def test_single_encode_jpeg_cuda(img_path, scripted, contiguous):
+    decoded_image_tv = read_image(img_path)
+    encode_fn = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
+
+    if "cmyk" in img_path:
+        pytest.xfail("Encoding a CMYK jpeg isn't supported")
+    if decoded_image_tv.shape[0] == 1:
+        pytest.xfail("Decoding a grayscale jpeg isn't supported")
+        # For more detail as to why check out: https://github.com/NVIDIA/cuda-samples/issues/23#issuecomment-559283013
+    if not contiguous:
+        decoded_image_tv = decoded_image_tv.permute(1, 2, 0).contiguous().permute(2,0,1)
+    encoded_jpeg_cuda_tv = encode_fn(decoded_image_tv.cuda(), quality=75)
+    decoded_jpeg_cuda_tv = decode_jpeg(encoded_jpeg_cuda_tv.cpu())
+
+    # the actual encoded bytestreams from libnvjpeg and libjpeg-turbo differ for the same quality
+    # instead, we re-decode the encoded image and compare to the original
+    abs_mean_diff = (decoded_jpeg_cuda_tv.type(torch.float32) - decoded_image_tv.type(torch.float32)).abs().mean().item()
+    assert abs_mean_diff < 3
+
+
+@needs_cuda
+@pytest.mark.parametrize("scripted", (False, True))
+@pytest.mark.parametrize("contiguous", (False, True))
+def test_batch_encode_jpegs_cuda(scripted, contiguous):
+    decoded_images_tv = []
+    for jpeg_path in get_images(IMAGE_ROOT, ".jpg"):
+        if "cmyk" in jpeg_path:
+            continue
+        decoded_image = read_image(jpeg_path)
+        if decoded_image.shape[0] == 1:
+            continue
+        if not contiguous:
+            decoded_image = decoded_image.permute(1, 2, 0).contiguous().permute(2,0,1)
+        decoded_images_tv.append(decoded_image)
+
+    encode_fn = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
+
+    decoded_images_tv_cuda = [img.cuda() for img in decoded_images_tv]
+    encoded_jpegs_tv_cuda = encode_fn(decoded_images_tv_cuda, quality=75)
+    decoded_jpegs_tv_cuda = [decode_jpeg(img.cpu()) for img in encoded_jpegs_tv_cuda]
+
+
+    for original, encoded_decoded in zip(decoded_images_tv, decoded_jpegs_tv_cuda):
+        c,h,w = original.shape
+        abs_mean_diff = (original.type(torch.float32) - encoded_decoded.type(torch.float32)).abs().mean().item()
+        assert abs_mean_diff < 3
+
+
+@needs_cuda
+def test_single_encode_jpeg_cuda_errors():
+    with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
+        encode_jpeg(torch.empty((3, 100, 100), dtype=torch.float32, device="cuda"))
+
+    with pytest.raises(RuntimeError, match="The number of channels should be 3, got: 5"):
+        encode_jpeg(torch.empty((5, 100, 100), dtype=torch.uint8, device="cuda"))
+
+    with pytest.raises(RuntimeError, match="The number of channels should be 3, got: 1"):
+        encode_jpeg(torch.empty((1, 100, 100), dtype=torch.uint8, device="cuda"))
+
+    with pytest.raises(RuntimeError, match="Input data should be a 3-dimensional tensor"):
+        encode_jpeg(torch.empty((1, 3, 100, 100), dtype=torch.uint8, device="cuda"))
+
+    with pytest.raises(RuntimeError, match="Input data should be a 3-dimensional tensor"):
+        encode_jpeg(torch.empty((100, 100), dtype=torch.uint8, device="cuda"))
+
+
+@needs_cuda
+def test_batch_encode_jpegs_cuda_errors():
+    with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
+        encode_jpeg([torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda"), torch.empty((3, 100, 100), dtype=torch.float32, device="cuda")])
+
+    with pytest.raises(RuntimeError, match="The number of channels should be 3, got: 5"):
+        encode_jpeg([torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda"), torch.empty((5, 100, 100), dtype=torch.uint8, device="cuda")])
+
+    with pytest.raises(RuntimeError, match="The number of channels should be 3, got: 1"):
+        encode_jpeg([torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda"), torch.empty((1, 100, 100), dtype=torch.uint8, device="cuda")])
+
+    with pytest.raises(RuntimeError, match="Input data should be a 3-dimensional tensor"):
+        encode_jpeg([torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda"), torch.empty((1, 3, 100, 100), dtype=torch.uint8, device="cuda")])
+
+    with pytest.raises(RuntimeError, match="Input data should be a 3-dimensional tensor"):
+        encode_jpeg([torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda"), torch.empty((100, 100), dtype=torch.uint8, device="cuda")])
+
+    with pytest.raises(RuntimeError, match="Input tensor should be on CPU"):
+        encode_jpeg([torch.empty((3, 100, 100), dtype=torch.uint8, device="cpu"), torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda")])
+
+    with pytest.raises(RuntimeError, match="All input tensors must be on the same CUDA device when encoding with nvjpeg"):
+        encode_jpeg([torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda"), torch.empty((3, 100, 100), dtype=torch.uint8, device="cpu")])
+
+    if torch.cuda.device_count() >= 2:
+        with pytest.raises(RuntimeError, match="All input tensors must be on the same CUDA device when encoding with nvjpeg"):
+            encode_jpeg([torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda:0"), torch.empty((3, 100, 100), dtype=torch.uint8, device="cuda:1")])
+
+    with pytest.raises(AssertionError, match="encode_jpeg requires at least one input tensor when a list is passed"):
+        encode_jpeg([])
 
 
 @pytest.mark.parametrize(
