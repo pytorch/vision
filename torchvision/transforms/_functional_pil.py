@@ -391,3 +391,22 @@ def equalize(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
     return ImageOps.equalize(img)
+
+@torch.jit.unused
+def gaussian_noise(img: Image.Image, mean: float = 0., var: float = 1.0) -> Image.Image:
+    if not _is_pil_image(img):
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
+
+    if var < 0:
+        raise ValueError(f"var shouldn't be negative. Got {var}")   
+
+    z = np.random.normal(
+        loc=mean,
+        scale=var,
+        size=(
+            *get_image_size(img), 
+            get_image_num_channels(img),
+        ),
+    )
+
+    return img + z

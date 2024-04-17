@@ -374,3 +374,24 @@ class RandomAdjustSharpness(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.adjust_sharpness, inpt, sharpness_factor=self.sharpness_factor)
+
+
+class GaussianNoise(Transform):
+    """Add gaussian noise to the image. Samples from `N(0, 1)` (standard normal distribution) by default.
+
+    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+    Args:
+        mean (float): Mean of the sampled gaussian distribution. Default is 0.
+        var (float): Variance of the sampled gaussian distribution. Default is 1.
+    """
+
+    def __init__(self, mean: float = 0., var: float = 1.) -> None:
+        super().__init__()
+        self.mean = mean
+        self.var = var
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        self._call_kernel(F.gaussian_noise, inpt, mean=self.mean, var=self.var)

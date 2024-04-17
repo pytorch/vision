@@ -737,3 +737,28 @@ def _permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) 
 @_register_kernel_internal(permute_channels, tv_tensors.Video)
 def permute_channels_video(video: torch.Tensor, permutation: List[int]) -> torch.Tensor:
     return permute_channels_image(video, permutation=permutation)
+
+def gaussian_noise(inpt: torch.Tensor, mean: float = 0., var: float = 1.) -> torch.Tensor:
+    """See :class:`~torchvision.transforms.v2.GaussianNoise`"""
+    if torch.jit.is_scripting():
+        return gaussian_noise_image(inpt, mean=mean, var=var)
+
+    _log_api_usage_once(gaussian_noise)
+
+    kernel = _get_kernel(gaussian_noise, type(inpt))
+    return kernel(inpt, mean=mean, var=var)
+
+@_register_kernel_internal(gaussian_noise, torch.Tensor)
+@_register_kernel_internal(gaussian_noise, tv_tensors.Image)
+def gaussian_noise_image(image: torch.Tensor, mean: float = 0., var: float = 1.) -> torch.Tensor:
+    if var < 0:
+        raise ValueError(f"var shouldn't be negative. Got {var}")
+
+    if image.numel() == 0:
+        return image
+
+    z = mean + torch.randn_like(image) * var
+
+    return image + z
+
+_gaussian_noise_pil = _register_kernel_internal(gaussian_noise, PIL.Image.Image)(_FP.gaussian_noise)
