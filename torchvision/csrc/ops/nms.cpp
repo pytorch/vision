@@ -19,6 +19,7 @@ at::Tensor nms(
 }
 
 TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.set_python_module("torchvision._meta_registrations");
   m.def(TORCH_SELECTIVE_SCHEMA(
       "torchvision::nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor"));
 }
