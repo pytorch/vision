@@ -14,6 +14,7 @@ from torchvision.io.image import (
     _read_png_16,
     decode_image,
     decode_jpeg,
+    batch_decode_jpegs,
     decode_png,
     encode_jpeg,
     encode_jpegs,
@@ -538,6 +539,11 @@ def test_decode_jpeg_cuda_errors():
     with pytest.raises(RuntimeError, match="Expected a cuda device"):
         torch.ops.image.decode_jpeg_cuda(data, ImageReadMode.UNCHANGED.value, "cpu")
 
+@needs_cuda
+def test_batch_decode_jpegs_cuda():
+    paths = get_images(IMAGE_ROOT, ".jpg")
+    encoded_jpegs = [read_file(path) for path in paths]
+    img1 = batch_decode_jpegs(encoded_jpegs, device="cuda")
 
 def test_encode_jpeg_errors():
 

@@ -183,6 +183,54 @@ def decode_jpeg(
     return output
 
 
+def batch_decode_jpegs(
+    inputs: List[torch.Tensor],
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
+    device: str = "cpu",
+    apply_exif_orientation: bool = False,
+) -> torch.Tensor:
+    """
+    Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
+    Optionally converts the image to the desired format.
+    The values of the output tensor are uint8 between 0 and 255.
+
+    Args:
+        input (Tensor[1]): a one dimensional uint8 tensor containing
+            the raw bytes of the JPEG image. This tensor must be on CPU,
+            regardless of the ``device`` parameter.
+        mode (ImageReadMode): the read mode used for optionally
+            converting the image. The supported modes are: ``ImageReadMode.UNCHANGED``,
+            ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``
+            Default: ``ImageReadMode.UNCHANGED``.
+            See ``ImageReadMode`` class for more information on various
+            available modes.
+        device (str or torch.device): The device on which the decoded image will
+            be stored. If a cuda device is specified, the image will be decoded
+            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
+            supported for CUDA version >= 10.1
+
+            .. betastatus:: device parameter
+
+            .. warning::
+                There is a memory leak in the nvjpeg library for CUDA versions < 11.6.
+                Make sure to rely on CUDA 11.6 or above before using ``device="cuda"``.
+        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
+            Default: False. Only implemented for JPEG format on CPU.
+
+    Returns:
+        output (Tensor[image_channels, image_height, image_width])
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(batch_decode_jpegs)
+    device = torch.device(device)
+    if device.type == "cuda":
+        output = torch.ops.image.batch_decode_jpegs(inputs, mode.value, device)
+    else:
+        output = [torch.ops.image.decode_jpeg(input, mode.value, apply_exif_orientation) for input in inputs]
+    return output
+
+
+
 def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
     """
     Takes an input tensor in CHW layout and returns a buffer with the contents

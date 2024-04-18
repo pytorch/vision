@@ -2,6 +2,7 @@
 
 #include <torch/types.h>
 #include "../image_read_mode.h"
+#include "batch_decode_jpegs.h"
 
 #if NVJPEG_FOUND
 #include <nvjpeg.h>
@@ -14,6 +15,11 @@ namespace vision {
 namespace image {
 
 C10_EXPORT torch::Tensor decode_jpeg_cuda(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    torch::Device device);
+
+C10_EXPORT torch::Tensor batch_decode_jpegs_cuda(
     const torch::Tensor& data,
     ImageReadMode mode,
     torch::Device device);
