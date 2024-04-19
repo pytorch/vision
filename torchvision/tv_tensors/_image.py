@@ -9,7 +9,7 @@ from ._tv_tensor import TVTensor
 
 
 class Image(TVTensor):
-    """:class:`torch.Tensor` subclass for images with a minimum shape of ``(C x H x W)``.
+    """:class:`torch.Tensor` subclass for images with shape ``[..., C, H, W]``.
 
     .. note::
 
