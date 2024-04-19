@@ -11,7 +11,7 @@
 #ifdef _WIN32
 PyMODINIT_FUNC PyInit_image(void) {
   // No need to do anything.
-  return NULL;
+  return nullptr;
 }
 #endif
 #endif // USE_PYTHON
@@ -21,7 +21,8 @@ namespace image {
 
 static auto registry =
     torch::RegisterOperators()
-        .op("image::decode_png", &decode_png)
+        .op("image::decode_png(Tensor data, int mode, bool allow_16_bits = False, bool apply_exif_orientation=False) -> Tensor",
+            &decode_png)
         .op("image::encode_png", &encode_png)
         .op("image::decode_jpeg(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor",
             &decode_jpeg)

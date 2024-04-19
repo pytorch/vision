@@ -50,9 +50,14 @@ direct,
 // Functions in this module are taken from OpenCV
 // https://github.com/opencv/opencv/blob/097891e311fae1d8354eb092a0fd0171e630d78c/modules/imgcodecs/src/exif.cpp
 
+#if JPEG_FOUND
 #include <jpeglib.h>
+#endif
+#if PNG_FOUND
+#include <png.h>
+#endif
+
 #include <torch/types.h>
-#include <vector>
 
 namespace vision {
 namespace image {
@@ -65,7 +70,23 @@ constexpr uint16_t REQ_EXIF_TAG_MARK = 0x2a;
 constexpr uint16_t ORIENTATION_EXIF_TAG = 0x0112;
 constexpr uint16_t INCORRECT_TAG = -1;
 
-inline uint16_t get_endianness(const std::vector<unsigned char>& exif_data) {
+class ExifDataReader {
+ public:
+  ExifDataReader(unsigned char* p, size_t s) : _ptr(p), _size(s) {}
+  size_t size() const {
+    return _size;
+  }
+  const unsigned char& operator[](size_t index) const {
+    TORCH_CHECK(index >= 0 && index < _size);
+    return _ptr[index];
+  }
+
+ protected:
+  unsigned char* _ptr;
+  size_t _size;
+};
+
+inline uint16_t get_endianness(const ExifDataReader& exif_data) {
   if ((exif_data.size() < 1) ||
       (exif_data.size() > 1 && exif_data[0] != exif_data[1])) {
     return 0;
@@ -80,7 +101,7 @@ inline uint16_t get_endianness(const std::vector<unsigned char>& exif_data) {
 }
 
 inline uint16_t get_uint16(
-    const std::vector<unsigned char>& exif_data,
+    const ExifDataReader& exif_data,
     uint16_t endianness,
     const size_t offset) {
   if (offset + 1 >= exif_data.size()) {
@@ -94,7 +115,7 @@ inline uint16_t get_uint16(
 }
 
 inline uint32_t get_uint32(
-    const std::vector<unsigned char>& exif_data,
+    const ExifDataReader& exif_data,
     uint16_t endianness,
     const size_t offset) {
   if (offset + 3 >= exif_data.size()) {
@@ -109,8 +130,48 @@ inline uint32_t get_uint32(
       (exif_data[offset + 2] << 8) + exif_data[offset + 3];
 }
 
-inline int fetch_exif_orientation(j_decompress_ptr cinfo) {
+inline int fetch_exif_orientation(unsigned char* exif_data_ptr, size_t size) {
   int exif_orientation = -1;
+
+  // Exif binary structure looks like this
+  // First 6 bytes: [E, x, i, f, 0, 0]
+  // Endianness, 2 bytes : [M, M] or [I, I]
+  // Tag mark, 2 bytes: [0, 0x2a]
+  // Offset, 4 bytes
+  // Num entries, 2 bytes
+  // Tag entries and data, tag has 2 bytes and its data has 10 bytes
+  // For more details:
+  // http://www.media.mit.edu/pia/Research/deepview/exif.html
+
+  ExifDataReader exif_data(exif_data_ptr, size);
+  auto endianness = get_endianness(exif_data);
+
+  // Checking whether Tag Mark (0x002A) correspond to one contained in the
+  // Jpeg file
+  uint16_t tag_mark = get_uint16(exif_data, endianness, 2);
+  if (tag_mark == REQ_EXIF_TAG_MARK) {
+    auto offset = get_uint32(exif_data, endianness, 4);
+    size_t num_entry = get_uint16(exif_data, endianness, offset);
+    offset += 2; // go to start of tag fields
+    constexpr size_t tiff_field_size = 12;
+    for (size_t entry = 0; entry < num_entry; entry++) {
+      // Here we just search for orientation tag and parse it
+      auto tag_num = get_uint16(exif_data, endianness, offset);
+      if (tag_num == INCORRECT_TAG) {
+        break;
+      }
+      if (tag_num == ORIENTATION_EXIF_TAG) {
+        exif_orientation = get_uint16(exif_data, endianness, offset + 8);
+        break;
+      }
+      offset += tiff_field_size;
+    }
+  }
+  return exif_orientation;
+}
+
+#if JPEG_FOUND
+inline int fetch_jpeg_exif_orientation(j_decompress_ptr cinfo) {
   // Check for Exif marker APP1
   jpeg_saved_marker_ptr exif_marker = 0;
   jpeg_saved_marker_ptr cmarker = cinfo->marker_list;
@@ -121,55 +182,38 @@ inline int fetch_exif_orientation(j_decompress_ptr cinfo) {
     cmarker = cmarker->next;
   }
 
-  if (exif_marker) {
-    // Exif binary structure looks like this
-    // First 6 bytes: [E, x, i, f, 0, 0]
-    // Endianness, 2 bytes : [M, M] or [I, I]
-    // Tag mark, 2 bytes: [0, 0x2a]
-    // Offset, 4 bytes
-    // Num entries, 2 bytes
-    // Tag entries and data, tag has 2 bytes and its data has 10 bytes
-    // For more details:
-    // http://www.media.mit.edu/pia/Research/deepview/exif.html
-
-    // Bytes from Exif size field to the first TIFF header
-    constexpr size_t start_offset = 6;
-    if (exif_marker->data_length > start_offset) {
-      auto* exif_data_ptr = exif_marker->data + start_offset;
-      auto size = exif_marker->data_length - start_offset;
-      // Here we copy the data into the vector structure
-      // TODO: we can avoid copying the data and read directly from the pointer
-      std::vector<unsigned char> exif_data_vec(
-          exif_data_ptr, exif_data_ptr + size);
-
-      auto endianness = get_endianness(exif_data_vec);
-
-      // Checking whether Tag Mark (0x002A) correspond to one contained in the
-      // Jpeg file
-      uint16_t tag_mark = get_uint16(exif_data_vec, endianness, 2);
-      if (tag_mark == REQ_EXIF_TAG_MARK) {
-        auto offset = get_uint32(exif_data_vec, endianness, 4);
-        size_t num_entry = get_uint16(exif_data_vec, endianness, offset);
-        offset += 2; // go to start of tag fields
-        constexpr size_t tiff_field_size = 12;
-        for (size_t entry = 0; entry < num_entry; entry++) {
-          // Here we just search for orientation tag and parse it
-          auto tag_num = get_uint16(exif_data_vec, endianness, offset);
-          if (tag_num == INCORRECT_TAG) {
-            break;
-          }
-          if (tag_num == ORIENTATION_EXIF_TAG) {
-            exif_orientation =
-                get_uint16(exif_data_vec, endianness, offset + 8);
-            break;
-          }
-          offset += tiff_field_size;
-        }
-      }
-    }
+  if (!exif_marker) {
+    return -1;
   }
-  return exif_orientation;
+
+  constexpr size_t start_offset = 6;
+  if (exif_marker->data_length <= start_offset) {
+    return -1;
+  }
+
+  auto* exif_data_ptr = exif_marker->data + start_offset;
+  auto size = exif_marker->data_length - start_offset;
+
+  return fetch_exif_orientation(exif_data_ptr, size);
 }
+#endif // #if JPEG_FOUND
+
+#if PNG_FOUND && defined(PNG_eXIf_SUPPORTED)
+inline int fetch_png_exif_orientation(png_structp png_ptr, png_infop info_ptr) {
+  png_uint_32 num_exif = 0;
+  png_bytep exif = 0;
+
+  // Exif info could be in info_ptr
+  if (png_get_valid(png_ptr, info_ptr, PNG_INFO_eXIf)) {
+    png_get_eXIf_1(png_ptr, info_ptr, &num_exif, &exif);
+  }
+
+  if (exif && num_exif > 0) {
+    return fetch_exif_orientation(exif, num_exif);
+  }
+  return -1;
+}
+#endif // #if PNG_FOUND && defined(PNG_eXIf_SUPPORTED)
 
 constexpr uint16_t IMAGE_ORIENTATION_TL = 1; // normal orientation
 constexpr uint16_t IMAGE_ORIENTATION_TR = 2; // needs horizontal flip
