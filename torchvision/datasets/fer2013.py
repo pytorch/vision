@@ -1,6 +1,6 @@
 import csv
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 import torch
 from PIL import Image
@@ -14,7 +14,7 @@ class FER2013(VisionDataset):
     <https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``root/fer2013`` exists.
         split (string, optional): The dataset split, supports ``"train"`` (default), or ``"test"``.
         transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
@@ -29,7 +29,7 @@ class FER2013(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

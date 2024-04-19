@@ -1,6 +1,7 @@
 import csv
 import os
 from collections import namedtuple
+from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import PIL
@@ -16,7 +17,7 @@ class CelebA(VisionDataset):
     """`Large-scale CelebFaces Attributes (CelebA) Dataset <http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html>`_ Dataset.
 
     Args:
-        root (string): Root directory where images are downloaded to.
+        root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         split (string): One of {'train', 'valid', 'test', 'all'}.
             Accordingly dataset is selected.
         target_type (string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,
@@ -63,7 +64,7 @@ class CelebA(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         target_type: Union[List[str], str] = "attr",
         transform: Optional[Callable] = None,
