@@ -169,7 +169,7 @@ def draw_bounding_boxes(
     If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float.
+        image (Tensor): Tensor of shape (C, H, W) and dtype uint8 or float.
         boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
@@ -188,6 +188,7 @@ def draw_bounding_boxes(
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
     """
+    import torchvision.transforms.v2.functional as F  # noqa
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(draw_bounding_boxes)
@@ -217,11 +218,7 @@ def draw_bounding_boxes(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
-    original_dtype = image.dtype
-    colors = [
-        torch.tensor(color, dtype=original_dtype, device=image.device)
-        for color in _parse_colors(colors, num_objects=num_boxes, dtype=original_dtype)
-    ]
+    colors = _parse_colors(colors, num_objects=num_boxes)
 
     if font is None:
         if font_size is not None:
@@ -234,8 +231,11 @@ def draw_bounding_boxes(
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
 
-    ndarr = image.permute(1, 2, 0).cpu().numpy()
-    img_to_draw = Image.fromarray(ndarr)
+    original_dtype = image.dtype
+    if original_dtype.is_floating_point:
+        image = F.to_dtype(image, dtype=torch.uint8, scale=True)
+
+    img_to_draw = F.to_pil_image(image)
     img_boxes = boxes.to(torch.int64).tolist()
 
     if fill:
@@ -254,7 +254,10 @@ def draw_bounding_boxes(
             margin = width + 1
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=original_dtype)
+    out = F.pil_to_tensor(img_to_draw)
+    if original_dtype.is_floating_point:
+        out = F.to_dtype(out, dtype=original_dtype, scale=True)
+    return out
 
 
 @torch.no_grad()
