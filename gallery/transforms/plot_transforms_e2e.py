@@ -93,7 +93,7 @@ plot([dataset[0], dataset[1]])
 # ----------
 #
 # Let's now define our pre-processing transforms. All the transforms know how
-# to handle images, bouding boxes and masks when relevant.
+# to handle images, bounding boxes and masks when relevant.
 #
 # Transforms are typically passed as the ``transforms`` parameter of the
 # dataset so that they can leverage multi-processing from the
