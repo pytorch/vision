@@ -1506,6 +1506,25 @@ def equalize(img: Tensor) -> Tensor:
     return F_t.equalize(img)
 
 
+def gaussian_noise(img: Tensor, mean: float = 0., var: float = 1.) -> Tensor:
+    """Add gaussian noise to the image. Samples from `N(0, 1)` (standard normal distribution) by default.
+
+    Args:
+        img (PIL Image or Tensor): Image on which equalize is applied.
+        mean (float): Mean of the sampled gaussian distribution. Default is 0.
+        var (float): Variance of the sampled gaussian distribution. Default is 1.
+
+    Returns:
+        PIL Image or Tensor: An image that was equalized.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(gaussian_noise)
+    if not isinstance(img, torch.Tensor):
+        F_pil.gaussian_noise(img, mean, var)
+    
+    return F_t.gaussian_noise(img, mean, var)
+
+
 def elastic_transform(
     img: Tensor,
     displacement: Tensor,

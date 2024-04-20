@@ -555,6 +555,7 @@ Color
     RandomAdjustSharpness
     RandomAutocontrast
     RandomEqualize
+    GaussianNoise
 
 Composition
 ^^^^^^^^^^^
