@@ -72,7 +72,8 @@ std::vector<torch::Tensor> encode_jpeg_cuda(
   std::vector<torch::Tensor> contig_images;
   contig_images.reserve(images.size());
   for (const auto& image : images) {
-    TORCH_CHECK(image.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+    TORCH_CHECK(
+        image.dtype() == torch::kU8, "Input tensor dtype should be uint8");
 
     TORCH_CHECK(
         image.device() == device,
@@ -84,7 +85,8 @@ std::vector<torch::Tensor> encode_jpeg_cuda(
 
     TORCH_CHECK(
         image.size(0) == 3,
-        "The number of channels should be 3, got: ", image.size(0));
+        "The number of channels should be 3, got: ",
+        image.size(0));
 
     // nvjpeg requires images to be contiguous
     contig_images.push_back(image.contiguous());
@@ -97,7 +99,8 @@ std::vector<torch::Tensor> encode_jpeg_cuda(
   nvjpegEncoderParams_t nv_enc_params;
 
   // initialize nvjpeg structures
-  // these are rather expensive to create and thus will be reused across multiple calls to encode_single_jpeg
+  // these are rather expensive to create and thus will be reused across
+  // multiple calls to encode_single_jpeg
   try {
     nvjpegStatus_t stateCreateResult =
         nvjpegEncoderStateCreate(nvjpeg_handle, &nv_enc_state, stream);

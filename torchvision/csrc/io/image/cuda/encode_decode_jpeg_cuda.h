@@ -18,7 +18,6 @@ C10_EXPORT torch::Tensor decode_jpeg_cuda(
     ImageReadMode mode,
     torch::Device device);
 
-
 C10_EXPORT std::vector<torch::Tensor> encode_jpeg_cuda(
     const std::vector<torch::Tensor>& images,
     const int64_t quality);
