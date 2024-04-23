@@ -203,6 +203,7 @@ def _set_default_tracer_kwargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> 
 def get_graph_node_names(
     model: nn.Module,
     tracer_kwargs: Optional[Dict[str, Any]] = None,
+    concrete_args: Optional[Dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
 ) -> Tuple[List[str], List[str]]:
     """
@@ -232,7 +233,9 @@ def get_graph_node_names(
             {"autowrap_modules": (math, torchvision.ops,),"leaf_modules": _get_leaf_modules_for_ops(),}
             WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
             provided dictionary.
-
+        concrete_args (Optional[Dict[str, any]]): Concrete arguments that should
+            not be treated as Proxies. This parameter is experimental and
+            its backwards-compatibility is *NOT* guaranteed.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -249,9 +252,9 @@ def get_graph_node_names(
     tracer_kwargs = _set_default_tracer_kwargs(tracer_kwargs)
     is_training = model.training
     train_tracer = NodePathTracer(**tracer_kwargs)
-    train_tracer.trace(model.train())
+    train_tracer.trace(model.train(), concrete_args=concrete_args)
     eval_tracer = NodePathTracer(**tracer_kwargs)
-    eval_tracer.trace(model.eval())
+    eval_tracer.trace(model.eval(), concrete_args=concrete_args)
     train_nodes = list(train_tracer.node_to_qualname.values())
     eval_nodes = list(eval_tracer.node_to_qualname.values())
     if not suppress_diff_warning:
@@ -333,6 +336,7 @@ def create_feature_extractor(
     train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     tracer_kwargs: Optional[Dict[str, Any]] = None,
+    concrete_args: Optional[Dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
 ) -> fx.GraphModule:
     """
@@ -395,6 +399,9 @@ def create_feature_extractor(
             {"autowrap_modules": (math, torchvision.ops,),"leaf_modules": _get_leaf_modules_for_ops(),}
             WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
             provided dictionary.
+        concrete_args (Optional[Dict[str, any]]): Concrete arguments that should
+            not be treated as Proxies. This parameter is experimental and
+            its backwards-compatibility is *NOT* guaranteed.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -482,7 +489,7 @@ def create_feature_extractor(
 
         # Instantiate our NodePathTracer and use that to trace the model
         tracer = NodePathTracer(**tracer_kwargs)
-        graph = tracer.trace(model)
+        graph = tracer.trace(model, concrete_args=concrete_args)
 
         name = model.__class__.__name__ if isinstance(model, nn.Module) else model.__name__
         graph_module = fx.GraphModule(tracer.root, graph, name)
