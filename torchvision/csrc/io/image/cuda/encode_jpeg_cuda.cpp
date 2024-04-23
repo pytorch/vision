@@ -16,7 +16,6 @@ nvjpegHandle_t nvjpeg_handle = nullptr;
 std::once_flag nvjpeg_handle_creation_flag;
 
 #endif
-#include <unistd.h>
 #include <string>
 
 namespace vision {
