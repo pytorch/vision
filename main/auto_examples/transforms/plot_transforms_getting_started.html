@@ -232,7 +232,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+96640af) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+89d2b38) &#x25BC</a>
     </div>
     
 
@@ -395,7 +395,7 @@ segmentation.</p>
 </div>
 <section id="the-basics">
 <h2>The basics<a class="headerlink" href="#the-basics" title="Permalink to this heading">¶</a></h2>
-<p>The Torchvision transforms behave like a regular <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></a> (in
+<p>The Torchvision transforms behave like a regular <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></a> (in
 fact, most of them are): instantiate a transform, pass an input, get a
 transformed output:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">transform</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">RandomCrop</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">))</span>
@@ -474,13 +474,13 @@ answer these in the next sections.</p>
 </section>
 <section id="what-are-tvtensors">
 <span id="what-are-tv-tensors"></span><h2>What are TVTensors?<a class="headerlink" href="#what-are-tvtensors" title="Permalink to this heading">¶</a></h2>
-<p>TVTensors are <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> subclasses. The available TVTensors are
+<p>TVTensors are <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> subclasses. The available TVTensors are
 <a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>,
 <a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a>,
 <a class="reference internal" href="../../generated/torchvision.tv_tensors.Mask.html#torchvision.tv_tensors.Mask" title="torchvision.tv_tensors.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a>, and
 <a class="reference internal" href="../../generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a>.</p>
 <p>TVTensors look and feel just like regular tensors - they <strong>are</strong> tensors.
-Everything that is supported on a plain <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> like <code class="docutils literal notranslate"><span class="pre">.sum()</span></code>
+Everything that is supported on a plain <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> like <code class="docutils literal notranslate"><span class="pre">.sum()</span></code>
 or any <code class="docutils literal notranslate"><span class="pre">torch.*</span></code> operator will also work on a TVTensor:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">img_dp</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span></a><span class="p">(</span><a href="https://pytorch.org/docs/stable/generated/torch.randint.html#torch.randint" title="torch.randint" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">randint</span></a><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span></a><span class="p">))</span>
 
@@ -536,7 +536,7 @@ debugging!</p>
 <p class="admonition-title">Note</p>
 <p><strong>Disclaimer</strong> This note is slightly advanced and can be safely skipped on
 a first read.</p>
-<p>Pure <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> objects are, in general, treated as images (or
+<p>Pure <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> objects are, in general, treated as images (or
 as videos for video-specific transforms). Indeed, you may have noticed
 that in the code above we haven’t used the
 <a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> class at all, and yet our images
@@ -550,7 +550,7 @@ or <a class="reference external" href="https://pillow.readthedocs.io/en/stable/r
 tensors are passed-through.</p></li>
 <li><p>If there is no <a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> or
 <a class="reference internal" href="../../generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> instance, only the first pure
-<a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> will be transformed as image or video, while all
+<a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a> will be transformed as image or video, while all
 others will be passed-through. Here “first” means “first in a depth-wise
 traversal”.</p></li>
 </ul>
@@ -598,7 +598,7 @@ sample (or by sub-classing the dataset).</p></li>
 <li><p>As the very first step of your transforms pipeline</p></li>
 </ul>
 <p>Either way, the logic will depend on your specific dataset.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.820 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.807 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-transforms-getting-started-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/d1e0b3022ec2c789e633f49bb9dd0cf4/plot_transforms_getting_started.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_transforms_getting_started.ipynb</span></code></a></p>
