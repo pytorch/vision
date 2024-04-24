@@ -1,0 +1,10 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.ops
+
+
+Conv3dNormActivation
+====================
+
+.. autoclass:: Conv3dNormActivation
+    :members:

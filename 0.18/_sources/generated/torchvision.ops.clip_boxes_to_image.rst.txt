@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.ops
+
+
+clip_boxes_to_image
+===================
+
+.. autofunction:: clip_boxes_to_image

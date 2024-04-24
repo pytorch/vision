@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.io
+
+
+encode_jpeg
+===========
+
+.. autofunction:: encode_jpeg

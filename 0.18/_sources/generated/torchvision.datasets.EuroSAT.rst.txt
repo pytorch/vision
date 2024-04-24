@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+EuroSAT
+=======
+
+.. autoclass:: EuroSAT
+    :members:
+        __getitem__,
+        
+    :special-members:

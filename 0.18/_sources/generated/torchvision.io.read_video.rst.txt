@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.io
+
+
+read_video
+==========
+
+.. autofunction:: read_video

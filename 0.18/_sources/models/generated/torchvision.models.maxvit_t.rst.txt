@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+maxvit_t
+========
+
+.. autofunction:: maxvit_t
