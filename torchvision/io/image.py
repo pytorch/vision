@@ -190,6 +190,10 @@ def encode_jpeg(
     Takes a (list of) input tensor(s) in CHW layout and returns a (list of) buffer(s) with the contents
     of the corresponding JPEG file(s).
 
+    .. note::
+        Passing a list of CUDA tensors is more efficient than repeated individual calls to ``encode_jpeg``.
+        For CPU tensors the performance is equivalent.
+
     Args:
         input (Tensor[channels, image_height, image_width] or List[Tensor[channels, image_height, image_width]]):
             (list of) uint8 image tensor(s) of ``c`` channels, where ``c`` must be 1 or 3
@@ -204,7 +208,8 @@ def encode_jpeg(
     if quality < 1 or quality > 100:
         raise ValueError("Image quality should be a positive number between 1 and 100")
     if isinstance(input, list):
-        assert len(input) > 0, "encode_jpeg requires at least one input tensor when a list is passed"
+        if not input:
+            raise ValueError("encode_jpeg requires at least one input tensor when a list is passed")
         if input[0].device.type == "cuda":
             return torch.ops.image.encode_jpeg_cuda(input, quality)
         else:
@@ -214,8 +219,6 @@ def encode_jpeg(
             return torch.ops.image.encode_jpeg_cuda([input], quality)[0]
         else:
             return torch.ops.image.encode_jpeg(input, quality)
-
-    return output
 
 
 def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):

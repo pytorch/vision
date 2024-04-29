@@ -89,7 +89,12 @@ std::vector<torch::Tensor> encode_jpeg_cuda(
         image.size(0));
 
     // nvjpeg requires images to be contiguous
-    contig_images.push_back(image.contiguous());
+    if (image.is_contiguous()) {
+        contig_images.push_back(image);
+    }
+    else {
+      contig_images.push_back(image.contiguous());
+    }
   }
 
   // Create global nvJPEG handle
