@@ -229,7 +229,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+ff31b6e) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+06ad737) &#x25BC</a>
     </div>
     
 
@@ -376,6 +376,7 @@
 <span class="sd">            ``segmentation``. Can also be a list to output a tuple with all specified target types. The types represent:</span>
 
 <span class="sd">                - ``category`` (int): Label for one of the 37 pet categories.</span>
+<span class="sd">                - ``binary-category`` (int): Binary label for cat or dog.</span>
 <span class="sd">                - ``segmentation`` (PIL image): Segmentation trimap of the image.</span>
 
 <span class="sd">            If empty, ``None`` will be returned as target.</span>
@@ -391,7 +392,7 @@
         <span class="p">(</span><span class="s2">&quot;https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;5c4f3ee8e5d25df40f4fd59a7f44e54c&quot;</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;95a8c909bbe2e81eed6a22bccdf3f68f&quot;</span><span class="p">),</span>
     <span class="p">)</span>
-    <span class="n">_VALID_TARGET_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;category&quot;</span><span class="p">,</span> <span class="s2">&quot;segmentation&quot;</span><span class="p">)</span>
+    <span class="n">_VALID_TARGET_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;category&quot;</span><span class="p">,</span> <span class="s2">&quot;binary-category&quot;</span><span class="p">,</span> <span class="s2">&quot;segmentation&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -424,12 +425,15 @@
 
         <span class="n">image_ids</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bin_labels</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_anns_folder</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_split</span><span class="si">}</span><span class="s2">.txt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
-                <span class="n">image_id</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">image_id</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">bin_label</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
                 <span class="n">image_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">image_id</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bin_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">bin_label</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_classes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Cat&quot;</span><span class="p">,</span> <span class="s2">&quot;Dog&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">classes</span> <span class="o">=</span> <span class="p">[</span>
             <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">raw_cls</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">raw_cls</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span>
@@ -437,6 +441,7 @@
                 <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">image_id_and_label</span><span class="p">:</span> <span class="n">image_id_and_label</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
             <span class="p">)</span>
         <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_class_to_idx</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin_classes</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin_classes</span><span class="p">))))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">class_to_idx</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">))))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">image_id</span><span class="si">}</span><span class="s2">.jpg&quot;</span> <span class="k">for</span> <span class="n">image_id</span> <span class="ow">in</span> <span class="n">image_ids</span><span class="p">]</span>
@@ -452,6 +457,8 @@
         <span class="k">for</span> <span class="n">target_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_types</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">target_type</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">target_type</span> <span class="o">==</span> <span class="s2">&quot;binary-category&quot;</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bin_labels</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># target_type == &quot;segmentation&quot;</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_segs</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
 
