@@ -13,7 +13,7 @@ class OxfordIIITPet(VisionDataset):
     """`Oxford-IIIT Pet Dataset   <https://www.robots.ox.ac.uk/~vgg/data/pets/>`_.
 
     Args:
-        root (string): Root directory of the dataset.
+        root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"trainval"`` (default) or ``"test"``.
         target_types (string, sequence of strings, optional): Types of target to use. Can be ``category`` (default) or
             ``segmentation``. Can also be a list to output a tuple with all specified target types. The types represent:
@@ -23,7 +23,7 @@ class OxfordIIITPet(VisionDataset):
 
             If empty, ``None`` will be returned as target.
 
-        transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and puts it into
@@ -38,7 +38,7 @@ class OxfordIIITPet(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "trainval",
         target_types: Union[Sequence[str], str] = "category",
         transforms: Optional[Callable] = None,

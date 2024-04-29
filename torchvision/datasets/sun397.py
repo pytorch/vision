@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 import PIL.Image
 
@@ -14,8 +14,8 @@ class SUN397(VisionDataset):
     397 categories with 108'754 images.
 
     Args:
-        root (string): Root directory of the dataset.
-        transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
+        root (str or ``pathlib.Path``): Root directory of the dataset.
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -28,7 +28,7 @@ class SUN397(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,

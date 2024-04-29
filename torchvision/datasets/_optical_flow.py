@@ -13,7 +13,6 @@ from ..io.image import _read_png_16
 from .utils import _read_pfm, verify_str_arg
 from .vision import VisionDataset
 
-
 T1 = Tuple[Image.Image, Image.Image, Optional[np.ndarray], Optional[np.ndarray]]
 T2 = Tuple[Image.Image, Image.Image, Optional[np.ndarray]]
 
@@ -33,7 +32,7 @@ class FlowDataset(ABC, VisionDataset):
     # and it's up to whatever consumes the dataset to decide what valid_flow_mask should be.
     _has_builtin_flow_mask = False
 
-    def __init__(self, root: str, transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], transforms: Optional[Callable] = None) -> None:
 
         super().__init__(root=root)
         self.transforms = transforms
@@ -113,7 +112,7 @@ class Sintel(FlowDataset):
                         ...
 
     Args:
-        root (string): Root directory of the Sintel Dataset.
+        root (str or ``pathlib.Path``): Root directory of the Sintel Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         pass_name (string, optional): The pass to use, either "clean" (default), "final", or "both". See link above for
             details on the different passes.
@@ -125,7 +124,7 @@ class Sintel(FlowDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         pass_name: str = "clean",
         transforms: Optional[Callable] = None,
@@ -183,7 +182,7 @@ class KittiFlow(FlowDataset):
                     flow_occ
 
     Args:
-        root (string): Root directory of the KittiFlow Dataset.
+        root (str or ``pathlib.Path``): Root directory of the KittiFlow Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.
@@ -191,7 +190,7 @@ class KittiFlow(FlowDataset):
 
     _has_builtin_flow_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -248,7 +247,7 @@ class FlyingChairs(FlowDataset):
 
 
     Args:
-        root (string): Root directory of the FlyingChairs Dataset.
+        root (str or ``pathlib.Path``): Root directory of the FlyingChairs Dataset.
         split (string, optional): The dataset split, either "train" (default) or "val"
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.
@@ -256,7 +255,7 @@ class FlyingChairs(FlowDataset):
             return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
     """
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "val"))
@@ -316,7 +315,7 @@ class FlyingThings3D(FlowDataset):
                     TRAIN
 
     Args:
-        root (string): Root directory of the intel FlyingThings3D Dataset.
+        root (str or ``pathlib.Path``): Root directory of the intel FlyingThings3D Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         pass_name (string, optional): The pass to use, either "clean" (default) or "final" or "both". See link above for
             details on the different passes.
@@ -329,7 +328,7 @@ class FlyingThings3D(FlowDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         pass_name: str = "clean",
         camera: str = "left",
@@ -411,7 +410,7 @@ class HD1K(FlowDataset):
                     image_2
 
     Args:
-        root (string): Root directory of the HD1K Dataset.
+        root (str or ``pathlib.Path``): Root directory of the HD1K Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.
@@ -419,7 +418,7 @@ class HD1K(FlowDataset):
 
     _has_builtin_flow_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
+    def __init__(self, root: Union[str, Path], split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))

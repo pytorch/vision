@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -18,13 +18,17 @@ class PCAM(VisionDataset):
     This dataset requires the ``h5py`` package which you can install with ``pip install h5py``.
 
     Args:
-         root (string): Root directory of the dataset.
+         root (str or ``pathlib.Path``): Root directory of the dataset.
          split (string, optional): The dataset split, supports ``"train"`` (default), ``"test"`` or ``"val"``.
-         transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
+         transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
              version. E.g, ``transforms.RandomCrop``.
          target_transform (callable, optional): A function/transform that takes in the target and transforms it.
          download (bool, optional): If True, downloads the dataset from the internet and puts it into ``root/pcam``. If
              dataset is already downloaded, it is not downloaded again.
+
+             .. warning::
+
+                To download the dataset `gdown <https://github.com/wkentaro/gdown>`_ is required.
     """
 
     _FILES = {
@@ -68,7 +72,7 @@ class PCAM(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

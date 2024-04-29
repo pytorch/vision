@@ -10,6 +10,12 @@ from torchvision.datasets.utils import download_url
 from torchvision.io import _HAS_VIDEO_OPT, VideoReader
 
 
+# WARNING: these tests have been skipped forever on the CI because the video ops
+# are never properly available. This is bad, but things have been in a terrible
+# state for a long time already as we write this comment, and we'll hopefully be
+# able to get rid of this all soon.
+
+
 try:
     import av
 
@@ -23,6 +29,13 @@ VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "
 
 CheckerConfig = ["duration", "video_fps", "audio_sample_rate"]
 GroundTruth = collections.namedtuple("GroundTruth", " ".join(CheckerConfig))
+
+
+def backends():
+    backends_ = ["video_reader"]
+    if av is not None:
+        backends_.append("pyav")
+    return backends_
 
 
 def fate(name, path="."):
@@ -53,7 +66,7 @@ test_videos = {
 class TestVideoApi:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
+    @pytest.mark.parametrize("backend", backends())
     def test_frame_reading(self, test_video, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -119,7 +132,7 @@ class TestVideoApi:
 
     @pytest.mark.parametrize("stream", ["video", "audio"])
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
+    @pytest.mark.parametrize("backend", backends())
     def test_frame_reading_mem_vs_file(self, test_video, stream, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -166,7 +179,7 @@ class TestVideoApi:
             del reader, reader_md
 
     @pytest.mark.parametrize("test_video,config", test_videos.items())
-    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
+    @pytest.mark.parametrize("backend", backends())
     def test_metadata(self, test_video, config, backend):
         """
         Test that the metadata returned via pyav corresponds to the one returned
@@ -180,7 +193,7 @@ class TestVideoApi:
         assert config.duration == approx(reader_md["video"]["duration"][0], abs=0.5)
 
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
+    @pytest.mark.parametrize("backend", backends())
     def test_seek_start(self, test_video, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -249,7 +262,7 @@ class TestVideoApi:
 
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video,config", test_videos.items())
-    @pytest.mark.parametrize("backend", ["pyav", "video_reader"])
+    @pytest.mark.parametrize("backend", backends())
     def test_keyframe_reading(self, test_video, config, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -285,6 +298,14 @@ class TestVideoApi:
             if test_video != "TrumanShow_wave_f_nm_np1_fr_med_26.avi":
                 for i in range(len(av_keyframes)):
                     assert av_keyframes[i] == approx(vr_keyframes[i], rel=0.001)
+
+    def test_src(self):
+        with pytest.raises(ValueError, match="src cannot be empty"):
+            VideoReader(src="")
+        with pytest.raises(ValueError, match="src must be either string"):
+            VideoReader(src=2)
+        with pytest.raises(TypeError, match="unexpected keyword argument"):
+            VideoReader(path="path")
 
 
 if __name__ == "__main__":

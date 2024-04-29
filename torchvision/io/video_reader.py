@@ -1,7 +1,7 @@
 import io
 import warnings
 
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator
 
 import torch
 
@@ -91,18 +91,16 @@ class VideoReader:
 
         Each stream descriptor consists of two parts: stream type (e.g. 'video') and
         a unique stream id (which are determined by the video encoding).
-        In this way, if the video contaner contains multiple
+        In this way, if the video container contains multiple
         streams of the same type, users can access the one they want.
         If only stream type is passed, the decoder auto-detects first stream of that type.
 
     Args:
         src (string, bytes object, or tensor): The media source.
             If string-type, it must be a file path supported by FFMPEG.
-            If bytes should be an in memory representatin of a file supported by FFMPEG.
+            If bytes, should be an in-memory representation of a file supported by FFMPEG.
             If Tensor, it is interpreted internally as byte buffer.
             It must be one-dimensional, of type ``torch.uint8``.
-
-
 
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
@@ -111,31 +109,21 @@ class VideoReader:
         num_threads (int, optional): number of threads used by the codec to decode video.
             Default value (0) enables multithreading with codec-dependent heuristic. The performance
             will depend on the version of FFMPEG codecs supported.
-
-
-        path (str, optional):
-            .. warning:
-                This parameter was deprecated in ``0.15`` and will be removed in ``0.17``.
-                Please use ``src`` instead.
     """
 
     def __init__(
         self,
-        src: str = "",
+        src: str,
         stream: str = "video",
         num_threads: int = 0,
-        path: Optional[str] = None,
     ) -> None:
         _log_api_usage_once(self)
         from .. import get_video_backend
 
         self.backend = get_video_backend()
         if isinstance(src, str):
-            if src == "":
-                if path is None:
-                    raise TypeError("src cannot be empty")
-                src = path
-                warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
+            if not src:
+                raise ValueError("src cannot be empty")
         elif isinstance(src, bytes):
             if self.backend in ["cuda"]:
                 raise RuntimeError(
@@ -154,7 +142,7 @@ class VideoReader:
                     "VideoReader cannot be initialized from Tensor object when using cuda or pyav backend."
                 )
         else:
-            raise TypeError("`src` must be either string, Tensor or bytes object.")
+            raise ValueError(f"src must be either string, Tensor or bytes object. Got {type(src)}")
 
         if self.backend == "cuda":
             device = torch.device("cuda")
@@ -204,9 +192,9 @@ class VideoReader:
                 frame = next(self._c)
                 pts = float(frame.pts * frame.time_base)
                 if "video" in self.pyav_stream:
-                    frame = torch.tensor(frame.to_rgb().to_ndarray()).permute(2, 0, 1)
+                    frame = torch.as_tensor(frame.to_rgb().to_ndarray()).permute(2, 0, 1)
                 elif "audio" in self.pyav_stream:
-                    frame = torch.tensor(frame.to_ndarray()).permute(1, 0)
+                    frame = torch.as_tensor(frame.to_ndarray()).permute(1, 0)
                 else:
                     frame = None
             except av.error.EOFError:
@@ -279,7 +267,7 @@ class VideoReader:
                 Currently available stream types include ``['video', 'audio']``.
                 Each descriptor consists of two parts: stream type (e.g. 'video') and
                 a unique stream id (which are determined by video encoding).
-                In this way, if the video contaner contains multiple
+                In this way, if the video container contains multiple
                 streams of the same type, users can access the one they want.
                 If only stream type is passed, the decoder auto-detects first stream
                 of that type and returns it.

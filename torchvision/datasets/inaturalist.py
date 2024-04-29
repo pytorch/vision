@@ -1,5 +1,6 @@
 import os
 import os.path
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -32,7 +33,7 @@ class INaturalist(VisionDataset):
     """`iNaturalist <https://github.com/visipedia/inat_comp>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where the image files are stored.
+        root (str or ``pathlib.Path``): Root directory of dataset where the image files are stored.
             This class does not require/use annotation files.
         version (string, optional): Which version of the dataset to download/use. One of
             '2017', '2018', '2019', '2021_train', '2021_train_mini', '2021_valid'.
@@ -54,7 +55,7 @@ class INaturalist(VisionDataset):
 
             Can also be a list to output a tuple with all specified target types.
             Defaults to ``full``.
-        transform (callable, optional): A function/transform that takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -65,7 +66,7 @@ class INaturalist(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         version: str = "2021_train",
         target_type: Union[List[str], str] = "full",
         transform: Optional[Callable] = None,

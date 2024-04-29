@@ -26,6 +26,7 @@ jobs:
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -40,12 +41,13 @@ jobs:
       matrix:
         include:
           - runner: macos-12
-          - runner: macos-m1-12
+          - runner: macos-m1-stable
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -71,21 +73,13 @@ jobs:
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
-        source packaging/windows/internal/vc_install_helper.sh
-
-        # FIXME: Basically, we are reinstalling CUDA here. We only need this, because we need to copy some files that
-        #  can be extracted from the CUDA installer, but are not available on our Windows AMI.
-        #  See https://github.com/pytorch/test-infra/pull/4189
-        if [[ ${{ matrix.gpu-arch-type }} == cuda ]]; then
-          export CU_VERSION=cu$(echo ${{ matrix.gpu-arch-version }} | sed 's/\.//')
-          echo CU_VERSION="${CU_VERSION}"
-          packaging/windows/internal/cuda_install.bat
-        fi
-
         export PYTHON_VERSION=3.8
+        export VC_YEAR=2022
+        export VSDEVCMD_ARGS=""
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 

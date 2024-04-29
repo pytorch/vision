@@ -2,7 +2,6 @@
 
 import glob
 import hashlib
-import io
 
 # Standard library imports
 import os
@@ -65,21 +64,12 @@ PLATFORM_ARCH = platform.machine()
 PYTHON_VERSION = sys.version_info
 
 
-def read_chunks(file, size=io.DEFAULT_BUFFER_SIZE):
-    """Yield pieces of data from a file-like object until EOF."""
-    while True:
-        chunk = file.read(size)
-        if not chunk:
-            break
-        yield chunk
-
-
 def rehash(path, blocksize=1 << 20):
     """Return (hash, length) for path using hashlib.sha256()"""
     h = hashlib.sha256()
     length = 0
     with open(path, "rb") as f:
-        for block in read_chunks(f, size=blocksize):
+        while block := f.read(blocksize):
             length += len(block)
             h.update(block)
     digest = "sha256=" + urlsafe_b64encode(h.digest()).decode("latin1").rstrip("=")
@@ -191,7 +181,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
 
     print("Copying dependencies to wheel directory")
     new_libraries_path = osp.join(output_dir, "torchvision.libs")
-    os.makedirs(new_libraries_path)
+    os.makedirs(new_libraries_path, exist_ok=True)
 
     new_names = {binary: binary_path}
 

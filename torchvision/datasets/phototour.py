@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
@@ -24,9 +25,9 @@ class PhotoTour(VisionDataset):
 
 
     Args:
-        root (string): Root directory where images are.
+        root (str or ``pathlib.Path``): Root directory where images are.
         name (string): Name of the dataset to load.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
@@ -87,7 +88,12 @@ class PhotoTour(VisionDataset):
     matches_files = "m50_100000_100000_0.txt"
 
     def __init__(
-        self, root: str, name: str, train: bool = True, transform: Optional[Callable] = None, download: bool = False
+        self,
+        root: Union[str, Path],
+        name: str,
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         super().__init__(root, transform=transform)
         self.name = name
@@ -106,7 +112,7 @@ class PhotoTour(VisionDataset):
             self.cache()
 
         # load the serialized data
-        self.data, self.labels, self.matches = torch.load(self.data_file)
+        self.data, self.labels, self.matches = torch.load(self.data_file, weights_only=True)
 
     def __getitem__(self, index: int) -> Union[torch.Tensor, Tuple[Any, Any, torch.Tensor]]:
         """

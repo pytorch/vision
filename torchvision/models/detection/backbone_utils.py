@@ -79,8 +79,10 @@ def resnet_fpn_backbone(
 
     Examples::
 
+        >>> import torch
+        >>> from torchvision.models import ResNet50_Weights
         >>> from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-        >>> backbone = resnet_fpn_backbone('resnet50', weights=ResNet50_Weights.DEFAULT, trainable_layers=3)
+        >>> backbone = resnet_fpn_backbone(backbone_name='resnet50', weights=ResNet50_Weights.DEFAULT, trainable_layers=3)
         >>> # get some dummy image
         >>> x = torch.rand(1,3,64,64)
         >>> # compute the output
@@ -158,7 +160,7 @@ def _validate_trainable_layers(
     if not is_trained:
         if trainable_backbone_layers is not None:
             warnings.warn(
-                "Changing trainable_backbone_layers has not effect if "
+                "Changing trainable_backbone_layers has no effect if "
                 "neither pretrained nor pretrained_backbone have been set to True, "
                 f"falling back to trainable_backbone_layers={max_value} so that all layers are trainable"
             )

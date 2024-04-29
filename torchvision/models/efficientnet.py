@@ -439,7 +439,7 @@ _COMMON_META_V2 = {
 class EfficientNet_B0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/rwightman/pytorch-image-models/
-        url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
+        url="https://download.pytorch.org/models/efficientnet_b0_rwightman-7f5810bc.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC
         ),
@@ -463,7 +463,7 @@ class EfficientNet_B0_Weights(WeightsEnum):
 class EfficientNet_B1_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/rwightman/pytorch-image-models/
-        url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
+        url="https://download.pytorch.org/models/efficientnet_b1_rwightman-bac287d4.pth",
         transforms=partial(
             ImageClassification, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC
         ),
@@ -511,7 +511,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
 class EfficientNet_B2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/rwightman/pytorch-image-models/
-        url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
+        url="https://download.pytorch.org/models/efficientnet_b2_rwightman-c35c1473.pth",
         transforms=partial(
             ImageClassification, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC
         ),
@@ -535,7 +535,7 @@ class EfficientNet_B2_Weights(WeightsEnum):
 class EfficientNet_B3_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/rwightman/pytorch-image-models/
-        url="https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
+        url="https://download.pytorch.org/models/efficientnet_b3_rwightman-b3899882.pth",
         transforms=partial(
             ImageClassification, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC
         ),
@@ -559,7 +559,7 @@ class EfficientNet_B3_Weights(WeightsEnum):
 class EfficientNet_B4_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/rwightman/pytorch-image-models/
-        url="https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
+        url="https://download.pytorch.org/models/efficientnet_b4_rwightman-23ab8bcd.pth",
         transforms=partial(
             ImageClassification, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC
         ),
@@ -583,7 +583,7 @@ class EfficientNet_B4_Weights(WeightsEnum):
 class EfficientNet_B5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
-        url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
+        url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-1a07897c.pth",
         transforms=partial(
             ImageClassification, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC
         ),
@@ -607,7 +607,7 @@ class EfficientNet_B5_Weights(WeightsEnum):
 class EfficientNet_B6_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
-        url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
+        url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-24a108a5.pth",
         transforms=partial(
             ImageClassification, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC
         ),
@@ -631,7 +631,7 @@ class EfficientNet_B6_Weights(WeightsEnum):
 class EfficientNet_B7_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
-        url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
+        url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-c5b4e57e.pth",
         transforms=partial(
             ImageClassification, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC
         ),

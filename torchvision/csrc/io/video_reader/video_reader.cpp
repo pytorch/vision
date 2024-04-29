@@ -13,7 +13,7 @@
 #ifdef _WIN32
 PyMODINIT_FUNC PyInit_video_reader(void) {
   // No need to do anything.
-  return NULL;
+  return nullptr;
 }
 #endif
 #endif // USE_PYTHONs

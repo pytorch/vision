@@ -1,6 +1,6 @@
 import json
 import pathlib
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 from PIL import Image
@@ -15,10 +15,10 @@ class CLEVRClassification(VisionDataset):
     The number of objects in a scene are used as label.
 
     Args:
-        root (string): Root directory of dataset where directory ``root/clevr`` exists or will be saved to if download is
+        root (str or ``pathlib.Path``): Root directory of dataset where directory ``root/clevr`` exists or will be saved to if download is
             set to True.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.
-        transform (callable, optional): A function/transform that takes in an PIL image and returns a transformed
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in them target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and puts it in root directory. If
@@ -30,7 +30,7 @@ class CLEVRClassification(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

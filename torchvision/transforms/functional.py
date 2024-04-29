@@ -1,5 +1,6 @@
 import math
 import numbers
+import sys
 import warnings
 from enum import Enum
 from typing import Any, List, Optional, Tuple, Union
@@ -7,6 +8,7 @@ from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 import torch
 from PIL import Image
+from PIL.Image import Image as PILImage
 from torch import Tensor
 
 try:
@@ -122,7 +124,7 @@ def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
 
-def to_tensor(pic) -> Tensor:
+def to_tensor(pic: Union[PILImage, np.ndarray]) -> Tensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     This function does not support torchscript.
 
@@ -162,7 +164,7 @@ def to_tensor(pic) -> Tensor:
         return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
-    mode_to_nptype = {"I": np.int32, "I;16": np.int16, "F": np.float32}
+    mode_to_nptype = {"I": np.int32, "I;16" if sys.byteorder == "little" else "I;16B": np.int16, "F": np.float32}
     img = torch.from_numpy(np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True))
 
     if pic.mode == "1":
@@ -258,41 +260,26 @@ def to_pil_image(pic, mode=None):
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(to_pil_image)
 
-    if not (isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
+    if isinstance(pic, torch.Tensor):
+        if pic.ndim == 3:
+            pic = pic.permute((1, 2, 0))
+        pic = pic.numpy(force=True)
+    elif not isinstance(pic, np.ndarray):
         raise TypeError(f"pic should be Tensor or ndarray. Got {type(pic)}.")
 
-    elif isinstance(pic, torch.Tensor):
-        if pic.ndimension() not in {2, 3}:
-            raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndimension()} dimensions.")
+    if pic.ndim == 2:
+        # if 2D image, add channel dimension (HWC)
+        pic = np.expand_dims(pic, 2)
+    if pic.ndim != 3:
+        raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndim} dimensions.")
 
-        elif pic.ndimension() == 2:
-            # if 2D image, add channel dimension (CHW)
-            pic = pic.unsqueeze(0)
-
-        # check number of channels
-        if pic.shape[-3] > 4:
-            raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-3]} channels.")
-
-    elif isinstance(pic, np.ndarray):
-        if pic.ndim not in {2, 3}:
-            raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndim} dimensions.")
-
-        elif pic.ndim == 2:
-            # if 2D image, add channel dimension (HWC)
-            pic = np.expand_dims(pic, 2)
-
-        # check number of channels
-        if pic.shape[-1] > 4:
-            raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-1]} channels.")
+    if pic.shape[-1] > 4:
+        raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-1]} channels.")
 
     npimg = pic
-    if isinstance(pic, torch.Tensor):
-        if pic.is_floating_point() and mode != "F":
-            pic = pic.mul(255).byte()
-        npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
 
-    if not isinstance(npimg, np.ndarray):
-        raise TypeError("Input pic must be a torch.Tensor or NumPy ndarray, not {type(npimg)}")
+    if np.issubdtype(npimg.dtype, np.floating) and mode != "F":
+        npimg = (npimg * 255).astype(np.uint8)
 
     if npimg.shape[2] == 1:
         expected_mode = None
@@ -300,7 +287,7 @@ def to_pil_image(pic, mode=None):
         if npimg.dtype == np.uint8:
             expected_mode = "L"
         elif npimg.dtype == np.int16:
-            expected_mode = "I;16"
+            expected_mode = "I;16" if sys.byteorder == "little" else "I;16B"
         elif npimg.dtype == np.int32:
             expected_mode = "I"
         elif npimg.dtype == np.float32:
@@ -393,18 +380,11 @@ def resize(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> Tensor:
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
-
-    .. warning::
-        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
-        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
-        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
-        closer.
 
     Args:
         img (PIL Image or Tensor): Image to be resized.
@@ -437,7 +417,7 @@ def resize(
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -446,8 +426,8 @@ def resize(
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
 
     Returns:
         PIL Image or Tensor: Resized image.
@@ -480,8 +460,6 @@ def resize(
 
     if [image_height, image_width] == output_size:
         return img
-
-    antialias = _check_antialias(img, antialias, interpolation)
 
     if not isinstance(img, torch.Tensor):
         if antialias is False:
@@ -615,7 +593,7 @@ def resized_crop(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    antialias: Optional[Union[str, bool]] = "warn",
+    antialias: Optional[bool] = True,
 ) -> Tensor:
     """Crop the given image and resize it to desired size.
     If the image is torch Tensor, it is expected
@@ -643,7 +621,7 @@ def resized_crop(
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -652,8 +630,8 @@ def resized_crop(
               PIL images. This value exists for legacy reasons and you probably
               don't want to use it unless you really know what you are doing.
 
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            The default value changed from ``None`` to ``True`` in
+            v0.17, for the PIL and Tensor backends to be consistent.
     Returns:
         PIL Image or Tensor: Cropped image.
     """
@@ -699,14 +677,19 @@ def _get_perspective_coeffs(startpoints: List[List[int]], endpoints: List[List[i
     Returns:
         octuple (a, b, c, d, e, f, g, h) for transforming each pixel.
     """
-    a_matrix = torch.zeros(2 * len(startpoints), 8, dtype=torch.float)
+    if len(startpoints) != 4 or len(endpoints) != 4:
+        raise ValueError(
+            f"Please provide exactly four corners, got {len(startpoints)} startpoints and {len(endpoints)} endpoints."
+        )
+    a_matrix = torch.zeros(2 * len(startpoints), 8, dtype=torch.float64)
 
     for i, (p1, p2) in enumerate(zip(endpoints, startpoints)):
         a_matrix[2 * i, :] = torch.tensor([p1[0], p1[1], 1, 0, 0, 0, -p2[0] * p1[0], -p2[0] * p1[1]])
         a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
-    b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.linalg.lstsq(a_matrix, b_matrix, driver="gels").solution
+    b_matrix = torch.tensor(startpoints, dtype=torch.float64).view(8)
+    # do least squares in double precision to prevent numerical issues
+    res = torch.linalg.lstsq(a_matrix, b_matrix, driver="gels").solution.to(torch.float32)
 
     output: List[float] = res.tolist()
     return output
@@ -1248,7 +1231,7 @@ def affine(
 
 # Looks like to_grayscale() is a stand-alone functional that is never called
 # from the transform classes. Perhaps it's still here for BC? I can't be
-# bothered to dig. Anyway, this can be deprecated as we migrate to V2.
+# bothered to dig.
 @torch.jit.unused
 def to_grayscale(img, num_output_channels=1):
     """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
@@ -1279,7 +1262,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
     Note:
         Please, note that this method supports only RGB images as input. For inputs in other color spaces,
-        please, consider using meth:`~torchvision.transforms.functional.to_grayscale` with PIL Image.
+        please, consider using :meth:`~torchvision.transforms.functional.to_grayscale` with PIL Image.
 
     Args:
         img (PIL Image or Tensor): RGB Image to be converted to grayscale.
@@ -1324,9 +1307,11 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 
 
 def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
-    """Performs Gaussian blurring on the image by given kernel.
+    """Performs Gaussian blurring on the image by given kernel
+
+    The convolution will be using reflection padding corresponding to the kernel size, to maintain the input shape.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    to have [..., H, W] shape, where ... means at most one leading dimension.
 
     Args:
         img (PIL Image or Tensor): Image to be blurred
@@ -1590,28 +1575,3 @@ def elastic_transform(
     if not isinstance(img, torch.Tensor):
         output = to_pil_image(output, mode=img.mode)
     return output
-
-
-# TODO in v0.17: remove this helper and change default of antialias to True everywhere
-def _check_antialias(
-    img: Tensor, antialias: Optional[Union[str, bool]], interpolation: InterpolationMode
-) -> Optional[bool]:
-    if isinstance(antialias, str):  # it should be "warn", but we don't bother checking against that
-        if isinstance(img, Tensor) and (
-            interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC
-        ):
-            warnings.warn(
-                "The default value of the antialias parameter of all the resizing transforms "
-                "(Resize(), RandomResizedCrop(), etc.) "
-                "will change from None to True in v0.17, "
-                "in order to be consistent across the PIL and Tensor backends. "
-                "To suppress this warning, directly pass "
-                "antialias=True (recommended, future default), antialias=None (current default, "
-                "which means False for Tensors and True for PIL), "
-                "or antialias=False (only works on Tensors - PIL will still use antialiasing). "
-                "This also applies if you are using the inference transforms from the models weights: "
-                "update the call to weights.transforms(antialias=True)."
-            )
-        antialias = None
-
-    return antialias

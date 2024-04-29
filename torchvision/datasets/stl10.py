@@ -1,5 +1,6 @@
 import os.path
-from typing import Any, Callable, cast, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, cast, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -12,14 +13,14 @@ class STL10(VisionDataset):
     """`STL10 <https://cs.stanford.edu/~acoates/stl10/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``stl10_binary`` exists.
         split (string): One of {'train', 'test', 'unlabeled', 'train+unlabeled'}.
             Accordingly, dataset is selected.
         folds (int, optional): One of {0-9} or None.
             For training, loads one of the 10 pre-defined folds of 1k samples for the
             standard evaluation procedure. If no value is passed, loads the 5k samples.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -45,7 +46,7 @@ class STL10(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         folds: Optional[int] = None,
         transform: Optional[Callable] = None,

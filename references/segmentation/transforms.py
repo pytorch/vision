@@ -35,7 +35,7 @@ class RandomResize:
 
     def __call__(self, image, target):
         size = random.randint(self.min_size, self.max_size)
-        image = F.resize(image, size)
+        image = F.resize(image, size, antialias=True)
         target = F.resize(target, size, interpolation=T.InterpolationMode.NEAREST)
         return image, target
 
@@ -81,11 +81,14 @@ class PILToTensor:
         return image, target
 
 
-class ConvertImageDtype:
-    def __init__(self, dtype):
+class ToDtype:
+    def __init__(self, dtype, scale=False):
         self.dtype = dtype
+        self.scale = scale
 
     def __call__(self, image, target):
+        if not self.scale:
+            return image.to(dtype=self.dtype), target
         image = F.convert_image_dtype(image, self.dtype)
         return image, target
 

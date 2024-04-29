@@ -1,5 +1,6 @@
 import os
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from torch import Tensor
 
@@ -28,7 +29,7 @@ class UCF101(VisionDataset):
     Internally, it uses a VideoClips object to handle clip creation.
 
     Args:
-        root (string): Root directory of the UCF101 Dataset.
+        root (str or ``pathlib.Path``): Root directory of the UCF101 Dataset.
         annotation_path (str): path to the folder containing the split files;
             see docstring above for download instructions of these files
         frames_per_clip (int): number of frames in a clip.
@@ -36,7 +37,7 @@ class UCF101(VisionDataset):
         fold (int, optional): which fold to use. Should be between 1 and 3.
         train (bool, optional): if ``True``, creates a dataset from the train split,
             otherwise from the ``test`` split.
-        transform (callable, optional): A function/transform that  takes in a TxHxWxC video
+        transform (callable, optional): A function/transform that takes in a TxHxWxC video
             and returns a transformed version.
         output_format (str, optional): The format of the output video tensors (before transforms).
             Can be either "THWC" (default) or "TCHW".
@@ -52,7 +53,7 @@ class UCF101(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         annotation_path: str,
         frames_per_clip: int,
         step_between_clips: int = 1,

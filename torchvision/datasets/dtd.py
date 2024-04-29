@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 import PIL.Image
 
@@ -12,7 +12,7 @@ class DTD(VisionDataset):
     """`Describable Textures Dataset (DTD) <https://www.robots.ox.ac.uk/~vgg/data/dtd/>`_.
 
     Args:
-        root (string): Root directory of the dataset.
+        root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.
         partition (int, optional): The dataset partition. Should be ``1 <= partition <= 10``. Defaults to ``1``.
 
@@ -21,7 +21,7 @@ class DTD(VisionDataset):
                 The partition only changes which split each image belongs to. Thus, regardless of the selected
                 partition, combining all splits will result in all images.
 
-        transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and
@@ -34,7 +34,7 @@ class DTD(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         partition: int = 1,
         transform: Optional[Callable] = None,
