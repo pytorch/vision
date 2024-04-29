@@ -203,8 +203,8 @@ def _set_default_tracer_kwargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> 
 def get_graph_node_names(
     model: nn.Module,
     tracer_kwargs: Optional[Dict[str, Any]] = None,
-    concrete_args: Optional[Dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
+    concrete_args: Optional[Dict[str, Any]] = None,
 ) -> Tuple[List[str], List[str]]:
     """
     Dev utility to return node names in order of execution. See note on node
@@ -233,12 +233,13 @@ def get_graph_node_names(
             {"autowrap_modules": (math, torchvision.ops,),"leaf_modules": _get_leaf_modules_for_ops(),}
             WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
             provided dictionary.
-        concrete_args (Optional[Dict[str, any]]): Concrete arguments that should
-            not be treated as Proxies. This parameter is experimental and
-            its backwards-compatibility is *NOT* guaranteed.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
+        concrete_args (Optional[Dict[str, any]]): Concrete arguments that should
+            not be treated as Proxies. According to the `Pytorch docs
+            <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer.trace>`_,
+            this parameter's API may not be guaranteed.
 
     Returns:
         tuple(list, list): a list of node names from tracing the model in
@@ -336,8 +337,8 @@ def create_feature_extractor(
     train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     tracer_kwargs: Optional[Dict[str, Any]] = None,
-    concrete_args: Optional[Dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
+    concrete_args: Optional[Dict[str, Any]] = None,
 ) -> fx.GraphModule:
     """
     Creates a new graph module that returns intermediate nodes from a given
@@ -399,12 +400,13 @@ def create_feature_extractor(
             {"autowrap_modules": (math, torchvision.ops,),"leaf_modules": _get_leaf_modules_for_ops(),}
             WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
             provided dictionary.
-        concrete_args (Optional[Dict[str, any]]): Concrete arguments that should
-            not be treated as Proxies. This parameter is experimental and
-            its backwards-compatibility is *NOT* guaranteed.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
+        concrete_args (Optional[Dict[str, any]]): Concrete arguments that should
+            not be treated as Proxies. According to the `Pytorch docs
+            <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer.trace>`_,
+            this parameter's API may not be guaranteed.
 
     Examples::
 
