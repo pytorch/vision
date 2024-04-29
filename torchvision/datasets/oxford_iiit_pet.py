@@ -76,7 +76,7 @@ class OxfordIIITPet(VisionDataset):
                 self._labels.append(int(label) - 1)
                 self._bin_labels.append(int(bin_label) - 1)
 
-        self.bin_classes = ['Cat','Dog']
+        self.bin_classes = ["Cat", "Dog"]
         self.classes = [
             " ".join(part.title() for part in raw_cls.split("_"))
             for raw_cls, _ in sorted(
