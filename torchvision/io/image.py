@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Union
 from warnings import warn
 
 import torch
@@ -137,22 +137,26 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
 
 
 def decode_jpeg(
-    input: torch.Tensor,
+    input: Union[torch.Tensor, List[torch.Tensor]],
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     device: str = "cpu",
     apply_exif_orientation: bool = False,
-) -> torch.Tensor:
+) -> Union[torch.Tensor, List[torch.Tensor]]:
     """
-    Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
-    Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
+    Decodes a (list of) JPEG image(s) into a (list of) 3 dimensional RGB or grayscale Tensor(s).
+    Optionally converts the image(s) to the desired format.
+    The values of the output tensor(s) are uint8 between 0 and 255.
+
+    .. note::
+        When using a CUDA device, passing a list of tensors is more efficient than repeated individual calls to ``decode_jpeg``.
+        When using CPU the performance is equivalent.
 
     Args:
-        input (Tensor[1]): a one dimensional uint8 tensor containing
-            the raw bytes of the JPEG image. This tensor must be on CPU,
+        input (Tensor[1] or list[Tensor[1]]): a (list of) one dimensional uint8 tensor(s) containing
+            the raw bytes of the JPEG image. This tensor(s) must be on CPU,
             regardless of the ``device`` parameter.
         mode (ImageReadMode): the read mode used for optionally
-            converting the image. The supported modes are: ``ImageReadMode.UNCHANGED``,
+            converting the image(s). The supported modes are: ``ImageReadMode.UNCHANGED``,
             ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
@@ -176,59 +180,24 @@ def decode_jpeg(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_jpeg)
     device = torch.device(device)
-    if device.type == "cuda":
-        output = torch.ops.image.decode_jpeg_cuda(input, mode.value, device)
-    else:
-        output = torch.ops.image.decode_jpeg(input, mode.value, apply_exif_orientation)
-    return output
 
+    if isinstance(input, list):
+        if len(input) == 0:
+            raise RuntimeError("Input list must contain at least one element")
+        if input[0].device.type != "cpu":
+            raise RuntimeError("Input list must contain tensors on CPU")
+        if device.type == "cuda":
+            return torch.ops.image.decode_jpegs_cuda(input, mode.value, device)
+        else:
+            return [torch.ops.image.decode_jpeg(img, mode.value, apply_exif_orientation) for img in input]
 
-def batch_decode_jpegs(
-    inputs: List[torch.Tensor],
-    mode: ImageReadMode = ImageReadMode.UNCHANGED,
-    device: str = "cpu",
-    apply_exif_orientation: bool = False,
-) -> torch.Tensor:
-    """
-    Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
-    Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
-
-    Args:
-        input (Tensor[1]): a one dimensional uint8 tensor containing
-            the raw bytes of the JPEG image. This tensor must be on CPU,
-            regardless of the ``device`` parameter.
-        mode (ImageReadMode): the read mode used for optionally
-            converting the image. The supported modes are: ``ImageReadMode.UNCHANGED``,
-            ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``
-            Default: ``ImageReadMode.UNCHANGED``.
-            See ``ImageReadMode`` class for more information on various
-            available modes.
-        device (str or torch.device): The device on which the decoded image will
-            be stored. If a cuda device is specified, the image will be decoded
-            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
-            supported for CUDA version >= 10.1
-
-            .. betastatus:: device parameter
-
-            .. warning::
-                There is a memory leak in the nvjpeg library for CUDA versions < 11.6.
-                Make sure to rely on CUDA 11.6 or above before using ``device="cuda"``.
-        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
-            Default: False. Only implemented for JPEG format on CPU.
-
-    Returns:
-        output (Tensor[image_channels, image_height, image_width])
-    """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(batch_decode_jpegs)
-    device = torch.device(device)
-    if device.type == "cuda":
-        output = torch.ops.image.batch_decode_jpegs(inputs, mode.value, device)
-    else:
-        output = [torch.ops.image.decode_jpeg(input, mode.value, apply_exif_orientation) for input in inputs]
-    return output
-
+    else:  # input is tensor
+        if input.device.type != "cpu":
+            raise RuntimeError("Input tensor must be a CPU tensor")
+        if device.type == "cuda":
+            return torch.ops.image.decode_jpegs_cuda([input], mode.value, device)[0]
+        else:
+            return torch.ops.image.decode_jpeg(input, mode.value, apply_exif_orientation)
 
 
 def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
@@ -237,50 +206,21 @@ def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
     of its corresponding JPEG file.
 
     Args:
-        input (Tensor[channels, image_height, image_width]): uint8 image tensor of ``c`` channels, where ``c`` must be 1 or 3
+        input (Tensor[channels, image_height, image_width])): int8 image tensor of
+            ``c`` channels, where ``c`` must be 1 or 3.
         quality (int): Quality of the resulting JPEG file, it must be a number between
             1 and 100. Default: 75
 
     Returns:
-        output (Tensor[1]): A one dimensional uint8 tensor that contains the raw bytes of the JPEG file.
+        output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the
+            JPEG file.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(encode_jpeg)
     if quality < 1 or quality > 100:
         raise ValueError("Image quality should be a positive number between 1 and 100")
-    if input.device.type == "cuda":
-        output: torch.Tensor = torch.ops.image.encode_jpeg_cuda([input], quality)[0]
-    else:
-        output: torch.Tensor = torch.ops.image.encode_jpeg(input, quality)
 
-    return output
-
-
-def encode_jpegs(inputs: List[torch.Tensor], quality: int = 75) -> List[torch.Tensor]:
-    """
-    Same as encode_jpeg, but takes a list of tensors as input.
-    This version uses a fused kernel and may be faster than successive calls to encode_jpeg when running on a CUDA device.
-
-    Args:
-        input (List[Tensor[channels, image_height, image_width]]): a list of CUDA image tensors. Tensors must have
-            ``c`` channels, where ``c`` must be 1 or 3.
-        quality (int): Quality of the resulting JPEG files, it must be a number between
-            1 and 100. Default: 75
-
-    Returns:
-        output (List[Tensor[1]]): A list of one dimensional uint8 tensors that contain the raw bytes of the
-            JPEG files.
-    """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(encode_jpegs)
-    if quality < 1 or quality > 100:
-        raise ValueError("Image quality should be a positive number between 1 and 100")
-    assert len(inputs) > 0, "encode_jpegs requires at least one input tensor"
-    if inputs[0].device.type == "cuda":
-        output: List[torch.Tensor] = torch.ops.image.encode_jpeg_cuda(inputs, quality)
-    else:
-        output: List[torch.Tensor] = [torch.ops.image.encode_jpeg(input, quality) for input in inputs]
-
+    output = torch.ops.image.encode_jpeg(input, quality)
     return output
 
 
