@@ -7,6 +7,7 @@ from PIL import Image
 
 from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
+from .voc import VOCDetection
 
 
 class OxfordIIITPet(VisionDataset):
@@ -20,6 +21,8 @@ class OxfordIIITPet(VisionDataset):
 
                 - ``category`` (int): Label for one of the 37 pet categories.
                 - ``binary-category`` (int): Binary label for cat or dog.
+                - ``detection`` (dict): Pascal VOC annotation dict with classes covering the 37 pet breeds
+                - ``binary-detection`` Pascal VOC annotation dict with binary cat/dog classes
                 - ``segmentation`` (PIL image): Segmentation trimap of the image.
 
             If empty, ``None`` will be returned as target.
@@ -59,6 +62,7 @@ class OxfordIIITPet(VisionDataset):
         self._images_folder = self._base_folder / "images"
         self._anns_folder = self._base_folder / "annotations"
         self._segs_folder = self._anns_folder / "trimaps"
+        self._xmls_folder = self._anns_folder / "xmls"
 
         if download:
             self._download()
@@ -89,6 +93,19 @@ class OxfordIIITPet(VisionDataset):
 
         self._images = [self._images_folder / f"{image_id}.jpg" for image_id in image_ids]
         self._segs = [self._segs_folder / f"{image_id}.png" for image_id in image_ids]
+        self._xmls = [self._xmls_folder / f"{image_id}.xml" for image_id in image_ids]
+
+        # The oxford pet dataset has detection XMLs in VOC format, but some images do not have xmls
+        # Here we filter to only samples that have corresponding xml files when detection is selected
+        if 'detection' in target_types:
+            # Notify users this is not a complete dataset
+            print('Dataset does not contain detection annotations for every sample. Filtering to include' \
+                  'only those that do.') # TODO: Is a simple print the right call here?
+            # Set up filtered arrays
+            self._labels = [lbl for lbl,xml_file in zip(self._labels,self._xmls) if os.path.isfile(xml_file)]
+            self._images = [img for img,xml_file in zip(self._images,self._xmls) if os.path.isfile(xml_file)]
+            self._segs = [seg for seg,xml_file in zip(self._segs,self._xmls) if os.path.isfile(xml_file)]
+            self._xmls = [xml_file for xml_file in self._xmls if os.path.isfile(xml_file)]
 
     def __len__(self) -> int:
         return len(self._images)
