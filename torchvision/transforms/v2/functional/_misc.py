@@ -328,12 +328,12 @@ def sanitize_bounding_boxes(
         bounding_boxes = bounding_boxes[valid]
     else:
         if not isinstance(bounding_boxes, tv_tensors.BoundingBoxes):
-            raise ValueError("bouding_boxes must be a tv_tensors.BoundingBoxes instance or a pure tensor.")
+            raise ValueError("bounding_boxes must be a tv_tensors.BoundingBoxes instance or a pure tensor.")
         if format is not None or canvas_size is not None:
             raise ValueError(
                 "format and canvas_size must be None when bounding_boxes is a tv_tensors.BoundingBoxes instance. "
                 f"Got format={format} and canvas_size={canvas_size}. "
-                "Leave those to None or pass bouding_boxes as a pure tensor."
+                "Leave those to None or pass bounding_boxes as a pure tensor."
             )
         valid = _get_sanitize_bounding_boxes_mask(
             bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size
