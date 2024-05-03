@@ -281,5 +281,5 @@ def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> to
     return torch.ops.image.decode_png(data, mode.value, True)
 
 
-def decode_gif():
-    return torch.ops.image.decode_gif()
+def decode_gif(path):
+    return torch.ops.image.decode_gif(path)

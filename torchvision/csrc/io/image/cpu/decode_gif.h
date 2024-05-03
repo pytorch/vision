@@ -5,7 +5,7 @@
 namespace vision {
 namespace image {
 
-C10_EXPORT void decode_gif();
+C10_EXPORT torch::Tensor decode_gif(const std::string& path);
 
 
 } // namespace image
