@@ -281,5 +281,9 @@ def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> to
     return torch.ops.image.decode_png(data, mode.value, True)
 
 
-def decode_gif(path):
-    return torch.ops.image.decode_gif(path)
+def decode_gif(input: torch.Tensor):
+    # TODO docstring
+    # TODO also update docstring of decode_image and read_image
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_gif)
+    return torch.ops.image.decode_gif(input)
