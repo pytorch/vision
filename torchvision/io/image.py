@@ -279,3 +279,7 @@ def read_image(
 def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     data = read_file(path)
     return torch.ops.image.decode_png(data, mode.value, True)
+
+
+def decode_gif():
+    return torch.ops.image.decode_gif()
