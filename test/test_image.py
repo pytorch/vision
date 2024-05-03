@@ -550,3 +550,17 @@ def test_pathlib_support(tmpdir):
 
 if __name__ == "__main__":
     pytest.main([__file__])
+
+
+@pytest.mark.parametrize("path", glob.glob("/home/nicolashug/dev/giflib-code/pic/*.gif"))
+def test_decode_gif(path):
+    tv_out = read_image(path)
+    if tv_out.ndim == 3:
+        tv_out = tv_out[None]
+
+    from PIL import ImageSequence
+    pil_seq = ImageSequence.Iterator(Image.open(path))
+
+    for pil_frame, tv_frame in zip(pil_seq, tv_out):
+        pil_frame = F.pil_to_tensor(pil_frame.convert("RGB"))
+        torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
