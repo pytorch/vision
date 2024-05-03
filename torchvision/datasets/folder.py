@@ -261,7 +261,11 @@ def pil_loader(path: str) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, "rb") as f:
         img = Image.open(f)
-        return img.convert("RGB")
+        if(len(Image.Image.getbands(img))!=4):
+            img=img.convert("RGB")
+        else:    
+            img=img.convert("RGBX") # in case RGBN(RGB,NIR)
+        return img    
 
 
 # TODO: specify the return type
