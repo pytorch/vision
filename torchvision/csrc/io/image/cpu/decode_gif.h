@@ -1,6 +1,6 @@
 #pragma once
 
-#include <torch/types.h>  // TODO: Is this where C10_EXPORT is defined?? remove/change?
+#include <torch/types.h> // TODO: Is this where C10_EXPORT is defined?? remove/change?
 
 namespace vision {
 namespace image {
