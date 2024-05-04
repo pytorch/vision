@@ -6,10 +6,11 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import requests
 import torch
 import torchvision.transforms.functional as F
 from common_utils import assert_equal, needs_cuda
-from PIL import __version__ as PILLOW_VERSION, Image, ImageOps
+from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
     _read_png_16,
     decode_image,
@@ -548,20 +549,32 @@ def test_pathlib_support(tmpdir):
     write_png(img, write_path)
 
 
-if __name__ == "__main__":
-    pytest.main([__file__])
+@pytest.mark.parametrize("name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans"))
+def test_decode_gif(tmpdir, name):
+    # Using test image from GIFLIB
+    # https://sourceforge.net/p/giflib/code/ci/master/tree/pic/, we assert PIL
+    # and torchvision decoded outputs are equal.
+    # We're not testing against "welcome2" because PIL and GIFLIB disagee on what
+    # the background color should be (likely a difference in the way they handle
+    # transparency?)
 
+    path = tmpdir / f"{name}.gif"
+    url = f"https://sourceforge.net/p/giflib/code/ci/master/tree/pic/{name}.gif?format=raw"
+    with open(path, "wb") as f:
+        f.write(requests.get(url).content)
 
-@pytest.mark.parametrize("path", glob.glob("/home/nicolashug/dev/giflib-code/pic/*.gif"))
-def test_decode_gif(path):
     tv_out = read_image(path)
     if tv_out.ndim == 3:
         tv_out = tv_out[None]
 
-    from PIL import ImageSequence
+    # For some reason, not using Image.open() as a CM causes "ResourceWarning: unclosed file"
+    with Image.open(path) as pil_img:
+        pil_seq = ImageSequence.Iterator(pil_img)
 
-    pil_seq = ImageSequence.Iterator(Image.open(path))
+        for pil_frame, tv_frame in zip(pil_seq, tv_out):
+            pil_frame = F.pil_to_tensor(pil_frame.convert("RGB"))
+            torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
 
-    for pil_frame, tv_frame in zip(pil_seq, tv_out):
-        pil_frame = F.pil_to_tensor(pil_frame.convert("RGB"))
-        torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
+
+if __name__ == "__main__":
+    pytest.main([__file__])
