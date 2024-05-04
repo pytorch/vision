@@ -551,7 +551,7 @@ def test_pathlib_support(tmpdir):
 
 @pytest.mark.parametrize("name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans"))
 def test_decode_gif(tmpdir, name):
-    # Using test image from GIFLIB
+    # Using test images from GIFLIB
     # https://sourceforge.net/p/giflib/code/ci/master/tree/pic/, we assert PIL
     # and torchvision decoded outputs are equal.
     # We're not testing against "welcome2" because PIL and GIFLIB disagee on what
