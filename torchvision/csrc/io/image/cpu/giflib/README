@@ -1,6 +1,9 @@
 These files come from the GIFLIB project (https://giflib.sourceforge.net/) and
 are licensed under the MIT license.
 
+Some modifications have been made to the original files:
+- Remove use of "register" keyword in gifalloc.c for C++17 compatibility.
+
 Below is the original license text from the COPYING file of the GIFLIB project:
 
 = MIT LICENSE
