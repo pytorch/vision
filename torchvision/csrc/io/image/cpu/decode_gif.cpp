@@ -67,15 +67,27 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_bytes) {
   }
 
   // Note:
-  // - We're assuming and enforcing that all images have the same height and
-  // width
-  // - We're ignoring the canvas width and height and assume shape is that of
-  // the first image
-  // - We're ignoring the top and left offsets and enforce them to be 0.
-  // This is for simplicity. All of those may be revisited in the future if need
-  // be.
-
-  // TODO: Transparency???
+  // The GIF format has this notion of "canvas" and "canvas size", where each
+  // image could be displayed on the canvas at different offsets, forming a
+  // mosaic/picture wall like so:
+  //
+  // <---    canvas W    --->
+  // ------------------------     ^
+  // |         |            |     |
+  // |   img1  |    img3    |     |
+  // |         |------------|  canvas H
+  // |----------            |     |
+  // |   img2  |    img4    |     |
+  // |         |            |     |
+  // ------------------------     v
+  // The GifLib doc indicate that this is mostly vestigial, and modern viewers
+  // ignore the canvas size as well as image offsets. Hence, we're ignoring that
+  // too:
+  // - We're ignoring the canvas width and height and assume that the shape of
+  // the canvas and of all images is the shape of the first image.
+  // - We're enforcing that all images have the same shape.
+  // - Left and Top offsets of each image are ignored as well and assumed to be
+  // 0.
 
   auto out_h = gifFile->SavedImages[0].ImageDesc.Height;
   auto out_w = gifFile->SavedImages[0].ImageDesc.Width;
@@ -91,13 +103,12 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_bytes) {
     TORCH_CHECK(
         desc.Width == out_w && desc.Height == out_h,
         "All images in the gif should have the same dimensions.");
-    TORCH_CHECK(
-        desc.Top == 0 && desc.Left == 0,
-        "Images are expected to have top and left offsets of 0.");
 
     const ColorMapObject* cmap =
         desc.ColorMap ? desc.ColorMap : gifFile->SColorMap;
-    TORCH_CHECK(cmap != nullptr, "ColorMap is missing.");
+    TORCH_CHECK(
+        cmap != nullptr,
+        "Global and local color maps are missing. This should never happen!");
 
     for (int h = 0; h < desc.Height; h++) {
       for (int w = 0; w < desc.Width; w++) {
