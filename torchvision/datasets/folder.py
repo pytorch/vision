@@ -258,14 +258,13 @@ IMG_EXTENSIONS = (".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tif
 
 
 def pil_loader(path: str) -> Image.Image:
+    conv = "RGB"
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, "rb") as f:
         img = Image.open(f)
-        if(len(Image.Image.getbands(img))!=4):
-            img=img.convert("RGB")
-        else:    
-            img=img.convert("RGBX") # in case RGBN(RGB,NIR)
-        return img    
+        if img.mode == "RGBX": # in case RGBN(RGB,NIR)
+            conv = "RGBX"
+        return img.convert(conv)
 
 
 # TODO: specify the return type
