@@ -83,6 +83,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_bytes) {
 
   auto out = torch::empty(
       {int64_t(num_images), 3, int64_t(out_h), int64_t(out_w)}, torch::kU8);
+  auto out_a = out.accessor<uint8_t, 4>();
 
   for (int i = 0; i < num_images; i++) {
     const SavedImage& img = gifFile->SavedImages[i];
@@ -102,9 +103,9 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_bytes) {
       for (int w = 0; w < desc.Width; w++) {
         auto c = img.RasterBits[h * desc.Width + w];
         GifColorType rgb = cmap->Colors[c];
-        out.index_put_({i, 0, h, w}, rgb.Red);
-        out.index_put_({i, 1, h, w}, rgb.Green);
-        out.index_put_({i, 2, h, w}, rgb.Blue);
+        out_a[i][0][h][w] = rgb.Red;
+        out_a[i][1][h][w] = rgb.Green;
+        out_a[i][2][h][w] = rgb.Blue;
       }
     }
   }
