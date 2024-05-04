@@ -1,8 +1,8 @@
 #include "decode_gif.h"
+#include "giflib/gif_lib.h"
 #include <stdio.h> // TODO: Remove
 #include <iostream> // TODO: Remove?
 
-#include <gif_lib.h>
 
 namespace vision {
 namespace image {

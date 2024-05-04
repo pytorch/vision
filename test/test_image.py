@@ -559,6 +559,7 @@ def test_decode_gif(path):
         tv_out = tv_out[None]
 
     from PIL import ImageSequence
+
     pil_seq = ImageSequence.Iterator(Image.open(path))
 
     for pil_frame, tv_frame in zip(pil_seq, tv_out):

@@ -315,15 +315,6 @@ def get_extensions():
         print("Building torchvision without JPEG image support")
     image_macros += [("JPEG_FOUND", str(int(use_jpeg)))]
 
-    print("-------------------" * 10)
-    # This adds -I when building decode_gif.o
-    image_include += ["/home/nicolashug/Downloads/zob/include"]
-    # This adds -L when linking image.so from all the other .o files
-    image_library += ["/home/nicolashug/Downloads/zob/lib"]
-    # This adds -lgif when linking image.so from all the other .o files
-    image_link_flags.append("gif")
-    print("-------------------" * 10)
-
     # Locating nvjpeg
     # Should be included in CUDA_HOME for CUDA >= 10.1, which is the minimum version we have in the CI
     nvjpeg_found = (
@@ -341,7 +332,11 @@ def get_extensions():
     image_macros += [("NVJPEG_FOUND", str(int(use_nvjpeg)))]
 
     image_path = os.path.join(extensions_dir, "io", "image")
-    image_src = glob.glob(os.path.join(image_path, "*.cpp")) + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
+    image_src = (
+        glob.glob(os.path.join(image_path, "*.cpp"))
+        + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
+        + glob.glob(os.path.join(image_path, "cpu", "giflib", "*.c"))
+    )
 
     if is_rocm_pytorch:
         image_src += glob.glob(os.path.join(image_path, "hip", "*.cpp"))
@@ -350,6 +345,7 @@ def get_extensions():
     else:
         image_src += glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
 
+    # TODO: what about GIF?
     if use_png or use_jpeg:
         ext_modules.append(
             extension(
