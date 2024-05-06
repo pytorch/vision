@@ -283,7 +283,7 @@ def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> to
 
 def decode_gif(input: torch.Tensor) -> torch.Tensor:
     """
-    Decode a GIF image into a 3 dimensional RGB Tensor.
+    Decode a GIF image into a 3 or 4 dimensional RGB Tensor.
 
     The values of the output tensor are uint8 between 0 and 255.
     The output tensor has shape ``(C, H, W)`` if there is only one image in the
