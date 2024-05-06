@@ -1,9 +1,13 @@
-#include <iostream>
 #include <torch/script.h>
 #include <torch/torch.h>
-#include <torchvision/vision.h>
+#include <iostream>
+#include <cstring>
 
-int main() {
+int main(int argc, const char* argv[]) {
+  if (argc != 2) {
+    std::cout << "Usage: run_model <path_to_scripted_model>\n";
+    return -1;
+  }
   torch::DeviceType device_type;
   device_type = torch::kCPU;
 
@@ -11,10 +15,11 @@ int main() {
   try {
     std::cout << "Loading model\n";
     // Deserialize the ScriptModule from a file using torch::jit::load().
-    model = torch::jit::load("resnet18.pt");
+    model = torch::jit::load(argv[1]);
     std::cout << "Model loaded\n";
   } catch (const torch::Error& e) {
-    std::cout << "error loading the model\n";
+    std::cout
+        << "error loading the model.\n";
     return -1;
   } catch (const std::exception& e) {
     std::cout << "Other error: " << e.what() << "\n";
@@ -24,8 +29,15 @@ int main() {
   // TorchScript models require a List[IValue] as input
   std::vector<torch::jit::IValue> inputs;
 
-  // Create a random input tensor and run it through the model.
-  inputs.push_back(torch::rand({1, 3, 10, 10}));
+  if(std::strstr(argv[1], "fasterrcnn") != NULL) {
+    // Faster RCNN accepts a List[Tensor] as main input
+    std::vector<torch::Tensor> images;
+    images.push_back(torch::rand({3, 256, 275}));
+    images.push_back(torch::rand({3, 256, 275}));
+    inputs.push_back(images);
+  } else {
+    inputs.push_back(torch::rand({1, 3, 10, 10}));
+  }
   auto out = model.forward(inputs);
   std::cout << out << "\n";
 
