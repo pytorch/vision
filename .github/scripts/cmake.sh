@@ -84,7 +84,7 @@ pushd examples/cpp/build
 
 cmake .. -DTorch_DIR="${Torch_DIR}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
-  -DCMAKE_FIND_FRAMEWORK=NEVER
+  -DCMAKE_FIND_FRAMEWORK=NEVER \
   -DUSE_TORCHVISION=ON
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cpp_example.bat" $JOBS
