@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(ScriptedTorchVisionModel)
+project(run_model)
 
 option(USE_TORCHVISION "Whether to link to torchvision" OFF)
 
