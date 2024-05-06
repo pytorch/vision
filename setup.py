@@ -345,19 +345,17 @@ def get_extensions():
     else:
         image_src += glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
 
-    # TODO: what about GIF?
-    if use_png or use_jpeg:
-        ext_modules.append(
-            extension(
-                "torchvision.image",
-                image_src,
-                include_dirs=image_include + include_dirs + [image_path],
-                library_dirs=image_library + library_dirs,
-                define_macros=image_macros,
-                libraries=image_link_flags,
-                extra_compile_args=extra_compile_args,
-            )
+    ext_modules.append(
+        extension(
+            "torchvision.image",
+            image_src,
+            include_dirs=image_include + include_dirs + [image_path],
+            library_dirs=image_library + library_dirs,
+            define_macros=image_macros,
+            libraries=image_link_flags,
+            extra_compile_args=extra_compile_args,
         )
+    )
 
     # Locating ffmpeg
     ffmpeg_exe = shutil.which("ffmpeg")
