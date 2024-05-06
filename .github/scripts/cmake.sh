@@ -46,12 +46,6 @@ fi
 echo '::group::Prepare CMake builds'
 mkdir -p cpp_build
 
-pushd test/tracing/frcnn
-python trace_model.py
-mkdir -p build
-mv fasterrcnn_resnet50_fpn.pt build
-popd
-
 pushd examples/cpp
 python script_model.py
 mkdir -p build
