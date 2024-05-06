@@ -47,7 +47,15 @@ int main(int argc, const char* argv[]) {
     // Add GPU inputs
     inputs.clear();
     torch::TensorOptions options = torch::TensorOptions{torch::kCUDA};
-    inputs.push_back(torch::rand({1, 3, 10, 10}, options));
+    if (std::strstr(argv[1], "fasterrcnn") != NULL) {
+      // Faster RCNN accepts a List[Tensor] as main input
+      std::vector<torch::Tensor> images;
+      images.push_back(torch::rand({3, 256, 275}, options));
+      images.push_back(torch::rand({3, 256, 275}, options));
+      inputs.push_back(images);
+    } else {
+      inputs.push_back(torch::rand({1, 3, 10, 10}, options));
+    }
 
     auto gpu_out = model.forward(inputs);
     std::cout << gpu_out << "\n";
