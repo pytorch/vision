@@ -80,7 +80,7 @@ popd
 echo '::endgroup::'
 
 echo '::group::Build and run C++ example'
-pushd examples/cpp/jit_models/build
+pushd examples/cpp/build
 
 cmake .. -DTorch_DIR="${Torch_DIR}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \

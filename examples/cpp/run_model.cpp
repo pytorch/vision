@@ -1,7 +1,7 @@
 #include <torch/script.h>
 #include <torch/torch.h>
-#include <iostream>
 #include <cstring>
+#include <iostream>
 
 int main(int argc, const char* argv[]) {
   if (argc != 2) {
@@ -18,8 +18,7 @@ int main(int argc, const char* argv[]) {
     model = torch::jit::load(argv[1]);
     std::cout << "Model loaded\n";
   } catch (const torch::Error& e) {
-    std::cout
-        << "error loading the model.\n";
+    std::cout << "error loading the model.\n";
     return -1;
   } catch (const std::exception& e) {
     std::cout << "Other error: " << e.what() << "\n";
@@ -29,7 +28,7 @@ int main(int argc, const char* argv[]) {
   // TorchScript models require a List[IValue] as input
   std::vector<torch::jit::IValue> inputs;
 
-  if(std::strstr(argv[1], "fasterrcnn") != NULL) {
+  if (std::strstr(argv[1], "fasterrcnn") != NULL) {
     // Faster RCNN accepts a List[Tensor] as main input
     std::vector<torch::Tensor> images;
     images.push_back(torch::rand({3, 256, 275}));
