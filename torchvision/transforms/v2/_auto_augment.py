@@ -1,5 +1,5 @@
 import math
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 import PIL.Image
 import torch
@@ -94,6 +94,7 @@ class _AutoAugmentBase(Transform):
         interpolation: Union[InterpolationMode, int],
         fill: Dict[Union[Type, str], _FillTypeJIT],
     ) -> ImageOrVideo:
+        image = cast(torch.Tensor, image)
         fill_ = _get_fill(fill, type(image))
 
         if transform_id == "Identity":
