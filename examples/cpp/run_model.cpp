@@ -2,6 +2,8 @@
 #include <torch/torch.h>
 #include <cstring>
 #include <iostream>
+#include <torchvision/vision.h>
+#include <torchvision/ops/nms.h>
 
 int main(int argc, const char* argv[]) {
   if (argc != 2) {
