@@ -34,6 +34,17 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   // Refer over there for more details on the libgif API, API ref, and a
   // detailed description of the GIF format.
 
+  TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
+  TORCH_CHECK(
+      encoded_data.dtype() == torch::kU8,
+      "Input tensor must have uint8 data type, got ",
+      encoded_data.dtype());
+  TORCH_CHECK(
+      encoded_data.dim() == 1,
+      "Input tensor must be 1-dimensional, got ",
+      encoded_data.dim(),
+      " dims.");
+
   int error = D_GIF_SUCCEEDED;
 
   // We're using DGidOpen. The other entrypoints of libgif are

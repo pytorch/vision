@@ -290,7 +290,7 @@ def decode_gif(input: torch.Tensor) -> torch.Tensor:
     GIF, and ``(N, C, H, W)`` if there are ``N`` images.
 
     Args:
-        input (Tensor[1]): a one dimensional uint8 tensor containing
+        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
             the raw bytes of the GIF image.
 
     Returns:

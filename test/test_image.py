@@ -1,6 +1,7 @@
 import glob
 import io
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from common_utils import assert_equal, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
     _read_png_16,
+    decode_gif,
     decode_image,
     decode_jpeg,
     decode_png,
@@ -576,6 +578,18 @@ def test_decode_gif(tmpdir, name):
         for pil_frame, tv_frame in zip(pil_seq, tv_out):
             pil_frame = F.pil_to_tensor(pil_frame.convert("RGB"))
             torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
+
+
+def test_decode_gif_errors():
+    encoded_data = torch.randint(0, 256, (100,), dtype=torch.uint8)
+    with pytest.raises(RuntimeError, match="Input tensor must be 1-dimensional"):
+        decode_gif(encoded_data[None])
+    with pytest.raises(RuntimeError, match="Input tensor must have uint8 data type"):
+        decode_gif(encoded_data.float())
+    with pytest.raises(RuntimeError, match="Input tensor must be contiguous"):
+        decode_gif(encoded_data[::2])
+    with pytest.raises(RuntimeError, match=re.escape("DGifOpenFileName() failed - 103")):
+        decode_gif(encoded_data)
 
 
 if __name__ == "__main__":
