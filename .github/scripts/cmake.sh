@@ -59,6 +59,12 @@ echo '::endgroup::'
 echo '::group::Build and install libtorchvision'
 pushd cpp_build
 
+if [[ $OS_TYPE == windows ]]; then
+  USE_PYTHON=ON
+else
+  USE_PYTHON=OFF
+fi
+
 # On macOS, CMake is looking for the library (*.dylib) and the header (*.h) separately. By default, it prefers to load
 # the header from other packages that install the library. This easily leads to a mismatch if the library installed
 # from conda doesn't have the exact same version. Thus, we need to explicitly set CMAKE_FIND_FRAMEWORK=NEVER to force
@@ -68,7 +74,8 @@ pushd cpp_build
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
   -DCMAKE_FIND_FRAMEWORK=NEVER \
-  -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
+  -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}" \
+  -DUSE_PYTHON=$USE_PYTHON
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cmake.bat" $JOBS
 else
@@ -85,7 +92,7 @@ pushd examples/cpp/build
 cmake .. -DTorch_DIR="${Torch_DIR}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
   -DCMAKE_FIND_FRAMEWORK=NEVER \
-  -DUSE_TORCHVISION=ON
+  -DUSE_TORCHVISION=ON  # Needed for faster-rcnn since it's using torchvision ops like NMS.
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cpp_example.bat" $JOBS
   cd Release
