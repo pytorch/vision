@@ -85,9 +85,10 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   // |   img2  |    img4    |     |
   // |         |            |     |
   // ------------------------     v
-  // The GifLib docs indicate that this is mostly vestigial, and modern viewers
-  // ignore the canvas size as well as image offsets. Hence, we're ignoring that
-  // too:
+  // The GifLib docs indicate that this is mostly vestigial
+  // (https://giflib.sourceforge.net/whatsinagif/bits_and_bytes.html), and
+  // modern viewers ignore the canvas size as well as image offsets. Hence,
+  // we're ignoring that too:
   // - We're ignoring the canvas width and height and assume that the shape of
   // the canvas and of all images is the shape of the first image.
   // - We're enforcing that all images have the same shape.
