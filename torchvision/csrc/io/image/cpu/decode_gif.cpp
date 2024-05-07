@@ -70,6 +70,10 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
     DGifCloseFile(gifFile, &error);
     TORCH_CHECK(false, "DGifSlurp() failed - ", gifFileError);
   }
+  auto num_images = gifFile->ImageCount;
+
+  // This check should already done within DGifSlurp(), just to be safe
+  TORCH_CHECK(num_images > 0, "GIF file should contain at least one image!");
 
   // Note:
   // The GIF format has this notion of "canvas" and "canvas size", where each
@@ -97,7 +101,6 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
 
   auto out_h = gifFile->SavedImages[0].ImageDesc.Height;
   auto out_w = gifFile->SavedImages[0].ImageDesc.Width;
-  auto num_images = gifFile->ImageCount;
 
   auto options = torch::TensorOptions()
                      .dtype(torch::kU8)
