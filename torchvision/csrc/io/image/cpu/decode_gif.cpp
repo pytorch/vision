@@ -5,31 +5,32 @@ namespace vision {
 namespace image {
 
 typedef struct reader_helper_t {
-  torch::Tensor const* encoded_bytes;
+  uint8_t const* encoded_data; // input tensor data pointer
+  size_t encoded_data_size; // size of input tensor in bytes
   int num_bytes_read; // number of bytes read so far in the tensor
 } reader_helper_t;
 
 // That function is used by GIFLIB routines to read the encoded bytes.
 // This reads `len` bytes and writes them into `buf`. The data is read from the
-// input tensor passed to decode_gif().
+// input tensor passed to decode_gif() starting at the `num_bytes_read`
+// position.
 int read_from_tensor(GifFileType* gifFile, GifByteType* buf, int len) {
   // the UserData field was set in DGifOpen()
   reader_helper_t* reader_helper = (reader_helper_t*)gifFile->UserData;
-  auto num_encoded_bytes = (int)reader_helper->encoded_bytes->numel();
-  auto data_ptr = reader_helper->encoded_bytes->data_ptr<GifByteType>();
 
   auto i = 0;
-  auto num_bytes_to_read =
-      std::min(len, num_encoded_bytes - reader_helper->num_bytes_read);
+  auto num_bytes_to_read = std::min(
+      len,
+      (int)(reader_helper->encoded_data_size - reader_helper->num_bytes_read));
   while (i < num_bytes_to_read) {
-    buf[i] = data_ptr[reader_helper->num_bytes_read + i];
+    buf[i] = reader_helper->encoded_data[reader_helper->num_bytes_read + i];
     i++;
   }
   reader_helper->num_bytes_read += i;
   return i;
 }
 
-torch::Tensor decode_gif(const torch::Tensor& encoded_bytes) {
+torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   // LibGif docs: https://giflib.sourceforge.net/intro.html
   // Refer over there for more details on the libgif API, API ref, and a
   // detailed description of the GIF format.
@@ -54,7 +55,8 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_bytes) {
   // If we do that, we'd have to make sure the buffers are never written to by
   // GIFLIB, otherwise we'd be overridding the tensor data.
   reader_helper_t reader_helper;
-  reader_helper.encoded_bytes = &encoded_bytes;
+  reader_helper.encoded_data = encoded_data.data_ptr<uint8_t>();
+  reader_helper.encoded_data_size = encoded_data.numel();
   reader_helper.num_bytes_read = 0;
   GifFileType* gifFile =
       DGifOpen((void*)&reader_helper, read_from_tensor, &error);
