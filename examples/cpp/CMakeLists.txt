@@ -16,6 +16,6 @@ if(USE_TORCHVISION)
 endif()
 
 find_package(Python3 REQUIRED COMPONENTS Development)
-target_link_libraries(run_model PRIVATE Python3::Python)
+target_link_libraries(run_model Python3::Python)
 
 set_property(TARGET run_model PROPERTY CXX_STANDARD 17)
