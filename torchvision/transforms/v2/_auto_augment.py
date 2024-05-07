@@ -1,5 +1,5 @@
 import math
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -323,7 +323,7 @@ class AutoAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_size(image_or_video)
+        height, width = get_size(image_or_video)  # type: ignore[arg-type]
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -412,7 +412,7 @@ class RandAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_size(image_or_video)
+        height, width = get_size(image_or_video)  # type: ignore[arg-type]
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -481,7 +481,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_size(image_or_video)
+        height, width = get_size(image_or_video)  # type: ignore[arg-type]
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
@@ -573,7 +573,7 @@ class AugMix(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, orig_image_or_video = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_size(orig_image_or_video)
+        height, width = get_size(orig_image_or_video)  # type: ignore[arg-type]
 
         if isinstance(orig_image_or_video, torch.Tensor):
             image_or_video = orig_image_or_video
@@ -614,9 +614,7 @@ class AugMix(_AutoAugmentBase):
                 else:
                     magnitude = 0.0
 
-                aug = self._apply_image_or_video_transform(
-                    aug, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill
-                )
+                aug = self._apply_image_or_video_transform(aug, transform_id, magnitude, interpolation=self.interpolation, fill=self._fill)  # type: ignore[assignment]
             mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
