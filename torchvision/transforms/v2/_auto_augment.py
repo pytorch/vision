@@ -94,6 +94,7 @@ class _AutoAugmentBase(Transform):
         interpolation: Union[InterpolationMode, int],
         fill: Dict[Union[Type, str], _FillTypeJIT],
     ) -> ImageOrVideo:
+        # Note: this cast is wrong and is only here to make mypy happy (it disagrees with torchscript)
         image = cast(torch.Tensor, image)
         fill_ = _get_fill(fill, type(image))
 
