@@ -17,7 +17,8 @@ typedef struct reader_helper_t {
 // position.
 int read_from_tensor(GifFileType* gifFile, GifByteType* buf, int len) {
   // the UserData field was set in DGifOpen()
-  reader_helper_t* reader_helper = (reader_helper_t*)gifFile->UserData;
+  reader_helper_t* reader_helper =
+      static_cast<reader_helper_t*>(gifFile->UserData);
 
   size_t num_bytes_to_read = std::min(
       (size_t)len,
@@ -57,7 +58,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   reader_helper.encoded_data_size = encoded_data.numel();
   reader_helper.num_bytes_read = 0;
   GifFileType* gifFile =
-      DGifOpen((void*)&reader_helper, read_from_tensor, &error);
+      DGifOpen(static_cast<void*>(&reader_helper), read_from_tensor, &error);
 
   TORCH_CHECK(
       (gifFile != nullptr) && (error == D_GIF_SUCCEEDED),
