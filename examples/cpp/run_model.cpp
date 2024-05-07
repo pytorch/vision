@@ -3,6 +3,10 @@
 #include <cstring>
 #include <iostream>
 
+#ifdef _WIN32
+#include <torchvision/vision.h>
+#endif // _WIN32
+
 int main(int argc, const char* argv[]) {
   if (argc != 2) {
     std::cout << "Usage: run_model <path_to_scripted_model>\n";
