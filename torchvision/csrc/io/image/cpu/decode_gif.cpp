@@ -1,4 +1,5 @@
 #include "decode_gif.h"
+#include <cstring>
 #include "giflib/gif_lib.h"
 
 namespace vision {
@@ -7,7 +8,7 @@ namespace image {
 typedef struct reader_helper_t {
   uint8_t const* encoded_data; // input tensor data pointer
   size_t encoded_data_size; // size of input tensor in bytes
-  int num_bytes_read; // number of bytes read so far in the tensor
+  size_t num_bytes_read; // number of bytes read so far in the tensor
 } reader_helper_t;
 
 // That function is used by GIFLIB routines to read the encoded bytes.
@@ -18,16 +19,13 @@ int read_from_tensor(GifFileType* gifFile, GifByteType* buf, int len) {
   // the UserData field was set in DGifOpen()
   reader_helper_t* reader_helper = (reader_helper_t*)gifFile->UserData;
 
-  auto i = 0;
-  auto num_bytes_to_read = std::min(
-      len,
-      (int)(reader_helper->encoded_data_size - reader_helper->num_bytes_read));
-  while (i < num_bytes_to_read) {
-    buf[i] = reader_helper->encoded_data[reader_helper->num_bytes_read + i];
-    i++;
-  }
-  reader_helper->num_bytes_read += i;
-  return i;
+  size_t num_bytes_to_read = std::min(
+      (size_t)len,
+      reader_helper->encoded_data_size - reader_helper->num_bytes_read);
+  std::memcpy(
+      buf, reader_helper->encoded_data + reader_helper->num_bytes_read, len);
+  reader_helper->num_bytes_read += num_bytes_to_read;
+  return num_bytes_to_read;
 }
 
 torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
