@@ -102,6 +102,8 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   auto out_h = gifFile->SavedImages[0].ImageDesc.Height;
   auto out_w = gifFile->SavedImages[0].ImageDesc.Width;
 
+  // We output a channels-last tensor for consistency with other image decoders.
+  // Torchvision's resize tends to be is faster on uint8 channels-last tensors.
   auto options = torch::TensorOptions()
                      .dtype(torch::kU8)
                      .memory_format(torch::MemoryFormat::ChannelsLast);
