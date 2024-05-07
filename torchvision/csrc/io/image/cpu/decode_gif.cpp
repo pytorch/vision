@@ -99,8 +99,11 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   auto out_w = gifFile->SavedImages[0].ImageDesc.Width;
   auto num_images = gifFile->ImageCount;
 
+  auto options = torch::TensorOptions()
+                     .dtype(torch::kU8)
+                     .memory_format(torch::MemoryFormat::ChannelsLast);
   auto out = torch::empty(
-      {int64_t(num_images), 3, int64_t(out_h), int64_t(out_w)}, torch::kU8);
+      {int64_t(num_images), 3, int64_t(out_h), int64_t(out_w)}, options);
   auto out_a = out.accessor<uint8_t, 4>();
 
   for (int i = 0; i < num_images; i++) {

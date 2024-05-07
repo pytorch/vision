@@ -567,6 +567,8 @@ def test_decode_gif(tmpdir, name):
     if tv_out.ndim == 3:
         tv_out = tv_out[None]
 
+    assert tv_out.is_contiguous(memory_format=torch.channels_last)
+
     # For some reason, not using Image.open() as a CM causes "ResourceWarning: unclosed file"
     with Image.open(path) as pil_img:
         pil_seq = ImageSequence.Iterator(pil_img)
