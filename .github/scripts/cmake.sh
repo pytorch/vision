@@ -59,11 +59,6 @@ echo '::endgroup::'
 echo '::group::Build and install libtorchvision'
 pushd cpp_build
 
-if [[ $OS_TYPE == windows ]]; then
-  USE_PYTHON=ON
-else
-  USE_PYTHON=OFF
-fi
 
 # On macOS, CMake is looking for the library (*.dylib) and the header (*.h) separately. By default, it prefers to load
 # the header from other packages that install the library. This easily leads to a mismatch if the library installed
@@ -74,8 +69,7 @@ fi
 cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
   -DCMAKE_FIND_FRAMEWORK=NEVER \
-  -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}" \
-  -DUSE_PYTHON=$USE_PYTHON
+  -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}"
 if [[ $OS_TYPE == windows ]]; then
   "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cmake.bat" $JOBS
 else
