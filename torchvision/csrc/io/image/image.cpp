@@ -8,12 +8,12 @@
 // // If we are in a Windows environment, we need to define
 // // initialization functions for the _custom_ops extension
 // #ifdef USE_PYTHON
-// #ifdef _WIN32
-// PyMODINIT_FUNC PyInit_image(void) {
-//   // No need to do anything.
-//   return nullptr;
-// }
-// #endif
+#ifdef _WIN32
+void * PyInit_image(void) {
+  // No need to do anything.
+  return nullptr;
+}
+#endif
 // #endif // USE_PYTHON
 
 namespace vision {
