@@ -381,7 +381,7 @@ bool Decoder::init(
 
     av_seek_frame(inputCtx_, -1, offset, AVSEEK_FLAG_BACKWARD);
   }
-
+  videoDurationMs_ = inputCtx_->duration / (double) AV_TIME_BASE * 1000;
   VLOG(1) << "Decoder initialized, log level: " << params_.logLevel;
   return true;
 }
