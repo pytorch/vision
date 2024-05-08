@@ -120,7 +120,7 @@ Here `$MODEL` is one of `efficientnet_v2_s` and `efficientnet_v2_m`.
 Note that the Small variant had a `$TRAIN_SIZE` of `300` and a `$EVAL_SIZE` of `384`, while the Medium `384` and `480` respectively.
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 4 nodes, each with 8 GPUs (for a total of 32 GPUs),
+For generating the pre-trained weights, we trained with 4 nodes, each with 8 GPUs (for a total of 32 GPUs),
 and `--batch_size 32`.
 
 The weights of the Large variant are ported from the original paper rather than trained from scratch. See the `EfficientNet_V2_L_Weights` entry for their exact preprocessing transforms.
@@ -167,7 +167,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+For generating the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
 and `--batch_size 64`.
 
 #### vit_b_32
@@ -180,7 +180,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+For generating the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 256`.
 
 #### vit_l_16
@@ -193,7 +193,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+For generating the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 64`.
 
 #### vit_l_32
@@ -206,7 +206,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+For generating the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
 and `--batch_size 64`.
 
 
@@ -221,7 +221,7 @@ torchrun --nproc_per_node=8 train.py\
 Here `$MODEL` is one of `convnext_tiny`, `convnext_small`, `convnext_base` and `convnext_large`. Note that each variant had its `--val-resize-size` optimized in a post-training step, see their `Weights` entry for their exact value.
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+For generating the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 64`.
 
 
