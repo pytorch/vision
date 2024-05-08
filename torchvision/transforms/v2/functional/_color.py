@@ -730,7 +730,7 @@ def permute_channels_image(image: torch.Tensor, permutation: List[int]) -> torch
 
 
 @_register_kernel_internal(permute_channels, PIL.Image.Image)
-def _permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image:
+def _permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image.Image:
     return to_pil_image(permute_channels_image(pil_to_tensor(image), permutation=permutation))
 
 
