@@ -5930,7 +5930,7 @@ class TestSanitizeBoundingBoxes:
         with pytest.raises(ValueError, match="canvas_size must be None when bounding_boxes is a tv_tensors"):
             F.sanitize_bounding_boxes(good_bbox, format="XYXY", canvas_size=None)
 
-        with pytest.raises(ValueError, match="bouding_boxes must be a tv_tensors.BoundingBoxes instance or a"):
+        with pytest.raises(ValueError, match="bounding_boxes must be a tv_tensors.BoundingBoxes instance or a"):
             F.sanitize_bounding_boxes(good_bbox.tolist())
 
 
