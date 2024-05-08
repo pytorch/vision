@@ -9,7 +9,7 @@ eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate c
 
 echo '::group::Install testing utilities'
 # TODO: remove the <8 constraint on pytest when https://github.com/pytorch/vision/issues/8238 is closed
-pip install --progress-bar=off "pytest<8" pytest-mock pytest-cov expecttest!=0.2.0
+pip install --progress-bar=off "pytest<8" pytest-mock pytest-cov expecttest!=0.2.0 requests
 echo '::endgroup::'
 
 python test/smoke_test.py
