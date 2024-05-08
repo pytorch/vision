@@ -232,7 +232,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+1644fff) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+e4d2d1a) &#x25BC</a>
     </div>
     
 
@@ -367,10 +367,10 @@ videos.</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_image.html#torchvision.io.read_image" title="torchvision.io.read_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_image</span></code></a>(path[, mode, apply_exif_orientation])</p></td>
-<td><p>Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+<td><p>Reads a JPEG, PNG or GIF image into a 3 dimensional RGB or grayscale Tensor.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image" title="torchvision.io.decode_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_image</span></code></a>(input[, mode, ...])</p></td>
-<td><p>Detects whether an image is a JPEG or PNG and performs the appropriate operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+<td><p>Detect whether an image is a JPEG, PNG or GIF and performs the appropriate operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg" title="torchvision.io.encode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_jpeg</span></code></a>(input[, quality])</p></td>
 <td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding JPEG file.</p></td>
@@ -381,19 +381,22 @@ videos.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg" title="torchvision.io.write_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_jpeg</span></code></a>(input, filename[, quality])</p></td>
 <td><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.encode_png.html#torchvision.io.encode_png" title="torchvision.io.encode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_png</span></code></a>(input[, compression_level])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_gif.html#torchvision.io.decode_gif" title="torchvision.io.decode_gif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_gif</span></code></a>(input)</p></td>
+<td><p>Decode a GIF image into a 3 or 4 dimensional RGB Tensor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_png.html#torchvision.io.encode_png" title="torchvision.io.encode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_png</span></code></a>(input[, compression_level])</p></td>
 <td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding PNG file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_png.html#torchvision.io.decode_png" title="torchvision.io.decode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_png</span></code></a>(input[, mode, apply_exif_orientation])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_png.html#torchvision.io.decode_png" title="torchvision.io.decode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_png</span></code></a>(input[, mode, apply_exif_orientation])</p></td>
 <td><p>Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_png.html#torchvision.io.write_png" title="torchvision.io.write_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_png</span></code></a>(input, filename[, compression_level])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_png.html#torchvision.io.write_png" title="torchvision.io.write_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_png</span></code></a>(input, filename[, compression_level])</p></td>
 <td><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images) and saves it in a PNG file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_file.html#torchvision.io.read_file" title="torchvision.io.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.read_file.html#torchvision.io.read_file" title="torchvision.io.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(path)</p></td>
 <td><p>Reads and outputs the bytes contents of a file as a uint8 Tensor with one dimension.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_file.html#torchvision.io.write_file" title="torchvision.io.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(filename, data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_file.html#torchvision.io.write_file" title="torchvision.io.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(filename, data)</p></td>
 <td><p>Writes the contents of an uint8 tensor with one dimension to a file.</p></td>
 </tr>
 </tbody>
