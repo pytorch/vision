@@ -56,6 +56,7 @@ class Decoder : public MediaDecoder {
   int* getPrintPrefix() {
     return &printPrefix;
   }
+  double videoDurationMs_ = -1;
 
  private:
   // mark below function for a proper invocation
@@ -79,6 +80,7 @@ class Decoder : public MediaDecoder {
 
  protected:
   DecoderParameters params_;
+
 
  private:
   SeekableBuffer seekableBuffer_;
