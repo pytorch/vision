@@ -21,6 +21,7 @@ from ._video_opt import (
     VideoMetaData,
 )
 from .image import (
+    decode_gif,
     decode_image,
     decode_jpeg,
     decode_png,
