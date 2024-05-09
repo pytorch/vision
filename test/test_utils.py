@@ -116,6 +116,23 @@ def test_draw_boxes():
     assert_equal(img, img_cp)
 
 
+@pytest.mark.parametrize("fill", [True, False])
+def test_draw_boxes_dtypes(fill):
+    img_uint8 = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+    out_uint8 = utils.draw_bounding_boxes(img_uint8, boxes, fill=fill)
+
+    assert img_uint8 is not out_uint8
+    assert out_uint8.dtype == torch.uint8
+
+    img_float = to_dtype(img_uint8, torch.float, scale=True)
+    out_float = utils.draw_bounding_boxes(img_float, boxes, fill=fill)
+
+    assert img_float is not out_float
+    assert out_float.is_floating_point()
+
+    torch.testing.assert_close(out_uint8, to_dtype(out_float, torch.uint8, scale=True), rtol=0, atol=1)
+
+
 @pytest.mark.parametrize("colors", [None, ["red", "blue", "#FF00FF", (1, 34, 122)], "red", "#FF00FF", (1, 34, 122)])
 def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
@@ -152,7 +169,6 @@ def test_draw_boxes_grayscale():
 
 def test_draw_invalid_boxes():
     img_tp = ((1, 1, 1), (1, 2, 3))
-    img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
     img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
     img_correct = torch.zeros((3, 10, 10), dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
@@ -162,8 +178,6 @@ def test_draw_invalid_boxes():
 
     with pytest.raises(TypeError, match="Tensor expected"):
         utils.draw_bounding_boxes(img_tp, boxes)
-    with pytest.raises(ValueError, match="Tensor uint8 expected"):
-        utils.draw_bounding_boxes(img_wrong1, boxes)
     with pytest.raises(ValueError, match="Pass individual images, not batches"):
         utils.draw_bounding_boxes(img_wrong2, boxes)
     with pytest.raises(ValueError, match="Only grayscale and RGB images are supported"):

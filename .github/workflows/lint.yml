@@ -63,7 +63,7 @@ jobs:
 
         echo '::group::Lint C source'
         set +e
-        ./.github/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format
+        ./.github/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format --exclude "torchvision/csrc/io/image/cpu/giflib/*"
 
         if [ $? -ne 0 ]; then
           git --no-pager diff
