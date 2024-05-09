@@ -1,22 +1,15 @@
 #include "video_reader.h"
 
-#ifdef USE_PYTHON
-#include <Python.h>
-#endif
-
 #include "../decoder/memory_buffer.h"
 #include "../decoder/sync_decoder.h"
 
-#ifdef USE_PYTHON
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
 #ifdef _WIN32
-PyMODINIT_FUNC PyInit_video_reader(void) {
-  // No need to do anything.
+void* PyInit_video_reader(void) {
   return nullptr;
 }
 #endif
-#endif // USE_PYTHONs
 
 using namespace ffmpeg;
 
