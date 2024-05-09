@@ -2462,6 +2462,30 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
 
                 writer.writerow(row)
 
+        with open(os.path.join(base_folder, "fer2013.csv"), "w", newline="") as file:
+            writer = csv.DictWriter(
+                file,
+                fieldnames=("emotion", "pixels", "Usage"),
+                quoting=csv.QUOTE_NONNUMERIC,
+                quotechar='"',
+            )
+            writer.writeheader()
+            for i in range(num_samples + 28709):
+                row = dict(
+                    pixels=" ".join(
+                        str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                    )
+                )
+                row["emotion"] = str(int(torch.randint(0, 7, ())))
+
+                usage_values = ["PrivateTest", "PublicTest"]
+                if i < 28709:
+                    row["Usage"] = "Training"
+                else:
+                    row["Usage"] = random.choice(usage_values)
+
+                writer.writerow(row)
+
         return num_samples
 
 
