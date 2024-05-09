@@ -208,7 +208,7 @@ def get_extensions():
         sources += source_mps
 
     if sys.platform == "win32":
-        define_macros += [("torchvision_EXPORTS", None)]
+        # define_macros += [("torchvision_EXPORTS", None)]
         extra_compile_args["cxx"].append("/MP")
 
     if debug_mode:
