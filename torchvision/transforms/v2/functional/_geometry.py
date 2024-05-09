@@ -113,7 +113,7 @@ def vertical_flip_image(image: torch.Tensor) -> torch.Tensor:
 
 
 @_register_kernel_internal(vertical_flip, PIL.Image.Image)
-def _vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
+def _vertical_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.vflip(image)
 
 

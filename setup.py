@@ -209,7 +209,6 @@ def get_extensions():
 
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
-        define_macros += [("USE_PYTHON", None)]
         extra_compile_args["cxx"].append("/MP")
 
     if debug_mode:
@@ -253,9 +252,6 @@ def get_extensions():
     image_include = [extensions_dir]
     image_library = []
     image_link_flags = []
-
-    if sys.platform == "win32":
-        image_macros += [("USE_PYTHON", None)]
 
     # Locating libPNG
     libpng = shutil.which("libpng-config")
@@ -332,7 +328,11 @@ def get_extensions():
     image_macros += [("NVJPEG_FOUND", str(int(use_nvjpeg)))]
 
     image_path = os.path.join(extensions_dir, "io", "image")
-    image_src = glob.glob(os.path.join(image_path, "*.cpp")) + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
+    image_src = (
+        glob.glob(os.path.join(image_path, "*.cpp"))
+        + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
+        + glob.glob(os.path.join(image_path, "cpu", "giflib", "*.c"))
+    )
 
     if is_rocm_pytorch:
         image_src += glob.glob(os.path.join(image_path, "hip", "*.cpp"))
@@ -341,18 +341,17 @@ def get_extensions():
     else:
         image_src += glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
 
-    if use_png or use_jpeg:
-        ext_modules.append(
-            extension(
-                "torchvision.image",
-                image_src,
-                include_dirs=image_include + include_dirs + [image_path],
-                library_dirs=image_library + library_dirs,
-                define_macros=image_macros,
-                libraries=image_link_flags,
-                extra_compile_args=extra_compile_args,
-            )
+    ext_modules.append(
+        extension(
+            "torchvision.image",
+            image_src,
+            include_dirs=image_include + include_dirs + [image_path],
+            library_dirs=image_library + library_dirs,
+            define_macros=image_macros,
+            libraries=image_link_flags,
+            extra_compile_args=extra_compile_args,
         )
+    )
 
     # Locating ffmpeg
     ffmpeg_exe = shutil.which("ffmpeg")
