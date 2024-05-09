@@ -86,32 +86,19 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   // This check should already done within DGifSlurp(), just to be safe
   TORCH_CHECK(num_images > 0, "GIF file should contain at least one image!");
 
-  // Note:
-  // The GIF format has this notion of "canvas" and "canvas size", where each
-  // image could be displayed on the canvas at different offsets, forming a
-  // mosaic/picture wall like so:
-  //
-  // <---    canvas W    --->
-  // ------------------------     ^
-  // |         |            |     |
-  // |   img1  |    img3    |     |
-  // |         |------------|  canvas H
-  // |----------            |     |
-  // |   img2  |    img4    |     |
-  // |         |            |     |
-  // ------------------------     v
-  // The GifLib docs indicate that this is mostly vestigial
-  // (https://giflib.sourceforge.net/whatsinagif/bits_and_bytes.html), and
-  // modern viewers ignore the canvas size as well as image offsets. Hence,
-  // we're ignoring that too:
-  // - We're ignoring the canvas width and height and assume that the shape of
-  // the canvas and of all images is the shape of the first image.
-  // - We're enforcing that all images have the same shape.
-  // - Left and Top offsets of each image are ignored as well and assumed to be
-  // 0.
+  GifColorType bg = {0, 0, 0};
+  if (gifFile->SColorMap) {
+    bg = gifFile->SColorMap->Colors[gifFile->SBackGroundColor];
+  }
 
-  auto out_h = gifFile->SavedImages[0].ImageDesc.Height;
-  auto out_w = gifFile->SavedImages[0].ImageDesc.Width;
+  // The GIFLIB docs say that the canvas's height and width are potentially
+  // ignored by modern viewers, so to be on the safe side we set the output
+  // height to max(canvas_heigh, first_image_height). Same for width.
+  // https://giflib.sourceforge.net/whatsinagif/bits_and_bytes.html
+  auto out_h =
+      std::max(gifFile->SHeight, gifFile->SavedImages[0].ImageDesc.Height);
+  auto out_w =
+      std::max(gifFile->SWidth, gifFile->SavedImages[0].ImageDesc.Width);
 
   // We output a channels-last tensor for consistency with other image decoders.
   // Torchvision's resize tends to be is faster on uint8 channels-last tensors.
@@ -121,30 +108,65 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   auto out = torch::empty(
       {int64_t(num_images), 3, int64_t(out_h), int64_t(out_w)}, options);
   auto out_a = out.accessor<uint8_t, 4>();
-
   for (int i = 0; i < num_images; i++) {
     const SavedImage& img = gifFile->SavedImages[i];
-    const GifImageDesc& desc = img.ImageDesc;
-    TORCH_CHECK(
-        desc.Width == out_w && desc.Height == out_h,
-        "All images in the gif should have the same dimensions.");
 
+    GraphicsControlBlock gcb;
+    DGifSavedExtensionToGCB(gifFile, i, &gcb);
+
+    const GifImageDesc& desc = img.ImageDesc;
     const ColorMapObject* cmap =
         desc.ColorMap ? desc.ColorMap : gifFile->SColorMap;
     TORCH_CHECK(
         cmap != nullptr,
         "Global and local color maps are missing. This should never happen!");
 
+    // When going from one image to another, there is a "disposal method" which
+    // specifies how to handle the transition. E.g. DISPOSE_DO_NOT means that
+    // the current image should essentially be drawn on top of the previous
+    // canvas. The pixels of that previous canvas will appear on the new one if
+    // either:
+    // - a pixel is transparent in the current image
+    // - the current image is smaller than the canvas, hence exposing its pixels
+    // The "background" disposal method means that the current canvas should be
+    // set to the background color.
+    // We only support these 2 modes and default to "background" when the
+    // disposal method is unspecified, or when it's set to "DISPOSE_PREVIOUS"
+    // which according to GIFLIB is not widely supported.
+    // (https://giflib.sourceforge.net/whatsinagif/animation_and_transparency.html).
+    if (i > 0 && gcb.DisposalMode == DISPOSE_DO_NOT) {
+      for (int h = 0; h < gifFile->SHeight; h++) {
+        for (int w = 0; w < gifFile->SWidth; w++) {
+          out_a[i][0][h][w] = out_a[i - 1][0][h][w];
+          out_a[i][1][h][w] = out_a[i - 1][1][h][w];
+          out_a[i][2][h][w] = out_a[i - 1][2][h][w];
+        }
+      }
+    } else {
+      // Background. If bg wasn't defined, it will be (0, 0, 0)
+      for (int h = 0; h < gifFile->SHeight; h++) {
+        for (int w = 0; w < gifFile->SWidth; w++) {
+          out_a[i][0][h][w] = bg.Red;
+          out_a[i][1][h][w] = bg.Green;
+          out_a[i][2][h][w] = bg.Blue;
+        }
+      }
+    }
+
     for (int h = 0; h < desc.Height; h++) {
       for (int w = 0; w < desc.Width; w++) {
         auto c = img.RasterBits[h * desc.Width + w];
+        if (c == gcb.TransparentColor) {
+          continue;
+        }
         GifColorType rgb = cmap->Colors[c];
-        out_a[i][0][h][w] = rgb.Red;
-        out_a[i][1][h][w] = rgb.Green;
-        out_a[i][2][h][w] = rgb.Blue;
+        out_a[i][0][h + desc.Top][w + desc.Left] = rgb.Red;
+        out_a[i][1][h + desc.Top][w + desc.Left] = rgb.Green;
+        out_a[i][2][h + desc.Top][w + desc.Left] = rgb.Blue;
       }
     }
   }
+
   out = out.squeeze(0); // remove batch dim if there's only one image
 
   DGifCloseFile(gifFile, &error);
