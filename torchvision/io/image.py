@@ -1,4 +1,6 @@
+import pathlib
 from enum import Enum
+from typing import Union
 from warnings import warn
 
 import torch
@@ -36,7 +38,7 @@ class ImageReadMode(Enum):
     RGB_ALPHA = 4
 
 
-def read_file(path: str) -> torch.Tensor:
+def read_file(path: Union[str, pathlib.Path]) -> torch.Tensor:
     """
     Reads and outputs the bytes contents of a file as a uint8 Tensor
     with one dimension.
@@ -53,7 +55,7 @@ def read_file(path: str) -> torch.Tensor:
     return data
 
 
-def write_file(filename: str, data: torch.Tensor) -> None:
+def write_file(filename: Union[str, pathlib.Path], data: torch.Tensor) -> None:
     """
     Writes the contents of an uint8 tensor with one dimension to a
     file.
@@ -251,7 +253,7 @@ def decode_image(
 
 
 def read_image(
-    path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
+    path: Union[str, pathlib.Path], mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
 ) -> torch.Tensor:
     """
     Reads a JPEG, PNG or GIF image into a 3 dimensional RGB or grayscale Tensor.
