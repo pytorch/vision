@@ -74,40 +74,14 @@ python setup.py install
 
 # Using the models on C++
 
-TorchVision provides an example project for how to use the models on C++ using JIT Script.
+Refer to [example/cpp](https://github.com/pytorch/vision/tree/main/examples/cpp).
 
-Installation From source:
-
-```
-mkdir build
-cd build
-# Add -DWITH_CUDA=on support for the CUDA if needed
-cmake ..
-make
-make install
-```
-
-Once installed, the library can be accessed in cmake (after properly configuring `CMAKE_PREFIX_PATH`) via the
-`TorchVision::TorchVision` target:
-
-```
-find_package(TorchVision REQUIRED)
-target_link_libraries(my-target PUBLIC TorchVision::TorchVision)
-```
-
-The `TorchVision` package will also automatically look for the `Torch` package and add it as a dependency to
-`my-target`, so make sure that it is also available to cmake via the `CMAKE_PREFIX_PATH`.
-
-For an example setup, take a look at `examples/cpp/hello_world`.
-
-Python linking is disabled by default when compiling TorchVision with CMake, this allows you to run models without any
-Python dependency. In some special cases where TorchVision's operators are used from Python code, you may need to link
-to Python. This can be done by passing `-DUSE_PYTHON=on` to CMake.
-
-### TorchVision Operators
-
-In order to get the torchvision operators registered with torch (eg. for the JIT), all you need to do is to ensure that
-you `#include <torchvision/vision.h>` in your project.
+**DISCLAIMER**: the `libtorchvision` library includes the torchvision
+custom ops as well as most of the C++ torchvision APIs. Those APIs do not come
+with any backward-compatibility guarantees and may change from one version to
+the next. Only the Python APIs are stable and with backward-compatibility
+guarantees. So, if you need stability within a C++ environment, your best bet is
+to export the Python APIs via torchscript.
 
 ## Documentation
 
