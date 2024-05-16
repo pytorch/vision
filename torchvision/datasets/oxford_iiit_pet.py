@@ -102,7 +102,7 @@ class OxfordIIITPet(VisionDataset):
         if "detection" in target_types or "binary-detection" in target_types:
             # Notify users this is not a complete dataset
             print('Dataset does not contain detection annotations for every sample. Filtering to include' \
-                  'only those that do.') # TODO: Is a simple print the right call here?
+                  ' only those that do.') # TODO: Is a simple print the right call here?
             # Set up filtered arrays
             self._labels = [lbl for lbl,xml_file in zip(self._labels,self._xmls) if os.path.isfile(xml_file)]
             self._bin_labels = [lbl for lbl,xml_file in zip(self._bin_labels,self._xmls) if os.path.isfile(xml_file)]
