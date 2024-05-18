@@ -142,7 +142,7 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixUpCutMix(Transform):
-    def __init__(self, *, alpha: float = 1.0, num_classes: int, labels_getter="default") -> None:
+    def __init__(self, *, alpha: float = 1.0, num_classes: int, labels_getter="default", labels_encoded: bool = False) -> None:
         super().__init__()
         self.alpha = float(alpha)
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
@@ -150,6 +150,7 @@ class _BaseMixUpCutMix(Transform):
         self.num_classes = num_classes
 
         self._labels_getter = _parse_labels_getter(labels_getter)
+        self._labels_encoded = labels_encoded
 
     def forward(self, *inputs):
         inputs = inputs if len(inputs) > 1 else inputs[0]
@@ -162,9 +163,9 @@ class _BaseMixUpCutMix(Transform):
         labels = self._labels_getter(inputs)
         if not isinstance(labels, torch.Tensor):
             raise ValueError(f"The labels must be a tensor, but got {type(labels)} instead.")
-        elif labels.ndim != 1:
+        elif (not self._labels_encoded and labels.ndim != 1) or (self._labels_encoded and labels.ndim != 2):
             raise ValueError(
-                f"labels tensor should be of shape (batch_size,) " f"but got shape {labels.shape} instead."
+                f"labels tensor should be of shape (batch_size,{self.num_classes if self._labels_encoded else ''}) " f"but got shape {labels.shape} instead."
             )
 
         params = {
@@ -198,7 +199,8 @@ class _BaseMixUpCutMix(Transform):
             )
 
     def _mixup_label(self, label: torch.Tensor, *, lam: float) -> torch.Tensor:
-        label = one_hot(label, num_classes=self.num_classes)
+        if not self._labels_encoded:
+            label = one_hot(label, num_classes=self.num_classes)
         if not label.dtype.is_floating_point:
             label = label.float()
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
