@@ -135,13 +135,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
     // which according to GIFLIB is not widely supported.
     // (https://giflib.sourceforge.net/whatsinagif/animation_and_transparency.html).
     if (i > 0 && gcb.DisposalMode == DISPOSE_DO_NOT) {
-      for (int h = 0; h < gifFile->SHeight; h++) {
-        for (int w = 0; w < gifFile->SWidth; w++) {
-          out_a[i][0][h][w] = out_a[i - 1][0][h][w];
-          out_a[i][1][h][w] = out_a[i - 1][1][h][w];
-          out_a[i][2][h][w] = out_a[i - 1][2][h][w];
-        }
-      }
+      out[i] = out[i - 1];
     } else {
       // Background. If bg wasn't defined, it will be (0, 0, 0)
       for (int h = 0; h < gifFile->SHeight; h++) {
