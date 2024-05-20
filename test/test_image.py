@@ -551,7 +551,9 @@ def test_pathlib_support(tmpdir):
     write_png(img, write_path)
 
 
-@pytest.mark.parametrize("name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans", "earth"))
+@pytest.mark.parametrize(
+    "name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans", "earth")
+)
 @pytest.mark.parametrize("scripted", (True, False))
 def test_decode_gif(tmpdir, name, scripted):
     # Using test images from GIFLIB
