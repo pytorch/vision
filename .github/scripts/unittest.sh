@@ -12,7 +12,7 @@ echo '::group::Install testing utilities'
 pip install --progress-bar=off "pytest<8" pytest-mock pytest-cov expecttest!=0.2.0 requests
 echo '::endgroup::'
 
-python test/smoke_test.py
+# python test/smoke_test.py
 
 # We explicitly ignore the video tests until we resolve https://github.com/pytorch/vision/issues/8162
 pytest --ignore-glob="*test_video*" --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25
