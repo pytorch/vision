@@ -2169,26 +2169,29 @@ class TestAdjustBrightness:
 
 class TestCutMixMixUp:
     class DummyDataset:
-        def __init__(self, size, num_classes):
+        def __init__(self, size, num_classes, encode_labels:bool):
             self.size = size
             self.num_classes = num_classes
+            self.encode_labels = encode_labels
             assert size < num_classes
 
         def __getitem__(self, idx):
             img = torch.rand(3, 100, 100)
-            label = idx  # This ensures all labels in a batch are unique and makes testing easier
+            label = torch.tensor(idx)  # This ensures all labels in a batch are unique and makes testing easier
+            if self.encode_labels:
+                label = torch.nn.functional.one_hot(label, num_classes=self.num_classes)
             return img, label
 
         def __len__(self):
             return self.size
 
-    @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
-    def test_supported_input_structure(self, T):
+    @pytest.mark.parametrize(["T", "encode_labels"], [[transforms.CutMix, False], [transforms.MixUp, False], [transforms.CutMix, True], [transforms.MixUp, True]])
+    def test_supported_input_structure(self, T, encode_labels: bool):
 
         batch_size = 32
         num_classes = 100
 
-        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
+        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes,encode_labels=encode_labels)
 
         cutmix_mixup = T(num_classes=num_classes)
 
@@ -2198,7 +2201,10 @@ class TestCutMixMixUp:
         img, target = next(iter(dl))
         input_img_size = img.shape[-3:]
         assert isinstance(img, torch.Tensor) and isinstance(target, torch.Tensor)
-        assert target.shape == (batch_size,)
+        if encode_labels:
+            assert target.shape == (batch_size, num_classes)
+        else:
+            assert target.shape == (batch_size,)
 
         def check_output(img, target):
             assert img.shape == (batch_size, *input_img_size)
@@ -2209,7 +2215,10 @@ class TestCutMixMixUp:
 
         # After Dataloader, as unpacked input
         img, target = next(iter(dl))
-        assert target.shape == (batch_size,)
+        if encode_labels:
+            assert target.shape == (batch_size, num_classes)
+        else:
+            assert target.shape == (batch_size,)
         img, target = cutmix_mixup(img, target)
         check_output(img, target)
 

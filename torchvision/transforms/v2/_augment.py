@@ -162,9 +162,9 @@ class _BaseMixUpCutMix(Transform):
         labels = self._labels_getter(inputs)
         if not isinstance(labels, torch.Tensor):
             raise ValueError(f"The labels must be a tensor, but got {type(labels)} instead.")
-        elif labels.ndim != 1:
+        elif not 0 < labels.ndim <= 2 or (labels.ndim == 2 and labels.shape[1] != self.num_classes):
             raise ValueError(
-                f"labels tensor should be of shape (batch_size,) " f"but got shape {labels.shape} instead."
+                f"labels tensor should be of shape (batch_size,) or (batch_size,num_classes) " f"but got shape {labels.shape} instead."
             )
 
         params = {
@@ -198,7 +198,8 @@ class _BaseMixUpCutMix(Transform):
             )
 
     def _mixup_label(self, label: torch.Tensor, *, lam: float) -> torch.Tensor:
-        label = one_hot(label, num_classes=self.num_classes)
+        if label.ndim == 1:
+            label = one_hot(label, num_classes=self.num_classes)
         if not label.dtype.is_floating_point:
             label = label.float()
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
