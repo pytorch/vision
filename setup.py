@@ -554,6 +554,7 @@ if __name__ == "__main__":
         zip_safe=False,
         install_requires=requirements,
         extras_require={
+            "gdown": ["gdown>=4.7.3"],
             "scipy": ["scipy"],
         },
         ext_modules=get_extensions(),
