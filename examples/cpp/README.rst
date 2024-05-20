@@ -81,9 +81,6 @@ cmake --install .
 You may want to pass `-DCMAKE_INSTALL_PREFIX=/path/to/libtorchvision` for
 cmake to copy/install the files to a specific location (e.g. `$CONDA_PREFIX`).
 
-On Windows, you may also need to pass `-DUSE_PYTHON`. Refer to the corresponding
-`CMakeLists.txt` for additional options.
-
 **DISCLAIMER**: the `libtorchvision` library includes the torchvision
 custom ops as well as most of the C++ torchvision APIs. Those APIs do not come
 with any backward-compatibility guarantees and may change from one version to
