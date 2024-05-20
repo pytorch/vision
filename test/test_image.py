@@ -552,7 +552,8 @@ def test_pathlib_support(tmpdir):
 
 
 @pytest.mark.parametrize("name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans"))
-def test_decode_gif(tmpdir, name):
+@pytest.mark.parametrize("scripted", (True, False))
+def test_decode_gif(tmpdir, name, scripted):
     # Using test images from GIFLIB
     # https://sourceforge.net/p/giflib/code/ci/master/tree/pic/, we assert PIL
     # and torchvision decoded outputs are equal.
@@ -565,7 +566,9 @@ def test_decode_gif(tmpdir, name):
     with open(path, "wb") as f:
         f.write(requests.get(url).content)
 
-    tv_out = read_image(path)
+    encoded_bytes = read_file(path)
+    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    tv_out = f(encoded_bytes)
     if tv_out.ndim == 3:
         tv_out = tv_out[None]
 
