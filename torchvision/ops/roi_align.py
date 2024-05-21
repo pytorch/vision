@@ -105,15 +105,13 @@ def maybe_cast(tensor):
         return tensor
 
 
-# This is a slow but pure Python and differentiable implementation of
-# roi_align.  It potentially is a good basis for Inductor compilation
-# (but I have not benchmarked it) but today it is solely used for the
-# fact that its backwards can be implemented deterministically,
-# which is needed for the PT2 benchmark suite.
-#
+# This is a pure Python and differentiable implementation of roi_align.  When
+# run in eager mode, it uses a lot of memory, but when compiled it has
+# acceptable memory usage.  The main point of this implementation is that
+# its backwards is deterministic.
 # It is transcribed directly off of the roi_align CUDA kernel, see
 # https://dev-discuss.pytorch.org/t/a-pure-python-implementation-of-roi-align-that-looks-just-like-its-cuda-kernel/1266
-@torch._dynamo.allow_in_graph
+@lazy_compile(dynamic=True)
 def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned):
     orig_dtype = input.dtype
 
@@ -202,8 +200,6 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
     return output
 
 
-# Use of torch.compile is mandatory for good memory usage
-@lazy_compile(dynamic=True)
 @torch.fx.wrap
 def roi_align(
     input: Tensor,
@@ -253,7 +249,7 @@ def roi_align(
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
     if not torch.jit.is_scripting():
-        if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and input.is_cuda):
+        if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and (input.is_cuda or input.is_mps)):
             return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
     _assert_has_ops()
     return torch.ops.torchvision.roi_align(
