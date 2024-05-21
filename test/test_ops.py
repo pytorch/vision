@@ -529,6 +529,8 @@ class TestRoIAlign(RoIOpTester):
     def test_backward(self, seed, device, contiguous, deterministic):
         if deterministic and device == "cpu":
             pytest.skip("cpu is always deterministic, don't retest")
+        if deterministic and device == "mps":
+            pytest.skip("no deterministic implementation for mps")
         super().test_backward(seed, device, contiguous, deterministic)
 
     def _make_rois(self, img_size, num_imgs, dtype, num_rois=1000):
