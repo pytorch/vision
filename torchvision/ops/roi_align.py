@@ -1,10 +1,11 @@
-from typing import List, Union
 import functools
+from typing import List, Union
 
 import torch
 import torch._dynamo
 import torch.fx
 from torch import nn, Tensor
+from torch._dynamo.utils import is_compile_supported
 from torch.jit.annotations import BroadcastingList2
 from torch.nn.modules.utils import _pair
 from torchvision.extension import _assert_has_ops, _has_ops
@@ -249,7 +250,9 @@ def roi_align(
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
     if not torch.jit.is_scripting():
-        if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and (input.is_cuda or input.is_mps)):
+        if (
+            not _has_ops() or (torch.are_deterministic_algorithms_enabled() and (input.is_cuda or input.is_mps))
+        ) and is_compile_supported(input.device.type):
             return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
     _assert_has_ops()
     return torch.ops.torchvision.roi_align(
