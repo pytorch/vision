@@ -1,4 +1,5 @@
 from typing import List, Union
+import functools
 
 import torch
 import torch._dynamo
@@ -10,6 +11,24 @@ from torchvision.extension import _assert_has_ops, _has_ops
 
 from ..utils import _log_api_usage_once
 from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
+
+
+def lazy_compile(**compile_kwargs):
+    """Lazily wrap a function with torch.compile on the first call
+
+    This avoids eagerly importing dynamo.
+    """
+
+    def decorate_fn(fn):
+        @functools.wraps(fn)
+        def compile_hook(*args, **kwargs):
+            compiled_fn = torch.compile(fn, **compile_kwargs)
+            globals()[fn.__name__] = functools.wraps(fn)(compiled_fn)
+            return compiled_fn(*args, **kwargs)
+
+        return compile_hook
+
+    return decorate_fn
 
 
 # NB: all inputs are tensors
@@ -183,6 +202,8 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
     return output
 
 
+# Use of torch.compile is mandatory for good memory usage
+@lazy_compile(dynamic=True)
 @torch.fx.wrap
 def roi_align(
     input: Tensor,
@@ -232,7 +253,7 @@ def roi_align(
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
     if not torch.jit.is_scripting():
-        if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and (input.is_cuda or input.is_mps)):
+        if not _has_ops() or (torch.are_deterministic_algorithms_enabled() and input.is_cuda):
             return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
     _assert_has_ops()
     return torch.ops.torchvision.roi_align(
