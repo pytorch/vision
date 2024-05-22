@@ -11,6 +11,7 @@ import torch
 import torch.fx
 import torch.nn.functional as F
 import torch.testing._internal.optests as optests
+from torch._dynamo.utils import is_compile_supported
 from common_utils import assert_equal, cpu_and_cuda, cpu_and_cuda_and_mps, needs_cuda, needs_mps
 from PIL import Image
 from torch import nn, Tensor
@@ -531,6 +532,8 @@ class TestRoIAlign(RoIOpTester):
             pytest.skip("cpu is always deterministic, don't retest")
         if deterministic and device == "mps":
             pytest.skip("no deterministic implementation for mps")
+        if deterministic and not is_compile_supported(device):
+            pytest.skip("deterministic implementation only if torch.compile supported")
         super().test_backward(seed, device, contiguous, deterministic)
 
     def _make_rois(self, img_size, num_imgs, dtype, num_rois=1000):
