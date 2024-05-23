@@ -11,10 +11,10 @@ import torch
 import torch.fx
 import torch.nn.functional as F
 import torch.testing._internal.optests as optests
-from torch._dynamo.utils import is_compile_supported
 from common_utils import assert_equal, cpu_and_cuda, cpu_and_cuda_and_mps, needs_cuda, needs_mps
 from PIL import Image
 from torch import nn, Tensor
+from torch._dynamo.utils import is_compile_supported
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
