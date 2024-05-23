@@ -392,10 +392,6 @@ def draw_keypoints(
     # validate visibility
     if visibility is None:  # set default
         visibility = torch.ones(keypoints.shape[:-1], dtype=torch.bool)
-    # If the last dimension is 1, e.g., after calling split([2, 1], dim=-1) on the output of a keypoint-prediction
-    # model, make sure visibility has shape (num_instances, K).
-    # Iff K = 1, this has unwanted behavior, but K=1 does not really make sense in the first place.
-    visibility = visibility.squeeze(-1)
     if visibility.ndim != 2:
         raise ValueError(f"visibility must be of shape (num_instances, K). Got ndim={visibility.ndim}")
     if visibility.shape != keypoints.shape[:-1]:
