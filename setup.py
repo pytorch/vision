@@ -1,6 +1,7 @@
 import distutils.command.clean
 import distutils.spawn
 import glob
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -8,7 +9,6 @@ import sys
 
 import torch
 from packaging.version import parse
-import importlib.util
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension
 
