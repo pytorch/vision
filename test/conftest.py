@@ -4,14 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from common_utils import (
-    CUDA_NOT_AVAILABLE_MSG,
-    IN_FBCODE,
-    IN_OSS_CI,
-    IN_RE_WORKER,
-    MPS_NOT_AVAILABLE_MSG,
-    OSS_CI_GPU_NO_CUDA_MSG,
-)
+from common_utils import CUDA_NOT_AVAILABLE_MSG, IN_FBCODE, IN_OSS_CI, IN_RE_WORKER, OSS_CI_GPU_NO_CUDA_MSG
 
 
 def pytest_configure(config):
@@ -49,8 +42,13 @@ def pytest_collection_modifyitems(items):
             # There are special cases though, see below
             item.add_marker(pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG))
 
-        if needs_mps and not torch.backends.mps.is_available():
-            item.add_marker(pytest.mark.skip(reason=MPS_NOT_AVAILABLE_MSG))
+        # FIXME: MPS tests are all failing due to allocation issue.
+        # When fixed, we should remove the unconditional skip and put back the one just below
+        # See https://github.com/pytorch/vision/issues/8433.
+        # if needs_mps and not torch.backends.mps.is_available():
+        #     item.add_marker(pytest.mark.skip(reason=MPS_NOT_AVAILABLE_MSG))
+        if needs_mps:
+            item.add_marker(pytest.mark.skip(reason="MPS tests are all failing due to allocation issue, see #8433"))
 
         if IN_FBCODE:
             # fbcode doesn't like skipping tests, so instead we  just don't collect the test
