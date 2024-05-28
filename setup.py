@@ -7,7 +7,8 @@ import subprocess
 import sys
 
 import torch
-from pkg_resources import DistributionNotFound, get_distribution, parse_version
+from packaging.version import parse
+import importlib.util
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension
 
@@ -15,13 +16,6 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, C
 def read(*names, **kwargs):
     with open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
         return fp.read()
-
-
-def get_dist(pkgname):
-    try:
-        return get_distribution(pkgname)
-    except DistributionNotFound:
-        return None
 
 
 cwd = os.path.dirname(os.path.abspath(__file__))
@@ -64,7 +58,7 @@ requirements = [
 
 # Excluding 8.3.* because of https://github.com/pytorch/vision/issues/4934
 pillow_ver = " >= 5.3.0, !=8.3.*"
-pillow_req = "pillow-simd" if get_dist("pillow-simd") is not None else "pillow"
+pillow_req = "pillow-simd" if importlib.util.find_spec("pillow-simd") is not None else "pillow"
 requirements.append(pillow_req + pillow_ver)
 
 
@@ -266,8 +260,8 @@ def get_extensions():
             min_version = "1.6.0"
             png_version = subprocess.run([libpng, "--version"], stdout=subprocess.PIPE)
             png_version = png_version.stdout.strip().decode("utf-8")
-            png_version = parse_version(png_version)
-            if png_version >= parse_version(min_version):
+            png_version = parse(png_version)
+            if png_version >= parse(min_version):
                 print("Building torchvision with PNG image support")
                 png_lib = subprocess.run([libpng, "--libdir"], stdout=subprocess.PIPE)
                 png_lib = png_lib.stdout.strip().decode("utf-8")

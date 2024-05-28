@@ -44,7 +44,7 @@ conda create \
   'ffmpeg<4.3'
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
-pip install --progress-bar=off --upgrade setuptools
+pip install --progress-bar=off --upgrade setuptools packaging
 
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
