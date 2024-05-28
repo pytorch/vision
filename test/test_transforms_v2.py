@@ -2169,26 +2169,30 @@ class TestAdjustBrightness:
 
 class TestCutMixMixUp:
     class DummyDataset:
-        def __init__(self, size, num_classes):
+        def __init__(self, size, num_classes, one_hot_labels):
             self.size = size
             self.num_classes = num_classes
+            self.one_hot_labels = one_hot_labels
             assert size < num_classes
 
         def __getitem__(self, idx):
             img = torch.rand(3, 100, 100)
             label = idx  # This ensures all labels in a batch are unique and makes testing easier
+            if self.one_hot_labels:
+                label = torch.nn.functional.one_hot(torch.tensor(label), num_classes=self.num_classes)
             return img, label
 
         def __len__(self):
             return self.size
 
     @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
-    def test_supported_input_structure(self, T):
+    @pytest.mark.parametrize("one_hot_labels", (True, False))
+    def test_supported_input_structure(self, T, one_hot_labels):
 
         batch_size = 32
         num_classes = 100
 
-        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
+        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes, one_hot_labels=one_hot_labels)
 
         cutmix_mixup = T(num_classes=num_classes)
 
@@ -2198,7 +2202,7 @@ class TestCutMixMixUp:
         img, target = next(iter(dl))
         input_img_size = img.shape[-3:]
         assert isinstance(img, torch.Tensor) and isinstance(target, torch.Tensor)
-        assert target.shape == (batch_size,)
+        assert target.shape == (batch_size, num_classes) if one_hot_labels else (batch_size,)
 
         def check_output(img, target):
             assert img.shape == (batch_size, *input_img_size)
@@ -2209,7 +2213,7 @@ class TestCutMixMixUp:
 
         # After Dataloader, as unpacked input
         img, target = next(iter(dl))
-        assert target.shape == (batch_size,)
+        assert target.shape == (batch_size, num_classes) if one_hot_labels else (batch_size,)
         img, target = cutmix_mixup(img, target)
         check_output(img, target)
 
@@ -2264,7 +2268,7 @@ class TestCutMixMixUp:
         with pytest.raises(ValueError, match="Could not infer where the labels are"):
             cutmix_mixup({"img": imgs, "Nothing_else": 3})
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
+        with pytest.raises(ValueError, match="labels should be index based"):
             # Note: the error message isn't ideal, but that's because the label heuristic found the img as the label
             # It's OK, it's an edge-case. The important thing is that this fails loudly instead of passing silently
             cutmix_mixup(imgs)
@@ -2272,22 +2276,21 @@ class TestCutMixMixUp:
         with pytest.raises(ValueError, match="When using the default labels_getter"):
             cutmix_mixup(imgs, "not_a_tensor")
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
-            cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3)))
-
         with pytest.raises(ValueError, match="Expected a batched input with 4 dims"):
             cutmix_mixup(imgs[None, None], torch.randint(0, num_classes, size=(batch_size,)))
 
         with pytest.raises(ValueError, match="does not match the batch size of the labels"):
             cutmix_mixup(imgs, torch.randint(0, num_classes, size=(batch_size + 1,)))
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
-            # The purpose of this check is more about documenting the current
-            # behaviour of what happens on a Compose(), rather than actually
-            # asserting the expected behaviour. We may support Compose() in the
-            # future, e.g. for 2 consecutive CutMix?
-            labels = torch.randint(0, num_classes, size=(batch_size,))
-            transforms.Compose([cutmix_mixup, cutmix_mixup])(imgs, labels)
+        with pytest.raises(ValueError, match="When passing 2D labels"):
+            wrong_num_classes = num_classes + 1
+            T(alpha=0.5, num_classes=num_classes)(imgs, torch.randint(0, 2, size=(batch_size, wrong_num_classes)))
+
+        with pytest.raises(ValueError, match="but got a tensor of shape"):
+            cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3, 4)))
+
+        with pytest.raises(ValueError, match="num_classes must be passed"):
+            T(alpha=0.5)(imgs, torch.randint(0, num_classes, size=(batch_size,)))
 
 
 @pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
