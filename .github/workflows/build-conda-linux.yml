@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - repository: pytorch/vision
-            pre-script: ""
+            pre-script: packaging/pre_build_script.sh
             post-script: ""
             conda-package-directory: packaging/torchvision
             smoke-test-script: test/smoke_test.py

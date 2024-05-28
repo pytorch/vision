@@ -47,4 +47,4 @@ else
 fi
 
 pip install numpy pyyaml future ninja
-pip install --upgrade setuptools
+pip install --upgrade setuptools packaging
