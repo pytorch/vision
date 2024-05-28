@@ -210,7 +210,7 @@ class _BaseMixUpCutMix(Transform):
 
     def _mixup_label(self, label: torch.Tensor, *, lam: float) -> torch.Tensor:
         if label.ndim == 1:
-            label = one_hot(label, num_classes=self.num_classes)
+            label = one_hot(label, num_classes=self.num_classes)  # type: ignore[arg-type]
         if not label.dtype.is_floating_point:
             label = label.float()
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
