@@ -267,7 +267,6 @@ def read_video(
 
     from torchvision import get_video_backend
 
-
     if get_video_backend() != "pyav":
         if not os.path.exists(filename):
             raise RuntimeError(f"File not found: {filename}")
