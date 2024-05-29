@@ -8,7 +8,9 @@ set -euo pipefail
 eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
 
 echo '::group::Install testing utilities'
-pip install --progress-bar=off pytest" pytest-mock pytest-cov expecttest!=0.2.0
+
+pip install --progress-bar=off pytest" pytest-mock pytest-cov expecttest!=0.2.0 requests
+
 echo '::endgroup::'
 
 python test/smoke_test.py

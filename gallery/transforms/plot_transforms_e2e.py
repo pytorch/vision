@@ -93,7 +93,7 @@ plot([dataset[0], dataset[1]])
 # ----------
 #
 # Let's now define our pre-processing transforms. All the transforms know how
-# to handle images, bouding boxes and masks when relevant.
+# to handle images, bounding boxes and masks when relevant.
 #
 # Transforms are typically passed as the ``transforms`` parameter of the
 # dataset so that they can leverage multi-processing from the
@@ -151,8 +151,8 @@ data_loader = torch.utils.data.DataLoader(
     # We need a custom collation function here, since the object detection
     # models expect a sequence of images and target dictionaries. The default
     # collation function tries to torch.stack() the individual elements,
-    # which fails in general for object detection, because the number of bouding
-    # boxes varies between the images of a same batch.
+    # which fails in general for object detection, because the number of bounding
+    # boxes varies between the images of the same batch.
     collate_fn=lambda batch: tuple(zip(*batch)),
 )
 

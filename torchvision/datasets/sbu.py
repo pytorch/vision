@@ -1,5 +1,6 @@
 import os
-from typing import Any, Callable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -11,7 +12,7 @@ class SBU(VisionDataset):
     """`SBU Captioned Photo <http://www.cs.virginia.edu/~vicente/sbucaptions/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where tarball
+        root (str or ``pathlib.Path``): Root directory of dataset where tarball
             ``SBUCaptionedPhotoDataset.tar.gz`` exists.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
@@ -28,7 +29,7 @@ class SBU(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = True,

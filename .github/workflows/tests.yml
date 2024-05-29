@@ -18,6 +18,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:
@@ -51,16 +52,12 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-        runner: ["macos-12"]
-        include:
-          - python-version: "3.8"
-            runner: macos-m1-12
+          - "3.12"
+        runner: ["macos-m1-stable"]
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
-      # We need an increased timeout here, since the macos-12 runner is the free one from GH
-      # and needs roughly 2 hours to just run the test suite
       timeout: 240
       runner: ${{ matrix.runner }}
       test-infra-ref: main
@@ -81,6 +78,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
         include:

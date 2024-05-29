@@ -113,7 +113,7 @@ def vertical_flip_image(image: torch.Tensor) -> torch.Tensor:
 
 
 @_register_kernel_internal(vertical_flip, PIL.Image.Image)
-def _vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
+def _vertical_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.vflip(image)
 
 
@@ -997,6 +997,21 @@ def rotate_image(
     center: Optional[List[float]] = None,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
+    angle = angle % 360  # shift angle to [0, 360) range
+
+    # fast path: transpose without affine transform
+    if center is None:
+        if angle == 0:
+            return image.clone()
+        if angle == 180:
+            return torch.rot90(image, k=2, dims=(-2, -1))
+
+        if expand or image.shape[-1] == image.shape[-2]:
+            if angle == 90:
+                return torch.rot90(image, k=1, dims=(-2, -1))
+            if angle == 270:
+                return torch.rot90(image, k=3, dims=(-2, -1))
+
     interpolation = _check_interpolation(interpolation)
 
     input_height, input_width = image.shape[-2:]

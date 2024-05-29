@@ -164,12 +164,12 @@ def draw_bounding_boxes(
 ) -> torch.Tensor:
 
     """
-    Draws bounding boxes on given image.
-    The values of the input image should be uint8 between 0 and 255.
+    Draws bounding boxes on given RGB image.
+    The image values should be uint8 in [0, 255] or float in [0, 1].
     If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W) and dtype uint8.
+        image (Tensor): Tensor of shape (C, H, W) and dtype uint8 or float.
         boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
@@ -188,13 +188,14 @@ def draw_bounding_boxes(
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
     """
+    import torchvision.transforms.v2.functional as F  # noqa
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(draw_bounding_boxes)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
-    elif image.dtype != torch.uint8:
-        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif not (image.dtype == torch.uint8 or image.is_floating_point()):
+        raise ValueError(f"The image dtype must be uint8 or float, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
@@ -230,8 +231,11 @@ def draw_bounding_boxes(
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
 
-    ndarr = image.permute(1, 2, 0).cpu().numpy()
-    img_to_draw = Image.fromarray(ndarr)
+    original_dtype = image.dtype
+    if original_dtype.is_floating_point:
+        image = F.to_dtype(image, dtype=torch.uint8, scale=True)
+
+    img_to_draw = F.to_pil_image(image)
     img_boxes = boxes.to(torch.int64).tolist()
 
     if fill:
@@ -250,7 +254,10 @@ def draw_bounding_boxes(
             margin = width + 1
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    out = F.pil_to_tensor(img_to_draw)
+    if original_dtype.is_floating_point:
+        out = F.to_dtype(out, dtype=original_dtype, scale=True)
+    return out
 
 
 @torch.no_grad()
@@ -331,56 +338,98 @@ def draw_keypoints(
     colors: Optional[Union[str, Tuple[int, int, int]]] = None,
     radius: int = 2,
     width: int = 3,
+    visibility: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
 
     """
     Draws Keypoints on given RGB image.
-    The values of the input image should be uint8 between 0 and 255.
+    The image values should be uint8 in [0, 255] or float in [0, 1].
+    Keypoints can be drawn for multiple instances at a time.
+
+    This method allows that keypoints and their connectivity are drawn based on the visibility of this keypoint.
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
-        keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float.
+        keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoint locations for each of the N instances,
             in the format [x, y].
-        connectivity (List[Tuple[int, int]]]): A List of tuple where,
-            each tuple contains pair of keypoints to be connected.
+        connectivity (List[Tuple[int, int]]]): A List of tuple where each tuple contains a pair of keypoints
+            to be connected.
+            If at least one of the two connected keypoints has a ``visibility`` of False,
+            this specific connection is not drawn.
+            Exclusions due to invisibility are computed per-instance.
         colors (str, Tuple): The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         radius (int): Integer denoting radius of keypoint.
         width (int): Integer denoting width of line connecting keypoints.
+        visibility (Tensor): Tensor of shape (num_instances, K) specifying the visibility of the K
+            keypoints for each of the N instances.
+            True means that the respective keypoint is visible and should be drawn.
+            False means invisible, so neither the point nor possible connections containing it are drawn.
+            The input tensor will be cast to bool.
+            Default ``None`` means that all the keypoints are visible.
+            For more details, see :ref:`draw_keypoints_with_visibility`.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
+        img (Tensor[C, H, W]): Image Tensor with keypoints drawn.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(draw_keypoints)
+    # validate image
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype != torch.uint8:
-        raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
+    elif not (image.dtype == torch.uint8 or image.is_floating_point()):
+        raise ValueError(f"The image dtype must be uint8 or float, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
         raise ValueError("Pass an RGB image. Other Image formats are not supported")
 
+    # validate keypoints
     if keypoints.ndim != 3:
         raise ValueError("keypoints must be of shape (num_instances, K, 2)")
+
+    # validate visibility
+    if visibility is None:  # set default
+        visibility = torch.ones(keypoints.shape[:-1], dtype=torch.bool)
+    if visibility.ndim == 3:
+        # If visibility was passed as pred.split([2, 1], dim=-1), it will be of shape (num_instances, K, 1).
+        # We make sure it is of shape (num_instances, K). This isn't documented, we're just being nice.
+        visibility = visibility.squeeze(-1)
+    if visibility.ndim != 2:
+        raise ValueError(f"visibility must be of shape (num_instances, K). Got ndim={visibility.ndim}")
+    if visibility.shape != keypoints.shape[:-1]:
+        raise ValueError(
+            "keypoints and visibility must have the same dimensionality for num_instances and K. "
+            f"Got {visibility.shape = } and {keypoints.shape = }"
+        )
+
+    original_dtype = image.dtype
+    if original_dtype.is_floating_point:
+        from torchvision.transforms.v2.functional import to_dtype  # noqa
+
+        image = to_dtype(image, dtype=torch.uint8, scale=True)
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
     draw = ImageDraw.Draw(img_to_draw)
     img_kpts = keypoints.to(torch.int64).tolist()
+    img_vis = visibility.cpu().bool().tolist()
 
-    for kpt_id, kpt_inst in enumerate(img_kpts):
-        for inst_id, kpt in enumerate(kpt_inst):
-            x1 = kpt[0] - radius
-            x2 = kpt[0] + radius
-            y1 = kpt[1] - radius
-            y2 = kpt[1] + radius
+    for kpt_inst, vis_inst in zip(img_kpts, img_vis):
+        for kpt_coord, kp_vis in zip(kpt_inst, vis_inst):
+            if not kp_vis:
+                continue
+            x1 = kpt_coord[0] - radius
+            x2 = kpt_coord[0] + radius
+            y1 = kpt_coord[1] - radius
+            y2 = kpt_coord[1] + radius
             draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
 
         if connectivity:
             for connection in connectivity:
+                if (not vis_inst[connection[0]]) or (not vis_inst[connection[1]]):
+                    continue
                 start_pt_x = kpt_inst[connection[0]][0]
                 start_pt_y = kpt_inst[connection[0]][1]
 
@@ -392,7 +441,10 @@ def draw_keypoints(
                     width=width,
                 )
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    out = torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
+    if original_dtype.is_floating_point:
+        out = to_dtype(out, dtype=original_dtype, scale=True)
+    return out
 
 
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
