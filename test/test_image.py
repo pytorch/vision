@@ -1,17 +1,20 @@
 import glob
 import io
 import os
+import re
 import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
+import requests
 import torch
 import torchvision.transforms.functional as F
 from common_utils import assert_equal, needs_cuda
-from PIL import __version__ as PILLOW_VERSION, Image, ImageOps
+from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
     _read_png_16,
+    decode_gif,
     decode_image,
     decode_jpeg,
     decode_png,
@@ -546,6 +549,59 @@ def test_pathlib_support(tmpdir):
     write_file(write_path, data=img.flatten())
     write_jpeg(img, write_path)
     write_png(img, write_path)
+
+
+@pytest.mark.parametrize(
+    "name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans", "earth")
+)
+@pytest.mark.parametrize("scripted", (True, False))
+def test_decode_gif(tmpdir, name, scripted):
+    # Using test images from GIFLIB
+    # https://sourceforge.net/p/giflib/code/ci/master/tree/pic/, we assert PIL
+    # and torchvision decoded outputs are equal.
+    # We're not testing against "welcome2" because PIL and GIFLIB disagee on what
+    # the background color should be (likely a difference in the way they handle
+    # transparency?)
+    # 'earth' image is from wikipedia, licensed under CC BY-SA 3.0
+    # https://creativecommons.org/licenses/by-sa/3.0/
+    # it allows to properly test for transparency, TOP-LEFT offsets, and
+    # disposal modes.
+
+    path = tmpdir / f"{name}.gif"
+    if name == "earth":
+        url = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Rotating_earth_%28large%29.gif"
+    else:
+        url = f"https://sourceforge.net/p/giflib/code/ci/master/tree/pic/{name}.gif?format=raw"
+    with open(path, "wb") as f:
+        f.write(requests.get(url).content)
+
+    encoded_bytes = read_file(path)
+    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    tv_out = f(encoded_bytes)
+    if tv_out.ndim == 3:
+        tv_out = tv_out[None]
+
+    assert tv_out.is_contiguous(memory_format=torch.channels_last)
+
+    # For some reason, not using Image.open() as a CM causes "ResourceWarning: unclosed file"
+    with Image.open(path) as pil_img:
+        pil_seq = ImageSequence.Iterator(pil_img)
+
+        for pil_frame, tv_frame in zip(pil_seq, tv_out):
+            pil_frame = F.pil_to_tensor(pil_frame.convert("RGB"))
+            torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
+
+
+def test_decode_gif_errors():
+    encoded_data = torch.randint(0, 256, (100,), dtype=torch.uint8)
+    with pytest.raises(RuntimeError, match="Input tensor must be 1-dimensional"):
+        decode_gif(encoded_data[None])
+    with pytest.raises(RuntimeError, match="Input tensor must have uint8 data type"):
+        decode_gif(encoded_data.float())
+    with pytest.raises(RuntimeError, match="Input tensor must be contiguous"):
+        decode_gif(encoded_data[::2])
+    with pytest.raises(RuntimeError, match=re.escape("DGifOpenFileName() failed - 103")):
+        decode_gif(encoded_data)
 
 
 if __name__ == "__main__":
