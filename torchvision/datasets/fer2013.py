@@ -43,7 +43,7 @@ class FER2013(VisionDataset):
 
         base_folder = pathlib.Path(self.root) / "fer2013"
         use_icml = (base_folder / self._RESOURCES["icml"][0]).exists()
-        file_name, md5 = self._RESOURCES["all" if use_icml else self._split]
+        file_name, md5 = self._RESOURCES["icml" if use_icml else self._split]
         data_file = base_folder / file_name
         if not check_integrity(str(data_file), md5=md5):
             raise RuntimeError(
