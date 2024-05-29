@@ -722,9 +722,7 @@ def perspective(
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
-def _get_gaussian_kernel1d(
-    kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device
-) -> Tensor:
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> Tensor:
     ksize_half = (kernel_size - 1) * 0.5
 
     x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size, dtype=dtype, device=device)
