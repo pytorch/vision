@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+775dd2d) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+a5f531a) &#x25BC</a>
     </div>
     
 
@@ -393,18 +393,38 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.ops.roi_align</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch._dynamo</span>
 <span class="kn">import</span> <span class="nn">torch.fx</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">torch._dynamo.utils</span> <span class="kn">import</span> <span class="n">is_compile_supported</span>
 <span class="kn">from</span> <span class="nn">torch.jit.annotations</span> <span class="kn">import</span> <span class="n">BroadcastingList2</span>
 <span class="kn">from</span> <span class="nn">torch.nn.modules.utils</span> <span class="kn">import</span> <span class="n">_pair</span>
 <span class="kn">from</span> <span class="nn">torchvision.extension</span> <span class="kn">import</span> <span class="n">_assert_has_ops</span><span class="p">,</span> <span class="n">_has_ops</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">check_roi_boxes_shape</span><span class="p">,</span> <span class="n">convert_boxes_to_roi_format</span>
+
+
+<span class="k">def</span> <span class="nf">lazy_compile</span><span class="p">(</span><span class="o">**</span><span class="n">compile_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lazily wrap a function with torch.compile on the first call</span>
+
+<span class="sd">    This avoids eagerly importing dynamo.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">decorate_fn</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">compile_hook</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">compiled_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">compile_kwargs</span><span class="p">)</span>
+            <span class="nb">globals</span><span class="p">()[</span><span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)(</span><span class="n">compiled_fn</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">compiled_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">compile_hook</span>
+
+    <span class="k">return</span> <span class="n">decorate_fn</span>
 
 
 <span class="c1"># NB: all inputs are tensors</span>
@@ -481,15 +501,13 @@
         <span class="k">return</span> <span class="n">tensor</span>
 
 
-<span class="c1"># This is a slow but pure Python and differentiable implementation of</span>
-<span class="c1"># roi_align.  It potentially is a good basis for Inductor compilation</span>
-<span class="c1"># (but I have not benchmarked it) but today it is solely used for the</span>
-<span class="c1"># fact that its backwards can be implemented deterministically,</span>
-<span class="c1"># which is needed for the PT2 benchmark suite.</span>
-<span class="c1">#</span>
+<span class="c1"># This is a pure Python and differentiable implementation of roi_align.  When</span>
+<span class="c1"># run in eager mode, it uses a lot of memory, but when compiled it has</span>
+<span class="c1"># acceptable memory usage.  The main point of this implementation is that</span>
+<span class="c1"># its backwards is deterministic.</span>
 <span class="c1"># It is transcribed directly off of the roi_align CUDA kernel, see</span>
 <span class="c1"># https://dev-discuss.pytorch.org/t/a-pure-python-implementation-of-roi-align-that-looks-just-like-its-cuda-kernel/1266</span>
-<span class="nd">@torch</span><span class="o">.</span><span class="n">_dynamo</span><span class="o">.</span><span class="n">allow_in_graph</span>
+<span class="nd">@lazy_compile</span><span class="p">(</span><span class="n">dynamic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_roi_align</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">rois</span><span class="p">,</span> <span class="n">spatial_scale</span><span class="p">,</span> <span class="n">pooled_height</span><span class="p">,</span> <span class="n">pooled_width</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="p">,</span> <span class="n">aligned</span><span class="p">):</span>
     <span class="n">orig_dtype</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span>
 
@@ -627,7 +645,9 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rois</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">rois</span> <span class="o">=</span> <span class="n">convert_boxes_to_roi_format</span><span class="p">(</span><span class="n">rois</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_has_ops</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">are_deterministic_algorithms_enabled</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">is_cuda</span> <span class="ow">or</span> <span class="nb">input</span><span class="o">.</span><span class="n">is_mps</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="n">_has_ops</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">are_deterministic_algorithms_enabled</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">is_cuda</span> <span class="ow">or</span> <span class="nb">input</span><span class="o">.</span><span class="n">is_mps</span><span class="p">))</span>
+        <span class="p">)</span> <span class="ow">and</span> <span class="n">is_compile_supported</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">_roi_align</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">rois</span><span class="p">,</span> <span class="n">spatial_scale</span><span class="p">,</span> <span class="n">output_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">output_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sampling_ratio</span><span class="p">,</span> <span class="n">aligned</span><span class="p">)</span>
     <span class="n">_assert_has_ops</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">roi_align</span><span class="p">(</span>

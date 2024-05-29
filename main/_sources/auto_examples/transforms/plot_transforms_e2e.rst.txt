@@ -336,7 +336,7 @@ v2). So don't be afraid to simplify and only keep what you need.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.977 seconds)
+   **Total running time of the script:** (0 minutes 4.822 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py:
