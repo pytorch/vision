@@ -32,7 +32,7 @@ def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> Interp
         interpolation = _interpolation_modes_from_int(interpolation)
     elif not isinstance(interpolation, InterpolationMode):
         raise ValueError(
-            f"Argument interpolation should be an `InterpolationMode` or a corresponding Pillow integer constant, "
+            f"Argument interpolation should be an 'InterpolationMode' or a corresponding Pillow integer constant, "
             f"but got {interpolation}."
         )
     return interpolation
@@ -159,13 +159,22 @@ vflip = vertical_flip
 
 
 def _compute_resized_output_size(
-    canvas_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+    canvas_size: Tuple[int, int], size: Optional[List[int]], max_size: Optional[int] = None
 ) -> List[int]:
     if isinstance(size, int):
         size = [size]
+    elif size is None:
+        if isinstance(max_size, int):
+            h, w = canvas_size
+            short, long = (w, h) if w <= h else (h, w)
+            new_short, new_long = int(max_size * short / long), max_size
+            new_w, new_h = (new_long, new_short) if w <= h else (new_short, new_long)
+            size = [new_w, new_h]
+        else:
+            raise ValueError(f"max_size must be an integer when size is None, but got {max_size} instead.")
     elif max_size is not None and len(size) != 1:
         raise ValueError(
-            "max_size should only be passed if size specifies the length of the smaller edge, "
+            "max_size should only be passed if size is None or specifies the length of the smaller edge, "
             "i.e. size should be an int or a sequence of length 1 in torchscript mode."
         )
     return __compute_resized_output_size(canvas_size, size=size, max_size=max_size)
@@ -173,7 +182,7 @@ def _compute_resized_output_size(
 
 def resize(
     inpt: torch.Tensor,
-    size: List[int],
+    size: Optional[List[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
@@ -206,7 +215,7 @@ def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
 @_register_kernel_internal(resize, tv_tensors.Image)
 def resize_image(
     image: torch.Tensor,
-    size: List[int],
+    size: Optional[List[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
@@ -310,7 +319,7 @@ def __resize_image_pil_dispatch(
     return _resize_image_pil(image, size=size, interpolation=interpolation, max_size=max_size)
 
 
-def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
+def resize_mask(mask: torch.Tensor, size: Optional[List[int]], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -334,7 +343,10 @@ def _resize_mask_dispatch(
 
 
 def resize_bounding_boxes(
-    bounding_boxes: torch.Tensor, canvas_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+    bounding_boxes: torch.Tensor,
+    canvas_size: Tuple[int, int],
+    size: Optional[List[int]],
+    max_size: Optional[int] = None,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = canvas_size
     new_height, new_width = _compute_resized_output_size(canvas_size, size=size, max_size=max_size)
@@ -353,7 +365,7 @@ def resize_bounding_boxes(
 
 @_register_kernel_internal(resize, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
 def _resize_bounding_boxes_dispatch(
-    inpt: tv_tensors.BoundingBoxes, size: List[int], max_size: Optional[int] = None, **kwargs: Any
+    inpt: tv_tensors.BoundingBoxes, size: Optional[List[int]], max_size: Optional[int] = None, **kwargs: Any
 ) -> tv_tensors.BoundingBoxes:
     output, canvas_size = resize_bounding_boxes(
         inpt.as_subclass(torch.Tensor), inpt.canvas_size, size, max_size=max_size
@@ -364,7 +376,7 @@ def _resize_bounding_boxes_dispatch(
 @_register_kernel_internal(resize, tv_tensors.Video)
 def resize_video(
     video: torch.Tensor,
-    size: List[int],
+    size: Optional[List[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
@@ -1176,7 +1188,7 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
                 f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
             )
     else:
-        raise TypeError(f"`padding` should be an integer or tuple or list of integers, but got {padding}")
+        raise TypeError(f"'padding' should be an integer or tuple or list of integers, but got {padding}")
 
     return [pad_left, pad_right, pad_top, pad_bottom]
 
@@ -1196,8 +1208,8 @@ def pad_image(
 
     if padding_mode not in ("constant", "edge", "reflect", "symmetric"):
         raise ValueError(
-            f"`padding_mode` should be either `'constant'`, `'edge'`, `'reflect'` or `'symmetric'`, "
-            f"but got `'{padding_mode}'`."
+            f"'padding_mode' should be either 'constant', 'edge', 'reflect' or 'symmetric', "
+            f"but got '{padding_mode}'."
         )
 
     if fill is None:

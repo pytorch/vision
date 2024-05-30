@@ -75,11 +75,14 @@ class Resize(Transform):
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
-        size (sequence or int): Desired output size. If size is a sequence like
+        size (sequence, int, or None): Desired output size. If size is a sequence like
             (h, w), output size will be matched to this. If size is an int,
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
-            (size * height / width, size).
+            (size * height / width, size). If size is None,
+            the longer edge of the image will be matched to max_size.
+            i.e, if height > width, then image will be rescaled to
+            (max_size, max_size * width / height).
 
             .. note::
                 In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
@@ -95,7 +98,8 @@ class Resize(Transform):
             ``max_size``.
             As a result, the smaller edge may be shorter than ``size``. This
             is only supported if ``size`` is an int (or a sequence of length
-            1 in torchscript mode).
+            1 in torchscript mode) or None.
+
         antialias (bool, optional): Whether to apply antialiasing.
             It only affects **tensors** with bilinear or bicubic modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
@@ -120,7 +124,7 @@ class Resize(Transform):
 
     def __init__(
         self,
-        size: Union[int, Sequence[int]],
+        size: Union[int, Sequence[int], None],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: Optional[bool] = True,
@@ -131,15 +135,26 @@ class Resize(Transform):
             size = [size]
         elif isinstance(size, Sequence) and len(size) in {1, 2}:
             size = list(size)
+        elif size is None:
+            if not isinstance(max_size, int):
+                raise ValueError(f"max_size must be an integer when size is None, but got {max_size} instead.")
         else:
             raise ValueError(
-                f"size can either be an integer or a sequence of one or two integers, but got {size} instead."
+                f"size can be an integer, a sequence of one or two integers, or None, but got {size} instead."
             )
         self.size = size
 
         self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+
+        if params["size"] is None:
+            params["size"] = [params["max_size"] - 1]
+
+        return params
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
@@ -445,7 +460,7 @@ class Pad(Transform):
         params = super()._extract_params_for_v1_transform()
 
         if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
-            raise ValueError(f"{type(self).__name__}() can only be scripted for a scalar `fill`, but got {self.fill}.")
+            raise ValueError(f"{type(self).__name__}() can only be scripted for a scalar 'fill', but got {self.fill}.")
 
         return params
 
@@ -791,7 +806,7 @@ class RandomCrop(Transform):
         params = super()._extract_params_for_v1_transform()
 
         if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
-            raise ValueError(f"{type(self).__name__}() can only be scripted for a scalar `fill`, but got {self.fill}.")
+            raise ValueError(f"{type(self).__name__}() can only be scripted for a scalar 'fill', but got {self.fill}.")
 
         padding = self.padding
         if padding is not None:
