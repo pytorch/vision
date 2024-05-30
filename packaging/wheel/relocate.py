@@ -280,6 +280,7 @@ def compress_wheel(output_dir, wheel, wheel_dir, wheel_name):
     """Create RECORD file and compress wheel distribution."""
     print("Update RECORD file in wheel")
     dist_info = glob.glob(osp.join(output_dir, "*.dist-info"))[0]
+    print("Trying to fetch RECORD")
     record_file = osp.join(dist_info, "RECORD")
 
     with open(record_file, "w") as f:
@@ -295,10 +296,14 @@ def compress_wheel(output_dir, wheel, wheel_dir, wheel_name):
 
     print("Compressing wheel")
     base_wheel_name = osp.join(wheel_dir, wheel_name)
+    print(f"base_wheel_name {base_wheel_name} {output_dir}")
     shutil.make_archive(base_wheel_name, "zip", output_dir)
+    print(f"before  os.remove(wheel)")
     os.remove(wheel)
-    shutil.move(f"{base_wheel_name}.zip", wheel)
-    shutil.rmtree(output_dir)
+    print(f"before  shutil.move {wheel}")
+    shutil.move(f"{base_wheel_name}.zip", f"{output_dir}/{wheel_name}.whl")
+    #shutil.rmtree(output_dir)
+    print("Finalized Compressing wheel....")
 
 
 def patch_linux():
@@ -307,10 +312,14 @@ def patch_linux():
     if patchelf is None:
         raise FileNotFoundError("Patchelf was not found in the system, please make sure that is available on the PATH.")
 
+    dest_dir = os.environ["DEST_DIR"]
+    wheel_path = os.environ["WHEEL_PATH"]
+    
+
     # Find wheel
     print("Finding wheels...")
-    wheels = glob.glob(osp.join(PACKAGE_ROOT, "dist", "*.whl"))
-    output_dir = osp.join(PACKAGE_ROOT, "dist", ".wheel-process")
+    wheels = [ wheel_path ]
+    output_dir = dest_dir
 
     image_binary = "image.so"
     video_binary = "video_reader.so"
@@ -334,6 +343,7 @@ def patch_linux():
             if osp.exists(osp.join(output_library, binary)):
                 relocate_elf_library(patchelf, output_dir, output_library, binary)
 
+        print(f"compress_wheel {output_dir} {wheel} {wheel_dir}")
         compress_wheel(output_dir, wheel, wheel_dir, wheel_name)
 
 
