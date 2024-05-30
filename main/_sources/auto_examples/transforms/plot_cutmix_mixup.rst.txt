@@ -79,6 +79,8 @@ We'll use a simple but typical image classification pipeline:
 
  .. code-block:: none
 
+    /pytorch/vision/torchvision/transforms/v2/functional/_geometry.py:197: FutureWarning: `is_compiling` is deprecated. Use `torch.compiler.is_compiling()` instead.
+      if torch._dynamo.is_compiling():
     type(img) = <class 'torch.Tensor'>, img.dtype = torch.float32, img.shape = torch.Size([3, 224, 224]), label = 67
 
 
@@ -263,7 +265,7 @@ by passing a callable to the ``labels_getter`` parameter. For example:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.181 seconds)
+   **Total running time of the script:** (0 minutes 0.187 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_cutmix_mixup.py:
