@@ -15,4 +15,4 @@ excludes = [
 
 [build-system]
 
-requires = ["setuptools", "torch", "wheel"]
+requires = ["torch"]
