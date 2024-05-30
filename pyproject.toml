@@ -15,4 +15,4 @@ excludes = [
 
 [build-system]
 
-requires = ["setuptools" @ git+https://github.com/pypa/setuptools.git@main, "torch", "wheel" @ git+https://github.com/pypa/wheel.git@main]
+requires = ["setuptools @ git+https://github.com/pypa/setuptools.git@main", "torch", "wheel @ git+https://github.com/pypa/wheel.git@main"]
