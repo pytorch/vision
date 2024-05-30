@@ -1506,7 +1506,7 @@ def equalize(img: Tensor) -> Tensor:
     return F_t.equalize(img)
 
 
-def gaussian_noise(img: Tensor, mean: float = 0., var: float = 1.) -> Tensor:
+def gaussian_noise(img: Tensor, mean: float = 0.0, var: float = 1.0) -> Tensor:
     """Add gaussian noise to the image. Samples from `N(0, 1)` (standard normal distribution) by default.
 
     Args:
@@ -1521,7 +1521,7 @@ def gaussian_noise(img: Tensor, mean: float = 0., var: float = 1.) -> Tensor:
         _log_api_usage_once(gaussian_noise)
     if not isinstance(img, torch.Tensor):
         F_pil.gaussian_noise(img, mean, var)
-    
+
     return F_t.gaussian_noise(img, mean, var)
 
 

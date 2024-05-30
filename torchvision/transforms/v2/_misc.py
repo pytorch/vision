@@ -205,6 +205,31 @@ class GaussianBlur(Transform):
         return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
+class GaussianNoise(Transform):
+    """Add gaussian noise to the image.
+
+    The input tensor is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+
+    The input tensor is also expected to be of float dtype in ``[0, 1]``.
+    This transform does not support PIL images.
+
+    Args:
+        mean (float): Mean of the sampled normal distribution. Default is 0.
+        sigma (float): Standard deviation of the sampled normal distribution. Default is 0.1.
+        clip (bool, optional): Whether to clip the values in ``[0, 1]`` after adding noise. Default is True.
+    """
+
+    def __init__(self, mean: float = 0.0, sigma: float = 0.1, clip=True) -> None:
+        super().__init__()
+        self.mean = mean
+        self.sigma = sigma
+        self.clip = clip
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.gaussian_noise, inpt, mean=self.mean, sigma=self.sigma, clip=self.clip)
+
+
 class ToDtype(Transform):
     """Converts the input to a specific dtype, optionally scaling the values for images or videos.
 

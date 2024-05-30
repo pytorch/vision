@@ -54,7 +54,6 @@ __all__ = [
     "RandomAutocontrast",
     "RandomEqualize",
     "ElasticTransform",
-    "GaussianNoise",
 ]
 
 

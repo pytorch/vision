@@ -18,7 +18,6 @@ from ._color import (
     RandomPhotometricDistort,
     RandomPosterize,
     RandomSolarize,
-    GaussianNoise,
     RGB,
 )
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
@@ -46,6 +45,7 @@ from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat
 from ._misc import (
     ConvertImageDtype,
     GaussianBlur,
+    GaussianNoise,
     Identity,
     Lambda,
     LinearTransformation,
