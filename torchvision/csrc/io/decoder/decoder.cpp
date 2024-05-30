@@ -592,15 +592,13 @@ int Decoder::getFrame(size_t workingTimeInMs) {
 
     av_packet_unref(avPacket);
 
-    if (++kFramesDecoded_ == params_.uniformSampling) {
-      result = ENODATA;
-      flushStreams();
-      break;
-    }
-
-    int64_t stepTs = static_cast<int64_t>((params_.expectedDuration * AV_TIME_BASE) / (params_.uniformSampling - 1));
-    while (kFramesDecoded_ < params_.uniformSampling && avformat_seek_file(inputCtx_, -1, stepTs * (kFramesDecoded_ - 1) + 1, stepTs * kFramesDecoded_, stepTs * kFramesDecoded_, 0) < 0) {
-      ++kFramesDecoded_;
+    if (params_.uniformSampling > 1) {
+      if (doSeek_) {
+        int64_t step = static_cast<int64_t>((params_.expectedDuration * AV_TIME_BASE) / (1000 * (params_.uniformSampling - 1)));
+        avformat_seek_file(inputCtx_, -1, step * kFramesDecoded_ + 1, step * (kFramesDecoded_ + 1), step * (kFramesDecoded_ + 1), 0);
+        ++kFramesDecoded_;
+        doSeek_ = false;
+      }
     }
   }
 
@@ -672,11 +670,29 @@ int Decoder::processPacket(
       startCondition = msg.header.pts >= params_.startOffset;
     }
     if (endInRange && startCondition) {
-      *hasMsg = true;
-      push(std::move(msg));
+        *hasMsg = pushMsg(std::move(msg));
     }
   }
   return result;
+}
+
+bool Decoder::pushMsg(DecoderOutputMessage&& msg) {
+  pastDecodedPTS_ = currentDecodedPTS_;
+  currentDecodedPTS_ = msg.header.pts;
+
+  if (params_.uniformSampling <= 1) {
+    push(std::move(msg));
+    return true;
+  }
+
+  int64_t step = static_cast<int64_t>((params_.expectedDuration * AV_TIME_BASE) / (1000 * (params_.uniformSampling - 1)));
+  if (pastDecodedPTS_ < step * kFramesDecoded_ && step * kFramesDecoded_ <= currentDecodedPTS_) {
+    push(std::move(msg));
+    doSeek_ = true;
+    return true;
+  }
+
+  return false;
 }
 
 void Decoder::flushStreams() {
@@ -690,7 +706,7 @@ void Decoder::flushStreams() {
           params_.endOffset <= 0 || msg.header.pts <= params_.endOffset;
       inRange_.set(stream.second->getIndex(), endInRange);
       if (endInRange && msg.header.pts >= params_.startOffset) {
-        push(std::move(msg));
+        pushMsg(std::move(msg));
       } else {
         msg.payload.reset();
       }

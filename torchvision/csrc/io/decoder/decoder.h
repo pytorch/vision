@@ -77,6 +77,7 @@ class Decoder : public MediaDecoder {
       bool fastSeek = false);
   void flushStreams();
   void cleanUp();
+  bool pushMsg(DecoderOutputMessage&& msg); // returns whether frame is passed to downstream
 
  protected:
   DecoderParameters params_;
@@ -92,5 +93,8 @@ class Decoder : public MediaDecoder {
   std::unordered_map<ssize_t, std::unique_ptr<Stream>> streams_;
   std::bitset<64> inRange_;
   int kFramesDecoded_{0};
+  int64_t pastDecodedPTS_{-1};
+  int64_t currentDecodedPTS_{-1};
+  bool doSeek_{false};
 };
 } // namespace ffmpeg
