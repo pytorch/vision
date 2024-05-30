@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
@@ -142,7 +142,7 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixUpCutMix(Transform):
-    def __init__(self, *, alpha: float = 1.0, num_classes: int, labels_getter="default") -> None:
+    def __init__(self, *, alpha: float = 1.0, num_classes: Optional[int] = None, labels_getter="default") -> None:
         super().__init__()
         self.alpha = float(alpha)
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
@@ -162,10 +162,21 @@ class _BaseMixUpCutMix(Transform):
         labels = self._labels_getter(inputs)
         if not isinstance(labels, torch.Tensor):
             raise ValueError(f"The labels must be a tensor, but got {type(labels)} instead.")
-        elif labels.ndim != 1:
+        if labels.ndim not in (1, 2):
             raise ValueError(
-                f"labels tensor should be of shape (batch_size,) " f"but got shape {labels.shape} instead."
+                f"labels should be index based with shape (batch_size,) "
+                f"or probability based with shape (batch_size, num_classes), "
+                f"but got a tensor of shape {labels.shape} instead."
             )
+        if labels.ndim == 2 and self.num_classes is not None and labels.shape[-1] != self.num_classes:
+            raise ValueError(
+                f"When passing 2D labels, "
+                f"the number of elements in last dimension must match num_classes: "
+                f"{labels.shape[-1]} != {self.num_classes}. "
+                f"You can Leave num_classes to None."
+            )
+        if labels.ndim == 1 and self.num_classes is None:
+            raise ValueError("num_classes must be passed if the labels are index-based (1D)")
 
         params = {
             "labels": labels,
@@ -198,7 +209,8 @@ class _BaseMixUpCutMix(Transform):
             )
 
     def _mixup_label(self, label: torch.Tensor, *, lam: float) -> torch.Tensor:
-        label = one_hot(label, num_classes=self.num_classes)
+        if label.ndim == 1:
+            label = one_hot(label, num_classes=self.num_classes)  # type: ignore[arg-type]
         if not label.dtype.is_floating_point:
             label = label.float()
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
@@ -223,7 +235,8 @@ class MixUp(_BaseMixUpCutMix):
 
     Args:
         alpha (float, optional): hyperparameter of the Beta distribution used for mixup. Default is 1.
-        num_classes (int): number of classes in the batch. Used for one-hot-encoding.
+        num_classes (int, optional): number of classes in the batch. Used for one-hot-encoding.
+            Can be None only if the labels are already one-hot-encoded.
         labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
             By default, this will pick the second parameter as the labels if it's a tensor. This covers the most
             common scenario where this transform is called as ``MixUp()(imgs_batch, labels_batch)``.
@@ -271,7 +284,8 @@ class CutMix(_BaseMixUpCutMix):
 
     Args:
         alpha (float, optional): hyperparameter of the Beta distribution used for mixup. Default is 1.
-        num_classes (int): number of classes in the batch. Used for one-hot-encoding.
+        num_classes (int, optional): number of classes in the batch. Used for one-hot-encoding.
+            Can be None only if the labels are already one-hot-encoded.
         labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
             By default, this will pick the second parameter as the labels if it's a tensor. This covers the most
             common scenario where this transform is called as ``CutMix()(imgs_batch, labels_batch)``.
