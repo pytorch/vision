@@ -107,8 +107,6 @@ where our samples are just images, bounding boxes and labels:
     I'm transforming an image of shape torch.Size([3, 256, 256]) with bboxes = BoundingBoxes([[ 0, 10, 10, 20],
                    [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256))
     label = 3
-    /pytorch/vision/torchvision/transforms/v2/functional/_geometry.py:197: FutureWarning: `is_compiling` is deprecated. Use `torch.compiler.is_compiling()` instead.
-      if torch._dynamo.is_compiling():
 
 
 

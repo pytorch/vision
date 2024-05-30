@@ -123,13 +123,6 @@ classification pipeline may look like this:
    :class: sphx-glr-single-img
 
 
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-    /pytorch/vision/torchvision/transforms/v2/functional/_geometry.py:197: FutureWarning: `is_compiling` is deprecated. Use `torch.compiler.is_compiling()` instead.
-      if torch._dynamo.is_compiling():
-
 
 
 
@@ -407,7 +400,7 @@ Either way, the logic will depend on your specific dataset.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.839 seconds)
+   **Total running time of the script:** (0 minutes 0.834 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py:
