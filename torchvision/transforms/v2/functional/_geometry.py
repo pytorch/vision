@@ -194,7 +194,7 @@ def resize(
 # according to our benchmarks on eager, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
 def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
     if interpolation == InterpolationMode.BILINEAR:
-        if torch._dynamo.is_compiling():
+        if torch.compiler.is_compiling():
             return True
         else:
             return "AVX2" in torch.backends.cpu.get_cpu_capability()
@@ -525,7 +525,7 @@ def _get_inverse_affine_matrix(
 
 
 def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
-    if torch._dynamo.is_compiling() and not torch.jit.is_scripting():
+    if torch.compiler.is_compiling() and not torch.jit.is_scripting():
         return _compute_affine_output_size_python(matrix, w, h)
     else:
         return _compute_affine_output_size_tensor(matrix, w, h)

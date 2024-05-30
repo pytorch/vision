@@ -5203,6 +5203,11 @@ class TestLinearTransform:
             transforms.LinearTransformation(*self._make_matrix_and_vector(input)),
             input,
             check_sample_input=self._sample_input_adapter,
+            # Compat check is failing on M1 with:
+            # AssertionError: Tensor-likes are not close!
+            # Mismatched elements: 1 / 561 (0.2%)
+            # See https://github.com/pytorch/vision/issues/8453
+            check_v1_compatibility=(sys.platform != "darwin"),
         )
 
     def test_transform_error(self):
