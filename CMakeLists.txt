@@ -7,7 +7,6 @@ option(WITH_CUDA "Enable CUDA support" OFF)
 option(WITH_MPS "Enable MPS support" OFF)
 option(WITH_PNG "Enable features requiring LibPNG." ON)
 option(WITH_JPEG "Enable features requiring LibJPEG." ON)
-option(USE_PYTHON "Link to Python when building" OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)
@@ -31,11 +30,6 @@ endif()
 if (WITH_JPEG)
     add_definitions(-DJPEG_FOUND)
     find_package(JPEG REQUIRED)
-endif()
-
-if (USE_PYTHON)
-  add_definitions(-DUSE_PYTHON)
-  find_package(Python3 REQUIRED COMPONENTS Development)
 endif()
 
 function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
@@ -80,7 +74,7 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 set(TVCPP torchvision/csrc)
-list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/models ${TVCPP}/ops
+list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/io/image/cpu/giflib ${TVCPP}/models ${TVCPP}/ops
   ${TVCPP}/ops/autograd ${TVCPP}/ops/cpu ${TVCPP}/io/image/cuda)
 if(WITH_CUDA)
     list(APPEND ALLOW_LISTED ${TVCPP}/ops/cuda ${TVCPP}/ops/autocast)
@@ -108,10 +102,6 @@ endif()
 
 if (WITH_JPEG)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${JPEG_LIBRARIES})
-endif()
-
-if (USE_PYTHON)
-  target_link_libraries(${PROJECT_NAME} PRIVATE Python3::Python)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
