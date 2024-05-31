@@ -235,7 +235,7 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_jpeg)
     output = encode_jpeg(input, quality)
-    assert isinstance(output, torch.Tensor)
+    assert isinstance(output, torch.Tensor)  # Needed for torchscript
     write_file(filename, output)
 
 
