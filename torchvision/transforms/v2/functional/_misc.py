@@ -181,6 +181,44 @@ def gaussian_blur_video(
     return gaussian_blur_image(video, kernel_size, sigma)
 
 
+def gaussian_noise(inpt: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
+    """See :class:`~torchvision.transforms.v2.GaussianNoise`"""
+    if torch.jit.is_scripting():
+        return gaussian_noise_image(inpt, mean=mean, sigma=sigma)
+
+    _log_api_usage_once(gaussian_noise)
+
+    kernel = _get_kernel(gaussian_noise, type(inpt))
+    return kernel(inpt, mean=mean, sigma=sigma, clip=clip)
+
+
+@_register_kernel_internal(gaussian_noise, torch.Tensor)
+@_register_kernel_internal(gaussian_noise, tv_tensors.Image)
+def gaussian_noise_image(image: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
+    if not image.is_floating_point():
+        raise ValueError(f"Input tensor is expected to be in float dtype, got dtype={image.dtype}")
+    if sigma < 0:
+        raise ValueError(f"sigma shouldn't be negative. Got {sigma}")
+
+    noise = mean + torch.randn_like(image) * sigma
+    out = image + noise
+    if clip:
+        out = torch.clamp(out, 0, 1)
+    return out
+
+
+@_register_kernel_internal(gaussian_noise, tv_tensors.Video)
+def gaussian_noise_video(video: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
+    return gaussian_noise_image(video, mean=mean, sigma=sigma, clip=clip)
+
+
+@_register_kernel_internal(gaussian_noise, PIL.Image.Image)
+def _gaussian_noise_pil(
+    video: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True
+) -> PIL.Image.Image:
+    raise ValueError("Gaussian Noise is not implemented for PIL images.")
+
+
 def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     """See :func:`~torchvision.transforms.v2.ToDtype` for details."""
     if torch.jit.is_scripting():
@@ -328,12 +366,12 @@ def sanitize_bounding_boxes(
         bounding_boxes = bounding_boxes[valid]
     else:
         if not isinstance(bounding_boxes, tv_tensors.BoundingBoxes):
-            raise ValueError("bouding_boxes must be a tv_tensors.BoundingBoxes instance or a pure tensor.")
+            raise ValueError("bounding_boxes must be a tv_tensors.BoundingBoxes instance or a pure tensor.")
         if format is not None or canvas_size is not None:
             raise ValueError(
                 "format and canvas_size must be None when bounding_boxes is a tv_tensors.BoundingBoxes instance. "
                 f"Got format={format} and canvas_size={canvas_size}. "
-                "Leave those to None or pass bouding_boxes as a pure tensor."
+                "Leave those to None or pass bounding_boxes as a pure tensor."
             )
         valid = _get_sanitize_bounding_boxes_mask(
             bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size
