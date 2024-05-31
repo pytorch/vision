@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms.functional as F
-from common_utils import assert_equal, needs_cuda
+from common_utils import assert_equal, cpu_and_cuda, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps
 from torchvision.io.image import (
     _read_png_16,
@@ -505,13 +505,6 @@ def test_encode_jpeg(img_path, scripted):
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
 
-@pytest.mark.skipif(IS_MACOS, reason="https://github.com/pytorch/vision/issues/8031")
-@pytest.mark.parametrize("scripted", (True, False))
-@pytest.mark.parametrize("contiguous", (True, False))
-def test_batch_encode_jpegs(scripted, contiguous):
-    _test_batch_encode_jpegs_helper(scripted, contiguous, "cpu")
-
-
 @needs_cuda
 @pytest.mark.parametrize(
     "img_path",
@@ -541,7 +534,12 @@ def test_single_encode_jpeg_cuda(img_path, scripted, contiguous):
     assert abs_mean_diff < 3
 
 
-def _test_batch_encode_jpegs_helper(scripted, contiguous, device):
+@pytest.mark.parametrize("device", cpu_and_cuda())
+@pytest.mark.parametrize("scripted", (True, False))
+@pytest.mark.parametrize("contiguous", (True, False))
+def test_encode_jpegs_batch(scripted, contiguous, device):
+    if device == "cpu" and IS_MACOS:
+        pytest.skip("https://github.com/pytorch/vision/issues/8031")
     decoded_images_tv = []
     for jpeg_path in get_images(IMAGE_ROOT, ".jpg"):
         if "cmyk" in jpeg_path:
@@ -565,13 +563,6 @@ def _test_batch_encode_jpegs_helper(scripted, contiguous, device):
         c, h, w = original.shape
         abs_mean_diff = (original.float() - encoded_decoded.float()).abs().mean().item()
         assert abs_mean_diff < 3
-
-
-@needs_cuda
-@pytest.mark.parametrize("scripted", (False, True))
-@pytest.mark.parametrize("contiguous", (False, True))
-def test_batch_encode_jpegs_cuda(scripted, contiguous):
-    _test_batch_encode_jpegs_helper(scripted, contiguous, "cuda")
 
 
 @needs_cuda
