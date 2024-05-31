@@ -6,7 +6,6 @@ import torch
 from torch.nn.functional import conv2d, pad as torch_pad
 
 from torchvision import tv_tensors
-from torchvision.transforms import _functional_pil as _FP
 from torchvision.transforms._functional_tensor import _max_value
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 

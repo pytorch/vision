@@ -206,10 +206,12 @@ class GaussianBlur(Transform):
 
 
 class GaussianNoise(Transform):
-    """Add gaussian noise to the image.
+    """Add gaussian noise to images or videos.
 
     The input tensor is expected to be in [..., 1 or 3, H, W] format,
     where ... means it can have an arbitrary number of leading dimensions.
+    Each image or frame in a batch will be transformed independently i.e. the
+    noise added to each image will be different.
 
     The input tensor is also expected to be of float dtype in ``[0, 1]``.
     This transform does not support PIL images.
