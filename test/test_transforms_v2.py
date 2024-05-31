@@ -4,6 +4,7 @@ import functools
 import inspect
 import itertools
 import math
+import os
 import pickle
 import random
 import re
@@ -119,6 +120,33 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
+DYNAMIC = os.environ.get("COMPILE_DYNAMIC", "true").lower() == "true"
+BACKEND = os.environ.get("COMPILE_BACKEND", "eager").lower()
+FULLGRAPH = os.environ.get("COMPILE_FULLGRAPH", "true").lower() == "true"
+
+
+def _check_kernel_compiled_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
+    """Checks if the kernel can be compiled without graph breaks and if compiled output is close to the eager one."""
+    if input.device.type != "cpu":
+        return
+
+    torch._dynamo.reset()
+    torch._dynamo.config.capture_scalar_outputs = True
+    kernel_compiled = torch.compile(kernel, dynamic=DYNAMIC, backend=BACKEND, fullgraph=FULLGRAPH)
+
+    input = input.as_subclass(torch.Tensor)
+    actual = kernel_compiled(input, *args, **kwargs)
+    expected = kernel(input, *args, **kwargs)
+
+    assert_close(
+        actual,
+        expected,
+        rtol=rtol,
+        atol=atol,
+        # msg=lambda msg: f"\n{input=}\n\n{args=}\n\n{kwargs=}\n\n{actual=}\n\n{expected=}\n\n{msg}",
+    )
+
+
 def _check_kernel_batched_vs_unbatched(kernel, input, *args, rtol, atol, **kwargs):
     """Checks if the kernel produces close results for batched and unbatched inputs."""
     unbatched_input = input.as_subclass(torch.Tensor)
@@ -158,30 +186,11 @@ def check_kernel(
     check_cuda_vs_cpu=True,
     check_scripted_vs_eager=True,
     check_batched_vs_unbatched=True,
+    check_compiled_vs_eager=True,
     **kwargs,
 ):
-    initial_input_version = input._version
-
-    output = kernel(input.as_subclass(torch.Tensor), *args, **kwargs)
-    # Most kernels just return a tensor, but some also return some additional metadata
-    if not isinstance(output, torch.Tensor):
-        output, *_ = output
-
-    # check that no inplace operation happened
-    assert input._version == initial_input_version
-
-    if kernel not in {F.to_dtype_image, F.to_dtype_video}:
-        assert output.dtype == input.dtype
-    assert output.device == input.device
-
-    if check_cuda_vs_cpu:
-        _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs, **_to_tolerances(check_cuda_vs_cpu))
-
-    if check_scripted_vs_eager:
-        _check_kernel_scripted_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_scripted_vs_eager))
-
-    if check_batched_vs_unbatched:
-        _check_kernel_batched_vs_unbatched(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_unbatched))
+    if check_compiled_vs_eager:
+        _check_kernel_compiled_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_compiled_vs_eager))
 
 
 def _check_functional_scripted_smoke(functional, input, *args, **kwargs):
@@ -619,6 +628,9 @@ class TestResize:
             antialias=antialias,
             check_cuda_vs_cpu=check_cuda_vs_cpu_tolerances,
             check_scripted_vs_eager=not isinstance(size, int),
+            check_compiled_vs_eager=dict(rtol=0, atol=1)
+            if (dtype is torch.uint8 and interpolation in (transforms.InterpolationMode.BILINEAR, transforms.InterpolationMode.BICUBIC))
+            else True,
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
@@ -650,7 +662,13 @@ class TestResize:
         check_kernel(F.resize_mask, make_mask(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1])
 
     def test_kernel_video(self):
-        check_kernel(F.resize_video, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1], antialias=True)
+        check_kernel(
+            F.resize_video,
+            make_video(self.INPUT_SIZE),
+            size=self.OUTPUT_SIZES[-1],
+            antialias=True,
+            check_compiled_vs_eager=dict(rtol=0, atol=1),
+        )
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
@@ -3570,12 +3588,12 @@ class TestResizedCrop:
     )
     def test_kernel(self, kernel, make_input):
         input = make_input(self.INPUT_SIZE)
-        if isinstance(input, tv_tensors.BoundingBoxes):
+        if isinstance(input, (tv_tensors.Image, tv_tensors.Video)):
+            extra_kwargs = dict(antialias=True, check_compiled_vs_eager=dict(rtol=0, atol=1))
+        elif isinstance(input, tv_tensors.BoundingBoxes):
             extra_kwargs = dict(format=input.format)
         elif isinstance(input, tv_tensors.Mask):
             extra_kwargs = dict()
-        else:
-            extra_kwargs = dict(antialias=True)
 
         check_kernel(kernel, input, **self.CROP_KWARGS, size=self.OUTPUT_SIZE, **extra_kwargs)
 
