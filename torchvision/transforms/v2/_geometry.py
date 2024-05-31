@@ -148,14 +148,6 @@ class Resize(Transform):
         self.max_size = max_size
         self.antialias = antialias
 
-    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
-        params = super()._extract_params_for_v1_transform()
-
-        if params["size"] is None:
-            params["size"] = [params["max_size"] - 1]
-
-        return params
-
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize,

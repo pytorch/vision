@@ -551,7 +551,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
 
 class TestResize:
     INPUT_SIZE = (17, 11)
-    OUTPUT_SIZES = [17, [17], (17,), None, [12, 13], (12, 13)]
+    OUTPUT_SIZES = [17, [17], (17,), [12, 13], (12, 13), None]
 
     def _make_max_size_kwarg(self, *, use_max_size, size):
         if size is None:
@@ -709,7 +709,7 @@ class TestResize:
             transforms.Resize(size=size, **max_size_kwarg, antialias=True),
             make_input(self.INPUT_SIZE, device=device),
             # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-            check_v1_compatibility=dict(rtol=0, atol=1),
+            check_v1_compatibility=dict(rtol=0, atol=1) if size is not None else False,
         )
 
     def _check_output_size(self, input, output, *, size, max_size):
@@ -847,8 +847,7 @@ class TestResize:
         check_transform(
             transforms.Resize(size=None, max_size=max_size, antialias=True),
             make_input(self.INPUT_SIZE, device=device),
-            # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-            check_v1_compatibility=dict(rtol=0, atol=1),
+            check_v1_compatibility=False,
         )
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
