@@ -19,6 +19,7 @@ Images
     encode_jpeg
     decode_jpeg
     write_jpeg
+    decode_gif
     encode_png
     decode_png
     write_png

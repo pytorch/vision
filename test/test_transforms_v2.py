@@ -111,8 +111,10 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
 
     input = input.as_subclass(torch.Tensor)
     with ignore_jit_no_profile_information_warning():
-        actual = kernel_scripted(input, *args, **kwargs)
-    expected = kernel(input, *args, **kwargs)
+        with freeze_rng_state():
+            actual = kernel_scripted(input, *args, **kwargs)
+    with freeze_rng_state():
+        expected = kernel(input, *args, **kwargs)
 
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
@@ -2169,26 +2171,30 @@ class TestAdjustBrightness:
 
 class TestCutMixMixUp:
     class DummyDataset:
-        def __init__(self, size, num_classes):
+        def __init__(self, size, num_classes, one_hot_labels):
             self.size = size
             self.num_classes = num_classes
+            self.one_hot_labels = one_hot_labels
             assert size < num_classes
 
         def __getitem__(self, idx):
             img = torch.rand(3, 100, 100)
             label = idx  # This ensures all labels in a batch are unique and makes testing easier
+            if self.one_hot_labels:
+                label = torch.nn.functional.one_hot(torch.tensor(label), num_classes=self.num_classes)
             return img, label
 
         def __len__(self):
             return self.size
 
     @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
-    def test_supported_input_structure(self, T):
+    @pytest.mark.parametrize("one_hot_labels", (True, False))
+    def test_supported_input_structure(self, T, one_hot_labels):
 
         batch_size = 32
         num_classes = 100
 
-        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
+        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes, one_hot_labels=one_hot_labels)
 
         cutmix_mixup = T(num_classes=num_classes)
 
@@ -2198,7 +2204,7 @@ class TestCutMixMixUp:
         img, target = next(iter(dl))
         input_img_size = img.shape[-3:]
         assert isinstance(img, torch.Tensor) and isinstance(target, torch.Tensor)
-        assert target.shape == (batch_size,)
+        assert target.shape == (batch_size, num_classes) if one_hot_labels else (batch_size,)
 
         def check_output(img, target):
             assert img.shape == (batch_size, *input_img_size)
@@ -2209,7 +2215,7 @@ class TestCutMixMixUp:
 
         # After Dataloader, as unpacked input
         img, target = next(iter(dl))
-        assert target.shape == (batch_size,)
+        assert target.shape == (batch_size, num_classes) if one_hot_labels else (batch_size,)
         img, target = cutmix_mixup(img, target)
         check_output(img, target)
 
@@ -2264,7 +2270,7 @@ class TestCutMixMixUp:
         with pytest.raises(ValueError, match="Could not infer where the labels are"):
             cutmix_mixup({"img": imgs, "Nothing_else": 3})
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
+        with pytest.raises(ValueError, match="labels should be index based"):
             # Note: the error message isn't ideal, but that's because the label heuristic found the img as the label
             # It's OK, it's an edge-case. The important thing is that this fails loudly instead of passing silently
             cutmix_mixup(imgs)
@@ -2272,22 +2278,21 @@ class TestCutMixMixUp:
         with pytest.raises(ValueError, match="When using the default labels_getter"):
             cutmix_mixup(imgs, "not_a_tensor")
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
-            cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3)))
-
         with pytest.raises(ValueError, match="Expected a batched input with 4 dims"):
             cutmix_mixup(imgs[None, None], torch.randint(0, num_classes, size=(batch_size,)))
 
         with pytest.raises(ValueError, match="does not match the batch size of the labels"):
             cutmix_mixup(imgs, torch.randint(0, num_classes, size=(batch_size + 1,)))
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
-            # The purpose of this check is more about documenting the current
-            # behaviour of what happens on a Compose(), rather than actually
-            # asserting the expected behaviour. We may support Compose() in the
-            # future, e.g. for 2 consecutive CutMix?
-            labels = torch.randint(0, num_classes, size=(batch_size,))
-            transforms.Compose([cutmix_mixup, cutmix_mixup])(imgs, labels)
+        with pytest.raises(ValueError, match="When passing 2D labels"):
+            wrong_num_classes = num_classes + 1
+            T(alpha=0.5, num_classes=num_classes)(imgs, torch.randint(0, 2, size=(batch_size, wrong_num_classes)))
+
+        with pytest.raises(ValueError, match="but got a tensor of shape"):
+            cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3, 4)))
+
+        with pytest.raises(ValueError, match="num_classes must be passed"):
+            T(alpha=0.5)(imgs, torch.randint(0, num_classes, size=(batch_size,)))
 
 
 @pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
@@ -3233,6 +3238,78 @@ class TestGaussianBlur:
         actual = F.gaussian_blur_image(image, kernel_size=kernel_size, sigma=sigma)
 
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestGaussianNoise:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_kernel(self, make_input):
+        check_kernel(
+            F.gaussian_noise,
+            make_input(dtype=torch.float32),
+            # This cannot pass because the noise on a batch in not per-image
+            check_batched_vs_unbatched=False,
+        )
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.gaussian_noise, make_input(dtype=torch.float32))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.gaussian_noise, torch.Tensor),
+            (F.gaussian_noise_image, tv_tensors.Image),
+            (F.gaussian_noise_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.gaussian_noise, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_transform(self, make_input):
+        def adapter(_, input, __):
+            # This transform doesn't support uint8 so we have to convert the auto-generated uint8 tensors to float32
+            # Same for PIL images
+            for key, value in input.items():
+                if isinstance(value, torch.Tensor) and not value.is_floating_point():
+                    input[key] = value.to(torch.float32)
+                if isinstance(value, PIL.Image.Image):
+                    input[key] = F.pil_to_tensor(value).to(torch.float32)
+            return input
+
+        check_transform(transforms.GaussianNoise(), make_input(dtype=torch.float32), check_sample_input=adapter)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Gaussian Noise is not implemented for PIL images."):
+            F.gaussian_noise(make_image_pil())
+        with pytest.raises(ValueError, match="Input tensor is expected to be in float dtype"):
+            F.gaussian_noise(make_image(dtype=torch.uint8))
+        with pytest.raises(ValueError, match="sigma shouldn't be negative"):
+            F.gaussian_noise(make_image(dtype=torch.float32), sigma=-1)
+
+    def test_clip(self):
+        img = make_image(dtype=torch.float32)
+
+        out = F.gaussian_noise(img, mean=100, clip=False)
+        assert out.min() > 50
+
+        out = F.gaussian_noise(img, mean=100, clip=True)
+        assert (out == 1).all()
+
+        out = F.gaussian_noise(img, mean=-100, clip=False)
+        assert out.min() < -50
+
+        out = F.gaussian_noise(img, mean=-100, clip=True)
+        assert (out == 0).all()
 
 
 class TestAutoAugmentTransforms:
@@ -5200,6 +5277,11 @@ class TestLinearTransform:
             transforms.LinearTransformation(*self._make_matrix_and_vector(input)),
             input,
             check_sample_input=self._sample_input_adapter,
+            # Compat check is failing on M1 with:
+            # AssertionError: Tensor-likes are not close!
+            # Mismatched elements: 1 / 561 (0.2%)
+            # See https://github.com/pytorch/vision/issues/8453
+            check_v1_compatibility=(sys.platform != "darwin"),
         )
 
     def test_transform_error(self):
