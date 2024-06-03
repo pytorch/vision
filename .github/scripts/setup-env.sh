@@ -83,6 +83,10 @@ if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
 fi
 echo '::endgroup::'
 
+echo '::group::Install np2 before building tv'
+pip install "numpy==2.0.0rc2"
+echo '::endgroup::'
+
 echo '::group::Install third party dependencies prior to TorchVision install'
 # Installing with `easy_install`, e.g. `python setup.py install` or `python setup.py develop`, has some quirks when
 # when pulling in third-party dependencies. For example:
