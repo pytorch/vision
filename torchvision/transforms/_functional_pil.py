@@ -109,12 +109,8 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
     h, s, v = img.convert("HSV").split()
 
     np_h = np.array(h, dtype=np.uint8)
-    with np.errstate(over="ignore"):
-        shift = int(hue_factor * 255)
-        if shift > 0:
-            np_h += shift
-        else:
-            np_h -= abs(shift)
+    # This will over/underflow, as desired
+    np_h += np.array(hue_factor * 255).astype(np.uint8)
 
     h = Image.fromarray(np_h, "L")
 
