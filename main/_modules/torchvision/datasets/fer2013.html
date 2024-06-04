@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+ab0b9a4) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+0325fdd) &#x25BC</a>
     </div>
     
 
@@ -408,9 +408,21 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`FER2013</span>
 <span class="sd">    &lt;https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge&gt;`_ Dataset.</span>
 
+<span class="sd">    .. note::</span>
+<span class="sd">        This dataset can return test labels only if ``fer2013.csv`` OR</span>
+<span class="sd">        ``icml_face_data.csv`` are present in ``root/fer2013/``. If only</span>
+<span class="sd">        ``train.csv`` and ``test.csv`` are present, the test labels are set to</span>
+<span class="sd">        ``None``.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of dataset where directory</span>
-<span class="sd">            ``root/fer2013`` exists.</span>
+<span class="sd">            ``root/fer2013`` exists. This directory may contain either</span>
+<span class="sd">            ``fer2013.csv``, ``icml_face_data.csv``, or both ``train.csv`` and</span>
+<span class="sd">            ``test.csv``. Precendence is given in that order, i.e. if</span>
+<span class="sd">            ``fer2013.csv`` is present then the rest of the files will be</span>
+<span class="sd">            ignored. All these (combinations of) files contain the same data and</span>
+<span class="sd">            are supported for convenience, but only ``fer2013.csv`` and</span>
+<span class="sd">            ``icml_face_data.csv`` are able to return non-None test labels.</span>
 <span class="sd">        split (string, optional): The dataset split, supports ``&quot;train&quot;`` (default), or ``&quot;test&quot;``.</span>
 <span class="sd">        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed</span>
 <span class="sd">            version. E.g, ``transforms.RandomCrop``</span>
@@ -420,6 +432,25 @@
     <span class="n">_RESOURCES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;train.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;3f0dfb3d3fd99c811a1299cb947e3131&quot;</span><span class="p">),</span>
         <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;test.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;b02c2298636a634e8c2faabbf3ea9a23&quot;</span><span class="p">),</span>
+        <span class="c1"># The fer2013.csv and icml_face_data.csv files contain both train and</span>
+        <span class="c1"># tests instances, and unlike test.csv they contain the labels for the</span>
+        <span class="c1"># test instances. We give these 2 files precedence over train.csv and</span>
+        <span class="c1"># test.csv. And yes, they both contain the same data, but with different</span>
+        <span class="c1"># column names (note the spaces) and ordering:</span>
+        <span class="c1"># $ head -n 1 fer2013.csv icml_face_data.csv train.csv test.csv</span>
+        <span class="c1"># ==&gt; fer2013.csv &lt;==</span>
+        <span class="c1"># emotion,pixels,Usage</span>
+        <span class="c1">#</span>
+        <span class="c1"># ==&gt; icml_face_data.csv &lt;==</span>
+        <span class="c1"># emotion, Usage, pixels</span>
+        <span class="c1">#</span>
+        <span class="c1"># ==&gt; train.csv &lt;==</span>
+        <span class="c1"># emotion,pixels</span>
+        <span class="c1">#</span>
+        <span class="c1"># ==&gt; test.csv &lt;==</span>
+        <span class="c1"># pixels</span>
+        <span class="s2">&quot;fer&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;fer2013.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;f8428a1edbd21e88f42c73edd2a14f95&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;icml&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;icml_face_data.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;b114b9e04e6949e5fe8b6a98b3892b1d&quot;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -429,11 +460,13 @@
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RESOURCES</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
 
         <span class="n">base_folder</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;fer2013&quot;</span>
-        <span class="n">file_name</span><span class="p">,</span> <span class="n">md5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RESOURCES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_split</span><span class="p">]</span>
+        <span class="n">use_fer_file</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_folder</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RESOURCES</span><span class="p">[</span><span class="s2">&quot;fer&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="n">use_icml_file</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">use_fer_file</span> <span class="ow">and</span> <span class="p">(</span><span class="n">base_folder</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RESOURCES</span><span class="p">[</span><span class="s2">&quot;icml&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="n">file_name</span><span class="p">,</span> <span class="n">md5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RESOURCES</span><span class="p">[</span><span class="s2">&quot;fer&quot;</span> <span class="k">if</span> <span class="n">use_fer_file</span> <span class="k">else</span> <span class="s2">&quot;icml&quot;</span> <span class="k">if</span> <span class="n">use_icml_file</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split</span><span class="p">]</span>
         <span class="n">data_file</span> <span class="o">=</span> <span class="n">base_folder</span> <span class="o">/</span> <span class="n">file_name</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">data_file</span><span class="p">),</span> <span class="n">md5</span><span class="o">=</span><span class="n">md5</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
@@ -442,14 +475,26 @@
                 <span class="sa">f</span><span class="s2">&quot;https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge&quot;</span>
             <span class="p">)</span>
 
+        <span class="n">pixels_key</span> <span class="o">=</span> <span class="s2">&quot; pixels&quot;</span> <span class="k">if</span> <span class="n">use_icml_file</span> <span class="k">else</span> <span class="s2">&quot;pixels&quot;</span>
+        <span class="n">usage_key</span> <span class="o">=</span> <span class="s2">&quot; Usage&quot;</span> <span class="k">if</span> <span class="n">use_icml_file</span> <span class="k">else</span> <span class="s2">&quot;Usage&quot;</span>
+
+        <span class="k">def</span> <span class="nf">get_img</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="n">pixels_key</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">get_label</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">use_fer_file</span> <span class="ow">or</span> <span class="n">use_icml_file</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;emotion&quot;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="p">(</span>
-                    <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;pixels&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">48</span><span class="p">),</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;emotion&quot;</span><span class="p">])</span> <span class="k">if</span> <span class="s2">&quot;emotion&quot;</span> <span class="ow">in</span> <span class="n">row</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="p">)</span>
-                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-            <span class="p">]</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">use_fer_file</span> <span class="ow">or</span> <span class="n">use_icml_file</span><span class="p">:</span>
+                <span class="n">valid_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Training&quot;</span><span class="p">,)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;PublicTest&quot;</span><span class="p">,</span> <span class="s2">&quot;PrivateTest&quot;</span><span class="p">)</span>
+                <span class="n">rows</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">usage_key</span><span class="p">]</span> <span class="ow">in</span> <span class="n">valid_keys</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="p">[(</span><span class="n">get_img</span><span class="p">(</span><span class="n">row</span><span class="p">),</span> <span class="n">get_label</span><span class="p">(</span><span class="n">row</span><span class="p">))</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">)</span>
