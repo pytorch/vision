@@ -45,6 +45,7 @@ from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat
 from ._misc import (
     ConvertImageDtype,
     GaussianBlur,
+    GaussianNoise,
     Identity,
     Lambda,
     LinearTransformation,
