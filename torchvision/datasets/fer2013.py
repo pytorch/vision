@@ -42,16 +42,16 @@ class FER2013(VisionDataset):
         # test instances. We give these 2 files precedence over train.csv and
         # test.csv. And yes, they both contain the same data, but with different
         # column names (note the spaces) and ordering:
-        # $ head -n 1 fer2013.csv icml_face_data.csv train.csv test.csv 
+        # $ head -n 1 fer2013.csv icml_face_data.csv train.csv test.csv
         # ==> fer2013.csv <==
         # emotion,pixels,Usage
-        # 
+        #
         # ==> icml_face_data.csv <==
         # emotion, Usage, pixels
-        # 
+        #
         # ==> train.csv <==
         # emotion,pixels
-        # 
+        #
         # ==> test.csv <==
         # pixels
         "fer": ("fer2013.csv", "f8428a1edbd21e88f42c73edd2a14f95"),

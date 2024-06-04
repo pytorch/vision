@@ -2446,7 +2446,7 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
         use_fer = config.pop("use_fer", False)
 
         num_samples = 5
-        
+
         if use_icml or use_fer:
             pixels_key, usage_key = (" pixels", " Usage") if use_icml else ("pixels", "Usage")
             fieldnames = ("emotion", usage_key, pixels_key) if use_icml else ("emotion", pixels_key, usage_key)
@@ -2463,8 +2463,9 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
                     row = {
                         "emotion": str(int(torch.randint(0, 7, ()))),
                         usage_key: "Training" if i % 2 else "PublicTest",
-                        pixels_key:" ".join(
-                            str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                        pixels_key: " ".join(
+                            str(pixel)
+                            for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
                         ),
                     }
 
@@ -2481,7 +2482,8 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
                 for _ in range(num_samples):
                     row = dict(
                         pixels=" ".join(
-                            str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                            str(pixel)
+                            for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
                         )
                     )
                     if config["split"] == "train":
@@ -2490,7 +2492,7 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
                     writer.writerow(row)
 
         return num_samples
-    
+
     def test_icml_file(self):
         config = {"split": "test"}
         with self.create_dataset(config=config) as (dataset, _):
