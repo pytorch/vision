@@ -5824,7 +5824,7 @@ class TestSanitizeBoundingBoxes:
             ([1, 1, 30, 20], 29 * 19 >= min_area),
         ]
 
-        # random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
+        random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
         boxes, expected_valid_mask = zip(*boxes_and_validity)
         boxes = tv_tensors.BoundingBoxes(
             boxes,
@@ -5978,6 +5978,8 @@ class TestSanitizeBoundingBoxes:
 
         with pytest.raises(ValueError, match="min_size must be >= 1"):
             transforms.SanitizeBoundingBoxes(min_size=0)
+        with pytest.raises(ValueError, match="min_area must be >= 1"):
+            transforms.SanitizeBoundingBoxes(min_area=0)
         with pytest.raises(ValueError, match="labels_getter should either be 'default'"):
             transforms.SanitizeBoundingBoxes(labels_getter=12)
 
