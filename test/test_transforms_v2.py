@@ -5879,7 +5879,9 @@ class TestSanitizeBoundingBoxes:
             img = sample.pop("image")
             sample = (img, sample)
 
-        out = transforms.SanitizeBoundingBoxes(min_size=min_size, min_area=min_area, labels_getter=labels_getter)(sample)
+        out = transforms.SanitizeBoundingBoxes(min_size=min_size, min_area=min_area, labels_getter=labels_getter)(
+            sample
+        )
 
         if sample_type is tuple:
             out_image = out[0]

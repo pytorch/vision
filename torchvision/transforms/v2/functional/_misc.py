@@ -376,7 +376,11 @@ def sanitize_bounding_boxes(
                 "Leave those to None or pass bounding_boxes as a pure tensor."
             )
         valid = _get_sanitize_bounding_boxes_mask(
-            bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size, min_area=min_area
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
+            min_size=min_size,
+            min_area=min_area,
         )
         bounding_boxes = tv_tensors.wrap(bounding_boxes[valid], like=bounding_boxes)
 
