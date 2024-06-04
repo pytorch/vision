@@ -711,6 +711,11 @@ void Decoder::flushStreams() {
         msg.payload.reset();
       }
     }
+
+    if (params_.uniformSampling > 1 && kFramesDecoded_ < params_.uniformSampling) {
+      push(std::move(msg));
+      ++kFramesDecoded_;
+    }
   }
 }
 
