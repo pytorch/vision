@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+f7d9e75) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+1023987) &#x25BC</a>
     </div>
     
 
@@ -717,12 +717,13 @@
     <span class="nb">format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">min_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove degenerate/invalid bounding boxes and return the corresponding indexing mask.</span>
 
 <span class="sd">    This removes bounding boxes that:</span>
 
-<span class="sd">    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 &lt;= X1.</span>
+<span class="sd">    - are below a given ``min_size`` or ``min_area``: by default this also removes degenerate boxes that have e.g. X2 &lt;= X1.</span>
 <span class="sd">    - have any coordinate outside of their corresponding image. You may want to</span>
 <span class="sd">      call :func:`~torchvision.transforms.v2.functional.clamp_bounding_boxes` first to avoid undesired removals.</span>
 
@@ -741,6 +742,7 @@
 <span class="sd">            (size of the corresponding image/video).</span>
 <span class="sd">            Must be left to none if ``bounding_boxes`` is a :class:`~torchvision.tv_tensors.BoundingBoxes` object.</span>
 <span class="sd">        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.</span>
+<span class="sd">        min_area (float, optional) The area below which bounding boxes are removed. Default is 1.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        out (tuple of Tensors): The subset of valid bounding boxes, and the corresponding indexing mask.</span>
@@ -756,7 +758,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="nb">format</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="nb">format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
         <span class="n">valid</span> <span class="o">=</span> <span class="n">_get_sanitize_bounding_boxes_mask</span><span class="p">(</span>
-            <span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">min_size</span><span class="o">=</span><span class="n">min_size</span>
+            <span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">min_size</span><span class="o">=</span><span class="n">min_size</span><span class="p">,</span> <span class="n">min_area</span><span class="o">=</span><span class="n">min_area</span>
         <span class="p">)</span>
         <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
@@ -769,7 +771,11 @@
                 <span class="s2">&quot;Leave those to None or pass bounding_boxes as a pure tensor.&quot;</span>
             <span class="p">)</span>
         <span class="n">valid</span> <span class="o">=</span> <span class="n">_get_sanitize_bounding_boxes_mask</span><span class="p">(</span>
-            <span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">bounding_boxes</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">bounding_boxes</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">min_size</span><span class="o">=</span><span class="n">min_size</span>
+            <span class="n">bounding_boxes</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="n">bounding_boxes</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+            <span class="n">canvas_size</span><span class="o">=</span><span class="n">bounding_boxes</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span>
+            <span class="n">min_size</span><span class="o">=</span><span class="n">min_size</span><span class="p">,</span>
+            <span class="n">min_area</span><span class="o">=</span><span class="n">min_area</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">like</span><span class="o">=</span><span class="n">bounding_boxes</span><span class="p">)</span>
 
@@ -781,6 +787,7 @@
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">min_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 
     <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">_convert_bounding_box_format</span><span class="p">(</span>
@@ -789,7 +796,7 @@
 
     <span class="n">image_h</span><span class="p">,</span> <span class="n">image_w</span> <span class="o">=</span> <span class="n">canvas_size</span>
     <span class="n">ws</span><span class="p">,</span> <span class="n">hs</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
-    <span class="n">valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">ws</span> <span class="o">&gt;=</span> <span class="n">min_size</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hs</span> <span class="o">&gt;=</span> <span class="n">min_size</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bounding_boxes</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">ws</span> <span class="o">&gt;=</span> <span class="n">min_size</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hs</span> <span class="o">&gt;=</span> <span class="n">min_size</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bounding_boxes</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ws</span> <span class="o">*</span> <span class="n">hs</span> <span class="o">&gt;=</span> <span class="n">min_area</span><span class="p">)</span>
     <span class="c1"># TODO: Do we really need to check for out of bounds here? All</span>
     <span class="c1"># transforms should be clamping anyway, so this should never happen?</span>
     <span class="n">image_h</span><span class="p">,</span> <span class="n">image_w</span> <span class="o">=</span> <span class="n">canvas_size</span>

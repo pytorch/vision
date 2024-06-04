@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+f7d9e75) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+1023987) &#x25BC</a>
     </div>
     
 
@@ -739,7 +739,7 @@
 
 <span class="sd">    This transform removes bounding boxes and their associated labels/masks that:</span>
 
-<span class="sd">    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 &lt;= X1.</span>
+<span class="sd">    - are below a given ``min_size`` or ``min_area``: by default this also removes degenerate boxes that have e.g. X2 &lt;= X1.</span>
 <span class="sd">    - have any coordinate outside of their corresponding image. You may want to</span>
 <span class="sd">      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.</span>
 
@@ -754,7 +754,8 @@
 <span class="sd">    cases.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.</span>
+<span class="sd">        min_size (float, optional): The size below which bounding boxes are removed. Default is 1.</span>
+<span class="sd">        min_area (float, optional): The area below which bounding boxes are removed. Default is 1.</span>
 <span class="sd">        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input</span>
 <span class="sd">            (or anything else that needs to be sanitized along with the bounding boxes).</span>
 <span class="sd">            By default, this will try to find a &quot;labels&quot; key in the input (case-insensitive), if</span>
@@ -774,6 +775,7 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">min_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">labels_getter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -781,6 +783,10 @@
         <span class="k">if</span> <span class="n">min_size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;min_size must be &gt;= 1, got </span><span class="si">{</span><span class="n">min_size</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_size</span> <span class="o">=</span> <span class="n">min_size</span>
+
+        <span class="k">if</span> <span class="n">min_area</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;min_area must be &gt;= 1, got </span><span class="si">{</span><span class="n">min_area</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_area</span> <span class="o">=</span> <span class="n">min_area</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">labels_getter</span> <span class="o">=</span> <span class="n">labels_getter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_labels_getter</span> <span class="o">=</span> <span class="n">_parse_labels_getter</span><span class="p">(</span><span class="n">labels_getter</span><span class="p">)</span>
@@ -817,7 +823,9 @@
             <span class="nb">format</span><span class="o">=</span><span class="n">boxes</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
             <span class="n">canvas_size</span><span class="o">=</span><span class="n">boxes</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span>
             <span class="n">min_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_size</span><span class="p">,</span>
+            <span class="n">min_area</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_area</span><span class="p">,</span>
         <span class="p">)</span>
+
         <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">valid</span><span class="o">=</span><span class="n">valid</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
         <span class="n">flat_outputs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_transform</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span> <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span><span class="p">]</span>
 
