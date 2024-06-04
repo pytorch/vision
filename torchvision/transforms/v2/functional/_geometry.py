@@ -32,7 +32,7 @@ def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> Interp
         interpolation = _interpolation_modes_from_int(interpolation)
     elif not isinstance(interpolation, InterpolationMode):
         raise ValueError(
-            f"Argument interpolation should be an 'InterpolationMode' or a corresponding Pillow integer constant, "
+            f"Argument interpolation should be an `InterpolationMode` or a corresponding Pillow integer constant, "
             f"but got {interpolation}."
         )
     return interpolation
@@ -164,20 +164,13 @@ def _compute_resized_output_size(
     if isinstance(size, int):
         size = [size]
     elif size is None:
-        if isinstance(max_size, int):
-            h, w = canvas_size
-            short, long = (w, h) if w <= h else (h, w)
-            new_short, new_long = int(max_size * short / long), max_size
-            new_w, new_h = (new_long, new_short) if w <= h else (new_short, new_long)
-            size = [new_w, new_h]
-        else:
-            raise ValueError(f"max_size must be an integer when size is None, but got {max_size} instead.")
+        size = []  # pass empty list to match function signature for v1
     elif max_size is not None and len(size) != 1:
         raise ValueError(
             "max_size should only be passed if size is None or specifies the length of the smaller edge, "
             "i.e. size should be an int or a sequence of length 1 in torchscript mode."
         )
-    return __compute_resized_output_size(canvas_size, size=size, max_size=max_size)
+    return __compute_resized_output_size(canvas_size, size=size, max_size=max_size, allow_size_none=True)
 
 
 def resize(
@@ -1188,7 +1181,7 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
                 f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
             )
     else:
-        raise TypeError(f"'padding' should be an integer or tuple or list of integers, but got {padding}")
+        raise TypeError(f"`padding` should be an integer or tuple or list of integers, but got {padding}")
 
     return [pad_left, pad_right, pad_top, pad_bottom]
 
@@ -1208,8 +1201,8 @@ def pad_image(
 
     if padding_mode not in ("constant", "edge", "reflect", "symmetric"):
         raise ValueError(
-            f"'padding_mode' should be either 'constant', 'edge', 'reflect' or 'symmetric', "
-            f"but got '{padding_mode}'."
+            f"`padding_mode` should be either `'constant'`, `'edge'`, `'reflect'` or `'symmetric'`, "
+            f"but got `'{padding_mode}'`."
         )
 
     if fill is None:

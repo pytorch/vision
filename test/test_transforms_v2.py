@@ -99,7 +99,7 @@ def _script(obj):
         return torch.jit.script(obj)
     except Exception as error:
         name = getattr(obj, "__name__", obj.__class__.__name__)
-        raise AssertionError(f"Trying to 'torch.jit.script' {name} raised the error above.") from error
+        raise AssertionError(f"Trying to `torch.jit.script` `{name}` raised the error above.") from error
 
 
 def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
@@ -233,8 +233,8 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
                 functional_param = next(functional_params)
         except StopIteration:
             raise AssertionError(
-                f"Parameter {repr(kernel_param.name)} of kernel {repr(kernel.__name__)}"
-                f"has no corresponding parameter on the functional {repr(functional.__name__)}."
+                f"Parameter `{kernel_param.name}` of kernel `{kernel.__name__}` "
+                f"has no corresponding parameter on the functional `{functional.__name__}`."
             ) from None
 
         if issubclass(input_type, PIL.Image.Image):
@@ -551,7 +551,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
 
 class TestResize:
     INPUT_SIZE = (17, 11)
-    OUTPUT_SIZES = [17, [17], (17,), [12, 13], (12, 13), None]
+    OUTPUT_SIZES = [17, [17], (17,), None, [12, 13], (12, 13)]
 
     def _make_max_size_kwarg(self, *, use_max_size, size):
         if size is None:
@@ -827,10 +827,15 @@ class TestResize:
             F.resize(make_input(self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
 
     @pytest.mark.parametrize(
-        "max_size",
-        [min(list(INPUT_SIZE)) // 2, min(list(INPUT_SIZE)), max(list(INPUT_SIZE)), max(list(INPUT_SIZE)) * 2],
+        "input_size, max_size, expected_size",
+        [
+            ((10, 10), 10, (10, 10)),
+            ((10, 20), 40, (20, 40)),
+            ((20, 10), 40, (40, 20)),
+            ((10, 20), 10, (5, 10)),
+            ((20, 10), 10, (10, 5)),
+        ],
     )
-    @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize(
         "make_input",
         [
@@ -843,12 +848,10 @@ class TestResize:
             make_video,
         ],
     )
-    def test_size_none(self, max_size, device, make_input):
-        check_transform(
-            transforms.Resize(size=None, max_size=max_size, antialias=True),
-            make_input(self.INPUT_SIZE, device=device),
-            check_v1_compatibility=False,
-        )
+    def test_resize_size_none(self, input_size, max_size, expected_size, make_input):
+        img = make_input(input_size)
+        out = F.resize(img, size=None, max_size=max_size)
+        assert F.get_size(out)[-2:] == list(expected_size)
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
