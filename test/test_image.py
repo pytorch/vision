@@ -551,21 +551,33 @@ def test_pathlib_support(tmpdir):
     write_png(img, write_path)
 
 
-@pytest.mark.parametrize("name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans"))
-def test_decode_gif(tmpdir, name):
+@pytest.mark.parametrize(
+    "name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans", "earth")
+)
+@pytest.mark.parametrize("scripted", (True, False))
+def test_decode_gif(tmpdir, name, scripted):
     # Using test images from GIFLIB
     # https://sourceforge.net/p/giflib/code/ci/master/tree/pic/, we assert PIL
     # and torchvision decoded outputs are equal.
     # We're not testing against "welcome2" because PIL and GIFLIB disagee on what
     # the background color should be (likely a difference in the way they handle
     # transparency?)
+    # 'earth' image is from wikipedia, licensed under CC BY-SA 3.0
+    # https://creativecommons.org/licenses/by-sa/3.0/
+    # it allows to properly test for transparency, TOP-LEFT offsets, and
+    # disposal modes.
 
     path = tmpdir / f"{name}.gif"
-    url = f"https://sourceforge.net/p/giflib/code/ci/master/tree/pic/{name}.gif?format=raw"
+    if name == "earth":
+        url = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Rotating_earth_%28large%29.gif"
+    else:
+        url = f"https://sourceforge.net/p/giflib/code/ci/master/tree/pic/{name}.gif?format=raw"
     with open(path, "wb") as f:
         f.write(requests.get(url).content)
 
-    tv_out = read_image(path)
+    encoded_bytes = read_file(path)
+    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    tv_out = f(encoded_bytes)
     if tv_out.ndim == 3:
         tv_out = tv_out[None]
 

@@ -687,7 +687,7 @@ def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor
 
     Example:
         >>> rgb_image = torch.rand(3, 256, 256)
-        >>> bgr_image = F.permutate_channels(rgb_image, permutation=[2, 1, 0])
+        >>> bgr_image = F.permute_channels(rgb_image, permutation=[2, 1, 0])
 
     Args:
         permutation (List[int]): Valid permutation of the input channel indices. The index of the element determines the
