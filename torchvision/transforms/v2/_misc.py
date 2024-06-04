@@ -359,8 +359,8 @@ class SanitizeBoundingBoxes(Transform):
     cases.
 
     Args:
-        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
-        min_area (float, optional) The area below which bounding boxes are removed. Default is 1.
+        min_size (float, optional): The size below which bounding boxes are removed. Default is 1.
+        min_area (float, optional): The area below which bounding boxes are removed. Default is 1.
         labels_getter (callable or str or None, optional): indicates how to identify the labels in the input
             (or anything else that needs to be sanitized along with the bounding boxes).
             By default, this will try to find a "labels" key in the input (case-insensitive), if
