@@ -4,15 +4,20 @@ set(CMAKE_CXX_STANDARD 17)
 file(STRINGS version.txt TORCHVISION_VERSION)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
+option(WITH_MPS "Enable MPS support" OFF)
 option(WITH_PNG "Enable features requiring LibPNG." ON)
 option(WITH_JPEG "Enable features requiring LibJPEG." ON)
-option(USE_PYTHON "Link to Python when building" OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
   add_definitions(-DWITH_CUDA)
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+endif()
+
+if(WITH_MPS)
+  enable_language(OBJC OBJCXX)
+  add_definitions(-DWITH_MPS)
 endif()
 
 find_package(Torch REQUIRED)
@@ -25,11 +30,6 @@ endif()
 if (WITH_JPEG)
     add_definitions(-DJPEG_FOUND)
     find_package(JPEG REQUIRED)
-endif()
-
-if (USE_PYTHON)
-  add_definitions(-DUSE_PYTHON)
-  find_package(Python3 REQUIRED COMPONENTS Development)
 endif()
 
 function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
@@ -74,10 +74,13 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 set(TVCPP torchvision/csrc)
-list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/models ${TVCPP}/ops
+list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/io/image/cpu/giflib ${TVCPP}/models ${TVCPP}/ops
   ${TVCPP}/ops/autograd ${TVCPP}/ops/cpu ${TVCPP}/io/image/cuda)
 if(WITH_CUDA)
     list(APPEND ALLOW_LISTED ${TVCPP}/ops/cuda ${TVCPP}/ops/autocast)
+endif()
+if(WITH_MPS)
+    list(APPEND ALLOW_LISTED ${TVCPP}/ops/mps)
 endif()
 
 FOREACH(DIR ${ALLOW_LISTED})
@@ -87,16 +90,18 @@ ENDFOREACH()
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 
+if(WITH_MPS)
+  find_library(metal NAMES Metal)
+  find_library(foundation NAMES Foundation)
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${metal} ${foundation})
+endif()
+
 if (WITH_PNG)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARY})
 endif()
 
 if (WITH_JPEG)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${JPEG_LIBRARIES})
-endif()
-
-if (USE_PYTHON)
-  target_link_libraries(${PROJECT_NAME} PRIVATE Python3::Python)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

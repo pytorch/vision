@@ -133,6 +133,7 @@ class RegionProposalNetwork(torch.nn.Module):
             contain two fields: training and testing, to allow for different values depending
             on training or evaluation
         nms_thresh (float): NMS threshold used for postprocessing the RPN proposals
+        score_thresh (float): only return proposals with an objectness score greater than score_thresh
 
     """
 

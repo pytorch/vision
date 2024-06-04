@@ -2,6 +2,8 @@
 
 #include <regex>
 
+using namespace ffmpeg;
+
 namespace vision {
 namespace video {
 
@@ -77,7 +79,7 @@ std::tuple<std::string, long> _parseStream(const std::string& streamString) {
   long index_ = -1;
   if (match[2].matched) {
     try {
-      index_ = c10::stoi(match[2].str());
+      index_ = std::stoi(match[2].str());
     } catch (const std::exception&) {
       TORCH_CHECK(
           false,

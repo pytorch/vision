@@ -168,7 +168,7 @@ class QuantizableInception3(inception_module.Inception3):
 
 class Inception_V3_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
-        url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
+        url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-a2837893.pth",
         transforms=partial(ImageClassification, crop_size=299, resize_size=342),
         meta={
             "num_params": 27161264,

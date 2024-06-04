@@ -24,6 +24,7 @@ import torch
 import torch.nn.functional as F
 from common_utils import combinations_grid
 from torchvision import datasets
+from torchvision.transforms import v2
 
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -183,6 +184,11 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
                 ), "Type of the combined target does not match the type of the corresponding individual target: "
                 f"{actual} is not {expected}",
 
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(target_type="category", transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
+
 
 class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Caltech256
@@ -190,7 +196,7 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir) / "caltech256" / "256_ObjectCategories"
 
-        categories = ((1, "ak47"), (127, "laptop-101"), (257, "clutter"))
+        categories = ((1, "ak47"), (2, "american-flag"), (3, "backpack"))
         num_images_per_category = 2
 
         for idx, category in categories:
@@ -257,6 +263,11 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
                 annotation_file.write(annotation_content)
 
         return split_to_num_examples[config["split"]]
+
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
@@ -382,6 +393,12 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
             assert isinstance(polygon_img, PIL.Image.Image)
             (polygon_target, info["expected_polygon_target"])
 
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        for target_type in ["instance", "semantic", ["instance", "semantic"]]:
+            with self.create_dataset(target_type=target_type, transform=v2.Resize(size=expected_size)) as (dataset, _):
+                datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
+
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageNet
@@ -412,6 +429,11 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
         wnid_to_classes = {wnid: [1]}
         torch.save((wnid_to_classes, None), tmpdir / "meta.bin")
         return num_examples
+
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -607,6 +629,12 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
 
         assert merged_imgs_names == all_imgs_names
 
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        for target_type in ["identity", "bbox", ["identity", "bbox"]]:
+            with self.create_dataset(target_type=target_type, transform=v2.Resize(size=expected_size)) as (dataset, _):
+                datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
+
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.VOCSegmentation
@@ -694,6 +722,11 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
 
         return data
 
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
+
 
 class VOCDetectionTestCase(VOCSegmentationTestCase):
     DATASET_CLASS = datasets.VOCDetection
@@ -713,6 +746,11 @@ class VOCDetectionTestCase(VOCSegmentationTestCase):
             object = objects[0]
 
             assert object == info["annotation"]
+
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
@@ -784,6 +822,16 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
             json.dump(content, fh)
         return file
 
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
+
+    def test_slice_error(self):
+        with self.create_dataset() as (dataset, _):
+            with pytest.raises(ValueError, match="Index must be of type integer"):
+                dataset[:2]
+
 
 class CocoCaptionsTestCase(CocoDetectionTestCase):
     DATASET_CLASS = datasets.CocoCaptions
@@ -799,6 +847,11 @@ class CocoCaptionsTestCase(CocoDetectionTestCase):
         with self.create_dataset() as (dataset, info):
             _, captions = dataset[0]
             assert tuple(captions) == tuple(info["captions"])
+
+    def test_transforms_v2_wrapper_spawn(self):
+        # We need to define this method, because otherwise the test from the super class will
+        # be run
+        pytest.skip("CocoCaptions is currently not supported by the v2 wrapper.")
 
 
 class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
@@ -965,6 +1018,12 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
                 num_videos_per_class,
             )
         return num_videos_per_class * len(classes)
+
+    @pytest.mark.xfail(reason="FIXME")
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(output_format="TCHW", transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
@@ -1192,6 +1251,11 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
 
     def _file_stem(self, idx):
         return f"2008_{idx:06d}"
+
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(mode="segmentation", transforms=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1561,6 +1625,10 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples_total += num_examples
             classes.append(cls)
 
+        if config.pop("make_empty_class", False):
+            os.makedirs(pathlib.Path(tmpdir) / "empty_class")
+            classes.append("empty_class")
+
         return dict(num_examples=num_examples_total, classes=classes)
 
     def _file_name_fn(self, cls, ext, idx):
@@ -1584,6 +1652,23 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(config) as (dataset, info):
             assert len(dataset.classes) == len(info["classes"])
             assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
+
+    def test_allow_empty(self):
+        config = {
+            "extensions": self._EXTENSIONS,
+            "make_empty_class": True,
+        }
+
+        config["allow_empty"] = True
+        with self.create_dataset(config) as (dataset, info):
+            assert "empty_class" in dataset.classes
+            assert len(dataset.classes) == len(info["classes"])
+            assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
+
+        config["allow_empty"] = False
+        with pytest.raises(FileNotFoundError, match="Found no valid file"):
+            with self.create_dataset(config) as (dataset, info):
+                pass
 
 
 class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1641,6 +1726,11 @@ class KittiTestCase(datasets_utils.ImageDatasetTestCase):
                         target_file.write(target_contents)
 
         return split_to_num_examples[config["train"]]
+
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class SvhnTestCase(datasets_utils.ImageDatasetTestCase):
@@ -2352,27 +2442,67 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
         base_folder = os.path.join(tmpdir, "fer2013")
         os.makedirs(base_folder)
 
-        num_samples = 5
-        with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
-            writer = csv.DictWriter(
-                file,
-                fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
-                quoting=csv.QUOTE_NONNUMERIC,
-                quotechar='"',
-            )
-            writer.writeheader()
-            for _ in range(num_samples):
-                row = dict(
-                    pixels=" ".join(
-                        str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
-                    )
-                )
-                if config["split"] == "train":
-                    row["emotion"] = str(int(torch.randint(0, 7, ())))
+        use_icml = config.pop("use_icml", False)
+        use_fer = config.pop("use_fer", False)
 
-                writer.writerow(row)
+        num_samples = 5
+
+        if use_icml or use_fer:
+            pixels_key, usage_key = (" pixels", " Usage") if use_icml else ("pixels", "Usage")
+            fieldnames = ("emotion", usage_key, pixels_key) if use_icml else ("emotion", pixels_key, usage_key)
+            filename = "icml_face_data.csv" if use_icml else "fer2013.csv"
+            with open(os.path.join(base_folder, filename), "w", newline="") as file:
+                writer = csv.DictWriter(
+                    file,
+                    fieldnames=fieldnames,
+                    quoting=csv.QUOTE_NONNUMERIC,
+                    quotechar='"',
+                )
+                writer.writeheader()
+                for i in range(num_samples):
+                    row = {
+                        "emotion": str(int(torch.randint(0, 7, ()))),
+                        usage_key: "Training" if i % 2 else "PublicTest",
+                        pixels_key: " ".join(
+                            str(pixel)
+                            for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                        ),
+                    }
+
+                    writer.writerow(row)
+        else:
+            with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
+                writer = csv.DictWriter(
+                    file,
+                    fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
+                    quoting=csv.QUOTE_NONNUMERIC,
+                    quotechar='"',
+                )
+                writer.writeheader()
+                for _ in range(num_samples):
+                    row = dict(
+                        pixels=" ".join(
+                            str(pixel)
+                            for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                        )
+                    )
+                    if config["split"] == "train":
+                        row["emotion"] = str(int(torch.randint(0, 7, ())))
+
+                    writer.writerow(row)
 
         return num_samples
+
+    def test_icml_file(self):
+        config = {"split": "test"}
+        with self.create_dataset(config=config) as (dataset, _):
+            assert all(s[1] is None for s in dataset)
+
+        for split in ("train", "test"):
+            for d in ({"use_icml": True}, {"use_fer": True}):
+                config = {"split": split, **d}
+                with self.create_dataset(config=config) as (dataset, _):
+                    assert all(s[1] is not None for s in dataset)
 
 
 class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
@@ -2463,7 +2593,7 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
 
     ADDITIONAL_CONFIGS = combinations_grid(
         split=("trainval", "test"),
-        target_types=("category", "segmentation", ["category", "segmentation"], []),
+        target_types=("category", "binary-category", "segmentation", ["category", "segmentation"], []),
     )
 
     def inject_fake_data(self, tmpdir, config):
@@ -2515,6 +2645,11 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         species = "1" if meta["species"] == "cat" else "2"
         breed_id = "-1"
         return (image_id, class_id, species, breed_id)
+
+    def test_transforms_v2_wrapper_spawn(self):
+        expected_size = (123, 321)
+        with self.create_dataset(transform=v2.Resize(size=expected_size)) as (dataset, _):
+            datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
 
 
 class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
@@ -3308,6 +3443,41 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
+class ImagenetteTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Imagenette
+    ADDITIONAL_CONFIGS = combinations_grid(split=["train", "val"], size=["full", "320px", "160px"])
+
+    _WNIDS = [
+        "n01440764",
+        "n02102040",
+        "n02979186",
+        "n03000684",
+        "n03028079",
+        "n03394916",
+        "n03417042",
+        "n03425413",
+        "n03445777",
+        "n03888257",
+    ]
+
+    def inject_fake_data(self, tmpdir, config):
+        archive_root = "imagenette2"
+        if config["size"] != "full":
+            archive_root += f"-{config['size'].replace('px', '')}"
+        image_root = pathlib.Path(tmpdir) / archive_root / config["split"]
+
+        num_images_per_class = 3
+        for wnid in self._WNIDS:
+            datasets_utils.create_image_folder(
+                root=image_root,
+                name=wnid,
+                file_name_fn=lambda idx: f"{wnid}_{idx}.JPEG",
+                num_examples=num_images_per_class,
+            )
+
+        return num_images_per_class * len(self._WNIDS)
+
+
 class TestDatasetWrapper:
     def test_unknown_type(self):
         unknown_object = object()
@@ -3332,11 +3502,11 @@ class TestDatasetWrapper:
             datasets.wrap_dataset_for_transforms_v2(dataset)
 
     def test_subclass(self, mocker):
-        from torchvision import datapoints
+        from torchvision import tv_tensors
 
         sentinel = object()
         mocker.patch.dict(
-            datapoints._dataset_wrapper.WRAPPER_FACTORIES,
+            tv_tensors._dataset_wrapper.WRAPPER_FACTORIES,
             clear=False,
             values={datasets.FakeData: lambda dataset, target_keys: lambda idx, sample: sentinel},
         )

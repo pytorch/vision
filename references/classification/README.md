@@ -120,7 +120,7 @@ Here `$MODEL` is one of `efficientnet_v2_s` and `efficientnet_v2_m`.
 Note that the Small variant had a `$TRAIN_SIZE` of `300` and a `$EVAL_SIZE` of `384`, while the Medium `384` and `480` respectively.
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 4 nodes, each with 8 GPUs (for a total of 32 GPUs),
+For generating the pre-trained weights, we trained with 4 nodes, each with 8 GPUs (for a total of 32 GPUs),
 and `--batch_size 32`.
 
 The weights of the Large variant are ported from the original paper rather than trained from scratch. See the `EfficientNet_V2_L_Weights` entry for their exact preprocessing transforms.
@@ -167,7 +167,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+For generating the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
 and `--batch_size 64`.
 
 #### vit_b_32
@@ -180,7 +180,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+For generating the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 256`.
 
 #### vit_l_16
@@ -193,7 +193,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+For generating the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 64`.
 
 #### vit_l_32
@@ -206,7 +206,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+For generating the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
 and `--batch_size 64`.
 
 
@@ -221,7 +221,7 @@ torchrun --nproc_per_node=8 train.py\
 Here `$MODEL` is one of `convnext_tiny`, `convnext_small`, `convnext_base` and `convnext_large`. Note that each variant had its `--val-resize-size` optimized in a post-training step, see their `Weights` entry for their exact value.
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+For generating the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 64`.
 
 
@@ -289,10 +289,10 @@ For all post training quantized models, the settings are:
 2. num_workers: 16
 3. batch_size: 32
 4. eval_batch_size: 128
-5. backend: 'fbgemm'
+5. qbackend: 'fbgemm'
 
 ```
-python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
+python train_quantization.py --device='cpu' --post-training-quantize --qbackend='fbgemm' --model='$MODEL'
 ```
 Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d`, `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0`.
 
@@ -301,12 +301,12 @@ Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `re
 Here are commands that we use to quantize the `shufflenet_v2_x1_5` and `shufflenet_v2_x2_0` models.
 ```
 # For shufflenet_v2_x1_5
-python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+python train_quantization.py --device='cpu' --post-training-quantize --qbackend='fbgemm' \
     --model=shufflenet_v2_x1_5 --weights="ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1" \
     --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
 
 # For shufflenet_v2_x2_0
-python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+python train_quantization.py --device='cpu' --post-training-quantize --qbackend='fbgemm' \
     --model=shufflenet_v2_x2_0 --weights="ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1" \
     --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
 ```
@@ -317,7 +317,7 @@ For Mobilenet-v2, the model was trained with quantization aware training, the se
 1. num_workers: 16
 2. batch_size: 32
 3. eval_batch_size: 128
-4. backend: 'qnnpack'
+4. qbackend: 'qnnpack'
 5. learning-rate: 0.0001
 6. num_epochs: 90
 7. num_observer_update_epochs:4
@@ -339,7 +339,7 @@ For Mobilenet-v3 Large, the model was trained with quantization aware training, 
 1. num_workers: 16
 2. batch_size: 32
 3. eval_batch_size: 128
-4. backend: 'qnnpack'
+4. qbackend: 'qnnpack'
 5. learning-rate: 0.001
 6. num_epochs: 90
 7. num_observer_update_epochs:4
@@ -359,7 +359,7 @@ For post training quant, device is set to CPU. For training, the device is set t
 ### Command to evaluate quantized models using the pre-trained weights:
 
 ```
-python train_quantization.py --device='cpu' --test-only --backend='<backend>' --model='<model_name>'
+python train_quantization.py --device='cpu' --test-only --qbackend='<qbackend>' --model='<model_name>'
 ```
 
 For inception_v3 you need to pass the following extra parameters:

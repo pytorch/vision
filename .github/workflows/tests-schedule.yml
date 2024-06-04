@@ -29,6 +29,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: TODO REMOVE THIS! Install non pre-release version of mpmath.
+        run: pip install "mpmath<1.4"
+
       - name: Install torch nightly build
         run: pip install --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
 
@@ -36,7 +39,7 @@ jobs:
         run: pip install --no-build-isolation --editable .
 
       - name: Install all optional dataset requirements
-        run: pip install scipy pycocotools lmdb requests
+        run: pip install scipy pycocotools lmdb gdown
 
       - name: Install tests requirements
         run: pip install pytest

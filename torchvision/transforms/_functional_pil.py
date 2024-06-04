@@ -109,9 +109,9 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
     h, s, v = img.convert("HSV").split()
 
     np_h = np.array(h, dtype=np.uint8)
-    # uint8 addition take cares of rotation across boundaries
-    with np.errstate(over="ignore"):
-        np_h += np.uint8(hue_factor * 255)
+    # This will over/underflow, as desired
+    np_h += np.array(hue_factor * 255).astype(np.uint8)
+
     h = Image.fromarray(np_h, "L")
 
     img = Image.merge("HSV", (h, s, v)).convert(input_mode)
@@ -264,11 +264,13 @@ def _parse_fill(
     if isinstance(fill, (int, float)) and num_channels > 1:
         fill = tuple([fill] * num_channels)
     if isinstance(fill, (list, tuple)):
-        if len(fill) != num_channels:
+        if len(fill) == 1:
+            fill = fill * num_channels
+        elif len(fill) != num_channels:
             msg = "The number of elements in 'fill' does not match the number of channels of the image ({} != {})"
             raise ValueError(msg.format(len(fill), num_channels))
 
-        fill = tuple(fill)
+        fill = tuple(fill)  # type: ignore[arg-type]
 
     if img.mode != "F":
         if isinstance(fill, (list, tuple)):

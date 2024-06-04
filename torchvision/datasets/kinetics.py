@@ -5,7 +5,8 @@ import urllib
 from functools import partial
 from multiprocessing import Pool
 from os import path
-from typing import Any, Callable, Dict, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 from torch import Tensor
 
@@ -35,19 +36,19 @@ class Kinetics(VisionDataset):
     frames in a video might be present.
 
     Args:
-        root (string): Root directory of the Kinetics Dataset.
+        root (str or ``pathlib.Path``): Root directory of the Kinetics Dataset.
             Directory should be structured as follows:
             .. code::
 
                 root/
                 ├── split
                 │   ├──  class1
-                │   │   ├──  clip1.mp4
-                │   │   ├──  clip2.mp4
-                │   │   ├──  clip3.mp4
+                │   │   ├──  vid1.mp4
+                │   │   ├──  vid2.mp4
+                │   │   ├──  vid3.mp4
                 │   │   ├──  ...
                 │   ├──  class2
-                │   │   ├──   clipx.mp4
+                │   │   ├──   vidx.mp4
                 │   │    └── ...
 
             Note: split is appended automatically using the split argument.
@@ -56,7 +57,7 @@ class Kinetics(VisionDataset):
         split (str): split of the dataset to consider; supports ``"train"`` (default) ``"val"`` ``"test"``
         frame_rate (float): If omitted, interpolate different frame rate for each clip.
         step_between_clips (int): number of frames between each clip
-        transform (callable, optional): A function/transform that  takes in a TxHxWxC video
+        transform (callable, optional): A function/transform that takes in a TxHxWxC video
             and returns a transformed version.
         download (bool): Download the official version of the dataset to root folder.
         num_workers (int): Use multiple workers for VideoClips creation
@@ -90,7 +91,7 @@ class Kinetics(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         frames_per_clip: int,
         num_classes: str = "400",
         split: str = "train",

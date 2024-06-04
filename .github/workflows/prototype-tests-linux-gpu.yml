@@ -1,5 +1,8 @@
 name: Prototype tests on Linux
 
+# IMPORTANT: This workflow has been manually disabled from the GitHub interface
+# in June 2024. The file is kept for reference in case we ever put this back.
+
 on:
   pull_request:
 
@@ -12,6 +15,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:

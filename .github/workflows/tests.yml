@@ -18,6 +18,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:
@@ -33,6 +34,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -41,7 +43,7 @@ jobs:
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
         ./.github/scripts/unittest.sh
-        
+
   unittests-macos:
     strategy:
       matrix:
@@ -50,18 +52,15 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-        runner: ["macos-12"]
-        include:
-          - python-version: "3.8"
-            runner: macos-m1-12
+          - "3.12"
+        runner: ["macos-m1-stable"]
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
-      # We need an increased timeout here, since the macos-12 runner is the free one from GH
-      # and needs roughly 2 hours to just run the test suite
       timeout: 240
       runner: ${{ matrix.runner }}
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -79,6 +78,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
         include:
@@ -94,6 +94,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
+      test-infra-ref: main
       script: |
         set -euxo pipefail
 
@@ -102,13 +103,14 @@ jobs:
         export VSDEVCMD_ARGS=""
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-        
+
         ./.github/scripts/unittest.sh
 
   onnx:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -117,20 +119,20 @@ jobs:
         export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
-        
+
         echo '::group::Install ONNX'
         pip install --progress-bar=off onnx onnxruntime
         echo '::endgroup::'
-        
+
         echo '::group::Install testing utilities'
         pip install --progress-bar=off pytest
         echo '::endgroup::'
-        
+
         echo '::group::Run ONNX tests'
         pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_onnx.py
         echo '::endgroup::'
@@ -139,6 +141,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -147,21 +150,22 @@ jobs:
         export GPU_ARCH_VERSION=''
 
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
-        
+
         echo '::group::Pre-download model weights'
         pip install --progress-bar=off aiohttp aiofiles tqdm
         python scripts/download_model_urls.py
         echo '::endgroup::'
-        
+
         echo '::group::Install testing utilities'
-        pip install --progress-bar=off pytest
+        # TODO: remove the <8 constraint on pytest when https://github.com/pytorch/vision/issues/8238 is closed
+        pip install --progress-bar=off "pytest<8"
         echo '::endgroup::'
-        
+
         echo '::group::Run extended unittests'
         export PYTORCH_TEST_WITH_EXTENDED=1
         pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_extended_*.py

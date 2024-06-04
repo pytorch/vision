@@ -1,8 +1,6 @@
 import bz2
-import contextlib
 import gzip
 import hashlib
-import itertools
 import lzma
 import os
 import os.path
@@ -13,13 +11,11 @@ import tarfile
 import urllib
 import urllib.error
 import urllib.request
-import warnings
 import zipfile
-from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, IO, Iterable, List, Optional, Tuple, TypeVar, Union
 from urllib.parse import urlparse
 
 import numpy as np
-import requests
 import torch
 from torch.utils.model_zoo import tqdm
 
@@ -28,27 +24,15 @@ from .._internally_replaced_utils import _download_file_from_remote_location, _i
 USER_AGENT = "pytorch/vision"
 
 
-def _save_response_content(
-    content: Iterator[bytes],
-    destination: str,
-    length: Optional[int] = None,
-) -> None:
-    with open(destination, "wb") as fh, tqdm(total=length) as pbar:
-        for chunk in content:
-            # filter out keep-alive new chunks
-            if not chunk:
-                continue
-
-            fh.write(chunk)
-            pbar.update(len(chunk))
-
-
-def _urlretrieve(url: str, filename: str, chunk_size: int = 1024 * 32) -> None:
+def _urlretrieve(url: str, filename: Union[str, pathlib.Path], chunk_size: int = 1024 * 32) -> None:
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
-        _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
+        with open(filename, "wb") as fh, tqdm(total=response.length) as pbar:
+            while chunk := response.read(chunk_size):
+                fh.write(chunk)
+                pbar.update(len(chunk))
 
 
-def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
+def calculate_md5(fpath: Union[str, pathlib.Path], chunk_size: int = 1024 * 1024) -> str:
     # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
     # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
     # it torchvision.datasets is unusable in these environments since we perform a MD5 check everywhere.
@@ -62,11 +46,11 @@ def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
     return md5.hexdigest()
 
 
-def check_md5(fpath: str, md5: str, **kwargs: Any) -> bool:
+def check_md5(fpath: Union[str, pathlib.Path], md5: str, **kwargs: Any) -> bool:
     return md5 == calculate_md5(fpath, **kwargs)
 
 
-def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
+def check_integrity(fpath: Union[str, pathlib.Path], md5: Optional[str] = None) -> bool:
     if not os.path.isfile(fpath):
         return False
     if md5 is None:
@@ -104,7 +88,11 @@ def _get_google_drive_file_id(url: str) -> Optional[str]:
 
 
 def download_url(
-    url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 3
+    url: str,
+    root: Union[str, pathlib.Path],
+    filename: Optional[Union[str, pathlib.Path]] = None,
+    md5: Optional[str] = None,
+    max_redirect_hops: int = 3,
 ) -> None:
     """Download a file from a url and place it in root.
 
@@ -118,7 +106,7 @@ def download_url(
     root = os.path.expanduser(root)
     if not filename:
         filename = os.path.basename(url)
-    fpath = os.path.join(root, filename)
+    fpath = os.fspath(os.path.join(root, filename))
 
     os.makedirs(root, exist_ok=True)
 
@@ -155,7 +143,7 @@ def download_url(
         raise RuntimeError("File not found or corrupted.")
 
 
-def list_dir(root: str, prefix: bool = False) -> List[str]:
+def list_dir(root: Union[str, pathlib.Path], prefix: bool = False) -> List[str]:
     """List all directories at a given root
 
     Args:
@@ -170,7 +158,7 @@ def list_dir(root: str, prefix: bool = False) -> List[str]:
     return directories
 
 
-def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
+def list_files(root: Union[str, pathlib.Path], suffix: str, prefix: bool = False) -> List[str]:
     """List all files ending with a suffix at a given root
 
     Args:
@@ -187,23 +175,12 @@ def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
     return files
 
 
-def _extract_gdrive_api_response(response, chunk_size: int = 32 * 1024) -> Tuple[bytes, Iterator[bytes]]:
-    content = response.iter_content(chunk_size)
-    first_chunk = None
-    # filter out keep-alive new chunks
-    while not first_chunk:
-        first_chunk = next(content)
-    content = itertools.chain([first_chunk], content)
-
-    try:
-        match = re.search("<title>Google Drive - (?P<api_response>.+?)</title>", first_chunk.decode())
-        api_response = match["api_response"] if match is not None else None
-    except UnicodeDecodeError:
-        api_response = None
-    return api_response, content
-
-
-def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):
+def download_file_from_google_drive(
+    file_id: str,
+    root: Union[str, pathlib.Path],
+    filename: Optional[Union[str, pathlib.Path]] = None,
+    md5: Optional[str] = None,
+):
     """Download a Google Drive file from  and place it in root.
 
     Args:
@@ -212,12 +189,17 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         filename (str, optional): Name to save the file under. If None, use the id of the file.
         md5 (str, optional): MD5 checksum of the download. If None, do not check
     """
-    # Based on https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
+    try:
+        import gdown
+    except ModuleNotFoundError:
+        raise RuntimeError(
+            "To download files from GDrive, 'gdown' is required. You can install it with 'pip install gdown'."
+        )
 
     root = os.path.expanduser(root)
     if not filename:
         filename = file_id
-    fpath = os.path.join(root, filename)
+    fpath = os.fspath(os.path.join(root, filename))
 
     os.makedirs(root, exist_ok=True)
 
@@ -225,54 +207,15 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         print(f"Using downloaded {'and verified ' if md5 else ''}file: {fpath}")
         return
 
-    url = "https://drive.google.com/uc"
-    params = dict(id=file_id, export="download")
-    with requests.Session() as session:
-        response = session.get(url, params=params, stream=True)
+    gdown.download(id=file_id, output=fpath, quiet=False, user_agent=USER_AGENT)
 
-        for key, value in response.cookies.items():
-            if key.startswith("download_warning"):
-                token = value
-                break
-        else:
-            api_response, content = _extract_gdrive_api_response(response)
-            token = "t" if api_response == "Virus scan warning" else None
-
-        if token is not None:
-            response = session.get(url, params=dict(params, confirm=token), stream=True)
-            api_response, content = _extract_gdrive_api_response(response)
-
-        if api_response == "Quota exceeded":
-            raise RuntimeError(
-                f"The daily quota of the file {filename} is exceeded and it "
-                f"can't be downloaded. This is a limitation of Google Drive "
-                f"and can only be overcome by trying again later."
-            )
-
-        _save_response_content(content, fpath)
-
-    # In case we deal with an unhandled GDrive API response, the file should be smaller than 10kB and contain only text
-    if os.stat(fpath).st_size < 10 * 1024:
-        with contextlib.suppress(UnicodeDecodeError), open(fpath) as fh:
-            text = fh.read()
-            # Regular expression to detect HTML. Copied from https://stackoverflow.com/a/70585604
-            if re.search(r"</?\s*[a-z-][^>]*\s*>|(&(?:[\w\d]+|#\d+|#x[a-f\d]+);)", text):
-                warnings.warn(
-                    f"We detected some HTML elements in the downloaded file. "
-                    f"This most likely means that the download triggered an unhandled API response by GDrive. "
-                    f"Please report this to torchvision at https://github.com/pytorch/vision/issues including "
-                    f"the response:\n\n{text}"
-                )
-
-    if md5 and not check_md5(fpath, md5):
-        raise RuntimeError(
-            f"The MD5 checksum of the download file {fpath} does not match the one on record."
-            f"Please delete the file and try again. "
-            f"If the issue persists, please report this to torchvision at https://github.com/pytorch/vision/issues."
-        )
+    if not check_integrity(fpath, md5):
+        raise RuntimeError("File not found or corrupted.")
 
 
-def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> None:
+def _extract_tar(
+    from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
+) -> None:
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
         tar.extractall(to_path)
 
@@ -283,14 +226,16 @@ _ZIP_COMPRESSION_MAP: Dict[str, int] = {
 }
 
 
-def _extract_zip(from_path: str, to_path: str, compression: Optional[str]) -> None:
+def _extract_zip(
+    from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
+) -> None:
     with zipfile.ZipFile(
         from_path, "r", compression=_ZIP_COMPRESSION_MAP[compression] if compression else zipfile.ZIP_STORED
     ) as zip:
         zip.extractall(to_path)
 
 
-_ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
+_ARCHIVE_EXTRACTORS: Dict[str, Callable[[Union[str, pathlib.Path], Union[str, pathlib.Path], Optional[str]], None]] = {
     ".tar": _extract_tar,
     ".zip": _extract_zip,
 }
@@ -306,7 +251,7 @@ _FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
 }
 
 
-def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
+def _detect_file_type(file: Union[str, pathlib.Path]) -> Tuple[str, Optional[str], Optional[str]]:
     """Detect the archive type and/or compression of a file.
 
     Args:
@@ -349,7 +294,11 @@ def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
     raise RuntimeError(f"Unknown compression or archive type: '{suffix}'.\nKnown suffixes are: '{valid_suffixes}'.")
 
 
-def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+def _decompress(
+    from_path: Union[str, pathlib.Path],
+    to_path: Optional[Union[str, pathlib.Path]] = None,
+    remove_finished: bool = False,
+) -> pathlib.Path:
     r"""Decompress a file.
 
     The compression is automatically detected from the file name.
@@ -367,7 +316,7 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
         raise RuntimeError(f"Couldn't detect a compression from suffix {suffix}.")
 
     if to_path is None:
-        to_path = from_path.replace(suffix, archive_type if archive_type is not None else "")
+        to_path = pathlib.Path(os.fspath(from_path).replace(suffix, archive_type if archive_type is not None else ""))
 
     # We don't need to check for a missing key here, since this was already done in _detect_file_type()
     compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
@@ -378,10 +327,14 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
     if remove_finished:
         os.remove(from_path)
 
-    return to_path
+    return pathlib.Path(to_path)
 
 
-def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+def extract_archive(
+    from_path: Union[str, pathlib.Path],
+    to_path: Optional[Union[str, pathlib.Path]] = None,
+    remove_finished: bool = False,
+) -> Union[str, pathlib.Path]:
     """Extract an archive.
 
     The archive type and a possible compression is automatically detected from the file name. If the file is compressed
@@ -396,16 +349,24 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
     Returns:
         (str): Path to the directory the file was extracted to.
     """
+
+    def path_or_str(ret_path: pathlib.Path) -> Union[str, pathlib.Path]:
+        if isinstance(from_path, str):
+            return os.fspath(ret_path)
+        else:
+            return ret_path
+
     if to_path is None:
         to_path = os.path.dirname(from_path)
 
     suffix, archive_type, compression = _detect_file_type(from_path)
     if not archive_type:
-        return _decompress(
+        ret_path = _decompress(
             from_path,
             os.path.join(to_path, os.path.basename(from_path).replace(suffix, "")),
             remove_finished=remove_finished,
         )
+        return path_or_str(ret_path)
 
     # We don't need to check for a missing key here, since this was already done in _detect_file_type()
     extractor = _ARCHIVE_EXTRACTORS[archive_type]
@@ -414,14 +375,14 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
     if remove_finished:
         os.remove(from_path)
 
-    return to_path
+    return path_or_str(pathlib.Path(to_path))
 
 
 def download_and_extract_archive(
     url: str,
-    download_root: str,
-    extract_root: Optional[str] = None,
-    filename: Optional[str] = None,
+    download_root: Union[str, pathlib.Path],
+    extract_root: Optional[Union[str, pathlib.Path]] = None,
+    filename: Optional[Union[str, pathlib.Path]] = None,
     md5: Optional[str] = None,
     remove_finished: bool = False,
 ) -> None:
@@ -473,7 +434,7 @@ def verify_str_arg(
     return value
 
 
-def _read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
+def _read_pfm(file_name: Union[str, pathlib.Path], slice_channels: int = 2) -> np.ndarray:
     """Read file in .pfm format. Might contain either 1 or 3 channels of data.
 
     Args:

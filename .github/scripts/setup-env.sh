@@ -22,17 +22,6 @@ case $(uname) in
     ;;
 esac
 
-if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
-  echo '::group::Uninstall system JPEG libraries on macOS'
-  # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG and PNG libraries
-  # installed by default that interfere with our build. We uninstall them here and use the one from conda below.
-  IMAGE_LIBS=$(brew list | grep -E "jpeg|png")
-  for lib in $IMAGE_LIBS; do
-    brew uninstall --ignore-dependencies --force "${lib}"
-  done
-  echo '::endgroup::'
-fi
-
 echo '::group::Create build environment'
 # See https://github.com/pytorch/vision/issues/7296 for ffmpeg
 conda create \
@@ -40,9 +29,10 @@ conda create \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
-  libpng jpeg \
+  libpng \
   'ffmpeg<4.3'
 conda activate ci
+conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools
 
 # See https://github.com/pytorch/vision/issues/6790
@@ -72,11 +62,21 @@ else
   CHANNEL=nightly
 fi
 
-pip install --progress-bar=off light-the-torch
-ltt install --progress-bar=off \
-  --pytorch-computation-backend="${GPU_ARCH_TYPE}${GPU_ARCH_VERSION}" \
-  --pytorch-channel="${CHANNEL}" \
-  torch
+case $GPU_ARCH_TYPE in
+  cpu)
+    GPU_ARCH_ID="cpu"
+    ;;
+  cuda)
+    VERSION_WITHOUT_DOT=$(echo "${GPU_ARCH_VERSION}" | sed 's/\.//')
+    GPU_ARCH_ID="cu${VERSION_WITHOUT_DOT}"
+    ;;
+  *)
+    echo "Unknown GPU_ARCH_TYPE=${GPU_ARCH_TYPE}"
+    exit 1
+    ;;
+esac
+PYTORCH_WHEEL_INDEX="https://download.pytorch.org/whl/${CHANNEL}/${GPU_ARCH_ID}"
+pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python -c "import torch; exit(not torch.cuda.is_available())"

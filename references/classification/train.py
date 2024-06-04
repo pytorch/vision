@@ -8,12 +8,12 @@ import torch
 import torch.utils.data
 import torchvision
 import torchvision.transforms
-import transforms
 import utils
 from sampler import RASampler
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
+from transforms import get_mixup_cutmix
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
@@ -127,7 +127,8 @@ def load_data(traindir, valdir, args):
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
         print(f"Loading dataset_train from {cache_path}")
-        dataset, _ = torch.load(cache_path)
+        # TODO: this could probably be weights_only=True
+        dataset, _ = torch.load(cache_path, weights_only=False)
     else:
         # We need a default value for the variables below because args may come
         # from train_quantization.py which doesn't define them.
@@ -159,7 +160,8 @@ def load_data(traindir, valdir, args):
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
         print(f"Loading dataset_test from {cache_path}")
-        dataset_test, _ = torch.load(cache_path)
+        # TODO: this could probably be weights_only=True
+        dataset_test, _ = torch.load(cache_path, weights_only=False)
     else:
         if args.weights and args.test_only:
             weights = torchvision.models.get_weight(args.weights)
@@ -218,18 +220,17 @@ def main(args):
     val_dir = os.path.join(args.data_path, "val")
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
 
-    collate_fn = None
     num_classes = len(dataset.classes)
-    mixup_transforms = []
-    if args.mixup_alpha > 0.0:
-        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
-    if args.cutmix_alpha > 0.0:
-        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
-    if mixup_transforms:
-        mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
+    mixup_cutmix = get_mixup_cutmix(
+        mixup_alpha=args.mixup_alpha, cutmix_alpha=args.cutmix_alpha, num_classes=num_classes, use_v2=args.use_v2
+    )
+    if mixup_cutmix is not None:
 
         def collate_fn(batch):
-            return mixupcutmix(*default_collate(batch))
+            return mixup_cutmix(*default_collate(batch))
+
+    else:
+        collate_fn = default_collate
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -338,7 +339,7 @@ def main(args):
         model_ema = utils.ExponentialMovingAverage(model_without_ddp, device=device, decay=1.0 - alpha)
 
     if args.resume:
-        checkpoint = torch.load(args.resume, map_location="cpu")
+        checkpoint = torch.load(args.resume, map_location="cpu", weights_only=True)
         model_without_ddp.load_state_dict(checkpoint["model"])
         if not args.test_only:
             optimizer.load_state_dict(checkpoint["optimizer"])

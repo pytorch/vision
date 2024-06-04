@@ -88,7 +88,7 @@ class ConfusionMatrix:
         return acc_global, acc, iu
 
     def reduce_from_all_processes(self):
-        reduce_across_processes(self.mat)
+        self.mat = reduce_across_processes(self.mat).to(torch.int64)
 
     def __str__(self):
         acc_global, acc, iu = self.compute()
@@ -267,9 +267,9 @@ def init_distributed_mode(args):
         args.rank = int(os.environ["RANK"])
         args.world_size = int(os.environ["WORLD_SIZE"])
         args.gpu = int(os.environ["LOCAL_RANK"])
-    elif "SLURM_PROCID" in os.environ:
-        args.rank = int(os.environ["SLURM_PROCID"])
-        args.gpu = args.rank % torch.cuda.device_count()
+    # elif "SLURM_PROCID" in os.environ:
+    #     args.rank = int(os.environ["SLURM_PROCID"])
+    #     args.gpu = args.rank % torch.cuda.device_count()
     elif hasattr(args, "rank"):
         pass
     else:

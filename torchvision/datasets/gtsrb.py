@@ -1,6 +1,6 @@
 import csv
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 import PIL
 
@@ -13,9 +13,9 @@ class GTSRB(VisionDataset):
     """`German Traffic Sign Recognition Benchmark (GTSRB) <https://benchmark.ini.rub.de/>`_ Dataset.
 
     Args:
-        root (string): Root directory of the dataset.
+        root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), or ``"test"``.
-        transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and
@@ -25,7 +25,7 @@ class GTSRB(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

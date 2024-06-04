@@ -89,7 +89,7 @@ class VideoClips:
         video_paths (List[str]): paths to the video files
         clip_length_in_frames (int): size of a clip in number of frames
         frames_between_clips (int): step (in frames) between each clip
-        frame_rate (int, optional): if specified, it will resample the video
+        frame_rate (float, optional): if specified, it will resample the video
             so that it has `frame_rate`, and then the clips will be defined
             on the resampled video
         num_workers (int): how many subprocesses to use for data loading.
@@ -102,7 +102,7 @@ class VideoClips:
         video_paths: List[str],
         clip_length_in_frames: int = 16,
         frames_between_clips: int = 1,
-        frame_rate: Optional[int] = None,
+        frame_rate: Optional[float] = None,
         _precomputed_metadata: Optional[Dict[str, Any]] = None,
         num_workers: int = 0,
         _video_width: int = 0,
@@ -135,8 +135,8 @@ class VideoClips:
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
     def _compute_frame_pts(self) -> None:
-        self.video_pts = []
-        self.video_fps = []
+        self.video_pts = []  # len = num_videos. Each entry is a tensor of shape (num_frames_in_video,)
+        self.video_fps: List[float] = []  # len = num_videos
 
         # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
@@ -152,13 +152,13 @@ class VideoClips:
         with tqdm(total=len(dl)) as pbar:
             for batch in dl:
                 pbar.update(1)
-                clips, fps = list(zip(*batch))
+                batch_pts, batch_fps = list(zip(*batch))
                 # we need to specify dtype=torch.long because for empty list,
                 # torch.as_tensor will use torch.float as default dtype. This
                 # happens when decoding fails and no pts is returned in the list.
-                clips = [torch.as_tensor(c, dtype=torch.long) for c in clips]
-                self.video_pts.extend(clips)
-                self.video_fps.extend(fps)
+                batch_pts = [torch.as_tensor(pts, dtype=torch.long) for pts in batch_pts]
+                self.video_pts.extend(batch_pts)
+                self.video_fps.extend(batch_fps)
 
     def _init_from_metadata(self, metadata: Dict[str, Any]) -> None:
         self.video_paths = metadata["video_paths"]
@@ -187,9 +187,9 @@ class VideoClips:
         }
         return type(self)(
             video_paths,
-            self.num_frames,
-            self.step,
-            self.frame_rate,
+            clip_length_in_frames=self.num_frames,
+            frames_between_clips=self.step,
+            frame_rate=self.frame_rate,
             _precomputed_metadata=metadata,
             num_workers=self.num_workers,
             _video_width=self._video_width,
@@ -203,7 +203,7 @@ class VideoClips:
 
     @staticmethod
     def compute_clips_for_video(
-        video_pts: torch.Tensor, num_frames: int, step: int, fps: int, frame_rate: Optional[int] = None
+        video_pts: torch.Tensor, num_frames: int, step: int, fps: Optional[float], frame_rate: Optional[float] = None
     ) -> Tuple[torch.Tensor, Union[List[slice], torch.Tensor]]:
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
@@ -211,7 +211,7 @@ class VideoClips:
             fps = 1
         if frame_rate is None:
             frame_rate = fps
-        total_frames = len(video_pts) * (float(frame_rate) / fps)
+        total_frames = len(video_pts) * frame_rate / fps
         _idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
         video_pts = video_pts[_idxs]
         clips = unfold(video_pts, num_frames, step)
@@ -227,7 +227,7 @@ class VideoClips:
             idxs = unfold(_idxs, num_frames, step)
         return clips, idxs
 
-    def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[int] = None) -> None:
+    def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[float] = None) -> None:
         """
         Compute all consecutive sequences of clips from video_pts.
         Always returns clips of size `num_frames`, meaning that the
@@ -275,8 +275,8 @@ class VideoClips:
         return video_idx, clip_idx
 
     @staticmethod
-    def _resample_video_idx(num_frames: int, original_fps: int, new_fps: int) -> Union[slice, torch.Tensor]:
-        step = float(original_fps) / new_fps
+    def _resample_video_idx(num_frames: int, original_fps: float, new_fps: float) -> Union[slice, torch.Tensor]:
+        step = original_fps / new_fps
         if step.is_integer():
             # optimization: if step is integer, don't need to perform
             # advanced indexing

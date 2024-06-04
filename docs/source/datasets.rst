@@ -1,3 +1,5 @@
+.. _datasets:
+
 Datasets
 ========
 
@@ -52,6 +54,7 @@ Image classification
     GTSRB
     INaturalist
     ImageNet
+    Imagenette
     KMNIST
     LFWPeople
     LSUN
