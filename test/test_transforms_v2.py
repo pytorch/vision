@@ -5805,7 +5805,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 
 
 class TestSanitizeBoundingBoxes:
-    def _get_boxes_and_valid_mask(self, H=256, W=128, min_size=10):
+    def _get_boxes_and_valid_mask(self, H=256, W=128, min_size=10, min_area=10):
         boxes_and_validity = [
             ([0, 1, 10, 1], False),  # Y1 == Y2
             ([0, 1, 0, 20], False),  # X1 == X2
@@ -5816,15 +5816,15 @@ class TestSanitizeBoundingBoxes:
             ([-1, 1, 10, 20], False),  # any < 0
             ([0, 0, -1, 20], False),  # any < 0
             ([0, 0, -10, -1], False),  # any < 0
-            ([0, 0, min_size, 10], True),  # H < min_size
-            ([0, 0, 10, min_size], True),  # W < min_size
-            ([0, 0, W, H], True),  # TODO: Is that actually OK?? Should it be -1?
-            ([1, 1, 30, 20], True),
-            ([0, 0, 10, 10], True),
-            ([1, 1, 30, 20], True),
+            ([0, 0, min_size, 10], min_size * 10 >= min_area),  # H < min_size
+            ([0, 0, 10, min_size], min_size * 10 >= min_area),  # W < min_size
+            ([0, 0, W, H], W * H >= min_area),
+            ([1, 1, 30, 20], 29 * 19 >= min_area),
+            ([0, 0, 10, 10], 9 * 9 >= min_area),
+            ([1, 1, 30, 20], 29 * 19 >= min_area),
         ]
 
-        random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
+        # random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
         boxes, expected_valid_mask = zip(*boxes_and_validity)
         boxes = tv_tensors.BoundingBoxes(
             boxes,
@@ -5834,7 +5834,7 @@ class TestSanitizeBoundingBoxes:
 
         return boxes, expected_valid_mask
 
-    @pytest.mark.parametrize("min_size", (1, 10))
+    @pytest.mark.parametrize("min_size, min_area", ((1, 1), (10, 1), (10, 101)))
     @pytest.mark.parametrize(
         "labels_getter",
         (
@@ -5847,7 +5847,7 @@ class TestSanitizeBoundingBoxes:
         ),
     )
     @pytest.mark.parametrize("sample_type", (tuple, dict))
-    def test_transform(self, min_size, labels_getter, sample_type):
+    def test_transform(self, min_size, min_area, labels_getter, sample_type):
 
         if sample_type is tuple and not isinstance(labels_getter, str):
             # The "lambda inputs: inputs["labels"]" labels_getter used in this test
@@ -5855,7 +5855,7 @@ class TestSanitizeBoundingBoxes:
             return
 
         H, W = 256, 128
-        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size)
+        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size, min_area=min_area)
         valid_indices = [i for (i, is_valid) in enumerate(expected_valid_mask) if is_valid]
 
         labels = torch.arange(boxes.shape[0])
@@ -5879,7 +5879,7 @@ class TestSanitizeBoundingBoxes:
             img = sample.pop("image")
             sample = (img, sample)
 
-        out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
+        out = transforms.SanitizeBoundingBoxes(min_size=min_size, min_area=min_area, labels_getter=labels_getter)(sample)
 
         if sample_type is tuple:
             out_image = out[0]

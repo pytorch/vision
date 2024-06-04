@@ -322,12 +322,13 @@ def sanitize_bounding_boxes(
     format: Optional[tv_tensors.BoundingBoxFormat] = None,
     canvas_size: Optional[Tuple[int, int]] = None,
     min_size: float = 1.0,
+    min_area: float = 1.0,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Remove degenerate/invalid bounding boxes and return the corresponding indexing mask.
 
     This removes bounding boxes that:
 
-    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - are below a given ``min_size`` or ``min_area``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
       call :func:`~torchvision.transforms.v2.functional.clamp_bounding_boxes` first to avoid undesired removals.
 
@@ -346,6 +347,7 @@ def sanitize_bounding_boxes(
             (size of the corresponding image/video).
             Must be left to none if ``bounding_boxes`` is a :class:`~torchvision.tv_tensors.BoundingBoxes` object.
         min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
+        min_area (float, optional) The area below which bounding boxes are removed. Default is 1.
 
     Returns:
         out (tuple of Tensors): The subset of valid bounding boxes, and the corresponding indexing mask.
@@ -361,7 +363,7 @@ def sanitize_bounding_boxes(
         if isinstance(format, str):
             format = tv_tensors.BoundingBoxFormat[format.upper()]
         valid = _get_sanitize_bounding_boxes_mask(
-            bounding_boxes, format=format, canvas_size=canvas_size, min_size=min_size
+            bounding_boxes, format=format, canvas_size=canvas_size, min_size=min_size, min_area=min_area
         )
         bounding_boxes = bounding_boxes[valid]
     else:
@@ -374,7 +376,7 @@ def sanitize_bounding_boxes(
                 "Leave those to None or pass bounding_boxes as a pure tensor."
             )
         valid = _get_sanitize_bounding_boxes_mask(
-            bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size
+            bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size, min_area=min_area
         )
         bounding_boxes = tv_tensors.wrap(bounding_boxes[valid], like=bounding_boxes)
 
