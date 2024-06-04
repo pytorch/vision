@@ -698,8 +698,10 @@ bool Decoder::pushMsg(DecoderOutputMessage&& msg) {
 void Decoder::flushStreams() {
   VLOG(1) << "Flushing streams...";
   for (auto& stream : streams_) {
+    std::unique_ptr<ByteStorage> prevMsgPayload;
     DecoderOutputMessage msg;
-    while (msg.payload = (params_.headerOnly ? nullptr : createByteStorage(0)),
+    while (prevMsgPayload = (msg.payload != nullptr ? std::move(msg.payload) : nullptr),
+           msg.payload = (params_.headerOnly ? nullptr : createByteStorage(0)),
            stream.second->flush(&msg, params_.headerOnly) > 0) {
       // check end offset
       bool endInRange =
@@ -713,8 +715,11 @@ void Decoder::flushStreams() {
     }
 
     if (params_.uniformSampling > 1 && kFramesDecoded_ < params_.uniformSampling) {
-      push(std::move(msg));
-      ++kFramesDecoded_;
+      if (msg.payload != nullptr) {
+        msg.payload = std::move(prevMsgPayload);
+        push(std::move(msg));
+        ++kFramesDecoded_;
+      }
     }
   }
 }
