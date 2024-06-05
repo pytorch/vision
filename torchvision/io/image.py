@@ -137,22 +137,26 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
 
 
 def decode_jpeg(
-    input: torch.Tensor,
+    input: Union[torch.Tensor, List[torch.Tensor]],
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
-    device: str = "cpu",
+    device: Union[str, torch.device] = "cpu",
     apply_exif_orientation: bool = False,
-) -> torch.Tensor:
+) -> Union[torch.Tensor, List[torch.Tensor]]:
     """
-    Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
-    Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
+    Decodes a (list of) JPEG image(s) into a (list of) 3 dimensional RGB or grayscale Tensor(s).
+    Optionally converts the image(s) to the desired format.
+    The values of the output tensor(s) are uint8 between 0 and 255.
+
+    .. note::
+        When using a CUDA device, passing a list of tensors is more efficient than repeated individual calls to ``decode_jpeg``.
+        When using CPU the performance is equivalent.
 
     Args:
-        input (Tensor[1]): a one dimensional uint8 tensor containing
-            the raw bytes of the JPEG image. This tensor must be on CPU,
+        input (Tensor[1] or list[Tensor[1]]): a (list of) one dimensional uint8 tensor(s) containing
+            the raw bytes of the JPEG image. This tensor(s) must be on CPU,
             regardless of the ``device`` parameter.
         mode (ImageReadMode): the read mode used for optionally
-            converting the image. The supported modes are: ``ImageReadMode.UNCHANGED``,
+            converting the image(s). The supported modes are: ``ImageReadMode.UNCHANGED``,
             ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
@@ -175,12 +179,26 @@ def decode_jpeg(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_jpeg)
-    device = torch.device(device)
-    if device.type == "cuda":
-        output = torch.ops.image.decode_jpeg_cuda(input, mode.value, device)
-    else:
-        output = torch.ops.image.decode_jpeg(input, mode.value, apply_exif_orientation)
-    return output
+    if isinstance(device, str):
+        device = torch.device(device)
+
+    if isinstance(input, list):
+        if len(input) == 0:
+            raise RuntimeError("Input list must contain at least one element")
+        if input[0].device.type != "cpu":
+            raise RuntimeError("Input list must contain tensors on CPU")
+        if device.type == "cuda":
+            return torch.ops.image.decode_jpegs_cuda(input, mode.value, device)
+        else:
+            return [torch.ops.image.decode_jpeg(img, mode.value, apply_exif_orientation) for img in input]
+
+    else:  # input is tensor
+        if input.device.type != "cpu":
+            raise RuntimeError("Input tensor must be a CPU tensor")
+        if device.type == "cuda":
+            return torch.ops.image.decode_jpegs_cuda([input], mode.value, device)[0]
+        else:
+            return torch.ops.image.decode_jpeg(input, mode.value, apply_exif_orientation)
 
 
 def encode_jpeg(
