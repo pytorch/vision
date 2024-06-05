@@ -828,6 +828,10 @@ class TestResize:
         with pytest.raises(ValueError, match=match):
             F.resize(make_input(self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
 
+        if isinstance(size, list) and len(size) != 1:
+            with pytest.raises(ValueError, match="max_size should only be passed if size is None or specifies"):
+                F.resize(make_input(self.INPUT_SIZE), size=size, max_size=500)
+
     @pytest.mark.parametrize(
         "input_size, max_size, expected_size",
         [
