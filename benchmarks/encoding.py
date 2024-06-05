@@ -1,9 +1,6 @@
 import os
 import platform
 import statistics
-import tarfile
-import tempfile
-import urllib.request
 
 import torch
 import torch.utils.benchmark as benchmark
@@ -52,7 +49,7 @@ def run_benchmark(batch):
                         stmt=stmt,
                         setup="import torchvision",
                         globals={"batch_input": batch_input},
-                        label=f"Image Encoding",
+                        label="Image Encoding",
                         sub_label=f"{device.upper()} ({strat}): {stmt}",
                         description=f"{size} images",
                         num_threads=num_threads,
