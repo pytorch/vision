@@ -163,9 +163,7 @@ def _compute_resized_output_size(
 ) -> List[int]:
     if isinstance(size, int):
         size = [size]
-    elif size is None:
-        size = []  # pass empty list to match function signature for v1
-    elif max_size is not None and len(size) != 1:
+    elif max_size is not None and size is not None and len(size) != 1:
         raise ValueError(
             "max_size should only be passed if size is None or specifies the length of the smaller edge, "
             "i.e. size should be an int or a sequence of length 1 in torchscript mode."
