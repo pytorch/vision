@@ -99,7 +99,7 @@ def _script(obj):
         return torch.jit.script(obj)
     except Exception as error:
         name = getattr(obj, "__name__", obj.__class__.__name__)
-        raise AssertionError(f"Trying to `torch.jit.script` '{name}' raised the error above.") from error
+        raise AssertionError(f"Trying to `torch.jit.script` `{name}` raised the error above.") from error
 
 
 def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
@@ -553,10 +553,12 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
 
 class TestResize:
     INPUT_SIZE = (17, 11)
-    OUTPUT_SIZES = [17, [17], (17,), [12, 13], (12, 13)]
+    OUTPUT_SIZES = [17, [17], (17,), None, [12, 13], (12, 13)]
 
     def _make_max_size_kwarg(self, *, use_max_size, size):
-        if use_max_size:
+        if size is None:
+            max_size = min(list(self.INPUT_SIZE))
+        elif use_max_size:
             if not (isinstance(size, int) or len(size) == 1):
                 # This would result in an `ValueError`
                 return None
@@ -568,10 +570,13 @@ class TestResize:
         return dict(max_size=max_size)
 
     def _compute_output_size(self, *, input_size, size, max_size):
-        if not (isinstance(size, int) or len(size) == 1):
+        if size is None:
+            size = max_size
+
+        elif not (isinstance(size, int) or len(size) == 1):
             return tuple(size)
 
-        if not isinstance(size, int):
+        elif not isinstance(size, int):
             size = size[0]
 
         old_height, old_width = input_size
@@ -658,10 +663,13 @@ class TestResize:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, size, make_input):
+        max_size_kwarg = self._make_max_size_kwarg(use_max_size=size is None, size=size)
+
         check_functional(
             F.resize,
             make_input(self.INPUT_SIZE),
             size=size,
+            **max_size_kwarg,
             antialias=True,
             check_scripted_smoke=not isinstance(size, int),
         )
@@ -695,11 +703,13 @@ class TestResize:
         ],
     )
     def test_transform(self, size, device, make_input):
+        max_size_kwarg = self._make_max_size_kwarg(use_max_size=size is None, size=size)
+
         check_transform(
-            transforms.Resize(size=size, antialias=True),
+            transforms.Resize(size=size, **max_size_kwarg, antialias=True),
             make_input(self.INPUT_SIZE, device=device),
             # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-            check_v1_compatibility=dict(rtol=0, atol=1),
+            check_v1_compatibility=dict(rtol=0, atol=1) if size is not None else False,
         )
 
     def _check_output_size(self, input, output, *, size, max_size):
@@ -801,7 +811,11 @@ class TestResize:
         ],
     )
     def test_max_size_error(self, size, make_input):
-        if isinstance(size, int) or len(size) == 1:
+        if size is None:
+            # value can be anything other than an integer
+            max_size = None
+            match = "max_size must be an integer when size is None"
+        elif isinstance(size, int) or len(size) == 1:
             max_size = (size if isinstance(size, int) else size[0]) - 1
             match = "must be strictly greater than the requested size"
         else:
@@ -811,6 +825,37 @@ class TestResize:
 
         with pytest.raises(ValueError, match=match):
             F.resize(make_input(self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
+
+        if isinstance(size, list) and len(size) != 1:
+            with pytest.raises(ValueError, match="max_size should only be passed if size is None or specifies"):
+                F.resize(make_input(self.INPUT_SIZE), size=size, max_size=500)
+
+    @pytest.mark.parametrize(
+        "input_size, max_size, expected_size",
+        [
+            ((10, 10), 10, (10, 10)),
+            ((10, 20), 40, (20, 40)),
+            ((20, 10), 40, (40, 20)),
+            ((10, 20), 10, (5, 10)),
+            ((20, 10), 10, (10, 5)),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_masks,
+            make_video,
+        ],
+    )
+    def test_resize_size_none(self, input_size, max_size, expected_size, make_input):
+        img = make_input(input_size)
+        out = F.resize(img, size=None, max_size=max_size)
+        assert F.get_size(out)[-2:] == list(expected_size)
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
@@ -834,7 +879,7 @@ class TestResize:
         assert_equal(actual, expected)
 
     def test_transform_unknown_size_error(self):
-        with pytest.raises(ValueError, match="size can either be an integer or a sequence of one or two integers"):
+        with pytest.raises(ValueError, match="size can be an integer, a sequence of one or two integers, or None"):
             transforms.Resize(size=object())
 
     @pytest.mark.parametrize(
