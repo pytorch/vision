@@ -7,4 +7,4 @@
 #include "cpu/encode_jpeg.h"
 #include "cpu/encode_png.h"
 #include "cpu/read_write_file.h"
-#include "cuda/encode_decode_jpeg_cuda.h"
+#include "cuda/encode_decode_jpegs_cuda.h"

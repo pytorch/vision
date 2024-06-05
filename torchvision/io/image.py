@@ -211,12 +211,12 @@ def encode_jpeg(
         if not input:
             raise ValueError("encode_jpeg requires at least one input tensor when a list is passed")
         if input[0].device.type == "cuda":
-            return torch.ops.image.encode_jpeg_cuda(input, quality)
+            return torch.ops.image.encode_jpegs_cuda(input, quality)
         else:
             return [torch.ops.image.encode_jpeg(image, quality) for image in input]
     else:  # single input tensor
         if input.device.type == "cuda":
-            return torch.ops.image.encode_jpeg_cuda([input], quality)[0]
+            return torch.ops.image.encode_jpegs_cuda([input], quality)[0]
         else:
             return torch.ops.image.encode_jpeg(input, quality)
 

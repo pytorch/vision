@@ -1,3 +1,4 @@
+import concurrent.futures
 import glob
 import io
 import os
@@ -509,13 +510,35 @@ def test_encode_jpeg(img_path, scripted):
 
 
 @needs_cuda
+def test_encode_jpeg_cuda_device_param():
+    path = next(path for path in get_images(IMAGE_ROOT, ".jpg") if "cmyk" not in path)
+
+    data = read_image(path)
+
+    current_device = torch.cuda.current_device()
+    current_stream = torch.cuda.current_stream()
+    num_devices = torch.cuda.device_count()
+    devices = ["cuda", torch.device("cuda")] + [torch.device(f"cuda:{i}") for i in range(num_devices)]
+    results = []
+    for device in devices:
+        print(f"python: device: {device}")
+        results.append(encode_jpeg(data.to(device=device)))
+    assert len(results) == len(devices)
+    for result in results:
+        assert torch.all(result.cpu() == results[0].cpu())
+
+    assert current_device == torch.cuda.current_device()
+    assert current_stream == torch.cuda.current_stream()
+
+
+@needs_cuda
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(IMAGE_ROOT, ".jpg")],
 )
 @pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize("contiguous", (False, True))
-def test_single_encode_jpeg_cuda(img_path, scripted, contiguous):
+def test_encode_jpeg_cuda(img_path, scripted, contiguous):
     decoded_image_tv = read_image(img_path)
     encode_fn = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
 
@@ -566,6 +589,25 @@ def test_encode_jpegs_batch(scripted, contiguous, device):
         c, h, w = original.shape
         abs_mean_diff = (original.float() - encoded_decoded.float()).abs().mean().item()
         assert abs_mean_diff < 3
+
+    # test multithreaded decoding
+    # in the current version we prevent this by using a lock but we still want to test it
+    num_workers = 10
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+        futures = [executor.submit(encode_fn, decoded_images_tv_device) for _ in range(num_workers)]
+    encoded_images_threaded = [future.result() for future in futures]
+    assert len(encoded_images_threaded) == num_workers
+    for encoded_images in encoded_images_threaded:
+        assert len(decoded_images_tv_device) == len(encoded_images)
+        for i, (encoded_image_cuda, decoded_image_tv) in enumerate(zip(encoded_images, decoded_images_tv_device)):
+            # make sure all the threads produce identical outputs
+            assert torch.all(encoded_image_cuda == encoded_images_threaded[0][i])
+
+            # make sure the outputs are identical or close enough to baseline
+            decoded_cuda_encoded_image = decode_jpeg(encoded_image_cuda.cpu())
+            assert decoded_cuda_encoded_image.shape == decoded_image_tv.shape
+            assert decoded_cuda_encoded_image.dtype == decoded_image_tv.dtype
+            assert (decoded_cuda_encoded_image.cpu().float() - decoded_image_tv.cpu().float()).abs().mean() < 3
 
 
 @needs_cuda
