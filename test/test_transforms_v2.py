@@ -111,8 +111,10 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
 
     input = input.as_subclass(torch.Tensor)
     with ignore_jit_no_profile_information_warning():
-        actual = kernel_scripted(input, *args, **kwargs)
-    expected = kernel(input, *args, **kwargs)
+        with freeze_rng_state():
+            actual = kernel_scripted(input, *args, **kwargs)
+    with freeze_rng_state():
+        expected = kernel(input, *args, **kwargs)
 
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
@@ -3281,6 +3283,78 @@ class TestGaussianBlur:
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
 
+class TestGaussianNoise:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_kernel(self, make_input):
+        check_kernel(
+            F.gaussian_noise,
+            make_input(dtype=torch.float32),
+            # This cannot pass because the noise on a batch in not per-image
+            check_batched_vs_unbatched=False,
+        )
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.gaussian_noise, make_input(dtype=torch.float32))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.gaussian_noise, torch.Tensor),
+            (F.gaussian_noise_image, tv_tensors.Image),
+            (F.gaussian_noise_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.gaussian_noise, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_transform(self, make_input):
+        def adapter(_, input, __):
+            # This transform doesn't support uint8 so we have to convert the auto-generated uint8 tensors to float32
+            # Same for PIL images
+            for key, value in input.items():
+                if isinstance(value, torch.Tensor) and not value.is_floating_point():
+                    input[key] = value.to(torch.float32)
+                if isinstance(value, PIL.Image.Image):
+                    input[key] = F.pil_to_tensor(value).to(torch.float32)
+            return input
+
+        check_transform(transforms.GaussianNoise(), make_input(dtype=torch.float32), check_sample_input=adapter)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Gaussian Noise is not implemented for PIL images."):
+            F.gaussian_noise(make_image_pil())
+        with pytest.raises(ValueError, match="Input tensor is expected to be in float dtype"):
+            F.gaussian_noise(make_image(dtype=torch.uint8))
+        with pytest.raises(ValueError, match="sigma shouldn't be negative"):
+            F.gaussian_noise(make_image(dtype=torch.float32), sigma=-1)
+
+    def test_clip(self):
+        img = make_image(dtype=torch.float32)
+
+        out = F.gaussian_noise(img, mean=100, clip=False)
+        assert out.min() > 50
+
+        out = F.gaussian_noise(img, mean=100, clip=True)
+        assert (out == 1).all()
+
+        out = F.gaussian_noise(img, mean=-100, clip=False)
+        assert out.min() < -50
+
+        out = F.gaussian_noise(img, mean=-100, clip=True)
+        assert (out == 0).all()
+
+
 class TestAutoAugmentTransforms:
     # These transforms have a lot of branches in their `forward()` passes which are conditioned on random sampling.
     # It's typically very hard to test the effect on some parameters without heavy mocking logic.
@@ -5774,7 +5848,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 
 
 class TestSanitizeBoundingBoxes:
-    def _get_boxes_and_valid_mask(self, H=256, W=128, min_size=10):
+    def _get_boxes_and_valid_mask(self, H=256, W=128, min_size=10, min_area=10):
         boxes_and_validity = [
             ([0, 1, 10, 1], False),  # Y1 == Y2
             ([0, 1, 0, 20], False),  # X1 == X2
@@ -5785,17 +5859,16 @@ class TestSanitizeBoundingBoxes:
             ([-1, 1, 10, 20], False),  # any < 0
             ([0, 0, -1, 20], False),  # any < 0
             ([0, 0, -10, -1], False),  # any < 0
-            ([0, 0, min_size, 10], True),  # H < min_size
-            ([0, 0, 10, min_size], True),  # W < min_size
-            ([0, 0, W, H], True),  # TODO: Is that actually OK?? Should it be -1?
-            ([1, 1, 30, 20], True),
-            ([0, 0, 10, 10], True),
-            ([1, 1, 30, 20], True),
+            ([0, 0, min_size, 10], min_size * 10 >= min_area),  # H < min_size
+            ([0, 0, 10, min_size], min_size * 10 >= min_area),  # W < min_size
+            ([0, 0, W, H], W * H >= min_area),
+            ([1, 1, 30, 20], 29 * 19 >= min_area),
+            ([0, 0, 10, 10], 9 * 9 >= min_area),
+            ([1, 1, 30, 20], 29 * 19 >= min_area),
         ]
 
         random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
         boxes, expected_valid_mask = zip(*boxes_and_validity)
-
         boxes = tv_tensors.BoundingBoxes(
             boxes,
             format=tv_tensors.BoundingBoxFormat.XYXY,
@@ -5804,7 +5877,7 @@ class TestSanitizeBoundingBoxes:
 
         return boxes, expected_valid_mask
 
-    @pytest.mark.parametrize("min_size", (1, 10))
+    @pytest.mark.parametrize("min_size, min_area", ((1, 1), (10, 1), (10, 101)))
     @pytest.mark.parametrize(
         "labels_getter",
         (
@@ -5817,7 +5890,7 @@ class TestSanitizeBoundingBoxes:
         ),
     )
     @pytest.mark.parametrize("sample_type", (tuple, dict))
-    def test_transform(self, min_size, labels_getter, sample_type):
+    def test_transform(self, min_size, min_area, labels_getter, sample_type):
 
         if sample_type is tuple and not isinstance(labels_getter, str):
             # The "lambda inputs: inputs["labels"]" labels_getter used in this test
@@ -5825,7 +5898,7 @@ class TestSanitizeBoundingBoxes:
             return
 
         H, W = 256, 128
-        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size)
+        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size, min_area=min_area)
         valid_indices = [i for (i, is_valid) in enumerate(expected_valid_mask) if is_valid]
 
         labels = torch.arange(boxes.shape[0])
@@ -5849,7 +5922,9 @@ class TestSanitizeBoundingBoxes:
             img = sample.pop("image")
             sample = (img, sample)
 
-        out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
+        out = transforms.SanitizeBoundingBoxes(min_size=min_size, min_area=min_area, labels_getter=labels_getter)(
+            sample
+        )
 
         if sample_type is tuple:
             out_image = out[0]
@@ -5946,6 +6021,8 @@ class TestSanitizeBoundingBoxes:
 
         with pytest.raises(ValueError, match="min_size must be >= 1"):
             transforms.SanitizeBoundingBoxes(min_size=0)
+        with pytest.raises(ValueError, match="min_area must be >= 1"):
+            transforms.SanitizeBoundingBoxes(min_area=0)
         with pytest.raises(ValueError, match="labels_getter should either be 'default'"):
             transforms.SanitizeBoundingBoxes(labels_getter=12)
 
