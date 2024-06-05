@@ -11,6 +11,9 @@ Examples and tutorials
 
     <div class="sphx-glr-thumbnails">
 
+.. thumbnail-parent-div-open
+
+.. thumbnail-parent-div-close
 
 .. raw:: html
 
@@ -26,6 +29,7 @@ Transforms
 
     <div class="sphx-glr-thumbnails">
 
+.. thumbnail-parent-div-open
 
 .. raw:: html
 
@@ -146,6 +150,8 @@ Transforms
     </div>
 
 
+.. thumbnail-parent-div-close
+
 .. raw:: html
 
     </div>
@@ -159,6 +165,7 @@ Others
 
     <div class="sphx-glr-thumbnails">
 
+.. thumbnail-parent-div-open
 
 .. raw:: html
 
@@ -244,6 +251,8 @@ Others
       <div class="sphx-glr-thumbnail-title">Visualization utilities</div>
     </div>
 
+
+.. thumbnail-parent-div-close
 
 .. raw:: html
 

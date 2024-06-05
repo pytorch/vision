@@ -13,6 +13,7 @@ Transforms
 
     <div class="sphx-glr-thumbnails">
 
+.. thumbnail-parent-div-open
 
 .. raw:: html
 
@@ -132,6 +133,8 @@ Transforms
       <div class="sphx-glr-thumbnail-title">How to write your own TVTensor class</div>
     </div>
 
+
+.. thumbnail-parent-div-close
 
 .. raw:: html
 
