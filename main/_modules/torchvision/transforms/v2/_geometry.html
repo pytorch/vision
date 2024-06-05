@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+1023987) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.19.0a0+7896ffd) &#x25BC</a>
     </div>
     
 
@@ -470,11 +470,15 @@
 <span class="sd">    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        size (sequence or int): Desired output size. If size is a sequence like</span>
-<span class="sd">            (h, w), output size will be matched to this. If size is an int,</span>
-<span class="sd">            smaller edge of the image will be matched to this number.</span>
-<span class="sd">            i.e, if height &gt; width, then image will be rescaled to</span>
-<span class="sd">            (size * height / width, size).</span>
+<span class="sd">        size (sequence, int, or None): Desired</span>
+<span class="sd">            output size.</span>
+
+<span class="sd">            - If size is a sequence like (h, w), output size will be matched to this.</span>
+<span class="sd">            - If size is an int, smaller edge of the image will be matched to this</span>
+<span class="sd">              number.  i.e, if height &gt; width, then image will be rescaled to</span>
+<span class="sd">              (size * height / width, size).</span>
+<span class="sd">            - If size is None, the output shape is determined by the ``max_size``</span>
+<span class="sd">              parameter.</span>
 
 <span class="sd">            .. note::</span>
 <span class="sd">                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
@@ -484,13 +488,21 @@
 <span class="sd">            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.</span>
 <span class="sd">            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.</span>
 <span class="sd">        max_size (int, optional): The maximum allowed for the longer edge of</span>
-<span class="sd">            the resized image. If the longer edge of the image is greater</span>
-<span class="sd">            than ``max_size`` after being resized according to ``size``,</span>
-<span class="sd">            ``size`` will be overruled so that the longer edge is equal to</span>
-<span class="sd">            ``max_size``.</span>
-<span class="sd">            As a result, the smaller edge may be shorter than ``size``. This</span>
-<span class="sd">            is only supported if ``size`` is an int (or a sequence of length</span>
-<span class="sd">            1 in torchscript mode).</span>
+<span class="sd">            the resized image.</span>
+
+<span class="sd">            - If ``size`` is an int: if the longer edge of the image is greater</span>
+<span class="sd">              than ``max_size`` after being resized according to ``size``,</span>
+<span class="sd">              ``size`` will be overruled so that the longer edge is equal to</span>
+<span class="sd">              ``max_size``. As a result, the smaller edge may be shorter than</span>
+<span class="sd">              ``size``. This is only supported if ``size`` is an int (or a</span>
+<span class="sd">              sequence of length 1 in torchscript mode).</span>
+<span class="sd">            - If ``size`` is None: the longer edge of the image will be matched</span>
+<span class="sd">              to max_size.  i.e, if height &gt; width, then image will be rescaled</span>
+<span class="sd">              to (max_size, max_size * width / height).</span>
+
+<span class="sd">            This should be left to ``None`` (default) when ``size`` is a</span>
+<span class="sd">            sequence.</span>
+
 <span class="sd">        antialias (bool, optional): Whether to apply antialiasing.</span>
 <span class="sd">            It only affects **tensors** with bilinear or bicubic modes and it is</span>
 <span class="sd">            ignored otherwise: on PIL images, antialiasing is always applied on</span>
@@ -515,7 +527,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
         <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
         <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">antialias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -526,9 +538,12 @@
             <span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="n">size</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">}:</span>
             <span class="n">size</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_size must be an integer when size is None, but got </span><span class="si">{</span><span class="n">max_size</span><span class="si">}</span><span class="s2"> instead.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;size can either be an integer or a sequence of one or two integers, but got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2"> instead.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;size can be an integer, a sequence of one or two integers, or None, but got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2"> instead.&quot;</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
 
