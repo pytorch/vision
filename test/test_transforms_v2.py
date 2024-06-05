@@ -663,8 +663,7 @@ class TestResize:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, size, make_input):
-        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=True, size=size)):
-            return
+        max_size_kwarg = self._make_max_size_kwarg(use_max_size=size is None, size=size)
 
         check_functional(
             F.resize,
@@ -704,8 +703,7 @@ class TestResize:
         ],
     )
     def test_transform(self, size, device, make_input):
-        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=True, size=size)):
-            return
+        max_size_kwarg = self._make_max_size_kwarg(use_max_size=size is None, size=size)
 
         check_transform(
             transforms.Resize(size=size, **max_size_kwarg, antialias=True),
