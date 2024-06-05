@@ -1,11 +1,15 @@
 #include "encode_jpegs_cuda.h"
 #if !NVJPEG_FOUND
+namespace vision {
+namespace image {
 std::vector<torch::Tensor> encode_jpegs_cuda(
-    const std::vector<torch::Tensor>& images,
+    const std::vector<torch::Tensor>& decoded_images,
     const int64_t quality) {
   TORCH_CHECK(
       false, "encode_jpegs_cuda: torchvision not compiled with nvJPEG support");
 }
+} // namespace image
+} // namespace vision
 #else
 
 #include <ATen/ATen.h>
