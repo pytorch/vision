@@ -115,9 +115,10 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
 CUDAJpegEncoder::CUDAJpegEncoder(const torch::Device& target_device)
     : original_device{torch::kCUDA, torch::cuda::current_device()},
       target_device{target_device},
-      stream{at::cuda::getStreamFromPool(
-          false,
-          target_device.has_index() ? target_device.index() : 0)} {
+      stream{
+          target_device.has_index()
+              ? at::cuda::getStreamFromPool(false, target_device.index())
+              : at::cuda::getStreamFromPool(false)} {
   nvjpegStatus_t status;
   status = nvjpegCreateSimple(&nvjpeg_handle);
   TORCH_CHECK(

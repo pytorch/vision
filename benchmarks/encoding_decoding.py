@@ -58,6 +58,7 @@ def run_encoding_benchmark(decoded_images):
     compare = benchmark.Compare(results)
     compare.print()
 
+
 def run_decoding_benchmark(encoded_images):
     results = []
     for device in ["cpu", "cuda"]:
@@ -88,9 +89,11 @@ def run_decoding_benchmark(encoded_images):
 if __name__ == "__main__":
     print_machine_specs()
     decoded_images = get_data()
-    mean_h, mean_w = statistics.mean(t.shape[-2] for t in decoded_images), statistics.mean(t.shape[-1] for t in decoded_images)
+    mean_h, mean_w = statistics.mean(t.shape[-2] for t in decoded_images), statistics.mean(
+        t.shape[-1] for t in decoded_images
+    )
     print(f"\nMean image size: {int(mean_h)}x{int(mean_w)}")
-    # run_encoding_benchmark(decoded_images)
+    run_encoding_benchmark(decoded_images)
     encoded_images_cuda = torchvision.io.encode_jpeg([img.cuda() for img in decoded_images])
     encoded_images_cpu = [img.cpu() for img in encoded_images_cuda]
     run_decoding_benchmark(encoded_images_cpu)
