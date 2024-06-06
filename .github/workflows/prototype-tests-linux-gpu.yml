@@ -1,5 +1,8 @@
 name: Prototype tests on Linux
 
+# IMPORTANT: This workflow has been manually disabled from the GitHub interface
+# in June 2024. The file is kept for reference in case we ever put this back.
+
 on:
   pull_request:
 
