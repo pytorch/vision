@@ -204,8 +204,8 @@ def get_extensions():
             define_macros += [("WITH_HIP", None)]
             nvcc_flags = []
         extra_compile_args["nvcc"] = nvcc_flags
-    elif torch.backends.mps.is_available() or force_mps:
-        sources += source_mps
+    # elif torch.backends.mps.is_available() or force_mps:
+    #     sources += source_mps
 
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
