@@ -217,8 +217,6 @@ def get_extensions():
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
         extra_compile_args["cxx"].append("/MP")
-    if sys.platform == "darwin":
-        extra_compile_args["cxx"].append("-mmacosx-version-min=11.1")
 
     if debug_mode:
         print("Compiling in debug mode")
