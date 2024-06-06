@@ -49,7 +49,7 @@ bool AudioSampler::init(const SamplerParameters& params) {
   }
 
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)
-  SwrContext *swrContext_ = NULL;
+  SwrContext* swrContext_ = NULL;
   AVChannelLayout channel_out;
   AVChannelLayout channel_in;
   av_channel_layout_default(&channel_out, params.out.audio.channels);

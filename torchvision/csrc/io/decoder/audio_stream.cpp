@@ -8,20 +8,22 @@ namespace ffmpeg {
 namespace {
 static int get_nb_channels(const AVFrame* frame, const AVCodecContext* codec) {
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)
-    return frame ? frame->ch_layout.nb_channels : codec->ch_layout.nb_channels;
+  return frame ? frame->ch_layout.nb_channels : codec->ch_layout.nb_channels;
 #else
-    return frame ? frame->channels : codec->channels;
+  return frame ? frame->channels : codec->channels;
 #endif
 }
 
 bool operator==(const AudioFormat& x, const AVFrame& y) {
   return x.samples == static_cast<size_t>(y.sample_rate) &&
-      x.channels == static_cast<size_t>(get_nb_channels(&y, nullptr)) && x.format == y.format;
+      x.channels == static_cast<size_t>(get_nb_channels(&y, nullptr)) &&
+      x.format == y.format;
 }
 
 bool operator==(const AudioFormat& x, const AVCodecContext& y) {
   return x.samples == static_cast<size_t>(y.sample_rate) &&
-      x.channels == static_cast<size_t>(get_nb_channels(nullptr, &y)) && x.format == y.sample_fmt;
+      x.channels == static_cast<size_t>(get_nb_channels(nullptr, &y)) &&
+      x.format == y.sample_fmt;
 }
 
 AudioFormat& toAudioFormat(AudioFormat& x, const AVFrame& y) {
