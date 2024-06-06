@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:47.925** total execution time for 12 files **from all galleries**:
+**00:47.104** total execution time for 12 files **from all galleries**:
 
 .. container::
 
@@ -33,31 +33,31 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``../../gallery/others/plot_visualization_utils.py``)
-     - 00:16.097
+     - 00:14.076
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``../../gallery/others/plot_optical_flow.py``)
-     - 00:09.498
+     - 00:09.814
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``../../gallery/transforms/plot_transforms_illustrations.py``)
-     - 00:08.713
+     - 00:08.785
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``../../gallery/transforms/plot_transforms_e2e.py``)
-     - 00:04.829
+     - 00:04.846
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_video_api.py` (``../../gallery/others/plot_video_api.py``)
-     - 00:03.785
+     - 00:04.655
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``../../gallery/others/plot_repurposing_annotations.py``)
-     - 00:02.381
+     - 00:02.349
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``../../gallery/others/plot_scripted_tensor_transforms.py``)
-     - 00:01.605
+     - 00:01.587
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``../../gallery/transforms/plot_transforms_getting_started.py``)
-     - 00:00.832
+     - 00:00.798
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``../../gallery/transforms/plot_cutmix_mixup.py``)
-     - 00:00.166
+     - 00:00.175
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py` (``../../gallery/transforms/plot_tv_tensors.py``)
      - 00:00.009
