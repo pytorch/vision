@@ -4,8 +4,10 @@ from modulefinder import Module
 
 import torch
 
-from .extension import _HAS_OPS
-from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils
+# Don't re-order these, we need to load the _C extension (done when importing
+# .extensions) before entering _meta_registrations.
+from .extension import _HAS_OPS  # usort:skip
+from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils  # usort:skip
 
 try:
     from .version import __version__  # noqa: F401
