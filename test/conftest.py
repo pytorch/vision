@@ -49,7 +49,8 @@ def pytest_collection_modifyitems(items):
             # There are special cases though, see below
             item.add_marker(pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG))
 
-        if needs_mps and not torch.backends.mps.is_available():
+        # TODO: uncoment when MPS works again - see FIXME in setup.py
+        if needs_mps:  # and not torch.backends.mps.is_available():
             item.add_marker(pytest.mark.skip(reason=MPS_NOT_AVAILABLE_MSG))
 
         if IN_FBCODE:
