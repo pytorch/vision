@@ -259,7 +259,7 @@ def read_image(
     The values of the output tensor are uint8 in [0, 255].
 
     Args:
-        path (str or ``pathlib.Path``): path of the JPEG or PNG image.
+        path (str or ``pathlib.Path``): path of the JPEG, PNG or GIF image.
         mode (ImageReadMode): the read mode used for optionally converting the image.
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
