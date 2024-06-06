@@ -139,7 +139,6 @@ def get_extensions():
         + glob.glob(os.path.join(extensions_dir, "ops", "cpu", "*.cpp"))
         + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
     )
-    source_mps = glob.glob(os.path.join(extensions_dir, "ops", "mps", "*.mm"))
 
     print("Compiling extensions with following flags:")
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
@@ -212,6 +211,7 @@ def get_extensions():
     if force_mps:
         warnings.warn("MPS build is temporarily disabled!!!!")
     # elif torch.backends.mps.is_available() or force_mps:
+    #     source_mps = glob.glob(os.path.join(extensions_dir, "ops", "mps", "*.mm"))
     #     sources += source_mps
 
     if sys.platform == "win32":
