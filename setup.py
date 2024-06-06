@@ -5,7 +5,6 @@ import os
 import shutil
 import subprocess
 import sys
-import warnings
 
 import torch
 from pkg_resources import DistributionNotFound, get_distribution, parse_version
