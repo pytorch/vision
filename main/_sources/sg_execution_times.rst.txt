@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:48.828** total execution time for 12 files **from all galleries**:
+**00:47.925** total execution time for 12 files **from all galleries**:
 
 .. container::
 
@@ -33,34 +33,34 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``../../gallery/others/plot_visualization_utils.py``)
-     - 00:16.038
+     - 00:16.097
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``../../gallery/others/plot_optical_flow.py``)
-     - 00:09.398
+     - 00:09.498
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``../../gallery/transforms/plot_transforms_illustrations.py``)
-     - 00:08.857
+     - 00:08.713
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``../../gallery/transforms/plot_transforms_e2e.py``)
-     - 00:04.841
+     - 00:04.829
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_video_api.py` (``../../gallery/others/plot_video_api.py``)
-     - 00:04.671
+     - 00:03.785
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``../../gallery/others/plot_repurposing_annotations.py``)
-     - 00:02.409
+     - 00:02.381
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``../../gallery/others/plot_scripted_tensor_transforms.py``)
-     - 00:01.571
+     - 00:01.605
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``../../gallery/transforms/plot_transforms_getting_started.py``)
-     - 00:00.839
+     - 00:00.832
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``../../gallery/transforms/plot_cutmix_mixup.py``)
-     - 00:00.187
+     - 00:00.166
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py` (``../../gallery/transforms/plot_tv_tensors.py``)
-     - 00:00.008
+     - 00:00.009
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` (``../../gallery/transforms/plot_custom_transforms.py``)
      - 00:00.006
