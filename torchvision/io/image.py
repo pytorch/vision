@@ -225,7 +225,7 @@ def decode_image(
     input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
 ) -> torch.Tensor:
     """
-    Detects whether an image is a JPEG or PNG and performs the appropriate
+    Detect whether an image is a JPEG, PNG or GIF and performs the appropriate
     operation to decode the image into a 3 dimensional RGB or grayscale Tensor.
 
     Optionally converts the image to the desired format.
@@ -237,9 +237,9 @@ def decode_image(
         mode (ImageReadMode): the read mode used for optionally converting the image.
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
-            available modes.
+            available modes. Ignored for GIFs.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
-            Default: False.
+            Ignored for GIFs. Default: False.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -254,18 +254,18 @@ def read_image(
     path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
 ) -> torch.Tensor:
     """
-    Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.
+    Reads a JPEG, PNG or GIF image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
     The values of the output tensor are uint8 in [0, 255].
 
     Args:
-        path (str or ``pathlib.Path``): path of the JPEG or PNG image.
+        path (str or ``pathlib.Path``): path of the JPEG, PNG or GIF image.
         mode (ImageReadMode): the read mode used for optionally converting the image.
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
-            available modes.
+            available modes. Ignored for GIFs.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
-            Default: False.
+            Ignored for GIFs. Default: False.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -279,3 +279,23 @@ def read_image(
 def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     data = read_file(path)
     return torch.ops.image.decode_png(data, mode.value, True)
+
+
+def decode_gif(input: torch.Tensor) -> torch.Tensor:
+    """
+    Decode a GIF image into a 3 or 4 dimensional RGB Tensor.
+
+    The values of the output tensor are uint8 between 0 and 255.
+    The output tensor has shape ``(C, H, W)`` if there is only one image in the
+    GIF, and ``(N, C, H, W)`` if there are ``N`` images.
+
+    Args:
+        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
+            the raw bytes of the GIF image.
+
+    Returns:
+        output (Tensor[image_channels, image_height, image_width] or Tensor[num_images, image_channels, image_height, image_width])
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_gif)
+    return torch.ops.image.decode_gif(input)
