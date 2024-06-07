@@ -474,7 +474,7 @@ torch::List<torch::Tensor> probeVideo(
                    .count()
             << " us";
   } else {
-    LOG_EVERY_N(ERROR, 1000) << "Decoder initialization has failed";
+    LOG(ERROR) << "Decoder initialization has failed";
   }
 
   decoder.shutdown();
@@ -507,7 +507,7 @@ torch::List<torch::Tensor> probeVideo(
     VLOG(1) << "Video probing from " << logType << " [" << logMessage
             << "] filled video tensors";
   } else {
-    LOG_EVERY_N(ERROR, 1000) << "Miss video stream";
+    LOG(ERROR) << "Miss video stream";
   }
 
   // audio section
