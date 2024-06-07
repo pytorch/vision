@@ -2442,27 +2442,67 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
         base_folder = os.path.join(tmpdir, "fer2013")
         os.makedirs(base_folder)
 
-        num_samples = 5
-        with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
-            writer = csv.DictWriter(
-                file,
-                fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
-                quoting=csv.QUOTE_NONNUMERIC,
-                quotechar='"',
-            )
-            writer.writeheader()
-            for _ in range(num_samples):
-                row = dict(
-                    pixels=" ".join(
-                        str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
-                    )
-                )
-                if config["split"] == "train":
-                    row["emotion"] = str(int(torch.randint(0, 7, ())))
+        use_icml = config.pop("use_icml", False)
+        use_fer = config.pop("use_fer", False)
 
-                writer.writerow(row)
+        num_samples = 5
+
+        if use_icml or use_fer:
+            pixels_key, usage_key = (" pixels", " Usage") if use_icml else ("pixels", "Usage")
+            fieldnames = ("emotion", usage_key, pixels_key) if use_icml else ("emotion", pixels_key, usage_key)
+            filename = "icml_face_data.csv" if use_icml else "fer2013.csv"
+            with open(os.path.join(base_folder, filename), "w", newline="") as file:
+                writer = csv.DictWriter(
+                    file,
+                    fieldnames=fieldnames,
+                    quoting=csv.QUOTE_NONNUMERIC,
+                    quotechar='"',
+                )
+                writer.writeheader()
+                for i in range(num_samples):
+                    row = {
+                        "emotion": str(int(torch.randint(0, 7, ()))),
+                        usage_key: "Training" if i % 2 else "PublicTest",
+                        pixels_key: " ".join(
+                            str(pixel)
+                            for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                        ),
+                    }
+
+                    writer.writerow(row)
+        else:
+            with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
+                writer = csv.DictWriter(
+                    file,
+                    fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
+                    quoting=csv.QUOTE_NONNUMERIC,
+                    quotechar='"',
+                )
+                writer.writeheader()
+                for _ in range(num_samples):
+                    row = dict(
+                        pixels=" ".join(
+                            str(pixel)
+                            for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                        )
+                    )
+                    if config["split"] == "train":
+                        row["emotion"] = str(int(torch.randint(0, 7, ())))
+
+                    writer.writerow(row)
 
         return num_samples
+
+    def test_icml_file(self):
+        config = {"split": "test"}
+        with self.create_dataset(config=config) as (dataset, _):
+            assert all(s[1] is None for s in dataset)
+
+        for split in ("train", "test"):
+            for d in ({"use_icml": True}, {"use_fer": True}):
+                config = {"split": split, **d}
+                with self.create_dataset(config=config) as (dataset, _):
+                    assert all(s[1] is not None for s in dataset)
 
 
 class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
