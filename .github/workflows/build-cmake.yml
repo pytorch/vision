@@ -40,7 +40,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: macos-m1-stable
+          - runner: macos-m1-14
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
