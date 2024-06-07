@@ -25,7 +25,7 @@ class BoundingBoxFormat(Enum):
 
 
 class BoundingBoxes(TVTensor):
-    """:class:`torch.Tensor` subclass for bounding boxes.
+    """:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, 4]``.
 
     .. note::
         There should be only one :class:`~torchvision.tv_tensors.BoundingBoxes`

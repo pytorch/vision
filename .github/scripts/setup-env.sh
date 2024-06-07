@@ -22,17 +22,6 @@ case $(uname) in
     ;;
 esac
 
-if [[ "${OS_TYPE}" == "macos" && $(uname -m) == x86_64 ]]; then
-  echo '::group::Uninstall system JPEG libraries on macOS'
-  # The x86 macOS runners, e.g. the GitHub Actions native "macos-12" runner, has some JPEG and PNG libraries
-  # installed by default that interfere with our build. We uninstall them here and use the one from conda below.
-  IMAGE_LIBS=$(brew list | grep -E "jpeg|png")
-  for lib in $IMAGE_LIBS; do
-    brew uninstall --ignore-dependencies --force "${lib}"
-  done
-  echo '::endgroup::'
-fi
-
 echo '::group::Create build environment'
 # See https://github.com/pytorch/vision/issues/7296 for ffmpeg
 conda create \
