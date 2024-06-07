@@ -111,8 +111,10 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
 
     input = input.as_subclass(torch.Tensor)
     with ignore_jit_no_profile_information_warning():
-        actual = kernel_scripted(input, *args, **kwargs)
-    expected = kernel(input, *args, **kwargs)
+        with freeze_rng_state():
+            actual = kernel_scripted(input, *args, **kwargs)
+    with freeze_rng_state():
+        expected = kernel(input, *args, **kwargs)
 
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
@@ -3236,6 +3238,78 @@ class TestGaussianBlur:
         actual = F.gaussian_blur_image(image, kernel_size=kernel_size, sigma=sigma)
 
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestGaussianNoise:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_kernel(self, make_input):
+        check_kernel(
+            F.gaussian_noise,
+            make_input(dtype=torch.float32),
+            # This cannot pass because the noise on a batch in not per-image
+            check_batched_vs_unbatched=False,
+        )
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.gaussian_noise, make_input(dtype=torch.float32))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.gaussian_noise, torch.Tensor),
+            (F.gaussian_noise_image, tv_tensors.Image),
+            (F.gaussian_noise_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.gaussian_noise, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_transform(self, make_input):
+        def adapter(_, input, __):
+            # This transform doesn't support uint8 so we have to convert the auto-generated uint8 tensors to float32
+            # Same for PIL images
+            for key, value in input.items():
+                if isinstance(value, torch.Tensor) and not value.is_floating_point():
+                    input[key] = value.to(torch.float32)
+                if isinstance(value, PIL.Image.Image):
+                    input[key] = F.pil_to_tensor(value).to(torch.float32)
+            return input
+
+        check_transform(transforms.GaussianNoise(), make_input(dtype=torch.float32), check_sample_input=adapter)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Gaussian Noise is not implemented for PIL images."):
+            F.gaussian_noise(make_image_pil())
+        with pytest.raises(ValueError, match="Input tensor is expected to be in float dtype"):
+            F.gaussian_noise(make_image(dtype=torch.uint8))
+        with pytest.raises(ValueError, match="sigma shouldn't be negative"):
+            F.gaussian_noise(make_image(dtype=torch.float32), sigma=-1)
+
+    def test_clip(self):
+        img = make_image(dtype=torch.float32)
+
+        out = F.gaussian_noise(img, mean=100, clip=False)
+        assert out.min() > 50
+
+        out = F.gaussian_noise(img, mean=100, clip=True)
+        assert (out == 1).all()
+
+        out = F.gaussian_noise(img, mean=-100, clip=False)
+        assert out.min() < -50
+
+        out = F.gaussian_noise(img, mean=-100, clip=True)
+        assert (out == 0).all()
 
 
 class TestAutoAugmentTransforms:
