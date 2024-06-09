@@ -32,7 +32,6 @@ jobs:
       matrix:
         include:
           - repository: pytorch/vision
-            env-var-script: packaging/env_var_script.sh
             pre-script: packaging/pre_build_script.sh
             post-script: packaging/post_build_script.sh
             smoke-test-script: test/smoke_test.py
@@ -45,7 +44,6 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
-      env-var-script: ${{ matrix.env-var-script }}
       pre-script: ${{ matrix.pre-script }}
       post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
