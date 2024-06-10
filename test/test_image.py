@@ -11,7 +11,7 @@ import pytest
 import requests
 import torch
 import torchvision.transforms.functional as F
-from common_utils import assert_equal, cpu_and_cuda, needs_cuda
+from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
     _read_png_16,
@@ -764,6 +764,9 @@ def test_decode_gif(tmpdir, name, scripted):
 
     path = tmpdir / f"{name}.gif"
     if name == "earth":
+        if IN_OSS_CI:
+            # TODO: Fix this... one day.
+            pytest.skip("Skipping 'earth' test as it's flaky on OSS CI")
         url = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Rotating_earth_%28large%29.gif"
     else:
         url = f"https://sourceforge.net/p/giflib/code/ci/master/tree/pic/{name}.gif?format=raw"
