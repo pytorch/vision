@@ -205,6 +205,33 @@ class GaussianBlur(Transform):
         return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
+class GaussianNoise(Transform):
+    """Add gaussian noise to images or videos.
+
+    The input tensor is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    Each image or frame in a batch will be transformed independently i.e. the
+    noise added to each image will be different.
+
+    The input tensor is also expected to be of float dtype in ``[0, 1]``.
+    This transform does not support PIL images.
+
+    Args:
+        mean (float): Mean of the sampled normal distribution. Default is 0.
+        sigma (float): Standard deviation of the sampled normal distribution. Default is 0.1.
+        clip (bool, optional): Whether to clip the values in ``[0, 1]`` after adding noise. Default is True.
+    """
+
+    def __init__(self, mean: float = 0.0, sigma: float = 0.1, clip=True) -> None:
+        super().__init__()
+        self.mean = mean
+        self.sigma = sigma
+        self.clip = clip
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.gaussian_noise, inpt, mean=self.mean, sigma=self.sigma, clip=self.clip)
+
+
 class ToDtype(Transform):
     """Converts the input to a specific dtype, optionally scaling the values for images or videos.
 
@@ -317,7 +344,7 @@ class SanitizeBoundingBoxes(Transform):
 
     This transform removes bounding boxes and their associated labels/masks that:
 
-    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - are below a given ``min_size`` or ``min_area``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
       call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
 
@@ -332,7 +359,8 @@ class SanitizeBoundingBoxes(Transform):
     cases.
 
     Args:
-        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
+        min_size (float, optional): The size below which bounding boxes are removed. Default is 1.
+        min_area (float, optional): The area below which bounding boxes are removed. Default is 1.
         labels_getter (callable or str or None, optional): indicates how to identify the labels in the input
             (or anything else that needs to be sanitized along with the bounding boxes).
             By default, this will try to find a "labels" key in the input (case-insensitive), if
@@ -352,6 +380,7 @@ class SanitizeBoundingBoxes(Transform):
     def __init__(
         self,
         min_size: float = 1.0,
+        min_area: float = 1.0,
         labels_getter: Union[Callable[[Any], Any], str, None] = "default",
     ) -> None:
         super().__init__()
@@ -359,6 +388,10 @@ class SanitizeBoundingBoxes(Transform):
         if min_size < 1:
             raise ValueError(f"min_size must be >= 1, got {min_size}.")
         self.min_size = min_size
+
+        if min_area < 1:
+            raise ValueError(f"min_area must be >= 1, got {min_area}.")
+        self.min_area = min_area
 
         self.labels_getter = labels_getter
         self._labels_getter = _parse_labels_getter(labels_getter)
@@ -395,7 +428,9 @@ class SanitizeBoundingBoxes(Transform):
             format=boxes.format,
             canvas_size=boxes.canvas_size,
             min_size=self.min_size,
+            min_area=self.min_area,
         )
+
         params = dict(valid=valid, labels=labels)
         flat_outputs = [self._transform(inpt, params) for inpt in flat_inputs]
 
