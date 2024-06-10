@@ -81,7 +81,7 @@ def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
     images = []
     for i in range(image.shape[0]):
         encoded_image = encode_jpeg(image[i], quality=quality)
-        assert isinstance(encoded_image, torch.Tensor)
+        assert isinstance(encoded_image, torch.Tensor)  # For torchscript
         images.append(decode_jpeg(encoded_image))
 
     images = torch.stack(images, dim=0).view(original_shape)
