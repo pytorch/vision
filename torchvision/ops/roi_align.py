@@ -2,7 +2,6 @@ import functools
 from typing import List, Union
 
 import torch
-import torch._dynamo
 import torch.fx
 from torch import nn, Tensor
 from torch._dynamo.utils import is_compile_supported
