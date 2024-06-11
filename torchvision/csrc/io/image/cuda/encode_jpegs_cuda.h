@@ -17,7 +17,7 @@ class CUDAJpegEncoder {
 
   torch::Tensor encode_jpeg(const torch::Tensor& src_image);
 
-  void setQuality(const int64_t);
+  void set_quality(const int64_t quality);
 
   const torch::Device original_device;
   const torch::Device target_device;
