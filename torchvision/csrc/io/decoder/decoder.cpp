@@ -285,8 +285,6 @@ bool Decoder::init(
       return false;
     }
 
-    avioCtx_->max_packet_size = params.maxEncodedBufferSize;
-
     inputCtx_->pb = avioCtx_;
     inputCtx_->flags |= AVFMT_FLAG_CUSTOM_IO;
   }

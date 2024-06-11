@@ -225,10 +225,6 @@ struct DecoderParameters {
 
   // Sample N key-frames from the video roughly uniformly across the timeline
   int uniformSampling{0};
-
-  // with 0, ffmpeg allocates buffers of size 32768 bytes for encoded frames.
-  // Override this with bigger buffer size if needed.
-  int64_t maxEncodedBufferSize{0};
 };
 
 struct DecoderHeader {
