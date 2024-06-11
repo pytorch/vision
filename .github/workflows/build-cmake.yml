@@ -54,7 +54,7 @@ jobs:
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
-        ./.github/scripts/cmake.sh
+        ${CONDA_RUN} ./.github/scripts/cmake.sh
 
   windows:
     strategy:
