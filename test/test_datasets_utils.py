@@ -10,7 +10,7 @@ import pytest
 import torch
 import torchvision.datasets.utils as utils
 from common_utils import assert_equal
-from torch._utils_internal import get_file_path_2
+from torch._utils_internal import get_file_path_2 # @manual=fbcode//caffe2:utils_internal
 from torchvision.datasets.folder import make_dataset
 from torchvision.datasets.utils import _COMPRESSED_FILE_OPENERS
 
