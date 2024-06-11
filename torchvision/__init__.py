@@ -10,7 +10,7 @@ from .extension import _HAS_OPS  # usort:skip
 from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils  # usort:skip
 
 try:
-    from .version import __version__  # noqa: F401
+    from .version import __version__ # @manual=fbcode//pytorch/vision:version
 except ImportError:
     pass
 

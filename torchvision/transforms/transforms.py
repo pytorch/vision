@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 
 try:
-    import accimage
+    import accimage # @manual=fbcode//pytorch/accimage:accimage
 except ImportError:
     accimage = None
 

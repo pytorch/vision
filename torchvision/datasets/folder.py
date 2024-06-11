@@ -266,7 +266,7 @@ def pil_loader(path: str) -> Image.Image:
 
 # TODO: specify the return type
 def accimage_loader(path: str) -> Any:
-    import accimage
+    import accimage # @manual=fbcode//pytorch/accimage:accimage
 
     try:
         return accimage.Image(path)

@@ -19,7 +19,7 @@ import numpy as np
 import torch
 from torch.utils.model_zoo import tqdm
 
-from .._internally_replaced_utils import _download_file_from_remote_location, _is_remote_location_available
+from .._internally_replaced_utils import _download_file_from_remote_location, _is_remote_location_available # @manual
 
 USER_AGENT = "pytorch/vision"
 

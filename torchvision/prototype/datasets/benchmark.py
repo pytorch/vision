@@ -17,7 +17,7 @@ import warnings
 
 import torch
 from torch.utils.data import DataLoader
-from torch.utils.data.dataloader_experimental import DataLoader2
+from torch.utils.data.dataloader_experimental import DataLoader2 # @manual=fbcode//caffe2:torch
 from torchvision import datasets as legacy_datasets
 from torchvision.datasets.utils import extract_archive
 from torchvision.prototype import datasets as new_datasets

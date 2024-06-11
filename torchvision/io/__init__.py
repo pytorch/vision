@@ -5,7 +5,7 @@ import torch
 from ..utils import _log_api_usage_once
 
 try:
-    from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER
+    from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER # @manual
 except ModuleNotFoundError:
     _HAS_GPU_VIDEO_DECODER = False
 
