@@ -146,20 +146,28 @@ CUDAJpegEncoder::~CUDAJpegEncoder() {
   // We run cudaGetDeviceCount as a dummy to test if the CUDA runtime is still
   // initialized. If it is not, we can skip the rest of this function as it is
   // unsafe to execute.
+
+  std::cout << "CUDAJpegEncoder dtor: checking if CUDA runtime is still alive"
+            << std::endl;
   int deviceCount = 0;
   cudaError_t error = cudaGetDeviceCount(&deviceCount);
-  if (error != cudaSuccess)
+  if (error != cudaSuccess) {
+    std::cout << "CUDAJpegEncoder dtor: CUDA already shut down" << std::endl;
     return; // CUDA runtime has already shut down. There's nothing we can do
             // now.
+  }
 
   nvjpegStatus_t status;
 
+  std::cout << "CUDAJpegEncoder dtor: 1" << std::endl;
+
   status = nvjpegEncoderParamsDestroy(nv_enc_params);
+  std::cout << "status: " << status << std::endl;
   TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to destroy nvjpeg encoder params: ",
       status);
-
+  std::cout << "CUDAJpegEncoder dtor: 2" << std::endl;
   status = nvjpegEncoderStateDestroy(nv_enc_state);
   TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
@@ -167,10 +175,11 @@ CUDAJpegEncoder::~CUDAJpegEncoder() {
       status);
 
   cudaStreamSynchronize(stream);
-
+  std::cout << "CUDAJpegEncoder dtor: 3" << std::endl;
   status = nvjpegDestroy(nvjpeg_handle);
   TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
+  std::cout << "CUDAJpegEncoder dtor: 4" << std::endl;
 }
 
 torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
