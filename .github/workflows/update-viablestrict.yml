@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   do_update_viablestrict:
-    uses: pytorch/test-infra/.github/workflows/update-viablestrict.yml@main
+    uses: pytorch/test-infra/.github/workflows/update-viablestrict.yml@release/2.4
     with:
       repository: pytorch/vision
       required_checks: "Build Linux,Build M1,Build Macos,Build Windows,Tests,CMake,Lint,Docs"
