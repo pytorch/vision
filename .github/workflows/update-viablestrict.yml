@@ -18,7 +18,7 @@ jobs:
     with:
       repository: pytorch/vision
       required_checks: "Build Linux,Build M1,Build Macos,Build Windows,Tests,CMake,Lint,Docs"
-      test-infra-ref: main
+      test-infra-ref: release/2.4
     secrets:
       ROCKSET_API_KEY: ${{ secrets.ROCKSET_API_KEY }}
       GITHUB_DEPLOY_KEY : ${{ secrets.VISION_GITHUB_DEPLOY_KEY }}
