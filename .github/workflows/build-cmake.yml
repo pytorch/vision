@@ -79,6 +79,7 @@ jobs:
         export PYTHON_VERSION=3.8
         export VC_YEAR=2022
         export VSDEVCMD_ARGS=""
+        export NVCC_FLAGS="--allow-unsupported-compiler"
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
