@@ -20,13 +20,13 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.4
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
-      test-infra-ref: main
+      test-infra-ref: release/2.4
       script: |
         set -euo pipefail
 
@@ -42,11 +42,11 @@ jobs:
         include:
           - runner: macos-m1-stable
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@release/2.4
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
-      test-infra-ref: main
+      test-infra-ref: release/2.4
       script: |
         set -euo pipefail
 
@@ -66,13 +66,13 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@release/2.4
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
-      test-infra-ref: main
+      test-infra-ref: release/2.4
       script: |
         set -euo pipefail
 
