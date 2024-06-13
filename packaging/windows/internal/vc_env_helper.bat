@@ -1,5 +1,6 @@
 @echo on
 
+set NVCC_FLAGS="--allow-unsupported-compiler"
 set VC_VERSION_LOWER=17
 set VC_VERSION_UPPER=18
 if "%VC_YEAR%" == "2019" (
