@@ -817,11 +817,11 @@ We will first have a look at output of the model.
              [289.8069, 357.4897,   1.0000],
              [245.5288, 389.8956,   1.0000],
              [281.4300, 349.0882,   1.0000],
-             [209.0294, 389.8956,   1.0000]]], grad_fn=<CopySlices>), 'keypoints_scores': tensor([[16.0164, 16.6672, 15.8312,  4.6510, 14.2053,  8.8280,  9.1136, 12.2084,
+             [209.0294, 389.8956,   1.0000]]], grad_fn=<CopySlices>), 'keypoints_scores': tensor([[16.0163, 16.6672, 15.8312,  4.6510, 14.2053,  8.8280,  9.1136, 12.2084,
              12.1901, 13.8453, 10.7090,  5.5852,  7.5005, 11.3378,  9.3700,  8.2987,
               8.4479],
             [12.9326, 13.8158, 14.9053,  3.9368, 12.9585,  6.4240,  6.8328, 10.4227,
-              9.2907, 10.1066, 10.1019,  0.1822,  4.3057, -4.9904, -2.7409, -2.7874,
+              9.2907, 10.1066, 10.1019,  0.1822,  4.3058, -4.9904, -2.7409, -2.7874,
              -3.9329]], grad_fn=<CopySlices>)}]
 
 
@@ -1162,7 +1162,7 @@ which we used in the first case, does so too.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 14.171 seconds)
+   **Total running time of the script:** (0 minutes 15.145 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_visualization_utils.py:
