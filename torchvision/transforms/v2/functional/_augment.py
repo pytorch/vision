@@ -78,9 +78,14 @@ def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
     if image.shape[0] == 0:  # degenerate
         return image.reshape(original_shape).clone()
 
-    image = [decode_jpeg(encode_jpeg(image[i], quality=quality)) for i in range(image.shape[0])]
-    image = torch.stack(image, dim=0).view(original_shape)
-    return image
+    images = []
+    for i in range(image.shape[0]):
+        encoded_image = encode_jpeg(image[i], quality=quality)
+        assert isinstance(encoded_image, torch.Tensor)  # For torchscript
+        images.append(decode_jpeg(encoded_image))
+
+    images = torch.stack(images, dim=0).view(original_shape)
+    return images
 
 
 @_register_kernel_internal(jpeg, tv_tensors.Video)

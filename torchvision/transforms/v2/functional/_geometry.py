@@ -113,7 +113,7 @@ def vertical_flip_image(image: torch.Tensor) -> torch.Tensor:
 
 
 @_register_kernel_internal(vertical_flip, PIL.Image.Image)
-def _vertical_flip_image_pil(image: PIL.Image) -> PIL.Image:
+def _vertical_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.vflip(image)
 
 
@@ -159,21 +159,21 @@ vflip = vertical_flip
 
 
 def _compute_resized_output_size(
-    canvas_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+    canvas_size: Tuple[int, int], size: Optional[List[int]], max_size: Optional[int] = None
 ) -> List[int]:
     if isinstance(size, int):
         size = [size]
-    elif max_size is not None and len(size) != 1:
+    elif max_size is not None and size is not None and len(size) != 1:
         raise ValueError(
-            "max_size should only be passed if size specifies the length of the smaller edge, "
+            "max_size should only be passed if size is None or specifies the length of the smaller edge, "
             "i.e. size should be an int or a sequence of length 1 in torchscript mode."
         )
-    return __compute_resized_output_size(canvas_size, size=size, max_size=max_size)
+    return __compute_resized_output_size(canvas_size, size=size, max_size=max_size, allow_size_none=True)
 
 
 def resize(
     inpt: torch.Tensor,
-    size: List[int],
+    size: Optional[List[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
@@ -194,7 +194,7 @@ def resize(
 # according to our benchmarks on eager, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
 def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
     if interpolation == InterpolationMode.BILINEAR:
-        if torch._dynamo.is_compiling():
+        if torch.compiler.is_compiling():
             return True
         else:
             return "AVX2" in torch.backends.cpu.get_cpu_capability()
@@ -206,7 +206,7 @@ def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
 @_register_kernel_internal(resize, tv_tensors.Image)
 def resize_image(
     image: torch.Tensor,
-    size: List[int],
+    size: Optional[List[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
@@ -310,7 +310,7 @@ def __resize_image_pil_dispatch(
     return _resize_image_pil(image, size=size, interpolation=interpolation, max_size=max_size)
 
 
-def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
+def resize_mask(mask: torch.Tensor, size: Optional[List[int]], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -334,7 +334,10 @@ def _resize_mask_dispatch(
 
 
 def resize_bounding_boxes(
-    bounding_boxes: torch.Tensor, canvas_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+    bounding_boxes: torch.Tensor,
+    canvas_size: Tuple[int, int],
+    size: Optional[List[int]],
+    max_size: Optional[int] = None,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = canvas_size
     new_height, new_width = _compute_resized_output_size(canvas_size, size=size, max_size=max_size)
@@ -353,7 +356,7 @@ def resize_bounding_boxes(
 
 @_register_kernel_internal(resize, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
 def _resize_bounding_boxes_dispatch(
-    inpt: tv_tensors.BoundingBoxes, size: List[int], max_size: Optional[int] = None, **kwargs: Any
+    inpt: tv_tensors.BoundingBoxes, size: Optional[List[int]], max_size: Optional[int] = None, **kwargs: Any
 ) -> tv_tensors.BoundingBoxes:
     output, canvas_size = resize_bounding_boxes(
         inpt.as_subclass(torch.Tensor), inpt.canvas_size, size, max_size=max_size
@@ -364,7 +367,7 @@ def _resize_bounding_boxes_dispatch(
 @_register_kernel_internal(resize, tv_tensors.Video)
 def resize_video(
     video: torch.Tensor,
-    size: List[int],
+    size: Optional[List[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
@@ -525,7 +528,7 @@ def _get_inverse_affine_matrix(
 
 
 def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
-    if torch._dynamo.is_compiling() and not torch.jit.is_scripting():
+    if torch.compiler.is_compiling() and not torch.jit.is_scripting():
         return _compute_affine_output_size_python(matrix, w, h)
     else:
         return _compute_affine_output_size_tensor(matrix, w, h)
