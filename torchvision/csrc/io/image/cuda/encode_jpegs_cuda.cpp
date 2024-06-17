@@ -58,8 +58,10 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
     // object correctly upon program exit. This is because, when cudaJpegEncoder
     // gets destroyed, the CUDA runtime may already be shut down, rendering all
     // destroy* calls in the encoder destructor invalid. Instead, we use an
-    // atexit hook which executes after main() finishes, but before CUDA shuts
-    // down when the program exits.
+    // atexit hook which executes after main() finishes, but hopefully before
+    // CUDA shuts down when the program exits. If CUDA is already shut down the
+    // destructor will detect this and will not attempt to destroy any encoder
+    // structures.
     std::atexit([]() { delete cudaJpegEncoder.release(); });
   }
 
@@ -90,7 +92,7 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
     }
   }
 
-  cudaJpegEncoder->setQuality(quality);
+  cudaJpegEncoder->set_quality(quality);
   std::vector<torch::Tensor> encoded_images;
   at::cuda::CUDAEvent event;
   event.record(cudaJpegEncoder->stream);
@@ -103,8 +105,9 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
   // may be ready on that stream we cannot assume that they are also available
   // on the current stream of the calling context when this function returns. We
   // use a blocking event to ensure that this is indeed the case. Crucially, we
-  // do not want to block the host (which is what cudaStreamSynchronize would
-  // do) Events allow us to synchronize the streams without blocking the host
+  // do not want to block the host at this particular point
+  // (which is what cudaStreamSynchronize would do.) Events allow us to
+  // synchronize the streams without blocking the host.
   event.block(at::cuda::getCurrentCUDAStream(
       cudaJpegEncoder->original_device.has_index()
           ? cudaJpegEncoder->original_device.index()
@@ -140,25 +143,46 @@ CUDAJpegEncoder::CUDAJpegEncoder(const torch::Device& target_device)
 }
 
 CUDAJpegEncoder::~CUDAJpegEncoder() {
-  nvjpegStatus_t status;
+  /*
+  The below code works on Mac and Linux, but fails on Windows.
+  This is because on Windows, the atexit hook which calls this
+  destructor executes after cuda is already shut down causing SIGSEGV.
+  We do not have a solution to this problem at the moment, so we'll
+  just leak the libnvjpeg & cuda variables for the time being and hope
+  that the CUDA runtime handles cleanup for us.
+  Please send a PR if you have a solution for this problem.
+  */
 
-  status = nvjpegEncoderParamsDestroy(nv_enc_params);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy nvjpeg encoder params: ",
-      status);
+  // // We run cudaGetDeviceCount as a dummy to test if the CUDA runtime is
+  // still
+  // // initialized. If it is not, we can skip the rest of this function as it
+  // is
+  // // unsafe to execute.
+  // int deviceCount = 0;
+  // cudaError_t error = cudaGetDeviceCount(&deviceCount);
+  // if (error != cudaSuccess)
+  //   return; // CUDA runtime has already shut down. There's nothing we can do
+  //           // now.
 
-  status = nvjpegEncoderStateDestroy(nv_enc_state);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy nvjpeg encoder state: ",
-      status);
+  // nvjpegStatus_t status;
 
-  cudaStreamSynchronize(stream);
+  // status = nvjpegEncoderParamsDestroy(nv_enc_params);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg encoder params: ",
+  //     status);
 
-  status = nvjpegDestroy(nvjpeg_handle);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
+  // status = nvjpegEncoderStateDestroy(nv_enc_state);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg encoder state: ",
+  //     status);
+
+  // cudaStreamSynchronize(stream);
+
+  // status = nvjpegDestroy(nvjpeg_handle);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
 }
 
 torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
@@ -235,7 +259,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
   return encoded_image;
 }
 
-void CUDAJpegEncoder::setQuality(const int64_t quality) {
+void CUDAJpegEncoder::set_quality(const int64_t quality) {
   nvjpegStatus_t paramsQualityStatus =
       nvjpegEncoderParamsSetQuality(nv_enc_params, quality, stream);
   TORCH_CHECK(
