@@ -218,65 +218,75 @@ CUDAJpegDecoder::CUDAJpegDecoder(const torch::Device& target_device)
 }
 
 CUDAJpegDecoder::~CUDAJpegDecoder() {
-  nvjpegStatus_t status;
+  /*
+  The below code works on Mac and Linux, but fails on Windows.
+  This is because on Windows, the atexit hook which calls this
+  destructor executes after cuda is already shut down causing SIGSEGV.
+  We do not have a solution to this problem at the moment, so we'll
+  just leak the libnvjpeg & cuda variables for the time being and hope
+  that the CUDA runtime handles cleanup for us.
+  Please send a PR if you have a solution for this problem.
+  */
 
-  status = nvjpegDecodeParamsDestroy(nvjpeg_decode_params);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy nvjpeg decode params: ",
-      status);
+  // nvjpegStatus_t status;
 
-  status = nvjpegJpegStreamDestroy(jpeg_streams[0]);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy jpeg stream: ",
-      status);
+  // status = nvjpegDecodeParamsDestroy(nvjpeg_decode_params);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg decode params: ",
+  //     status);
 
-  status = nvjpegJpegStreamDestroy(jpeg_streams[1]);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy jpeg stream: ",
-      status);
+  // status = nvjpegJpegStreamDestroy(jpeg_streams[0]);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy jpeg stream: ",
+  //     status);
 
-  status = nvjpegBufferPinnedDestroy(pinned_buffers[0]);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy pinned buffer[0]: ",
-      status);
+  // status = nvjpegJpegStreamDestroy(jpeg_streams[1]);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy jpeg stream: ",
+  //     status);
 
-  status = nvjpegBufferPinnedDestroy(pinned_buffers[1]);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy pinned buffer[1]: ",
-      status);
+  // status = nvjpegBufferPinnedDestroy(pinned_buffers[0]);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy pinned buffer[0]: ",
+  //     status);
 
-  status = nvjpegBufferDeviceDestroy(device_buffer);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy device buffer: ",
-      status);
+  // status = nvjpegBufferPinnedDestroy(pinned_buffers[1]);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy pinned buffer[1]: ",
+  //     status);
 
-  status = nvjpegJpegStateDestroy(nvjpeg_decoupled_state);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy nvjpeg decoupled state: ",
-      status);
+  // status = nvjpegBufferDeviceDestroy(device_buffer);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy device buffer: ",
+  //     status);
 
-  status = nvjpegDecoderDestroy(nvjpeg_decoder);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy nvjpeg decoder: ",
-      status);
+  // status = nvjpegJpegStateDestroy(nvjpeg_decoupled_state);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg decoupled state: ",
+  //     status);
 
-  status = nvjpegJpegStateDestroy(nvjpeg_state);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS,
-      "Failed to destroy nvjpeg state: ",
-      status);
+  // status = nvjpegDecoderDestroy(nvjpeg_decoder);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg decoder: ",
+  //     status);
 
-  status = nvjpegDestroy(nvjpeg_handle);
-  TORCH_CHECK(
-      status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
+  // status = nvjpegJpegStateDestroy(nvjpeg_state);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg state: ",
+  //     status);
+
+  // status = nvjpegDestroy(nvjpeg_handle);
+  // TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
 }
 
 std::tuple<
