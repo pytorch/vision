@@ -218,7 +218,6 @@ CUDAJpegDecoder::CUDAJpegDecoder(const torch::Device& target_device)
 }
 
 CUDAJpegDecoder::~CUDAJpegDecoder() {
-
   /*
   The below code works on Mac and Linux, but fails on Windows.
   This is because on Windows, the atexit hook which calls this
@@ -228,7 +227,6 @@ CUDAJpegDecoder::~CUDAJpegDecoder() {
   that the CUDA runtime handles cleanup for us.
   Please send a PR if you have a solution for this problem.
   */
-
 
   // nvjpegStatus_t status;
 
