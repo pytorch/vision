@@ -84,9 +84,9 @@ def gaussian_blur(inpt: torch.Tensor, kernel_size: List[int], sigma: Optional[Li
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
-    lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0) * sigma)
+    lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0))
     x = torch.linspace(-lim, lim, steps=kernel_size, dtype=dtype, device=device)
-    kernel1d = torch.softmax(x.pow_(2).neg_(), dim=0)
+    kernel1d = torch.softmax(x.div(sigma).pow(2).neg(), dim=0)
     return kernel1d
 
 
@@ -119,7 +119,7 @@ def gaussian_blur_image(
         if isinstance(sigma, (list, tuple)):
             length = len(sigma)
             if length == 1:
-                s = float(sigma[0])
+                s = sigma[0]
                 sigma = [s, s]
             elif length != 2:
                 raise ValueError(f"If sigma is a sequence, its length should be 2. Got {length}")
