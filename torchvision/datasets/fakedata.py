@@ -30,6 +30,7 @@ class FakeData(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         random_offset: int = 0,
+        *args,**kwargs
     ) -> None:
         super().__init__(transform=transform, target_transform=target_transform)
         self.size = size
