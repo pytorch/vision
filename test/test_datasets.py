@@ -2913,15 +2913,15 @@ class Kitti2015StereoTestCase(datasets_utils.ImageDatasetTestCase):
         datasets_utils.create_image_folder(
             root=split_dir,
             name="image_2",
-            file_name_fn=lambda i: f"{i:06d}_10.png",
-            num_examples=num_examples,
+            file_name_fn=lambda i: f"{i // 2:06d}_1{i % 2}.png",
+            num_examples=num_examples * 2,
             size=(3, 100, 200),
         )
         datasets_utils.create_image_folder(
             root=split_dir,
             name="image_3",
-            file_name_fn=lambda i: f"{i:06d}_10.png",
-            num_examples=num_examples,
+            file_name_fn=lambda i: f"{i // 2:06d}_1{i % 2}.png",
+            num_examples=num_examples * 2,
             size=(3, 100, 200),
         )
 
@@ -2929,7 +2929,7 @@ class Kitti2015StereoTestCase(datasets_utils.ImageDatasetTestCase):
             datasets_utils.create_image_folder(
                 root=split_dir,
                 name="disp_occ_0",
-                file_name_fn=lambda i: f"{i:06d}.png",
+                file_name_fn=lambda i: f"{i:06d}_10.png",
                 num_examples=num_examples,
                 # Kitti2015 uses a single channel image for disparities
                 size=(1, 100, 200),
@@ -2938,7 +2938,7 @@ class Kitti2015StereoTestCase(datasets_utils.ImageDatasetTestCase):
             datasets_utils.create_image_folder(
                 root=split_dir,
                 name="disp_occ_1",
-                file_name_fn=lambda i: f"{i:06d}.png",
+                file_name_fn=lambda i: f"{i:06d}_10.png",
                 num_examples=num_examples,
                 # Kitti2015 uses a single channel image for disparities
                 size=(1, 100, 200),
