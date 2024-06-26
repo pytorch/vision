@@ -145,11 +145,13 @@ def decode_jpeg(
     """
     Decodes a (list of) JPEG image(s) into a (list of) 3 dimensional RGB or grayscale Tensor(s).
     Optionally converts the image(s) to the desired format.
-    The values of the output tensor(s) are uint8 between 0 and 255.
+
 
     .. note::
         When using a CUDA device, passing a list of tensors is more efficient than repeated individual calls to ``decode_jpeg``.
         When using CPU the performance is equivalent.
+        The CUDA version of this function has explicitly been designed with thread-safety in mind.
+        This function does not return partial results in case of an error.
 
     Args:
         input (Tensor[1] or list[Tensor[1]]): a (list of) one dimensional uint8 tensor(s) containing
@@ -175,7 +177,10 @@ def decode_jpeg(
             Default: False. Only implemented for JPEG format on CPU.
 
     Returns:
-        output (Tensor[image_channels, image_height, image_width])
+        output (Tensor[image_channels, image_height, image_width] or list[Tensor[image_channels, image_height, image_width]]):
+            The values of the output tensor(s) are uint8 between 0 and 255. output.device will be set to the specified ``device``
+
+
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_jpeg)

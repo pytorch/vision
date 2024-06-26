@@ -22,7 +22,7 @@ class CUDAJpegDecoder {
   const torch::Device target_device;
   const c10::cuda::CUDAStream stream;
 
- protected:
+ private:
   std::tuple<
       std::vector<nvjpegImage_t>,
       std::vector<torch::Tensor>,

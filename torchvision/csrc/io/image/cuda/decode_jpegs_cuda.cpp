@@ -40,6 +40,8 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
       "torchvision.csrc.io.image.cuda.decode_jpegs_cuda.decode_jpegs_cuda");
 
   std::lock_guard<std::mutex> lock(decoderMutex);
+  std::vector<torch::Tensor> contig_images;
+  contig_images.reserve(encoded_images.size());
 
   for (auto& encoded_image : encoded_images) {
     TORCH_CHECK(
@@ -52,6 +54,13 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
     TORCH_CHECK(
         encoded_image.dim() == 1 && encoded_image.numel() > 0,
         "Expected a non empty 1-dimensional tensor");
+
+    // nvjpeg requires images to be contiguous
+    if (encoded_image.is_contiguous()) {
+      contig_images.push_back(encoded_image);
+    } else {
+      contig_images.push_back(encoded_image.contiguous());
+    }
   }
 
   TORCH_CHECK(device.is_cuda(), "Expected a cuda device");
@@ -81,9 +90,11 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 
   if (cudaJpegDecoder == nullptr || device != cudaJpegDecoder->target_device) {
     if (cudaJpegDecoder != nullptr)
-      delete cudaJpegDecoder.release();
-    cudaJpegDecoder = std::make_unique<CUDAJpegDecoder>(device);
-    std::atexit([]() { delete cudaJpegDecoder.release(); });
+      cudaJpegDecoder.reset(new CUDAJpegDecoder(device));
+    else {
+      cudaJpegDecoder = std::make_unique<CUDAJpegDecoder>(device);
+      std::atexit([]() { cudaJpegDecoder.reset(); });
+    }
   }
 
   nvjpegOutputFormat_t output_format;
@@ -109,14 +120,13 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 
   try {
     at::cuda::CUDAEvent event;
+    auto result = cudaJpegDecoder->decode_images(contig_images, output_format);
+    auto current_stream{
+        device.has_index() ? at::cuda::getCurrentCUDAStream(
+                                 cudaJpegDecoder->original_device.index())
+                           : at::cuda::getCurrentCUDAStream()};
     event.record(cudaJpegDecoder->stream);
-    auto result = cudaJpegDecoder->decode_images(encoded_images, output_format);
-    if (device.has_index())
-      event.block(at::cuda::getCurrentCUDAStream(
-          cudaJpegDecoder->original_device.index()));
-    else
-      event.block(at::cuda::getCurrentCUDAStream());
-    return result;
+    event.block(current_stream) return result;
   } catch (const std::exception& e) {
     if (typeid(e) != typeid(std::runtime_error)) {
       TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
