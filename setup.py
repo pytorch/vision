@@ -169,15 +169,6 @@ def get_extensions():
         is_rocm_pytorch = (torch.version.hip is not None) and (ROCM_HOME is not None)
 
     if is_rocm_pytorch:
-        from torch.utils.hipify import hipify_python
-
-        hipify_python.hipify(
-            project_directory=this_dir,
-            output_directory=this_dir,
-            includes="torchvision/csrc/ops/cuda/*",
-            show_detailed=True,
-            is_pytorch_extension=True,
-        )
         source_cuda = glob.glob(os.path.join(extensions_dir, "ops", "hip", "*.hip"))
         # Copy over additional files
         for file in glob.glob(r"torchvision/csrc/ops/cuda/*.h"):
