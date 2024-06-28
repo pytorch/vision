@@ -4,7 +4,7 @@ Getting started with transforms v2
 ==================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_getting_started.ipynb>`_
+    Try on `Colab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_getting_started.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py>` to download the full example code.
 
 This example illustrates all of what you need to know to get started with the
@@ -25,7 +25,7 @@ from torchvision.io import read_image
 
 torch.manual_seed(1)
 
-# If you're trying to run that on collab, you can download the assets and the
+# If you're trying to run that on Colab, you can download the assets and the
 # helpers from https://github.com/pytorch/vision/tree/main/gallery/
 from helpers import plot
 img = read_image(str(Path('../assets') / 'astronaut.jpg'))
