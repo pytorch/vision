@@ -59,7 +59,7 @@ extensions = [
 # We override sphinx-gallery's example header to prevent sphinx-gallery from
 # creating a note at the top of the renderred notebook.
 # https://github.com/sphinx-gallery/sphinx-gallery/blob/451ccba1007cc523f39cbcc960ebc21ca39f7b75/sphinx_gallery/gen_rst.py#L1267-L1271
-# This is because we also want to add a link to google collab, so we write our own note in each example.
+# This is because we also want to add a link to google Colab, so we write our own note in each example.
 from sphinx_gallery import gen_rst
 
 gen_rst.EXAMPLE_HEADER = """
