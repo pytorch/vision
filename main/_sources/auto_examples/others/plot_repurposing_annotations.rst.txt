@@ -15,7 +15,7 @@ Repurposing masks into bounding boxes
 =====================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_repurposing_annotations.ipynb>`_
+    Try on `Colab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_repurposing_annotations.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_repurposing_annotations.py>` to download the full example code.
 
 The following example illustrates the operations available
@@ -327,8 +327,8 @@ Here is demo with a Faster R-CNN model loaded from
     model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
     print(img.size())
 
-    tranforms = weights.transforms()
-    img = tranforms(img)
+    transforms = weights.transforms()
+    img = transforms(img)
     target = {}
     target["boxes"] = boxes
     target["labels"] = labels = torch.ones((masks.size(0),), dtype=torch.int64)
@@ -417,7 +417,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.785 seconds)
+   **Total running time of the script:** (0 minutes 2.450 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_repurposing_annotations.py:
