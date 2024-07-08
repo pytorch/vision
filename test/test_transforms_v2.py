@@ -394,7 +394,14 @@ def _check_transform_sample_input_smoke(transform, input, *, adapter):
 
 
 def check_transform(transform, input, check_v1_compatibility=True, check_sample_input=True):
-    pickle.loads(pickle.dumps(transform))
+    # TODO: remove this cm once https://github.com/pytorch/vision/issues/8517 and associated torch core issue is resolved
+    if isinstance(transform, (transforms.RandomResizedCrop, transforms.LinearTransformation)):
+        cm = pytest.warns(FutureWarning, match="You are using `torch.load`")
+    else:
+        cm = contextlib.nullcontext()
+
+    with cm:
+        pickle.loads(pickle.dumps(transform))
 
     output = transform(input)
     assert isinstance(output, type(input))
