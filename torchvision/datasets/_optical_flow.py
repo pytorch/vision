@@ -43,7 +43,7 @@ class FlowDataset(ABC, VisionDataset):
     def _read_img(self, file_name: str) -> Image.Image:
         img = Image.open(file_name)
         if img.mode != "RGB":
-            img = img.convert("RGB")
+            img = img.convert("RGB")  # type: ignore[assignment]
         return img
 
     @abstractmethod
