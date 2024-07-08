@@ -612,8 +612,8 @@ def _parse_colors(
 
     colors = [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
     if dtype.is_floating_point:  # [0, 255] -> [0, 1]
-        colors = [tuple(v / 255 for v in color) for color in colors]
-    return colors
+        colors = [tuple(v / 255 for v in color) for color in colors]  # type: ignore[[union-attr]]
+    return colors  # type: ignore[return-value]
 
 
 def _log_api_usage_once(obj: Any) -> None:
