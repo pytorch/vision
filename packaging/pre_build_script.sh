@@ -1,4 +1,6 @@
 #!/bin/bash
+gcc --version
+
 if [[ "$(uname)" == Darwin ]]; then
   # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)
