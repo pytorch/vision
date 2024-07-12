@@ -14,7 +14,6 @@ import torchvision.transforms.functional as F
 from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
-    _read_png_16,
     decode_gif,
     decode_image,
     decode_jpeg,
@@ -211,14 +210,9 @@ def test_decode_png(img_path, pil_mode, mode, scripted, decode_fun):
     img_pil = normalize_dimensions(img_pil)
 
     if img_path.endswith("16.png"):
-        # 16 bits image decoding is supported, but only as a private API
-        # FIXME: see https://github.com/pytorch/vision/issues/4731 for potential solutions to making it public
-        with pytest.raises(RuntimeError, match="At most 8-bit PNG images are supported"):
-            data = read_file(img_path)
-            img_lpng = decode_fun(data, mode=mode)
-
-        img_lpng = _read_png_16(img_path, mode=mode)
-        assert img_lpng.dtype == torch.int32
+        data = read_file(img_path)
+        img_lpng = decode_fun(data, mode=mode)
+        assert img_lpng.dtype == torch.uint16
         # PIL converts 16 bits pngs in uint8
         img_lpng = torch.round(img_lpng / (2**16 - 1) * 255).to(torch.uint8)
     else:

@@ -93,7 +93,7 @@ def decode_png(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_png)
-    output = torch.ops.image.decode_png(input, mode.value, False, apply_exif_orientation)
+    output = torch.ops.image.decode_png(input, mode.value, apply_exif_orientation)
     return output
 
 
@@ -296,11 +296,6 @@ def read_image(
         _log_api_usage_once(read_image)
     data = read_file(path)
     return decode_image(data, mode, apply_exif_orientation=apply_exif_orientation)
-
-
-def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
-    data = read_file(path)
-    return torch.ops.image.decode_png(data, mode.value, True)
 
 
 def decode_gif(input: torch.Tensor) -> torch.Tensor:
