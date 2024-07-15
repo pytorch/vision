@@ -237,6 +237,8 @@ def _num_value_bits(dtype: torch.dtype) -> int:
         return 7
     elif dtype == torch.int16:
         return 15
+    elif dtype == torch.uint16:
+        return 16
     elif dtype == torch.int32:
         return 31
     elif dtype == torch.int64:
@@ -295,6 +297,7 @@ def to_dtype_image(image: torch.Tensor, dtype: torch.dtype = torch.float, scale:
 
         if num_value_bits_input > num_value_bits_output:
             return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
+            # return (image / 2**(num_value_bits_input - num_value_bits_output)).to(dtype)
         else:
             return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
 
