@@ -2085,6 +2085,8 @@ class TestToDtype:
     def test_image_correctness(self, input_dtype, output_dtype, device, scale):
         if input_dtype.is_floating_point and output_dtype == torch.int64:
             pytest.xfail("float to int64 conversion is not supported")
+        if input_dtype == torch.uint8 and output_dtype == torch.uint16 and device == "cuda":
+            pytest.xfail("uint8 to uint16 conversion is not supported on cuda")
 
         input = make_image(dtype=input_dtype, device=device)
 
