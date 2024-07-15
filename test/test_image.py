@@ -798,15 +798,11 @@ def test_decode_gif_errors():
 
 
 def test_decode_webp(tmpdir):
-    url = "https://upload.wikimedia.org/wikipedia/commons/a/ae/Digital_transformation.webp"
-    path = tmpdir / f"lol.webp"
-    with open(path, "wb") as f:
-        f.write(requests.get(url).content)
-    encoded_bytes = read_file(path)
+    encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
     img = decode_webp(encoded_bytes)
     print(img.shape)
     F.to_pil_image(img).show()
-    assert img.shape == (3, 853, 1280)
+    assert img.shape == (3, 100, 100)
 
 
 if __name__ == "__main__":
