@@ -2179,6 +2179,7 @@ class TestToDtype:
 
         img_uint8 = F.to_dtype(img_uint16, torch.uint8, scale=True)
         img_float32 = F.to_dtype(img_uint16, torch.float32, scale=True)
+        img_int32 = F.to_dtype(img_uint16, torch.int32, scale=True)
 
         assert_equal(img_uint8, (img_uint16 / 256).to(torch.uint8))
         assert_close(img_float32, (img_uint16 / 65535))
@@ -2187,6 +2188,7 @@ class TestToDtype:
         # Ideally we'd check against (img_uint16 & 0xFF00) but bitwise and isn't supported for it yet
         # so we simulate it by scaling down and up again.
         assert_equal(F.to_dtype(img_uint8, torch.uint16, scale=True), ((img_uint16 / 256).to(torch.uint16) * 256))
+        assert_equal(F.to_dtype(img_int32, torch.uint16, scale=True), img_uint16)
 
         assert_equal(F.to_dtype(img_float32, torch.uint8, scale=True), img_uint8)
         assert_close(F.to_dtype(img_uint8, torch.float32, scale=True), img_float32, rtol=0, atol=1e-2)
