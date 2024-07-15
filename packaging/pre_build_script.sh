@@ -1,4 +1,7 @@
 #!/bin/bash
+
+conda install libwebp -yq
+
 if [[ "$(uname)" == Darwin ]]; then
   # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)
@@ -46,6 +49,5 @@ else
   export TORCHVISION_LIBRARY=$(pwd)/ext_libraries/lib
 fi
 
-conda install libwebp -yq
 pip install numpy pyyaml future ninja
 pip install --upgrade setuptools
