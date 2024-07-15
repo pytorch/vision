@@ -805,6 +805,7 @@ def test_decode_webp(tmpdir):
     encoded_bytes = read_file(path)
     img = decode_webp(encoded_bytes)
     print(img.shape)
+    F.to_pil_image(img).show()
     assert img.shape == (3, 853, 1280)
 
 

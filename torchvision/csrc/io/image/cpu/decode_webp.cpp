@@ -10,11 +10,12 @@ torch::Tensor decode_webp(const torch::Tensor& data) {
     int width = 0;
     int height = 0;
 
-    auto out_data = WebPDecodeRGB(data.data_ptr<uint8_t>(), data.numel(), &width, &height);
-
-    printf("width: %d, height: %d\n", width, height);
-    auto out = torch::from_blob(out_data, {height, width, 3}, torch::kUInt8);
-    return out.permute({2, 0, 1});
+    if (!WebPGetInfo(data.data_ptr<uint8_t>(), data.numel(), &width, &height)) {
+        TORCH_CHECK(false, "WebPGetInfo failed");
+    }
+    auto out = torch::empty({height, width, 3}, torch::kUInt8);
+    WebPDecodeRGBInto(data.data_ptr<uint8_t>(), data.numel(), out.data_ptr<uint8_t>(), out.numel(), /*output_stride=*/3 * width);
+    return out.permute({2, 0, 1});  // return CHW, channels-last
 }
 
 } // namespace image
