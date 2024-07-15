@@ -25,6 +25,7 @@ from .image import (
     decode_image,
     decode_jpeg,
     decode_png,
+    decode_webp,
     encode_jpeg,
     encode_png,
     ImageReadMode,

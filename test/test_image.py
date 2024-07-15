@@ -18,6 +18,7 @@ from torchvision.io.image import (
     decode_image,
     decode_jpeg,
     decode_png,
+    decode_webp,
     encode_jpeg,
     encode_png,
     ImageReadMode,
@@ -794,6 +795,17 @@ def test_decode_gif_errors():
         decode_gif(encoded_data[::2])
     with pytest.raises(RuntimeError, match=re.escape("DGifOpenFileName() failed - 103")):
         decode_gif(encoded_data)
+
+
+def test_decode_webp(tmpdir):
+    url = "https://upload.wikimedia.org/wikipedia/commons/a/ae/Digital_transformation.webp"
+    path = tmpdir / f"lol.webp"
+    with open(path, "wb") as f:
+        f.write(requests.get(url).content)
+    encoded_bytes = read_file(path)
+    img = decode_webp(encoded_bytes)
+    print(img.shape)
+    assert img.shape == (3, 853, 1280)
 
 
 if __name__ == "__main__":

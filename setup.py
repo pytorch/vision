@@ -348,7 +348,7 @@ def get_extensions():
             include_dirs=image_include + include_dirs + [image_path],
             library_dirs=image_library + library_dirs,
             define_macros=image_macros,
-            libraries=image_link_flags,
+            libraries=image_link_flags + ["webp"],
             extra_compile_args=extra_compile_args,
         )
     )
