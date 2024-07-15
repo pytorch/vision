@@ -46,5 +46,6 @@ else
   export TORCHVISION_LIBRARY=$(pwd)/ext_libraries/lib
 fi
 
+conda install libwebp -yq
 pip install numpy pyyaml future ninja
 pip install --upgrade setuptools

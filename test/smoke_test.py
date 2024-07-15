@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 import torchvision
-from torchvision.io import decode_jpeg, read_file, read_image
+from torchvision.io import decode_jpeg, read_file, read_image, decode_webp
 from torchvision.models import resnet50, ResNet50_Weights
 
 SCRIPT_DIR = Path(__file__).parent
@@ -25,6 +25,10 @@ def smoke_test_torchvision_read_decode() -> None:
     img_png = read_image(str(SCRIPT_DIR / "assets" / "interlaced_png" / "wizard_low.png"))
     if img_png.shape != (4, 471, 354):
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
+    # TODO: just use read_image here.
+    img_webp = decode_webp(read_file(str(SCRIPT_DIR / "assets" / "fakedata" / "logos" / "rgb_pytorch.webp")))
+    if img_webp.shape != (3, 100, 100):
+        raise RuntimeError(f"Unexpected shape of img_webp: {img_webp.shape}")
 
 
 def smoke_test_torchvision_decode_jpeg(device: str = "cpu"):
