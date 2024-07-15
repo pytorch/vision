@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 import requests
 import torch
-import torchvision.transforms.functional as F
+import torchvision.transforms.v2.functional as F
 from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
@@ -213,8 +213,8 @@ def test_decode_png(img_path, pil_mode, mode, scripted, decode_fun):
         data = read_file(img_path)
         img_lpng = decode_fun(data, mode=mode)
         assert img_lpng.dtype == torch.uint16
-        # PIL converts 16 bits pngs in uint8
-        img_lpng = torch.round(img_lpng / (2**16 - 1) * 255).to(torch.uint8)
+        # PIL converts 16 bits pngs to uint8
+        img_lpng = F.to_dtype(img_lpng, torch.uint8, scale=True)
     else:
         data = read_file(img_path)
         img_lpng = decode_fun(data, mode=mode)

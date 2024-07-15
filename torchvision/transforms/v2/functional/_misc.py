@@ -295,11 +295,18 @@ def to_dtype_image(image: torch.Tensor, dtype: torch.dtype = torch.float, scale:
         num_value_bits_input = _num_value_bits(image.dtype)
         num_value_bits_output = _num_value_bits(dtype)
 
+        # TODO: Remove if/else inner blocks once uint16 dtype supports bitwise shift operations.
+        shift_by = abs(num_value_bits_input - num_value_bits_output)
         if num_value_bits_input > num_value_bits_output:
-            return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
-            # return (image / 2**(num_value_bits_input - num_value_bits_output)).to(dtype)
+            if image.dtype == torch.uint16:
+                return (image / 2 ** (shift_by)).to(dtype)
+            else:
+                return image.bitwise_right_shift(shift_by).to(dtype)
         else:
-            return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
+            if dtype == torch.uint16:
+                return image.to(dtype) * 2 ** (shift_by)
+            else:
+                return image.to(dtype).bitwise_left_shift_(shift_by)
 
 
 # We encourage users to use to_dtype() instead but we keep this for BC

@@ -2076,10 +2076,10 @@ class TestToDtype:
                         factor = (output_max_value + 1) // (input_max_value + 1)
                         return value * factor
 
-        return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype, device=image.device)
+        return torch.tensor(tree_map(fn, image.tolist())).to(dtype=output_dtype, device=image.device)
 
-    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
-    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8, torch.uint16])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8, torch.uint16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
     def test_image_correctness(self, input_dtype, output_dtype, device, scale):
@@ -2170,6 +2170,26 @@ class TestToDtype:
         assert out["inpt"].dtype == inpt_dtype
         assert out["bbox"].dtype == bbox_dtype
         assert out["mask"].dtype == mask_dtype
+
+    def test_uint16(self):
+        # These checks are probably already covered above but since uint16 is a
+        # newly supported dtype,  we want to be extra careful, hence this
+        # explicit test
+        img_uint16 = torch.randint(0, 65535, (256, 512), dtype=torch.uint16)
+
+        img_uint8 = F.to_dtype(img_uint16, torch.uint8, scale=True)
+        img_float32 = F.to_dtype(img_uint16, torch.float32, scale=True)
+
+        assert_equal(img_uint8, (img_uint16 / 256).to(torch.uint8))
+        assert_close(img_float32, (img_uint16 / 65535))
+
+        assert_close(F.to_dtype(img_float32, torch.uint16, scale=True), img_uint16, rtol=0, atol=1)
+        # Ideally we'd check against (img_uint16 & 0xFF00) but bitwise and isn't supported for it yet
+        # so we simulate it by scaling down and up again.
+        assert_equal(F.to_dtype(img_uint8, torch.uint16, scale=True), ((img_uint16 / 256).to(torch.uint16) * 256))
+
+        assert_equal(F.to_dtype(img_float32, torch.uint8, scale=True), img_uint8)
+        assert_close(F.to_dtype(img_uint8, torch.float32, scale=True), img_float32, rtol=0, atol=1e-2)
 
 
 class TestAdjustBrightness:
