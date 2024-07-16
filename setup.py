@@ -312,7 +312,7 @@ def make_image_extension():
         if nvjpeg_found:
             print("Building torchvision with NVJPEG image support")
             libraries.append("nvjpeg")
-            image_macros += [("NVJPEG_FOUND", 1)]
+            define_macros += [("NVJPEG_FOUND", 1)]
             Extension = CUDAExtension
         else:
             warnings.warn("Building torchvision without NVJPEG support")
