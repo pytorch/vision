@@ -98,6 +98,7 @@ def find_library(name, vision_include):
             library_header_path = os.path.join(include_folder, library_header)
             library_found = os.path.isfile(library_header_path)
             conda_installed = library_found
+            raise ValueError("WHAAAAAAAAAAAAAAAAAAAAAAAAT")
         else:
             # Check if using Anaconda to produce wheels
             conda = shutil.which("conda")
