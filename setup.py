@@ -126,6 +126,43 @@ def find_library(name, vision_include):
     return library_found, conda_installed, include_folder, lib_folder
 
 
+def find_libjpeg():
+
+    library_header = "jpeglib.h"
+
+    # Attempt: lookup in TORCHVISION_INCLUDE
+    for folder in TORCHVISION_INCLUDE:
+        if (Path(folder) / library_header).exists():
+            return True, None, None
+
+    # Attempt: lookup in BUILD_PREFIX, set by conda-build
+    build_prefix = os.environ.get("BUILD_PREFIX", None)
+    if build_prefix is not None:  # This is a conda-build build
+        build_prefix = Path(build_prefix)
+        if os.name == "nt":
+            build_prefix = build_prefix / "Library"
+        include_dir = build_prefix / "include"
+        library_dir = build_prefix / "lib"
+        if (include_dir / library_header).exists():
+            return True, str(include_dir), str(library_dir)
+
+    # Attempt: lookup in CONDA_PREFIX, set in conda environments
+    conda_prefix = os.environ.get("CONDA_PREFIX", None)
+    if conda_prefix is not None:
+        conda_prefix = Path(conda_prefix)
+        include_dir = conda_prefix / "include"
+        library_dir = conda_prefix / "lib"
+        if (include_dir / library_header).exists():
+            return True, str(include_dir), str(library_dir)
+
+    if sys.platform == "linux":
+        prefixes = ("/usr/include", "/usr/local/include")
+        if any((Path(prefix) / library_header).exists() for prefix in prefixes):
+            return True, None, None
+
+    return False, None, None
+
+
 FORCE_CUDA = os.getenv("FORCE_CUDA", "0") == "1"
 print(f"{FORCE_CUDA = }")
 FORCE_MPS = os.getenv("FORCE_MPS", "0") == "1"
@@ -136,6 +173,11 @@ USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 print(f"{USE_PNG = }")
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 print(f"{USE_JPEG = }")
+
+TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
+TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
+TORCHVISION_INCLUDE = TORCHVISION_INCLUDE.split(os.pathsep) if TORCHVISION_INCLUDE else []
+TORCHVISION_LIBRARY = TORCHVISION_LIBRARY.split(os.pathsep) if TORCHVISION_LIBRARY else []
 
 ROOT_DIR = Path(__file__).absolute().parent
 CSRS_DIR = ROOT_DIR / "torchvision/csrc"
@@ -262,10 +304,9 @@ def find_libpng():
 
 
 def make_image_extension():
-    include_dirs = os.environ.get("TORCHVISION_INCLUDE", "")
-    library_dirs = os.environ.get("TORCHVISION_LIBRARY", "")
-    include_dirs = include_dirs.split(os.pathsep) if include_dirs else []
-    library_dirs = library_dirs.split(os.pathsep) if library_dirs else []
+
+    include_dirs = TORCHVISION_INCLUDE
+    library_dirs = TORCHVISION_LIBRARY
 
     libraries = []
     define_macros, extra_compile_args = get_macros_and_flags()
@@ -284,6 +325,8 @@ def make_image_extension():
         png_found, png_include_dir, png_library_dir, png_library = find_libpng()
         if png_found:
             print("Building torchvision with PNG support")
+            print(f"{png_include_dir = }")
+            print(f"{png_library_dir = }")
             include_dirs.append(png_include_dir)
             library_dirs.append(png_library_dir)
             libraries.append(png_library)
@@ -291,16 +334,21 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without PNG support")
 
-
     if USE_JPEG:
-        jpeg_found, jpeg_conda, jpeg_include, jpeg_lib = find_library("jpeglib", include_dirs)
-
+        jpeg_found, jpeg_include_dir, jpeg_library_dir = find_libjpeg()
         if jpeg_found:
+            print("Building torchvision with JPEG support")
+            print(f"{jpeg_include_dir = }")
+            print(f"{jpeg_library_dir = }")
+            if jpeg_include_dir is not None and jpeg_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to add.
+                include_dirs.append(jpeg_include_dir)
+                library_dirs.append(jpeg_library_dir)
             libraries.append("jpeg")
             define_macros += [("JPEG_FOUND", 1)]
-            if jpeg_conda:
-                include_dirs.append(jpeg_include)
-                library_dirs.append(jpeg_lib)
+        else:
+            warnings.warn("Building torchvision without JPEG support")
+    exit(1)
 
     return CppExtension(
         name="torchvision.image",
