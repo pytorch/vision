@@ -11,7 +11,6 @@ requirements:
     - {{ compiler('c') }} # [win]
     - libpng
     - libjpeg-turbo
-    - libwebp
     - ffmpeg >=4.2  # [linux]
 
   host:
@@ -29,7 +28,6 @@ requirements:
     - libpng
     - ffmpeg >=4.2  # [linux]
     - libjpeg-turbo
-    - libwebp
     - pillow >=5.3.0, !=8.3.*
     - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}

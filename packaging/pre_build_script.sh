@@ -1,7 +1,5 @@
 #!/bin/bash
 
-conda install libwebp -yq
-
 if [[ "$(uname)" == Darwin ]]; then
   # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)

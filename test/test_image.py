@@ -800,8 +800,6 @@ def test_decode_gif_errors():
 def test_decode_webp(tmpdir):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
     img = decode_webp(encoded_bytes)
-    print(img.shape)
-    F.to_pil_image(img).show()
     assert img.shape == (3, 100, 100)
 
 

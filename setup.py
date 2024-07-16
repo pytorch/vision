@@ -151,6 +151,8 @@ def get_extensions():
     print(f"  TORCHVISION_USE_PNG: {use_png}")
     use_jpeg = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
     print(f"  TORCHVISION_USE_JPEG: {use_jpeg}")
+    use_webp = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
+    print(f"  TORCHVISION_USE_WEBP: {use_webp}")
     use_nvjpeg = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
     print(f"  TORCHVISION_USE_NVJPEG: {use_nvjpeg}")
     use_ffmpeg = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
@@ -294,6 +296,13 @@ def get_extensions():
     else:
         print("Building torchvision without PNG image support")
     image_macros += [("PNG_FOUND", str(int(use_png)))]
+
+    use_webp = use_webp and webp_found
+    if use_webp:
+        print("Found WEBP library")
+    else:
+        print("Building torchvision without WEBP image support")
+    image_macros += [("WEBP_FOUND", str(int(use_webp)))]
 
     # Locating libjpeg
     (jpeg_found, jpeg_conda, jpeg_include, jpeg_lib) = find_library("jpeglib", vision_include)
