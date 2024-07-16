@@ -210,7 +210,7 @@ def find_libpng():
         pngfix_dir = Path(pngfix).absolute().parent
 
         library_dir = str(pngfix_dir / "lib")
-        include_dir = str(pngfix_dir / "include", "libpng16")
+        include_dir = str(pngfix_dir / "include/libpng16")
         library = "libpng"
 
     return True, include_dir, library_dir, library
