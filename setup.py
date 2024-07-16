@@ -348,7 +348,6 @@ def make_image_extension():
             define_macros += [("JPEG_FOUND", 1)]
         else:
             warnings.warn("Building torchvision without JPEG support")
-    exit(1)
 
     return CppExtension(
         name="torchvision.image",
