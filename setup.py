@@ -58,7 +58,7 @@ if os.getenv("PYTORCH_VERSION"):
     pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
 requirements = [
-    "numpy<2",
+    "numpy<2" if sys.platform == "win32" else "numpy",
     pytorch_dep,
 ]
 
