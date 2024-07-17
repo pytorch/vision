@@ -224,46 +224,31 @@ def find_libjpeg():
     # paths
 
     library_header = "jpeglib.h"
+    searching_for = f"Searching for {library_header}"
 
-    # Attempt: lookup in TORCHVISION_INCLUDE
     for folder in TORCHVISION_INCLUDE:
         if (Path(folder) / library_header).exists():
             return True, None, None
-    print("DIDNT FIND IN TORCHVISION_INCLUDE")
+    print(f"{searching_for}. Didn't find in TORCHVISION_INCLUDE.")
 
-    # Attempt: lookup in BUILD_PREFIX, set by conda-build
-    build_prefix = os.environ.get("BUILD_PREFIX", None)
-    if build_prefix is not None:  # This is a conda-build build
-        build_prefix = Path(build_prefix)
-        if os.name == "nt":
-            build_prefix = build_prefix / "Library"
-        include_dir = build_prefix / "include"
-        library_dir = build_prefix / "lib"
-        if (include_dir / library_header).exists():
-            return True, str(include_dir), str(library_dir)
-    print("DIDNT FIND IN BUILD_PREFIX")
+    # Try conda-related prefixes. If BUILD_PREFIX is set it means conda-build is
+    # being run. If CONDA_PREFIX is set then we're in a conda environment.
+    for prefix_env_var in ("BUILD_PREFIX", "CONDA_PREFIX"):
+        if prefix := os.environ.get(prefix_env_var) is not None:
+            prefix = Path(prefix)
+            if sys.platform == "win32":
+                prefix = prefix / "Library"
+            include_dir = prefix / "include"
+            library_dir = prefix / "lib"
+            if (include_dir / library_header).exists():
+                return True, str(include_dir), str(library_dir)
+        print(f"{searching_for}. Didn't find in {prefix_env_var}.")
 
-    # Attempt: lookup in CONDA_PREFIX, set in conda environments
-    conda_prefix = os.environ.get("CONDA_PREFIX", None)
-    if conda_prefix is not None:
-        conda_prefix = Path(conda_prefix)
-        if os.name == "nt":
-            conda_prefix = conda_prefix / "Library"
-        print(f"{conda_prefix = }")
-        include_dir = conda_prefix / "include"
-        library_dir = conda_prefix / "lib"
-        print("TRYING")
-        print(f"{include_dir = }")
-        print(f"{library_dir = }")
-        if (include_dir / library_header).exists():
-            return True, str(include_dir), str(library_dir)
-    print("DIDNT FIND IN CONDA_RPEFIX")
-
-    # Attempt: lookup in standard linux paths
     if sys.platform == "linux":
         prefixes = ("/usr/include", "/usr/local/include")
         if any((Path(prefix) / library_header).exists() for prefix in prefixes):
             return True, None, None
+        print(f"{searching_for}. Didn't find in {prefixes}.")
 
     return False, None, None
 
@@ -308,7 +293,7 @@ def make_image_extension():
             print(f"{jpeg_include_dir = }")
             print(f"{jpeg_library_dir = }")
             if jpeg_include_dir is not None and jpeg_library_dir is not None:
-                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to add.
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
                 include_dirs.append(jpeg_include_dir)
                 library_dirs.append(jpeg_library_dir)
             libraries.append("jpeg")
