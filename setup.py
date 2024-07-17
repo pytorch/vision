@@ -231,7 +231,11 @@ def find_library(header):
 
     searching_for = f"Searching for {header}"
 
+    print(f"{TORCHVISION_INCLUDE = }")
+    print(f"{TORCHVISION_LIBRARY = }")
     for folder in TORCHVISION_INCLUDE:
+        print(f"{folder = }")
+        print(f"{Path(folder) = }")
         if (Path(folder) / header).exists():
             print(f"{searching_for} in {Path(folder) / header}. Found in TORCHVISION_INCLUDE.")
             return True, None, None
