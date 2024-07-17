@@ -36,25 +36,21 @@ BUILD_CUDA_SOURCES = (torch.cuda.is_available() and ((CUDA_HOME is not None) or 
 
 PACKAGE_NAME = "torchvision"
 
-def print_build_config():
-    # This is a function called a bunch of times in relevant places. Calling it
-    # just once at the top of the file isn't enough because setup.py is invoked
-    # multiple times even during a single build, with different entry points.
-    print("Torchvision build configuration:")
-    print(f"{FORCE_CUDA = }")
-    print(f"{FORCE_MPS = }")
-    print(f"{DEBUG = }")
-    print(f"{USE_PNG = }")
-    print(f"{USE_JPEG = }")
-    print(f"{USE_WEBP = }")
-    print(f"{USE_NVJPEG = }")
-    print(f"{NVCC_FLAGS = }")
-    print(f"{USE_FFMPEG = }")
-    print(f"{USE_VIDEO_CODEC = }")
-    print(f"{TORCHVISION_INCLUDE = }")
-    print(f"{TORCHVISION_LIBRARY = }")
-    print(f"{IS_ROCM = }")
-    print(f"{BUILD_CUDA_SOURCES = }")
+print("Torchvision build configuration:")
+print(f"{FORCE_CUDA = }")
+print(f"{FORCE_MPS = }")
+print(f"{DEBUG = }")
+print(f"{USE_PNG = }")
+print(f"{USE_JPEG = }")
+print(f"{USE_WEBP = }")
+print(f"{USE_NVJPEG = }")
+print(f"{NVCC_FLAGS = }")
+print(f"{USE_FFMPEG = }")
+print(f"{USE_VIDEO_CODEC = }")
+print(f"{TORCHVISION_INCLUDE = }")
+print(f"{TORCHVISION_LIBRARY = }")
+print(f"{IS_ROCM = }")
+print(f"{BUILD_CUDA_SOURCES = }")
 
 
 def get_version():
@@ -146,7 +142,6 @@ def get_macros_and_flags():
 
 def make_C_extension():
     print("Building _C extension")
-    print_build_config()
 
     sources = (
         list(CSRS_DIR.glob("*.cpp"))
@@ -269,7 +264,6 @@ def find_library(header):
 
 def make_image_extension():
     print("Building image extension")
-    print_build_config()
 
     include_dirs = TORCHVISION_INCLUDE.copy()
     library_dirs = TORCHVISION_LIBRARY.copy()
@@ -356,7 +350,7 @@ def make_image_extension():
 
 def make_video_decoders_extensions():
     print("Building video decoder extensions")
-    print_build_config()
+
     # Locating ffmpeg
     ffmpeg_exe = shutil.which("ffmpeg")
     has_ffmpeg = ffmpeg_exe is not None
