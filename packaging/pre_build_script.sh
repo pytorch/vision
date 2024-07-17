@@ -1,8 +1,5 @@
 #!/bin/bash
 
-conda install libwebp -y
-conda uninstall libjpeg-turbo -y
-
 if [[ "$(uname)" == Darwin ]]; then
   # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)
@@ -32,6 +29,8 @@ else
     conda install libpng -yq
     conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
   fi
+
+  conda install libwebp -y
 
   # Install native CentOS libJPEG, freetype and GnuTLS
   yum install -y libjpeg-turbo-devel freetype gnutls

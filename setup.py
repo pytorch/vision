@@ -233,6 +233,8 @@ def find_library(header):
     searching_for = f"Searching for {header}"
 
     for folder in TORCHVISION_INCLUDE:
+        if "jpeg" in header:
+            continue
         if (Path(folder) / header).exists():
             print(f"{searching_for} in {Path(folder) / header}. Found in TORCHVISION_INCLUDE.")
             return True, None, None
@@ -241,6 +243,8 @@ def find_library(header):
     # Try conda-related prefixes. If BUILD_PREFIX is set it means conda-build is
     # being run. If CONDA_PREFIX is set then we're in a conda environment.
     for prefix_env_var in ("BUILD_PREFIX", "CONDA_PREFIX"):
+        if "jpeg" in header:
+            continue
         if (prefix := os.environ.get(prefix_env_var)) is not None:
             prefix = Path(prefix)
             if sys.platform == "win32":
@@ -253,11 +257,12 @@ def find_library(header):
         print(f"{searching_for}. Didn't find in {prefix_env_var}.")
 
     if sys.platform == "linux":
-        prefixes = ("/usr/include", "/usr/local/include")
-        if any((Path(prefix) / header).exists() for prefix in prefixes):
-            print(f"{searching_for}. Found in {prefixes}.")
-            return True, None, None
-        print(f"{searching_for}. Didn't find in {prefixes}.")
+        for prefix in ("/usr/include", "/usr/local/include"):
+            prefix = Path(prefix)
+            if (prefix / header).exists():
+                print(f"{searching_for}. Found in {prefix}.")
+                return True, None, None
+            print(f"{searching_for}. Didn't find in {prefix}")
 
     return False, None, None
 
