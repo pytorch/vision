@@ -1,5 +1,8 @@
 #include "decode_webp.h"
+
+#if !WEBP_FOUND
 #include "webp/decode.h"
+#endif // WEBP_FOUND
 
 namespace vision {
 namespace image {
