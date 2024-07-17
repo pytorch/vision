@@ -247,6 +247,8 @@ def find_libjpeg():
     conda_prefix = os.environ.get("CONDA_PREFIX", None)
     if conda_prefix is not None:
         conda_prefix = Path(conda_prefix)
+        if os.name == "nt":
+            conda_prefix = conda_prefix / "Library"
         print(f"{conda_prefix = }")
         include_dir = conda_prefix / "include"
         library_dir = conda_prefix / "lib"
