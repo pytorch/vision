@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 import torchvision
-from torchvision.io import decode_jpeg, read_file, read_image, decode_webp
+from torchvision.io import decode_jpeg, decode_webp, read_file, read_image
 from torchvision.models import resnet50, ResNet50_Weights
 
 SCRIPT_DIR = Path(__file__).parent

@@ -18,6 +18,7 @@ FORCE_MPS = os.getenv("FORCE_MPS", "0") == "1"
 DEBUG = os.getenv("DEBUG", "0") == "1"
 USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
+USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 USE_FFMPEG = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
@@ -41,6 +42,7 @@ print(f"{FORCE_MPS = }")
 print(f"{DEBUG = }")
 print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
+print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
 print(f"{USE_FFMPEG = }")
@@ -221,17 +223,16 @@ def find_libpng():
     return True, include_dir, library_dir, library
 
 
-def find_libjpeg():
+def find_library(header):
     # returns (found, include dir, library dir)
     # if include dir or library dir is None, it means that the library is in
     # standard paths and don't need to be added to compiler / linker search
     # paths
 
-    library_header = "jpeglib.h"
-    searching_for = f"Searching for {library_header}"
+    searching_for = f"Searching for {header}"
 
     for folder in TORCHVISION_INCLUDE:
-        if (Path(folder) / library_header).exists():
+        if (Path(folder) / header).exists():
             print(f"{searching_for}. Found in TORCHVISION_INCLUDE.")
             return True, None, None
     print(f"{searching_for}. Didn't find in TORCHVISION_INCLUDE.")
@@ -245,14 +246,14 @@ def find_libjpeg():
                 prefix = prefix / "Library"
             include_dir = prefix / "include"
             library_dir = prefix / "lib"
-            if (include_dir / library_header).exists():
+            if (include_dir / header).exists():
                 print(f"{searching_for}. Found in {prefix_env_var}.")
                 return True, str(include_dir), str(library_dir)
         print(f"{searching_for}. Didn't find in {prefix_env_var}.")
 
     if sys.platform == "linux":
         prefixes = ("/usr/include", "/usr/local/include")
-        if any((Path(prefix) / library_header).exists() for prefix in prefixes):
+        if any((Path(prefix) / header).exists() for prefix in prefixes):
             print(f"{searching_for}. Found in {prefixes}.")
             return True, None, None
         print(f"{searching_for}. Didn't find in {prefixes}.")
@@ -294,7 +295,7 @@ def make_image_extension():
             warnings.warn("Building torchvision without PNG support")
 
     if USE_JPEG:
-        jpeg_found, jpeg_include_dir, jpeg_library_dir = find_libjpeg()
+        jpeg_found, jpeg_include_dir, jpeg_library_dir = find_library(header="jpeglib.h")
         if jpeg_found:
             print("Building torchvision with JPEG support")
             print(f"{jpeg_include_dir = }")
@@ -307,6 +308,21 @@ def make_image_extension():
             define_macros += [("JPEG_FOUND", 1)]
         else:
             warnings.warn("Building torchvision without JPEG support")
+
+    if USE_WEBP:
+        webp_found, webp_include_dir, webp_library_dir = find_library(header="webp/decode.h")
+        if webp_found:
+            print("Building torchvision with WEBP support")
+            print(f"{webp_include_dir = }")
+            print(f"{webp_library_dir = }")
+            if webp_include_dir is not None and webp_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
+                include_dirs.append(webp_include_dir)
+                library_dirs.append(webp_library_dir)
+            libraries.append("webp")
+            define_macros += [("WEBP_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without WEBP support")
 
     if USE_NVJPEG and torch.cuda.is_available():
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()

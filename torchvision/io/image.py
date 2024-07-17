@@ -334,11 +334,11 @@ def decode_gif(input: torch.Tensor) -> torch.Tensor:
         _log_api_usage_once(decode_gif)
     return torch.ops.image.decode_gif(input)
 
+
 def decode_webp(
     input: torch.Tensor,
 ) -> torch.Tensor:
-    """
-    """
+    """ """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_webp)
     return torch.ops.image.decode_webp(input)
