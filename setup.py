@@ -228,25 +228,28 @@ def find_libjpeg():
 
     for folder in TORCHVISION_INCLUDE:
         if (Path(folder) / library_header).exists():
+            print(f"{searching_for}. Found in TORCHVISION_INCLUDE.")
             return True, None, None
     print(f"{searching_for}. Didn't find in TORCHVISION_INCLUDE.")
 
     # Try conda-related prefixes. If BUILD_PREFIX is set it means conda-build is
     # being run. If CONDA_PREFIX is set then we're in a conda environment.
     for prefix_env_var in ("BUILD_PREFIX", "CONDA_PREFIX"):
-        if prefix := os.environ.get(prefix_env_var) is not None:
+        if (prefix := os.environ.get(prefix_env_var)) is not None:
             prefix = Path(prefix)
             if sys.platform == "win32":
                 prefix = prefix / "Library"
             include_dir = prefix / "include"
             library_dir = prefix / "lib"
             if (include_dir / library_header).exists():
+                print(f"{searching_for}. Found in {prefix_env_var}.")
                 return True, str(include_dir), str(library_dir)
         print(f"{searching_for}. Didn't find in {prefix_env_var}.")
 
     if sys.platform == "linux":
         prefixes = ("/usr/include", "/usr/local/include")
         if any((Path(prefix) / library_header).exists() for prefix in prefixes):
+            print(f"{searching_for}. Found in {prefixes}.")
             return True, None, None
         print(f"{searching_for}. Didn't find in {prefixes}.")
 
