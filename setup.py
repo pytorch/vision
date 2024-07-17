@@ -14,23 +14,14 @@ from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension, ROCM_HOME
 
 FORCE_CUDA = os.getenv("FORCE_CUDA", "0") == "1"
-print(f"{FORCE_CUDA = }")
 FORCE_MPS = os.getenv("FORCE_MPS", "0") == "1"
-print(f"{FORCE_MPS = }")
 DEBUG = os.getenv("DEBUG", "0") == "1"
-print(f"{DEBUG = }")
 USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
-print(f"{USE_PNG = }")
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
-print(f"{USE_JPEG = }")
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
-print(f"{USE_NVJPEG = }")
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
-print(f"{NVCC_FLAGS = }")
 USE_FFMPEG = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
-print(f"{USE_FFMPEG = }")
 USE_VIDEO_CODEC = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
-print(f"{USE_VIDEO_CODEC = }")
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
@@ -43,6 +34,21 @@ IS_ROCM = (torch.version.hip is not None) and (ROCM_HOME is not None)
 BUILD_CUDA_SOURCES = (torch.cuda.is_available() and ((CUDA_HOME is not None) or IS_ROCM)) or FORCE_CUDA
 
 PACKAGE_NAME = "torchvision"
+
+print("Torchvision build configuration:")
+print(f"{FORCE_CUDA = }")
+print(f"{FORCE_MPS = }")
+print(f"{DEBUG = }")
+print(f"{USE_PNG = }")
+print(f"{USE_JPEG = }")
+print(f"{USE_NVJPEG = }")
+print(f"{NVCC_FLAGS = }")
+print(f"{USE_FFMPEG = }")
+print(f"{USE_VIDEO_CODEC = }")
+print(f"{TORCHVISION_INCLUDE = }")
+print(f"{TORCHVISION_LIBRARY = }")
+print(f"{IS_ROCM = }")
+print(f"{BUILD_CUDA_SOURCES = }")
 
 
 def get_version():
@@ -134,11 +140,11 @@ def get_macros_and_flags():
 
 def make_C_extension():
 
-    common_sources = (
-        list(CSRS_DIR.glob("*.cpp")) + list(CSRS_DIR.glob("ops/*.cpp")) + list(CSRS_DIR.glob("ops/autocast/*.cpp"))
-    )
-    cpu_sources = (
-        list(CSRS_DIR.glob("ops/autograd/*.cpp"))
+    sources = (
+        list(CSRS_DIR.glob("*.cpp"))
+        + list(CSRS_DIR.glob("ops/*.cpp"))
+        + list(CSRS_DIR.glob("ops/autocast/*.cpp"))
+        + list(CSRS_DIR.glob("ops/autograd/*.cpp"))
         + list(CSRS_DIR.glob("ops/cpu/*.cpp"))
         + list(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
     )
@@ -159,8 +165,6 @@ def make_C_extension():
             shutil.copy(str(header), str(CSRS_DIR / "ops/hip"))
     else:
         cuda_sources = list(CSRS_DIR.glob("ops/cuda/*.cu"))
-
-    sources = common_sources + cpu_sources
 
     if BUILD_CUDA_SOURCES:
         Extension = CUDAExtension
