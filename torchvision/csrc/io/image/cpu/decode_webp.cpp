@@ -12,13 +12,14 @@ torch::Tensor decode_webp(const torch::Tensor& data) {
 #else
 
 torch::Tensor decode_webp(const torch::Tensor& data) {
-    int width = 0;
-    int height = 0;
+  int width = 0;
+  int height = 0;
 
-    auto decoded_data = WebPDecodeRGB(data.data_ptr<uint8_t>(), data.numel(), &width, &height);
-    TORCH_CHECK(decoded_data != nullptr, "WebPDecodeRGB failed.");
-    auto out = torch::from_blob(decoded_data, {height, width, 3}, torch::kUInt8);
-    return out.permute({2, 0, 1});  // return CHW, channels-last
+  auto decoded_data =
+      WebPDecodeRGB(data.data_ptr<uint8_t>(), data.numel(), &width, &height);
+  TORCH_CHECK(decoded_data != nullptr, "WebPDecodeRGB failed.");
+  auto out = torch::from_blob(decoded_data, {height, width, 3}, torch::kUInt8);
+  return out.permute({2, 0, 1}); // return CHW, channels-last
 }
 #endif // WEBP_FOUND
 

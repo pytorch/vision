@@ -797,9 +797,10 @@ def test_decode_gif_errors():
         decode_gif(encoded_data)
 
 
-def test_decode_webp(tmpdir):
+@pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
+def test_decode_webp(decode_fun):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
-    img = decode_webp(encoded_bytes)
+    img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
 
 
