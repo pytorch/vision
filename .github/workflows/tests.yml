@@ -14,11 +14,11 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
+        #   - "3.8"
+        #   - "3.9"
+        #   - "3.10"
           - "3.11"
-          - "3.12"
+        #   - "3.12"
         runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:
