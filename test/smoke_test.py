@@ -2,11 +2,13 @@
 
 import sys
 from pathlib import Path
+import warnings
 
 import torch
 import torchvision
 from torchvision.io import decode_jpeg, decode_webp, read_file, read_image
 from torchvision.models import resnet50, ResNet50_Weights
+
 
 SCRIPT_DIR = Path(__file__).parent
 
@@ -80,11 +82,19 @@ def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
 
-    # Turn 1.11.0aHASH into 1.11 (major.minor only)
-    version = ".".join(torchvision.__version__.split(".")[:2])
-    if version >= "0.16":
-        print(f"{torch.ops.image._jpeg_version() = }")
-        assert torch.ops.image._is_compiled_against_turbo()
+    print(f"{torch.ops.image._jpeg_version() = }")
+    if not torch.ops.image._is_compiled_against_turbo():
+        msg = "Torchvision wasn't compiled against libjpeg-turbo"
+        if sys.platform == "darwin" and os.getenv("BUILD_PREFIX") is not None:
+            # BUILD_PREFIX is set by conda when building the conda package with
+            # conda-build.
+            # When building the conda package on M1, it's difficult to enforce
+            # that we build against turbo due to interactions with the libwebp
+            # package. So we just raise a warning and accept it, instead of
+            # raising an error.
+            warnings.warn(msg)
+        else:
+            raise ValueError(msg)
 
     smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
