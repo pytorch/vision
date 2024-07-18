@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+import os
 import warnings
 
 import torch
@@ -85,9 +86,7 @@ def main() -> None:
     print(f"{torch.ops.image._jpeg_version() = }")
     if not torch.ops.image._is_compiled_against_turbo():
         msg = "Torchvision wasn't compiled against libjpeg-turbo"
-        if sys.platform == "darwin" and os.getenv("BUILD_PREFIX") is not None:
-            # BUILD_PREFIX is set by conda when building the conda package with
-            # conda-build.
+        if os.getenv("IS_M1_CONDA_BUILD_JOB") == "1":
             # When building the conda package on M1, it's difficult to enforce
             # that we build against turbo due to interactions with the libwebp
             # package. So we just raise a warning and accept it, instead of
