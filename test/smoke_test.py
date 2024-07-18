@@ -84,6 +84,9 @@ def main() -> None:
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
 
     print(f"{torch.ops.image._jpeg_version() = }")
+    print("XXX")
+    print(os.getenv("IS_M1_CONDA_BUILD_JOB"))
+    print("XXX")
     if not torch.ops.image._is_compiled_against_turbo():
         msg = "Torchvision wasn't compiled against libjpeg-turbo"
         if os.getenv("IS_M1_CONDA_BUILD_JOB") == "1":
