@@ -139,6 +139,7 @@ def get_macros_and_flags():
 
 
 def make_C_extension():
+    print("Building _C extension")
 
     sources = (
         list(CSRS_DIR.glob("*.cpp"))
@@ -221,18 +222,17 @@ def find_libpng():
     return True, include_dir, library_dir, library
 
 
-def find_libjpeg():
+def find_library(header):
     # returns (found, include dir, library dir)
     # if include dir or library dir is None, it means that the library is in
     # standard paths and don't need to be added to compiler / linker search
     # paths
 
-    library_header = "jpeglib.h"
-    searching_for = f"Searching for {library_header}"
+    searching_for = f"Searching for {header}"
 
     for folder in TORCHVISION_INCLUDE:
-        if (Path(folder) / library_header).exists():
-            print(f"{searching_for}. Found in TORCHVISION_INCLUDE.")
+        if (Path(folder) / header).exists():
+            print(f"{searching_for} in {Path(folder) / header}. Found in TORCHVISION_INCLUDE.")
             return True, None, None
     print(f"{searching_for}. Didn't find in TORCHVISION_INCLUDE.")
 
@@ -245,22 +245,23 @@ def find_libjpeg():
                 prefix = prefix / "Library"
             include_dir = prefix / "include"
             library_dir = prefix / "lib"
-            if (include_dir / library_header).exists():
+            if (include_dir / header).exists():
                 print(f"{searching_for}. Found in {prefix_env_var}.")
                 return True, str(include_dir), str(library_dir)
         print(f"{searching_for}. Didn't find in {prefix_env_var}.")
 
     if sys.platform == "linux":
-        prefixes = ("/usr/include", "/usr/local/include")
-        if any((Path(prefix) / library_header).exists() for prefix in prefixes):
-            print(f"{searching_for}. Found in {prefixes}.")
-            return True, None, None
-        print(f"{searching_for}. Didn't find in {prefixes}.")
+        for prefix in (Path("/usr/include"), Path("/usr/local/include")):
+            if (prefix / header).exists():
+                print(f"{searching_for}. Found in {prefix}.")
+                return True, None, None
+            print(f"{searching_for}. Didn't find in {prefix}")
 
     return False, None, None
 
 
 def make_image_extension():
+    print("Building image extension")
 
     include_dirs = TORCHVISION_INCLUDE.copy()
     library_dirs = TORCHVISION_LIBRARY.copy()
@@ -294,7 +295,7 @@ def make_image_extension():
             warnings.warn("Building torchvision without PNG support")
 
     if USE_JPEG:
-        jpeg_found, jpeg_include_dir, jpeg_library_dir = find_libjpeg()
+        jpeg_found, jpeg_include_dir, jpeg_library_dir = find_library(header="jpeglib.h")
         if jpeg_found:
             print("Building torchvision with JPEG support")
             print(f"{jpeg_include_dir = }")
@@ -331,6 +332,8 @@ def make_image_extension():
 
 
 def make_video_decoders_extensions():
+    print("Building video decoder extensions")
+
     # Locating ffmpeg
     ffmpeg_exe = shutil.which("ffmpeg")
     has_ffmpeg = ffmpeg_exe is not None
