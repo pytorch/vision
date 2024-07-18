@@ -13,8 +13,9 @@ if [[ "$(uname)" == Darwin ]]; then
 fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
-  conda install libpng -yq
-  conda install -yq ffmpeg=4.2 libjpeg-turbo libwebp -c pytorch
+  conda install libpng libwebp -yq
+  conda uninstall libjpeg-turbo libjpeg -y
+  conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch
 
   # Copy binaries to be included in the wheel distribution
   if [[ "$OSTYPE" == "msys" ]]; then
