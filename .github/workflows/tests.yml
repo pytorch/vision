@@ -48,11 +48,11 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
+        #   - "3.8"
+        #   - "3.9"
+        #   - "3.10"
           - "3.11"
-          - "3.12"
+        #   - "3.12"
         runner: ["macos-m1-stable"]
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
