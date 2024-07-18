@@ -13,9 +13,6 @@ on:
         - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 
-env:
-  IS_M1_CONDA_BUILD_JOB: 1
-
 jobs:
   generate-matrix:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
