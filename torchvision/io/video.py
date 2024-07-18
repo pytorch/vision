@@ -80,7 +80,7 @@ def write_video(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_video)
     _check_av_available()
-    video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
+    video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy(force=True)
 
     # PyAV does not support floating point numbers with decimal point
     # and will throw OverflowException in case this is not the case
