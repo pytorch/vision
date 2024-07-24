@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+vit_b_16
+========
+
+.. autofunction:: vit_b_16

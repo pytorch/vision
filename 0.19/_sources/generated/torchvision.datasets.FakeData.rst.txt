@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+FakeData
+========
+
+.. autoclass:: FakeData
+    :members:
+        __getitem__,
+        
+    :special-members:

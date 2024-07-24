@@ -1,0 +1,1562 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchvision.models.detection.faster_rcnn &mdash; Torchvision 0.19 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T8XT4PS');</script>
+    <!-- End Google Tag Manager -->
+  
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+
+          <li class="main-menu-item">
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Learn
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/get-started">
+                  <span class=dropdown-title>Get Started</span>
+                  <p>Run PyTorch locally or get started quickly with one of the supported cloud platforms</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials">
+                  <span class="dropdown-title">Tutorials</span>
+                  <p>Whats new in PyTorch tutorials</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/beginner/basics/intro.html">
+                  <span class="dropdown-title">Learn the Basics</span>
+                  <p>Familiarize yourself with PyTorch concepts and modules</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/recipes/recipes_index.html">
+                  <span class="dropdown-title">PyTorch Recipes</span>
+                  <p>Bite-size, ready-to-deploy PyTorch code examples</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/beginner/introyt.html">
+                  <span class="dropdown-title">Intro to PyTorch - YouTube Series</span>
+                  <p>Master PyTorch basics with our engaging YouTube tutorial series</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Ecosystem
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class="dropdown-title">Tools</span>
+                  <p>Learn about the tools and frameworks in the PyTorch Ecosystem</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class=dropdown-title>Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class=dropdown-title>Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem/contributor-awards-2023">
+                  <span class="dropdown-title">Contributor Awards - 2023</span>
+                  <p>Award winners announced at this year's PyTorch Conference</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                  <p>Build innovative and privacy-aware AI experiences for edge devices</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch-overview">
+                  <span class="dropdown-title">ExecuTorch</span>
+                  <p>End-to-end solution for enabling on-device inference capabilities across mobile and edge devices</p>
+                </a>
+              </div>
+            </div>  
+          </li>
+
+          <li class="main-menu-item">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p>Explore the documentation for comprehensive guidance on how to use PyTorch</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/pytorch-domains">
+                  <span class="dropdown-title">PyTorch Domains</span>
+                  <p>Read the PyTorch Domains documentation to learn more about domain-specific libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Blogs & News 
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/blog/">
+                  <span class="dropdown-title">PyTorch Blog</span>
+                  <p>Catch up on the latest technical news and happenings</p>
+                </a>
+                 <a class="nav-dropdown-item" href="https://pytorch.org/community-blog">
+                  <span class="dropdown-title">Community Blog</span>
+                  <p>Stories from the PyTorch ecosystem</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/videos">
+                  <span class="dropdown-title">Videos</span>
+                  <p>Learn about the latest PyTorch tutorials, new, and more </p>
+                <a class="nav-dropdown-item" href="https://pytorch.org/community-stories">
+                  <span class="dropdown-title">Community Stories</span>
+                  <p>Learn how our community solves real, everyday machine learning problems with PyTorch</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/events">
+                  <span class="dropdown-title">Events</span>
+                  <p>Find events, webinars, and podcasts</p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                About
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/foundation">
+                  <span class="dropdown-title">PyTorch Foundation</span>
+                  <p>Learn more about the PyTorch Foundation</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/governing-board">
+                  <span class="dropdown-title">Governing Board</span>
+                  <p></p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li class="main-menu-item">
+            <div class="no-dropdown">
+              <a href="https://pytorch.org/join" data-cta="join">
+                Become a Member
+              </a>
+            </div>
+          </li>
+          <li>
+           <div class="main-menu-item">
+             <a href="https://github.com/pytorch/pytorch" class="github-icon">
+             </a>
+           </div>
+          </li>
+          <!--- TODO: This block adds the search icon to the nav bar. We will enable it later. 
+          <li>
+            <div class="main-menu-item">
+             <a href="https://github.com/pytorch/pytorch" class="search-icon">
+             </a>
+            </div>
+          </li>
+          --->
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='https://pytorch.org/vision/versions.html'>0.19 &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tv_tensors.html">TVTensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../auto_examples/index.html">Examples and tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_references.html">Training references</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/text">torchtext</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/vision">torchvision</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/elastic/">TorchElastic</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/serve">TorchServe</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://pytorch.org/xla/">PyTorch on XLA Devices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="../../../../index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+          <li><a href="../../../index.html">Module code</a> &gt;</li>
+        
+          <li><a href="../../../torchvision.html">torchvision</a> &gt;</li>
+        
+      <li>torchvision.models.detection.faster_rcnn</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          <!-- Google Tag Manager (noscript) -->
+          <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T8XT4PS"
+          height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+          <!-- End Google Tag Manager (noscript) -->
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <h1>Source code for torchvision.models.detection.faster_rcnn</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">MultiScaleRoIAlign</span>
+
+<span class="kn">from</span> <span class="nn">...ops</span> <span class="kn">import</span> <span class="n">misc</span> <span class="k">as</span> <span class="n">misc_nn_ops</span>
+<span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">ObjectDetection</span>
+<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span> <span class="nn">.._meta</span> <span class="kn">import</span> <span class="n">_COCO_CATEGORIES</span>
+<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">_ovewrite_value_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
+<span class="kn">from</span> <span class="nn">..mobilenetv3</span> <span class="kn">import</span> <span class="n">mobilenet_v3_large</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span>
+<span class="kn">from</span> <span class="nn">..resnet</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">overwrite_eps</span>
+<span class="kn">from</span> <span class="nn">.anchor_utils</span> <span class="kn">import</span> <span class="n">AnchorGenerator</span>
+<span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">_mobilenet_extractor</span><span class="p">,</span> <span class="n">_resnet_fpn_extractor</span><span class="p">,</span> <span class="n">_validate_trainable_layers</span>
+<span class="kn">from</span> <span class="nn">.generalized_rcnn</span> <span class="kn">import</span> <span class="n">GeneralizedRCNN</span>
+<span class="kn">from</span> <span class="nn">.roi_heads</span> <span class="kn">import</span> <span class="n">RoIHeads</span>
+<span class="kn">from</span> <span class="nn">.rpn</span> <span class="kn">import</span> <span class="n">RegionProposalNetwork</span><span class="p">,</span> <span class="n">RPNHead</span>
+<span class="kn">from</span> <span class="nn">.transform</span> <span class="kn">import</span> <span class="n">GeneralizedRCNNTransform</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;FasterRCNN&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FasterRCNN_ResNet50_FPN_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FasterRCNN_ResNet50_FPN_V2_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FasterRCNN_MobileNet_V3_Large_FPN_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FasterRCNN_MobileNet_V3_Large_320_FPN_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fasterrcnn_resnet50_fpn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fasterrcnn_resnet50_fpn_v2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fasterrcnn_mobilenet_v3_large_fpn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fasterrcnn_mobilenet_v3_large_320_fpn&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_default_anchorgen</span><span class="p">():</span>
+    <span class="n">anchor_sizes</span> <span class="o">=</span> <span class="p">((</span><span class="mi">32</span><span class="p">,),</span> <span class="p">(</span><span class="mi">64</span><span class="p">,),</span> <span class="p">(</span><span class="mi">128</span><span class="p">,),</span> <span class="p">(</span><span class="mi">256</span><span class="p">,),</span> <span class="p">(</span><span class="mi">512</span><span class="p">,))</span>
+    <span class="n">aspect_ratios</span> <span class="o">=</span> <span class="p">((</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">anchor_sizes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">AnchorGenerator</span><span class="p">(</span><span class="n">anchor_sizes</span><span class="p">,</span> <span class="n">aspect_ratios</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">FasterRCNN</span><span class="p">(</span><span class="n">GeneralizedRCNN</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements Faster R-CNN.</span>
+
+<span class="sd">    The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each</span>
+<span class="sd">    image, and should be in 0-1 range. Different images can have different sizes.</span>
+
+<span class="sd">    The behavior of the model changes depending on if it is in training or evaluation mode.</span>
+
+<span class="sd">    During training, the model expects both the input tensors and targets (list of dictionary),</span>
+<span class="sd">    containing:</span>
+<span class="sd">        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with</span>
+<span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
+<span class="sd">        - labels (Int64Tensor[N]): the class label for each ground-truth box</span>
+
+<span class="sd">    The model returns a Dict[Tensor] during training, containing the classification and regression</span>
+<span class="sd">    losses for both the RPN and the R-CNN.</span>
+
+<span class="sd">    During inference, the model requires only the input tensors, and returns the post-processed</span>
+<span class="sd">    predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as</span>
+<span class="sd">    follows:</span>
+<span class="sd">        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with</span>
+<span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
+<span class="sd">        - labels (Int64Tensor[N]): the predicted labels for each image</span>
+<span class="sd">        - scores (Tensor[N]): the scores or each prediction</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        backbone (nn.Module): the network used to compute the features for the model.</span>
+<span class="sd">            It should contain an out_channels attribute, which indicates the number of output</span>
+<span class="sd">            channels that each feature map has (and it should be the same for all feature maps).</span>
+<span class="sd">            The backbone should return a single Tensor or and OrderedDict[Tensor].</span>
+<span class="sd">        num_classes (int): number of output classes of the model (including the background).</span>
+<span class="sd">            If box_predictor is specified, num_classes should be None.</span>
+<span class="sd">        min_size (int): Images are rescaled before feeding them to the backbone:</span>
+<span class="sd">            we attempt to preserve the aspect ratio and scale the shorter edge</span>
+<span class="sd">            to ``min_size``. If the resulting longer edge exceeds ``max_size``,</span>
+<span class="sd">            then downscale so that the longer edge does not exceed ``max_size``.</span>
+<span class="sd">            This may result in the shorter edge beeing lower than ``min_size``.</span>
+<span class="sd">        max_size (int): See ``min_size``.</span>
+<span class="sd">        image_mean (Tuple[float, float, float]): mean values used for input normalization.</span>
+<span class="sd">            They are generally the mean values of the dataset on which the backbone has been trained</span>
+<span class="sd">            on</span>
+<span class="sd">        image_std (Tuple[float, float, float]): std values used for input normalization.</span>
+<span class="sd">            They are generally the std values of the dataset on which the backbone has been trained on</span>
+<span class="sd">        rpn_anchor_generator (AnchorGenerator): module that generates the anchors for a set of feature</span>
+<span class="sd">            maps.</span>
+<span class="sd">        rpn_head (nn.Module): module that computes the objectness and regression deltas from the RPN</span>
+<span class="sd">        rpn_pre_nms_top_n_train (int): number of proposals to keep before applying NMS during training</span>
+<span class="sd">        rpn_pre_nms_top_n_test (int): number of proposals to keep before applying NMS during testing</span>
+<span class="sd">        rpn_post_nms_top_n_train (int): number of proposals to keep after applying NMS during training</span>
+<span class="sd">        rpn_post_nms_top_n_test (int): number of proposals to keep after applying NMS during testing</span>
+<span class="sd">        rpn_nms_thresh (float): NMS threshold used for postprocessing the RPN proposals</span>
+<span class="sd">        rpn_fg_iou_thresh (float): minimum IoU between the anchor and the GT box so that they can be</span>
+<span class="sd">            considered as positive during training of the RPN.</span>
+<span class="sd">        rpn_bg_iou_thresh (float): maximum IoU between the anchor and the GT box so that they can be</span>
+<span class="sd">            considered as negative during training of the RPN.</span>
+<span class="sd">        rpn_batch_size_per_image (int): number of anchors that are sampled during training of the RPN</span>
+<span class="sd">            for computing the loss</span>
+<span class="sd">        rpn_positive_fraction (float): proportion of positive anchors in a mini-batch during training</span>
+<span class="sd">            of the RPN</span>
+<span class="sd">        rpn_score_thresh (float): only return proposals with an objectness score greater than rpn_score_thresh</span>
+<span class="sd">        box_roi_pool (MultiScaleRoIAlign): the module which crops and resizes the feature maps in</span>
+<span class="sd">            the locations indicated by the bounding boxes</span>
+<span class="sd">        box_head (nn.Module): module that takes the cropped feature maps as input</span>
+<span class="sd">        box_predictor (nn.Module): module that takes the output of box_head and returns the</span>
+<span class="sd">            classification logits and box regression deltas.</span>
+<span class="sd">        box_score_thresh (float): during inference, only return proposals with a classification score</span>
+<span class="sd">            greater than box_score_thresh</span>
+<span class="sd">        box_nms_thresh (float): NMS threshold for the prediction head. Used during inference</span>
+<span class="sd">        box_detections_per_img (int): maximum number of detections per image, for all classes.</span>
+<span class="sd">        box_fg_iou_thresh (float): minimum IoU between the proposals and the GT box so that they can be</span>
+<span class="sd">            considered as positive during training of the classification head</span>
+<span class="sd">        box_bg_iou_thresh (float): maximum IoU between the proposals and the GT box so that they can be</span>
+<span class="sd">            considered as negative during training of the classification head</span>
+<span class="sd">        box_batch_size_per_image (int): number of proposals that are sampled during training of the</span>
+<span class="sd">            classification head</span>
+<span class="sd">        box_positive_fraction (float): proportion of positive proposals in a mini-batch during training</span>
+<span class="sd">            of the classification head</span>
+<span class="sd">        bbox_reg_weights (Tuple[float, float, float, float]): weights for the encoding/decoding of the</span>
+<span class="sd">            bounding boxes</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        &gt;&gt;&gt; import torch</span>
+<span class="sd">        &gt;&gt;&gt; import torchvision</span>
+<span class="sd">        &gt;&gt;&gt; from torchvision.models.detection import FasterRCNN</span>
+<span class="sd">        &gt;&gt;&gt; from torchvision.models.detection.rpn import AnchorGenerator</span>
+<span class="sd">        &gt;&gt;&gt; # load a pre-trained model for classification and return</span>
+<span class="sd">        &gt;&gt;&gt; # only the features</span>
+<span class="sd">        &gt;&gt;&gt; backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features</span>
+<span class="sd">        &gt;&gt;&gt; # FasterRCNN needs to know the number of</span>
+<span class="sd">        &gt;&gt;&gt; # output channels in a backbone. For mobilenet_v2, it&#39;s 1280,</span>
+<span class="sd">        &gt;&gt;&gt; # so we need to add it here</span>
+<span class="sd">        &gt;&gt;&gt; backbone.out_channels = 1280</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # let&#39;s make the RPN generate 5 x 3 anchors per spatial</span>
+<span class="sd">        &gt;&gt;&gt; # location, with 5 different sizes and 3 different aspect</span>
+<span class="sd">        &gt;&gt;&gt; # ratios. We have a Tuple[Tuple[int]] because each feature</span>
+<span class="sd">        &gt;&gt;&gt; # map could potentially have different sizes and</span>
+<span class="sd">        &gt;&gt;&gt; # aspect ratios</span>
+<span class="sd">        &gt;&gt;&gt; anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),</span>
+<span class="sd">        &gt;&gt;&gt;                                    aspect_ratios=((0.5, 1.0, 2.0),))</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # let&#39;s define what are the feature maps that we will</span>
+<span class="sd">        &gt;&gt;&gt; # use to perform the region of interest cropping, as well as</span>
+<span class="sd">        &gt;&gt;&gt; # the size of the crop after rescaling.</span>
+<span class="sd">        &gt;&gt;&gt; # if your backbone returns a Tensor, featmap_names is expected to</span>
+<span class="sd">        &gt;&gt;&gt; # be [&#39;0&#39;]. More generally, the backbone should return an</span>
+<span class="sd">        &gt;&gt;&gt; # OrderedDict[Tensor], and in featmap_names you can choose which</span>
+<span class="sd">        &gt;&gt;&gt; # feature maps to use.</span>
+<span class="sd">        &gt;&gt;&gt; roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[&#39;0&#39;],</span>
+<span class="sd">        &gt;&gt;&gt;                                                 output_size=7,</span>
+<span class="sd">        &gt;&gt;&gt;                                                 sampling_ratio=2)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # put the pieces together inside a FasterRCNN model</span>
+<span class="sd">        &gt;&gt;&gt; model = FasterRCNN(backbone,</span>
+<span class="sd">        &gt;&gt;&gt;                    num_classes=2,</span>
+<span class="sd">        &gt;&gt;&gt;                    rpn_anchor_generator=anchor_generator,</span>
+<span class="sd">        &gt;&gt;&gt;                    box_roi_pool=roi_pooler)</span>
+<span class="sd">        &gt;&gt;&gt; model.eval()</span>
+<span class="sd">        &gt;&gt;&gt; x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]</span>
+<span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backbone</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># transform parameters</span>
+        <span class="n">min_size</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span>
+        <span class="n">max_size</span><span class="o">=</span><span class="mi">1333</span><span class="p">,</span>
+        <span class="n">image_mean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">image_std</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># RPN parameters</span>
+        <span class="n">rpn_anchor_generator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rpn_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rpn_pre_nms_top_n_train</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">rpn_pre_nms_top_n_test</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">rpn_post_nms_top_n_train</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">rpn_post_nms_top_n_test</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">rpn_nms_thresh</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">rpn_fg_iou_thresh</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">rpn_bg_iou_thresh</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">rpn_batch_size_per_image</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">rpn_positive_fraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">rpn_score_thresh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="c1"># Box parameters</span>
+        <span class="n">box_roi_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">box_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">box_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">box_score_thresh</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">box_nms_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">box_detections_per_img</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">box_fg_iou_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">box_bg_iou_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">box_batch_size_per_image</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+        <span class="n">box_positive_fraction</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">bbox_reg_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;out_channels&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;backbone should contain an attribute out_channels &quot;</span>
+                <span class="s2">&quot;specifying the number of output channels (assumed to be the &quot;</span>
+                <span class="s2">&quot;same for all the levels)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rpn_anchor_generator</span><span class="p">,</span> <span class="p">(</span><span class="n">AnchorGenerator</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;rpn_anchor_generator should be of type AnchorGenerator or None instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rpn_anchor_generator</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">box_roi_pool</span><span class="p">,</span> <span class="p">(</span><span class="n">MultiScaleRoIAlign</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;box_roi_pool should be of type MultiScaleRoIAlign or None instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">box_roi_pool</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">box_predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes should be None when box_predictor is specified&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">box_predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes should not be None when box_predictor is not specified&quot;</span><span class="p">)</span>
+
+        <span class="n">out_channels</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span>
+
+        <span class="k">if</span> <span class="n">rpn_anchor_generator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rpn_anchor_generator</span> <span class="o">=</span> <span class="n">_default_anchorgen</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">rpn_head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rpn_head</span> <span class="o">=</span> <span class="n">RPNHead</span><span class="p">(</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">rpn_anchor_generator</span><span class="o">.</span><span class="n">num_anchors_per_location</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">rpn_pre_nms_top_n</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">training</span><span class="o">=</span><span class="n">rpn_pre_nms_top_n_train</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="n">rpn_pre_nms_top_n_test</span><span class="p">)</span>
+        <span class="n">rpn_post_nms_top_n</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">training</span><span class="o">=</span><span class="n">rpn_post_nms_top_n_train</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="n">rpn_post_nms_top_n_test</span><span class="p">)</span>
+
+        <span class="n">rpn</span> <span class="o">=</span> <span class="n">RegionProposalNetwork</span><span class="p">(</span>
+            <span class="n">rpn_anchor_generator</span><span class="p">,</span>
+            <span class="n">rpn_head</span><span class="p">,</span>
+            <span class="n">rpn_fg_iou_thresh</span><span class="p">,</span>
+            <span class="n">rpn_bg_iou_thresh</span><span class="p">,</span>
+            <span class="n">rpn_batch_size_per_image</span><span class="p">,</span>
+            <span class="n">rpn_positive_fraction</span><span class="p">,</span>
+            <span class="n">rpn_pre_nms_top_n</span><span class="p">,</span>
+            <span class="n">rpn_post_nms_top_n</span><span class="p">,</span>
+            <span class="n">rpn_nms_thresh</span><span class="p">,</span>
+            <span class="n">score_thresh</span><span class="o">=</span><span class="n">rpn_score_thresh</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">box_roi_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">box_roi_pool</span> <span class="o">=</span> <span class="n">MultiScaleRoIAlign</span><span class="p">(</span><span class="n">featmap_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">],</span> <span class="n">output_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">box_head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">resolution</span> <span class="o">=</span> <span class="n">box_roi_pool</span><span class="o">.</span><span class="n">output_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">representation_size</span> <span class="o">=</span> <span class="mi">1024</span>
+            <span class="n">box_head</span> <span class="o">=</span> <span class="n">TwoMLPHead</span><span class="p">(</span><span class="n">out_channels</span> <span class="o">*</span> <span class="n">resolution</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">representation_size</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">box_predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">representation_size</span> <span class="o">=</span> <span class="mi">1024</span>
+            <span class="n">box_predictor</span> <span class="o">=</span> <span class="n">FastRCNNPredictor</span><span class="p">(</span><span class="n">representation_size</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
+
+        <span class="n">roi_heads</span> <span class="o">=</span> <span class="n">RoIHeads</span><span class="p">(</span>
+            <span class="c1"># Box</span>
+            <span class="n">box_roi_pool</span><span class="p">,</span>
+            <span class="n">box_head</span><span class="p">,</span>
+            <span class="n">box_predictor</span><span class="p">,</span>
+            <span class="n">box_fg_iou_thresh</span><span class="p">,</span>
+            <span class="n">box_bg_iou_thresh</span><span class="p">,</span>
+            <span class="n">box_batch_size_per_image</span><span class="p">,</span>
+            <span class="n">box_positive_fraction</span><span class="p">,</span>
+            <span class="n">bbox_reg_weights</span><span class="p">,</span>
+            <span class="n">box_score_thresh</span><span class="p">,</span>
+            <span class="n">box_nms_thresh</span><span class="p">,</span>
+            <span class="n">box_detections_per_img</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">image_mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_mean</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">image_std</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_std</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">]</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">GeneralizedRCNNTransform</span><span class="p">(</span><span class="n">min_size</span><span class="p">,</span> <span class="n">max_size</span><span class="p">,</span> <span class="n">image_mean</span><span class="p">,</span> <span class="n">image_std</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">rpn</span><span class="p">,</span> <span class="n">roi_heads</span><span class="p">,</span> <span class="n">transform</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">TwoMLPHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standard heads for FPN-based models</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        in_channels (int): number of input channels</span>
+<span class="sd">        representation_size (int): size of the intermediate representation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">representation_size</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc6</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">representation_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc7</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">representation_size</span><span class="p">,</span> <span class="n">representation_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc6</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc7</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="k">class</span> <span class="nc">FastRCNNConvFCHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">conv_layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">fc_layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            input_size (Tuple[int, int, int]): the input size in CHW format.</span>
+<span class="sd">            conv_layers (list): feature dimensions of each Convolution layer</span>
+<span class="sd">            fc_layers (list): feature dimensions of each FCN layer</span>
+<span class="sd">            norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">in_channels</span><span class="p">,</span> <span class="n">in_height</span><span class="p">,</span> <span class="n">in_width</span> <span class="o">=</span> <span class="n">input_size</span>
+
+        <span class="n">blocks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">previous_channels</span> <span class="o">=</span> <span class="n">in_channels</span>
+        <span class="k">for</span> <span class="n">current_channels</span> <span class="ow">in</span> <span class="n">conv_layers</span><span class="p">:</span>
+            <span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">misc_nn_ops</span><span class="o">.</span><span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">previous_channels</span><span class="p">,</span> <span class="n">current_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">))</span>
+            <span class="n">previous_channels</span> <span class="o">=</span> <span class="n">current_channels</span>
+        <span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">())</span>
+        <span class="n">previous_channels</span> <span class="o">=</span> <span class="n">previous_channels</span> <span class="o">*</span> <span class="n">in_height</span> <span class="o">*</span> <span class="n">in_width</span>
+        <span class="k">for</span> <span class="n">current_channels</span> <span class="ow">in</span> <span class="n">fc_layers</span><span class="p">:</span>
+            <span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">previous_channels</span><span class="p">,</span> <span class="n">current_channels</span><span class="p">))</span>
+            <span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="n">previous_channels</span> <span class="o">=</span> <span class="n">current_channels</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">blocks</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">FastRCNNPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standard classification + bounding box regression layers</span>
+<span class="sd">    for Fast R-CNN.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        in_channels (int): number of input channels</span>
+<span class="sd">        num_classes (int): number of output classes (including background)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cls_score</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bbox_pred</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="sa">f</span><span class="s2">&quot;x has the wrong shape, expecting the last two dimensions to be [1,1] instead of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cls_score</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">bbox_deltas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bbox_pred</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">scores</span><span class="p">,</span> <span class="n">bbox_deltas</span>
+
+
+<span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_COCO_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="FasterRCNN_ResNet50_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights">[docs]</a><span class="k">class</span> <span class="nc">FasterRCNN_ResNet50_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">41755286</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">37.0</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">134.38</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">159.743</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced by following a similar training recipe as on the paper.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
+
+
+<div class="viewcode-block" id="FasterRCNN_ResNet50_FPN_V2_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn_v2.html#torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights">[docs]</a><span class="k">class</span> <span class="nc">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">43712278</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5763&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">46.7</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">280.371</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">167.104</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced using an enhanced training recipe to boost the model accuracy.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
+
+
+<div class="viewcode-block" id="FasterRCNN_MobileNet_V3_Large_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn.html#torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_FPN_Weights">[docs]</a><span class="k">class</span> <span class="nc">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">19386354</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">32.8</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">4.494</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">74.239</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced by following a similar training recipe as on the paper.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
+
+
+<div class="viewcode-block" id="FasterRCNN_MobileNet_V3_Large_320_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn.html#torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights">[docs]</a><span class="k">class</span> <span class="nc">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">19386354</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">22.8</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">0.719</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">74.239</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced by following a similar training recipe as on the paper.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
+
+
+<div class="viewcode-block" id="fasterrcnn_resnet50_fpn"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.fasterrcnn_resnet50_fpn">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">fasterrcnn_resnet50_fpn</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FasterRCNN_ResNet50_FPN_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weights_backbone</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNet50_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
+    <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Faster R-CNN model with a ResNet-50-FPN backbone from the `Faster R-CNN: Towards Real-Time Object</span>
+<span class="sd">    Detection with Region Proposal Networks &lt;https://arxiv.org/abs/1506.01497&gt;`__</span>
+<span class="sd">    paper.</span>
+
+<span class="sd">    .. betastatus:: detection module</span>
+
+<span class="sd">    The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each</span>
+<span class="sd">    image, and should be in ``0-1`` range. Different images can have different sizes.</span>
+
+<span class="sd">    The behavior of the model changes depending on if it is in training or evaluation mode.</span>
+
+<span class="sd">    During training, the model expects both the input tensors and a targets (list of dictionary),</span>
+<span class="sd">    containing:</span>
+
+<span class="sd">        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with</span>
+<span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
+<span class="sd">        - labels (``Int64Tensor[N]``): the class label for each ground-truth box</span>
+
+<span class="sd">    The model returns a ``Dict[Tensor]`` during training, containing the classification and regression</span>
+<span class="sd">    losses for both the RPN and the R-CNN.</span>
+
+<span class="sd">    During inference, the model requires only the input tensors, and returns the post-processed</span>
+<span class="sd">    predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as</span>
+<span class="sd">    follows, where ``N`` is the number of detections:</span>
+
+<span class="sd">        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with</span>
+<span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
+<span class="sd">        - labels (``Int64Tensor[N]``): the predicted labels for each detection</span>
+<span class="sd">        - scores (``Tensor[N]``): the scores of each detection</span>
+
+<span class="sd">    For more details on the output, you may refer to :ref:`instance_seg_output`.</span>
+
+<span class="sd">    Faster R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        &gt;&gt;&gt; model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)</span>
+<span class="sd">        &gt;&gt;&gt; # For training</span>
+<span class="sd">        &gt;&gt;&gt; images, boxes = torch.rand(4, 3, 600, 1200), torch.rand(4, 11, 4)</span>
+<span class="sd">        &gt;&gt;&gt; boxes[:, :, 2:4] = boxes[:, :, 0:2] + boxes[:, :, 2:4]</span>
+<span class="sd">        &gt;&gt;&gt; labels = torch.randint(1, 91, (4, 11))</span>
+<span class="sd">        &gt;&gt;&gt; images = list(image for image in images)</span>
+<span class="sd">        &gt;&gt;&gt; targets = []</span>
+<span class="sd">        &gt;&gt;&gt; for i in range(len(images)):</span>
+<span class="sd">        &gt;&gt;&gt;     d = {}</span>
+<span class="sd">        &gt;&gt;&gt;     d[&#39;boxes&#39;] = boxes[i]</span>
+<span class="sd">        &gt;&gt;&gt;     d[&#39;labels&#39;] = labels[i]</span>
+<span class="sd">        &gt;&gt;&gt;     targets.append(d)</span>
+<span class="sd">        &gt;&gt;&gt; output = model(images, targets)</span>
+<span class="sd">        &gt;&gt;&gt; # For inference</span>
+<span class="sd">        &gt;&gt;&gt; model.eval()</span>
+<span class="sd">        &gt;&gt;&gt; x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]</span>
+<span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # optionally, if you want to export the model to ONNX:</span>
+<span class="sd">        &gt;&gt;&gt; torch.onnx.export(model, x, &quot;faster_rcnn.onnx&quot;, opset_version = 11)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights (:class:`~torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights` below for</span>
+<span class="sd">            more details, and possible values. By default, no pre-trained</span>
+<span class="sd">            weights are used.</span>
+<span class="sd">        progress (bool, optional): If True, displays a progress bar of the</span>
+<span class="sd">            download to stderr. Default is True.</span>
+<span class="sd">        num_classes (int, optional): number of output classes of the model (including the background)</span>
+<span class="sd">        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The</span>
+<span class="sd">            pretrained weights for the backbone.</span>
+<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from</span>
+<span class="sd">            final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are</span>
+<span class="sd">            trainable. If ``None`` is passed (the default) this value is set to 3.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.detection.faster_rcnn.FasterRCNN``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/detection/faster_rcnn.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights</span>
+<span class="sd">        :members:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">weights_backbone</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+    <span class="k">elif</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">91</span>
+
+    <span class="n">is_trained</span> <span class="o">=</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">weights_backbone</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="n">_validate_trainable_layers</span><span class="p">(</span><span class="n">is_trained</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">norm_layer</span> <span class="o">=</span> <span class="n">misc_nn_ops</span><span class="o">.</span><span class="n">FrozenBatchNorm2d</span> <span class="k">if</span> <span class="n">is_trained</span> <span class="k">else</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span>
+
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights_backbone</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">)</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">_resnet_fpn_extractor</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">FasterRCNN</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">check_hash</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="o">==</span> <span class="n">FasterRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">:</span>
+            <span class="n">overwrite_eps</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+<div class="viewcode-block" id="fasterrcnn_resnet50_fpn_v2"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn_v2.html#torchvision.models.detection.fasterrcnn_resnet50_fpn_v2">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">fasterrcnn_resnet50_fpn_v2</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weights_backbone</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNet50_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone from `Benchmarking Detection</span>
+<span class="sd">    Transfer Learning with Vision Transformers &lt;https://arxiv.org/abs/2111.11429&gt;`__ paper.</span>
+
+<span class="sd">    .. betastatus:: detection module</span>
+
+<span class="sd">    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See</span>
+<span class="sd">    :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more</span>
+<span class="sd">    details.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights (:class:`~torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights` below for</span>
+<span class="sd">            more details, and possible values. By default, no pre-trained</span>
+<span class="sd">            weights are used.</span>
+<span class="sd">        progress (bool, optional): If True, displays a progress bar of the</span>
+<span class="sd">            download to stderr. Default is True.</span>
+<span class="sd">        num_classes (int, optional): number of output classes of the model (including the background)</span>
+<span class="sd">        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The</span>
+<span class="sd">            pretrained weights for the backbone.</span>
+<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from</span>
+<span class="sd">            final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are</span>
+<span class="sd">            trainable. If ``None`` is passed (the default) this value is set to 3.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.detection.faster_rcnn.FasterRCNN``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/detection/faster_rcnn.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights</span>
+<span class="sd">        :members:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">weights_backbone</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+    <span class="k">elif</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">91</span>
+
+    <span class="n">is_trained</span> <span class="o">=</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">weights_backbone</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="n">_validate_trainable_layers</span><span class="p">(</span><span class="n">is_trained</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights_backbone</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">_resnet_fpn_extractor</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">)</span>
+    <span class="n">rpn_anchor_generator</span> <span class="o">=</span> <span class="n">_default_anchorgen</span><span class="p">()</span>
+    <span class="n">rpn_head</span> <span class="o">=</span> <span class="n">RPNHead</span><span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">rpn_anchor_generator</span><span class="o">.</span><span class="n">num_anchors_per_location</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">conv_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">box_head</span> <span class="o">=</span> <span class="n">FastRCNNConvFCHead</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">[</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">],</span> <span class="p">[</span><span class="mi">1024</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span>
+    <span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">FasterRCNN</span><span class="p">(</span>
+        <span class="n">backbone</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span>
+        <span class="n">rpn_anchor_generator</span><span class="o">=</span><span class="n">rpn_anchor_generator</span><span class="p">,</span>
+        <span class="n">rpn_head</span><span class="o">=</span><span class="n">rpn_head</span><span class="p">,</span>
+        <span class="n">box_head</span><span class="o">=</span><span class="n">box_head</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">check_hash</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+<span class="k">def</span> <span class="nf">_fasterrcnn_mobilenet_v3_large_fpn</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="p">,</span> <span class="n">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="p">]],</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">weights_backbone</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MobileNet_V3_Large_Weights</span><span class="p">],</span>
+    <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">weights_backbone</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+    <span class="k">elif</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">91</span>
+
+    <span class="n">is_trained</span> <span class="o">=</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">weights_backbone</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="n">_validate_trainable_layers</span><span class="p">(</span><span class="n">is_trained</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">norm_layer</span> <span class="o">=</span> <span class="n">misc_nn_ops</span><span class="o">.</span><span class="n">FrozenBatchNorm2d</span> <span class="k">if</span> <span class="n">is_trained</span> <span class="k">else</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span>
+
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">mobilenet_v3_large</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights_backbone</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">)</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">_mobilenet_extractor</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">)</span>
+    <span class="n">anchor_sizes</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span>
+            <span class="mi">32</span><span class="p">,</span>
+            <span class="mi">64</span><span class="p">,</span>
+            <span class="mi">128</span><span class="p">,</span>
+            <span class="mi">256</span><span class="p">,</span>
+            <span class="mi">512</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="n">aspect_ratios</span> <span class="o">=</span> <span class="p">((</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">anchor_sizes</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">FasterRCNN</span><span class="p">(</span>
+        <span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">rpn_anchor_generator</span><span class="o">=</span><span class="n">AnchorGenerator</span><span class="p">(</span><span class="n">anchor_sizes</span><span class="p">,</span> <span class="n">aspect_ratios</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">check_hash</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+
+
+<div class="viewcode-block" id="fasterrcnn_mobilenet_v3_large_320_fpn"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn.html#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">fasterrcnn_mobilenet_v3_large_320_fpn</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weights_backbone</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MobileNet_V3_Large_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
+    <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tuned for mobile use cases.</span>
+
+<span class="sd">    .. betastatus:: detection module</span>
+
+<span class="sd">    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See</span>
+<span class="sd">    :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more</span>
+<span class="sd">    details.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        &gt;&gt;&gt; model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(weights=FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT)</span>
+<span class="sd">        &gt;&gt;&gt; model.eval()</span>
+<span class="sd">        &gt;&gt;&gt; x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]</span>
+<span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights (:class:`~torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights` below for</span>
+<span class="sd">            more details, and possible values. By default, no pre-trained</span>
+<span class="sd">            weights are used.</span>
+<span class="sd">        progress (bool, optional): If True, displays a progress bar of the</span>
+<span class="sd">            download to stderr. Default is True.</span>
+<span class="sd">        num_classes (int, optional): number of output classes of the model (including the background)</span>
+<span class="sd">        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The</span>
+<span class="sd">            pretrained weights for the backbone.</span>
+<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from</span>
+<span class="sd">            final block. Valid values are between 0 and 6, with 6 meaning all backbone layers are</span>
+<span class="sd">            trainable. If ``None`` is passed (the default) this value is set to 3.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.detection.faster_rcnn.FasterRCNN``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/detection/faster_rcnn.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span>
+<span class="sd">        :members:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
+
+    <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="mi">320</span><span class="p">,</span>
+        <span class="s2">&quot;max_size&quot;</span><span class="p">:</span> <span class="mi">640</span><span class="p">,</span>
+        <span class="s2">&quot;rpn_pre_nms_top_n_test&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+        <span class="s2">&quot;rpn_post_nms_top_n_test&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+        <span class="s2">&quot;rpn_score_thresh&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">_fasterrcnn_mobilenet_v3_large_fpn</span><span class="p">(</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+        <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span>
+        <span class="n">weights_backbone</span><span class="o">=</span><span class="n">weights_backbone</span><span class="p">,</span>
+        <span class="n">trainable_backbone_layers</span><span class="o">=</span><span class="n">trainable_backbone_layers</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fasterrcnn_mobilenet_v3_large_fpn"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn.html#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">fasterrcnn_mobilenet_v3_large_fpn</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weights_backbone</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MobileNet_V3_Large_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
+    <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.</span>
+
+<span class="sd">    .. betastatus:: detection module</span>
+
+<span class="sd">    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See</span>
+<span class="sd">    :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more</span>
+<span class="sd">    details.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        &gt;&gt;&gt; model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(weights=FasterRCNN_MobileNet_V3_Large_FPN_Weights.DEFAULT)</span>
+<span class="sd">        &gt;&gt;&gt; model.eval()</span>
+<span class="sd">        &gt;&gt;&gt; x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]</span>
+<span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights (:class:`~torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_FPN_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_FPN_Weights` below for</span>
+<span class="sd">            more details, and possible values. By default, no pre-trained</span>
+<span class="sd">            weights are used.</span>
+<span class="sd">        progress (bool, optional): If True, displays a progress bar of the</span>
+<span class="sd">            download to stderr. Default is True.</span>
+<span class="sd">        num_classes (int, optional): number of output classes of the model (including the background)</span>
+<span class="sd">        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The</span>
+<span class="sd">            pretrained weights for the backbone.</span>
+<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from</span>
+<span class="sd">            final block. Valid values are between 0 and 6, with 6 meaning all backbone layers are</span>
+<span class="sd">            trainable. If ``None`` is passed (the default) this value is set to 3.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.detection.faster_rcnn.FasterRCNN``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/detection/faster_rcnn.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_FPN_Weights</span>
+<span class="sd">        :members:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
+
+    <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;rpn_score_thresh&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">_fasterrcnn_mobilenet_v3_large_fpn</span><span class="p">(</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+        <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span>
+        <span class="n">weights_backbone</span><span class="o">=</span><span class="n">weights_backbone</span><span class="p">,</span>
+        <span class="n">trainable_backbone_layers</span><span class="o">=</span><span class="n">trainable_backbone_layers</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+</pre></div>
+
+             </article>
+             
+            </div>
+            <footer>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-present, Torch Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+         <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+         <script src="../../../../_static/jquery.js"></script>
+         <script src="../../../../_static/underscore.js"></script>
+         <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+         <script src="../../../../_static/doctools.js"></script>
+         <script src="../../../../_static/clipboard.min.js"></script>
+         <script src="../../../../_static/copybutton.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">Stay up to date</li>
+            <li><a href="https://www.facebook.com/pytorch" target="_blank">Facebook</a></li>
+            <li><a href="https://twitter.com/pytorch" target="_blank">Twitter</a></li>
+            <li><a href="https://www.youtube.com/pytorch" target="_blank">YouTube</a></li>
+            <li><a href="https://www.linkedin.com/company/pytorch" target="_blank">LinkedIn</a></li>
+          </ul>  
+          </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">PyTorch Podcasts</li>
+            <li><a href="https://open.spotify.com/show/6UzHKeiy368jKfQMKKvJY5" target="_blank">Spotify</a></li>
+            <li><a href="https://podcasts.apple.com/us/podcast/pytorch-developer-podcast/id1566080008" target="_blank">Apple</a></li>
+            <li><a href="https://www.google.com/podcasts?feed=aHR0cHM6Ly9mZWVkcy5zaW1wbGVjYXN0LmNvbS9PQjVGa0lsOA%3D%3D" target="_blank">Google</a></li>
+            <li><a href="https://music.amazon.com/podcasts/7a4e6f0e-26c2-49e9-a478-41bd244197d0/PyTorch-Developer-Podcast?" target="_blank">Amazon</a></li>
+          </ul>
+         </div>
+        </div>
+        
+        <div class="privacy-policy">
+          <ul>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/terms/" target="_blank">Terms</a></li>
+            <li class="privacy-policy-links">|</li>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/privacy-policy/" target="_blank">Privacy</a></li>
+          </ul>
+        </div>
+        <div class="copyright">
+        <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
+          For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+      </div>
+     </div>
+
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="../../../../_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+           <li class="resources-mobile-menu-title">
+             <a>Learn</a>
+           </li>
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/get-started">Get Started</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials">Tutorials</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/beginner/basics/intro.html">Learn the Basics</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/recipes/recipes_index.html">PyTorch Recipes</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/beginner/introyt.html">Introduction to PyTorch - YouTube Series</a>
+             </li>
+           </ul>
+           <li class="resources-mobile-menu-title">
+             <a>Ecosystem</a>
+           </li>
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/ecosystem">Tools</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/#community-module">Community</a>
+             </li>
+             <li>
+               <a href="https://discuss.pytorch.org/">Forums</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/resources">Developer Resources</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/ecosystem/contributor-awards-2023">Contributor Awards - 2023</a>
+             </li>
+           </ul>
+
+           <li class="resources-mobile-menu-title">
+             <a>Edge</a>
+           </li>
+
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/edge">About PyTorch Edge</a>
+             </li>
+             
+             <li>
+               <a href="https://pytorch.org/executorch-overview">ExecuTorch</a>
+             </li>
+           </ul>
+
+           <li class="resources-mobile-menu-title">
+             <a>Docs</a>
+           </li>
+
+           <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/pytorch-domains">PyTorch Domains</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            <a>Blog & News</a>
+          </li>
+            
+           <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/blog/">PyTorch Blog</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/community-blog">Community Blog</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/videos">Videos</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/community-stories">Community Stories</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/events">Events</a>
+            </li>
+          </ul>
+          
+          <li class="resources-mobile-menu-title">
+            <a>About</a>
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/foundation">PyTorch Foundation</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/governing-board">Governing Board</a>
+            </li>
+          </ul>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="../../../../_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

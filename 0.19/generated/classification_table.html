@@ -1,0 +1,1544 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; Torchvision 0.19 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T8XT4PS');</script>
+    <!-- End Google Tag Manager -->
+  
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+
+          <li class="main-menu-item">
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Learn
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/get-started">
+                  <span class=dropdown-title>Get Started</span>
+                  <p>Run PyTorch locally or get started quickly with one of the supported cloud platforms</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials">
+                  <span class="dropdown-title">Tutorials</span>
+                  <p>Whats new in PyTorch tutorials</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/beginner/basics/intro.html">
+                  <span class="dropdown-title">Learn the Basics</span>
+                  <p>Familiarize yourself with PyTorch concepts and modules</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/recipes/recipes_index.html">
+                  <span class="dropdown-title">PyTorch Recipes</span>
+                  <p>Bite-size, ready-to-deploy PyTorch code examples</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/beginner/introyt.html">
+                  <span class="dropdown-title">Intro to PyTorch - YouTube Series</span>
+                  <p>Master PyTorch basics with our engaging YouTube tutorial series</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Ecosystem
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class="dropdown-title">Tools</span>
+                  <p>Learn about the tools and frameworks in the PyTorch Ecosystem</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class=dropdown-title>Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class=dropdown-title>Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem/contributor-awards-2023">
+                  <span class="dropdown-title">Contributor Awards - 2023</span>
+                  <p>Award winners announced at this year's PyTorch Conference</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                  <p>Build innovative and privacy-aware AI experiences for edge devices</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch-overview">
+                  <span class="dropdown-title">ExecuTorch</span>
+                  <p>End-to-end solution for enabling on-device inference capabilities across mobile and edge devices</p>
+                </a>
+              </div>
+            </div>  
+          </li>
+
+          <li class="main-menu-item">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p>Explore the documentation for comprehensive guidance on how to use PyTorch</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/pytorch-domains">
+                  <span class="dropdown-title">PyTorch Domains</span>
+                  <p>Read the PyTorch Domains documentation to learn more about domain-specific libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Blogs & News 
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/blog/">
+                  <span class="dropdown-title">PyTorch Blog</span>
+                  <p>Catch up on the latest technical news and happenings</p>
+                </a>
+                 <a class="nav-dropdown-item" href="https://pytorch.org/community-blog">
+                  <span class="dropdown-title">Community Blog</span>
+                  <p>Stories from the PyTorch ecosystem</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/videos">
+                  <span class="dropdown-title">Videos</span>
+                  <p>Learn about the latest PyTorch tutorials, new, and more </p>
+                <a class="nav-dropdown-item" href="https://pytorch.org/community-stories">
+                  <span class="dropdown-title">Community Stories</span>
+                  <p>Learn how our community solves real, everyday machine learning problems with PyTorch</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/events">
+                  <span class="dropdown-title">Events</span>
+                  <p>Find events, webinars, and podcasts</p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                About
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/foundation">
+                  <span class="dropdown-title">PyTorch Foundation</span>
+                  <p>Learn more about the PyTorch Foundation</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/governing-board">
+                  <span class="dropdown-title">Governing Board</span>
+                  <p></p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li class="main-menu-item">
+            <div class="no-dropdown">
+              <a href="https://pytorch.org/join" data-cta="join">
+                Become a Member
+              </a>
+            </div>
+          </li>
+          <li>
+           <div class="main-menu-item">
+             <a href="https://github.com/pytorch/pytorch" class="github-icon">
+             </a>
+           </div>
+          </li>
+          <!--- TODO: This block adds the search icon to the nav bar. We will enable it later. 
+          <li>
+            <div class="main-menu-item">
+             <a href="https://github.com/pytorch/pytorch" class="search-icon">
+             </a>
+            </div>
+          </li>
+          --->
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='https://pytorch.org/vision/versions.html'>0.19 &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tv_tensors.html">TVTensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../auto_examples/index.html">Examples and tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training_references.html">Training references</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/text">torchtext</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/vision">torchvision</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/elastic/">TorchElastic</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/serve">TorchServe</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://pytorch.org/xla/">PyTorch on XLA Devices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="../index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/generated/classification_table.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          <!-- Google Tag Manager (noscript) -->
+          <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T8XT4PS"
+          height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+          <!-- End Google Tag Manager (noscript) -->
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <table class="table-weights docutils align-default">
+<colgroup>
+<col style="width: 57%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
+<th class="head"><p><strong>Acc&#64;1</strong></p></th>
+<th class="head"><p><strong>Acc&#64;5</strong></p></th>
+<th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GFLOPS</strong></p></th>
+<th class="head"><p><strong>Recipe</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AlexNet_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>56.522</p></td>
+<td><p>79.066</p></td>
+<td><p>61.1M</p></td>
+<td><p>0.71</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Base_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>84.062</p></td>
+<td><p>96.87</p></td>
+<td><p>88.6M</p></td>
+<td><p>15.36</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Large_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>84.414</p></td>
+<td><p>96.976</p></td>
+<td><p>197.8M</p></td>
+<td><p>34.36</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Small_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>83.616</p></td>
+<td><p>96.65</p></td>
+<td><p>50.2M</p></td>
+<td><p>8.68</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Tiny_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>82.52</p></td>
+<td><p>96.146</p></td>
+<td><p>28.6M</p></td>
+<td><p>4.46</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseNet121_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>74.434</p></td>
+<td><p>91.972</p></td>
+<td><p>8.0M</p></td>
+<td><p>2.83</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/116">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseNet161_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>77.138</p></td>
+<td><p>93.56</p></td>
+<td><p>28.7M</p></td>
+<td><p>7.73</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/116">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseNet169_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>75.6</p></td>
+<td><p>92.806</p></td>
+<td><p>14.1M</p></td>
+<td><p>3.36</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/116">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseNet201_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>76.896</p></td>
+<td><p>93.37</p></td>
+<td><p>20.0M</p></td>
+<td><p>4.29</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/116">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B0_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>77.692</p></td>
+<td><p>93.532</p></td>
+<td><p>5.3M</p></td>
+<td><p>0.39</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B1_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>78.642</p></td>
+<td><p>94.186</p></td>
+<td><p>7.8M</p></td>
+<td><p>0.69</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B1_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>79.838</p></td>
+<td><p>94.934</p></td>
+<td><p>7.8M</p></td>
+<td><p>0.69</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B2_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>80.608</p></td>
+<td><p>95.31</p></td>
+<td><p>9.1M</p></td>
+<td><p>1.09</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B3_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>82.008</p></td>
+<td><p>96.054</p></td>
+<td><p>12.2M</p></td>
+<td><p>1.83</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B4_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>83.384</p></td>
+<td><p>96.594</p></td>
+<td><p>19.3M</p></td>
+<td><p>4.39</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B5_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>83.444</p></td>
+<td><p>96.628</p></td>
+<td><p>30.4M</p></td>
+<td><p>10.27</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B6_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>84.008</p></td>
+<td><p>96.916</p></td>
+<td><p>43.0M</p></td>
+<td><p>19.07</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B7_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>84.122</p></td>
+<td><p>96.908</p></td>
+<td><p>66.3M</p></td>
+<td><p>37.75</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_V2_L_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>85.808</p></td>
+<td><p>97.788</p></td>
+<td><p>118.5M</p></td>
+<td><p>56.08</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v2">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_V2_M_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>85.112</p></td>
+<td><p>97.156</p></td>
+<td><p>54.1M</p></td>
+<td><p>24.58</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v2">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_V2_S_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>84.228</p></td>
+<td><p>96.878</p></td>
+<td><p>21.5M</p></td>
+<td><p>8.37</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v2">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">GoogLeNet_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>69.778</p></td>
+<td><p>89.53</p></td>
+<td><p>6.6M</p></td>
+<td><p>1.5</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#googlenet">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Inception_V3_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>77.294</p></td>
+<td><p>93.45</p></td>
+<td><p>27.2M</p></td>
+<td><p>5.71</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#inception-v3">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet0_5_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>67.734</p></td>
+<td><p>87.49</p></td>
+<td><p>2.2M</p></td>
+<td><p>0.1</p></td>
+<td><p><a class="reference external" href="https://github.com/1e100/mnasnet_trainer">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet0_75_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>71.18</p></td>
+<td><p>90.496</p></td>
+<td><p>3.2M</p></td>
+<td><p>0.21</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/6019">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet1_0_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>73.456</p></td>
+<td><p>91.51</p></td>
+<td><p>4.4M</p></td>
+<td><p>0.31</p></td>
+<td><p><a class="reference external" href="https://github.com/1e100/mnasnet_trainer">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet1_3_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>76.506</p></td>
+<td><p>93.522</p></td>
+<td><p>6.3M</p></td>
+<td><p>0.53</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/6019">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MaxVit_T_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>83.7</p></td>
+<td><p>96.722</p></td>
+<td><p>30.9M</p></td>
+<td><p>5.56</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#maxvit">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V2_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>71.878</p></td>
+<td><p>90.286</p></td>
+<td><p>3.5M</p></td>
+<td><p>0.3</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V2_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>72.154</p></td>
+<td><p>90.822</p></td>
+<td><p>3.5M</p></td>
+<td><p>0.3</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V3_Large_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>74.042</p></td>
+<td><p>91.34</p></td>
+<td><p>5.5M</p></td>
+<td><p>0.22</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V3_Large_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>75.274</p></td>
+<td><p>92.566</p></td>
+<td><p>5.5M</p></td>
+<td><p>0.22</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V3_Small_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>67.668</p></td>
+<td><p>87.402</p></td>
+<td><p>2.5M</p></td>
+<td><p>0.06</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_16GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>80.058</p></td>
+<td><p>94.944</p></td>
+<td><p>54.3M</p></td>
+<td><p>15.94</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_16GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>82.716</p></td>
+<td><p>96.196</p></td>
+<td><p>54.3M</p></td>
+<td><p>15.94</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_1_6GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>77.04</p></td>
+<td><p>93.44</p></td>
+<td><p>9.2M</p></td>
+<td><p>1.6</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_1_6GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>79.668</p></td>
+<td><p>94.922</p></td>
+<td><p>9.2M</p></td>
+<td><p>1.6</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_32GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>80.622</p></td>
+<td><p>95.248</p></td>
+<td><p>107.8M</p></td>
+<td><p>31.74</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#large-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_32GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>83.014</p></td>
+<td><p>96.288</p></td>
+<td><p>107.8M</p></td>
+<td><p>31.74</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_3_2GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>78.364</p></td>
+<td><p>93.992</p></td>
+<td><p>15.3M</p></td>
+<td><p>3.18</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_3_2GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>81.196</p></td>
+<td><p>95.43</p></td>
+<td><p>15.3M</p></td>
+<td><p>3.18</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_400MF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>72.834</p></td>
+<td><p>90.95</p></td>
+<td><p>5.5M</p></td>
+<td><p>0.41</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_400MF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>74.864</p></td>
+<td><p>92.322</p></td>
+<td><p>5.5M</p></td>
+<td><p>0.41</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_800MF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>75.212</p></td>
+<td><p>92.348</p></td>
+<td><p>7.3M</p></td>
+<td><p>0.8</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_800MF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>77.522</p></td>
+<td><p>93.826</p></td>
+<td><p>7.3M</p></td>
+<td><p>0.8</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_8GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>79.344</p></td>
+<td><p>94.686</p></td>
+<td><p>39.6M</p></td>
+<td><p>8</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_8GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>81.682</p></td>
+<td><p>95.678</p></td>
+<td><p>39.6M</p></td>
+<td><p>8</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_128GF_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></p></td>
+<td><p>88.228</p></td>
+<td><p>98.682</p></td>
+<td><p>644.8M</p></td>
+<td><p>374.57</p></td>
+<td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_128GF_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></p></td>
+<td><p>86.068</p></td>
+<td><p>97.844</p></td>
+<td><p>644.8M</p></td>
+<td><p>127.52</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_16GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>80.424</p></td>
+<td><p>95.24</p></td>
+<td><p>83.6M</p></td>
+<td><p>15.91</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#large-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_16GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>82.886</p></td>
+<td><p>96.328</p></td>
+<td><p>83.6M</p></td>
+<td><p>15.91</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_16GF_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></p></td>
+<td><p>86.012</p></td>
+<td><p>98.054</p></td>
+<td><p>83.6M</p></td>
+<td><p>46.73</p></td>
+<td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_16GF_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></p></td>
+<td><p>83.976</p></td>
+<td><p>97.244</p></td>
+<td><p>83.6M</p></td>
+<td><p>15.91</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_1_6GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>77.95</p></td>
+<td><p>93.966</p></td>
+<td><p>11.2M</p></td>
+<td><p>1.61</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_1_6GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>80.876</p></td>
+<td><p>95.444</p></td>
+<td><p>11.2M</p></td>
+<td><p>1.61</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_32GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>80.878</p></td>
+<td><p>95.34</p></td>
+<td><p>145.0M</p></td>
+<td><p>32.28</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#large-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_32GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>83.368</p></td>
+<td><p>96.498</p></td>
+<td><p>145.0M</p></td>
+<td><p>32.28</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_32GF_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></p></td>
+<td><p>86.838</p></td>
+<td><p>98.362</p></td>
+<td><p>145.0M</p></td>
+<td><p>94.83</p></td>
+<td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_32GF_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></p></td>
+<td><p>84.622</p></td>
+<td><p>97.48</p></td>
+<td><p>145.0M</p></td>
+<td><p>32.28</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_3_2GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>78.948</p></td>
+<td><p>94.576</p></td>
+<td><p>19.4M</p></td>
+<td><p>3.18</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_3_2GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>81.982</p></td>
+<td><p>95.972</p></td>
+<td><p>19.4M</p></td>
+<td><p>3.18</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_400MF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>74.046</p></td>
+<td><p>91.716</p></td>
+<td><p>4.3M</p></td>
+<td><p>0.4</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_400MF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>75.804</p></td>
+<td><p>92.742</p></td>
+<td><p>4.3M</p></td>
+<td><p>0.4</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_800MF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>76.42</p></td>
+<td><p>93.136</p></td>
+<td><p>6.4M</p></td>
+<td><p>0.83</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_800MF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>78.828</p></td>
+<td><p>94.502</p></td>
+<td><p>6.4M</p></td>
+<td><p>0.83</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_8GF_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>80.032</p></td>
+<td><p>95.048</p></td>
+<td><p>39.4M</p></td>
+<td><p>8.47</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_8GF_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>82.828</p></td>
+<td><p>96.33</p></td>
+<td><p>39.4M</p></td>
+<td><p>8.47</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_32X8D_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>79.312</p></td>
+<td><p>94.526</p></td>
+<td><p>88.8M</p></td>
+<td><p>16.41</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnext">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_32X8D_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>82.834</p></td>
+<td><p>96.228</p></td>
+<td><p>88.8M</p></td>
+<td><p>16.41</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>83.246</p></td>
+<td><p>96.454</p></td>
+<td><p>83.5M</p></td>
+<td><p>15.46</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5935">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt50_32X4D_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>77.618</p></td>
+<td><p>93.698</p></td>
+<td><p>25.0M</p></td>
+<td><p>4.23</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnext">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt50_32X4D_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>81.198</p></td>
+<td><p>95.34</p></td>
+<td><p>25.0M</p></td>
+<td><p>4.23</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet101_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>77.374</p></td>
+<td><p>93.546</p></td>
+<td><p>44.5M</p></td>
+<td><p>7.8</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet101_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>81.886</p></td>
+<td><p>95.78</p></td>
+<td><p>44.5M</p></td>
+<td><p>7.8</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet152_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>78.312</p></td>
+<td><p>94.046</p></td>
+<td><p>60.2M</p></td>
+<td><p>11.51</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet152_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>82.284</p></td>
+<td><p>96.002</p></td>
+<td><p>60.2M</p></td>
+<td><p>11.51</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet18_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>69.758</p></td>
+<td><p>89.078</p></td>
+<td><p>11.7M</p></td>
+<td><p>1.81</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet34_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>73.314</p></td>
+<td><p>91.42</p></td>
+<td><p>21.8M</p></td>
+<td><p>3.66</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>76.13</p></td>
+<td><p>92.862</p></td>
+<td><p>25.6M</p></td>
+<td><p>4.09</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>80.858</p></td>
+<td><p>95.434</p></td>
+<td><p>25.6M</p></td>
+<td><p>4.09</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>60.552</p></td>
+<td><p>81.746</p></td>
+<td><p>1.4M</p></td>
+<td><p>0.04</p></td>
+<td><p><a class="reference external" href="https://github.com/ericsun99/Shufflenet-v2-Pytorch">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>69.362</p></td>
+<td><p>88.316</p></td>
+<td><p>2.3M</p></td>
+<td><p>0.14</p></td>
+<td><p><a class="reference external" href="https://github.com/ericsun99/Shufflenet-v2-Pytorch">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>72.996</p></td>
+<td><p>91.086</p></td>
+<td><p>3.5M</p></td>
+<td><p>0.3</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5906">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>76.23</p></td>
+<td><p>93.006</p></td>
+<td><p>7.4M</p></td>
+<td><p>0.58</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5906">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SqueezeNet1_0_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>58.092</p></td>
+<td><p>80.42</p></td>
+<td><p>1.2M</p></td>
+<td><p>0.82</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/49#issuecomment-277560717">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SqueezeNet1_1_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>58.178</p></td>
+<td><p>80.624</p></td>
+<td><p>1.2M</p></td>
+<td><p>0.35</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/49#issuecomment-277560717">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_B_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>83.582</p></td>
+<td><p>96.64</p></td>
+<td><p>87.8M</p></td>
+<td><p>15.43</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_S_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>83.196</p></td>
+<td><p>96.36</p></td>
+<td><p>49.6M</p></td>
+<td><p>8.74</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_T_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>81.474</p></td>
+<td><p>95.776</p></td>
+<td><p>28.3M</p></td>
+<td><p>4.49</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_V2_B_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>84.112</p></td>
+<td><p>96.864</p></td>
+<td><p>87.9M</p></td>
+<td><p>20.32</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_V2_S_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>83.712</p></td>
+<td><p>96.816</p></td>
+<td><p>49.7M</p></td>
+<td><p>11.55</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_V2_T_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>82.072</p></td>
+<td><p>96.132</p></td>
+<td><p>28.4M</p></td>
+<td><p>5.94</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG11_BN_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>70.37</p></td>
+<td><p>89.81</p></td>
+<td><p>132.9M</p></td>
+<td><p>7.61</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG11_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>69.02</p></td>
+<td><p>88.628</p></td>
+<td><p>132.9M</p></td>
+<td><p>7.61</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG13_BN_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>71.586</p></td>
+<td><p>90.374</p></td>
+<td><p>133.1M</p></td>
+<td><p>11.31</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG13_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>69.928</p></td>
+<td><p>89.246</p></td>
+<td><p>133.0M</p></td>
+<td><p>11.31</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG16_BN_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>73.36</p></td>
+<td><p>91.516</p></td>
+<td><p>138.4M</p></td>
+<td><p>15.47</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG16_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>71.592</p></td>
+<td><p>90.382</p></td>
+<td><p>138.4M</p></td>
+<td><p>15.47</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG16_Weights.IMAGENET1K_FEATURES</span></code></p></td>
+<td><p>nan</p></td>
+<td><p>nan</p></td>
+<td><p>138.4M</p></td>
+<td><p>15.47</p></td>
+<td><p><a class="reference external" href="https://github.com/amdegroot/ssd.pytorch#training-ssd">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG19_BN_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>74.218</p></td>
+<td><p>91.842</p></td>
+<td><p>143.7M</p></td>
+<td><p>19.63</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG19_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>72.376</p></td>
+<td><p>90.876</p></td>
+<td><p>143.7M</p></td>
+<td><p>19.63</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_B_16_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>81.072</p></td>
+<td><p>95.318</p></td>
+<td><p>86.6M</p></td>
+<td><p>17.56</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_B_16_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></p></td>
+<td><p>85.304</p></td>
+<td><p>97.65</p></td>
+<td><p>86.9M</p></td>
+<td><p>55.48</p></td>
+<td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_B_16_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></p></td>
+<td><p>81.886</p></td>
+<td><p>96.18</p></td>
+<td><p>86.6M</p></td>
+<td><p>17.56</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_B_32_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>75.912</p></td>
+<td><p>92.466</p></td>
+<td><p>88.2M</p></td>
+<td><p>4.41</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_H_14_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></p></td>
+<td><p>88.552</p></td>
+<td><p>98.694</p></td>
+<td><p>633.5M</p></td>
+<td><p>1016.72</p></td>
+<td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_H_14_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></p></td>
+<td><p>85.708</p></td>
+<td><p>97.73</p></td>
+<td><p>632.0M</p></td>
+<td><p>167.29</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_L_16_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>79.662</p></td>
+<td><p>94.638</p></td>
+<td><p>304.3M</p></td>
+<td><p>61.55</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_L_16_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></p></td>
+<td><p>88.064</p></td>
+<td><p>98.512</p></td>
+<td><p>305.2M</p></td>
+<td><p>361.99</p></td>
+<td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_L_16_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></p></td>
+<td><p>85.146</p></td>
+<td><p>97.422</p></td>
+<td><p>304.3M</p></td>
+<td><p>61.55</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_L_32_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>76.972</p></td>
+<td><p>93.07</p></td>
+<td><p>306.5M</p></td>
+<td><p>15.38</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Wide_ResNet101_2_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>78.848</p></td>
+<td><p>94.284</p></td>
+<td><p>126.9M</p></td>
+<td><p>22.75</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/912#issue-445437439">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Wide_ResNet101_2_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>82.51</p></td>
+<td><p>96.02</p></td>
+<td><p>126.9M</p></td>
+<td><p>22.75</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Wide_ResNet50_2_Weights.IMAGENET1K_V1</span></code></p></td>
+<td><p>78.468</p></td>
+<td><p>94.086</p></td>
+<td><p>68.9M</p></td>
+<td><p>11.4</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/912#issue-445437439">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Wide_ResNet50_2_Weights.IMAGENET1K_V2</span></code></p></td>
+<td><p>81.602</p></td>
+<td><p>95.758</p></td>
+<td><p>68.9M</p></td>
+<td><p>11.4</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
+</tr>
+</tbody>
+</table>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-present, Torch Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul class="simple">
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+         <script src="../_static/jquery.js"></script>
+         <script src="../_static/underscore.js"></script>
+         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+         <script src="../_static/doctools.js"></script>
+         <script src="../_static/clipboard.min.js"></script>
+         <script src="../_static/copybutton.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">Stay up to date</li>
+            <li><a href="https://www.facebook.com/pytorch" target="_blank">Facebook</a></li>
+            <li><a href="https://twitter.com/pytorch" target="_blank">Twitter</a></li>
+            <li><a href="https://www.youtube.com/pytorch" target="_blank">YouTube</a></li>
+            <li><a href="https://www.linkedin.com/company/pytorch" target="_blank">LinkedIn</a></li>
+          </ul>  
+          </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">PyTorch Podcasts</li>
+            <li><a href="https://open.spotify.com/show/6UzHKeiy368jKfQMKKvJY5" target="_blank">Spotify</a></li>
+            <li><a href="https://podcasts.apple.com/us/podcast/pytorch-developer-podcast/id1566080008" target="_blank">Apple</a></li>
+            <li><a href="https://www.google.com/podcasts?feed=aHR0cHM6Ly9mZWVkcy5zaW1wbGVjYXN0LmNvbS9PQjVGa0lsOA%3D%3D" target="_blank">Google</a></li>
+            <li><a href="https://music.amazon.com/podcasts/7a4e6f0e-26c2-49e9-a478-41bd244197d0/PyTorch-Developer-Podcast?" target="_blank">Amazon</a></li>
+          </ul>
+         </div>
+        </div>
+        
+        <div class="privacy-policy">
+          <ul>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/terms/" target="_blank">Terms</a></li>
+            <li class="privacy-policy-links">|</li>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/privacy-policy/" target="_blank">Privacy</a></li>
+          </ul>
+        </div>
+        <div class="copyright">
+        <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
+          For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+      </div>
+     </div>
+
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="../_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+           <li class="resources-mobile-menu-title">
+             <a>Learn</a>
+           </li>
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/get-started">Get Started</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials">Tutorials</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/beginner/basics/intro.html">Learn the Basics</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/recipes/recipes_index.html">PyTorch Recipes</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/beginner/introyt.html">Introduction to PyTorch - YouTube Series</a>
+             </li>
+           </ul>
+           <li class="resources-mobile-menu-title">
+             <a>Ecosystem</a>
+           </li>
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/ecosystem">Tools</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/#community-module">Community</a>
+             </li>
+             <li>
+               <a href="https://discuss.pytorch.org/">Forums</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/resources">Developer Resources</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/ecosystem/contributor-awards-2023">Contributor Awards - 2023</a>
+             </li>
+           </ul>
+
+           <li class="resources-mobile-menu-title">
+             <a>Edge</a>
+           </li>
+
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/edge">About PyTorch Edge</a>
+             </li>
+             
+             <li>
+               <a href="https://pytorch.org/executorch-overview">ExecuTorch</a>
+             </li>
+           </ul>
+
+           <li class="resources-mobile-menu-title">
+             <a>Docs</a>
+           </li>
+
+           <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/pytorch-domains">PyTorch Domains</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            <a>Blog & News</a>
+          </li>
+            
+           <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/blog/">PyTorch Blog</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/community-blog">Community Blog</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/videos">Videos</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/community-stories">Community Stories</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/events">Events</a>
+            </li>
+          </ul>
+          
+          <li class="resources-mobile-menu-title">
+            <a>About</a>
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/foundation">PyTorch Foundation</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/governing-board">Governing Board</a>
+            </li>
+          </ul>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="../_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

@@ -1,0 +1,1663 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchvision.models.optical_flow.raft &mdash; Torchvision 0.19 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T8XT4PS');</script>
+    <!-- End Google Tag Manager -->
+  
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+
+          <li class="main-menu-item">
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Learn
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/get-started">
+                  <span class=dropdown-title>Get Started</span>
+                  <p>Run PyTorch locally or get started quickly with one of the supported cloud platforms</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials">
+                  <span class="dropdown-title">Tutorials</span>
+                  <p>Whats new in PyTorch tutorials</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/beginner/basics/intro.html">
+                  <span class="dropdown-title">Learn the Basics</span>
+                  <p>Familiarize yourself with PyTorch concepts and modules</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/recipes/recipes_index.html">
+                  <span class="dropdown-title">PyTorch Recipes</span>
+                  <p>Bite-size, ready-to-deploy PyTorch code examples</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/beginner/introyt.html">
+                  <span class="dropdown-title">Intro to PyTorch - YouTube Series</span>
+                  <p>Master PyTorch basics with our engaging YouTube tutorial series</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Ecosystem
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class="dropdown-title">Tools</span>
+                  <p>Learn about the tools and frameworks in the PyTorch Ecosystem</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class=dropdown-title>Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class=dropdown-title>Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem/contributor-awards-2023">
+                  <span class="dropdown-title">Contributor Awards - 2023</span>
+                  <p>Award winners announced at this year's PyTorch Conference</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                  <p>Build innovative and privacy-aware AI experiences for edge devices</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch-overview">
+                  <span class="dropdown-title">ExecuTorch</span>
+                  <p>End-to-end solution for enabling on-device inference capabilities across mobile and edge devices</p>
+                </a>
+              </div>
+            </div>  
+          </li>
+
+          <li class="main-menu-item">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p>Explore the documentation for comprehensive guidance on how to use PyTorch</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/pytorch-domains">
+                  <span class="dropdown-title">PyTorch Domains</span>
+                  <p>Read the PyTorch Domains documentation to learn more about domain-specific libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Blogs & News 
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/blog/">
+                  <span class="dropdown-title">PyTorch Blog</span>
+                  <p>Catch up on the latest technical news and happenings</p>
+                </a>
+                 <a class="nav-dropdown-item" href="https://pytorch.org/community-blog">
+                  <span class="dropdown-title">Community Blog</span>
+                  <p>Stories from the PyTorch ecosystem</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/videos">
+                  <span class="dropdown-title">Videos</span>
+                  <p>Learn about the latest PyTorch tutorials, new, and more </p>
+                <a class="nav-dropdown-item" href="https://pytorch.org/community-stories">
+                  <span class="dropdown-title">Community Stories</span>
+                  <p>Learn how our community solves real, everyday machine learning problems with PyTorch</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/events">
+                  <span class="dropdown-title">Events</span>
+                  <p>Find events, webinars, and podcasts</p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                About
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/foundation">
+                  <span class="dropdown-title">PyTorch Foundation</span>
+                  <p>Learn more about the PyTorch Foundation</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/governing-board">
+                  <span class="dropdown-title">Governing Board</span>
+                  <p></p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li class="main-menu-item">
+            <div class="no-dropdown">
+              <a href="https://pytorch.org/join" data-cta="join">
+                Become a Member
+              </a>
+            </div>
+          </li>
+          <li>
+           <div class="main-menu-item">
+             <a href="https://github.com/pytorch/pytorch" class="github-icon">
+             </a>
+           </div>
+          </li>
+          <!--- TODO: This block adds the search icon to the nav bar. We will enable it later. 
+          <li>
+            <div class="main-menu-item">
+             <a href="https://github.com/pytorch/pytorch" class="search-icon">
+             </a>
+            </div>
+          </li>
+          --->
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='https://pytorch.org/vision/versions.html'>0.19 &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tv_tensors.html">TVTensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../auto_examples/index.html">Examples and tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_references.html">Training references</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/text">torchtext</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/vision">torchvision</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/elastic/">TorchElastic</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/serve">TorchServe</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://pytorch.org/xla/">PyTorch on XLA Devices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="../../../../index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+          <li><a href="../../../index.html">Module code</a> &gt;</li>
+        
+          <li><a href="../../../torchvision.html">torchvision</a> &gt;</li>
+        
+      <li>torchvision.models.optical_flow.raft</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          <!-- Google Tag Manager (noscript) -->
+          <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T8XT4PS"
+          height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+          <!-- End Google Tag Manager (noscript) -->
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <h1>Source code for torchvision.models.optical_flow.raft</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">torch.nn.modules.batchnorm</span> <span class="kn">import</span> <span class="n">BatchNorm2d</span>
+<span class="kn">from</span> <span class="nn">torch.nn.modules.instancenorm</span> <span class="kn">import</span> <span class="n">InstanceNorm2d</span>
+<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">Conv2dNormActivation</span>
+
+<span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">OpticalFlow</span>
+<span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">handle_legacy_interface</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">make_coords_grid</span><span class="p">,</span> <span class="n">upsample_flow</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;RAFT&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;raft_large&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;raft_small&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Raft_Large_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Raft_Small_Weights&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ResidualBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slightly modified Residual block with extra relu and biases.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">always_project</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Note regarding bias=True:</span>
+        <span class="c1"># Usually we can pass bias=False in conv layers followed by a norm layer.</span>
+        <span class="c1"># But in the RAFT training reference, the BatchNorm2d layers are only activated for the first dataset,</span>
+        <span class="c1"># and frozen for the rest of the training process (i.e. set as eval()). The bias term is thus still useful</span>
+        <span class="c1"># for the rest of the datasets. Technically, we could remove the bias for other norm layers like Instance norm</span>
+        <span class="c1"># because these aren&#39;t frozen, but we don&#39;t bother (also, we wouldn&#39;t be able to load the original weights).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu1</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu2</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+            <span class="n">out_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+        <span class="c1"># make mypy happy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span>
+
+        <span class="k">if</span> <span class="n">stride</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">always_project</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+                <span class="n">in_channels</span><span class="p">,</span>
+                <span class="n">out_channels</span><span class="p">,</span>
+                <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">activation_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu1</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu2</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">BottleneckBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slightly modified BottleNeck block (extra relu and biases)&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># See note in ResidualBlock for the reason behind bias=True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu1</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu2</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+            <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu3</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+            <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">stride</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+                <span class="n">in_channels</span><span class="p">,</span>
+                <span class="n">out_channels</span><span class="p">,</span>
+                <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">activation_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu1</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu2</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu3</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">FeatureEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The feature encoder, used both as the actual feature encoder, and as the context encoder.</span>
+
+<span class="sd">    It must downsample its input by 8.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="n">ResidualBlock</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The expected number of layers is 5, instead got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># See note in ResidualBlock for the reason behind bias=True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+            <span class="mi">3</span><span class="p">,</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">strides</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_2_blocks</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">first_stride</span><span class="o">=</span><span class="n">strides</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_2_blocks</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">layers</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">first_stride</span><span class="o">=</span><span class="n">strides</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_2_blocks</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">layers</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">layers</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">first_stride</span><span class="o">=</span><span class="n">strides</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">layers</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">layers</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">InstanceNorm2d</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">num_downsamples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="n">strides</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dim</span> <span class="o">=</span> <span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">downsample_factor</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">num_downsamples</span>
+
+    <span class="k">def</span> <span class="nf">_make_2_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">,</span> <span class="n">first_stride</span><span class="p">):</span>
+        <span class="n">block1</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">first_stride</span><span class="p">)</span>
+        <span class="n">block2</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">block1</span><span class="p">,</span> <span class="n">block2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="k">class</span> <span class="nc">MotionEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The motion encoder, part of the update block.</span>
+
+<span class="sd">    Takes the current predicted flow and the correlation features as input and returns an encoded version of these.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">in_channels_corr</span><span class="p">,</span> <span class="n">corr_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">192</span><span class="p">),</span> <span class="n">flow_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span> <span class="n">out_channels</span><span class="o">=</span><span class="mi">128</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flow_layers</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The expected number of flow_layers is 2, instead got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">flow_layers</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">corr_layers</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of corr_layers should be 1 or 2, instead got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">corr_layers</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">convcorr1</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">in_channels_corr</span><span class="p">,</span> <span class="n">corr_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">corr_layers</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">convcorr2</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">corr_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">corr_layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">convcorr2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">convflow1</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">flow_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convflow2</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">flow_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">flow_layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># out_channels - 2 because we cat the flow (2 channels) at the end</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+            <span class="n">corr_layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">flow_layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">out_channels</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">out_channels</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">corr_features</span><span class="p">):</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convcorr1</span><span class="p">(</span><span class="n">corr_features</span><span class="p">)</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convcorr2</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+
+        <span class="n">flow_orig</span> <span class="o">=</span> <span class="n">flow</span>
+        <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convflow1</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+        <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convflow2</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+
+        <span class="n">corr_flow</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">corr</span><span class="p">,</span> <span class="n">flow</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">corr_flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">corr_flow</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">corr_flow</span><span class="p">,</span> <span class="n">flow_orig</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ConvGRU</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convolutional Gru unit.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convz</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">hidden_size</span> <span class="o">+</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convr</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">hidden_size</span> <span class="o">+</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convq</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">hidden_size</span> <span class="o">+</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">hx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">h</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">convz</span><span class="p">(</span><span class="n">hx</span><span class="p">))</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">convr</span><span class="p">(</span><span class="n">hx</span><span class="p">))</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">convq</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">r</span> <span class="o">*</span> <span class="n">h</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span> <span class="o">*</span> <span class="n">h</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">q</span>
+        <span class="k">return</span> <span class="n">h</span>
+
+
+<span class="k">def</span> <span class="nf">_pass_through_h</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+    <span class="c1"># Declared here for torchscript</span>
+    <span class="k">return</span> <span class="n">h</span>
+
+
+<span class="k">class</span> <span class="nc">RecurrentBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recurrent block, part of the update block.</span>
+
+<span class="sd">    Takes the current hidden state and the concatenation of (motion encoder output, context) as input.</span>
+<span class="sd">    Returns an updated hidden state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">padding</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">padding</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;kernel_size should have the same length as padding, instead got len(kernel_size) = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span><span class="si">}</span><span class="s2"> and len(padding) = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">padding</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;kernel_size should either 1 or 2, instead got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">convgru1</span> <span class="o">=</span> <span class="n">ConvGRU</span><span class="p">(</span>
+            <span class="n">input_size</span><span class="o">=</span><span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">convgru2</span> <span class="o">=</span> <span class="n">ConvGRU</span><span class="p">(</span>
+                <span class="n">input_size</span><span class="o">=</span><span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">convgru2</span> <span class="o">=</span> <span class="n">_pass_through_h</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span> <span class="o">=</span> <span class="n">hidden_size</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convgru1</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convgru2</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">h</span>
+
+
+<span class="k">class</span> <span class="nc">FlowHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flow head, part of the update block.</span>
+
+<span class="sd">    Takes the hidden state of the recurrent unit as input, and outputs the predicted &quot;delta flow&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+
+
+<span class="k">class</span> <span class="nc">UpdateBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The update block which contains the motion encoder, the recurrent block, and the flow head.</span>
+
+<span class="sd">    It must expose a ``hidden_state_size`` attribute which is the hidden state size of its recurrent block.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">motion_encoder</span><span class="p">,</span> <span class="n">recurrent_block</span><span class="p">,</span> <span class="n">flow_head</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">motion_encoder</span> <span class="o">=</span> <span class="n">motion_encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recurrent_block</span> <span class="o">=</span> <span class="n">recurrent_block</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flow_head</span> <span class="o">=</span> <span class="n">flow_head</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_state_size</span> <span class="o">=</span> <span class="n">recurrent_block</span><span class="o">.</span><span class="n">hidden_size</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hidden_state</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">corr_features</span><span class="p">,</span> <span class="n">flow</span><span class="p">):</span>
+        <span class="n">motion_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">motion_encoder</span><span class="p">(</span><span class="n">flow</span><span class="p">,</span> <span class="n">corr_features</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">context</span><span class="p">,</span> <span class="n">motion_features</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">hidden_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recurrent_block</span><span class="p">(</span><span class="n">hidden_state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">delta_flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_head</span><span class="p">(</span><span class="n">hidden_state</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hidden_state</span><span class="p">,</span> <span class="n">delta_flow</span>
+
+
+<span class="k">class</span> <span class="nc">MaskPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mask predictor to be used when upsampling the predicted flow.</span>
+
+<span class="sd">    It takes the hidden state of the recurrent unit as input and outputs the mask.</span>
+<span class="sd">    This is not used in the raft-small model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convrelu</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="c1"># 8 * 8 * 9 because the predicted flow is downsampled by 8, from the downsampling of the initial FeatureEncoder,</span>
+        <span class="c1"># and we interpolate with all 9 surrounding neighbors. See paper and appendix B.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># In the original code, they use a factor of 0.25 to &quot;downweight the gradients&quot; of that branch.</span>
+        <span class="c1"># See e.g. https://github.com/princeton-vl/RAFT/issues/119#issuecomment-953950419</span>
+        <span class="c1"># or https://github.com/princeton-vl/RAFT/issues/24.</span>
+        <span class="c1"># It doesn&#39;t seem to affect epe significantly and can likely be set to 1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span> <span class="o">=</span> <span class="n">multiplier</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convrelu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span> <span class="o">*</span> <span class="n">x</span>
+
+
+<span class="k">class</span> <span class="nc">CorrBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The correlation block.</span>
+
+<span class="sd">    Creates a correlation pyramid with ``num_levels`` levels from the outputs of the feature encoder,</span>
+<span class="sd">    and then indexes from this pyramid to create correlation features.</span>
+<span class="sd">    The &quot;indexing&quot; of a given centroid pixel x&#39; is done by concatenating its surrounding neighbors that</span>
+<span class="sd">    are within a ``radius``, according to the infinity norm (see paper section 3.2).</span>
+<span class="sd">    Note: typo in the paper, it should be infinity norm, not 1-norm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">num_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_levels</span> <span class="o">=</span> <span class="n">num_levels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">corr_pyramid</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>  <span class="c1"># useless, but torchscript is otherwise confused :&#39;)</span>
+
+        <span class="c1"># The neighborhood of a centroid pixel x&#39; is {x&#39; + delta, ||delta||_inf &lt;= radius}</span>
+        <span class="c1"># so it&#39;s a square surrounding x&#39;, and its sides have a length of 2 * radius + 1</span>
+        <span class="c1"># The paper claims that it&#39;s ||.||_1 instead of ||.||_inf but it&#39;s a typo:</span>
+        <span class="c1"># https://github.com/princeton-vl/RAFT/issues/122</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">num_levels</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">radius</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">build_pyramid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmap1</span><span class="p">,</span> <span class="n">fmap2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the correlation pyramid from two feature maps.</span>
+
+<span class="sd">        The correlation volume is first computed as the dot product of each pair (pixel_in_fmap1, pixel_in_fmap2)</span>
+<span class="sd">        The last 2 dimensions of the correlation volume are then pooled num_levels times at different resolutions</span>
+<span class="sd">        to build the correlation pyramid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">fmap1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">fmap2</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Input feature maps should have the same shape, instead got </span><span class="si">{</span><span class="n">fmap1</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> (fmap1.shape) != </span><span class="si">{</span><span class="n">fmap2</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> (fmap2.shape)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Explaining min_fmap_size below: the fmaps are down-sampled (num_levels - 1) times by a factor of 2.</span>
+        <span class="c1"># The last corr_volume most have at least 2 values (hence the 2* factor), otherwise grid_sample() would</span>
+        <span class="c1"># produce nans in its output.</span>
+        <span class="n">min_fmap_size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_levels</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">fmap_size</span> <span class="o">&lt;</span> <span class="n">min_fmap_size</span> <span class="k">for</span> <span class="n">fmap_size</span> <span class="ow">in</span> <span class="n">fmap1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Feature maps are too small to be down-sampled by the correlation pyramid. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;H and W of feature maps should be at least </span><span class="si">{</span><span class="n">min_fmap_size</span><span class="si">}</span><span class="s2">; got: </span><span class="si">{</span><span class="n">fmap1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="s2">&quot;Remember that input images to the model are downsampled by 8, so that means their &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;dimensions should be at least 8 * </span><span class="si">{</span><span class="n">min_fmap_size</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="mi">8</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">min_fmap_size</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">corr_volume</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_corr_volume</span><span class="p">(</span><span class="n">fmap1</span><span class="p">,</span> <span class="n">fmap2</span><span class="p">)</span>
+
+        <span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">corr_volume</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># _, _ = h, w</span>
+        <span class="n">corr_volume</span> <span class="o">=</span> <span class="n">corr_volume</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">h</span> <span class="o">*</span> <span class="n">w</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corr_pyramid</span> <span class="o">=</span> <span class="p">[</span><span class="n">corr_volume</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_levels</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">corr_volume</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">avg_pool2d</span><span class="p">(</span><span class="n">corr_volume</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">corr_pyramid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">corr_volume</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">index_pyramid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">centroids_coords</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return correlation features by indexing from the pyramid.&quot;&quot;&quot;</span>
+        <span class="n">neighborhood_side_len</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># see note in __init__ about out_channels</span>
+        <span class="n">di</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="n">neighborhood_side_len</span><span class="p">)</span>
+        <span class="n">dj</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="n">neighborhood_side_len</span><span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">di</span><span class="p">,</span> <span class="n">dj</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s2">&quot;ij&quot;</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">centroids_coords</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">delta</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">neighborhood_side_len</span><span class="p">,</span> <span class="n">neighborhood_side_len</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">batch_size</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">centroids_coords</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># _ = 2</span>
+        <span class="n">centroids_coords</span> <span class="o">=</span> <span class="n">centroids_coords</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">h</span> <span class="o">*</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">indexed_pyramid</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">corr_volume</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_pyramid</span><span class="p">:</span>
+            <span class="n">sampling_coords</span> <span class="o">=</span> <span class="n">centroids_coords</span> <span class="o">+</span> <span class="n">delta</span>  <span class="c1"># end shape is (batch_size * h * w, side_len, side_len, 2)</span>
+            <span class="n">indexed_corr_volume</span> <span class="o">=</span> <span class="n">grid_sample</span><span class="p">(</span><span class="n">corr_volume</span><span class="p">,</span> <span class="n">sampling_coords</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;bilinear&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
+                <span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="p">)</span>
+            <span class="n">indexed_pyramid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indexed_corr_volume</span><span class="p">)</span>
+            <span class="n">centroids_coords</span> <span class="o">=</span> <span class="n">centroids_coords</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="n">corr_features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">indexed_pyramid</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+
+        <span class="n">expected_output_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">corr_features</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">expected_output_shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Output shape of index pyramid is incorrect. Should be </span><span class="si">{</span><span class="n">expected_output_shape</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">corr_features</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">corr_features</span>
+
+    <span class="k">def</span> <span class="nf">_compute_corr_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmap1</span><span class="p">,</span> <span class="n">fmap2</span><span class="p">):</span>
+        <span class="n">batch_size</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">fmap1</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">fmap1</span> <span class="o">=</span> <span class="n">fmap1</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">,</span> <span class="n">h</span> <span class="o">*</span> <span class="n">w</span><span class="p">)</span>
+        <span class="n">fmap2</span> <span class="o">=</span> <span class="n">fmap2</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">,</span> <span class="n">h</span> <span class="o">*</span> <span class="n">w</span><span class="p">)</span>
+
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">fmap1</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">fmap2</span><span class="p">)</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">corr</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">corr</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">num_channels</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">RAFT</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">feature_encoder</span><span class="p">,</span> <span class="n">context_encoder</span><span class="p">,</span> <span class="n">corr_block</span><span class="p">,</span> <span class="n">update_block</span><span class="p">,</span> <span class="n">mask_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;RAFT model from</span>
+<span class="sd">        `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
+
+<span class="sd">        args:</span>
+<span class="sd">            feature_encoder (nn.Module): The feature encoder. It must downsample the input by 8.</span>
+<span class="sd">                Its input is the concatenation of ``image1`` and ``image2``.</span>
+<span class="sd">            context_encoder (nn.Module): The context encoder. It must downsample the input by 8.</span>
+<span class="sd">                Its input is ``image1``. As in the original implementation, its output will be split into 2 parts:</span>
+
+<span class="sd">                - one part will be used as the actual &quot;context&quot;, passed to the recurrent unit of the ``update_block``</span>
+<span class="sd">                - one part will be used to initialize the hidden state of the recurrent unit of</span>
+<span class="sd">                  the ``update_block``</span>
+
+<span class="sd">                These 2 parts are split according to the ``hidden_state_size`` of the ``update_block``, so the output</span>
+<span class="sd">                of the ``context_encoder`` must be strictly greater than ``hidden_state_size``.</span>
+
+<span class="sd">            corr_block (nn.Module): The correlation block, which creates a correlation pyramid from the output of the</span>
+<span class="sd">                ``feature_encoder``, and then indexes from this pyramid to create correlation features. It must expose</span>
+<span class="sd">                2 methods:</span>
+
+<span class="sd">                - a ``build_pyramid`` method that takes ``feature_map_1`` and ``feature_map_2`` as input (these are the</span>
+<span class="sd">                  output of the ``feature_encoder``).</span>
+<span class="sd">                - a ``index_pyramid`` method that takes the coordinates of the centroid pixels as input, and returns</span>
+<span class="sd">                  the correlation features. See paper section 3.2.</span>
+
+<span class="sd">                It must expose an ``out_channels`` attribute.</span>
+
+<span class="sd">            update_block (nn.Module): The update block, which contains the motion encoder, the recurrent unit, and the</span>
+<span class="sd">                flow head. It takes as input the hidden state of its recurrent unit, the context, the correlation</span>
+<span class="sd">                features, and the current predicted flow. It outputs an updated hidden state, and the ``delta_flow``</span>
+<span class="sd">                prediction (see paper appendix A). It must expose a ``hidden_state_size`` attribute.</span>
+<span class="sd">            mask_predictor (nn.Module, optional): Predicts the mask that will be used to upsample the predicted flow.</span>
+<span class="sd">                The output channel must be 8 * 8 * 9 - see paper section 3.3, and Appendix B.</span>
+<span class="sd">                If ``None`` (default), the flow is upsampled using interpolation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_encoder</span> <span class="o">=</span> <span class="n">feature_encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context_encoder</span> <span class="o">=</span> <span class="n">context_encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corr_block</span> <span class="o">=</span> <span class="n">corr_block</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_block</span> <span class="o">=</span> <span class="n">update_block</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_predictor</span> <span class="o">=</span> <span class="n">mask_predictor</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_block</span><span class="p">,</span> <span class="s2">&quot;hidden_state_size&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The update_block parameter should expose a &#39;hidden_state_size&#39; attribute.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image1</span><span class="p">,</span> <span class="n">image2</span><span class="p">,</span> <span class="n">num_flow_updates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">):</span>
+
+        <span class="n">batch_size</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">image1</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">!=</span> <span class="n">image2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;input images should have the same shape, instead got (</span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">) != </span><span class="si">{</span><span class="n">image2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">h</span> <span class="o">%</span> <span class="mi">8</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">w</span> <span class="o">%</span> <span class="mi">8</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;input image H and W should be divisible by 8, instead got </span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2"> (h) and </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2"> (w)&quot;</span><span class="p">)</span>
+
+        <span class="n">fmaps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_encoder</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">image1</span><span class="p">,</span> <span class="n">image2</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">fmap1</span><span class="p">,</span> <span class="n">fmap2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="n">fmaps</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fmap1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">!=</span> <span class="p">(</span><span class="n">h</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">8</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The feature encoder should downsample H and W by 8&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">corr_block</span><span class="o">.</span><span class="n">build_pyramid</span><span class="p">(</span><span class="n">fmap1</span><span class="p">,</span> <span class="n">fmap2</span><span class="p">)</span>
+
+        <span class="n">context_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_encoder</span><span class="p">(</span><span class="n">image1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">context_out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">!=</span> <span class="p">(</span><span class="n">h</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">8</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The context encoder should downsample H and W by 8&quot;</span><span class="p">)</span>
+
+        <span class="c1"># As in the original paper, the actual output of the context encoder is split in 2 parts:</span>
+        <span class="c1"># - one part is used to initialize the hidden state of the recurent units of the update block</span>
+        <span class="c1"># - the rest is the &quot;actual&quot; context.</span>
+        <span class="n">hidden_state_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_block</span><span class="o">.</span><span class="n">hidden_state_size</span>
+        <span class="n">out_channels_context</span> <span class="o">=</span> <span class="n">context_out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">hidden_state_size</span>
+        <span class="k">if</span> <span class="n">out_channels_context</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The context encoder outputs </span><span class="si">{</span><span class="n">context_out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> channels, but it should have at strictly more than hidden_state=</span><span class="si">{</span><span class="n">hidden_state_size</span><span class="si">}</span><span class="s2"> channels&quot;</span>
+            <span class="p">)</span>
+        <span class="n">hidden_state</span><span class="p">,</span> <span class="n">context</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">context_out</span><span class="p">,</span> <span class="p">[</span><span class="n">hidden_state_size</span><span class="p">,</span> <span class="n">out_channels_context</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">hidden_state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">hidden_state</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="n">coords0</span> <span class="o">=</span> <span class="n">make_coords_grid</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">fmap1</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">coords1</span> <span class="o">=</span> <span class="n">make_coords_grid</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">fmap1</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">flow_predictions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_flow_updates</span><span class="p">):</span>
+            <span class="n">coords1</span> <span class="o">=</span> <span class="n">coords1</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>  <span class="c1"># Don&#39;t backpropagate gradients through this branch, see paper</span>
+            <span class="n">corr_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_block</span><span class="o">.</span><span class="n">index_pyramid</span><span class="p">(</span><span class="n">centroids_coords</span><span class="o">=</span><span class="n">coords1</span><span class="p">)</span>
+
+            <span class="n">flow</span> <span class="o">=</span> <span class="n">coords1</span> <span class="o">-</span> <span class="n">coords0</span>
+            <span class="n">hidden_state</span><span class="p">,</span> <span class="n">delta_flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_block</span><span class="p">(</span><span class="n">hidden_state</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">corr_features</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+
+            <span class="n">coords1</span> <span class="o">=</span> <span class="n">coords1</span> <span class="o">+</span> <span class="n">delta_flow</span>
+
+            <span class="n">up_mask</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_predictor</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_predictor</span><span class="p">(</span><span class="n">hidden_state</span><span class="p">)</span>
+            <span class="n">upsampled_flow</span> <span class="o">=</span> <span class="n">upsample_flow</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="p">(</span><span class="n">coords1</span> <span class="o">-</span> <span class="n">coords0</span><span class="p">),</span> <span class="n">up_mask</span><span class="o">=</span><span class="n">up_mask</span><span class="p">)</span>
+            <span class="n">flow_predictions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">upsampled_flow</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">flow_predictions</span>
+
+
+<span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="Raft_Large_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.Raft_Large_Weights">[docs]</a><span class="k">class</span> <span class="nc">Raft_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The metrics reported here are as follows.</span>
+
+<span class="sd">    ``epe`` is the &quot;end-point-error&quot; and indicates how far (in pixels) the</span>
+<span class="sd">    predicted flow is from its true value. This is averaged over all pixels</span>
+<span class="sd">    of all images. ``per_image_epe`` is similar, but the average is different:</span>
+<span class="sd">    the epe is first computed on each image independently, and then averaged</span>
+<span class="sd">    over all images. This corresponds to &quot;Fl-epe&quot; (sometimes written &quot;F1-epe&quot;)</span>
+<span class="sd">    in the original paper, and it&#39;s only used on Kitti. ``fl-all`` is also a</span>
+<span class="sd">    Kitti-specific metric, defined by the author of the dataset and used for the</span>
+<span class="sd">    Kitti leaderboard. It corresponds to the average of pixels whose epe is</span>
+<span class="sd">    either &lt;3px, or &lt;5% of flow&#39;s 2-norm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">C_T_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Weights ported from https://github.com/princeton-vl/RAFT</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Train-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.4411</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Train-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">2.7894</span><span class="p">},</span>
+                <span class="s2">&quot;Kitti-Train&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;per_image_epe&quot;</span><span class="p">:</span> <span class="mf">5.0172</span><span class="p">,</span> <span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">17.4506</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">211.007</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">20.129</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were ported from the original paper. They</span>
+<span class="s2">            are trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingThings3D`.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Train-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.3822</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Train-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">2.7161</span><span class="p">},</span>
+                <span class="s2">&quot;Kitti-Train&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;per_image_epe&quot;</span><span class="p">:</span> <span class="mf">4.5118</span><span class="p">,</span> <span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">16.0679</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">211.007</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">20.129</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were trained from scratch on</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingThings3D`.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_SKHT_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Weights ported from https://github.com/princeton-vl/RAFT</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Test-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.94</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Test-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">3.18</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">211.007</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">20.129</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                These weights were ported from the original paper. They are</span>
+<span class="s2">                trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D` and fine-tuned on</span>
+<span class="s2">                Sintel. The Sintel fine-tuning step is a combination of</span>
+<span class="s2">                :class:`~torchvision.datasets.Sintel`,</span>
+<span class="s2">                :class:`~torchvision.datasets.KittiFlow`,</span>
+<span class="s2">                :class:`~torchvision.datasets.HD1K`, and</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D` (clean pass).</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_SKHT_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Test-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.819</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Test-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">3.067</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">211.007</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">20.129</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                These weights were trained from scratch. They are</span>
+<span class="s2">                pre-trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D` and then</span>
+<span class="s2">                fine-tuned on Sintel. The Sintel fine-tuning step is a</span>
+<span class="s2">                combination of :class:`~torchvision.datasets.Sintel`,</span>
+<span class="s2">                :class:`~torchvision.datasets.KittiFlow`,</span>
+<span class="s2">                :class:`~torchvision.datasets.HD1K`, and</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D` (clean pass).</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_SKHT_K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Weights ported from https://github.com/princeton-vl/RAFT</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V1-4a6a5039.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Kitti-Test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">5.10</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">211.007</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">20.129</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                These weights were ported from the original paper. They are</span>
+<span class="s2">                pre-trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D`,</span>
+<span class="s2">                fine-tuned on Sintel, and then fine-tuned on</span>
+<span class="s2">                :class:`~torchvision.datasets.KittiFlow`. The Sintel fine-tuning</span>
+<span class="s2">                step was described above.</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_SKHT_K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V2-b5c70766.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Kitti-Test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">5.19</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">211.007</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">20.129</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                These weights were trained from scratch. They are</span>
+<span class="s2">                pre-trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D`,</span>
+<span class="s2">                fine-tuned on Sintel, and then fine-tuned on</span>
+<span class="s2">                :class:`~torchvision.datasets.KittiFlow`. The Sintel fine-tuning</span>
+<span class="s2">                step was described above.</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">C_T_SKHT_V2</span></div>
+
+
+<div class="viewcode-block" id="Raft_Small_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.Raft_Small_Weights">[docs]</a><span class="k">class</span> <span class="nc">Raft_Small_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The metrics reported here are as follows.</span>
+
+<span class="sd">    ``epe`` is the &quot;end-point-error&quot; and indicates how far (in pixels) the</span>
+<span class="sd">    predicted flow is from its true value. This is averaged over all pixels</span>
+<span class="sd">    of all images. ``per_image_epe`` is similar, but the average is different:</span>
+<span class="sd">    the epe is first computed on each image independently, and then averaged</span>
+<span class="sd">    over all images. This corresponds to &quot;Fl-epe&quot; (sometimes written &quot;F1-epe&quot;)</span>
+<span class="sd">    in the original paper, and it&#39;s only used on Kitti. ``fl-all`` is also a</span>
+<span class="sd">    Kitti-specific metric, defined by the author of the dataset and used for the</span>
+<span class="sd">    Kitti leaderboard. It corresponds to the average of pixels whose epe is</span>
+<span class="sd">    either &lt;3px, or &lt;5% of flow&#39;s 2-norm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">C_T_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Weights ported from https://github.com/princeton-vl/RAFT</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">990162</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Train-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">2.1231</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Train-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">3.2790</span><span class="p">},</span>
+                <span class="s2">&quot;Kitti-Train&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;per_image_epe&quot;</span><span class="p">:</span> <span class="mf">7.6557</span><span class="p">,</span> <span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">25.2801</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">47.655</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">3.821</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were ported from the original paper. They</span>
+<span class="s2">            are trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingThings3D`.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">C_T_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">990162</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Train-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.9901</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Train-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">3.2831</span><span class="p">},</span>
+                <span class="s2">&quot;Kitti-Train&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;per_image_epe&quot;</span><span class="p">:</span> <span class="mf">7.5978</span><span class="p">,</span> <span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">25.2369</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">47.655</span><span class="p">,</span>
+            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">3.821</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were trained from scratch on</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingThings3D`.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">C_T_V2</span></div>
+
+
+<span class="k">def</span> <span class="nf">_raft</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="c1"># Feature encoder</span>
+    <span class="n">feature_encoder_layers</span><span class="p">,</span>
+    <span class="n">feature_encoder_block</span><span class="p">,</span>
+    <span class="n">feature_encoder_norm_layer</span><span class="p">,</span>
+    <span class="c1"># Context encoder</span>
+    <span class="n">context_encoder_layers</span><span class="p">,</span>
+    <span class="n">context_encoder_block</span><span class="p">,</span>
+    <span class="n">context_encoder_norm_layer</span><span class="p">,</span>
+    <span class="c1"># Correlation block</span>
+    <span class="n">corr_block_num_levels</span><span class="p">,</span>
+    <span class="n">corr_block_radius</span><span class="p">,</span>
+    <span class="c1"># Motion encoder</span>
+    <span class="n">motion_encoder_corr_layers</span><span class="p">,</span>
+    <span class="n">motion_encoder_flow_layers</span><span class="p">,</span>
+    <span class="n">motion_encoder_out_channels</span><span class="p">,</span>
+    <span class="c1"># Recurrent block</span>
+    <span class="n">recurrent_block_hidden_state_size</span><span class="p">,</span>
+    <span class="n">recurrent_block_kernel_size</span><span class="p">,</span>
+    <span class="n">recurrent_block_padding</span><span class="p">,</span>
+    <span class="c1"># Flow Head</span>
+    <span class="n">flow_head_hidden_size</span><span class="p">,</span>
+    <span class="c1"># Mask predictor</span>
+    <span class="n">use_mask_predictor</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">feature_encoder</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;feature_encoder&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">FeatureEncoder</span><span class="p">(</span>
+        <span class="n">block</span><span class="o">=</span><span class="n">feature_encoder_block</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="n">feature_encoder_layers</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">feature_encoder_norm_layer</span>
+    <span class="p">)</span>
+    <span class="n">context_encoder</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;context_encoder&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">FeatureEncoder</span><span class="p">(</span>
+        <span class="n">block</span><span class="o">=</span><span class="n">context_encoder_block</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="n">context_encoder_layers</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">context_encoder_norm_layer</span>
+    <span class="p">)</span>
+
+    <span class="n">corr_block</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;corr_block&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">CorrBlock</span><span class="p">(</span><span class="n">num_levels</span><span class="o">=</span><span class="n">corr_block_num_levels</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">corr_block_radius</span><span class="p">)</span>
+
+    <span class="n">update_block</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;update_block&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">update_block</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">motion_encoder</span> <span class="o">=</span> <span class="n">MotionEncoder</span><span class="p">(</span>
+            <span class="n">in_channels_corr</span><span class="o">=</span><span class="n">corr_block</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span>
+            <span class="n">corr_layers</span><span class="o">=</span><span class="n">motion_encoder_corr_layers</span><span class="p">,</span>
+            <span class="n">flow_layers</span><span class="o">=</span><span class="n">motion_encoder_flow_layers</span><span class="p">,</span>
+            <span class="n">out_channels</span><span class="o">=</span><span class="n">motion_encoder_out_channels</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># See comments in forward pass of RAFT class about why we split the output of the context encoder</span>
+        <span class="n">out_channels_context</span> <span class="o">=</span> <span class="n">context_encoder_layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">recurrent_block_hidden_state_size</span>
+        <span class="n">recurrent_block</span> <span class="o">=</span> <span class="n">RecurrentBlock</span><span class="p">(</span>
+            <span class="n">input_size</span><span class="o">=</span><span class="n">motion_encoder</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">+</span> <span class="n">out_channels_context</span><span class="p">,</span>
+            <span class="n">hidden_size</span><span class="o">=</span><span class="n">recurrent_block_hidden_state_size</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="n">recurrent_block_kernel_size</span><span class="p">,</span>
+            <span class="n">padding</span><span class="o">=</span><span class="n">recurrent_block_padding</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">flow_head</span> <span class="o">=</span> <span class="n">FlowHead</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="n">recurrent_block_hidden_state_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="n">flow_head_hidden_size</span><span class="p">)</span>
+
+        <span class="n">update_block</span> <span class="o">=</span> <span class="n">UpdateBlock</span><span class="p">(</span><span class="n">motion_encoder</span><span class="o">=</span><span class="n">motion_encoder</span><span class="p">,</span> <span class="n">recurrent_block</span><span class="o">=</span><span class="n">recurrent_block</span><span class="p">,</span> <span class="n">flow_head</span><span class="o">=</span><span class="n">flow_head</span><span class="p">)</span>
+
+    <span class="n">mask_predictor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;mask_predictor&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask_predictor</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">use_mask_predictor</span><span class="p">:</span>
+        <span class="n">mask_predictor</span> <span class="o">=</span> <span class="n">MaskPredictor</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="o">=</span><span class="n">recurrent_block_hidden_state_size</span><span class="p">,</span>
+            <span class="n">hidden_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+            <span class="n">multiplier</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>  <span class="c1"># See comment in MaskPredictor about this</span>
+        <span class="p">)</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">RAFT</span><span class="p">(</span>
+        <span class="n">feature_encoder</span><span class="o">=</span><span class="n">feature_encoder</span><span class="p">,</span>
+        <span class="n">context_encoder</span><span class="o">=</span><span class="n">context_encoder</span><span class="p">,</span>
+        <span class="n">corr_block</span><span class="o">=</span><span class="n">corr_block</span><span class="p">,</span>
+        <span class="n">update_block</span><span class="o">=</span><span class="n">update_block</span><span class="p">,</span>
+        <span class="n">mask_predictor</span><span class="o">=</span><span class="n">mask_predictor</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>  <span class="c1"># not really needed, all params should be consumed by now</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">check_hash</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+
+
+<div class="viewcode-block" id="raft_large"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.raft_large">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Large_Weights</span><span class="o">.</span><span class="n">C_T_SKHT_V2</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">raft_large</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Raft_Large_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAFT</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RAFT model from</span>
+<span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
+
+<span class="sd">    Please see the example below for a tutorial on how to use this model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights(:class:`~torchvision.models.optical_flow.Raft_Large_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.optical_flow.Raft_Large_Weights`</span>
+<span class="sd">            below for more details, and possible values. By default, no</span>
+<span class="sd">            pre-trained weights are used.</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.optical_flow.Raft_Large_Weights</span>
+<span class="sd">        :members:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">Raft_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_raft</span><span class="p">(</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+        <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
+        <span class="c1"># Feature encoder</span>
+        <span class="n">feature_encoder_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+        <span class="n">feature_encoder_block</span><span class="o">=</span><span class="n">ResidualBlock</span><span class="p">,</span>
+        <span class="n">feature_encoder_norm_layer</span><span class="o">=</span><span class="n">InstanceNorm2d</span><span class="p">,</span>
+        <span class="c1"># Context encoder</span>
+        <span class="n">context_encoder_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+        <span class="n">context_encoder_block</span><span class="o">=</span><span class="n">ResidualBlock</span><span class="p">,</span>
+        <span class="n">context_encoder_norm_layer</span><span class="o">=</span><span class="n">BatchNorm2d</span><span class="p">,</span>
+        <span class="c1"># Correlation block</span>
+        <span class="n">corr_block_num_levels</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">corr_block_radius</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="c1"># Motion encoder</span>
+        <span class="n">motion_encoder_corr_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">192</span><span class="p">),</span>
+        <span class="n">motion_encoder_flow_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>
+        <span class="n">motion_encoder_out_channels</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+        <span class="c1"># Recurrent block</span>
+        <span class="n">recurrent_block_hidden_state_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+        <span class="n">recurrent_block_kernel_size</span><span class="o">=</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">recurrent_block_padding</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="c1"># Flow head</span>
+        <span class="n">flow_head_hidden_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="c1"># Mask predictor</span>
+        <span class="n">use_mask_predictor</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="raft_small"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.raft_small">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Small_Weights</span><span class="o">.</span><span class="n">C_T_V2</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">raft_small</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Raft_Small_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAFT</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RAFT &quot;small&quot; model from</span>
+<span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`__.</span>
+
+<span class="sd">    Please see the example below for a tutorial on how to use this model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights(:class:`~torchvision.models.optical_flow.Raft_Small_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.optical_flow.Raft_Small_Weights`</span>
+<span class="sd">            below for more details, and possible values. By default, no</span>
+<span class="sd">            pre-trained weights are used.</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.optical_flow.Raft_Small_Weights</span>
+<span class="sd">        :members:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">Raft_Small_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_raft</span><span class="p">(</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+        <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
+        <span class="c1"># Feature encoder</span>
+        <span class="n">feature_encoder_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+        <span class="n">feature_encoder_block</span><span class="o">=</span><span class="n">BottleneckBlock</span><span class="p">,</span>
+        <span class="n">feature_encoder_norm_layer</span><span class="o">=</span><span class="n">InstanceNorm2d</span><span class="p">,</span>
+        <span class="c1"># Context encoder</span>
+        <span class="n">context_encoder_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">160</span><span class="p">),</span>
+        <span class="n">context_encoder_block</span><span class="o">=</span><span class="n">BottleneckBlock</span><span class="p">,</span>
+        <span class="n">context_encoder_norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># Correlation block</span>
+        <span class="n">corr_block_num_levels</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">corr_block_radius</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="c1"># Motion encoder</span>
+        <span class="n">motion_encoder_corr_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">96</span><span class="p">,),</span>
+        <span class="n">motion_encoder_flow_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+        <span class="n">motion_encoder_out_channels</span><span class="o">=</span><span class="mi">82</span><span class="p">,</span>
+        <span class="c1"># Recurrent block</span>
+        <span class="n">recurrent_block_hidden_state_size</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+        <span class="n">recurrent_block_kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,),</span>
+        <span class="n">recurrent_block_padding</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span>
+        <span class="c1"># Flow head</span>
+        <span class="n">flow_head_hidden_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+        <span class="c1"># Mask predictor</span>
+        <span class="n">use_mask_predictor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+</pre></div>
+
+             </article>
+             
+            </div>
+            <footer>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-present, Torch Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+         <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+         <script src="../../../../_static/jquery.js"></script>
+         <script src="../../../../_static/underscore.js"></script>
+         <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+         <script src="../../../../_static/doctools.js"></script>
+         <script src="../../../../_static/clipboard.min.js"></script>
+         <script src="../../../../_static/copybutton.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">Stay up to date</li>
+            <li><a href="https://www.facebook.com/pytorch" target="_blank">Facebook</a></li>
+            <li><a href="https://twitter.com/pytorch" target="_blank">Twitter</a></li>
+            <li><a href="https://www.youtube.com/pytorch" target="_blank">YouTube</a></li>
+            <li><a href="https://www.linkedin.com/company/pytorch" target="_blank">LinkedIn</a></li>
+          </ul>  
+          </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">PyTorch Podcasts</li>
+            <li><a href="https://open.spotify.com/show/6UzHKeiy368jKfQMKKvJY5" target="_blank">Spotify</a></li>
+            <li><a href="https://podcasts.apple.com/us/podcast/pytorch-developer-podcast/id1566080008" target="_blank">Apple</a></li>
+            <li><a href="https://www.google.com/podcasts?feed=aHR0cHM6Ly9mZWVkcy5zaW1wbGVjYXN0LmNvbS9PQjVGa0lsOA%3D%3D" target="_blank">Google</a></li>
+            <li><a href="https://music.amazon.com/podcasts/7a4e6f0e-26c2-49e9-a478-41bd244197d0/PyTorch-Developer-Podcast?" target="_blank">Amazon</a></li>
+          </ul>
+         </div>
+        </div>
+        
+        <div class="privacy-policy">
+          <ul>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/terms/" target="_blank">Terms</a></li>
+            <li class="privacy-policy-links">|</li>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/privacy-policy/" target="_blank">Privacy</a></li>
+          </ul>
+        </div>
+        <div class="copyright">
+        <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
+          For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+      </div>
+     </div>
+
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="../../../../_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+           <li class="resources-mobile-menu-title">
+             <a>Learn</a>
+           </li>
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/get-started">Get Started</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials">Tutorials</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/beginner/basics/intro.html">Learn the Basics</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/recipes/recipes_index.html">PyTorch Recipes</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/beginner/introyt.html">Introduction to PyTorch - YouTube Series</a>
+             </li>
+           </ul>
+           <li class="resources-mobile-menu-title">
+             <a>Ecosystem</a>
+           </li>
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/ecosystem">Tools</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/#community-module">Community</a>
+             </li>
+             <li>
+               <a href="https://discuss.pytorch.org/">Forums</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/resources">Developer Resources</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/ecosystem/contributor-awards-2023">Contributor Awards - 2023</a>
+             </li>
+           </ul>
+
+           <li class="resources-mobile-menu-title">
+             <a>Edge</a>
+           </li>
+
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/edge">About PyTorch Edge</a>
+             </li>
+             
+             <li>
+               <a href="https://pytorch.org/executorch-overview">ExecuTorch</a>
+             </li>
+           </ul>
+
+           <li class="resources-mobile-menu-title">
+             <a>Docs</a>
+           </li>
+
+           <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/pytorch-domains">PyTorch Domains</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            <a>Blog & News</a>
+          </li>
+            
+           <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/blog/">PyTorch Blog</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/community-blog">Community Blog</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/videos">Videos</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/community-stories">Community Stories</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/events">Events</a>
+            </li>
+          </ul>
+          
+          <li class="resources-mobile-menu-title">
+            <a>About</a>
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/foundation">PyTorch Foundation</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/governing-board">Governing Board</a>
+            </li>
+          </ul>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="../../../../_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

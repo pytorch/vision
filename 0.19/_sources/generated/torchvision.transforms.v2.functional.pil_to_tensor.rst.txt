@@ -1,0 +1,6 @@
+﻿torchvision.transforms.v2.functional.pil\_to\_tensor
+====================================================
+
+.. currentmodule:: torchvision.transforms.v2.functional
+
+.. autofunction:: pil_to_tensor
