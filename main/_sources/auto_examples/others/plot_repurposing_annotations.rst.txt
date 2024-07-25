@@ -417,7 +417,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.345 seconds)
+   **Total running time of the script:** (0 minutes 2.352 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_repurposing_annotations.py:
@@ -433,6 +433,10 @@ Here is an example where we re-purpose the dataset from the
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_repurposing_annotations.py <plot_repurposing_annotations.py>`
+
+    .. container:: sphx-glr-download sphx-glr-download-zip
+
+      :download:`Download zipped: plot_repurposing_annotations.zip <plot_repurposing_annotations.zip>`
 
 
 .. only:: html

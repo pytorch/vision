@@ -838,7 +838,7 @@ randomly applies a list of transforms, with a given probability.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.946 seconds)
+   **Total running time of the script:** (0 minutes 9.065 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_illustrations.py:
@@ -854,6 +854,10 @@ randomly applies a list of transforms, with a given probability.
     .. container:: sphx-glr-download sphx-glr-download-python
 
       :download:`Download Python source code: plot_transforms_illustrations.py <plot_transforms_illustrations.py>`
+
+    .. container:: sphx-glr-download sphx-glr-download-zip
+
+      :download:`Download zipped: plot_transforms_illustrations.zip <plot_transforms_illustrations.zip>`
 
 
 .. only:: html

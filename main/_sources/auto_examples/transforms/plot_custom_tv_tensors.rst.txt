@@ -242,6 +242,10 @@ will be able to accept any new parameter that we may add in the future.
 
       :download:`Download Python source code: plot_custom_tv_tensors.py <plot_custom_tv_tensors.py>`
 
+    .. container:: sphx-glr-download sphx-glr-download-zip
+
+      :download:`Download zipped: plot_custom_tv_tensors.zip <plot_custom_tv_tensors.zip>`
+
 
 .. only:: html
 

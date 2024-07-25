@@ -15,7 +15,7 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Optical flow is the task of predicting movement between two images, usually two consecutive fra...">
+    <div class="sphx-glr-thumbcontainer" tooltip="Optical flow is the task of predicting movement between two images, usually two consecutive frames of a video. Optical flow models take two images as input, and predict a flow: the flow indicates the displacement of every single pixel in the first image, and maps it to its corresponding pixel in the second image. Flows are (2, H, W)-dimensional tensors, where the first axis corresponds to the predicted horizontal and vertical displacements.">
 
 .. only:: html
 
@@ -32,7 +32,7 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The following example illustrates the operations available the ops module for repurposing segme...">
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example illustrates the operations available the ops module for repurposing segmentation masks into object localization annotations for different tasks (e.g. transforming masks used by instance and panoptic segmentation methods into bounding boxes used by object detection methods).">
 
 .. only:: html
 
@@ -66,7 +66,7 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the APIs that torchvision offers for videos, together with the...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the APIs that torchvision offers for videos, together with the examples on how to build datasets and more.">
 
 .. only:: html
 
@@ -83,7 +83,7 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, bounding boxes, segmentation masks and keypoints.">
 
 .. only:: html
 

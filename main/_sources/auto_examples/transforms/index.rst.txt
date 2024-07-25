@@ -17,7 +17,7 @@ Transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates all of what you need to know to get started with the new torchvision.t...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates all of what you need to know to get started with the new torchvision.transforms.v2 API. We&#x27;ll cover simple tasks like image classification, and more advanced ones like object detection / segmentation.">
 
 .. only:: html
 
@@ -34,7 +34,7 @@ Transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the various transforms available in the torchvision.transforms...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the various transforms available in the torchvision.transforms.v2 module &lt;transforms&gt;.">
 
 .. only:: html
 
@@ -51,7 +51,7 @@ Transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Object detection and segmentation tasks are natively supported: torchvision.transforms.v2 enabl...">
+    <div class="sphx-glr-thumbcontainer" tooltip="Object detection and segmentation tasks are natively supported: torchvision.transforms.v2 enables jointly transforming images, videos, bounding boxes, and masks.">
 
 .. only:: html
 
@@ -85,7 +85,7 @@ Transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This guide explains how to write transforms that are compatible with the torchvision transforms...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This guide explains how to write transforms that are compatible with the torchvision transforms V2 API.">
 
 .. only:: html
 
@@ -102,7 +102,7 @@ Transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip=" TVTensors are Tensor subclasses introduced together with torchvision.transforms.v2. This examp...">
+    <div class="sphx-glr-thumbcontainer" tooltip=" TVTensors are Tensor subclasses introduced together with torchvision.transforms.v2. This example showcases what these TVTensors are and how they behave.">
 
 .. only:: html
 
@@ -119,7 +119,7 @@ Transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This guide is intended for advanced users and downstream library maintainers. We explain how to...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This guide is intended for advanced users and downstream library maintainers. We explain how to write your own TVTensor class, and how to make it compatible with the built-in Torchvision v2 transforms. Before continuing, make sure you have read sphx_glr_auto_examples_transforms_plot_tv_tensors.py.">
 
 .. only:: html
 

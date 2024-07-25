@@ -222,6 +222,10 @@ an issue on our `GitHub repo <https://github.com/pytorch/vision/issues>`_.
 
       :download:`Download Python source code: plot_custom_transforms.py <plot_custom_transforms.py>`
 
+    .. container:: sphx-glr-download sphx-glr-download-zip
+
+      :download:`Download zipped: plot_custom_transforms.zip <plot_custom_transforms.zip>`
+
 
 .. only:: html
 
