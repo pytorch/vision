@@ -57,7 +57,7 @@ jobs:
         sed -i -e 's/-j auto/-j 1/' Makefile
         make html
 
-        # Below is an imperfect way for us to add "try on collab" links to all of our gallery examples.
+        # Below is an imperfect way for us to add "try on Colab" links to all of our gallery examples.
         # sphinx-gallery will convert all gallery examples to .ipynb notebooks and stores them in
         # build/html/_downloads/<some_hash>/<example_name>.ipynb
         # We copy all those ipynb files in a more convenient folder so that we can more easily link to them.
