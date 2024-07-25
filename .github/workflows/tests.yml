@@ -19,11 +19,11 @@ jobs:
           - "3.10"
           - "3.11"
           - "3.12"
-        runner: ["linux.12xlarge"]
+        runner: ["amz2023.linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:
           - python-version: 3.8
-            runner: linux.g5.4xlarge.nvidia.gpu
+            runner: amz2023.linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
