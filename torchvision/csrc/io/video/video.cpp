@@ -314,8 +314,6 @@ void Video::Seek(double ts, bool fastSeek = false) {
   // callback and metadata defined in Video.h
   DecoderInCallback tmp_callback = callback;
   succeeded = decoder.init(params, std::move(tmp_callback), &metadata);
-
-  LOG(INFO) << "Decoder init at seek " << succeeded << "\n";
 }
 
 std::tuple<torch::Tensor, double> Video::Next() {
