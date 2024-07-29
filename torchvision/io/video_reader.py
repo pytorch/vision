@@ -251,12 +251,7 @@ class VideoReader:
                         rate_n = "framerate"
                     metadata[stream.type] = {rate_n: [], "duration": []}
 
-                    rate = (
-                        stream.average_rate
-                        if hasattr(stream, "average_rate")
-                        and stream.average_rate is not None
-                        else stream.sample_rate
-                    )
+                    rate = getattr(stream, "average_rate", None) or stream.sample_rate
 
                 metadata[stream.type]["duration"].append(float(stream.duration * stream.time_base))
                 metadata[stream.type][rate_n].append(float(rate))
