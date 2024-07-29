@@ -157,7 +157,6 @@ class KeypointRCNN(FasterRCNN):
         >>>                      box_roi_pool=roi_pooler,
         >>>                      keypoint_roi_pool=keypoint_roi_pooler)
         >>> model.eval()
-        >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
     """

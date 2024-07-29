@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List, Union
 from warnings import warn
 
 import torch
@@ -68,12 +69,20 @@ def write_file(filename: str, data: torch.Tensor) -> None:
 
 
 def decode_png(
-    input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
+    input: torch.Tensor,
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
+    apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
-    Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 in [0, 255].
+
+    The values of the output tensor are in uint8 in [0, 255] for most cases. If
+    the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
+    (supported from torchvision ``0.21``. Since uint16 support is limited in
+    pytorch, we recommend calling
+    :func:`torchvision.transforms.v2.functional.to_dtype()` with ``scale=True``
+    after this function to convert the decoded image into a uint8 or float
+    tensor.
 
     Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
@@ -90,7 +99,7 @@ def decode_png(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_png)
-    output = torch.ops.image.decode_png(input, mode.value, False, apply_exif_orientation)
+    output = torch.ops.image.decode_png(input, mode.value, apply_exif_orientation)
     return output
 
 
@@ -141,7 +150,7 @@ def decode_jpeg(
 ) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
-    Optionally converts the image to the desired format.
+
     The values of the output tensor are uint8 between 0 and 255.
 
     Args:
@@ -180,28 +189,42 @@ def decode_jpeg(
     return output
 
 
-def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
+def encode_jpeg(
+    input: Union[torch.Tensor, List[torch.Tensor]], quality: int = 75
+) -> Union[torch.Tensor, List[torch.Tensor]]:
     """
-    Takes an input tensor in CHW layout and returns a buffer with the contents
-    of its corresponding JPEG file.
+    Takes a (list of) input tensor(s) in CHW layout and returns a (list of) buffer(s) with the contents
+    of the corresponding JPEG file(s).
+
+    .. note::
+        Passing a list of CUDA tensors is more efficient than repeated individual calls to ``encode_jpeg``.
+        For CPU tensors the performance is equivalent.
 
     Args:
-        input (Tensor[channels, image_height, image_width])): int8 image tensor of
-            ``c`` channels, where ``c`` must be 1 or 3.
-        quality (int): Quality of the resulting JPEG file, it must be a number between
+        input (Tensor[channels, image_height, image_width] or List[Tensor[channels, image_height, image_width]]):
+            (list of) uint8 image tensor(s) of ``c`` channels, where ``c`` must be 1 or 3
+        quality (int): Quality of the resulting JPEG file(s). Must be a number between
             1 and 100. Default: 75
 
     Returns:
-        output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the
-            JPEG file.
+        output (Tensor[1] or list[Tensor[1]]): A (list of) one dimensional uint8 tensor(s) that contain the raw bytes of the JPEG file.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(encode_jpeg)
     if quality < 1 or quality > 100:
         raise ValueError("Image quality should be a positive number between 1 and 100")
-
-    output = torch.ops.image.encode_jpeg(input, quality)
-    return output
+    if isinstance(input, list):
+        if not input:
+            raise ValueError("encode_jpeg requires at least one input tensor when a list is passed")
+        if input[0].device.type == "cuda":
+            return torch.ops.image.encode_jpegs_cuda(input, quality)
+        else:
+            return [torch.ops.image.encode_jpeg(image, quality) for image in input]
+    else:  # single input tensor
+        if input.device.type == "cuda":
+            return torch.ops.image.encode_jpegs_cuda([input], quality)[0]
+        else:
+            return torch.ops.image.encode_jpeg(input, quality)
 
 
 def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
@@ -218,18 +241,26 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_jpeg)
     output = encode_jpeg(input, quality)
+    assert isinstance(output, torch.Tensor)  # Needed for torchscript
     write_file(filename, output)
 
 
 def decode_image(
-    input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
+    input: torch.Tensor,
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
+    apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
     Detect whether an image is a JPEG, PNG or GIF and performs the appropriate
     operation to decode the image into a 3 dimensional RGB or grayscale Tensor.
 
-    Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 in [0, 255].
+    The values of the output tensor are in uint8 in [0, 255] for most cases. If
+    the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
+    (supported from torchvision ``0.21``. Since uint16 support is limited in
+    pytorch, we recommend calling
+    :func:`torchvision.transforms.v2.functional.to_dtype()` with ``scale=True``
+    after this function to convert the decoded image into a uint8 or float
+    tensor.
 
     Args:
         input (Tensor): a one dimensional uint8 tensor containing the raw bytes of the
@@ -251,12 +282,20 @@ def decode_image(
 
 
 def read_image(
-    path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
+    path: str,
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
+    apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
     Reads a JPEG, PNG or GIF image into a 3 dimensional RGB or grayscale Tensor.
-    Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 in [0, 255].
+
+    The values of the output tensor are in uint8 in [0, 255] for most cases. If
+    the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
+    (supported from torchvision ``0.21``. Since uint16 support is limited in
+    pytorch, we recommend calling
+    :func:`torchvision.transforms.v2.functional.to_dtype()` with ``scale=True``
+    after this function to convert the decoded image into a uint8 or float
+    tensor.
 
     Args:
         path (str or ``pathlib.Path``): path of the JPEG, PNG or GIF image.
@@ -274,11 +313,6 @@ def read_image(
         _log_api_usage_once(read_image)
     data = read_file(path)
     return decode_image(data, mode, apply_exif_orientation=apply_exif_orientation)
-
-
-def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
-    data = read_file(path)
-    return torch.ops.image.decode_png(data, mode.value, True)
 
 
 def decode_gif(input: torch.Tensor) -> torch.Tensor:
