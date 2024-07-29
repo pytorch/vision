@@ -14,9 +14,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: linux.12xlarge
+          - runner: amz2023.linux.12xlarge
             gpu-arch-type: cpu
-          - runner: linux.g5.4xlarge.nvidia.gpu
+          - runner: amz2023.linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
