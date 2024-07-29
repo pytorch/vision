@@ -255,9 +255,13 @@ class TestVideo:
                 assert_equal(video, data)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="temporarily disabled on Windows")
-    def test_write_video_with_audio(self, tmpdir):
+    @pytest.mark.parametrize("device", ["cpu", "cuda"])
+    def test_write_video_with_audio(self, device, tmpdir):
         f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
         video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")
+
+        video_tensor = video_tensor.to(device)
+        audio_tensor = audio_tensor.to(device)
 
         out_f_name = os.path.join(tmpdir, "testing.mp4")
         io.video.write_video(
