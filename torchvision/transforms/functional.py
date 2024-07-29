@@ -125,7 +125,7 @@ def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
 
-def to_tensor(pic: Union[PILImage, NDArray[np.uint8]]) -> Tensor:
+def to_tensor(pic: Union[PILImage.Image, NDArray[Union[np.uint8, np.float32]]]) -> Tensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     This function does not support torchscript.
 
