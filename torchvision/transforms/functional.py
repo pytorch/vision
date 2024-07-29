@@ -7,10 +7,10 @@ from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from numpy.typing import NDArray
 from PIL import Image
 from PIL.Image import Image as PILImage
 from torch import Tensor
-from numpy.typing import NDArray
 
 try:
     import accimage
