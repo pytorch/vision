@@ -172,8 +172,8 @@ def make_C_extension():
         sources += cuda_sources
     else:
         Extension = CppExtension
-        if torch.backends.mps.is_available() or FORCE_MPS:
-            sources += mps_sources
+        # if torch.backends.mps.is_available() or FORCE_MPS:
+        #     sources += mps_sources
 
     define_macros, extra_compile_args = get_macros_and_flags()
     return Extension(
