@@ -2,7 +2,7 @@
 This file is part of the private API. Please do not use directly these classes as they will be modified on
 future versions without warning. The classes should be accessed only via the transforms argument of Weights.
 """
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import torch
 from torch import nn, Tensor
@@ -87,7 +87,7 @@ class VideoClassification(nn.Module):
         self,
         *,
         crop_size: Tuple[int, int],
-        resize_size: Tuple[int, int],
+        resize_size: Union[Tuple[int], Tuple[int, int]],
         mean: Tuple[float, ...] = (0.43216, 0.394666, 0.37645),
         std: Tuple[float, ...] = (0.22803, 0.22145, 0.216989),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
