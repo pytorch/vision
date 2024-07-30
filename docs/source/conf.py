@@ -110,6 +110,7 @@ sphinx_gallery_conf = {
     "examples_dirs": "../../gallery/",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
     "subsection_order": ExplicitOrder(["../../gallery/transforms", "../../gallery/others"]),
+    "example_extensions": {".py", ".rst"},
     "backreferences_dir": "gen_modules/backreferences",
     "doc_module": ("torchvision",),
     "remove_config_comments": True,
