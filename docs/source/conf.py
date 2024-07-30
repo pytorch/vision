@@ -93,7 +93,7 @@ class CustomGalleryExampleSortKey:
     ]
 
     def __call__(self, filename):
-        if "gallery/transforms" in self.src_dir:
+        if "gallery/transforms" in self.src_dir and "README" not in filename:
             try:
                 return self.transforms_subsection_order.index(filename)
             except ValueError as e:
