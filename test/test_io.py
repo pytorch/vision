@@ -6,7 +6,7 @@ import tempfile
 import pytest
 import torch
 import torchvision.io as io
-from common_utils import assert_equal
+from common_utils import assert_equal, cpu_and_cuda
 from torchvision import get_video_backend
 
 
@@ -255,7 +255,7 @@ class TestVideo:
                 assert_equal(video, data)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="temporarily disabled on Windows")
-    @pytest.mark.parametrize("device", ["cpu", "cuda"])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_write_video_with_audio(self, device, tmpdir):
         f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
         video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")

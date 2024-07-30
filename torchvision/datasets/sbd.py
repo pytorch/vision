@@ -46,7 +46,7 @@ class SBDataset(VisionDataset):
     md5 = "82b4d87ceb2ed10f6038a1cba92111cb"
     filename = "benchmark.tgz"
 
-    voc_train_url = "http://home.bharathh.info/pubs/codes/SBD/train_noval.txt"
+    voc_train_url = "https://www.cs.cornell.edu/~bharathh/train_noval.txt"
     voc_split_filename = "train_noval.txt"
     voc_split_md5 = "79bff800c5f0b1ec6b21080a3c066722"
 
