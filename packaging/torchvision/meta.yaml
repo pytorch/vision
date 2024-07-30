@@ -12,6 +12,7 @@ requirements:
     - libpng
     - libjpeg-turbo
     - ffmpeg >=4.2  # [linux]
+    - {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
 
   host:
     - python
