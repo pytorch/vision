@@ -32,8 +32,7 @@ torch::Tensor decode_image(
   if (memcmp(jpeg_signature, datap, 3) == 0) {
     return decode_jpeg(data, mode, apply_exif_orientation);
   } else if (memcmp(png_signature, datap, 4) == 0) {
-    return decode_png(
-        data, mode, /*allow_16_bits=*/false, apply_exif_orientation);
+    return decode_png(data, mode, apply_exif_orientation);
   } else if (
       memcmp(gif_signature_1, datap, 6) == 0 ||
       memcmp(gif_signature_2, datap, 6) == 0) {
