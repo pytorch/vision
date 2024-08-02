@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List, Union
 from warnings import warn
 
 import torch
@@ -68,7 +69,9 @@ def write_file(filename: str, data: torch.Tensor) -> None:
 
 
 def decode_png(
-    input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
+    input: torch.Tensor,
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
+    apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
@@ -180,28 +183,42 @@ def decode_jpeg(
     return output
 
 
-def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
+def encode_jpeg(
+    input: Union[torch.Tensor, List[torch.Tensor]], quality: int = 75
+) -> Union[torch.Tensor, List[torch.Tensor]]:
     """
-    Takes an input tensor in CHW layout and returns a buffer with the contents
-    of its corresponding JPEG file.
+    Takes a (list of) input tensor(s) in CHW layout and returns a (list of) buffer(s) with the contents
+    of the corresponding JPEG file(s).
+
+    .. note::
+        Passing a list of CUDA tensors is more efficient than repeated individual calls to ``encode_jpeg``.
+        For CPU tensors the performance is equivalent.
 
     Args:
-        input (Tensor[channels, image_height, image_width])): int8 image tensor of
-            ``c`` channels, where ``c`` must be 1 or 3.
-        quality (int): Quality of the resulting JPEG file, it must be a number between
+        input (Tensor[channels, image_height, image_width] or List[Tensor[channels, image_height, image_width]]):
+            (list of) uint8 image tensor(s) of ``c`` channels, where ``c`` must be 1 or 3
+        quality (int): Quality of the resulting JPEG file(s). Must be a number between
             1 and 100. Default: 75
 
     Returns:
-        output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the
-            JPEG file.
+        output (Tensor[1] or list[Tensor[1]]): A (list of) one dimensional uint8 tensor(s) that contain the raw bytes of the JPEG file.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(encode_jpeg)
     if quality < 1 or quality > 100:
         raise ValueError("Image quality should be a positive number between 1 and 100")
-
-    output = torch.ops.image.encode_jpeg(input, quality)
-    return output
+    if isinstance(input, list):
+        if not input:
+            raise ValueError("encode_jpeg requires at least one input tensor when a list is passed")
+        if input[0].device.type == "cuda":
+            return torch.ops.image.encode_jpegs_cuda(input, quality)
+        else:
+            return [torch.ops.image.encode_jpeg(image, quality) for image in input]
+    else:  # single input tensor
+        if input.device.type == "cuda":
+            return torch.ops.image.encode_jpegs_cuda([input], quality)[0]
+        else:
+            return torch.ops.image.encode_jpeg(input, quality)
 
 
 def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
@@ -218,11 +235,14 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_jpeg)
     output = encode_jpeg(input, quality)
+    assert isinstance(output, torch.Tensor)  # Needed for torchscript
     write_file(filename, output)
 
 
 def decode_image(
-    input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
+    input: torch.Tensor,
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
+    apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
     Detect whether an image is a JPEG, PNG or GIF and performs the appropriate
@@ -251,7 +271,9 @@ def decode_image(
 
 
 def read_image(
-    path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED, apply_exif_orientation: bool = False
+    path: str,
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
+    apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
     Reads a JPEG, PNG or GIF image into a 3 dimensional RGB or grayscale Tensor.

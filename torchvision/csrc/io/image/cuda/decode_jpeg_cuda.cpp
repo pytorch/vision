@@ -1,4 +1,4 @@
-#include "decode_jpeg_cuda.h"
+#include "encode_decode_jpegs_cuda.h"
 
 #include <ATen/ATen.h>
 
