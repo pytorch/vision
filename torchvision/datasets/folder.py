@@ -318,7 +318,7 @@ class ImageFolder(DatasetFolder):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         loader: Callable[[str], Any] = default_loader,
