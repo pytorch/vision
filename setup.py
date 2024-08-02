@@ -262,8 +262,8 @@ def find_libjpeg():
 
 def make_image_extension():
 
-    include_dirs = TORCHVISION_INCLUDE
-    library_dirs = TORCHVISION_LIBRARY
+    include_dirs = TORCHVISION_INCLUDE.copy()
+    library_dirs = TORCHVISION_LIBRARY.copy()
 
     libraries = []
     define_macros, extra_compile_args = get_macros_and_flags()
