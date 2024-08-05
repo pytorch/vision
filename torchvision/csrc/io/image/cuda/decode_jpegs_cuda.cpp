@@ -43,7 +43,8 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   std::vector<torch::Tensor> contig_images;
   contig_images.reserve(encoded_images.size());
 
-  TORCH_CHECK(device.is_cuda(), "Expected the device parameter to be a cuda device");
+  TORCH_CHECK(
+      device.is_cuda(), "Expected the device parameter to be a cuda device");
 
   for (auto& encoded_image : encoded_images) {
     TORCH_CHECK(
@@ -317,7 +318,6 @@ CUDAJpegDecoder::prepare_buffers(
     torch.uint8 and device cpu
     - output_format (nvjpegOutputFormat_t): NVJPEG_OUTPUT_RGB, NVJPEG_OUTPUT_Y
     or NVJPEG_OUTPUT_UNCHANGED
-    - device (torch::Device): The desired CUDA device for the returned Tensors
 
     Returns:
     - decoded_images (std::vector<nvjpegImage_t>): a vector of nvjpegImages
