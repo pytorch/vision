@@ -161,7 +161,7 @@ def decode_jpeg(
 
     Args:
         input (Tensor[1] or list[Tensor[1]]): a (list of) one dimensional uint8 tensor(s) containing
-            the raw bytes of the JPEG image. This tensor(s) must be on CPU,
+            the raw bytes of the JPEG image. The tensor(s) must be on CPU,
             regardless of the ``device`` parameter.
         mode (ImageReadMode): the read mode used for optionally
             converting the image(s). The supported modes are: ``ImageReadMode.UNCHANGED``,
@@ -184,7 +184,8 @@ def decode_jpeg(
 
     Returns:
         output (Tensor[image_channels, image_height, image_width] or list[Tensor[image_channels, image_height, image_width]]):
-            The values of the output tensor(s) are uint8 between 0 and 255. output.device will be set to the specified ``device``
+            The values of the output tensor(s) are uint8 between 0 and 255.
+            ``output.device`` will be set to the specified ``device``
 
 
     """
@@ -195,9 +196,11 @@ def decode_jpeg(
 
     if isinstance(input, list):
         if len(input) == 0:
-            raise RuntimeError("Input list must contain at least one element")
-        if input[0].device.type != "cpu":
-            raise RuntimeError("Input list must contain tensors on CPU")
+            raise ValueError("Input list must contain at least one element")
+        if not all(isinstance(t, torch.Tensor) for t in input):
+            raise ValueError("All elements of the input list must be tensors.")
+        if not all(t.device.type == "cpu" for t in input):
+            raise ValueError("Input list must contain tensors on CPU.")
         if device.type == "cuda":
             return torch.ops.image.decode_jpegs_cuda(input, mode.value, device)
         else:
@@ -205,7 +208,7 @@ def decode_jpeg(
 
     else:  # input is tensor
         if input.device.type != "cpu":
-            raise RuntimeError("Input tensor must be a CPU tensor")
+            raise ValueError("Input tensor must be a CPU tensor")
         if device.type == "cuda":
             return torch.ops.image.decode_jpegs_cuda([input], mode.value, device)[0]
         else:

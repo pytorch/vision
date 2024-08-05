@@ -412,10 +412,10 @@ def test_read_interlaced_png():
     assert_equal(img1, img2)
 
 
-@pytest.mark.parametrize("device", cpu_and_cuda())
+@needs_cuda
 @pytest.mark.parametrize("mode", [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB])
 @pytest.mark.parametrize("scripted", (False, True))
-def test_decode_jpegs(mode, scripted, device):
+def test_decode_jpegs_cuda(mode, scripted):
     encoded_images = []
     for jpeg_path in get_images(IMAGE_ROOT, ".jpg"):
         if "cmyk" in jpeg_path:
@@ -430,14 +430,14 @@ def test_decode_jpegs(mode, scripted, device):
     num_workers = 10
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(decode_fn, encoded_images, mode, device) for _ in range(num_workers)]
+        futures = [executor.submit(decode_fn, encoded_images, mode, "cuda") for _ in range(num_workers)]
     decoded_images_threaded = [future.result() for future in futures]
     assert len(decoded_images_threaded) == num_workers
     for decoded_images in decoded_images_threaded:
         assert len(decoded_images) == len(encoded_images)
         for decoded_image_cuda, decoded_image_cpu in zip(decoded_images, decoded_images_cpu):
             assert decoded_image_cuda.shape == decoded_image_cpu.shape
-            assert decoded_image_cuda.dtype == decoded_image_cpu.dtype
+            assert decoded_image_cuda.dtype == decoded_image_cpu.dtype == torch.uint8
             assert (decoded_image_cuda.cpu().float() - decoded_image_cpu.cpu().float()).abs().mean() < 2
 
 
@@ -471,17 +471,19 @@ def test_decode_jpeg_cuda_errors():
     data = read_file(next(get_images(IMAGE_ROOT, ".jpg")))
     with pytest.raises(RuntimeError, match="Expected a non empty 1-dimensional tensor"):
         decode_jpeg(data.reshape(-1, 1), device="cuda")
-    with pytest.raises(RuntimeError, match="Input tensor must be a CPU tensor"):
+    with pytest.raises(ValueError, match="must be tensors"):
+        decode_jpeg([1, 2, 3])
+    with pytest.raises(ValueError, match="Input tensor must be a CPU tensor"):
         decode_jpeg(data.to("cuda"), device="cuda")
     with pytest.raises(RuntimeError, match="Expected a torch.uint8 tensor"):
         decode_jpeg(data.to(torch.float), device="cuda")
-    with pytest.raises(RuntimeError, match="Expected a cuda device"):
+    with pytest.raises(RuntimeError, match="Expected the device parameter to be a cuda device"):
         torch.ops.image.decode_jpegs_cuda([data], ImageReadMode.UNCHANGED.value, "cpu")
-    with pytest.raises(RuntimeError, match="Input tensor must be a CPU tensor"):
+    with pytest.raises(ValueError, match="Input tensor must be a CPU tensor"):
         decode_jpeg(
             torch.empty((100,), dtype=torch.uint8, device="cuda"),
         )
-    with pytest.raises(RuntimeError, match="Input list must contain tensors on CPU"):
+    with pytest.raises(ValueError, match="Input list must contain tensors on CPU"):
         decode_jpeg(
             [
                 torch.empty((100,), dtype=torch.uint8, device="cuda"),
@@ -489,7 +491,7 @@ def test_decode_jpeg_cuda_errors():
             ]
         )
 
-    with pytest.raises(RuntimeError, match="Input list must contain tensors on CPU"):
+    with pytest.raises(ValueError, match="Input list must contain tensors on CPU"):
         decode_jpeg(
             [
                 torch.empty((100,), dtype=torch.uint8, device="cuda"),
@@ -498,7 +500,7 @@ def test_decode_jpeg_cuda_errors():
             device="cuda",
         )
 
-    with pytest.raises(RuntimeError, match="The input tensor must be on CPU when decoding with nvjpeg"):
+    with pytest.raises(ValueError, match="Input list must contain tensors on CPU"):
         decode_jpeg(
             [
                 torch.empty((100,), dtype=torch.uint8, device="cpu"),
@@ -534,7 +536,7 @@ def test_decode_jpeg_cuda_errors():
             device="cuda",
         )
 
-    with pytest.raises(RuntimeError, match="Input list must contain at least one element"):
+    with pytest.raises(ValueError, match="Input list must contain at least one element"):
         decode_jpeg([], device="cuda")
 
 

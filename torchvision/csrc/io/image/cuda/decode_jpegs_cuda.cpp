@@ -43,6 +43,8 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   std::vector<torch::Tensor> contig_images;
   contig_images.reserve(encoded_images.size());
 
+  TORCH_CHECK(device.is_cuda(), "Expected the device parameter to be a cuda device");
+
   for (auto& encoded_image : encoded_images) {
     TORCH_CHECK(
         encoded_image.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
@@ -62,8 +64,6 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
       contig_images.push_back(encoded_image.contiguous());
     }
   }
-
-  TORCH_CHECK(device.is_cuda(), "Expected a cuda device");
 
   int major_version;
   int minor_version;
@@ -395,11 +395,15 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
     1. Baseline JPEGs: Can be decoded with hardware support on A100+ GPUs.
     2. Other JPEGs (e.g. progressive JPEGs): Need to be decoded in software.
 
+    See
+    https://github.com/NVIDIA/CUDALibrarySamples/blob/f17940ac4e705bf47a8c39f5365925c1665f6c98/nvJPEG/nvJPEG-Decoder/nvjpegDecoder.cpp#L33
+    for reference.
+
     Args:
     - encoded_images (std::vector<torch::Tensor>): a vector of tensors
     containing the jpeg bitstreams to be decoded
     - output_format (nvjpegOutputFormat_t): NVJPEG_OUTPUT_RGB, NVJPEG_OUTPUT_Y
-    or NVJPEG_OUTPUT_
+    or NVJPEG_OUTPUT_UNCHANGED
     - device (torch::Device): The desired CUDA device for the returned Tensors
 
     Returns:
@@ -578,11 +582,14 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
       cudaStatus);
 
   // prune extraneous channels from single channel images
-  if (output_format == NVJPEG_OUTPUT_UNCHANGED)
+  if (output_format == NVJPEG_OUTPUT_UNCHANGED) {
     for (std::vector<at::Tensor>::size_type i = 0; i < output_tensors.size();
-         ++i)
-      if (channels[i] == 1)
+         ++i) {
+      if (channels[i] == 1) {
         output_tensors[i] = output_tensors[i][0].unsqueeze(0).clone();
+      }
+    }
+  }
 
   return output_tensors;
 }
