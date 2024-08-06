@@ -147,6 +147,7 @@ CUDAJpegDecoder::CUDAJpegDecoder(const torch::Device& target_device)
               : at::cuda::getStreamFromPool(false)} {
   nvjpegStatus_t status;
 
+  hw_decode_available = true;
   status = nvjpegCreateEx(
       NVJPEG_BACKEND_HARDWARE,
       NULL,
@@ -393,7 +394,8 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
     This function decodes a batch of jpeg bitstreams.
     We scan all encoded bitstreams and sort them into two groups:
     1. Baseline JPEGs: Can be decoded with hardware support on A100+ GPUs.
-    2. Other JPEGs (e.g. progressive JPEGs): Need to be decoded in software.
+    2. Other JPEGs (e.g. progressive JPEGs): Can also be decoded on the 
+    GPU (albeit with software support only) but need some preprocessing on the host first.
 
     See
     https://github.com/NVIDIA/CUDALibrarySamples/blob/f17940ac4e705bf47a8c39f5365925c1665f6c98/nvJPEG/nvJPEG-Decoder/nvjpegDecoder.cpp#L33

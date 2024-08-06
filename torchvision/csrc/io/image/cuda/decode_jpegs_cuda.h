@@ -37,7 +37,7 @@ class CUDAJpegDecoder {
   nvjpegJpegStream_t jpeg_streams[2];
   nvjpegDecodeParams_t nvjpeg_decode_params;
   nvjpegJpegDecoder_t nvjpeg_decoder;
-  bool hw_decode_available{true};
+  bool hw_decode_available{false};
   nvjpegHandle_t nvjpeg_handle;
 };
 } // namespace image
