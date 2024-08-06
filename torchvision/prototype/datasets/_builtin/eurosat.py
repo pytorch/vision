@@ -31,11 +31,8 @@ def _info() -> Dict[str, Any]:
 
 @register_dataset(NAME)
 class EuroSAT(Dataset):
-    """RGB version of the EuroSAT Dataset.
+    """EuroSAT Dataset.
     homepage="https://github.com/phelber/eurosat",
-
-    For the MS version of the dataset, see
-    `TorchGeo <https://torchgeo.readthedocs.io/en/stable/api/datasets.html#eurosat>`__.
     """
 
     def __init__(self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False) -> None:
@@ -45,7 +42,7 @@ class EuroSAT(Dataset):
     def _resources(self) -> List[OnlineResource]:
         return [
             HttpResource(
-                "https://huggingface.co/datasets/torchgeo/eurosat/resolve/c877bcd43f099cd0196738f714544e355477f3fd/EuroSAT.zip",
+                "https://madm.dfki.de/files/sentinel/EuroSAT.zip",
                 sha256="8ebea626349354c5328b142b96d0430e647051f26efc2dc974c843f25ecf70bd",
             )
         ]
