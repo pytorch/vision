@@ -115,7 +115,7 @@ def write_video(
             audio_sample_fmt = container.streams.audio[0].format.name
 
             format_dtype = np.dtype(audio_format_dtypes[audio_sample_fmt])
-            audio_array = torch.as_tensor(audio_array).numpy().astype(format_dtype)
+            audio_array = torch.as_tensor(audio_array).numpy(force=True).astype(format_dtype)
 
             frame = av.AudioFrame.from_ndarray(audio_array, format=audio_sample_fmt, layout=audio_layout)
 
