@@ -395,7 +395,8 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
     We scan all encoded bitstreams and sort them into two groups:
     1. Baseline JPEGs: Can be decoded with hardware support on A100+ GPUs.
     2. Other JPEGs (e.g. progressive JPEGs): Can also be decoded on the 
-    GPU (albeit with software support only) but need some preprocessing on the host first.
+    GPU (albeit with software support only) but need some preprocessing on the
+    host first.
 
     See
     https://github.com/NVIDIA/CUDALibrarySamples/blob/f17940ac4e705bf47a8c39f5365925c1665f6c98/nvJPEG/nvJPEG-Decoder/nvjpegDecoder.cpp#L33
