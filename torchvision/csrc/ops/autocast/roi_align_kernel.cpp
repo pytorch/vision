@@ -48,5 +48,13 @@ TORCH_LIBRARY_IMPL(torchvision, AutocastCPU, m) {
                 c10::DeviceType::CPU>)));
 }
 
+TORCH_LIBRARY_IMPL(torchvision, AutocastXPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::roi_align"),
+      TORCH_FN((roi_align_autocast<
+                c10::DispatchKey::AutocastXPU,
+                c10::DeviceType::XPU>)));
+}
+
 } // namespace ops
 } // namespace vision

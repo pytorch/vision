@@ -38,5 +38,12 @@ TORCH_LIBRARY_IMPL(torchvision, AutocastCPU, m) {
           (nms_autocast<c10::DispatchKey::AutocastCPU, c10::DeviceType::CPU>)));
 }
 
+TORCH_LIBRARY_IMPL(torchvision, AutocastXPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::nms"),
+      TORCH_FN(
+          (nms_autocast<c10::DispatchKey::AutocastXPU, c10::DeviceType::XPU>)));
+}
+
 } // namespace ops
 } // namespace vision
