@@ -45,6 +45,8 @@ jobs:
       script: |
         set -euo pipefail
 
+        export PYTHON_VERSION=3.9
+
         echo '::group::Setup environment'
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
