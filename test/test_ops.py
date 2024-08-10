@@ -512,6 +512,9 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.bfloat16))
     @pytest.mark.parametrize("rois_dtype", (torch.float, torch.bfloat16))
     def test_autocast_cpu(self, aligned, deterministic, x_dtype, rois_dtype):
+        if aligned and x_dtype == torch.bfloat16:
+            pytest.skip("1/5000 flaky failure")
+
         with torch.cpu.amp.autocast():
             self.test_forward(
                 torch.device("cpu"),
