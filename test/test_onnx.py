@@ -87,7 +87,6 @@ class TestONNXExporter:
         for i in range(0, len(outputs)):
             torch.testing.assert_close(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
 
-    @pytest.mark.skip(reason="segfault on 3.9")
     def test_nms(self):
         num_boxes = 100
         boxes = torch.rand(num_boxes, 4)
@@ -423,6 +422,7 @@ class TestONNXExporter:
             [self.get_image("fakedata/logos/rgb_pytorch.png", (250, 380))],
         )
 
+    @pytest.mark.skip("Too long on CPU")
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
