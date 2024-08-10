@@ -127,7 +127,7 @@ jobs:
         echo '::endgroup::'
 
         echo '::group::Install testing utilities'
-        pip install --progress-bar=off pytest
+        pip install --progress-bar=off pytest "numpy<2"
         echo '::endgroup::'
 
         echo '::group::Run ONNX tests'

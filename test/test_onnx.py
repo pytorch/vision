@@ -422,7 +422,6 @@ class TestONNXExporter:
             [self.get_image("fakedata/logos/rgb_pytorch.png", (250, 380))],
         )
 
-    @pytest.mark.skip("Too long on CPU")
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
