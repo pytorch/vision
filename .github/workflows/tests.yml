@@ -79,7 +79,7 @@ jobs:
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
         include:
-          - python-version: "3.10"
+          - python-version: "3.9"
             runner: windows.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
