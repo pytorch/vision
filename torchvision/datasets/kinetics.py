@@ -16,7 +16,7 @@ from .video_utils import VideoClips
 from .vision import VisionDataset
 
 
-def _dl_wrap(tarpath: str, videopath: str, line: str) -> None:
+def _dl_wrap(tarpath: Union[str, Path], videopath: Union[str, Path], line: str) -> None:
     download_and_extract_archive(line, tarpath, videopath)
 
 

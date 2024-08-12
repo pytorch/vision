@@ -143,7 +143,8 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* disp_info) {
   uint8_t* frame_ptr = decoded_frame.data_ptr<uint8_t>();
   const uint8_t* const source_arr[] = {
       (const uint8_t* const)source_frame,
-      (const uint8_t* const)(source_frame + source_pitch * ((surface_height + 1) & ~1))};
+      (const uint8_t* const)(source_frame +
+                             source_pitch * ((surface_height + 1) & ~1))};
 
   auto err = nppiNV12ToRGB_709CSC_8u_P2C3R(
       source_arr,
