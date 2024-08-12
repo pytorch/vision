@@ -14,7 +14,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
@@ -22,7 +21,7 @@ jobs:
         runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:
-          - python-version: 3.8
+          - python-version: 3.9
             runner: linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
@@ -48,7 +47,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
@@ -74,7 +72,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
@@ -82,7 +79,7 @@ jobs:
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
         include:
-          - python-version: "3.8"
+          - python-version: "3.9"
             runner: windows.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
@@ -114,7 +111,7 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.10
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
@@ -130,7 +127,7 @@ jobs:
         echo '::endgroup::'
 
         echo '::group::Install testing utilities'
-        pip install --progress-bar=off pytest
+        pip install --progress-bar=off pytest "numpy<2"
         echo '::endgroup::'
 
         echo '::group::Run ONNX tests'
@@ -139,13 +136,14 @@ jobs:
 
   unittests-extended:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    if: contains(github.event.pull_request.labels.*.name, 'run-extended')
     with:
       repository: pytorch/vision
       test-infra-ref: main
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
