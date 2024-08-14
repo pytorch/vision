@@ -862,16 +862,21 @@ def test_decode_gif(tmpdir, name, scripted):
             torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
 
 
-def test_decode_gif_errors():
+@pytest.mark.parametrize("decode_fun", (decode_gif, decode_webp))
+def test_decode_gif_webp_errors(decode_fun):
     encoded_data = torch.randint(0, 256, (100,), dtype=torch.uint8)
     with pytest.raises(RuntimeError, match="Input tensor must be 1-dimensional"):
-        decode_gif(encoded_data[None])
+        decode_fun(encoded_data[None])
     with pytest.raises(RuntimeError, match="Input tensor must have uint8 data type"):
-        decode_gif(encoded_data.float())
+        decode_fun(encoded_data.float())
     with pytest.raises(RuntimeError, match="Input tensor must be contiguous"):
-        decode_gif(encoded_data[::2])
-    with pytest.raises(RuntimeError, match=re.escape("DGifOpenFileName() failed - 103")):
-        decode_gif(encoded_data)
+        decode_fun(encoded_data[::2])
+    if decode_fun is decode_gif:
+        expected_match = re.escape("DGifOpenFileName() failed - 103")
+    else:
+        expected_match = "WebPDecodeRGB failed."
+    with pytest.raises(RuntimeError, match=expected_match):
+        decode_fun(encoded_data)
 
 
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
