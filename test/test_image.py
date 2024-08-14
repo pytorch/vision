@@ -879,6 +879,7 @@ def test_decode_webp(decode_fun):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
+    assert img[None].is_contiguous(memory_format=torch.channels_last)
 
 
 if __name__ == "__main__":

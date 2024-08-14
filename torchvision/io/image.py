@@ -78,7 +78,7 @@ def decode_png(
 
     The values of the output tensor are in uint8 in [0, 255] for most cases. If
     the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
-    (supported from torchvision ``0.21``. Since uint16 support is limited in
+    (supported from torchvision ``0.21``). Since uint16 support is limited in
     pytorch, we recommend calling
     :func:`torchvision.transforms.v2.functional.to_dtype()` with ``scale=True``
     after this function to convert the decoded image into a uint8 or float
@@ -277,12 +277,13 @@ def decode_image(
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
-    Detect whether an image is a JPEG, PNG or GIF and performs the appropriate
-    operation to decode the image into a 3 dimensional RGB or grayscale Tensor.
+    Detect whether an image is a JPEG, PNG, WEBP, or GIF and performs the
+    appropriate operation to decode the image into a Tensor.
 
-    The values of the output tensor are in uint8 in [0, 255] for most cases. If
-    the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
-    (supported from torchvision ``0.21``. Since uint16 support is limited in
+    The values of the output tensor are in uint8 in [0, 255] for most cases.
+
+    If the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
+    (supported from torchvision ``0.21``). Since uint16 support is limited in
     pytorch, we recommend calling
     :func:`torchvision.transforms.v2.functional.to_dtype()` with ``scale=True``
     after this function to convert the decoded image into a uint8 or float
@@ -290,13 +291,13 @@ def decode_image(
 
     Args:
         input (Tensor): a one dimensional uint8 tensor containing the raw bytes of the
-            PNG or JPEG image.
+            image.
         mode (ImageReadMode): the read mode used for optionally converting the image.
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
-            available modes. Ignored for GIFs.
+            available modes. Only applies to JPEG and PNG images.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
-            Ignored for GIFs. Default: False.
+           Only applies to JPEG and PNG images. Default: False.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -313,10 +314,11 @@ def read_image(
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """
-    Reads a JPEG, PNG or GIF image into a 3 dimensional RGB or grayscale Tensor.
+    Reads a JPEG, PNG, WEBP, or GIF image into a Tensor.
 
-    The values of the output tensor are in uint8 in [0, 255] for most cases. If
-    the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
+    The values of the output tensor are in uint8 in [0, 255] for most cases.
+
+    If the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
     (supported from torchvision ``0.21``. Since uint16 support is limited in
     pytorch, we recommend calling
     :func:`torchvision.transforms.v2.functional.to_dtype()` with ``scale=True``
@@ -324,13 +326,13 @@ def read_image(
     tensor.
 
     Args:
-        path (str or ``pathlib.Path``): path of the JPEG, PNG or GIF image.
+        path (str or ``pathlib.Path``): path of the image.
         mode (ImageReadMode): the read mode used for optionally converting the image.
             Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
-            available modes. Ignored for GIFs.
+            available modes. Only applies to JPEG and PNG images.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
-            Ignored for GIFs. Default: False.
+            Only applies to JPEG and PNG images. Default: False.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -364,7 +366,18 @@ def decode_gif(input: torch.Tensor) -> torch.Tensor:
 def decode_webp(
     input: torch.Tensor,
 ) -> torch.Tensor:
-    """ """
+    """
+    Decode a WEBP image into a 3 dimensional RGB Tensor.
+
+    The values of the output tensor are uint8 between 0 and 255.
+
+    Args:
+        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
+            the raw bytes of the WEBP image.
+
+    Returns:
+        Decoded image (Tensor[image_channels, image_height, image_width])
+    """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_webp)
     return torch.ops.image.decode_webp(input)
