@@ -15,12 +15,12 @@ on:
 
 jobs:
   generate-matrix:
-    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
+    uses: nicolashug/test-infra/.github/workflows/generate_binary_build_matrix.yml@lol
     with:
       package-type: conda
       os: windows
-      test-infra-repository: pytorch/test-infra
-      test-infra-ref: main
+      test-infra-repository: nicolashug/test-infra
+      test-infra-ref: lol
   build:
     needs: generate-matrix
     strategy:
@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - repository: pytorch/vision
-            pre-script: packaging/pre_build_script.sh
+            pre-script: ""
             env-script: packaging/windows/internal/vc_env_helper.bat
             post-script: ""
             smoke-test-script: test/smoke_test.py
