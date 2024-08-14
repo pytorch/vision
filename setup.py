@@ -321,7 +321,8 @@ def make_image_extension():
                 # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
                 include_dirs.append(webp_include_dir)
                 library_dirs.append(webp_library_dir)
-            libraries.append("webp")
+            webp_library = "libwebp" if sys.platform == "win32" else "webp"
+            libraries.append(webp_library)
             define_macros += [("WEBP_FOUND", 1)]
         else:
             warnings.warn("Building torchvision without WEBP support")
