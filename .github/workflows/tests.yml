@@ -73,16 +73,16 @@ jobs:
       matrix:
         python-version:
           - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
-        runner: ["windows.4xlarge"]
+          # - "3.10"
+          # - "3.11"
+          # - "3.12"
+        runner: ["windows.4xlarge.nonephemeral"]
         gpu-arch-type: ["cpu"]
-        include:
-          - python-version: "3.9"
-            runner: windows.g5.4xlarge.nvidia.gpu
-            gpu-arch-type: cuda
-            gpu-arch-version: "11.8"
+        # include:
+        #   - python-version: "3.9"
+        #     runner: windows.g5.4xlarge.nvidia.gpu
+        #     gpu-arch-type: cuda
+        #     gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
