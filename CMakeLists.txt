@@ -7,7 +7,7 @@ option(WITH_CUDA "Enable CUDA support" OFF)
 option(WITH_MPS "Enable MPS support" OFF)
 option(WITH_PNG "Enable features requiring LibPNG." ON)
 option(WITH_JPEG "Enable features requiring LibJPEG." ON)
-option(WITH_WEBP "Enable features requiring LibWEBP." ON)
+option(WITH_WEBP "Enable features requiring LibWEBP." OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)

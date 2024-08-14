@@ -1,8 +1,8 @@
 """Run smoke tests"""
 
+import os
 import sys
 from pathlib import Path
-import os
 
 import torch
 import torchvision
@@ -27,7 +27,7 @@ def smoke_test_torchvision_read_decode() -> None:
     img_png = read_image(str(SCRIPT_DIR / "assets" / "interlaced_png" / "wizard_low.png"))
     if img_png.shape != (4, 471, 354):
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
-    img_webp= read_image(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.webp"))
+    img_webp = read_image(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.webp"))
     if img_webp.shape != (3, 100, 100):
         raise RuntimeError(f"Unexpected shape of img_webp: {img_webp.shape}")
 
