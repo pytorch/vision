@@ -93,8 +93,7 @@ def get_requirements():
         pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
     requirements = [
-        # TODO: Remove <2 constraint! https://github.com/pytorch/vision/issues/8531
-        "numpy<2" if sys.platform == "win32" else "numpy",
+        "numpy",
         pytorch_dep,
     ]
 
