@@ -21,7 +21,7 @@ jobs:
         echo '::group::Setup environment'
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
-        conda create --name ci --quiet --yes python=3.8 pip
+        conda create --name ci --quiet --yes python=3.9 pip
         conda activate ci
         echo '::endgroup::'
 
@@ -48,22 +48,14 @@ jobs:
         echo '::group::Setup environment'
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
-        # clang-format needs some shared libraries that conflict with the system ones. Thus, we install them from conda
-        # and prepend the libraries to linker path to prioritize them. `ncurses=5` is only available on the conda-forge
-        # channel. Since we are not building or testing here, this is fine.
-        conda create --name ci --quiet --yes -c conda-forge python=3.8 ncurses=5 libgcc
+        conda create --name ci --quiet --yes -c conda-forge python=3.9 clang-format
         conda activate ci
-        export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
         echo '::endgroup::'
 
-        echo '::group::Install lint tools'
-        curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o ./clang-format
-        chmod +x ./clang-format
-        echo '::endgroup::'
 
         echo '::group::Lint C source'
         set +e
-        ./.github/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable ./clang-format --exclude "torchvision/csrc/io/image/cpu/giflib/*"
+        ./.github/scripts/run-clang-format.py -r torchvision/csrc --exclude "torchvision/csrc/io/image/cpu/giflib/*"
 
         if [ $? -ne 0 ]; then
           git --no-pager diff
@@ -80,7 +72,7 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
