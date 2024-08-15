@@ -369,7 +369,8 @@ def decode_webp(
     """
     Decode a WEBP image into a 3 dimensional RGB Tensor.
 
-    The values of the output tensor are uint8 between 0 and 255.
+    The values of the output tensor are uint8 between 0 and 255. If the input
+    image is RGBA, the transparency is ignored.
 
     Args:
         input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
