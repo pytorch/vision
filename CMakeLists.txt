@@ -7,6 +7,9 @@ option(WITH_CUDA "Enable CUDA support" OFF)
 option(WITH_MPS "Enable MPS support" OFF)
 option(WITH_PNG "Enable features requiring LibPNG." ON)
 option(WITH_JPEG "Enable features requiring LibJPEG." ON)
+# Libwebp is disabled by default, which means enabling it from cmake is largely
+# untested. Since building from cmake is very low pri anyway, this is OK. If
+# you're a user and you need this, please open an issue (and a PR!).
 option(WITH_WEBP "Enable features requiring LibWEBP." OFF)
 
 if(WITH_CUDA)

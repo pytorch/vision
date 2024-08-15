@@ -880,8 +880,11 @@ def test_decode_gif_webp_errors(decode_fun):
 
 
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
-def test_decode_webp(decode_fun):
+@pytest.mark.parametrize("scripted", (False, True))
+def test_decode_webp(decode_fun, scripted):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
+    if scripted:
+        decode_fun = torch.jit.script(decode_fun)
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
