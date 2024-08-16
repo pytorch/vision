@@ -329,7 +329,7 @@ def make_image_extension():
             warnings.warn("Building torchvision without WEBP support")
 
     if USE_AVIF:
-        avif_found, avif_include_dir, avif_library_dir = find_library(header="avif/avif_cxx.h")
+        avif_found, avif_include_dir, avif_library_dir = find_library(header="avif/avif.h")
         if avif_found:
             print("Building torchvision with AVIF support")
             print(f"{avif_include_dir = }")

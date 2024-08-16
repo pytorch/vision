@@ -2,7 +2,6 @@
 
 #if AVIF_FOUND
 #include "avif/avif.h"
-#include "avif/avif_cxx.h"
 #endif // AVIF_FOUND
 
 namespace vision {
@@ -14,6 +13,15 @@ torch::Tensor decode_avif(const torch::Tensor& data) {
       false, "decode_avif: torchvision not compiled with libavif support");
 }
 #else
+
+// This normally comes from avif_cxx.h, but it's not always present when
+// installing libavif. So we just copy/paste it here.
+struct UniquePtrDeleter {
+  void operator()(avifDecoder* decoder) const {
+    avifDecoderDestroy(decoder);
+  }
+};
+using DecoderPtr = std::unique_ptr<avifDecoder, UniquePtrDeleter>;
 
 torch::Tensor decode_avif(const torch::Tensor& encoded_data) {
   // This is based on
@@ -32,7 +40,7 @@ torch::Tensor decode_avif(const torch::Tensor& encoded_data) {
       encoded_data.dim(),
       " dims.");
 
-  avif::DecoderPtr decoder(avifDecoderCreate());
+  DecoderPtr decoder(avifDecoderCreate());
   TORCH_CHECK(decoder != nullptr, "Failed to create avif decoder.");
 
   auto result = AVIF_RESULT_UNKNOWN_ERROR;
