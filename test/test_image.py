@@ -895,7 +895,7 @@ def test_decode_webp(decode_fun, scripted):
 
 @pytest.mark.parametrize("decode_fun", (decode_avif, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))
-def test_decode_webp(decode_fun, scripted):
+def test_decode_avif(decode_fun, scripted):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".avif")))
     if scripted:
         decode_fun = torch.jit.script(decode_fun)
