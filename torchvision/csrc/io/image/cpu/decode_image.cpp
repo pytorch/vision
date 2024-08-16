@@ -1,5 +1,6 @@
 #include "decode_image.h"
 
+#include "decode_avif.h"
 #include "decode_gif.h"
 #include "decode_jpeg.h"
 #include "decode_png.h"
@@ -46,6 +47,17 @@ torch::Tensor decode_image(
   if (memcmp(gif_signature_1, datap, 6) == 0 ||
       memcmp(gif_signature_2, datap, 6) == 0) {
     return decode_gif(data);
+  }
+
+  // We assume the signature of an avif file is
+  // 0000 0020 6674 7970 6176 6966
+  // xxxx xxxx  f t  y p  a v  i f
+  // We only check for the "ftyp avif" part.
+  // This is probably not perfect, but hopefully this should cover most files.
+  const uint8_t avif_signature[8] = {0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66}; // == "ftypavif"
+  TORCH_CHECK(data.numel() >= 12, err_msg);
+  if ((memcmp(avif_signature, datap + 4, 8) == 0)){
+    return decode_avif(data);
   }
 
   const uint8_t webp_signature_begin[4] = {0x52, 0x49, 0x46, 0x46}; // == "RIFF"

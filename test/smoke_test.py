@@ -30,6 +30,9 @@ def smoke_test_torchvision_read_decode() -> None:
     img_webp = read_image(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.webp"))
     if img_webp.shape != (3, 100, 100):
         raise RuntimeError(f"Unexpected shape of img_webp: {img_webp.shape}")
+    img_avif = read_image(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.avif"))
+    if img_avif.shape != (3, 100, 100):
+        raise RuntimeError(f"Unexpected shape of img_avif: {img_avif.shape}")
 
 
 def smoke_test_torchvision_decode_jpeg(device: str = "cpu"):
