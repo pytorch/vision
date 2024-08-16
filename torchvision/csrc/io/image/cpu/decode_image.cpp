@@ -54,9 +54,10 @@ torch::Tensor decode_image(
   // xxxx xxxx  f t  y p  a v  i f
   // We only check for the "ftyp avif" part.
   // This is probably not perfect, but hopefully this should cover most files.
-  const uint8_t avif_signature[8] = {0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66}; // == "ftypavif"
+  const uint8_t avif_signature[8] = {
+      0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66}; // == "ftypavif"
   TORCH_CHECK(data.numel() >= 12, err_msg);
-  if ((memcmp(avif_signature, datap + 4, 8) == 0)){
+  if ((memcmp(avif_signature, datap + 4, 8) == 0)) {
     return decode_avif(data);
   }
 
