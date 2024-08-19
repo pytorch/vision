@@ -7,9 +7,9 @@ import torch
 
 from ..utils import _log_api_usage_once
 
-from ._video_opt import _HAS_VIDEO_OPT
+from ._video_opt import _HAS_CPU_VIDEO_DECODER
 
-if _HAS_VIDEO_OPT:
+if _HAS_CPU_VIDEO_DECODER:
 
     def _has_video_opt() -> bool:
         return True
