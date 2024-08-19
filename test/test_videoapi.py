@@ -7,7 +7,7 @@ import torch
 import torchvision
 from pytest import approx
 from torchvision.datasets.utils import download_url
-from torchvision.io import _HAS_VIDEO_OPT, VideoReader
+from torchvision.io import _HAS_CPU_VIDEO_DECODER, VideoReader
 
 
 # WARNING: these tests have been skipped forever on the CI because the video ops
@@ -62,7 +62,7 @@ test_videos = {
 }
 
 
-@pytest.mark.skipif(_HAS_VIDEO_OPT is False, reason="Didn't compile with ffmpeg")
+@pytest.mark.skipif(_HAS_CPU_VIDEO_DECODER is False, reason="Didn't compile with ffmpeg")
 class TestVideoApi:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video", test_videos.keys())
