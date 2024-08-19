@@ -10,10 +10,11 @@ from ..extension import _load_library
 
 try:
     _load_library("video_reader")
-    _HAS_VIDEO_OPT = True
+    _HAS_CPU_VIDEO_DECODER = True
 except (ImportError, OSError):
-    _HAS_VIDEO_OPT = False
+    _HAS_CPU_VIDEO_DECODER = False
 
+_HAS_VIDEO_OPT = _HAS_CPU_VIDEO_DECODER  # For BC
 default_timebase = Fraction(0, 1)
 
 
