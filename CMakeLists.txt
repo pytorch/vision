@@ -11,6 +11,8 @@ option(WITH_JPEG "Enable features requiring LibJPEG." ON)
 # untested. Since building from cmake is very low pri anyway, this is OK. If
 # you're a user and you need this, please open an issue (and a PR!).
 option(WITH_WEBP "Enable features requiring LibWEBP." OFF)
+# Same here
+option(WITH_AVIF "Enable features requiring LibAVIF." OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)
@@ -39,6 +41,11 @@ endif()
 if (WITH_WEBP)
     add_definitions(-DWEBP_FOUND)
     find_package(WEBP REQUIRED)
+endif()
+
+if (WITH_AVIF)
+    add_definitions(-DAVIF_FOUND)
+    find_package(AVIF REQUIRED)
 endif()
 
 function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
@@ -117,6 +124,10 @@ if (WITH_WEBP)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${WEBP_LIBRARIES})
 endif()
 
+if (WITH_AVIF)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${AVIF_LIBRARIES})
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
   EXPORT_NAME TorchVision
   INSTALL_RPATH ${TORCH_INSTALL_PREFIX}/lib)
@@ -133,6 +144,10 @@ endif()
 
 if (WITH_WEBP)
     include_directories(${WEBP_INCLUDE_DIRS})
+endif()
+
+if (WITH_AVIF)
+    include_directories(${AVIF_INCLUDE_DIRS})
 endif()
 
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")
