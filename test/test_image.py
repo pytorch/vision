@@ -14,6 +14,7 @@ import torchvision.transforms.v2.functional as F
 from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
+    decode_heic,
     _decode_avif,
     decode_gif,
     decode_image,
@@ -889,9 +890,10 @@ def test_decode_webp(decode_fun, scripted):
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
+    img += 123  # Make sure the underlying data wasn't accidentally freed
 
 
-@pytest.mark.xfail(reason="AVIF support not enabled yet.")
+# @pytest.mark.xfail(reason="AVIF support not enabled yet.")
 @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))
 def test_decode_avif(decode_fun, scripted):
@@ -901,7 +903,20 @@ def test_decode_avif(decode_fun, scripted):
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
+    img += 123  # Make sure the underlying data wasn't accidentally freed
 
+
+# @pytest.mark.xfail(reason="HEIC support not enabled yet.")
+@pytest.mark.parametrize("decode_fun", (decode_heic, decode_image))
+@pytest.mark.parametrize("scripted", (False, True))
+def test_decode_heic(decode_fun, scripted):
+    encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".heic")))
+    if scripted:
+        decode_fun = torch.jit.script(decode_fun)
+    img = decode_fun(encoded_bytes)
+    assert img.shape == (3, 100, 100)
+    assert img[None].is_contiguous(memory_format=torch.channels_last)
+    img += 123  # Make sure the underlying data wasn't accidentally freed
 
 if __name__ == "__main__":
     pytest.main([__file__])

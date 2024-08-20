@@ -1,7 +1,8 @@
 #include "decode_heic.h"
 
 #if HEIC_FOUND
-#include "libheif/heif.h"
+// #include "libheif/heif.h"
+#include "libheif/heif_cxx.h"
 #endif // HEIC_FOUND
 
 namespace vision {
@@ -15,32 +16,49 @@ torch::Tensor decode_heic(const torch::Tensor& data) {
 #else
 
 torch::Tensor decode_heic(const torch::Tensor& encoded_data) {
-  heif_context* ctx = heif_context_alloc();
-  heif_context_read_from_memory(
-      ctx, encoded_data.data_ptr<uint8_t>(), encoded_data.numel(), nullptr);
+  TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
+  TORCH_CHECK(
+      encoded_data.dtype() == torch::kU8,
+      "Input tensor must have uint8 data type, got ",
+      encoded_data.dtype());
+  TORCH_CHECK(
+      encoded_data.dim() == 1,
+      "Input tensor must be 1-dimensional, got ",
+      encoded_data.dim(),
+      " dims.");
 
-  // get a handle to the primary image
-  heif_image_handle* handle;
-  heif_context_get_primary_image_handle(ctx, &handle);
-  int width = heif_image_handle_get_width(handle);
-  int height = heif_image_handle_get_height(handle);
+  heif::Context ctx;
+  ctx.read_from_memory_without_copy(
+      encoded_data.data_ptr<uint8_t>(), encoded_data.numel());
 
-  // decode the image and convert colorspace to RGB, saved as 24bit interleaved
-  heif_image* img;
-  heif_decode_image(
-      handle, &img, heif_colorspace_RGB, heif_chroma_interleaved_RGB, nullptr);
+  heif::ImageHandle handle = ctx.get_primary_image_handle();
+  heif::Image img =
+      handle.decode_image(heif_colorspace_RGB, heif_chroma_interleaved_RGB);
 
   int stride;
-  uint8_t* data = (uint8_t*)heif_image_get_plane_readonly(
-      img, heif_channel_interleaved, &stride);
-  auto out = torch::from_blob(data, {height, width, 3}, torch::kUInt8);
-  return out.permute({2, 0, 1});
+  uint8_t* decoded_data = img.get_plane(heif_channel_interleaved, &stride);
+  TORCH_CHECK(decoded_data != nullptr, "Something went wrong during decoding.");
 
-  // TODO
-  // clean up resources
-  // heif_image_release(img);
-  // heif_image_handle_release(handle);
-  // heif_context_free(ctx);
+  auto out =
+      torch::empty({handle.get_height(), handle.get_width(), 3}, torch::kUInt8);
+  auto out_ptr = out.data_ptr<uint8_t>();
+
+  // decoded_data is *almost* the raw decoded data: for some image, there may be
+  // some padding at the end of each row, i.e. when stride != row_size. So we
+  // can't copy decoded_data into the tensor's memory directly, we have to copy
+  // row by row.
+  // Oh, and if you think you can take a shortcut when stride == row_size and
+  // just do:
+  // out = torch::from_blob(decoded_data, ...)
+  // you can't, because decoded_data is owned by the heif::Image object and gets
+  // freed when it gets out of scope!
+  auto row_size = handle.get_width() * 3;
+  for (auto i = 0; i < handle.get_height(); i++) {
+    memcpy(out_ptr, decoded_data, row_size);
+    out_ptr += row_size;
+    decoded_data += stride;
+  }
+  return out.permute({2, 0, 1});
 }
 #endif // HEIC_FOUND
 
