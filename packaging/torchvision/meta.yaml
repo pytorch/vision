@@ -12,6 +12,7 @@ requirements:
     - libpng
     - libjpeg-turbo
     - libwebp
+    - libavif  # -c conda-forge
     - ffmpeg >=4.2.2, <5.0.0  # [linux]
 
   host:
@@ -30,6 +31,7 @@ requirements:
     - ffmpeg >=4.2.2, <5.0.0  # [linux]
     - libjpeg-turbo
     - libwebp
+    - libavif  # -c conda-forge
     - pillow >=5.3.0, !=8.3.*
     - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT', 'pytorch') }}

@@ -22,6 +22,7 @@ from ._video_opt import (
     VideoMetaData,
 )
 from .image import (
+    decode_avif,
     decode_gif,
     decode_image,
     decode_jpeg,
@@ -63,6 +64,7 @@ __all__ = [
     "decode_png",
     "decode_webp",
     "decode_gif",
+    "decode_avif",
     "encode_jpeg",
     "encode_png",
     "read_file",
