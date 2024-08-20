@@ -383,9 +383,14 @@ def decode_webp(
         _log_api_usage_once(decode_webp)
     return torch.ops.image.decode_webp(input)
 
-def decode_heic(
-    input: torch.Tensor,
-) -> torch.Tensor:
+
+def decode_heic(input: torch.Tensor) -> torch.Tensor:
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(decode_webp)
+        _log_api_usage_once(decode_heic)
     return torch.ops.image.decode_heic(input)
+
+
+def _decode_avif(input: torch.Tensor) -> torch.Tensor:
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(_decode_avif)
+    return torch.ops.image.decode_avif(input)

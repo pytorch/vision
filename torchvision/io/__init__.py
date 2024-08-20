@@ -63,6 +63,8 @@ __all__ = [
     "decode_jpeg",
     "decode_png",
     "decode_heic",
+    "decode_webp",
+    "decode_gif",
     "encode_jpeg",
     "encode_png",
     "read_file",

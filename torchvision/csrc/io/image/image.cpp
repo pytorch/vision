@@ -23,6 +23,7 @@ static auto registry =
             &decode_jpeg)
         .op("image::decode_webp", &decode_webp)
         .op("image::decode_heic", &decode_heic)
+        .op("image::decode_avif", &decode_avif)
         .op("image::encode_jpeg", &encode_jpeg)
         .op("image::read_file", &read_file)
         .op("image::write_file", &write_file)
