@@ -23,11 +23,11 @@ from ._video_opt import (
 )
 from .image import (
     decode_gif,
+    decode_heic,
     decode_image,
     decode_jpeg,
     decode_png,
     decode_webp,
-    decode_heic,
     encode_jpeg,
     encode_png,
     ImageReadMode,
