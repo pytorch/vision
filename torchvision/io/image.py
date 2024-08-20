@@ -382,3 +382,11 @@ def decode_webp(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_webp)
     return torch.ops.image.decode_webp(input)
+
+
+def _decode_avif(
+    input: torch.Tensor,
+) -> torch.Tensor:
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_webp)
+    return torch.ops.image.decode_avif(input)
