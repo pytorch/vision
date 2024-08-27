@@ -916,7 +916,7 @@ def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename)
     assert_equal(img, from_pil)
 
 
-@pytest.mark.xfail(reason="AVIF support not enabled yet.")
+# @pytest.mark.xfail(reason="AVIF support not enabled yet.")
 @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))
 def test_decode_avif(decode_fun, scripted):
@@ -926,6 +926,28 @@ def test_decode_avif(decode_fun, scripted):
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
+
+
+# @pytest.mark.xfail(reason="AVIF support not enabled yet.")
+# @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
+@pytest.mark.parametrize("decode_fun", (_decode_avif,))
+# @pytest.mark.parametrize("scripted", (False, True))
+@pytest.mark.parametrize("scripted", (False, ))
+@pytest.mark.parametrize("filename", Path("/home/nicolashug/dev/libavif/tests/data/").glob("*.avif"))
+def test_decode_avif_against_pil(decode_fun, scripted, filename):
+    print(filename)
+    import pillow_avif  # noqa
+    encoded_bytes = read_file(filename)
+    if scripted:
+        decode_fun = torch.jit.script(decode_fun)
+    img = decode_fun(encoded_bytes)
+    assert img[None].is_contiguous(memory_format=torch.channels_last)
+    pil_img = Image.open(filename)
+    from_pil = F.pil_to_tensor(pil_img)
+    # assert_equal(img, from_pil)
+    torch.testing.assert_close(img, from_pil, rtol=0, atol=2)
+
+
 
 
 if __name__ == "__main__":
