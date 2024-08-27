@@ -875,7 +875,7 @@ def test_decode_gif_webp_errors(decode_fun):
     if decode_fun is decode_gif:
         expected_match = re.escape("DGifOpenFileName() failed - 103")
     elif decode_fun is decode_webp:
-        expected_match = "WebPDecodeRGB failed."
+        expected_match = "WebPGetFeatures failed."
     with pytest.raises(RuntimeError, match=expected_match):
         decode_fun(encoded_data)
 
@@ -889,6 +889,26 @@ def test_decode_webp(decode_fun, scripted):
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
+
+
+# TODO: explain this test and why it's skipped
+@pytest.mark.skip(reason="Need to download test images first")
+@pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
+@pytest.mark.parametrize("scripted", (False, True))
+@pytest.mark.parametrize(
+    "mode, pil_mode", ((ImageReadMode.RGB, "RGB"), (ImageReadMode.RGB_ALPHA, "RGBA"), (ImageReadMode.UNCHANGED, None))
+)
+@pytest.mark.parametrize("filename", Path("/home/nicolashug/webp_samples").glob("*.webp"))
+def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename):
+    encoded_bytes = read_file(filename)
+    if scripted:
+        decode_fun = torch.jit.script(decode_fun)
+    img = decode_fun(encoded_bytes, mode=mode)
+    assert img[None].is_contiguous(memory_format=torch.channels_last)
+
+    pil_img = Image.open(filename).convert(pil_mode)
+    from_pil = F.pil_to_tensor(pil_img)
+    assert_equal(img, from_pil)
 
 
 @pytest.mark.xfail(reason="AVIF support not enabled yet.")
