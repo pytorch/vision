@@ -59,8 +59,8 @@ torch::Tensor decode_avif(const torch::Tensor& encoded_data) {
   TORCH_CHECK(
       decoder->imageCount == 1, "Avif file contains more than one image");
   TORCH_CHECK(
-      decoder->image->depth <= 8,
-      "avif images with bitdepth > 8 are not supported");
+      decoder->image->depth <= 16,
+      "avif images with bitdepth > 16 are not supported");
 
   result = avifDecoderNextImage(decoder.get());
   TORCH_CHECK(
@@ -68,15 +68,20 @@ torch::Tensor decode_avif(const torch::Tensor& encoded_data) {
       "avifDecoderNextImage failed:",
       avifResultToString(result));
 
+  auto dtype = torch::kUInt8;
   auto out = torch::empty(
-      {decoder->image->height, decoder->image->width, 3}, torch::kUInt8);
+      {decoder->image->height, decoder->image->width, 3}, dtype);
 
   avifRGBImage rgb;
   memset(&rgb, 0, sizeof(rgb));
   avifRGBImageSetDefaults(&rgb, decoder->image);
+  // Below we force the avif decoder to return RGB data encoded as uint8. If the
+  // avif image is 10, 12 bits etc., it's automatically converted.
   rgb.format = AVIF_RGB_FORMAT_RGB;
-  rgb.pixels = out.data_ptr<uint8_t>();
+  rgb.depth = 8;
   rgb.rowBytes = rgb.width * avifRGBImagePixelSize(&rgb);
+
+  rgb.pixels = (uint8_t*)out.data_ptr<uint8_t>();
 
   result = avifImageYUVToRGB(decoder->image, &rgb);
   TORCH_CHECK(

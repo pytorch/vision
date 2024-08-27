@@ -28,6 +28,11 @@ class ImageReadMode(Enum):
     ``ImageReadMode.GRAY_ALPHA`` for grayscale with transparency,
     ``ImageReadMode.RGB`` for RGB and ``ImageReadMode.RGB_ALPHA`` for
     RGB with transparency.
+
+    .. note::
+
+        Some decoders won't support all possible values, e.g. a decoder may only
+        support "RGB" and "RGBA" mode.
     """
 
     UNCHANGED = 0
@@ -365,23 +370,26 @@ def decode_gif(input: torch.Tensor) -> torch.Tensor:
 
 def decode_webp(
     input: torch.Tensor,
+    mode: ImageReadMode = ImageReadMode.UNCHANGED,
 ) -> torch.Tensor:
     """
-    Decode a WEBP image into a 3 dimensional RGB Tensor.
+    Decode a WEBP image into a 3 dimensional RGB[A] Tensor.
 
-    The values of the output tensor are uint8 between 0 and 255. If the input
-    image is RGBA, the transparency is ignored.
+    The values of the output tensor are uint8 between 0 and 255.
 
     Args:
         input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
             the raw bytes of the WEBP image.
+        mode (ImageReadMode): The read mode used for optionally
+            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.
+            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.
 
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_webp)
-    return torch.ops.image.decode_webp(input)
+    return torch.ops.image.decode_webp(input, mode.value)
 
 
 def decode_heic(input: torch.Tensor) -> torch.Tensor:
