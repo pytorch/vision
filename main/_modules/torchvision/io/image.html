@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+4c5ae78) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+bdf354e) &#x25BC</a>
     </div>
     
 
@@ -423,6 +423,11 @@
 <span class="sd">    ``ImageReadMode.GRAY_ALPHA`` for grayscale with transparency,</span>
 <span class="sd">    ``ImageReadMode.RGB`` for RGB and ``ImageReadMode.RGB_ALPHA`` for</span>
 <span class="sd">    RGB with transparency.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        Some decoders won&#39;t support all possible values, e.g. a decoder may only</span>
+<span class="sd">        support &quot;RGB&quot; and &quot;RGBA&quot; mode.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">UNCHANGED</span> <span class="o">=</span> <span class="mi">0</span>
@@ -760,23 +765,26 @@
 
 <div class="viewcode-block" id="decode_webp"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_webp.html#torchvision.io.decode_webp">[docs]</a><span class="k">def</span> <span class="nf">decode_webp</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decode a WEBP image into a 3 dimensional RGB Tensor.</span>
+<span class="sd">    Decode a WEBP image into a 3 dimensional RGB[A] Tensor.</span>
 
-<span class="sd">    The values of the output tensor are uint8 between 0 and 255. If the input</span>
-<span class="sd">    image is RGBA, the transparency is ignored.</span>
+<span class="sd">    The values of the output tensor are uint8 between 0 and 255.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the WEBP image.</span>
+<span class="sd">        mode (ImageReadMode): The read mode used for optionally</span>
+<span class="sd">            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.</span>
+<span class="sd">            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Decoded image (Tensor[image_channels, image_height, image_width])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_webp</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_webp</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_webp</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">_decode_avif</span><span class="p">(</span>
