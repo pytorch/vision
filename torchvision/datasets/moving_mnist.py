@@ -66,7 +66,7 @@ class MovingMNIST(VisionDataset):
     def __getitem__(self, idx: int) -> torch.Tensor:
         """
         Args:
-            index (int): Index
+            idx (int): Index
         Returns:
             torch.Tensor: Video frames (torch Tensor[T, C, H, W]). The `T` is the number of frames.
         """
