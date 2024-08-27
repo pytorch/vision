@@ -891,7 +891,12 @@ def test_decode_webp(decode_fun, scripted):
     assert img[None].is_contiguous(memory_format=torch.channels_last)
 
 
-# TODO: explain this test and why it's skipped
+# This test is skipped because it requires webp images that we're not including
+# within the repo. The test images were downloaded from the different pages of
+# https://developers.google.com/speed/webp/gallery
+# Note that converting an RGBA image to RGB leads to bad results because the
+# transparent pixels aren't necessarily set to "black" or "white", they can be
+# random stuff. This is consistent with PIL results.
 @pytest.mark.skip(reason="Need to download test images first")
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))

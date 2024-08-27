@@ -64,10 +64,6 @@ torch::Tensor decode_webp(
   auto out = torch::from_blob(
       decoded_data, {height, width, num_channels}, torch::kUInt8);
 
-  if (features.has_alpha && mode == IMAGE_READ_MODE_RGB) {
-    namespace idx = torch::indexing;
-    out = out.index({idx::Slice(), idx::Slice(), idx::Slice(idx::None, 3)});
-  }
   return out.permute({2, 0, 1});
 }
 #endif // WEBP_FOUND
