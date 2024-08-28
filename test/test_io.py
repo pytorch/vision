@@ -63,7 +63,7 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
 
 
 @pytest.mark.skipif(
-    get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT, reason="video_reader backend not available"
+    get_video_backend() != "pyav" and not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend not available"
 )
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 class TestVideo:
@@ -77,14 +77,14 @@ class TestVideo:
             assert_equal(data, lv)
             assert info["video_fps"] == 5
 
-    @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
+    @pytest.mark.skipif(not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend is not chosen")
     def test_probe_video_from_file(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             video_info = io._probe_video_from_file(f_name)
             assert pytest.approx(2, rel=0.0, abs=0.1) == video_info.video_duration
             assert pytest.approx(5, rel=0.0, abs=0.1) == video_info.video_fps
 
-    @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
+    @pytest.mark.skipif(not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend is not chosen")
     def test_probe_video_from_memory(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             with open(f_name, "rb") as fp:
