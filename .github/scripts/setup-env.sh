@@ -35,7 +35,7 @@ conda create \
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools==72.1.0
-conda install libavif -c conda-forge --yes
+conda install libavif -c pytorch-nightly--yes
 
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
