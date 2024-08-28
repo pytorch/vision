@@ -934,8 +934,11 @@ def test_decode_avif(decode_fun, scripted):
 # @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
 @pytest.mark.parametrize("decode_fun", (_decode_avif, ))
 @pytest.mark.parametrize("scripted", (False, True))
+@pytest.mark.parametrize(
+    "mode, pil_mode", ((ImageReadMode.RGB, "RGB"), (ImageReadMode.RGB_ALPHA, "RGBA"), (ImageReadMode.UNCHANGED, None))
+)
 @pytest.mark.parametrize("filename", Path("/home/nicolashug/dev/libavif/tests/data/").glob("*.avif"))
-def test_decode_avif_against_pil(decode_fun, scripted, filename):
+def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename):
     if "reversed_dimg_order" in str(filename):
         # Pillow properly decodes this one, but we don't (order of parts of the
         # image is wrong). This is due to a bug that was recently fixed in
@@ -948,7 +951,7 @@ def test_decode_avif_against_pil(decode_fun, scripted, filename):
     if scripted:
         decode_fun = torch.jit.script(decode_fun)
     try:
-        img = decode_fun(encoded_bytes)
+        img = decode_fun(encoded_bytes, mode=mode)
     except RuntimeError as e:
         if any(
             s in str(e)
@@ -960,7 +963,7 @@ def test_decode_avif_against_pil(decode_fun, scripted, filename):
     assert img[None].is_contiguous(memory_format=torch.channels_last)
     if img.dtype == torch.uint16:
         img = F.to_dtype(img, dtype=torch.uint8, scale=True)
-    pil_img = Image.open(filename)
+    pil_img = Image.open(filename).convert(pil_mode)
     from_pil = F.pil_to_tensor(pil_img)
     # from torchvision.utils import make_grid
     # g = make_grid([img, from_pil])

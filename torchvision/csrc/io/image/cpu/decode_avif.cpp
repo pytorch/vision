@@ -8,7 +8,9 @@ namespace vision {
 namespace image {
 
 #if !AVIF_FOUND
-torch::Tensor decode_avif(const torch::Tensor& data) {
+torch::Tensor decode_avif(
+    const torch::Tensor& encoded_data,
+    ImageReadMode mode) {
   TORCH_CHECK(
       false, "decode_avif: torchvision not compiled with libavif support");
 }
@@ -23,7 +25,9 @@ struct UniquePtrDeleter {
 };
 using DecoderPtr = std::unique_ptr<avifDecoder, UniquePtrDeleter>;
 
-torch::Tensor decode_avif(const torch::Tensor& encoded_data) {
+torch::Tensor decode_avif(
+    const torch::Tensor& encoded_data,
+    ImageReadMode mode) {
   // This is based on
   // https://github.com/AOMediaCodec/libavif/blob/main/examples/avif_example_decode_memory.c
   // Refer there for more detail about what each function does, and which
@@ -74,15 +78,22 @@ torch::Tensor decode_avif(const torch::Tensor& encoded_data) {
   auto use_uint8 = (decoder->image->depth <= 8);
   rgb.depth = use_uint8 ? 8 : 16;
 
-  int num_channels = 0;
-  if (decoder->alphaPresent) {
-    num_channels = 4;
-    rgb.format = AVIF_RGB_FORMAT_RGBA;
-  } else {
-    num_channels = 3;
-    rgb.format = AVIF_RGB_FORMAT_RGB;
-    rgb.ignoreAlpha = AVIF_TRUE;
+  if (mode != IMAGE_READ_MODE_UNCHANGED && mode != IMAGE_READ_MODE_RGB &&
+      mode != IMAGE_READ_MODE_RGB_ALPHA) {
+    // Other modes aren't supported, but we don't error or even warn because we
+    // have generic entry points like decode_image which may support all modes,
+    // it just depends on the underlying decoder.
+    mode = IMAGE_READ_MODE_UNCHANGED;
   }
+
+  // If return_rgb is false it means we return rgba - nothing else.
+  auto return_rgb =
+      (mode == IMAGE_READ_MODE_RGB ||
+       (mode == IMAGE_READ_MODE_UNCHANGED && !decoder->alphaPresent));
+
+  auto num_channels = return_rgb ? 3 : 4;
+  rgb.format = return_rgb ? AVIF_RGB_FORMAT_RGB : AVIF_RGB_FORMAT_RGBA;
+  rgb.ignoreAlpha = return_rgb ? AVIF_TRUE : AVIF_FALSE;
 
   auto out = torch::empty(
       {rgb.height, rgb.width, num_channels},
