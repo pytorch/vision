@@ -875,7 +875,7 @@ def test_decode_gif_webp_errors(decode_fun):
     if decode_fun is decode_gif:
         expected_match = re.escape("DGifOpenFileName() failed - 103")
     elif decode_fun is decode_webp:
-        expected_match = "WebPDecodeRGB failed."
+        expected_match = "WebPGetFeatures failed."
     with pytest.raises(RuntimeError, match=expected_match):
         decode_fun(encoded_data)
 
@@ -891,6 +891,31 @@ def test_decode_webp(decode_fun, scripted):
     assert img[None].is_contiguous(memory_format=torch.channels_last)
 
 
+# This test is skipped because it requires webp images that we're not including
+# within the repo. The test images were downloaded from the different pages of
+# https://developers.google.com/speed/webp/gallery
+# Note that converting an RGBA image to RGB leads to bad results because the
+# transparent pixels aren't necessarily set to "black" or "white", they can be
+# random stuff. This is consistent with PIL results.
+@pytest.mark.skip(reason="Need to download test images first")
+@pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
+@pytest.mark.parametrize("scripted", (False, True))
+@pytest.mark.parametrize(
+    "mode, pil_mode", ((ImageReadMode.RGB, "RGB"), (ImageReadMode.RGB_ALPHA, "RGBA"), (ImageReadMode.UNCHANGED, None))
+)
+@pytest.mark.parametrize("filename", Path("/home/nicolashug/webp_samples").glob("*.webp"))
+def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename):
+    encoded_bytes = read_file(filename)
+    if scripted:
+        decode_fun = torch.jit.script(decode_fun)
+    img = decode_fun(encoded_bytes, mode=mode)
+    assert img[None].is_contiguous(memory_format=torch.channels_last)
+
+    pil_img = Image.open(filename).convert(pil_mode)
+    from_pil = F.pil_to_tensor(pil_img)
+    assert_equal(img, from_pil)
+
+
 @pytest.mark.xfail(reason="AVIF support not enabled yet.")
 @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))
@@ -901,6 +926,66 @@ def test_decode_avif(decode_fun, scripted):
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
+
+
+@pytest.mark.xfail(reason="AVIF support not enabled yet.")
+# Note: decode_image fails because some of these files have a (valid) signature
+# we don't recognize. We should probably use libmagic....
+# @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
+@pytest.mark.parametrize("decode_fun", (_decode_avif,))
+@pytest.mark.parametrize("scripted", (False, True))
+@pytest.mark.parametrize(
+    "mode, pil_mode",
+    (
+        (ImageReadMode.RGB, "RGB"),
+        (ImageReadMode.RGB_ALPHA, "RGBA"),
+        (ImageReadMode.UNCHANGED, None),
+    ),
+)
+@pytest.mark.parametrize("filename", Path("/home/nicolashug/dev/libavif/tests/data/").glob("*.avif"))
+def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename):
+    if "reversed_dimg_order" in str(filename):
+        # Pillow properly decodes this one, but we don't (order of parts of the
+        # image is wrong). This is due to a bug that was recently fixed in
+        # libavif. Hopefully this test will end up passing soon with a new
+        # libavif version https://github.com/AOMediaCodec/libavif/issues/2311
+        pytest.xfail()
+    import pillow_avif  # noqa
+
+    encoded_bytes = read_file(filename)
+    if scripted:
+        decode_fun = torch.jit.script(decode_fun)
+    try:
+        img = decode_fun(encoded_bytes, mode=mode)
+    except RuntimeError as e:
+        if any(
+            s in str(e)
+            for s in ("BMFF parsing failed", "avifDecoderParse failed: ", "file contains more than one image")
+        ):
+            pytest.skip(reason="Expected failure, that's OK")
+        else:
+            raise e
+    assert img[None].is_contiguous(memory_format=torch.channels_last)
+    if mode == ImageReadMode.RGB:
+        assert img.shape[0] == 3
+    if mode == ImageReadMode.RGB_ALPHA:
+        assert img.shape[0] == 4
+    if img.dtype == torch.uint16:
+        img = F.to_dtype(img, dtype=torch.uint8, scale=True)
+
+    from_pil = F.pil_to_tensor(Image.open(filename).convert(pil_mode))
+    if False:
+        from torchvision.utils import make_grid
+
+        g = make_grid([img, from_pil])
+        F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png"))
+    if mode != ImageReadMode.RGB:
+        # We don't compare against PIL for RGB because results look pretty
+        # different on RGBA images (other images are fine). The result on
+        # torchvision basically just plainly ignores the alpha channel, resuting
+        # in transparent pixels looking dark. PIL seems to be using a sort of
+        # k-nn thing, looking at the output. Take a look at the resuting images.
+        torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
 
 
 if __name__ == "__main__":

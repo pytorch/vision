@@ -66,7 +66,7 @@ def _rgb_to_grayscale_image_pil(image: PIL.Image.Image, num_output_channels: int
 
 
 def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.GrayscaleToRgb` for details."""
+    """See :class:`~torchvision.transforms.v2.RGB` for details."""
     if torch.jit.is_scripting():
         return grayscale_to_rgb_image(inpt)
 
