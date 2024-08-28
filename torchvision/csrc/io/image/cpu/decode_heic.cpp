@@ -71,7 +71,7 @@ torch::Tensor decode_heic(const torch::Tensor& encoded_data, ImageReadMode mode)
   auto out_ptr = out.data_ptr<uint8_t>();
 
   // decoded_data is *almost* the raw decoded data, but not quite: for some
-  // image, there may be some padding at the end of each row, i.e. when stride
+  // images, there may be some padding at the end of each row, i.e. when stride
   // != row_size. So we can't copy decoded_data into the tensor's memory
   // directly, we have to copy row by row. Oh, and if you think you can take a
   // shortcut when stride == row_size and just do:
