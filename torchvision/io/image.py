@@ -421,7 +421,7 @@ def _decode_avif(
     return torch.ops.image.decode_avif(input, mode.value)
 
 
-def decode_heic(input: torch.Tensor) -> torch.Tensor:
+def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_heic)
-    return torch.ops.image.decode_heic(input)
+    return torch.ops.image.decode_heic(input, mode.value)

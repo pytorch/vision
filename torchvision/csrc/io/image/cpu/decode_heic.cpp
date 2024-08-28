@@ -9,13 +9,13 @@ namespace vision {
 namespace image {
 
 #if !HEIC_FOUND
-torch::Tensor decode_heic(const torch::Tensor& data) {
+torch::Tensor decode_heic(const torch::Tensor& encoded_data, ImageReadMode mode) {
   TORCH_CHECK(
       false, "decode_heic: torchvision not compiled with libheif support");
 }
 #else
 
-torch::Tensor decode_heic(const torch::Tensor& encoded_data) {
+torch::Tensor decode_heic(const torch::Tensor& encoded_data, ImageReadMode mode) {
   TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
   TORCH_CHECK(
       encoded_data.dtype() == torch::kU8,
@@ -27,8 +27,20 @@ torch::Tensor decode_heic(const torch::Tensor& encoded_data) {
       encoded_data.dim(),
       " dims.");
 
+    if (mode != IMAGE_READ_MODE_UNCHANGED && mode != IMAGE_READ_MODE_RGB &&
+      mode != IMAGE_READ_MODE_RGB_ALPHA) {
+    // Other modes aren't supported, but we don't error or even warn because we
+    // have generic entry points like decode_image which may support all modes,
+    // it just depends on the underlying decoder.
+    mode = IMAGE_READ_MODE_UNCHANGED;
+  }
+
+  // If return_rgb is false it means we return rgba - nothing else.
+  auto return_rgb = true;
+
   int height = 0;
   int width = 0;
+  int num_channels = 0;
   int stride = 0;
   uint8_t* decoded_data = nullptr;
   heif::Image img;
@@ -39,10 +51,15 @@ torch::Tensor decode_heic(const torch::Tensor& encoded_data) {
         encoded_data.data_ptr<uint8_t>(), encoded_data.numel());
 
     heif::ImageHandle handle = ctx.get_primary_image_handle();
+    return_rgb = (mode == IMAGE_READ_MODE_RGB ||
+       (mode == IMAGE_READ_MODE_UNCHANGED && !handle.has_alpha_channel()));
+
     height = handle.get_height();
     width = handle.get_width();
 
-    img = handle.decode_image(heif_colorspace_RGB, heif_chroma_interleaved_RGB);
+    num_channels = return_rgb ? 3 : 4;
+    auto chroma = return_rgb? heif_chroma_interleaved_RGB : heif_chroma_interleaved_RGBA;
+    img = handle.decode_image(heif_colorspace_RGB, chroma);
 
     decoded_data = img.get_plane(heif_channel_interleaved, &stride);
   } catch (const heif::Error& err) {
@@ -50,7 +67,7 @@ torch::Tensor decode_heic(const torch::Tensor& encoded_data) {
   }
   TORCH_CHECK(decoded_data != nullptr, "Something went wrong during decoding.");
 
-  auto out = torch::empty({height, width, 3}, torch::kUInt8);
+  auto out = torch::empty({height, width, num_channels}, torch::kUInt8);
   auto out_ptr = out.data_ptr<uint8_t>();
 
   // decoded_data is *almost* the raw decoded data, but not quite: for some
@@ -61,7 +78,7 @@ torch::Tensor decode_heic(const torch::Tensor& encoded_data) {
   // out =  torch::from_blob(decoded_data, ...)
   // you can't, because decoded_data is owned by the heif::Image object and gets
   // freed when it gets out of scope!
-  auto row_size = width * 3;
+  auto row_size = width * num_channels;
   for (auto i = 0; i < height; i++) {
     memcpy(out_ptr, decoded_data, row_size);
     out_ptr += row_size;

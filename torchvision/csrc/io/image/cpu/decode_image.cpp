@@ -70,7 +70,7 @@ torch::Tensor decode_image(
       0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63}; // == "ftypheic"
   TORCH_CHECK(data.numel() >= 12, err_msg);
   if ((memcmp(heic_signature, datap + 4, 8) == 0)) {
-    return decode_heic(data);
+    return decode_heic(data, mode);
   }
 
   const uint8_t webp_signature_begin[4] = {0x52, 0x49, 0x46, 0x46}; // == "RIFF"
