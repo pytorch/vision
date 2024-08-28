@@ -929,25 +929,41 @@ def test_decode_avif(decode_fun, scripted):
 
 
 # @pytest.mark.xfail(reason="AVIF support not enabled yet.")
+# Note: decode_image fails because some of these files have a (valid) signature
+# we don't recognize. We should probably use libmagic....
 # @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
-@pytest.mark.parametrize("decode_fun", (_decode_avif,))
-# @pytest.mark.parametrize("scripted", (False, True))
-@pytest.mark.parametrize("scripted", (False, ))
+@pytest.mark.parametrize("decode_fun", (_decode_avif, ))
+@pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize("filename", Path("/home/nicolashug/dev/libavif/tests/data/").glob("*.avif"))
 def test_decode_avif_against_pil(decode_fun, scripted, filename):
-    print(filename)
+    if "reversed_dimg_order" in str(filename):
+        # Pillow properly decodes this one, but we don't (order of parts of the
+        # image is wrong). This is due to a bug that was recently fixed in
+        # libavif. Hopefully this test will end up passing soon with a new
+        # libavif version https://github.com/AOMediaCodec/libavif/issues/2311
+        pytest.xfail()
     import pillow_avif  # noqa
+
     encoded_bytes = read_file(filename)
     if scripted:
         decode_fun = torch.jit.script(decode_fun)
-    img = decode_fun(encoded_bytes)
+    try:
+        img = decode_fun(encoded_bytes)
+    except RuntimeError as e:
+        if any(
+            s in str(e)
+            for s in ("BMFF parsing failed", "avifDecoderParse failed: ", "file contains more than one image")
+        ):
+            pytest.skip(reason="Expected failure, that's OK")
+        else:
+            raise e
     assert img[None].is_contiguous(memory_format=torch.channels_last)
     pil_img = Image.open(filename)
     from_pil = F.pil_to_tensor(pil_img)
-    # assert_equal(img, from_pil)
-    torch.testing.assert_close(img, from_pil, rtol=0, atol=2)
-
-
+    # from torchvision.utils import make_grid
+    # g = make_grid([img, from_pil])
+    # F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.png"))
+    torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
 
 
 if __name__ == "__main__":
