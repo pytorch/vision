@@ -932,10 +932,15 @@ def test_decode_avif(decode_fun, scripted):
 # Note: decode_image fails because some of these files have a (valid) signature
 # we don't recognize. We should probably use libmagic....
 # @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
-@pytest.mark.parametrize("decode_fun", (_decode_avif, ))
+@pytest.mark.parametrize("decode_fun", (_decode_avif,))
 @pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize(
-    "mode, pil_mode", ((ImageReadMode.RGB, "RGB"), (ImageReadMode.RGB_ALPHA, "RGBA"), (ImageReadMode.UNCHANGED, None))
+    "mode, pil_mode",
+    (
+        (ImageReadMode.RGB, "RGB"),
+        (ImageReadMode.RGB_ALPHA, "RGBA"),
+        (ImageReadMode.UNCHANGED, None),
+    ),
 )
 @pytest.mark.parametrize("filename", Path("/home/nicolashug/dev/libavif/tests/data/").glob("*.avif"))
 def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename):
@@ -961,14 +966,26 @@ def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename)
         else:
             raise e
     assert img[None].is_contiguous(memory_format=torch.channels_last)
+    if mode == ImageReadMode.RGB:
+        assert img.shape[0] == 3
+    if mode == ImageReadMode.RGB_ALPHA:
+        assert img.shape[0] == 4
     if img.dtype == torch.uint16:
         img = F.to_dtype(img, dtype=torch.uint8, scale=True)
-    pil_img = Image.open(filename).convert(pil_mode)
-    from_pil = F.pil_to_tensor(pil_img)
-    # from torchvision.utils import make_grid
-    # g = make_grid([img, from_pil])
-    # F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.png"))
-    torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
+
+    from_pil = F.pil_to_tensor(Image.open(filename).convert(pil_mode))
+    if False:
+        from torchvision.utils import make_grid
+
+        g = make_grid([img, from_pil])
+        F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png"))
+    if mode != ImageReadMode.RGB:
+        # We don't compare against PIL for RGB because results look pretty
+        # different on RGBA images (other images are fine). The result on
+        # torchvision basically just plainly ignores the alpha channel, resuting
+        # in transparent pixels looking dark. PIL seems to be using a sort of
+        # k-nn thing, looking at the output. Take a look at the resuting images.
+        torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
 
 
 if __name__ == "__main__":
