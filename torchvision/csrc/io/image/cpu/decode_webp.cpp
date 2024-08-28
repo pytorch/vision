@@ -40,19 +40,21 @@ torch::Tensor decode_webp(
   TORCH_CHECK(
       !features.has_animation, "Animated webp files are not supported.");
 
-  auto decoding_func = WebPDecodeRGB;
-  int num_channels = 0;
-  if (mode == IMAGE_READ_MODE_RGB) {
-    decoding_func = WebPDecodeRGB;
-    num_channels = 3;
-  } else if (mode == IMAGE_READ_MODE_RGB_ALPHA) {
-    decoding_func = WebPDecodeRGBA;
-    num_channels = 4;
-  } else {
-    // Assume mode is "unchanged"
-    decoding_func = features.has_alpha ? WebPDecodeRGBA : WebPDecodeRGB;
-    num_channels = features.has_alpha ? 4 : 3;
+  if (mode != IMAGE_READ_MODE_UNCHANGED && mode != IMAGE_READ_MODE_RGB &&
+      mode != IMAGE_READ_MODE_RGB_ALPHA) {
+    // Other modes aren't supported, but we don't error or even warn because we
+    // have generic entry points like decode_image which may support all modes,
+    // it just depends on the underlying decoder.
+    mode = IMAGE_READ_MODE_UNCHANGED;
   }
+
+  // If return_rgb is false it means we return rgba - nothing else.
+  auto return_rgb =
+      (mode == IMAGE_READ_MODE_RGB ||
+       (mode == IMAGE_READ_MODE_UNCHANGED && !features.has_alpha));
+
+  auto decoding_func = return_rgb ? WebPDecodeRGB : WebPDecodeRGBA;
+  auto num_channels = return_rgb ? 3 : 4;
 
   int width = 0;
   int height = 0;
