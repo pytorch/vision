@@ -65,13 +65,14 @@ torch::Tensor decode_avif(const torch::Tensor& encoded_data) {
       "avifDecoderNextImage failed:",
       avifResultToString(result));
 
-
   avifRGBImage rgb;
   memset(&rgb, 0, sizeof(rgb));
   avifRGBImageSetDefaults(&rgb, decoder->image);
-  // Force the avif decoder to return data encoded as uint8. If the
-  // avif image is 10, 12 bits etc., it's automatically converted.
-  rgb.depth = 8;
+
+  // images encoded as 10 or 12 bits will be decoded as uint16. The rest are
+  // decoded as uint8.
+  auto use_uint8 = (decoder->image->depth <= 8);
+  rgb.depth = use_uint8 ? 8 : 16;
 
   int num_channels = 0;
   if (decoder->alphaPresent) {
@@ -83,8 +84,10 @@ torch::Tensor decode_avif(const torch::Tensor& encoded_data) {
     rgb.ignoreAlpha = AVIF_TRUE;
   }
 
-  auto out = torch::empty({rgb.height, rgb.width, num_channels}, torch::kUInt8);
-  rgb.pixels = (uint8_t*)out.data_ptr<uint8_t>();
+  auto out = torch::empty(
+      {rgb.height, rgb.width, num_channels},
+      use_uint8 ? torch::kUInt8 : at::kUInt16);
+  rgb.pixels = (uint8_t*)out.data_ptr();
   rgb.rowBytes = rgb.width * avifRGBImagePixelSize(&rgb);
 
   result = avifImageYUVToRGB(decoder->image, &rgb);

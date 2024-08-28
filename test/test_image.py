@@ -958,6 +958,8 @@ def test_decode_avif_against_pil(decode_fun, scripted, filename):
         else:
             raise e
     assert img[None].is_contiguous(memory_format=torch.channels_last)
+    if img.dtype == torch.uint16:
+        img = F.to_dtype(img, dtype=torch.uint8, scale=True)
     pil_img = Image.open(filename)
     from_pil = F.pil_to_tensor(pil_img)
     # from torchvision.utils import make_grid
