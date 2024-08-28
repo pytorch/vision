@@ -916,7 +916,7 @@ def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename)
     assert_equal(img, from_pil)
 
 
-# @pytest.mark.xfail(reason="AVIF support not enabled yet.")
+@pytest.mark.xfail(reason="AVIF support not enabled yet.")
 @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))
 def test_decode_avif(decode_fun, scripted):
@@ -928,7 +928,7 @@ def test_decode_avif(decode_fun, scripted):
     assert img[None].is_contiguous(memory_format=torch.channels_last)
 
 
-# @pytest.mark.xfail(reason="AVIF support not enabled yet.")
+@pytest.mark.xfail(reason="AVIF support not enabled yet.")
 # Note: decode_image fails because some of these files have a (valid) signature
 # we don't recognize. We should probably use libmagic....
 # @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
