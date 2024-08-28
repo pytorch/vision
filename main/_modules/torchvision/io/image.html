@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+4d6f0c0) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+a59c939) &#x25BC</a>
     </div>
     
 
@@ -789,10 +789,31 @@
 
 <span class="k">def</span> <span class="nf">_decode_avif</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decode an AVIF image into a 3 dimensional RGB[A] Tensor.</span>
+
+<span class="sd">    The values of the output tensor are in uint8 in [0, 255] for most images. If</span>
+<span class="sd">    the image has a bit-depth of more than 8, then the output tensor is uint16</span>
+<span class="sd">    in [0, 65535]. Since uint16 support is limited in pytorch, we recommend</span>
+<span class="sd">    calling :func:`torchvision.transforms.v2.functional.to_dtype()` with</span>
+<span class="sd">    ``scale=True`` after this function to convert the decoded image into a uint8</span>
+<span class="sd">    or float tensor.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing</span>
+<span class="sd">            the raw bytes of the AVIF image.</span>
+<span class="sd">        mode (ImageReadMode): The read mode used for optionally</span>
+<span class="sd">            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.</span>
+<span class="sd">            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Decoded image (Tensor[image_channels, image_height, image_width])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_webp</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 
              </article>
