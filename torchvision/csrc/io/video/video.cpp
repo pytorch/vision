@@ -244,7 +244,6 @@ void Video::_init(std::string stream, int64_t numThreads) {
   streamsMetadata.insert("cc", ccMetadata);
 
   succeeded = setCurrentStream(stream);
-  LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
   if (std::get<1>(current_stream) != -1) {
     LOG(INFO)
         << "Stream index set to " << std::get<1>(current_stream)
