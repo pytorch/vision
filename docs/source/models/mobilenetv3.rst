@@ -2,7 +2,7 @@ MobileNet V3
 ============
 
 .. warning::
-    PyTorch Mobile is no longer actively supported. Please check out `ExecuTorch <https://pytorch.org/executorch-overview>`_, PyTorch's all-new on-device inference library. You can also review our `end-to-end workflows <https://github.com/pytorch/executorch/tree/main/examples/portable#readme>`_ and the `source code <https://github.com/pytorch/executorch/tree/main/examples/portable#readme>`_ for MobileNetV3.
+    PyTorch Mobile is no longer actively supported. Please check out `ExecuTorch <https://pytorch.org/executorch-overview>`_, PyTorch's all-new on-device inference library. You can also review our `end-to-end workflows <https://github.com/pytorch/executorch/tree/main/examples/portable#readme>`_ and the `source code <https://github.com/pytorch/executorch/tree/main/examples/portable#readme>`__ for MobileNetV3.
 
 .. currentmodule:: torchvision.models
 
