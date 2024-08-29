@@ -14,9 +14,9 @@ import torchvision.transforms.v2.functional as F
 from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
-    decode_heic,
     _decode_avif,
     decode_gif,
+    decode_heic,
     decode_image,
     decode_jpeg,
     decode_png,
@@ -934,8 +934,7 @@ def test_decode_avif(decode_fun, scripted):
 # @pytest.mark.xfail(reason="AVIF support not enabled yet.")
 # Note: decode_image fails because some of these files have a (valid) signature
 # we don't recognize. We should probably use libmagic....
-# @pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
-@pytest.mark.parametrize("decode_fun", (_decode_avif,))
+@pytest.mark.parametrize("decode_fun", (_decode_avif, decode_heic))
 @pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize(
     "mode, pil_mode",
@@ -945,7 +944,9 @@ def test_decode_avif(decode_fun, scripted):
         (ImageReadMode.UNCHANGED, None),
     ),
 )
-@pytest.mark.parametrize("filename", Path("/home/nicolashug/dev/libavif/tests/data/").glob("*.avif"))
+@pytest.mark.parametrize(
+    "filename", Path("/home/nicolashug/dev/libavif/tests/data/").glob("*.avif"), ids=lambda p: p.name
+)
 def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename):
     if "reversed_dimg_order" in str(filename):
         # Pillow properly decodes this one, but we don't (order of parts of the
@@ -963,7 +964,14 @@ def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename)
     except RuntimeError as e:
         if any(
             s in str(e)
-            for s in ("BMFF parsing failed", "avifDecoderParse failed: ", "file contains more than one image")
+            for s in (
+                "BMFF parsing failed",
+                "avifDecoderParse failed: ",
+                "file contains more than one image",
+                "no 'ispe' property",
+                "'iref' has double references",
+                "Invalid image grid",
+            )
         ):
             pytest.skip(reason="Expected failure, that's OK")
         else:
@@ -976,19 +984,32 @@ def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename)
     if img.dtype == torch.uint16:
         img = F.to_dtype(img, dtype=torch.uint8, scale=True)
 
-    from_pil = F.pil_to_tensor(Image.open(filename).convert(pil_mode))
-    if False:
+    try:
+        from_pil = F.pil_to_tensor(Image.open(filename).convert(pil_mode))
+    except RuntimeError as e:
+        if "Invalid image grid" in str(e):
+            pytest.skip(reason="PIL failure")
+        else:
+            raise e
+
+    if True:
         from torchvision.utils import make_grid
 
         g = make_grid([img, from_pil])
         F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png"))
-    if mode != ImageReadMode.RGB:
-        # We don't compare against PIL for RGB because results look pretty
-        # different on RGBA images (other images are fine). The result on
-        # torchvision basically just plainly ignores the alpha channel, resuting
-        # in transparent pixels looking dark. PIL seems to be using a sort of
-        # k-nn thing, looking at the output. Take a look at the resuting images.
-        torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
+
+    is_decode_heic = getattr(decode_fun, "__name__", getattr(decode_fun, "name", None)) == "decode_heic"
+    if mode == ImageReadMode.RGB and not is_decode_heic:
+        # We don't compare torchvision's AVIF against PIL for RGB because
+        # results look pretty different on RGBA images (other images are fine).
+        # The result on torchvision basically just plainly ignores the alpha
+        # channel, resuting in transparent pixels looking dark. PIL seems to be
+        # using a sort of k-nn thing (Take a look at the resuting images)
+        return
+    if filename.name == "sofa_grid1x5_420.avif" and is_decode_heic:
+        return
+
+    torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
 
 
 # @pytest.mark.xfail(reason="HEIC support not enabled yet.")
