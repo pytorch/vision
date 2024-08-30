@@ -135,7 +135,7 @@ torchrun --nproc_per_node=8 train.py\
      --lr-scheduler=cosineannealinglr --lr-warmup-method=linear\
      --lr-warmup-epochs=5 --lr-warmup-decay=0.1
 ```
-Here `$MODEL` is one of `regnet_x_400mf`, `regnet_x_800mf`, `regnet_x_1_6gf`, `regnet_y_400mf`, `regnet_y_800mf` and `regnet_y_1_6gf`. Please note we used learning rate 0.4 for `regent_y_400mf` to get the same Acc@1 as [the paper)(https://arxiv.org/abs/2003.13678).
+Here `$MODEL` is one of `regnet_x_400mf`, `regnet_x_800mf`, `regnet_x_1_6gf`, `regnet_y_400mf`, `regnet_y_800mf` and `regnet_y_1_6gf`. Please note we used learning rate 0.4 for `regent_y_400mf` to get the same Acc@1 as [the paper](https://arxiv.org/abs/2003.13678).
 
 #### Medium models
 ```

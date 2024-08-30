@@ -6,7 +6,7 @@ import tempfile
 import pytest
 import torch
 import torchvision.io as io
-from common_utils import assert_equal
+from common_utils import assert_equal, cpu_and_cuda
 from torchvision import get_video_backend
 
 
@@ -63,7 +63,7 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
 
 
 @pytest.mark.skipif(
-    get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT, reason="video_reader backend not available"
+    get_video_backend() != "pyav" and not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend not available"
 )
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 class TestVideo:
@@ -77,14 +77,14 @@ class TestVideo:
             assert_equal(data, lv)
             assert info["video_fps"] == 5
 
-    @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
+    @pytest.mark.skipif(not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend is not chosen")
     def test_probe_video_from_file(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             video_info = io._probe_video_from_file(f_name)
             assert pytest.approx(2, rel=0.0, abs=0.1) == video_info.video_duration
             assert pytest.approx(5, rel=0.0, abs=0.1) == video_info.video_fps
 
-    @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
+    @pytest.mark.skipif(not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend is not chosen")
     def test_probe_video_from_memory(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             with open(f_name, "rb") as fp:
@@ -255,18 +255,19 @@ class TestVideo:
                 assert_equal(video, data)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="temporarily disabled on Windows")
-    def test_write_video_with_audio(self, tmpdir):
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_write_video_with_audio(self, device, tmpdir):
         f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
         video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")
 
         out_f_name = os.path.join(tmpdir, "testing.mp4")
         io.video.write_video(
             out_f_name,
-            video_tensor,
+            video_tensor.to(device),
             round(info["video_fps"]),
             video_codec="libx264rgb",
             options={"crf": "0"},
-            audio_array=audio_tensor,
+            audio_array=audio_tensor.to(device),
             audio_fps=info["audio_fps"],
             audio_codec="aac",
         )

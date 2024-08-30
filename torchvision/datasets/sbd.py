@@ -46,7 +46,7 @@ class SBDataset(VisionDataset):
     md5 = "82b4d87ceb2ed10f6038a1cba92111cb"
     filename = "benchmark.tgz"
 
-    voc_train_url = "http://home.bharathh.info/pubs/codes/SBD/train_noval.txt"
+    voc_train_url = "https://www.cs.cornell.edu/~bharathh/train_noval.txt"
     voc_split_filename = "train_noval.txt"
     voc_split_md5 = "79bff800c5f0b1ec6b21080a3c066722"
 
@@ -81,7 +81,9 @@ class SBDataset(VisionDataset):
             for f in ["cls", "img", "inst", "train.txt", "val.txt"]:
                 old_path = os.path.join(extracted_ds_root, f)
                 shutil.move(old_path, sbd_root)
-            download_url(self.voc_train_url, sbd_root, self.voc_split_filename, self.voc_split_md5)
+            if self.image_set == "train_noval":
+                # Note: this is failing as of June 2024 https://github.com/pytorch/vision/issues/8471
+                download_url(self.voc_train_url, sbd_root, self.voc_split_filename, self.voc_split_md5)
 
         if not os.path.isdir(sbd_root):
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")

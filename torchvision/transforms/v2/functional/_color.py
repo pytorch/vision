@@ -66,7 +66,7 @@ def _rgb_to_grayscale_image_pil(image: PIL.Image.Image, num_output_channels: int
 
 
 def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.GrayscaleToRgb` for details."""
+    """See :class:`~torchvision.transforms.v2.RGB` for details."""
     if torch.jit.is_scripting():
         return grayscale_to_rgb_image(inpt)
 
@@ -687,7 +687,7 @@ def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor
 
     Example:
         >>> rgb_image = torch.rand(3, 256, 256)
-        >>> bgr_image = F.permutate_channels(rgb_image, permutation=[2, 1, 0])
+        >>> bgr_image = F.permute_channels(rgb_image, permutation=[2, 1, 0])
 
     Args:
         permutation (List[int]): Valid permutation of the input channel indices. The index of the element determines the
@@ -730,7 +730,7 @@ def permute_channels_image(image: torch.Tensor, permutation: List[int]) -> torch
 
 
 @_register_kernel_internal(permute_channels, PIL.Image.Image)
-def _permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image:
+def _permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image.Image:
     return to_pil_image(permute_channels_image(pil_to_tensor(image), permutation=permutation))
 
 

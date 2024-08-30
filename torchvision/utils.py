@@ -392,10 +392,10 @@ def draw_keypoints(
     # validate visibility
     if visibility is None:  # set default
         visibility = torch.ones(keypoints.shape[:-1], dtype=torch.bool)
-    # If the last dimension is 1, e.g., after calling split([2, 1], dim=-1) on the output of a keypoint-prediction
-    # model, make sure visibility has shape (num_instances, K).
-    # Iff K = 1, this has unwanted behavior, but K=1 does not really make sense in the first place.
-    visibility = visibility.squeeze(-1)
+    if visibility.ndim == 3:
+        # If visibility was passed as pred.split([2, 1], dim=-1), it will be of shape (num_instances, K, 1).
+        # We make sure it is of shape (num_instances, K). This isn't documented, we're just being nice.
+        visibility = visibility.squeeze(-1)
     if visibility.ndim != 2:
         raise ValueError(f"visibility must be of shape (num_instances, K). Got ndim={visibility.ndim}")
     if visibility.shape != keypoints.shape[:-1]:
@@ -612,8 +612,8 @@ def _parse_colors(
 
     colors = [ImageColor.getrgb(color) if isinstance(color, str) else color for color in colors]
     if dtype.is_floating_point:  # [0, 255] -> [0, 1]
-        colors = [tuple(v / 255 for v in color) for color in colors]
-    return colors
+        colors = [tuple(v / 255 for v in color) for color in colors]  # type: ignore[union-attr]
+    return colors  # type: ignore[return-value]
 
 
 def _log_api_usage_once(obj: Any) -> None:

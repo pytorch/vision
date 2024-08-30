@@ -11,7 +11,7 @@ from common_utils import assert_equal
 from numpy.random import randint
 from pytest import approx
 from torchvision import set_video_backend
-from torchvision.io import _HAS_VIDEO_OPT
+from torchvision.io import _HAS_CPU_VIDEO_DECODER
 
 
 try:
@@ -263,7 +263,7 @@ def _get_video_tensor(video_dir, video_file):
 
 
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
-@pytest.mark.skipif(_HAS_VIDEO_OPT is False, reason="Didn't compile with ffmpeg")
+@pytest.mark.skipif(_HAS_CPU_VIDEO_DECODER is False, reason="Didn't compile with ffmpeg")
 class TestVideoReader:
     def check_separate_decoding_result(self, tv_result, config):
         """check the decoding results from TorchVision decoder"""

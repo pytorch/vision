@@ -4,7 +4,7 @@ Transforms v2: End-to-end object detection/segmentation example
 ===============================================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_e2e.ipynb>`_
+    Try on `Colab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_e2e.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py>` to download the full example code.
 
 Object detection and segmentation tasks are natively supported:
@@ -30,7 +30,7 @@ torch.manual_seed(0)
 
 # This loads fake data for illustration purposes of this example. In practice, you'll have
 # to replace this with the proper data.
-# If you're trying to run that on collab, you can download the assets and the
+# If you're trying to run that on Colab, you can download the assets and the
 # helpers from https://github.com/pytorch/vision/tree/main/gallery/
 ROOT = pathlib.Path("../assets") / "coco"
 IMAGES_PATH = str(ROOT / "images")

@@ -782,32 +782,46 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
 
         annotation_folder = tmpdir / self._ANNOTATIONS_FOLDER
         os.makedirs(annotation_folder)
+
+        segmentation_kind = config.pop("segmentation_kind", "list")
         info = self._create_annotation_file(
-            annotation_folder, self._ANNOTATIONS_FILE, file_names, num_annotations_per_image
+            annotation_folder,
+            self._ANNOTATIONS_FILE,
+            file_names,
+            num_annotations_per_image,
+            segmentation_kind=segmentation_kind,
         )
 
         info["num_examples"] = num_images
         return info
 
-    def _create_annotation_file(self, root, name, file_names, num_annotations_per_image):
+    def _create_annotation_file(self, root, name, file_names, num_annotations_per_image, segmentation_kind="list"):
         image_ids = [int(file_name.stem) for file_name in file_names]
         images = [dict(file_name=str(file_name), id=id) for file_name, id in zip(file_names, image_ids)]
 
-        annotations, info = self._create_annotations(image_ids, num_annotations_per_image)
+        annotations, info = self._create_annotations(image_ids, num_annotations_per_image, segmentation_kind)
         self._create_json(root, name, dict(images=images, annotations=annotations))
 
         return info
 
-    def _create_annotations(self, image_ids, num_annotations_per_image):
+    def _create_annotations(self, image_ids, num_annotations_per_image, segmentation_kind="list"):
         annotations = []
         annotion_id = 0
+
         for image_id in itertools.islice(itertools.cycle(image_ids), len(image_ids) * num_annotations_per_image):
+            segmentation = {
+                "list": [torch.rand(8).tolist()],
+                "rle": {"size": [10, 10], "counts": [1]},
+                "rle_encoded": {"size": [2400, 2400], "counts": "PQRQ2[1\\Y2f0gNVNRhMg2"},
+                "bad": 123,
+            }[segmentation_kind]
+
             annotations.append(
                 dict(
                     image_id=image_id,
                     id=annotion_id,
                     bbox=torch.rand(4).tolist(),
-                    segmentation=[torch.rand(8).tolist()],
+                    segmentation=segmentation,
                     category_id=int(torch.randint(91, ())),
                     area=float(torch.rand(1)),
                     iscrowd=int(torch.randint(2, size=(1,))),
@@ -832,11 +846,27 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
             with pytest.raises(ValueError, match="Index must be of type integer"):
                 dataset[:2]
 
+    def test_segmentation_kind(self):
+        if isinstance(self, CocoCaptionsTestCase):
+            return
+
+        for segmentation_kind in ("list", "rle", "rle_encoded"):
+            config = {"segmentation_kind": segmentation_kind}
+            with self.create_dataset(config) as (dataset, _):
+                dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys="all")
+                list(dataset)
+
+        config = {"segmentation_kind": "bad"}
+        with self.create_dataset(config) as (dataset, _):
+            dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys="all")
+            with pytest.raises(ValueError, match="COCO segmentation expected to be a dict or a list"):
+                list(dataset)
+
 
 class CocoCaptionsTestCase(CocoDetectionTestCase):
     DATASET_CLASS = datasets.CocoCaptions
 
-    def _create_annotations(self, image_ids, num_annotations_per_image):
+    def _create_annotations(self, image_ids, num_annotations_per_image, segmentation_kind="list"):
         captions = [str(idx) for idx in range(num_annotations_per_image)]
         annotations = combinations_grid(image_id=image_ids, caption=captions)
         for id, annotation in enumerate(annotations):
@@ -2442,27 +2472,67 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
         base_folder = os.path.join(tmpdir, "fer2013")
         os.makedirs(base_folder)
 
-        num_samples = 5
-        with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
-            writer = csv.DictWriter(
-                file,
-                fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
-                quoting=csv.QUOTE_NONNUMERIC,
-                quotechar='"',
-            )
-            writer.writeheader()
-            for _ in range(num_samples):
-                row = dict(
-                    pixels=" ".join(
-                        str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
-                    )
-                )
-                if config["split"] == "train":
-                    row["emotion"] = str(int(torch.randint(0, 7, ())))
+        use_icml = config.pop("use_icml", False)
+        use_fer = config.pop("use_fer", False)
 
-                writer.writerow(row)
+        num_samples = 5
+
+        if use_icml or use_fer:
+            pixels_key, usage_key = (" pixels", " Usage") if use_icml else ("pixels", "Usage")
+            fieldnames = ("emotion", usage_key, pixels_key) if use_icml else ("emotion", pixels_key, usage_key)
+            filename = "icml_face_data.csv" if use_icml else "fer2013.csv"
+            with open(os.path.join(base_folder, filename), "w", newline="") as file:
+                writer = csv.DictWriter(
+                    file,
+                    fieldnames=fieldnames,
+                    quoting=csv.QUOTE_NONNUMERIC,
+                    quotechar='"',
+                )
+                writer.writeheader()
+                for i in range(num_samples):
+                    row = {
+                        "emotion": str(int(torch.randint(0, 7, ()))),
+                        usage_key: "Training" if i % 2 else "PublicTest",
+                        pixels_key: " ".join(
+                            str(pixel)
+                            for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                        ),
+                    }
+
+                    writer.writerow(row)
+        else:
+            with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
+                writer = csv.DictWriter(
+                    file,
+                    fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
+                    quoting=csv.QUOTE_NONNUMERIC,
+                    quotechar='"',
+                )
+                writer.writeheader()
+                for _ in range(num_samples):
+                    row = dict(
+                        pixels=" ".join(
+                            str(pixel)
+                            for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                        )
+                    )
+                    if config["split"] == "train":
+                        row["emotion"] = str(int(torch.randint(0, 7, ())))
+
+                    writer.writerow(row)
 
         return num_samples
+
+    def test_icml_file(self):
+        config = {"split": "test"}
+        with self.create_dataset(config=config) as (dataset, _):
+            assert all(s[1] is None for s in dataset)
+
+        for split in ("train", "test"):
+            for d in ({"use_icml": True}, {"use_fer": True}):
+                config = {"split": split, **d}
+                with self.create_dataset(config=config) as (dataset, _):
+                    assert all(s[1] is not None for s in dataset)
 
 
 class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):

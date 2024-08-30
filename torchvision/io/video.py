@@ -80,7 +80,7 @@ def write_video(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_video)
     _check_av_available()
-    video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
+    video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy(force=True)
 
     # PyAV does not support floating point numbers with decimal point
     # and will throw OverflowException in case this is not the case
@@ -115,7 +115,7 @@ def write_video(
             audio_sample_fmt = container.streams.audio[0].format.name
 
             format_dtype = np.dtype(audio_format_dtypes[audio_sample_fmt])
-            audio_array = torch.as_tensor(audio_array).numpy().astype(format_dtype)
+            audio_array = torch.as_tensor(audio_array).numpy(force=True).astype(format_dtype)
 
             frame = av.AudioFrame.from_ndarray(audio_array, format=audio_sample_fmt, layout=audio_layout)
 
@@ -244,7 +244,7 @@ def read_video(
     Reads a video from a file, returning both the video frames and the audio frames
 
     Args:
-        filename (str): path to the video file
+        filename (str): path to the video file. If using the pyav backend, this can be whatever ``av.open`` accepts.
         start_pts (int if pts_unit = 'pts', float / Fraction if pts_unit = 'sec', optional):
             The start presentation time of the video
         end_pts (int if pts_unit = 'pts', float / Fraction if pts_unit = 'sec', optional):
@@ -267,10 +267,9 @@ def read_video(
 
     from torchvision import get_video_backend
 
-    if not os.path.exists(filename):
-        raise RuntimeError(f"File not found: {filename}")
-
     if get_video_backend() != "pyav":
+        if not os.path.exists(filename):
+            raise RuntimeError(f"File not found: {filename}")
         vframes, aframes, info = _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
     else:
         _check_av_available()

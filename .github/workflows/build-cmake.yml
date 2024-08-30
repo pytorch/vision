@@ -30,7 +30,7 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
@@ -40,7 +40,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: macos-12
           - runner: macos-m1-stable
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
@@ -51,11 +50,11 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
-        ./.github/scripts/cmake.sh
+        ${CONDA_RUN} ./.github/scripts/cmake.sh
 
   windows:
     strategy:
@@ -77,7 +76,7 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.9
         export VC_YEAR=2022
         export VSDEVCMD_ARGS=""
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}

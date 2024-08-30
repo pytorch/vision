@@ -60,8 +60,12 @@ class KeypointRCNN(FasterRCNN):
             The backbone should return a single Tensor or and OrderedDict[Tensor].
         num_classes (int): number of output classes of the model (including the background).
             If box_predictor is specified, num_classes should be None.
-        min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
-        max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
+        min_size (int): Images are rescaled before feeding them to the backbone:
+            we attempt to preserve the aspect ratio and scale the shorter edge
+            to ``min_size``. If the resulting longer edge exceeds ``max_size``,
+            then downscale so that the longer edge does not exceed ``max_size``.
+            This may result in the shorter edge beeing lower than ``min_size``.
+        max_size (int): See ``min_size``.
         image_mean (Tuple[float, float, float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
@@ -152,7 +156,6 @@ class KeypointRCNN(FasterRCNN):
         >>>                      rpn_anchor_generator=anchor_generator,
         >>>                      box_roi_pool=roi_pooler,
         >>>                      keypoint_roi_pool=keypoint_roi_pooler)
-        >>> model.eval()
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)

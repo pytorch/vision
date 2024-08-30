@@ -355,6 +355,13 @@ def test_draw_keypoints_vanilla():
     assert_equal(img, img_cp)
 
 
+def test_draw_keypoins_K_equals_one():
+    # Non-regression test for https://github.com/pytorch/vision/pull/8439
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    keypoints = torch.tensor([[[10, 10]]], dtype=torch.float)
+    utils.draw_keypoints(img, keypoints)
+
+
 @pytest.mark.parametrize("colors", ["red", "#FF00FF", (1, 34, 122)])
 def test_draw_keypoints_colored(colors):
     # Keypoints is declared on top as global variable

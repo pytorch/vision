@@ -6,26 +6,36 @@
 namespace ffmpeg {
 
 namespace {
+static int get_nb_channels(const AVFrame* frame, const AVCodecContext* codec) {
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)
+  return frame ? frame->ch_layout.nb_channels : codec->ch_layout.nb_channels;
+#else
+  return frame ? frame->channels : codec->channels;
+#endif
+}
+
 bool operator==(const AudioFormat& x, const AVFrame& y) {
   return x.samples == static_cast<size_t>(y.sample_rate) &&
-      x.channels == static_cast<size_t>(y.channels) && x.format == y.format;
+      x.channels == static_cast<size_t>(get_nb_channels(&y, nullptr)) &&
+      x.format == y.format;
 }
 
 bool operator==(const AudioFormat& x, const AVCodecContext& y) {
   return x.samples == static_cast<size_t>(y.sample_rate) &&
-      x.channels == static_cast<size_t>(y.channels) && x.format == y.sample_fmt;
+      x.channels == static_cast<size_t>(get_nb_channels(nullptr, &y)) &&
+      x.format == y.sample_fmt;
 }
 
 AudioFormat& toAudioFormat(AudioFormat& x, const AVFrame& y) {
   x.samples = y.sample_rate;
-  x.channels = y.channels;
+  x.channels = get_nb_channels(&y, nullptr);
   x.format = y.format;
   return x;
 }
 
 AudioFormat& toAudioFormat(AudioFormat& x, const AVCodecContext& y) {
   x.samples = y.sample_rate;
-  x.channels = y.channels;
+  x.channels = get_nb_channels(nullptr, &y);
   x.format = y.sample_fmt;
   return x;
 }
@@ -54,9 +64,15 @@ int AudioStream::initFormat() {
   if (format_.format.audio.samples == 0) {
     format_.format.audio.samples = codecCtx_->sample_rate;
   }
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)
+  if (format_.format.audio.channels == 0) {
+    format_.format.audio.channels = codecCtx_->ch_layout.nb_channels;
+  }
+#else
   if (format_.format.audio.channels == 0) {
     format_.format.audio.channels = codecCtx_->channels;
   }
+#endif
   if (format_.format.audio.format == AV_SAMPLE_FMT_NONE) {
     format_.format.audio.format = codecCtx_->sample_fmt;
   }

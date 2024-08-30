@@ -92,7 +92,7 @@ class WIDERFace(VisionDataset):
         """
 
         # stay consistent with other datasets and return a PIL Image
-        img = Image.open(self.img_info[index]["img_path"])
+        img = Image.open(self.img_info[index]["img_path"])  # type: ignore[arg-type]
 
         if self.transform is not None:
             img = self.transform(img)

@@ -46,16 +46,10 @@ fi
 echo '::group::Prepare CMake builds'
 mkdir -p cpp_build
 
-pushd test/tracing/frcnn
-python trace_model.py
+pushd examples/cpp
+python script_model.py
 mkdir -p build
-mv fasterrcnn_resnet50_fpn.pt build
-popd
-
-pushd examples/cpp/hello_world
-python trace_model.py
-mkdir -p build
-mv resnet18.pt build
+mv resnet18.pt fasterrcnn_resnet50_fpn.pt build
 popd
 
 # This was only needed for the tracing above
@@ -64,6 +58,7 @@ echo '::endgroup::'
 
 echo '::group::Build and install libtorchvision'
 pushd cpp_build
+
 
 # On macOS, CMake is looking for the library (*.dylib) and the header (*.h) separately. By default, it prefers to load
 # the header from other packages that install the library. This easily leads to a mismatch if the library installed
@@ -85,40 +80,24 @@ fi
 popd
 echo '::endgroup::'
 
-echo '::group::Build and run project that uses Faster-RCNN'
-pushd test/tracing/frcnn/build
+echo '::group::Build and run C++ example'
+pushd examples/cpp/build
 
-cmake .. -DTorch_DIR="${Torch_DIR}" -DWITH_CUDA="${WITH_CUDA}" \
+cmake .. -DTorch_DIR="${Torch_DIR}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
-  -DCMAKE_FIND_FRAMEWORK=NEVER
+  -DCMAKE_FIND_FRAMEWORK=NEVER \
+  -DUSE_TORCHVISION=ON  # Needed for faster-rcnn since it's using torchvision ops like NMS.
 if [[ $OS_TYPE == windows ]]; then
-  "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_frcnn.bat" $JOBS
+  "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cpp_example.bat" $JOBS
   cd Release
+  cp ../resnet18.pt .
   cp ../fasterrcnn_resnet50_fpn.pt .
 else
   make -j$JOBS
 fi
 
-./test_frcnn_tracing
-
-popd
-echo '::endgroup::'
-
-echo '::group::Build and run C++ example'
-pushd examples/cpp/hello_world/build
-
-cmake .. -DTorch_DIR="${Torch_DIR}" \
-  -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
-  -DCMAKE_FIND_FRAMEWORK=NEVER
-if [[ $OS_TYPE == windows ]]; then
-  "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cpp_example.bat" $JOBS
-  cd Release
-  cp ../resnet18.pt .
-else
-  make -j$JOBS
-fi
-
-./hello-world
+./run_model resnet18.pt
+./run_model fasterrcnn_resnet50_fpn.pt
 
 popd
 echo '::endgroup::'

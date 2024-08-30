@@ -99,7 +99,7 @@ def _script(obj):
         return torch.jit.script(obj)
     except Exception as error:
         name = getattr(obj, "__name__", obj.__class__.__name__)
-        raise AssertionError(f"Trying to `torch.jit.script` '{name}' raised the error above.") from error
+        raise AssertionError(f"Trying to `torch.jit.script` `{name}` raised the error above.") from error
 
 
 def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
@@ -111,8 +111,10 @@ def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
 
     input = input.as_subclass(torch.Tensor)
     with ignore_jit_no_profile_information_warning():
-        actual = kernel_scripted(input, *args, **kwargs)
-    expected = kernel(input, *args, **kwargs)
+        with freeze_rng_state():
+            actual = kernel_scripted(input, *args, **kwargs)
+    with freeze_rng_state():
+        expected = kernel(input, *args, **kwargs)
 
     assert_close(actual, expected, rtol=rtol, atol=atol)
 
@@ -551,10 +553,12 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
 
 class TestResize:
     INPUT_SIZE = (17, 11)
-    OUTPUT_SIZES = [17, [17], (17,), [12, 13], (12, 13)]
+    OUTPUT_SIZES = [17, [17], (17,), None, [12, 13], (12, 13)]
 
     def _make_max_size_kwarg(self, *, use_max_size, size):
-        if use_max_size:
+        if size is None:
+            max_size = min(list(self.INPUT_SIZE))
+        elif use_max_size:
             if not (isinstance(size, int) or len(size) == 1):
                 # This would result in an `ValueError`
                 return None
@@ -566,10 +570,13 @@ class TestResize:
         return dict(max_size=max_size)
 
     def _compute_output_size(self, *, input_size, size, max_size):
-        if not (isinstance(size, int) or len(size) == 1):
+        if size is None:
+            size = max_size
+
+        elif not (isinstance(size, int) or len(size) == 1):
             return tuple(size)
 
-        if not isinstance(size, int):
+        elif not isinstance(size, int):
             size = size[0]
 
         old_height, old_width = input_size
@@ -656,10 +663,13 @@ class TestResize:
         [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
     )
     def test_functional(self, size, make_input):
+        max_size_kwarg = self._make_max_size_kwarg(use_max_size=size is None, size=size)
+
         check_functional(
             F.resize,
             make_input(self.INPUT_SIZE),
             size=size,
+            **max_size_kwarg,
             antialias=True,
             check_scripted_smoke=not isinstance(size, int),
         )
@@ -693,11 +703,13 @@ class TestResize:
         ],
     )
     def test_transform(self, size, device, make_input):
+        max_size_kwarg = self._make_max_size_kwarg(use_max_size=size is None, size=size)
+
         check_transform(
-            transforms.Resize(size=size, antialias=True),
+            transforms.Resize(size=size, **max_size_kwarg, antialias=True),
             make_input(self.INPUT_SIZE, device=device),
             # atol=1 due to Resize v2 is using native uint8 interpolate path for bilinear and nearest modes
-            check_v1_compatibility=dict(rtol=0, atol=1),
+            check_v1_compatibility=dict(rtol=0, atol=1) if size is not None else False,
         )
 
     def _check_output_size(self, input, output, *, size, max_size):
@@ -799,7 +811,11 @@ class TestResize:
         ],
     )
     def test_max_size_error(self, size, make_input):
-        if isinstance(size, int) or len(size) == 1:
+        if size is None:
+            # value can be anything other than an integer
+            max_size = None
+            match = "max_size must be an integer when size is None"
+        elif isinstance(size, int) or len(size) == 1:
             max_size = (size if isinstance(size, int) else size[0]) - 1
             match = "must be strictly greater than the requested size"
         else:
@@ -809,6 +825,37 @@ class TestResize:
 
         with pytest.raises(ValueError, match=match):
             F.resize(make_input(self.INPUT_SIZE), size=size, max_size=max_size, antialias=True)
+
+        if isinstance(size, list) and len(size) != 1:
+            with pytest.raises(ValueError, match="max_size should only be passed if size is None or specifies"):
+                F.resize(make_input(self.INPUT_SIZE), size=size, max_size=500)
+
+    @pytest.mark.parametrize(
+        "input_size, max_size, expected_size",
+        [
+            ((10, 10), 10, (10, 10)),
+            ((10, 20), 40, (20, 40)),
+            ((20, 10), 40, (40, 20)),
+            ((10, 20), 10, (5, 10)),
+            ((20, 10), 10, (10, 5)),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_detection_masks,
+            make_video,
+        ],
+    )
+    def test_resize_size_none(self, input_size, max_size, expected_size, make_input):
+        img = make_input(input_size)
+        out = F.resize(img, size=None, max_size=max_size)
+        assert F.get_size(out)[-2:] == list(expected_size)
 
     @pytest.mark.parametrize("interpolation", INTERPOLATION_MODES)
     @pytest.mark.parametrize(
@@ -832,7 +879,7 @@ class TestResize:
         assert_equal(actual, expected)
 
     def test_transform_unknown_size_error(self):
-        with pytest.raises(ValueError, match="size can either be an integer or a sequence of one or two integers"):
+        with pytest.raises(ValueError, match="size can be an integer, a sequence of one or two integers, or None"):
             transforms.Resize(size=object())
 
     @pytest.mark.parametrize(
@@ -2029,15 +2076,17 @@ class TestToDtype:
                         factor = (output_max_value + 1) // (input_max_value + 1)
                         return value * factor
 
-        return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype, device=image.device)
+        return torch.tensor(tree_map(fn, image.tolist())).to(dtype=output_dtype, device=image.device)
 
-    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
-    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
+    @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8, torch.uint16])
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8, torch.uint16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
     def test_image_correctness(self, input_dtype, output_dtype, device, scale):
         if input_dtype.is_floating_point and output_dtype == torch.int64:
             pytest.xfail("float to int64 conversion is not supported")
+        if input_dtype == torch.uint8 and output_dtype == torch.uint16 and device == "cuda":
+            pytest.xfail("uint8 to uint16 conversion is not supported on cuda")
 
         input = make_image(dtype=input_dtype, device=device)
 
@@ -2124,6 +2173,28 @@ class TestToDtype:
         assert out["bbox"].dtype == bbox_dtype
         assert out["mask"].dtype == mask_dtype
 
+    def test_uint16(self):
+        # These checks are probably already covered above but since uint16 is a
+        # newly supported dtype,  we want to be extra careful, hence this
+        # explicit test
+        img_uint16 = torch.randint(0, 65535, (256, 512), dtype=torch.uint16)
+
+        img_uint8 = F.to_dtype(img_uint16, torch.uint8, scale=True)
+        img_float32 = F.to_dtype(img_uint16, torch.float32, scale=True)
+        img_int32 = F.to_dtype(img_uint16, torch.int32, scale=True)
+
+        assert_equal(img_uint8, (img_uint16 / 256).to(torch.uint8))
+        assert_close(img_float32, (img_uint16 / 65535))
+
+        assert_close(F.to_dtype(img_float32, torch.uint16, scale=True), img_uint16, rtol=0, atol=1)
+        # Ideally we'd check against (img_uint16 & 0xFF00) but bitwise and isn't supported for it yet
+        # so we simulate it by scaling down and up again.
+        assert_equal(F.to_dtype(img_uint8, torch.uint16, scale=True), ((img_uint16 / 256).to(torch.uint16) * 256))
+        assert_equal(F.to_dtype(img_int32, torch.uint16, scale=True), img_uint16)
+
+        assert_equal(F.to_dtype(img_float32, torch.uint8, scale=True), img_uint8)
+        assert_close(F.to_dtype(img_uint8, torch.float32, scale=True), img_float32, rtol=0, atol=1e-2)
+
 
 class TestAdjustBrightness:
     _CORRECTNESS_BRIGHTNESS_FACTORS = [0.5, 0.0, 1.0, 5.0]
@@ -2169,26 +2240,30 @@ class TestAdjustBrightness:
 
 class TestCutMixMixUp:
     class DummyDataset:
-        def __init__(self, size, num_classes):
+        def __init__(self, size, num_classes, one_hot_labels):
             self.size = size
             self.num_classes = num_classes
+            self.one_hot_labels = one_hot_labels
             assert size < num_classes
 
         def __getitem__(self, idx):
             img = torch.rand(3, 100, 100)
             label = idx  # This ensures all labels in a batch are unique and makes testing easier
+            if self.one_hot_labels:
+                label = torch.nn.functional.one_hot(torch.tensor(label), num_classes=self.num_classes)
             return img, label
 
         def __len__(self):
             return self.size
 
     @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
-    def test_supported_input_structure(self, T):
+    @pytest.mark.parametrize("one_hot_labels", (True, False))
+    def test_supported_input_structure(self, T, one_hot_labels):
 
         batch_size = 32
         num_classes = 100
 
-        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes)
+        dataset = self.DummyDataset(size=batch_size, num_classes=num_classes, one_hot_labels=one_hot_labels)
 
         cutmix_mixup = T(num_classes=num_classes)
 
@@ -2198,7 +2273,7 @@ class TestCutMixMixUp:
         img, target = next(iter(dl))
         input_img_size = img.shape[-3:]
         assert isinstance(img, torch.Tensor) and isinstance(target, torch.Tensor)
-        assert target.shape == (batch_size,)
+        assert target.shape == (batch_size, num_classes) if one_hot_labels else (batch_size,)
 
         def check_output(img, target):
             assert img.shape == (batch_size, *input_img_size)
@@ -2209,7 +2284,7 @@ class TestCutMixMixUp:
 
         # After Dataloader, as unpacked input
         img, target = next(iter(dl))
-        assert target.shape == (batch_size,)
+        assert target.shape == (batch_size, num_classes) if one_hot_labels else (batch_size,)
         img, target = cutmix_mixup(img, target)
         check_output(img, target)
 
@@ -2264,7 +2339,7 @@ class TestCutMixMixUp:
         with pytest.raises(ValueError, match="Could not infer where the labels are"):
             cutmix_mixup({"img": imgs, "Nothing_else": 3})
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
+        with pytest.raises(ValueError, match="labels should be index based"):
             # Note: the error message isn't ideal, but that's because the label heuristic found the img as the label
             # It's OK, it's an edge-case. The important thing is that this fails loudly instead of passing silently
             cutmix_mixup(imgs)
@@ -2272,22 +2347,21 @@ class TestCutMixMixUp:
         with pytest.raises(ValueError, match="When using the default labels_getter"):
             cutmix_mixup(imgs, "not_a_tensor")
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
-            cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3)))
-
         with pytest.raises(ValueError, match="Expected a batched input with 4 dims"):
             cutmix_mixup(imgs[None, None], torch.randint(0, num_classes, size=(batch_size,)))
 
         with pytest.raises(ValueError, match="does not match the batch size of the labels"):
             cutmix_mixup(imgs, torch.randint(0, num_classes, size=(batch_size + 1,)))
 
-        with pytest.raises(ValueError, match="labels tensor should be of shape"):
-            # The purpose of this check is more about documenting the current
-            # behaviour of what happens on a Compose(), rather than actually
-            # asserting the expected behaviour. We may support Compose() in the
-            # future, e.g. for 2 consecutive CutMix?
-            labels = torch.randint(0, num_classes, size=(batch_size,))
-            transforms.Compose([cutmix_mixup, cutmix_mixup])(imgs, labels)
+        with pytest.raises(ValueError, match="When passing 2D labels"):
+            wrong_num_classes = num_classes + 1
+            T(alpha=0.5, num_classes=num_classes)(imgs, torch.randint(0, 2, size=(batch_size, wrong_num_classes)))
+
+        with pytest.raises(ValueError, match="but got a tensor of shape"):
+            cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3, 4)))
+
+        with pytest.raises(ValueError, match="num_classes must be passed"):
+            T(alpha=0.5)(imgs, torch.randint(0, num_classes, size=(batch_size,)))
 
 
 @pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
@@ -3233,6 +3307,78 @@ class TestGaussianBlur:
         actual = F.gaussian_blur_image(image, kernel_size=kernel_size, sigma=sigma)
 
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+
+
+class TestGaussianNoise:
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_kernel(self, make_input):
+        check_kernel(
+            F.gaussian_noise,
+            make_input(dtype=torch.float32),
+            # This cannot pass because the noise on a batch in not per-image
+            check_batched_vs_unbatched=False,
+        )
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_functional(self, make_input):
+        check_functional(F.gaussian_noise, make_input(dtype=torch.float32))
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.gaussian_noise, torch.Tensor),
+            (F.gaussian_noise_image, tv_tensors.Image),
+            (F.gaussian_noise_video, tv_tensors.Video),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.gaussian_noise, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_transform(self, make_input):
+        def adapter(_, input, __):
+            # This transform doesn't support uint8 so we have to convert the auto-generated uint8 tensors to float32
+            # Same for PIL images
+            for key, value in input.items():
+                if isinstance(value, torch.Tensor) and not value.is_floating_point():
+                    input[key] = value.to(torch.float32)
+                if isinstance(value, PIL.Image.Image):
+                    input[key] = F.pil_to_tensor(value).to(torch.float32)
+            return input
+
+        check_transform(transforms.GaussianNoise(), make_input(dtype=torch.float32), check_sample_input=adapter)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Gaussian Noise is not implemented for PIL images."):
+            F.gaussian_noise(make_image_pil())
+        with pytest.raises(ValueError, match="Input tensor is expected to be in float dtype"):
+            F.gaussian_noise(make_image(dtype=torch.uint8))
+        with pytest.raises(ValueError, match="sigma shouldn't be negative"):
+            F.gaussian_noise(make_image(dtype=torch.float32), sigma=-1)
+
+    def test_clip(self):
+        img = make_image(dtype=torch.float32)
+
+        out = F.gaussian_noise(img, mean=100, clip=False)
+        assert out.min() > 50
+
+        out = F.gaussian_noise(img, mean=100, clip=True)
+        assert (out == 1).all()
+
+        out = F.gaussian_noise(img, mean=-100, clip=False)
+        assert out.min() < -50
+
+        out = F.gaussian_noise(img, mean=-100, clip=True)
+        assert (out == 0).all()
 
 
 class TestAutoAugmentTransforms:
@@ -5200,6 +5346,11 @@ class TestLinearTransform:
             transforms.LinearTransformation(*self._make_matrix_and_vector(input)),
             input,
             check_sample_input=self._sample_input_adapter,
+            # Compat check is failing on M1 with:
+            # AssertionError: Tensor-likes are not close!
+            # Mismatched elements: 1 / 561 (0.2%)
+            # See https://github.com/pytorch/vision/issues/8453
+            check_v1_compatibility=(sys.platform != "darwin"),
         )
 
     def test_transform_error(self):
@@ -5723,7 +5874,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 
 
 class TestSanitizeBoundingBoxes:
-    def _get_boxes_and_valid_mask(self, H=256, W=128, min_size=10):
+    def _get_boxes_and_valid_mask(self, H=256, W=128, min_size=10, min_area=10):
         boxes_and_validity = [
             ([0, 1, 10, 1], False),  # Y1 == Y2
             ([0, 1, 0, 20], False),  # X1 == X2
@@ -5734,17 +5885,16 @@ class TestSanitizeBoundingBoxes:
             ([-1, 1, 10, 20], False),  # any < 0
             ([0, 0, -1, 20], False),  # any < 0
             ([0, 0, -10, -1], False),  # any < 0
-            ([0, 0, min_size, 10], True),  # H < min_size
-            ([0, 0, 10, min_size], True),  # W < min_size
-            ([0, 0, W, H], True),  # TODO: Is that actually OK?? Should it be -1?
-            ([1, 1, 30, 20], True),
-            ([0, 0, 10, 10], True),
-            ([1, 1, 30, 20], True),
+            ([0, 0, min_size, 10], min_size * 10 >= min_area),  # H < min_size
+            ([0, 0, 10, min_size], min_size * 10 >= min_area),  # W < min_size
+            ([0, 0, W, H], W * H >= min_area),
+            ([1, 1, 30, 20], 29 * 19 >= min_area),
+            ([0, 0, 10, 10], 9 * 9 >= min_area),
+            ([1, 1, 30, 20], 29 * 19 >= min_area),
         ]
 
         random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
         boxes, expected_valid_mask = zip(*boxes_and_validity)
-
         boxes = tv_tensors.BoundingBoxes(
             boxes,
             format=tv_tensors.BoundingBoxFormat.XYXY,
@@ -5753,7 +5903,7 @@ class TestSanitizeBoundingBoxes:
 
         return boxes, expected_valid_mask
 
-    @pytest.mark.parametrize("min_size", (1, 10))
+    @pytest.mark.parametrize("min_size, min_area", ((1, 1), (10, 1), (10, 101)))
     @pytest.mark.parametrize(
         "labels_getter",
         (
@@ -5766,7 +5916,7 @@ class TestSanitizeBoundingBoxes:
         ),
     )
     @pytest.mark.parametrize("sample_type", (tuple, dict))
-    def test_transform(self, min_size, labels_getter, sample_type):
+    def test_transform(self, min_size, min_area, labels_getter, sample_type):
 
         if sample_type is tuple and not isinstance(labels_getter, str):
             # The "lambda inputs: inputs["labels"]" labels_getter used in this test
@@ -5774,7 +5924,7 @@ class TestSanitizeBoundingBoxes:
             return
 
         H, W = 256, 128
-        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size)
+        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size, min_area=min_area)
         valid_indices = [i for (i, is_valid) in enumerate(expected_valid_mask) if is_valid]
 
         labels = torch.arange(boxes.shape[0])
@@ -5798,7 +5948,9 @@ class TestSanitizeBoundingBoxes:
             img = sample.pop("image")
             sample = (img, sample)
 
-        out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
+        out = transforms.SanitizeBoundingBoxes(min_size=min_size, min_area=min_area, labels_getter=labels_getter)(
+            sample
+        )
 
         if sample_type is tuple:
             out_image = out[0]
@@ -5895,6 +6047,8 @@ class TestSanitizeBoundingBoxes:
 
         with pytest.raises(ValueError, match="min_size must be >= 1"):
             transforms.SanitizeBoundingBoxes(min_size=0)
+        with pytest.raises(ValueError, match="min_area must be >= 1"):
+            transforms.SanitizeBoundingBoxes(min_area=0)
         with pytest.raises(ValueError, match="labels_getter should either be 'default'"):
             transforms.SanitizeBoundingBoxes(labels_getter=12)
 

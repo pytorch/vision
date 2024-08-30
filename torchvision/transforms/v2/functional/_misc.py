@@ -84,9 +84,9 @@ def gaussian_blur(inpt: torch.Tensor, kernel_size: List[int], sigma: Optional[Li
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
-    lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0) * sigma)
+    lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0))
     x = torch.linspace(-lim, lim, steps=kernel_size, dtype=dtype, device=device)
-    kernel1d = torch.softmax(x.pow_(2).neg_(), dim=0)
+    kernel1d = torch.softmax(x.div(sigma).pow(2).neg(), dim=0)
     return kernel1d
 
 
@@ -119,7 +119,7 @@ def gaussian_blur_image(
         if isinstance(sigma, (list, tuple)):
             length = len(sigma)
             if length == 1:
-                s = float(sigma[0])
+                s = sigma[0]
                 sigma = [s, s]
             elif length != 2:
                 raise ValueError(f"If sigma is a sequence, its length should be 2. Got {length}")
@@ -181,6 +181,44 @@ def gaussian_blur_video(
     return gaussian_blur_image(video, kernel_size, sigma)
 
 
+def gaussian_noise(inpt: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
+    """See :class:`~torchvision.transforms.v2.GaussianNoise`"""
+    if torch.jit.is_scripting():
+        return gaussian_noise_image(inpt, mean=mean, sigma=sigma)
+
+    _log_api_usage_once(gaussian_noise)
+
+    kernel = _get_kernel(gaussian_noise, type(inpt))
+    return kernel(inpt, mean=mean, sigma=sigma, clip=clip)
+
+
+@_register_kernel_internal(gaussian_noise, torch.Tensor)
+@_register_kernel_internal(gaussian_noise, tv_tensors.Image)
+def gaussian_noise_image(image: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
+    if not image.is_floating_point():
+        raise ValueError(f"Input tensor is expected to be in float dtype, got dtype={image.dtype}")
+    if sigma < 0:
+        raise ValueError(f"sigma shouldn't be negative. Got {sigma}")
+
+    noise = mean + torch.randn_like(image) * sigma
+    out = image + noise
+    if clip:
+        out = torch.clamp(out, 0, 1)
+    return out
+
+
+@_register_kernel_internal(gaussian_noise, tv_tensors.Video)
+def gaussian_noise_video(video: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
+    return gaussian_noise_image(video, mean=mean, sigma=sigma, clip=clip)
+
+
+@_register_kernel_internal(gaussian_noise, PIL.Image.Image)
+def _gaussian_noise_pil(
+    video: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True
+) -> PIL.Image.Image:
+    raise ValueError("Gaussian Noise is not implemented for PIL images.")
+
+
 def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     """See :func:`~torchvision.transforms.v2.ToDtype` for details."""
     if torch.jit.is_scripting():
@@ -199,6 +237,8 @@ def _num_value_bits(dtype: torch.dtype) -> int:
         return 7
     elif dtype == torch.int16:
         return 15
+    elif dtype == torch.uint16:
+        return 16
     elif dtype == torch.int32:
         return 31
     elif dtype == torch.int64:
@@ -255,10 +295,18 @@ def to_dtype_image(image: torch.Tensor, dtype: torch.dtype = torch.float, scale:
         num_value_bits_input = _num_value_bits(image.dtype)
         num_value_bits_output = _num_value_bits(dtype)
 
+        # TODO: Remove if/else inner blocks once uint16 dtype supports bitwise shift operations.
+        shift_by = abs(num_value_bits_input - num_value_bits_output)
         if num_value_bits_input > num_value_bits_output:
-            return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
+            if image.dtype == torch.uint16:
+                return (image / 2 ** (shift_by)).to(dtype)
+            else:
+                return image.bitwise_right_shift(shift_by).to(dtype)
         else:
-            return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
+            if dtype == torch.uint16:
+                return image.to(dtype) * 2 ** (shift_by)
+            else:
+                return image.to(dtype).bitwise_left_shift_(shift_by)
 
 
 # We encourage users to use to_dtype() instead but we keep this for BC
@@ -284,12 +332,13 @@ def sanitize_bounding_boxes(
     format: Optional[tv_tensors.BoundingBoxFormat] = None,
     canvas_size: Optional[Tuple[int, int]] = None,
     min_size: float = 1.0,
+    min_area: float = 1.0,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Remove degenerate/invalid bounding boxes and return the corresponding indexing mask.
 
     This removes bounding boxes that:
 
-    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - are below a given ``min_size`` or ``min_area``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
       call :func:`~torchvision.transforms.v2.functional.clamp_bounding_boxes` first to avoid undesired removals.
 
@@ -308,6 +357,7 @@ def sanitize_bounding_boxes(
             (size of the corresponding image/video).
             Must be left to none if ``bounding_boxes`` is a :class:`~torchvision.tv_tensors.BoundingBoxes` object.
         min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
+        min_area (float, optional) The area below which bounding boxes are removed. Default is 1.
 
     Returns:
         out (tuple of Tensors): The subset of valid bounding boxes, and the corresponding indexing mask.
@@ -323,7 +373,7 @@ def sanitize_bounding_boxes(
         if isinstance(format, str):
             format = tv_tensors.BoundingBoxFormat[format.upper()]
         valid = _get_sanitize_bounding_boxes_mask(
-            bounding_boxes, format=format, canvas_size=canvas_size, min_size=min_size
+            bounding_boxes, format=format, canvas_size=canvas_size, min_size=min_size, min_area=min_area
         )
         bounding_boxes = bounding_boxes[valid]
     else:
@@ -336,7 +386,11 @@ def sanitize_bounding_boxes(
                 "Leave those to None or pass bounding_boxes as a pure tensor."
             )
         valid = _get_sanitize_bounding_boxes_mask(
-            bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size
+            bounding_boxes,
+            format=bounding_boxes.format,
+            canvas_size=bounding_boxes.canvas_size,
+            min_size=min_size,
+            min_area=min_area,
         )
         bounding_boxes = tv_tensors.wrap(bounding_boxes[valid], like=bounding_boxes)
 
@@ -348,6 +402,7 @@ def _get_sanitize_bounding_boxes_mask(
     format: tv_tensors.BoundingBoxFormat,
     canvas_size: Tuple[int, int],
     min_size: float = 1.0,
+    min_area: float = 1.0,
 ) -> torch.Tensor:
 
     bounding_boxes = _convert_bounding_box_format(
@@ -356,7 +411,7 @@ def _get_sanitize_bounding_boxes_mask(
 
     image_h, image_w = canvas_size
     ws, hs = bounding_boxes[:, 2] - bounding_boxes[:, 0], bounding_boxes[:, 3] - bounding_boxes[:, 1]
-    valid = (ws >= min_size) & (hs >= min_size) & (bounding_boxes >= 0).all(dim=-1)
+    valid = (ws >= min_size) & (hs >= min_size) & (bounding_boxes >= 0).all(dim=-1) & (ws * hs >= min_area)
     # TODO: Do we really need to check for out of bounds here? All
     # transforms should be clamping anyway, so this should never happen?
     image_h, image_w = canvas_size

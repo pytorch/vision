@@ -45,6 +45,8 @@ def _max_value(dtype: torch.dtype) -> int:
         return 127
     elif dtype == torch.int16:
         return 32767
+    elif dtype == torch.uint16:
+        return 65535
     elif dtype == torch.int32:
         return 2147483647
     elif dtype == torch.int64:
@@ -722,10 +724,10 @@ def perspective(
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
-def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> Tensor:
     ksize_half = (kernel_size - 1) * 0.5
 
-    x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size)
+    x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size, dtype=dtype, device=device)
     pdf = torch.exp(-0.5 * (x / sigma).pow(2))
     kernel1d = pdf / pdf.sum()
 
@@ -735,8 +737,8 @@ def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
 def _get_gaussian_kernel2d(
     kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
 ) -> Tensor:
-    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0]).to(device, dtype=dtype)
-    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1]).to(device, dtype=dtype)
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0], dtype, device)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], dtype, device)
     kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
     return kernel2d
 

@@ -6,8 +6,6 @@
 #include "../decoder/memory_buffer.h"
 #include "../decoder/sync_decoder.h"
 
-using namespace ffmpeg;
-
 namespace vision {
 namespace video {
 
