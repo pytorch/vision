@@ -42,11 +42,12 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
+      env-var-script: ./.github/scripts/export_IS_M1_CONDA_BUILD_JOB.sh
       pre-script: ${{ matrix.pre-script }}
       post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
-      runner-type: macos-m1-12
+      runner-type: macos-m1-stable
       trigger-event: ${{ github.event_name }}
     secrets:
       CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}

@@ -1,6 +1,7 @@
 import json
 import os
 from collections import namedtuple
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
@@ -13,7 +14,7 @@ class Cityscapes(VisionDataset):
     """`Cityscapes <http://www.cityscapes-dataset.com/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory ``leftImg8bit``
+        root (str or ``pathlib.Path``): Root directory of dataset where directory ``leftImg8bit``
             and ``gtFine`` or ``gtCoarse`` are located.
         split (string, optional): The image split to use, ``train``, ``test`` or ``val`` if mode="fine"
             otherwise ``train``, ``train_extra`` or ``val``
@@ -103,7 +104,7 @@ class Cityscapes(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         mode: str = "fine",
         target_type: Union[List[str], str] = "instance",
@@ -187,7 +188,7 @@ class Cityscapes(VisionDataset):
             if t == "polygon":
                 target = self._load_json(self.targets[index][i])
             else:
-                target = Image.open(self.targets[index][i])
+                target = Image.open(self.targets[index][i])  # type: ignore[assignment]
 
             targets.append(target)
 

@@ -1,6 +1,7 @@
 import os
 from os import path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 from .folder import default_loader
@@ -12,7 +13,7 @@ class Places365(VisionDataset):
     r"""`Places365 <http://places2.csail.mit.edu/index.html>`_ classification dataset.
 
     Args:
-        root (string): Root directory of the Places365 dataset.
+        root (str or ``pathlib.Path``): Root directory of the Places365 dataset.
         split (string, optional): The dataset split. Can be one of ``train-standard`` (default), ``train-challenge``,
             ``val``.
         small (bool, optional): If ``True``, uses the small images, i.e. resized to 256 x 256 pixels, instead of the
@@ -62,7 +63,7 @@ class Places365(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train-standard",
         small: bool = False,
         download: bool = False,

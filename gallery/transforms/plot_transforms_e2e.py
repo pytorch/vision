@@ -4,7 +4,7 @@ Transforms v2: End-to-end object detection/segmentation example
 ===============================================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_e2e.ipynb>`_
+    Try on `Colab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_e2e.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py>` to download the full example code.
 
 Object detection and segmentation tasks are natively supported:
@@ -30,7 +30,7 @@ torch.manual_seed(0)
 
 # This loads fake data for illustration purposes of this example. In practice, you'll have
 # to replace this with the proper data.
-# If you're trying to run that on collab, you can download the assets and the
+# If you're trying to run that on Colab, you can download the assets and the
 # helpers from https://github.com/pytorch/vision/tree/main/gallery/
 ROOT = pathlib.Path("../assets") / "coco"
 IMAGES_PATH = str(ROOT / "images")
@@ -93,7 +93,7 @@ plot([dataset[0], dataset[1]])
 # ----------
 #
 # Let's now define our pre-processing transforms. All the transforms know how
-# to handle images, bouding boxes and masks when relevant.
+# to handle images, bounding boxes and masks when relevant.
 #
 # Transforms are typically passed as the ``transforms`` parameter of the
 # dataset so that they can leverage multi-processing from the
@@ -151,8 +151,8 @@ data_loader = torch.utils.data.DataLoader(
     # We need a custom collation function here, since the object detection
     # models expect a sequence of images and target dictionaries. The default
     # collation function tries to torch.stack() the individual elements,
-    # which fails in general for object detection, because the number of bouding
-    # boxes varies between the images of a same batch.
+    # which fails in general for object detection, because the number of bounding
+    # boxes varies between the images of the same batch.
     collate_fn=lambda batch: tuple(zip(*batch)),
 )
 

@@ -17,7 +17,7 @@ std::wstring utf8_decode(const std::string& str) {
     return std::wstring();
   }
   int size_needed = MultiByteToWideChar(
-      CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), NULL, 0);
+      CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), nullptr, 0);
   TORCH_CHECK(size_needed > 0, "Error converting the content to Unicode");
   std::wstring wstrTo(size_needed, 0);
   MultiByteToWideChar(

@@ -1,4 +1,4 @@
-## Torchvision maintainers guide
+# Torchvision maintainers guide
 
 This document aims at documenting user-facing policies / principles used when
 developing and maintaining torchvision. Other maintainer info (e.g. release

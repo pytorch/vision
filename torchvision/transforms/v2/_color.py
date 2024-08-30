@@ -54,6 +54,20 @@ class RandomGrayscale(_RandomApplyTransform):
         return self._call_kernel(F.rgb_to_grayscale, inpt, num_output_channels=params["num_input_channels"])
 
 
+class RGB(Transform):
+    """Convert images or videos to RGB (if they are already not RGB).
+
+    If the input is a :class:`torch.Tensor`, it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.grayscale_to_rgb, inpt)
+
+
 class ColorJitter(Transform):
     """Randomly change the brightness, contrast, saturation and hue of an image or video.
 

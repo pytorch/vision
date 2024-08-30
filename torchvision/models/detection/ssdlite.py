@@ -255,7 +255,7 @@ def ssdlite320_mobilenet_v3_large(
         norm_layer (callable, optional): Module specifying the normalization layer to use.
         **kwargs: parameters passed to the ``torchvision.models.detection.ssd.SSD``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssdlite.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights

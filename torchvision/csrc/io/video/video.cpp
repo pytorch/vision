@@ -2,6 +2,8 @@
 
 #include <regex>
 
+using namespace ffmpeg;
+
 namespace vision {
 namespace video {
 

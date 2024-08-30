@@ -1,5 +1,6 @@
 import os
-from typing import Any, Callable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -15,7 +16,7 @@ class USPS(VisionDataset):
     and make pixel values in ``[0, 255]``.
 
     Args:
-        root (string): Root directory of dataset to store``USPS`` data files.
+        root (str or ``pathlib.Path``): Root directory of dataset to store``USPS`` data files.
         train (bool, optional): If True, creates dataset from ``usps.bz2``,
             otherwise from ``usps.t.bz2``.
         transform (callable, optional): A function/transform that takes in a PIL image
@@ -43,7 +44,7 @@ class USPS(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         train: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

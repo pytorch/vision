@@ -4,7 +4,7 @@ import collections.abc
 import numbers
 from contextlib import suppress
 
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -139,9 +139,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
     return inputs[candidate_key]
 
 
-def _parse_labels_getter(
-    labels_getter: Union[str, Callable[[Any], Optional[torch.Tensor]], None]
-) -> Callable[[Any], Optional[torch.Tensor]]:
+def _parse_labels_getter(labels_getter: Union[str, Callable[[Any], Any], None]) -> Callable[[Any], Any]:
     if labels_getter == "default":
         return _find_labels_default_heuristic
     elif callable(labels_getter):

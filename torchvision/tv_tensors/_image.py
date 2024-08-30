@@ -9,7 +9,7 @@ from ._tv_tensor import TVTensor
 
 
 class Image(TVTensor):
-    """:class:`torch.Tensor` subclass for images.
+    """:class:`torch.Tensor` subclass for images with shape ``[..., C, H, W]``.
 
     .. note::
 

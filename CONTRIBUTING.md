@@ -74,7 +74,7 @@ We don't officially support building from source using `pip`, but _if_ you do, y
 #### Other development dependencies (some of these are needed to run tests):
 
 ```
-pip install expecttest flake8 typing mypy pytest pytest-mock scipy
+pip install expecttest flake8 typing mypy pytest pytest-mock scipy requests
 ```
 
 ## Development Process

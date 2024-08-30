@@ -4,7 +4,7 @@ from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
 
-from ._augment import CutMix, MixUp, RandomErasing
+from ._augment import CutMix, JPEG, MixUp, RandomErasing
 from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
 from ._color import (
     ColorJitter,
@@ -18,6 +18,7 @@ from ._color import (
     RandomPhotometricDistort,
     RandomPosterize,
     RandomSolarize,
+    RGB,
 )
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
@@ -44,6 +45,7 @@ from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat
 from ._misc import (
     ConvertImageDtype,
     GaussianBlur,
+    GaussianNoise,
     Identity,
     Lambda,
     LinearTransformation,

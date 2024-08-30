@@ -48,6 +48,23 @@ bool AudioSampler::init(const SamplerParameters& params) {
     return false;
   }
 
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)
+  SwrContext* swrContext_ = NULL;
+  AVChannelLayout channel_out;
+  AVChannelLayout channel_in;
+  av_channel_layout_default(&channel_out, params.out.audio.channels);
+  av_channel_layout_default(&channel_in, params.in.audio.channels);
+  int ret = swr_alloc_set_opts2(
+      &swrContext_,
+      &channel_out,
+      (AVSampleFormat)params.out.audio.format,
+      params.out.audio.samples,
+      &channel_in,
+      (AVSampleFormat)params.in.audio.format,
+      params.in.audio.samples,
+      0,
+      logCtx_);
+#else
   swrContext_ = swr_alloc_set_opts(
       nullptr,
       av_get_default_channel_layout(params.out.audio.channels),
@@ -58,6 +75,7 @@ bool AudioSampler::init(const SamplerParameters& params) {
       params.in.audio.samples,
       0,
       logCtx_);
+#endif
   if (swrContext_ == nullptr) {
     LOG(ERROR) << "Cannot allocate SwrContext";
     return false;

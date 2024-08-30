@@ -214,6 +214,11 @@ def convert_bounding_box_format(
     if not torch.jit.is_scripting():
         _log_api_usage_once(convert_bounding_box_format)
 
+    if isinstance(old_format, str):
+        old_format = BoundingBoxFormat[old_format.upper()]
+    if isinstance(new_format, str):
+        new_format = BoundingBoxFormat[new_format.upper()]
+
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
         if old_format is None:
             raise ValueError("For pure tensor inputs, `old_format` has to be passed.")

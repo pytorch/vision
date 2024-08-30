@@ -1,5 +1,6 @@
 import os.path
-from typing import Any, Callable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -19,7 +20,7 @@ class SVHN(VisionDataset):
         This class needs `scipy <https://docs.scipy.org/doc/>`_ to load data from `.mat` format.
 
     Args:
-        root (string): Root directory of the dataset where the data is stored.
+        root (str or ``pathlib.Path``): Root directory of the dataset where the data is stored.
         split (string): One of {'train', 'test', 'extra'}.
             Accordingly dataset is selected. 'extra' is Extra training set.
         transform (callable, optional): A function/transform that takes in a PIL image
@@ -52,7 +53,7 @@ class SVHN(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

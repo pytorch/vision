@@ -11,13 +11,14 @@ requirements:
     - {{ compiler('c') }} # [win]
     - libpng
     - libjpeg-turbo
-    - ffmpeg >=4.2  # [linux]
+    - libwebp
+    - ffmpeg >=4.2.2, <5.0.0  # [linux]
 
   host:
     - python
     - setuptools
     - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
-    {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
+    {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT', 'pytorch') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT', '') }}
 
   run:
@@ -26,11 +27,12 @@ requirements:
     - numpy >=1.23.5 # [py >= 311]
     - requests
     - libpng
-    - ffmpeg >=4.2  # [linux]
+    - ffmpeg >=4.2.2, <5.0.0  # [linux]
     - libjpeg-turbo
+    - libwebp
     - pillow >=5.3.0, !=8.3.*
     - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
-    {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
+    {{ environ.get('CONDA_PYTORCH_CONSTRAINT', 'pytorch') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT', '') }}
 
   {% if build_variant == 'cpu' %}

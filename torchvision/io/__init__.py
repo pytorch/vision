@@ -10,6 +10,7 @@ except ModuleNotFoundError:
     _HAS_GPU_VIDEO_DECODER = False
 
 from ._video_opt import (
+    _HAS_CPU_VIDEO_DECODER,
     _HAS_VIDEO_OPT,
     _probe_video_from_file,
     _probe_video_from_memory,
@@ -21,9 +22,11 @@ from ._video_opt import (
     VideoMetaData,
 )
 from .image import (
+    decode_gif,
     decode_image,
     decode_jpeg,
     decode_png,
+    decode_webp,
     encode_jpeg,
     encode_png,
     ImageReadMode,
@@ -47,6 +50,7 @@ __all__ = [
     "_read_video_from_memory",
     "_read_video_timestamps_from_memory",
     "_probe_video_from_memory",
+    "_HAS_CPU_VIDEO_DECODER",
     "_HAS_VIDEO_OPT",
     "_HAS_GPU_VIDEO_DECODER",
     "_read_video_clip_from_memory",
@@ -57,6 +61,9 @@ __all__ = [
     "decode_image",
     "decode_jpeg",
     "decode_png",
+    "decode_heic",
+    "decode_webp",
+    "decode_gif",
     "encode_jpeg",
     "encode_png",
     "read_file",

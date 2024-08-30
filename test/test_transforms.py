@@ -1614,8 +1614,8 @@ def test_augmix(fill, severity, mixture_width, chain_depth, all_ops, grayscale):
 def test_random_crop():
     height = random.randint(10, 32) * 2
     width = random.randint(10, 32) * 2
-    oheight = random.randint(5, (height - 2) / 2) * 2
-    owidth = random.randint(5, (width - 2) / 2) * 2
+    oheight = random.randint(5, (height - 2) // 2) * 2
+    owidth = random.randint(5, (width - 2) // 2) * 2
     img = torch.ones(3, height, width, dtype=torch.uint8)
     result = transforms.Compose(
         [
@@ -1664,8 +1664,8 @@ def test_random_crop():
 def test_center_crop():
     height = random.randint(10, 32) * 2
     width = random.randint(10, 32) * 2
-    oheight = random.randint(5, (height - 2) / 2) * 2
-    owidth = random.randint(5, (width - 2) / 2) * 2
+    oheight = random.randint(5, (height - 2) // 2) * 2
+    owidth = random.randint(5, (width - 2) // 2) * 2
 
     img = torch.ones(3, height, width, dtype=torch.uint8)
     oh1 = (height - oheight) // 2

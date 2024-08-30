@@ -6,8 +6,6 @@
 #include "../decoder/memory_buffer.h"
 #include "../decoder/sync_decoder.h"
 
-using namespace ffmpeg;
-
 namespace vision {
 namespace video {
 
@@ -64,12 +62,12 @@ struct Video : torch::CustomClassHolder {
 
   std::map<std::string, std::vector<double>> streamTimeBase; // not used
 
-  DecoderInCallback callback = nullptr;
-  std::vector<DecoderMetadata> metadata;
+  ffmpeg::DecoderInCallback callback = nullptr;
+  std::vector<ffmpeg::DecoderMetadata> metadata;
 
  protected:
-  SyncDecoder decoder;
-  DecoderParameters params;
+  ffmpeg::SyncDecoder decoder;
+  ffmpeg::DecoderParameters params;
 
 }; // struct Video
 

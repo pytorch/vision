@@ -1,6 +1,7 @@
 import os.path
 import pickle
-from typing import Any, Callable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -13,7 +14,7 @@ class CIFAR10(VisionDataset):
     """`CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where directory
+        root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``cifar-10-batches-py`` exists or will be saved to if download is set to True.
         train (bool, optional): If True, creates dataset from training set, otherwise
             creates from test set.
@@ -50,7 +51,7 @@ class CIFAR10(VisionDataset):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         train: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,

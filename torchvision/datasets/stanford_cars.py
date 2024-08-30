@@ -1,37 +1,41 @@
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 from PIL import Image
 
-from .utils import download_and_extract_archive, download_url, verify_str_arg
+from .utils import verify_str_arg
 from .vision import VisionDataset
 
 
 class StanfordCars(VisionDataset):
-    """`Stanford Cars <https://ai.stanford.edu/~jkrause/cars/car_dataset.html>`_ Dataset
+    """Stanford Cars  Dataset
 
     The Cars dataset contains 16,185 images of 196 classes of cars. The data is
     split into 8,144 training images and 8,041 testing images, where each class
     has been split roughly in a 50-50 split
+
+    The original URL is https://ai.stanford.edu/~jkrause/cars/car_dataset.html, but it is broken.
 
     .. note::
 
         This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
 
     Args:
-        root (string): Root directory of dataset
+        root (str or ``pathlib.Path``): Root directory of dataset
         split (string, optional): The dataset split, supports ``"train"`` (default) or ``"test"``.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again."""
+        download (bool, optional): This parameter exists for backward compatibility but it does not
+            download the dataset, since the original URL is not available anymore. The dataset
+            seems to be available on Kaggle so you can try to manually download it using
+            `these instructions <https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616>`_.
+    """
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, pathlib.Path],
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -60,7 +64,10 @@ class StanfordCars(VisionDataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError("Dataset not found. You can use download=True to download it")
+            raise RuntimeError(
+                "Dataset not found. Try to manually download following the instructions in "
+                "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616."
+            )
 
         self._samples = [
             (
@@ -87,35 +94,16 @@ class StanfordCars(VisionDataset):
             target = self.target_transform(target)
         return pil_image, target
 
-    def download(self) -> None:
-        if self._check_exists():
-            return
-
-        download_and_extract_archive(
-            url="https://ai.stanford.edu/~jkrause/cars/car_devkit.tgz",
-            download_root=str(self._base_folder),
-            md5="c3b158d763b6e2245038c8ad08e45376",
-        )
-        if self._split == "train":
-            download_and_extract_archive(
-                url="https://ai.stanford.edu/~jkrause/car196/cars_train.tgz",
-                download_root=str(self._base_folder),
-                md5="065e5b463ae28d29e77c1b4b166cfe61",
-            )
-        else:
-            download_and_extract_archive(
-                url="https://ai.stanford.edu/~jkrause/car196/cars_test.tgz",
-                download_root=str(self._base_folder),
-                md5="4ce7ebf6a94d07f1952d94dd34c4d501",
-            )
-            download_url(
-                url="https://ai.stanford.edu/~jkrause/car196/cars_test_annos_withlabels.mat",
-                root=str(self._base_folder),
-                md5="b0a2b23655a3edd16d84508592a98d10",
-            )
-
     def _check_exists(self) -> bool:
         if not (self._base_folder / "devkit").is_dir():
             return False
 
         return self._annotations_mat_path.exists() and self._images_base_path.is_dir()
+
+    def download(self):
+        raise ValueError(
+            "The original URL is broken so the StanfordCars dataset is not available for automatic "
+            "download anymore. You can try to download it manually following "
+            "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616, "
+            "and set download=False to avoid this error."
+        )

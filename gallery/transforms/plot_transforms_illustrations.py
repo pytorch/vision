@@ -4,7 +4,7 @@ Illustration of transforms
 ==========================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_illustrations.ipynb>`_
+    Try on `Colab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_transforms_illustrations.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_transforms_plot_transforms_illustrations.py>` to download the full example code.
 
 This example illustrates some of the various transforms available in :ref:`the
@@ -27,7 +27,7 @@ plt.rcParams["savefig.bbox"] = 'tight'
 # properly show that the image can be both transformed and *not* transformed!
 torch.manual_seed(0)
 
-# If you're trying to run that on collab, you can download the assets and the
+# If you're trying to run that on Colab, you can download the assets and the
 # helpers from https://github.com/pytorch/vision/tree/main/gallery/
 from helpers import plot
 orig_img = Image.open(Path('../assets') / 'astronaut.jpg')
@@ -236,6 +236,17 @@ plot([orig_img] + autocontrasted_imgs)
 equalizer = v2.RandomEqualize()
 equalized_imgs = [equalizer(orig_img) for _ in range(4)]
 plot([orig_img] + equalized_imgs)
+
+# %%
+# JPEG
+# ~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.v2.JPEG` transform
+# (see also :func:`~torchvision.transforms.v2.functional.jpeg`)
+# applies JPEG compression to the given image with random
+# degree of compression.
+jpeg = v2.JPEG((5, 50))
+jpeg_imgs = [jpeg(orig_img) for _ in range(4)]
+plot([orig_img] + jpeg_imgs)
 
 # %%
 # Augmentation Transforms

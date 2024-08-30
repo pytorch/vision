@@ -71,7 +71,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
 
   // Define output buffer
   struct torch_mem_encode buf_info;
-  buf_info.buffer = NULL;
+  buf_info.buffer = nullptr;
   buf_info.size = 0;
 
   /* Establish the setjmp return context for my_error_exit to use. */
@@ -79,15 +79,15 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
     /* If we get here, the PNG code has signaled an error.
      * We need to clean up the PNG object and the buffer.
      */
-    if (info_ptr != NULL) {
+    if (info_ptr != nullptr) {
       png_destroy_info_struct(png_write, &info_ptr);
     }
 
-    if (png_write != NULL) {
-      png_destroy_write_struct(&png_write, NULL);
+    if (png_write != nullptr) {
+      png_destroy_write_struct(&png_write, nullptr);
     }
 
-    if (buf_info.buffer != NULL) {
+    if (buf_info.buffer != nullptr) {
       free(buf_info.buffer);
     }
 
@@ -121,12 +121,12 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
 
   // Initialize PNG structures
   png_write = png_create_write_struct(
-      PNG_LIBPNG_VER_STRING, &err_ptr, torch_png_error, NULL);
+      PNG_LIBPNG_VER_STRING, &err_ptr, torch_png_error, nullptr);
 
   info_ptr = png_create_info_struct(png_write);
 
   // Define custom buffer output
-  png_set_write_fn(png_write, &buf_info, torch_png_write_data, NULL);
+  png_set_write_fn(png_write, &buf_info, torch_png_write_data, nullptr);
 
   // Set output image information
   auto color_type = channels == 1 ? PNG_COLOR_TYPE_GRAY : PNG_COLOR_TYPE_RGB;
