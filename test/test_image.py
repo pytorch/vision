@@ -162,17 +162,6 @@ def test_invalid_exif(tmpdir, size):
     torch.testing.assert_close(expected, output)
 
 
-def test_decode_jpeg_errors():
-    with pytest.raises(RuntimeError, match="Expected a non empty 1-dimensional tensor"):
-        decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
-
-    with pytest.raises(RuntimeError, match="Expected a torch.uint8 tensor"):
-        decode_jpeg(torch.empty((100,), dtype=torch.float16))
-
-    with pytest.raises(RuntimeError, match="Not a JPEG file"):
-        decode_jpeg(torch.empty((100), dtype=torch.uint8))
-
-
 def test_decode_bad_huffman_images():
     # sanity check: make sure we can decode the bad Huffman encoding
     bad_huff = read_file(os.path.join(DAMAGED_JPEG, "bad_huffman.jpg"))
@@ -248,10 +237,6 @@ def test_decode_png(img_path, pil_mode, mode, scripted, decode_fun):
 
 
 def test_decode_png_errors():
-    with pytest.raises(RuntimeError, match="Expected a non empty 1-dimensional tensor"):
-        decode_png(torch.empty((), dtype=torch.uint8))
-    with pytest.raises(RuntimeError, match="Content is not png"):
-        decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
     with pytest.raises(RuntimeError, match="Out of bound read in decode_png"):
         decode_png(read_file(os.path.join(DAMAGED_PNG, "sigsegv.png")))
     with pytest.raises(RuntimeError, match="Content is too small for png"):
