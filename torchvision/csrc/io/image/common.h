@@ -16,5 +16,9 @@ const ImageReadMode IMAGE_READ_MODE_RGB_ALPHA = 4;
 
 void validate_encoded_data(const torch::Tensor& encoded_data);
 
+bool should_this_return_rgb_or_rgba_let_me_know_in_the_comments_down_below_guys_see_you_in_the_next_video(
+    ImageReadMode mode,
+    bool has_alpha);
+
 } // namespace image
 } // namespace vision

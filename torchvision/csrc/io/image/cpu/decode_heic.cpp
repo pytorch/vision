@@ -22,15 +22,6 @@ torch::Tensor decode_heic(
     ImageReadMode mode) {
   validate_encoded_data(encoded_data);
 
-  if (mode != IMAGE_READ_MODE_UNCHANGED && mode != IMAGE_READ_MODE_RGB &&
-      mode != IMAGE_READ_MODE_RGB_ALPHA) {
-    // Other modes aren't supported, but we don't error or even warn because we
-    // have generic entry points like decode_image which may support all modes,
-    // it just depends on the underlying decoder.
-    mode = IMAGE_READ_MODE_UNCHANGED;
-  }
-
-  // If return_rgb is false it means we return rgba - nothing else.
   auto return_rgb = true;
 
   int height = 0;
@@ -74,8 +65,8 @@ torch::Tensor decode_heic(
     bit_depth = handle.get_luma_bits_per_pixel();
 
     return_rgb =
-        (mode == IMAGE_READ_MODE_RGB ||
-         (mode == IMAGE_READ_MODE_UNCHANGED && !handle.has_alpha_channel()));
+        should_this_return_rgb_or_rgba_let_me_know_in_the_comments_down_below_guys_see_you_in_the_next_video(
+            mode, handle.has_alpha_channel());
 
     height = handle.get_height();
     width = handle.get_width();

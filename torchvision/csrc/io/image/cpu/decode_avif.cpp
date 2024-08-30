@@ -71,18 +71,9 @@ torch::Tensor decode_avif(
   auto use_uint8 = (decoder->image->depth <= 8);
   rgb.depth = use_uint8 ? 8 : 16;
 
-  if (mode != IMAGE_READ_MODE_UNCHANGED && mode != IMAGE_READ_MODE_RGB &&
-      mode != IMAGE_READ_MODE_RGB_ALPHA) {
-    // Other modes aren't supported, but we don't error or even warn because we
-    // have generic entry points like decode_image which may support all modes,
-    // it just depends on the underlying decoder.
-    mode = IMAGE_READ_MODE_UNCHANGED;
-  }
-
-  // If return_rgb is false it means we return rgba - nothing else.
   auto return_rgb =
-      (mode == IMAGE_READ_MODE_RGB ||
-       (mode == IMAGE_READ_MODE_UNCHANGED && !decoder->alphaPresent));
+      should_this_return_rgb_or_rgba_let_me_know_in_the_comments_down_below_guys_see_you_in_the_next_video(
+          mode, decoder->alphaPresent);
 
   auto num_channels = return_rgb ? 3 : 4;
   rgb.format = return_rgb ? AVIF_RGB_FORMAT_RGB : AVIF_RGB_FORMAT_RGBA;
