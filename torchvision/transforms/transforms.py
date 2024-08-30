@@ -1649,9 +1649,9 @@ class RandomErasing(torch.nn.Module):
             raise TypeError("Argument value should be either a number or str or a sequence")
         if isinstance(value, str) and value != "random":
             raise ValueError("If value is str, it should be 'random'")
-        if not isinstance(scale, (tuple, list)):
+        if not isinstance(scale, Sequence):
             raise TypeError("Scale should be a sequence")
-        if not isinstance(ratio, (tuple, list)):
+        if not isinstance(ratio, Sequence):
             raise TypeError("Ratio should be a sequence")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
