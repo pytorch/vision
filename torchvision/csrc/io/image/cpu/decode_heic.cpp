@@ -1,4 +1,5 @@
 #include "decode_heic.h"
+#include "../common.h"
 
 #if HEIC_FOUND
 #include "libheif/heif_cxx.h"
@@ -19,16 +20,7 @@ torch::Tensor decode_heic(
 torch::Tensor decode_heic(
     const torch::Tensor& encoded_data,
     ImageReadMode mode) {
-  TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
-  TORCH_CHECK(
-      encoded_data.dtype() == torch::kU8,
-      "Input tensor must have uint8 data type, got ",
-      encoded_data.dtype());
-  TORCH_CHECK(
-      encoded_data.dim() == 1,
-      "Input tensor must be 1-dimensional, got ",
-      encoded_data.dim(),
-      " dims.");
+  validate_encoded_data(encoded_data);
 
   if (mode != IMAGE_READ_MODE_UNCHANGED && mode != IMAGE_READ_MODE_RGB &&
       mode != IMAGE_READ_MODE_RGB_ALPHA) {

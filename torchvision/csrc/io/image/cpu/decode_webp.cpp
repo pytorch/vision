@@ -1,4 +1,5 @@
 #include "decode_webp.h"
+#include "../common.h"
 
 #if WEBP_FOUND
 #include "webp/decode.h"
@@ -19,16 +20,7 @@ torch::Tensor decode_webp(
 torch::Tensor decode_webp(
     const torch::Tensor& encoded_data,
     ImageReadMode mode) {
-  TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
-  TORCH_CHECK(
-      encoded_data.dtype() == torch::kU8,
-      "Input tensor must have uint8 data type, got ",
-      encoded_data.dtype());
-  TORCH_CHECK(
-      encoded_data.dim() == 1,
-      "Input tensor must be 1-dimensional, got ",
-      encoded_data.dim(),
-      " dims.");
+  validate_encoded_data(encoded_data);
 
   auto encoded_data_p = encoded_data.data_ptr<uint8_t>();
   auto encoded_data_size = encoded_data.numel();

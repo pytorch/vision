@@ -1,4 +1,5 @@
 #include "decode_avif.h"
+#include "../common.h"
 
 #if AVIF_FOUND
 #include "avif/avif.h"
@@ -33,16 +34,7 @@ torch::Tensor decode_avif(
   // Refer there for more detail about what each function does, and which
   // structure/data is available after which call.
 
-  TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
-  TORCH_CHECK(
-      encoded_data.dtype() == torch::kU8,
-      "Input tensor must have uint8 data type, got ",
-      encoded_data.dtype());
-  TORCH_CHECK(
-      encoded_data.dim() == 1,
-      "Input tensor must be 1-dimensional, got ",
-      encoded_data.dim(),
-      " dims.");
+  validate_encoded_data(encoded_data);
 
   DecoderPtr decoder(avifDecoderCreate());
   TORCH_CHECK(decoder != nullptr, "Failed to create avif decoder.");

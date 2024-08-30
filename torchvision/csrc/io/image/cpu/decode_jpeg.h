@@ -1,7 +1,7 @@
 #pragma once
 
 #include <torch/types.h>
-#include "../image_read_mode.h"
+#include "../common.h"
 
 namespace vision {
 namespace image {
