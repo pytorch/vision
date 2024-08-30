@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import PIL.Image
 import torch
