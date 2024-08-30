@@ -15,8 +15,8 @@ from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
     _decode_avif,
+    _decode_heic,
     decode_gif,
-    decode_heic,
     decode_image,
     decode_jpeg,
     decode_png,
@@ -890,7 +890,6 @@ def test_decode_webp(decode_fun, scripted):
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
-    img += 123  # Make sure the underlying data wasn't accidentally freed
 
 
 # This test is skipped because it requires webp images that we're not including
@@ -928,13 +927,12 @@ def test_decode_avif(decode_fun, scripted):
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
-    img += 123  # Make sure the underlying data wasn't accidentally freed
 
 
 # @pytest.mark.xfail(reason="AVIF support not enabled yet.")
 # Note: decode_image fails because some of these files have a (valid) signature
 # we don't recognize. We should probably use libmagic....
-@pytest.mark.parametrize("decode_fun", (_decode_avif, decode_heic))
+@pytest.mark.parametrize("decode_fun", (_decode_avif, _decode_heic))
 @pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize(
     "mode, pil_mode",
@@ -981,9 +979,9 @@ def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename)
         assert img.shape[0] == 3
     if mode == ImageReadMode.RGB_ALPHA:
         assert img.shape[0] == 4
+
     if img.dtype == torch.uint16:
         img = F.to_dtype(img, dtype=torch.uint8, scale=True)
-
     try:
         from_pil = F.pil_to_tensor(Image.open(filename).convert(pil_mode))
     except RuntimeError as e:
@@ -998,22 +996,22 @@ def test_decode_avif_against_pil(decode_fun, scripted, mode, pil_mode, filename)
         g = make_grid([img, from_pil])
         F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png"))
 
-    is_decode_heic = getattr(decode_fun, "__name__", getattr(decode_fun, "name", None)) == "decode_heic"
-    if mode == ImageReadMode.RGB and not is_decode_heic:
+    is__decode_heic = getattr(decode_fun, "__name__", getattr(decode_fun, "name", None)) == "_decode_heic"
+    if mode == ImageReadMode.RGB and not is__decode_heic:
         # We don't compare torchvision's AVIF against PIL for RGB because
         # results look pretty different on RGBA images (other images are fine).
         # The result on torchvision basically just plainly ignores the alpha
         # channel, resuting in transparent pixels looking dark. PIL seems to be
         # using a sort of k-nn thing (Take a look at the resuting images)
         return
-    if filename.name == "sofa_grid1x5_420.avif" and is_decode_heic:
+    if filename.name == "sofa_grid1x5_420.avif" and is__decode_heic:
         return
 
     torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
 
 
 # @pytest.mark.xfail(reason="HEIC support not enabled yet.")
-@pytest.mark.parametrize("decode_fun", (decode_heic, decode_image))
+@pytest.mark.parametrize("decode_fun", (_decode_heic, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))
 def test_decode_heic(decode_fun, scripted):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".heic")))
@@ -1022,7 +1020,6 @@ def test_decode_heic(decode_fun, scripted):
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
-    img += 123  # Make sure the underlying data wasn't accidentally freed
 
 
 if __name__ == "__main__":

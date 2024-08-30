@@ -50,10 +50,33 @@ torch::Tensor decode_heic(
   int bit_depth = 0;
 
   try {
-    // TODO: error on image sequences
     heif::Context ctx;
     ctx.read_from_memory_without_copy(
         encoded_data.data_ptr<uint8_t>(), encoded_data.numel());
+
+    // TODO properly error on (or support) image sequences. Right now, I think
+    // this function will always return the first image in a sequence, which is
+    // inconsistent with decode_gif (which returns a batch) and with decode_avif
+    // (which errors loudly).
+    // Why? I'm struggling to make sense of
+    // ctx.get_number_of_top_level_images(). It disagrees with libavif's
+    // imageCount. For example on some of the libavif test images:
+    //
+    // - colors-animated-12bpc-keyframes-0-2-3.avif
+    //   avif num images = 5
+    //   heif num images = 1  // Why is this 1 when clearly this is supposed to
+    //                           be a sequence?
+    // - sofa_grid1x5_420.avif
+    //   avif num images = 1
+    //   heif num images = 6  // If we were to error here we won't be able to
+    //                           decode this image which is otherwise properly
+    //                           decoded by libavif.
+    // I can't find a libheif function that does what we need here, or at least
+    // that agrees with libavif.
+
+    // TORCH_CHECK(
+    //     ctx.get_number_of_top_level_images() == 1,
+    //     "heic file contains more than one image");
 
     heif::ImageHandle handle = ctx.get_primary_image_handle();
     bit_depth = handle.get_luma_bits_per_pixel();
@@ -71,6 +94,8 @@ torch::Tensor decode_heic(
       chroma = return_rgb ? heif_chroma_interleaved_RGB
                           : heif_chroma_interleaved_RGBA;
     } else {
+      // TODO: This, along with our 10bits -> 16bits range mapping down below,
+      // may not work on BE platforms
       chroma = return_rgb ? heif_chroma_interleaved_RRGGBB_LE
                           : heif_chroma_interleaved_RRGGBBAA_LE;
     }
@@ -79,6 +104,9 @@ torch::Tensor decode_heic(
 
     decoded_data = img.get_plane(heif_channel_interleaved, &stride);
   } catch (const heif::Error& err) {
+    // We need this try/catch block and call TORCH_CHECK, because libheif may
+    // otherwise throw heif::Error that would just be reported as "An unknown
+    // exception occurred" when we move back to Python.
     TORCH_CHECK(false, "decode_heif failed: ", err.get_message());
   }
   TORCH_CHECK(decoded_data != nullptr, "Something went wrong during decoding.");
