@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import PIL.Image
 import torch
@@ -56,8 +56,8 @@ class RandomErasing(_RandomApplyTransform):
     def __init__(
         self,
         p: float = 0.5,
-        scale: Tuple[float, float] = (0.02, 0.33),
-        ratio: Tuple[float, float] = (0.3, 3.3),
+        scale: Sequence[float] = (0.02, 0.33),
+        ratio: Sequence[float] = (0.3, 3.3),
         value: float = 0.0,
         inplace: bool = False,
     ):
@@ -66,9 +66,9 @@ class RandomErasing(_RandomApplyTransform):
             raise TypeError("Argument value should be either a number or str or a sequence")
         if isinstance(value, str) and value != "random":
             raise ValueError("If value is str, it should be 'random'")
-        if not isinstance(scale, (tuple, list)):
+        if not isinstance(scale, Sequence):
             raise TypeError("Scale should be a sequence")
-        if not isinstance(ratio, (tuple, list)):
+        if not isinstance(ratio, Sequence):
             raise TypeError("Ratio should be a sequence")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")

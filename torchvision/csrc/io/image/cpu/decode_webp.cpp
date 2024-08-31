@@ -1,4 +1,5 @@
 #include "decode_webp.h"
+#include "../common.h"
 
 #if WEBP_FOUND
 #include "webp/decode.h"
@@ -19,16 +20,7 @@ torch::Tensor decode_webp(
 torch::Tensor decode_webp(
     const torch::Tensor& encoded_data,
     ImageReadMode mode) {
-  TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
-  TORCH_CHECK(
-      encoded_data.dtype() == torch::kU8,
-      "Input tensor must have uint8 data type, got ",
-      encoded_data.dtype());
-  TORCH_CHECK(
-      encoded_data.dim() == 1,
-      "Input tensor must be 1-dimensional, got ",
-      encoded_data.dim(),
-      " dims.");
+  validate_encoded_data(encoded_data);
 
   auto encoded_data_p = encoded_data.data_ptr<uint8_t>();
   auto encoded_data_size = encoded_data.numel();
@@ -40,18 +32,9 @@ torch::Tensor decode_webp(
   TORCH_CHECK(
       !features.has_animation, "Animated webp files are not supported.");
 
-  if (mode != IMAGE_READ_MODE_UNCHANGED && mode != IMAGE_READ_MODE_RGB &&
-      mode != IMAGE_READ_MODE_RGB_ALPHA) {
-    // Other modes aren't supported, but we don't error or even warn because we
-    // have generic entry points like decode_image which may support all modes,
-    // it just depends on the underlying decoder.
-    mode = IMAGE_READ_MODE_UNCHANGED;
-  }
-
-  // If return_rgb is false it means we return rgba - nothing else.
   auto return_rgb =
-      (mode == IMAGE_READ_MODE_RGB ||
-       (mode == IMAGE_READ_MODE_UNCHANGED && !features.has_alpha));
+      should_this_return_rgb_or_rgba_let_me_know_in_the_comments_down_below_guys_see_you_in_the_next_video(
+          mode, features.has_alpha);
 
   auto decoding_func = return_rgb ? WebPDecodeRGB : WebPDecodeRGBA;
   auto num_channels = return_rgb ? 3 : 4;

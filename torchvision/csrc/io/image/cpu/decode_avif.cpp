@@ -1,4 +1,5 @@
 #include "decode_avif.h"
+#include "../common.h"
 
 #if AVIF_FOUND
 #include "avif/avif.h"
@@ -33,16 +34,7 @@ torch::Tensor decode_avif(
   // Refer there for more detail about what each function does, and which
   // structure/data is available after which call.
 
-  TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
-  TORCH_CHECK(
-      encoded_data.dtype() == torch::kU8,
-      "Input tensor must have uint8 data type, got ",
-      encoded_data.dtype());
-  TORCH_CHECK(
-      encoded_data.dim() == 1,
-      "Input tensor must be 1-dimensional, got ",
-      encoded_data.dim(),
-      " dims.");
+  validate_encoded_data(encoded_data);
 
   DecoderPtr decoder(avifDecoderCreate());
   TORCH_CHECK(decoder != nullptr, "Failed to create avif decoder.");
@@ -60,6 +52,7 @@ torch::Tensor decode_avif(
       result == AVIF_RESULT_OK,
       "avifDecoderParse failed: ",
       avifResultToString(result));
+  printf("avif num images = %d\n", decoder->imageCount);
   TORCH_CHECK(
       decoder->imageCount == 1, "Avif file contains more than one image");
 
@@ -78,18 +71,9 @@ torch::Tensor decode_avif(
   auto use_uint8 = (decoder->image->depth <= 8);
   rgb.depth = use_uint8 ? 8 : 16;
 
-  if (mode != IMAGE_READ_MODE_UNCHANGED && mode != IMAGE_READ_MODE_RGB &&
-      mode != IMAGE_READ_MODE_RGB_ALPHA) {
-    // Other modes aren't supported, but we don't error or even warn because we
-    // have generic entry points like decode_image which may support all modes,
-    // it just depends on the underlying decoder.
-    mode = IMAGE_READ_MODE_UNCHANGED;
-  }
-
-  // If return_rgb is false it means we return rgba - nothing else.
   auto return_rgb =
-      (mode == IMAGE_READ_MODE_RGB ||
-       (mode == IMAGE_READ_MODE_UNCHANGED && !decoder->alphaPresent));
+      should_this_return_rgb_or_rgba_let_me_know_in_the_comments_down_below_guys_see_you_in_the_next_video(
+          mode, decoder->alphaPresent);
 
   auto num_channels = return_rgb ? 3 : 4;
   rgb.format = return_rgb ? AVIF_RGB_FORMAT_RGB : AVIF_RGB_FORMAT_RGBA;

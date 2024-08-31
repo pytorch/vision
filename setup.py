@@ -19,6 +19,7 @@ DEBUG = os.getenv("DEBUG", "0") == "1"
 USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
+USE_HEIC = os.getenv("TORCHVISION_USE_HEIC", "0") == "1"  # TODO enable by default!
 USE_AVIF = os.getenv("TORCHVISION_USE_AVIF", "0") == "1"  # TODO enable by default!
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
@@ -50,6 +51,7 @@ print(f"{DEBUG = }")
 print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
+print(f"{USE_HEIC = }")
 print(f"{USE_AVIF = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
@@ -333,6 +335,21 @@ def make_image_extension():
             define_macros += [("WEBP_FOUND", 1)]
         else:
             warnings.warn("Building torchvision without WEBP support")
+
+    if USE_HEIC:
+        heic_found, heic_include_dir, heic_library_dir = find_library(header="libheif/heif.h")
+        if heic_found:
+            print("Building torchvision with HEIC support")
+            print(f"{heic_include_dir = }")
+            print(f"{heic_library_dir = }")
+            if heic_include_dir is not None and heic_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
+                include_dirs.append(heic_include_dir)
+                library_dirs.append(heic_library_dir)
+            libraries.append("heif")
+            define_macros += [("HEIC_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without HEIC support")
 
     if USE_AVIF:
         avif_found, avif_include_dir, avif_library_dir = find_library(header="avif/avif.h")
