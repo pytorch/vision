@@ -201,8 +201,9 @@ def pad(
 
         pad_left, pad_top, pad_right, pad_bottom = np.maximum(p, 0)
 
-        if padding_mode == 'circular':
-            padding_mode = 'wrap' # For compatibility with np.pad terminology
+        if padding_mode == "circular":
+            # Compatibility with np.pad
+            padding_mode = "wrap"
 
         if img.mode == "P":
             palette = img.getpalette()
