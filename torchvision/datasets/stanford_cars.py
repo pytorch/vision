@@ -15,7 +15,7 @@ class StanfordCars(VisionDataset):
     has been split roughly in a 50-50 split
 
     The original URL is https://ai.stanford.edu/~jkrause/cars/car_dataset.html, but it is broken.
-    Follow the instructions in ``download`` argument to use the dataset offline.
+    Follow the instructions in ``download`` argument to obtain and use the dataset offline.
 
     .. note::
 
@@ -32,7 +32,7 @@ class StanfordCars(VisionDataset):
             download the dataset, since the original URL is not available anymore. The dataset
             seems to be available on Kaggle so you can try to manually download and configure it using
             `these instructions <https://github.com/pytorch/vision/issues/7545#issuecomment-2282674373>`_
-            or use an integrated 
+            or use an integrated
             `dataset on Kaggle <https://www.kaggle.com/datasets/rickyyyyyyy/torchvision-stanford-cars>`_.
             In both cases, first download and configure the dataset locally, and use the dataset with
             ``"download=False"``.
