@@ -31,7 +31,7 @@ class StanfordCars(VisionDataset):
         download (bool, optional): This parameter exists for backward compatibility but it does not
             download the dataset, since the original URL is not available anymore. The dataset
             seems to be available on Kaggle so you can try to manually download and configure it using
-            `these instructions <https://github.com/pytorch/vision/issues/7545#issuecomment-2282674373>`_
+            `these instructions <https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616>`_
             or use an integrated
             `dataset on Kaggle <https://www.kaggle.com/datasets/rickyyyyyyy/torchvision-stanford-cars>`_.
             In both cases, first download and configure the dataset locally, and use the dataset with
