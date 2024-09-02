@@ -21,8 +21,14 @@ USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
-USE_FFMPEG = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
-USE_VIDEO_CODEC = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
+# Note: the GPU video decoding stuff used to be called "video codec", which
+# isn't an accurate or descriptive name considering there are at least 2 other
+# video deocding backends in torchvision. I'm renaming this to "gpu video
+# decoder" where possible, keeping user facing names (like the env var below) to
+# the old scheme for BC.
+USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
+# Same here: "use ffmpeg" was used to denote "use cpu video decoder".
+USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
@@ -45,8 +51,8 @@ print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
-print(f"{USE_FFMPEG = }")
-print(f"{USE_VIDEO_CODEC = }")
+print(f"{USE_CPU_VIDEO_DECODER = }")
+print(f"{USE_GPU_VIDEO_DECODER = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
 print(f"{IS_ROCM = }")
@@ -351,28 +357,21 @@ def make_image_extension():
 def make_video_decoders_extensions():
     print("Building video decoder extensions")
 
-    # Locating ffmpeg
-    ffmpeg_exe = shutil.which("ffmpeg")
-    has_ffmpeg = ffmpeg_exe is not None
-    ffmpeg_version = None
-    # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
-    # FIXME: causes crash. See the following GitHub issues for more details.
-    # FIXME: https://github.com/pytorch/pytorch/issues/65000
-    # FIXME: https://github.com/pytorch/vision/issues/3367
+    build_without_extensions_msg = "Building without video decoders extensions."
     if sys.platform != "linux" or (sys.version_info.major == 3 and sys.version_info.minor == 9):
-        has_ffmpeg = False
-    if has_ffmpeg:
-        try:
-            # This is to check if ffmpeg is installed properly.
-            ffmpeg_version = subprocess.check_output(["ffmpeg", "-version"])
-        except subprocess.CalledProcessError:
-            print("Building torchvision without ffmpeg support")
-            print("  Error fetching ffmpeg version, ignoring ffmpeg.")
-            has_ffmpeg = False
+        # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
+        # FIXME: causes crash. See the following GitHub issues for more details.
+        # FIXME: https://github.com/pytorch/pytorch/issues/65000
+        # FIXME: https://github.com/pytorch/vision/issues/3367
+        print("Can only build video decoder extensions on linux and Python != 3.9")
+        return []
 
-    use_ffmpeg = USE_FFMPEG and has_ffmpeg
+    ffmpeg_exe = shutil.which("ffmpeg")
+    if ffmpeg_exe is None:
+        print(f"{build_without_extensions_msg} Couldn't find ffmpeg binary.")
+        return []
 
-    if use_ffmpeg:
+    def find_ffmpeg_libraries():
         ffmpeg_libraries = {"libavcodec", "libavformat", "libavutil", "libswresample", "libswscale"}
 
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
@@ -399,18 +398,23 @@ def make_video_decoders_extensions():
                 library_found |= len(glob.glob(full_path)) > 0
 
             if not library_found:
-                print("Building torchvision without ffmpeg support")
-                print(f"  {library} header files were not found, disabling ffmpeg support")
-                use_ffmpeg = False
-    else:
-        print("Building torchvision without ffmpeg support")
+                print(f"{build_without_extensions_msg}")
+                print(f"{library} header files were not found.")
+                return None, None
+
+        return ffmpeg_include_dir, ffmpeg_library_dir
+
+    ffmpeg_include_dir, ffmpeg_library_dir = find_ffmpeg_libraries()
+    if ffmpeg_include_dir is None or ffmpeg_library_dir is None:
+        return []
+
+    print("Found ffmpeg:")
+    print(f"  ffmpeg include path: {ffmpeg_include_dir}")
+    print(f"  ffmpeg library_dir: {ffmpeg_library_dir}")
 
     extensions = []
-    if use_ffmpeg:
-        print("Building torchvision with ffmpeg support")
-        print(f"  ffmpeg version: {ffmpeg_version}")
-        print(f"  ffmpeg include path: {ffmpeg_include_dir}")
-        print(f"  ffmpeg library_dir: {ffmpeg_library_dir}")
+    if USE_CPU_VIDEO_DECODER:
+        print("Building with CPU video decoder support")
 
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(ROOT_DIR, "torchvision", "csrc", "io", "video_reader")
@@ -427,6 +431,7 @@ def make_video_decoders_extensions():
 
         extensions.append(
             CppExtension(
+                # This is an aweful name. It should be "cpu_video_decoder". Keeping for BC.
                 "torchvision.video_reader",
                 combined_src,
                 include_dirs=[
@@ -450,25 +455,24 @@ def make_video_decoders_extensions():
             )
         )
 
-    # Locating video codec
-    # CUDA_HOME should be set to the cuda root directory.
-    # TORCHVISION_INCLUDE and TORCHVISION_LIBRARY should include the location to
-    # video codec header files and libraries respectively.
-    video_codec_found = (
-        BUILD_CUDA_SOURCES
-        and CUDA_HOME is not None
-        and any([os.path.exists(os.path.join(folder, "cuviddec.h")) for folder in TORCHVISION_INCLUDE])
-        and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in TORCHVISION_INCLUDE])
-        and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in TORCHVISION_LIBRARY])
-    )
+    if USE_GPU_VIDEO_DECODER:
+        # Locating GPU video decoder headers and libraries
+        # CUDA_HOME should be set to the cuda root directory.
+        # TORCHVISION_INCLUDE and TORCHVISION_LIBRARY should include the locations
+        # to the headers and libraries below
+        if not (
+            BUILD_CUDA_SOURCES
+            and CUDA_HOME is not None
+            and any([os.path.exists(os.path.join(folder, "cuviddec.h")) for folder in TORCHVISION_INCLUDE])
+            and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in TORCHVISION_INCLUDE])
+            and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in TORCHVISION_LIBRARY])
+            and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
+        ):
+            print("Could not find necessary dependencies. Refer the setup.py to check which ones are needed.")
+            print("Building without GPU video decoder support")
+            return extensions
+        print("Building torchvision with GPU video decoder support")
 
-    use_video_codec = USE_VIDEO_CODEC and video_codec_found
-    if (
-        use_video_codec
-        and use_ffmpeg
-        and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
-    ):
-        print("Building torchvision with video codec support")
         gpu_decoder_path = os.path.join(CSRS_DIR, "io", "decoder", "gpu")
         gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
         cuda_libs = os.path.join(CUDA_HOME, "lib64")
@@ -477,7 +481,7 @@ def make_video_decoders_extensions():
         _, extra_compile_args = get_macros_and_flags()
         extensions.append(
             CUDAExtension(
-                "torchvision.Decoder",
+                "torchvision.gpu_decoder",
                 gpu_decoder_src,
                 include_dirs=[CSRS_DIR] + TORCHVISION_INCLUDE + [gpu_decoder_path] + [cuda_inc] + ffmpeg_include_dir,
                 library_dirs=ffmpeg_library_dir + TORCHVISION_LIBRARY + [cuda_libs],
@@ -498,18 +502,6 @@ def make_video_decoders_extensions():
                 extra_compile_args=extra_compile_args,
             )
         )
-    else:
-        print("Building torchvision without video codec support")
-        if (
-            use_video_codec
-            and use_ffmpeg
-            and not any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
-        ):
-            print(
-                "  The installed version of ffmpeg is missing the header file 'bsf.h' which is "
-                "  required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
-                "   `conda install -c conda-forge ffmpeg`."
-            )
 
     return extensions
 
