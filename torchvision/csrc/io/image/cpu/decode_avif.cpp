@@ -52,7 +52,6 @@ torch::Tensor decode_avif(
       result == AVIF_RESULT_OK,
       "avifDecoderParse failed: ",
       avifResultToString(result));
-  printf("avif num images = %d\n", decoder->imageCount);
   TORCH_CHECK(
       decoder->imageCount == 1, "Avif file contains more than one image");
 
