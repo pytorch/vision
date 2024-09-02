@@ -58,7 +58,7 @@ torch::Tensor decode_image(
       0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66}; // == "ftypavif"
   TORCH_CHECK(data.numel() >= 12, err_msg);
   if ((memcmp(avif_signature, datap + 4, 8) == 0)) {
-    return decode_avif(data);
+    return decode_avif(data, mode);
   }
 
   const uint8_t webp_signature_begin[4] = {0x52, 0x49, 0x46, 0x46}; // == "RIFF"
