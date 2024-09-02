@@ -26,7 +26,7 @@ USER_AGENT = "pytorch/vision"
 
 def _urlretrieve(url: str, filename: Union[str, pathlib.Path], chunk_size: int = 1024 * 32) -> None:
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
-        with open(filename, "wb") as fh, tqdm(total=response.length) as pbar:
+        with open(filename, "wb") as fh, tqdm(total=response.length, unit="B", unit_scale=True) as pbar:
             while chunk := response.read(chunk_size):
                 fh.write(chunk)
                 pbar.update(len(chunk))

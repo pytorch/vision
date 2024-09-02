@@ -7,9 +7,9 @@ import torch
 
 from ..utils import _log_api_usage_once
 
-from ._video_opt import _HAS_VIDEO_OPT
+from ._video_opt import _HAS_CPU_VIDEO_DECODER
 
-if _HAS_VIDEO_OPT:
+if _HAS_CPU_VIDEO_DECODER:
 
     def _has_video_opt() -> bool:
         return True
@@ -251,7 +251,7 @@ class VideoReader:
                         rate_n = "framerate"
                     metadata[stream.type] = {rate_n: [], "duration": []}
 
-                rate = stream.average_rate if stream.average_rate is not None else stream.sample_rate
+                rate = getattr(stream, "average_rate", None) or stream.sample_rate
 
                 metadata[stream.type]["duration"].append(float(stream.duration * stream.time_base))
                 metadata[stream.type][rate_n].append(float(rate))

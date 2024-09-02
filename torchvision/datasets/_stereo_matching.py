@@ -58,7 +58,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
     def _read_img(self, file_path: Union[str, Path]) -> Image.Image:
         img = Image.open(file_path)
         if img.mode != "RGB":
-            img = img.convert("RGB")
+            img = img.convert("RGB")  # type: ignore [assignment]
         return img
 
     def _scan_pairs(

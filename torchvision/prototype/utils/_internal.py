@@ -99,7 +99,7 @@ def fromfile(
 
 class ReadOnlyTensorBuffer:
     def __init__(self, tensor: torch.Tensor) -> None:
-        self._memory = memoryview(tensor.numpy())
+        self._memory = memoryview(tensor.numpy())  # type: ignore[arg-type]
         self._cursor: int = 0
 
     def tell(self) -> int:

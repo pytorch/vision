@@ -1,15 +1,14 @@
 #pragma once
 
 #include <torch/types.h>
-#include "../image_read_mode.h"
+#include "../common.h"
 
 namespace vision {
 namespace image {
 
-C10_EXPORT torch::Tensor decode_jpeg_cuda(
+C10_EXPORT torch::Tensor decode_heic(
     const torch::Tensor& data,
-    ImageReadMode mode,
-    torch::Device device);
+    ImageReadMode mode = IMAGE_READ_MODE_UNCHANGED);
 
 } // namespace image
 } // namespace vision

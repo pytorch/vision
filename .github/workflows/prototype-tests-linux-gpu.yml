@@ -1,5 +1,8 @@
 name: Prototype tests on Linux
 
+# IMPORTANT: This workflow has been manually disabled from the GitHub interface
+# in June 2024. The file is kept for reference in case we ever put this back.
+
 on:
   pull_request:
 
@@ -8,7 +11,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
@@ -16,7 +18,7 @@ jobs:
         runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:
-          - python-version: "3.8"
+          - python-version: "3.9"
             runner: linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"

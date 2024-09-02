@@ -188,7 +188,7 @@ class Cityscapes(VisionDataset):
             if t == "polygon":
                 target = self._load_json(self.targets[index][i])
             else:
-                target = Image.open(self.targets[index][i])
+                target = Image.open(self.targets[index][i])  # type: ignore[assignment]
 
             targets.append(target)
 

@@ -1,40 +1,22 @@
 # In[1]:
-
-# imports and set configuration
 import pandas as pd
-from retrieve_prs_data import run
-
-exclude_prototype = True
-data_filename = "10.0_to_11.0-rc2.json"
-previous_release = "v10.0"
-current_release = "v11.0-rc2"
 
 # In[2]:
-
-
+data_filename = "data.json"
 df = pd.read_json(data_filename).T
 df.tail()
 
-
 # In[3]:
-
-
 all_labels = {lbl for labels in df["labels"] for lbl in labels}
 all_labels
 
-
 # In[4]:
-
-
 # Add one column per label
 for label in all_labels:
     df[label] = df["labels"].apply(lambda labels_list: label in labels_list)
 df.head()
 
-
 # In[5]:
-
-
 # Add a clean "module" column. It contains tuples since PRs can have more than one module.
 # Maybe we should include "topics" in that column as well?
 
@@ -51,24 +33,15 @@ for i, row in df.iterrows():
 df["module"] = df.module.apply(tuple)
 df.head()
 
-
 # In[6]:
-
-
 mod_df = df.set_index("module").sort_index()
 mod_df.tail()
 
-
 # In[7]:
-
-
 # All improvement PRs
 mod_df[mod_df["enhancement"]].head()
 
-
 # In[8]:
-
-
 # improvement f module
 # note: don't filter module name on the index as the index contain tuples with non-exclusive values
 # Use the boolean column instead
@@ -76,12 +49,10 @@ mod_df[mod_df["enhancement"] & mod_df["module: transforms"]]
 
 
 # In[9]:
-
-
-def format_prs(mod_df):
+def format_prs(mod_df, exclude_prototype=True):
     out = []
     for idx, row in mod_df.iterrows():
-        if exclude_prototype and row["prototype"]:
+        if exclude_prototype and "prototype" in row and row["prototype"]:
             continue
         modules = idx
         # Put "documentation" and "tests" first for sorting to be dece
@@ -98,8 +69,6 @@ def format_prs(mod_df):
 
 
 # In[10]:
-
-
 included_prs = pd.DataFrame()
 
 # If labels are accurate, this shouhld generate most of the release notes already
@@ -112,27 +81,40 @@ for section_title, module_idx in (
     ("Bug Fixes", "bug"),
     ("Code Quality", "code quality"),
 ):
-    print(f"## {section_title}")
-    print()
-    tmp_df = mod_df[mod_df[module_idx]]
-    included_prs = pd.concat([included_prs, tmp_df])
-    print(format_prs(tmp_df))
-    print()
+    if module_idx in mod_df:
+        print(f"## {section_title}")
+        print()
+        tmp_df = mod_df[mod_df[module_idx]]
+        included_prs = pd.concat([included_prs, tmp_df])
+        print(format_prs(tmp_df))
+        print()
 
 
 # In[11]:
-
-
 # Missing PRs are these ones... classify them manually
 missing_prs = pd.concat([mod_df, included_prs]).drop_duplicates(subset="pr_number", keep=False)
 print(format_prs(missing_prs))
 
 # In[12]:
-
 # Generate list of contributors
 print()
 print("## Contributors")
 
-command_to_run = f"{{ git shortlog -s {previous_release}..{current_release} | cut -f2- & git log -s {previous_release}..{current_release} | grep Co-authored | cut -f2- -d: | cut -f1 -d\\< | sed 's/^ *//;s/ *$//' ; }} | sort --ignore-case | uniq | tr '\\n' ';' | sed 's/;/, /g;s/, $//' | fold -s"
-rc, output, err = run(command_to_run)
-print(output)
+previous_release = "c35d3855ccbfa6a36e6ae6337a1f2c721c1f1e78"
+current_release = "5181a854d8b127cf465cd22a67c1b5aaf6ccae05"
+print(
+    f"{{ git shortlog -s {previous_release}..{current_release} | cut -f2- & git log -s {previous_release}..{current_release} | grep Co-authored | cut -f2- -d: | cut -f1 -d\\< | sed 's/^ *//;s/ *//' ; }} | sort --ignore-case | uniq | tr '\\n' ';' | sed 's/;/, /g;s/,//' | fold -s"
+)
+
+# In[13]:
+# Utility to extract PR numbers only from multiple lines, useful to bundle all
+# the docs changes for example:
+import re
+
+s = """
+
+[] Remove unnecessary dependency from macOS/Conda binaries (#8077)
+[rocm] [ROCm] remove HCC references (#8070)
+"""
+
+print(", ".join(re.findall("(#\\d+)", s)))

@@ -351,6 +351,7 @@ Color
     v2.RGB
     v2.RandomGrayscale
     v2.GaussianBlur
+    v2.GaussianNoise
     v2.RandomInvert
     v2.RandomPosterize
     v2.RandomSolarize
@@ -369,6 +370,7 @@ Functionals
     v2.functional.grayscale_to_rgb
     v2.functional.to_grayscale
     v2.functional.gaussian_blur
+    v2.functional.gaussian_noise
     v2.functional.invert
     v2.functional.posterize
     v2.functional.solarize

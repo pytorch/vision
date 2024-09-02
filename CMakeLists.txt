@@ -7,7 +7,12 @@ option(WITH_CUDA "Enable CUDA support" OFF)
 option(WITH_MPS "Enable MPS support" OFF)
 option(WITH_PNG "Enable features requiring LibPNG." ON)
 option(WITH_JPEG "Enable features requiring LibJPEG." ON)
-option(USE_PYTHON "Link to Python when building" OFF)
+# Libwebp is disabled by default, which means enabling it from cmake is largely
+# untested. Since building from cmake is very low pri anyway, this is OK. If
+# you're a user and you need this, please open an issue (and a PR!).
+option(WITH_WEBP "Enable features requiring LibWEBP." OFF)
+# Same here
+option(WITH_AVIF "Enable features requiring LibAVIF." OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)
@@ -33,9 +38,14 @@ if (WITH_JPEG)
     find_package(JPEG REQUIRED)
 endif()
 
-if (USE_PYTHON)
-  add_definitions(-DUSE_PYTHON)
-  find_package(Python3 REQUIRED COMPONENTS Development)
+if (WITH_WEBP)
+    add_definitions(-DWEBP_FOUND)
+    find_package(WEBP REQUIRED)
+endif()
+
+if (WITH_AVIF)
+    add_definitions(-DAVIF_FOUND)
+    find_package(AVIF REQUIRED)
 endif()
 
 function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
@@ -80,7 +90,7 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 set(TVCPP torchvision/csrc)
-list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/models ${TVCPP}/ops
+list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/io/image/cpu/giflib ${TVCPP}/models ${TVCPP}/ops
   ${TVCPP}/ops/autograd ${TVCPP}/ops/cpu ${TVCPP}/io/image/cuda)
 if(WITH_CUDA)
     list(APPEND ALLOW_LISTED ${TVCPP}/ops/cuda ${TVCPP}/ops/autocast)
@@ -110,8 +120,12 @@ if (WITH_JPEG)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${JPEG_LIBRARIES})
 endif()
 
-if (USE_PYTHON)
-  target_link_libraries(${PROJECT_NAME} PRIVATE Python3::Python)
+if (WITH_WEBP)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${WEBP_LIBRARIES})
+endif()
+
+if (WITH_AVIF)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${AVIF_LIBRARIES})
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -126,6 +140,14 @@ endif()
 
 if (WITH_JPEG)
     include_directories(${JPEG_INCLUDE_DIRS})
+endif()
+
+if (WITH_WEBP)
+    include_directories(${WEBP_INCLUDE_DIRS})
+endif()
+
+if (WITH_AVIF)
+    include_directories(${AVIF_INCLUDE_DIRS})
 endif()
 
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")

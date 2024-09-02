@@ -359,11 +359,14 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
     def segmentation_to_mask(segmentation, *, canvas_size):
         from pycocotools import mask
 
-        segmentation = (
-            mask.frPyObjects(segmentation, *canvas_size)
-            if isinstance(segmentation, dict)
-            else mask.merge(mask.frPyObjects(segmentation, *canvas_size))
-        )
+        if isinstance(segmentation, dict):
+            # if counts is a string, it is already an encoded RLE mask
+            if not isinstance(segmentation["counts"], str):
+                segmentation = mask.frPyObjects(segmentation, *canvas_size)
+        elif isinstance(segmentation, list):
+            segmentation = mask.merge(mask.frPyObjects(segmentation, *canvas_size))
+        else:
+            raise ValueError(f"COCO segmentation expected to be a dict or a list, got {type(segmentation)}")
         return torch.from_numpy(mask.decode(segmentation))
 
     def wrapper(idx, sample):
