@@ -67,7 +67,7 @@ torch::Tensor decode_image(
   TORCH_CHECK(data.numel() >= 15, err_msg);
   if ((memcmp(webp_signature_begin, datap, 4) == 0) &&
       (memcmp(webp_signature_end, datap + 8, 7) == 0)) {
-    return decode_webp(data);
+    return decode_webp(data, mode);
   }
 
   TORCH_CHECK(false, err_msg);
