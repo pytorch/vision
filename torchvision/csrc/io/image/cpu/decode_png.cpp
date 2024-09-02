@@ -1,4 +1,5 @@
 #include "decode_png.h"
+#include "../common.h"
 #include "common_png.h"
 #include "exif.h"
 
@@ -27,12 +28,8 @@ torch::Tensor decode_png(
     ImageReadMode mode,
     bool apply_exif_orientation) {
   C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.decode_png.decode_png");
-  // Check that the input tensor dtype is uint8
-  TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
-  // Check that the input tensor is 1-dimensional
-  TORCH_CHECK(
-      data.dim() == 1 && data.numel() > 0,
-      "Expected a non empty 1-dimensional tensor");
+
+  validate_encoded_data(data);
 
   auto png_ptr =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);

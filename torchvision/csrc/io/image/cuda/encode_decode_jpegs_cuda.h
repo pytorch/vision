@@ -1,7 +1,7 @@
 #pragma once
 
 #include <torch/types.h>
-#include "../image_read_mode.h"
+#include "../common.h"
 #include "decode_jpegs_cuda.h"
 #include "encode_jpegs_cuda.h"
 
