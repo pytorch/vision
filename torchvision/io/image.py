@@ -417,5 +417,31 @@ def _decode_avif(
         Decoded image (Tensor[image_channels, image_height, image_width])
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(decode_webp)
+        _log_api_usage_once(_decode_avif)
     return torch.ops.image.decode_avif(input, mode.value)
+
+
+def _decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+    """
+    Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
+
+    The values of the output tensor are in uint8 in [0, 255] for most images. If
+    the image has a bit-depth of more than 8, then the output tensor is uint16
+    in [0, 65535]. Since uint16 support is limited in pytorch, we recommend
+    calling :func:`torchvision.transforms.v2.functional.to_dtype()` with
+    ``scale=True`` after this function to convert the decoded image into a uint8
+    or float tensor.
+
+    Args:
+        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
+            the raw bytes of the HEIC image.
+        mode (ImageReadMode): The read mode used for optionally
+            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.
+            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.
+
+    Returns:
+        Decoded image (Tensor[image_channels, image_height, image_width])
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(_decode_heic)
+    return torch.ops.image.decode_heic(input, mode.value)
