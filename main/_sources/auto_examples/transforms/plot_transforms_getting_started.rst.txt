@@ -37,14 +37,14 @@ First, a bit of setup
     plt.rcParams["savefig.bbox"] = 'tight'
 
     from torchvision.transforms import v2
-    from torchvision.io import read_image
+    from torchvision.io import decode_image
 
     torch.manual_seed(1)
 
     # If you're trying to run that on Colab, you can download the assets and the
     # helpers from https://github.com/pytorch/vision/tree/main/gallery/
     from helpers import plot
-    img = read_image(str(Path('../assets') / 'astronaut.jpg'))
+    img = decode_image(str(Path('../assets') / 'astronaut.jpg'))
     print(f"{type(img) = }, {img.dtype = }, {img.shape = }")
 
 
@@ -400,7 +400,7 @@ Either way, the logic will depend on your specific dataset.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.803 seconds)
+   **Total running time of the script:** (0 minutes 0.847 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_getting_started.py:

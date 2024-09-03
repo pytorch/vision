@@ -6,4 +6,5 @@
 read_image
 ==========
 
-.. autofunction:: read_image
+.. autoclass:: read_image
+    :members:

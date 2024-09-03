@@ -69,11 +69,11 @@ image of dtype ``uint8`` as input.
 
 
     from torchvision.utils import make_grid
-    from torchvision.io import read_image
+    from torchvision.io import decode_image
     from pathlib import Path
 
-    dog1_int = read_image(str(Path('../assets') / 'dog1.jpg'))
-    dog2_int = read_image(str(Path('../assets') / 'dog2.jpg'))
+    dog1_int = decode_image(str(Path('../assets') / 'dog1.jpg'))
+    dog2_int = decode_image(str(Path('../assets') / 'dog2.jpg'))
     dog_list = [dog1_int, dog2_int]
 
     grid = make_grid(dog_list)
@@ -758,9 +758,9 @@ We will first have a look at output of the model.
 
 
     from torchvision.models.detection import keypointrcnn_resnet50_fpn, KeypointRCNN_ResNet50_FPN_Weights
-    from torchvision.io import read_image
+    from torchvision.io import decode_image
 
-    person_int = read_image(str(Path("../assets") / "person1.jpg"))
+    person_int = decode_image(str(Path("../assets") / "person1.jpg"))
 
     weights = KeypointRCNN_ResNet50_FPN_Weights.DEFAULT
     transforms = weights.transforms()
@@ -1162,7 +1162,7 @@ which we used in the first case, does so too.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 14.122 seconds)
+   **Total running time of the script:** (0 minutes 16.488 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_visualization_utils.py:
