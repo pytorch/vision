@@ -19,7 +19,6 @@ For encoding, JPEG (cpu and CUDA) and PNG are supported.
     :toctree: generated/
     :template: function.rst
 
-    read_image
     decode_image
     encode_jpeg
     decode_jpeg
@@ -38,6 +37,13 @@ For encoding, JPEG (cpu and CUDA) and PNG are supported.
 
     ImageReadMode
 
+Obsolete decoding function:
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    read_image
 
 
 Video
