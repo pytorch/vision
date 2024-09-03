@@ -1044,5 +1044,26 @@ def test_decode_heic(decode_fun, scripted):
     img += 123  # make sure image buffer wasn't freed by underlying decoding lib
 
 
+@pytest.mark.parametrize("input_type", ("Path", "str", "tensor"))
+@pytest.mark.parametrize("scripted", (False, True))
+def test_decode_image_path(input_type, scripted):
+    # Check that decode_image can support not just tensors as input
+    path = next(get_images(IMAGE_ROOT, ".jpg"))
+    if input_type == "Path":
+        input = Path(path)
+    elif input_type == "str":
+        input = path
+    elif input_type == "tensor":
+        input = read_file(path)
+    else:
+        raise ValueError("Oops")
+
+    if scripted and input_type == "Path":
+        pytest.xfail(reason="Can't pass a Path when scripting")
+
+    decode_fun = torch.jit.script(decode_image) if scripted else decode_image
+    decode_fun(input)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
