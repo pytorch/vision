@@ -22,7 +22,6 @@ USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_HEIC = os.getenv("TORCHVISION_USE_HEIC", "0") == "1"  # TODO enable by default!
 USE_AVIF = os.getenv("TORCHVISION_USE_AVIF", "0") == "1"  # TODO enable by default!
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
-USE_NVJPEG = False
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # Note: the GPU video decoding stuff used to be called "video codec", which
 # isn't an accurate or descriptive name considering there are at least 2 other
