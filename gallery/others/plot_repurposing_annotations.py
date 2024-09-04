@@ -66,12 +66,12 @@ def show(imgs):
 # We will take images and masks from the `PenFudan Dataset <https://www.cis.upenn.edu/~jshi/ped_html/>`_.
 
 
-from torchvision.io import read_image
+from torchvision.io import decode_image
 
 img_path = os.path.join(ASSETS_DIRECTORY, "FudanPed00054.png")
 mask_path = os.path.join(ASSETS_DIRECTORY, "FudanPed00054_mask.png")
-img = read_image(img_path)
-mask = read_image(mask_path)
+img = decode_image(img_path)
+mask = decode_image(mask_path)
 
 
 # %%
@@ -181,8 +181,8 @@ class SegmentationToDetectionDataset(torch.utils.data.Dataset):
         img_path = os.path.join(self.root, "PNGImages", self.imgs[idx])
         mask_path = os.path.join(self.root, "PedMasks", self.masks[idx])
 
-        img = read_image(img_path)
-        mask = read_image(mask_path)
+        img = decode_image(img_path)
+        mask = decode_image(mask_path)
 
         img = F.convert_image_dtype(img, dtype=torch.float)
         mask = F.convert_image_dtype(mask, dtype=torch.float)
