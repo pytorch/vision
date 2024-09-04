@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+d0ebeb5) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+838ad6c) &#x25BC</a>
     </div>
     
 
@@ -434,7 +434,8 @@
     <span class="n">GRAY</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">GRAY_ALPHA</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">RGB</span> <span class="o">=</span> <span class="mi">3</span>
-    <span class="n">RGB_ALPHA</span> <span class="o">=</span> <span class="mi">4</span></div>
+    <span class="n">RGB_ALPHA</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">RGBA</span> <span class="o">=</span> <span class="n">RGB_ALPHA</span>  <span class="c1"># Alias for convenience</span></div>
 
 
 <div class="viewcode-block" id="read_file"><a class="viewcode-back" href="../../../generated/torchvision.io.read_file.html#torchvision.io.read_file">[docs]</a><span class="k">def</span> <span class="nf">read_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -487,7 +488,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the PNG image.</span>
-<span class="sd">        mode (ImageReadMode): the read mode used for optionally</span>
+<span class="sd">        mode (str or ImageReadMode): the read mode used for optionally</span>
 <span class="sd">            converting the image. Default: ``ImageReadMode.UNCHANGED``.</span>
 <span class="sd">            See `ImageReadMode` class for more information on various</span>
 <span class="sd">            available modes.</span>
@@ -499,6 +500,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_png</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">output</span></div>
 
@@ -563,7 +566,7 @@
 <span class="sd">        input (Tensor[1] or list[Tensor[1]]): a (list of) one dimensional uint8 tensor(s) containing</span>
 <span class="sd">            the raw bytes of the JPEG image. The tensor(s) must be on CPU,</span>
 <span class="sd">            regardless of the ``device`` parameter.</span>
-<span class="sd">        mode (ImageReadMode): the read mode used for optionally</span>
+<span class="sd">        mode (str or ImageReadMode): the read mode used for optionally</span>
 <span class="sd">            converting the image(s). The supported modes are: ``ImageReadMode.UNCHANGED``,</span>
 <span class="sd">            ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``</span>
 <span class="sd">            Default: ``ImageReadMode.UNCHANGED``.</span>
@@ -593,6 +596,8 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_jpeg</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -693,7 +698,7 @@
 <span class="sd">        input (Tensor or str or ``pathlib.Path``): The image to decode. If a</span>
 <span class="sd">            tensor is passed, it must be one dimensional uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the image. Otherwise, this must be a path to the image file.</span>
-<span class="sd">        mode (ImageReadMode): the read mode used for optionally converting the image.</span>
+<span class="sd">        mode (str or ImageReadMode): the read mode used for optionally converting the image.</span>
 <span class="sd">            Default: ``ImageReadMode.UNCHANGED``.</span>
 <span class="sd">            See ``ImageReadMode`` class for more information on various</span>
 <span class="sd">            available modes. Only applies to JPEG and PNG images.</span>
@@ -707,6 +712,8 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_image</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="nb">input</span> <span class="o">=</span> <span class="n">read_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_image</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">output</span></div>
 
@@ -755,7 +762,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the WEBP image.</span>
-<span class="sd">        mode (ImageReadMode): The read mode used for optionally</span>
+<span class="sd">        mode (str or ImageReadMode): The read mode used for optionally</span>
 <span class="sd">            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.</span>
 <span class="sd">            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.</span>
 
@@ -764,6 +771,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_webp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_webp</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 
 
@@ -784,7 +793,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the AVIF image.</span>
-<span class="sd">        mode (ImageReadMode): The read mode used for optionally</span>
+<span class="sd">        mode (str or ImageReadMode): The read mode used for optionally</span>
 <span class="sd">            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.</span>
 <span class="sd">            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.</span>
 
@@ -793,6 +802,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">_decode_avif</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 
 
@@ -810,7 +821,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the HEIC image.</span>
-<span class="sd">        mode (ImageReadMode): The read mode used for optionally</span>
+<span class="sd">        mode (str or ImageReadMode): The read mode used for optionally</span>
 <span class="sd">            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.</span>
 <span class="sd">            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.</span>
 
@@ -819,6 +830,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">_decode_heic</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 
