@@ -1065,5 +1065,16 @@ def test_decode_image_path(input_type, scripted):
     decode_fun(input)
 
 
+def test_mode_str():
+    # Make sure decode_image supports string modes. We just test decode_image,
+    # not all of the decoding functions, but they should all support that too.
+    # Torchscript fails when passing strings, which is expected.
+    path = next(get_images(IMAGE_ROOT, ".png"))
+    assert decode_image(path, mode="RGB").shape[0] == 3
+    assert decode_image(path, mode="rGb").shape[0] == 3
+    assert decode_image(path, mode="GRAY").shape[0] == 1
+    assert decode_image(path, mode="RGBA").shape[0] == 4
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
