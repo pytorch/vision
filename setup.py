@@ -366,7 +366,7 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without AVIF support")
 
-    if USE_NVJPEG and torch.cuda.is_available():
+    if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
 
         if nvjpeg_found:
@@ -376,6 +376,8 @@ def make_image_extension():
             Extension = CUDAExtension
         else:
             warnings.warn("Building torchvision without NVJPEG support")
+    elif USE_NVJPEG:
+        warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
         name="torchvision.image",
