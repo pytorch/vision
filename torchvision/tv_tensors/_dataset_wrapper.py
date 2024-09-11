@@ -384,12 +384,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         coco_ann = dataset.coco.imgToAnns[image_id]
         if "masks" in target_keys:
             target["masks"] = tv_tensors.Mask(
-                torch.stack(
-                    [
-                        torch.from_numpy(dataset.coco.annToMask(ann))
-                        for ann in coco_ann
-                    ]
-                ),
+                torch.stack([torch.from_numpy(dataset.coco.annToMask(ann)) for ann in coco_ann]),
             )
 
         if "labels" in target_keys:
