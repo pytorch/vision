@@ -376,7 +376,7 @@ def make_image_extension():
             Extension = CUDAExtension
         else:
             warnings.warn("Building torchvision without NVJPEG support")
-    else if USE_NVJPEG:
+    elif USE_NVJPEG:
         warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
