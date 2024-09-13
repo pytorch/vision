@@ -26,14 +26,14 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.5
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: release/2.5
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -53,12 +53,12 @@ jobs:
           - "3.12"
         runner: ["macos-m1-stable"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml@release/2.5
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
       timeout: 240
       runner: ${{ matrix.runner }}
-      test-infra-ref: release/2.5
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -84,14 +84,14 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/windows_job.yml@release/2.5
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: release/2.5
+      test-infra-ref: main
       script: |
         set -euxo pipefail
 
@@ -104,10 +104,10 @@ jobs:
         ./.github/scripts/unittest.sh
 
   onnx:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.5
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
-      test-infra-ref: release/2.5
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
@@ -135,11 +135,11 @@ jobs:
         echo '::endgroup::'
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@release/2.5
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     if: contains(github.event.pull_request.labels.*.name, 'run-extended')
     with:
       repository: pytorch/vision
-      test-infra-ref: release/2.5
+      test-infra-ref: main
       script: |
         set -euo pipefail
 
