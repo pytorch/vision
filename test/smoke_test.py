@@ -6,7 +6,7 @@ from pathlib import Path
 
 import torch
 import torchvision
-from torchvision.io import decode_jpeg, decode_webp, read_file, read_image
+from torchvision.io import decode_image, decode_jpeg, decode_webp, read_file
 from torchvision.models import resnet50, ResNet50_Weights
 
 
@@ -21,13 +21,13 @@ def smoke_test_torchvision() -> None:
 
 
 def smoke_test_torchvision_read_decode() -> None:
-    img_jpg = read_image(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
+    img_jpg = decode_image(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
     if img_jpg.shape != (3, 606, 517):
         raise RuntimeError(f"Unexpected shape of img_jpg: {img_jpg.shape}")
-    img_png = read_image(str(SCRIPT_DIR / "assets" / "interlaced_png" / "wizard_low.png"))
+    img_png = decode_image(str(SCRIPT_DIR / "assets" / "interlaced_png" / "wizard_low.png"))
     if img_png.shape != (4, 471, 354):
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
-    img_webp = read_image(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.webp"))
+    img_webp = decode_image(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.webp"))
     if img_webp.shape != (3, 100, 100):
         raise RuntimeError(f"Unexpected shape of img_webp: {img_webp.shape}")
 
@@ -54,7 +54,7 @@ def smoke_test_compile() -> None:
 
 
 def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
-    img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
+    img = decode_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
 
     # Step 1: Initialize model with the best available weights
     weights = ResNet50_Weights.DEFAULT
