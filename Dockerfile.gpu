@@ -1,0 +1,17 @@
+FROM pytorch/pytorch:1.7.0-cuda11.0-cudnn8-devel
+
+RUN apt-get update && apt-get install -y libjpeg-dev libpng-dev build-essential git
+
+RUN pip3 install --upgrade pip
+RUN pip3 install aiofiles aiohttp auditwheel av defusedxml docutils gdown h5py ipython lmdb matplotlib numpy pandas Pillow pycocotools pytest pytorch_sphinx_theme Requests scipy setuptools Sphinx sphinx_gallery tabulate torchdata tqdm
+
+ENV FORCE_CUDA="1"
+ENV TORCH_CUDA_ARCH_LIST="3.5 5.2 6.0 6.1 7.0+PTX"
+ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
+
+COPY . /workspace
+WORKDIR /workspace
+RUN chmod +x /workspace/setup.py
+RUN python3 /workspace/setup.py develop
+
+CMD ["tail", "-f", "/dev/null"]

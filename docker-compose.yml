@@ -1,0 +1,44 @@
+# for mac arm chips see:
+# - https://docs.docker.com/desktop/troubleshoot/known-issues/
+
+# for nvidia gpus see:
+# - https://github.com/NVIDIA/nvidia-container-toolkit
+# - https://docs.docker.com/compose/gpu-support/
+
+# compiling pip dependencies:
+# 
+#   $ pipreqs . --mode no-pin --encoding utf-8
+#   $ mv requirements.txt requirements.in
+#   $ pip-compile requirements.in -o requirements.txt -vvv
+
+# usage: cpu
+# 
+#   $ docker-compose build
+#   $ docker-compose up
+
+# usage: gpu
+# 
+#   $ BUILD_TYPE=gpu docker-compose build
+#   $ BUILD_TYPE=gpu docker-compose up
+
+services:
+    main:
+      container_name: main
+      volumes:
+        - type: bind
+          source: .
+          target: /workspace
+      working_dir: /workspace
+      build:
+        context: .
+        dockerfile: Dockerfile.${DOCKER_FILE_SUFFIX:-cpu}
+      deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: all
+                capabilities: [gpu]
+      environment:
+        - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all}
+        - NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
