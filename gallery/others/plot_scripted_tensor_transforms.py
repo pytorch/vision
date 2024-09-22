@@ -21,7 +21,7 @@ import torch
 import torch.nn as nn
 
 import torchvision.transforms as v1
-from torchvision.io import read_image
+from torchvision.io import decode_image
 
 plt.rcParams["savefig.bbox"] = 'tight'
 torch.manual_seed(1)
@@ -39,8 +39,8 @@ ASSETS_PATH = Path('../assets')
 # :class:`torch.nn.Sequential` instead of
 # :class:`~torchvision.transforms.v2.Compose`:
 
-dog1 = read_image(str(ASSETS_PATH / 'dog1.jpg'))
-dog2 = read_image(str(ASSETS_PATH / 'dog2.jpg'))
+dog1 = decode_image(str(ASSETS_PATH / 'dog1.jpg'))
+dog2 = decode_image(str(ASSETS_PATH / 'dog2.jpg'))
 
 transforms = torch.nn.Sequential(
     v1.RandomCrop(224),
