@@ -14,11 +14,14 @@ concurrency:
 
 jobs:
   do_update_viablestrict:
-    uses: pytorch/test-infra/.github/workflows/update-viablestrict.yml@main
-    with:
-      repository: pytorch/vision
-      required_checks: "Build Linux,Build M1,Build Macos,Build Windows,Tests,CMake,Lint,Docs"
-      test-infra-ref: main
-    secrets:
-      ROCKSET_API_KEY: ${{ secrets.ROCKSET_API_KEY }}
-      GITHUB_DEPLOY_KEY : ${{ secrets.VISION_GITHUB_DEPLOY_KEY }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Update viable/strict
+        uses: pytorch/test-infra/.github/actions/update-viablestrict@main
+        with:
+          repository: pytorch/vision
+          stable-branch: viable/strict
+          test-infra-ref: main
+          requires: '[\"Build Linux\",\"Build M1\",\"Build Macos\",\"Build Windows\",\"Tests\",\"CMake\",\"Lint\",\"Docs\"]'
+          rockset-api-key: ${{ secrets.ROCKSET_API_KEY }}
+          secret-bot-token: ${{ secrets.VISION_GITHUB_DEPLOY_KEY }}
