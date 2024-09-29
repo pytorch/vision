@@ -28,7 +28,9 @@ class Transform(nn.Module):
         for inpt in flat_inputs:
             # Raise exception if the input type is not torch.Tensor or PIL.Image.Image
             if not isinstance(inpt, (torch.Tensor, PIL.Image.Image)):
-                raise TypeError(f"Unsupported input type {type(inpt)}. Expected types are PIL.Image.Image or torch.Tensor.")
+                raise TypeError(
+                    f"Unsupported input type {type(inpt)}. Expected types are PIL.Image.Image or torch.Tensor."
+                )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict()
