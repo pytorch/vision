@@ -71,7 +71,7 @@ Chosen video statistics:
 
  .. code-block:: none
 
-    Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/WUzgd7C1pWA.mp4 to ./WUzgd7C1pWA.mp4
+    Downloading https://raw.githubusercontent.com/pytorch/vision/refs/heads/main/test/assets/videos/WUzgd7C1pWA.mp4 to ./WUzgd7C1pWA.mp4
     3.7%    7.4%    11.1%    14.7%    18.4%    22.1%    25.8%    29.5%    33.2%    36.8%    40.5%    44.2%    47.9%    51.6%    55.3%    58.9%    62.6%    66.3%    70.0%    73.7%    77.4%    81.0%    84.7%    88.4%    92.1%    95.8%    99.5%    100.0%
 
 
@@ -376,15 +376,15 @@ Download the videos
 
  .. code-block:: none
 
-    Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/WUzgd7C1pWA.mp4 to ./dataset/1/WUzgd7C1pWA.mp4
+    Downloading https://raw.githubusercontent.com/pytorch/vision/refs/heads/main/test/assets/videos/WUzgd7C1pWA.mp4 to ./dataset/1/WUzgd7C1pWA.mp4
     3.7%    7.4%    11.1%    14.7%    18.4%    22.1%    25.8%    29.5%    33.2%    36.8%    40.5%    44.2%    47.9%    51.6%    55.3%    58.9%    62.6%    66.3%    70.0%    73.7%    77.4%    81.0%    84.7%    88.4%    92.1%    95.8%    99.5%    100.0%
-    Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/RATRACE_wave_f_nm_np1_fr_goo_37.avi to ./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi
+    Downloading https://raw.githubusercontent.com/pytorch/vision/refs/heads/main/test/assets/videos/RATRACE_wave_f_nm_np1_fr_goo_37.avi to ./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi
     12.4%    24.9%    37.3%    49.7%    62.1%    74.6%    87.0%    99.4%    100.0%
-    Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/SOX5yA1l24A.mp4 to ./dataset/2/SOX5yA1l24A.mp4
+    Downloading https://raw.githubusercontent.com/pytorch/vision/refs/heads/main/test/assets/videos/SOX5yA1l24A.mp4 to ./dataset/2/SOX5yA1l24A.mp4
     5.8%    11.7%    17.5%    23.4%    29.2%    35.1%    40.9%    46.8%    52.6%    58.5%    64.3%    70.2%    76.0%    81.9%    87.7%    93.6%    99.4%    100.0%
-    Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/v_SoccerJuggling_g23_c01.avi to ./dataset/2/v_SoccerJuggling_g23_c01.avi
+    Downloading https://raw.githubusercontent.com/pytorch/vision/refs/heads/main/test/assets/videos/v_SoccerJuggling_g23_c01.avi to ./dataset/2/v_SoccerJuggling_g23_c01.avi
     6.4%    12.9%    19.3%    25.8%    32.2%    38.7%    45.1%    51.6%    58.0%    64.5%    70.9%    77.3%    83.8%    90.2%    96.7%    100.0%
-    Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/v_SoccerJuggling_g24_c01.avi to ./dataset/2/v_SoccerJuggling_g24_c01.avi
+    Downloading https://raw.githubusercontent.com/pytorch/vision/refs/heads/main/test/assets/videos/v_SoccerJuggling_g24_c01.avi to ./dataset/2/v_SoccerJuggling_g24_c01.avi
     5.3%    10.5%    15.8%    21.0%    26.3%    31.6%    36.8%    42.1%    47.3%    52.6%    57.9%    63.1%    68.4%    73.6%    78.9%    84.2%    89.4%    94.7%    99.9%    100.0%
 
 
@@ -549,7 +549,7 @@ We can generate a dataloader and test the dataset.
 
  .. code-block:: none
 
-    {'video': ['./dataset/2/SOX5yA1l24A.mp4', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/2/SOX5yA1l24A.mp4', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/SOX5yA1l24A.mp4'], 'start': [10.492229152107171, 0.35101958399536487, 10.221040898488097, 7.391992643078302, 7.548755149689394], 'end': [11.011, 0.866667, 10.744067, 7.9079, 8.074733], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+    {'video': ['./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/SOX5yA1l24A.mp4'], 'start': [1.4504102959019827, 1.8157436417838422, 3.467805649249084, 9.77808873630209, 5.503889143734954], 'end': [1.966667, 2.333333, 3.970633, 10.3103, 6.005999999999999], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 
 
 
@@ -607,7 +607,7 @@ Cleanup the video and dataset:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.707 seconds)
+   **Total running time of the script:** (0 minutes 4.576 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_video_api.py:
