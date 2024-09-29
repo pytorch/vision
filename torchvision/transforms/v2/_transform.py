@@ -16,7 +16,7 @@ from .functional._utils import _get_kernel
 
 class Transform(nn.Module):
 
-    # Class attribute defining transformed types. Other types are passed-through without any transformation
+    # Class attribute defining transformed types. Other types cause exceptions.
     # We support both Types and callables that are able to do further checks on the type of the input.
     _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor, PIL.Image.Image)
 
@@ -25,7 +25,10 @@ class Transform(nn.Module):
         _log_api_usage_once(self)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        pass
+        for inpt in flat_inputs:
+            # Raise exception if the input type is not torch.Tensor or PIL.Image.Image
+            if not isinstance(inpt, (torch.Tensor, PIL.Image.Image)):
+                raise TypeError(f"Unsupported input type {type(inpt)}. Expected types are PIL.Image.Image or torch.Tensor.")
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict()
