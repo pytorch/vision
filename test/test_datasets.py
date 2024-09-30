@@ -2623,7 +2623,7 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
 
     ADDITIONAL_CONFIGS = combinations_grid(
         split=("trainval", "test"),
-        target_types=("category", "binary-category", "segmentation", ["category", "segmentation"], []),
+        target_types=("category", "binary-category", "detection", "binary-detection", "segmentation", ["category", "segmentation"], []),
     )
 
     def inject_fake_data(self, tmpdir, config):
