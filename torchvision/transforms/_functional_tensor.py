@@ -398,8 +398,8 @@ def pad(
                 f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
             )
 
-    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
-        raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
+    if padding_mode not in ["constant", "edge", "reflect", "symmetric", "circular"]:
+        raise ValueError("Padding mode should be either constant, edge, reflect, symmetric, or circular")
 
     p = _parse_pad_padding(padding)
 
@@ -424,7 +424,7 @@ def pad(
         need_cast = True
         img = img.to(torch.float32)
 
-    if padding_mode in ("reflect", "replicate"):
+    if padding_mode in ("reflect", "replicate", "circular"):
         img = torch_pad(img, p, mode=padding_mode)
     else:
         img = torch_pad(img, p, mode=padding_mode, value=float(fill))
