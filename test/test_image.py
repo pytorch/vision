@@ -4,6 +4,7 @@ import io
 import os
 import re
 import sys
+from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -13,6 +14,7 @@ import torch
 import torchvision.transforms.v2.functional as F
 from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
+from torchvision._internally_replaced_utils import IN_FBCODE
 from torchvision.io.image import (
     _decode_avif,
     _decode_heic,
@@ -1074,6 +1076,14 @@ def test_mode_str():
     assert decode_image(path, mode="rGb").shape[0] == 3
     assert decode_image(path, mode="GRAY").shape[0] == 1
     assert decode_image(path, mode="RGBA").shape[0] == 4
+
+
+def test_avif_heic_fbcode():
+    cm = nullcontext() if IN_FBCODE else pytest.raises(ImportError, match="cannot import")
+    with cm:
+        from torchvision.io import decode_heic  # noqa
+    with cm:
+        from torchvision.io import decode_avif  # noqa
 
 
 if __name__ == "__main__":
