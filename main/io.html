@@ -270,7 +270,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+f559edf) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+fc74637) &#x25BC</a>
     </div>
     
 
@@ -397,55 +397,53 @@
               
   <section id="decoding-encoding-images-and-videos">
 <h1>Decoding / Encoding images and videos<a class="headerlink" href="#decoding-encoding-images-and-videos" title="Permalink to this heading">¶</a></h1>
-<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.io</span></code> package provides functions for performing IO
-operations. They are currently specific to reading and writing images and
-videos.</p>
-<section id="images">
-<h2>Images<a class="headerlink" href="#images" title="Permalink to this heading">¶</a></h2>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.io</span></code> module provides utilities for decoding and encoding
+images and videos.</p>
+<section id="image-decoding">
+<h2>Image Decoding<a class="headerlink" href="#image-decoding" title="Permalink to this heading">¶</a></h2>
 <p>Torchvision currently supports decoding JPEG, PNG, WEBP and GIF images. JPEG
 decoding can also be done on CUDA GPUs.</p>
-<p>For encoding, JPEG (cpu and CUDA) and PNG are supported.</p>
+<p>The main entry point is the <a class="reference internal" href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image" title="torchvision.io.decode_image"><code class="xref py py-func docutils literal notranslate"><span class="pre">decode_image()</span></code></a> function, which
+you can use as an alternative to <code class="docutils literal notranslate"><span class="pre">PIL.Image.open()</span></code>. It will decode images
+straight into image Tensors, thus saving you the conversion and allowing you to
+run transforms/preproc natively on tensors.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">decode_image</span>
+
+<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;path_to_image&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;RGB&quot;</span><span class="p">)</span>
+<span class="n">img</span><span class="o">.</span><span class="n">dtype</span>  <span class="c1"># torch.uint8</span>
+
+<span class="c1"># Or</span>
+<span class="n">raw_encoded_bytes</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># read encoded bytes from your file system</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="n">raw_encoded_bytes</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;RGB&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image" title="torchvision.io.decode_image"><code class="xref py py-func docutils literal notranslate"><span class="pre">decode_image()</span></code></a> will automatically detect the image format,
+and call the corresponding decoder. You can also use the lower-level
+format-specific decoders which can be more powerful, e.g. if you want to
+encode/decode JPEGs on CUDA.</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image" title="torchvision.io.decode_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_image</span></code></a>(input[, mode, ...])</p></td>
-<td><p>Decode an image into a tensor.</p></td>
+<td><p>Decode an image into a uint8 tensor, from a path or from raw encoded bytes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg" title="torchvision.io.encode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_jpeg</span></code></a>(input[, quality])</p></td>
-<td><p>Takes a (list of) input tensor(s) in CHW layout and returns a (list of) buffer(s) with the contents of the corresponding JPEG file(s).</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg" title="torchvision.io.decode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_jpeg</span></code></a>(input[, mode, device, ...])</p></td>
-<td><p>Decode JPEG image(s) into 3 dimensional RGB or grayscale Tensor(s).</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg" title="torchvision.io.write_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_jpeg</span></code></a>(input, filename[, quality])</p></td>
-<td><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_gif.html#torchvision.io.decode_gif" title="torchvision.io.decode_gif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_gif</span></code></a>(input)</p></td>
-<td><p>Decode a GIF image into a 3 or 4 dimensional RGB Tensor.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_webp.html#torchvision.io.decode_webp" title="torchvision.io.decode_webp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_webp</span></code></a>(input[, mode])</p></td>
-<td><p>Decode a WEBP image into a 3 dimensional RGB[A] Tensor.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg" title="torchvision.io.decode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_jpeg</span></code></a>(input[, mode, device, ...])</p></td>
+<td><p>Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_png.html#torchvision.io.encode_png" title="torchvision.io.encode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_png</span></code></a>(input[, compression_level])</p></td>
 <td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding PNG file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_png.html#torchvision.io.decode_png" title="torchvision.io.decode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_png</span></code></a>(input[, mode, apply_exif_orientation])</p></td>
-<td><p>Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_gif.html#torchvision.io.decode_gif" title="torchvision.io.decode_gif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_gif</span></code></a>(input)</p></td>
+<td><p>Decode a GIF image into a 3 or 4 dimensional RGB Tensor.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_png.html#torchvision.io.write_png" title="torchvision.io.write_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_png</span></code></a>(input, filename[, compression_level])</p></td>
-<td><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images) and saves it in a PNG file.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.read_file.html#torchvision.io.read_file" title="torchvision.io.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(path)</p></td>
-<td><p>Reads and outputs the bytes contents of a file as a uint8 Tensor with one dimension.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_file.html#torchvision.io.write_file" title="torchvision.io.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(filename, data)</p></td>
-<td><p>Writes the contents of an uint8 tensor with one dimension to a file.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_webp.html#torchvision.io.decode_webp" title="torchvision.io.decode_webp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_webp</span></code></a>(input[, mode])</p></td>
+<td><p>Decode a WEBP image into a 3 dimensional RGB[A] Tensor.</p></td>
 </tr>
 </tbody>
 </table>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ImageReadMode</span></code></a>(value)</p></td>
-<td><p>Support for various modes while reading images.</p></td>
+<td><p>Allow automatic conversion to RGB, RGBA, etc while decoding.</p></td>
 </tr>
 </tbody>
 </table>
@@ -458,8 +456,49 @@ decoding can also be done on CUDA GPUs.</p>
 </tbody>
 </table>
 </section>
+<section id="image-encoding">
+<h2>Image Encoding<a class="headerlink" href="#image-encoding" title="Permalink to this heading">¶</a></h2>
+<p>For encoding, JPEG (cpu and CUDA) and PNG are supported.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg" title="torchvision.io.encode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_jpeg</span></code></a>(input[, quality])</p></td>
+<td><p>Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg" title="torchvision.io.write_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_jpeg</span></code></a>(input, filename[, quality])</p></td>
+<td><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_png.html#torchvision.io.encode_png" title="torchvision.io.encode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_png</span></code></a>(input[, compression_level])</p></td>
+<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding PNG file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_png.html#torchvision.io.write_png" title="torchvision.io.write_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_png</span></code></a>(input, filename[, compression_level])</p></td>
+<td><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images) and saves it in a PNG file.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="io-operations">
+<h2>IO operations<a class="headerlink" href="#io-operations" title="Permalink to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_file.html#torchvision.io.read_file" title="torchvision.io.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(path)</p></td>
+<td><p>Return the bytes contents of a file as a uint8 1D Tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_file.html#torchvision.io.write_file" title="torchvision.io.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(filename, data)</p></td>
+<td><p>Write the content of an uint8 1D tensor to a file.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="video">
 <h2>Video<a class="headerlink" href="#video" title="Permalink to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Torchvision supports video decoding through different APIs listed below,
+some of which are still in BETA stage. In the near future, we intend to
+centralize PyTorch’s video decoding capabilities within the <a class="reference external" href="https://github.com/pytorch/torchcodec">torchcodec</a> project. We encourage you to try
+it out and share your feedback, as the torchvision video decoders will
+eventually be deprecated.</p>
+</div>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_video.html#torchvision.io.read_video" title="torchvision.io.read_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_video</span></code></a>(filename[, start_pts, end_pts, ...])</p></td>
@@ -473,15 +512,10 @@ decoding can also be done on CUDA GPUs.</p>
 </tr>
 </tbody>
 </table>
-<section id="fine-grained-video-api">
-<h3>Fine-grained video API<a class="headerlink" href="#fine-grained-video-api" title="Permalink to this heading">¶</a></h3>
+<p><strong>Fine-grained video API</strong></p>
 <p>In addition to the <code class="xref py py-mod docutils literal notranslate"><span class="pre">read_video</span></code> function, we provide a high-performance
 lower-level API for more fine-grained control compared to the <code class="xref py py-mod docutils literal notranslate"><span class="pre">read_video</span></code> function.
 It does all this whilst fully supporting torchscript.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The fine-grained video API is in Beta stage, and backward compatibility is not guaranteed.</p>
-</div>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader" title="torchvision.io.VideoReader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VideoReader</span></code></a>(src[, stream, num_threads])</p></td>
@@ -489,32 +523,6 @@ It does all this whilst fully supporting torchscript.</p>
 </tr>
 </tbody>
 </table>
-<p>Example of inspecting a video:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision</span>
-<span class="n">video_path</span> <span class="o">=</span> <span class="s2">&quot;path to a test video&quot;</span>
-<span class="c1"># Constructor allocates memory and a threaded decoder</span>
-<span class="c1"># instance per video. At the moment it takes two arguments:</span>
-<span class="c1"># path to the video file, and a wanted stream.</span>
-<span class="n">reader</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">VideoReader</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">)</span>
-
-<span class="c1"># The information about the video can be retrieved using the</span>
-<span class="c1"># `get_metadata()` method. It returns a dictionary for every stream, with</span>
-<span class="c1"># duration and other relevant metadata (often frame rate)</span>
-<span class="n">reader_md</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span>
-
-<span class="c1"># metadata is structured as a dict of dicts with following structure</span>
-<span class="c1"># {&quot;stream_type&quot;: {&quot;attribute&quot;: [attribute per stream]}}</span>
-<span class="c1">#</span>
-<span class="c1"># following would print out the list of frame rates for every present video stream</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">reader_md</span><span class="p">[</span><span class="s2">&quot;video&quot;</span><span class="p">][</span><span class="s2">&quot;fps&quot;</span><span class="p">])</span>
-
-<span class="c1"># we explicitly select the stream we would like to operate on. In</span>
-<span class="c1"># the constructor we select a default video stream, but</span>
-<span class="c1"># in practice, we can set whichever stream we would like</span>
-<span class="n">video</span><span class="o">.</span><span class="n">set_current_stream</span><span class="p">(</span><span class="s2">&quot;video:0&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
 </section>
 </section>
 
@@ -562,11 +570,12 @@ It does all this whilst fully supporting torchscript.</p>
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">Decoding / Encoding images and videos</a><ul>
-<li><a class="reference internal" href="#images">Images</a><ul>
+<li><a class="reference internal" href="#image-decoding">Image Decoding</a><ul>
 </ul>
 </li>
+<li><a class="reference internal" href="#image-encoding">Image Encoding</a></li>
+<li><a class="reference internal" href="#io-operations">IO operations</a></li>
 <li><a class="reference internal" href="#video">Video</a><ul>
-<li><a class="reference internal" href="#fine-grained-video-api">Fine-grained video API</a></li>
 </ul>
 </li>
 </ul>

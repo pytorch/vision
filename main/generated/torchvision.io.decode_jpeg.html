@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="write_jpeg" href="torchvision.io.write_jpeg.html" />
-    <link rel="prev" title="encode_jpeg" href="torchvision.io.encode_jpeg.html" />
+    <link rel="next" title="encode_png" href="torchvision.io.encode_png.html" />
+    <link rel="prev" title="decode_image" href="torchvision.io.decode_image.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -270,7 +270,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+f559edf) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+fc74637) &#x25BC</a>
     </div>
     
 
@@ -402,7 +402,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="torchvision.io.decode_jpeg">
 <span class="sig-prename descclassname"><span class="pre">torchvision.io.</span></span><span class="sig-name descname"><span class="pre">decode_jpeg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.12)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.4)"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.4)"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.image.ImageReadMode"><span class="pre">ImageReadMode</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">ImageReadMode.UNCHANGED</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.12)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.device" title="(in PyTorch v2.4)"><span class="pre">device</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_exif_orientation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.12)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.4)"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.4)"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/torchvision/io/image.html#decode_jpeg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_jpeg" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decode JPEG image(s) into 3 dimensional RGB or grayscale Tensor(s).</p>
+<dd><p>Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.</p>
 <p>The values of the output tensor are uint8 between 0 and 255.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -417,12 +417,9 @@ This function does not return partial results in case of an error.</p>
 <li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>1</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><em>Tensor</em><em>[</em><em>1</em><em>]</em><em>]</em>) – a (list of) one dimensional uint8 tensor(s) containing
 the raw bytes of the JPEG image. The tensor(s) must be on CPU,
 regardless of the <code class="docutils literal notranslate"><span class="pre">device</span></code> parameter.</p></li>
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally
-converting the image(s). The supported modes are: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>,
-<code class="docutils literal notranslate"><span class="pre">ImageReadMode.GRAY</span></code> and <code class="docutils literal notranslate"><span class="pre">ImageReadMode.RGB</span></code>
-Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
-See <code class="docutils literal notranslate"><span class="pre">ImageReadMode</span></code> class for more information on various
-available modes.</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – The mode to convert the image to, e.g. “RGB”.
+Default is “UNCHANGED”.  See <a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImageReadMode</span></code></a>
+for available modes.</p></li>
 <li><p><strong>device</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><a class="reference external" href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.device" title="(in PyTorch v2.4)"><em>torch.device</em></a>) – <p>The device on which the decoded image will
 be stored. If a cuda device is specified, the image will be decoded
 with <a class="reference external" href="https://developer.nvidia.com/nvjpeg">nvjpeg</a>. This is only
@@ -461,10 +458,10 @@ Default: False. Only implemented for JPEG format on CPU.</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="torchvision.io.write_jpeg.html" class="btn btn-neutral float-right" title="write_jpeg" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="torchvision.io.encode_png.html" class="btn btn-neutral float-right" title="encode_png" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="torchvision.io.encode_jpeg.html" class="btn btn-neutral" title="encode_jpeg" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="torchvision.io.decode_image.html" class="btn btn-neutral" title="decode_image" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
