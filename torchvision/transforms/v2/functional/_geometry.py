@@ -834,7 +834,7 @@ def _affine_bounding_boxes_with_expand(
         # Translate bounding boxes
         out_bboxes.sub_(tr.repeat((1, 2)))
         # Estimate meta-data for image with inverted=True
-        affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
+        affine_vector = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
