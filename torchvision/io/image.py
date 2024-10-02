@@ -20,19 +20,25 @@ except (ImportError, OSError) as e:
 
 
 class ImageReadMode(Enum):
-    """
-    Support for various modes while reading images.
-
-    Use ``ImageReadMode.UNCHANGED`` for loading the image as-is,
-    ``ImageReadMode.GRAY`` for converting to grayscale,
-    ``ImageReadMode.GRAY_ALPHA`` for grayscale with transparency,
-    ``ImageReadMode.RGB`` for RGB and ``ImageReadMode.RGB_ALPHA`` for
-    RGB with transparency.
+    """Allow automatic conversion to RGB, RGBA, etc while decoding.
 
     .. note::
 
-        Some decoders won't support all possible values, e.g. a decoder may only
-        support "RGB" and "RGBA" mode.
+        You don't need to use this struct, you can just pass strings to all
+        ``mode`` parameters, e.g. ``mode="RGB"``.
+
+    The different available modes are the following.
+
+    - UNCHANGED: loads the image as-is
+    - RGB: converts to RGB
+    - RGBA: converts to RGB with transparency (also aliased as RGB_ALPHA)
+    - GRAY: converts to grayscale
+    - GRAY_ALPHA: converts to grayscale with transparency
+
+    .. note::
+
+        Some decoders won't support all possible values, e.g. GRAY and
+        GRAY_ALPHA are only supported for PNG and JPEG images.
     """
 
     UNCHANGED = 0
@@ -45,8 +51,7 @@ class ImageReadMode(Enum):
 
 def read_file(path: str) -> torch.Tensor:
     """
-    Reads and outputs the bytes contents of a file as a uint8 Tensor
-    with one dimension.
+    Return the bytes contents of a file as a uint8 1D Tensor.
 
     Args:
         path (str or ``pathlib.Path``): the path to the file to be read
@@ -62,8 +67,7 @@ def read_file(path: str) -> torch.Tensor:
 
 def write_file(filename: str, data: torch.Tensor) -> None:
     """
-    Writes the contents of an uint8 tensor with one dimension to a
-    file.
+    Write the content of an uint8 1D tensor to a file.
 
     Args:
         filename (str or ``pathlib.Path``): the path to the file to be written
@@ -93,10 +97,9 @@ def decode_png(
     Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
             the raw bytes of the PNG image.
-        mode (str or ImageReadMode): the read mode used for optionally
-            converting the image. Default: ``ImageReadMode.UNCHANGED``.
-            See `ImageReadMode` class for more information on various
-            available modes.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
             Default: False.
 
@@ -156,8 +159,7 @@ def decode_jpeg(
     device: Union[str, torch.device] = "cpu",
     apply_exif_orientation: bool = False,
 ) -> Union[torch.Tensor, List[torch.Tensor]]:
-    """
-    Decode JPEG image(s) into 3 dimensional RGB or grayscale Tensor(s).
+    """Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.
 
     The values of the output tensor are uint8 between 0 and 255.
 
@@ -171,12 +173,9 @@ def decode_jpeg(
         input (Tensor[1] or list[Tensor[1]]): a (list of) one dimensional uint8 tensor(s) containing
             the raw bytes of the JPEG image. The tensor(s) must be on CPU,
             regardless of the ``device`` parameter.
-        mode (str or ImageReadMode): the read mode used for optionally
-            converting the image(s). The supported modes are: ``ImageReadMode.UNCHANGED``,
-            ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``
-            Default: ``ImageReadMode.UNCHANGED``.
-            See ``ImageReadMode`` class for more information on various
-            available modes.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
         device (str or torch.device): The device on which the decoded image will
             be stored. If a cuda device is specified, the image will be decoded
             with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
@@ -228,9 +227,7 @@ def decode_jpeg(
 def encode_jpeg(
     input: Union[torch.Tensor, List[torch.Tensor]], quality: int = 75
 ) -> Union[torch.Tensor, List[torch.Tensor]]:
-    """
-    Takes a (list of) input tensor(s) in CHW layout and returns a (list of) buffer(s) with the contents
-    of the corresponding JPEG file(s).
+    """Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.
 
     .. note::
         Passing a list of CUDA tensors is more efficient than repeated individual calls to ``encode_jpeg``.
@@ -286,7 +283,7 @@ def decode_image(
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
-    """Decode an image into a tensor.
+    """Decode an image into a uint8 tensor, from a path or from raw encoded bytes.
 
     Currently supported image formats are jpeg, png, gif and webp.
 
@@ -303,10 +300,9 @@ def decode_image(
         input (Tensor or str or ``pathlib.Path``): The image to decode. If a
             tensor is passed, it must be one dimensional uint8 tensor containing
             the raw bytes of the image. Otherwise, this must be a path to the image file.
-        mode (str or ImageReadMode): the read mode used for optionally converting the image.
-            Default: ``ImageReadMode.UNCHANGED``.
-            See ``ImageReadMode`` class for more information on various
-            available modes. Only applies to JPEG and PNG images.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
            Only applies to JPEG and PNG images. Default: False.
 
@@ -367,9 +363,9 @@ def decode_webp(
     Args:
         input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
             the raw bytes of the WEBP image.
-        mode (str or ImageReadMode): The read mode used for optionally
-            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.
-            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
 
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
@@ -398,9 +394,9 @@ def _decode_avif(
     Args:
         input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
             the raw bytes of the AVIF image.
-        mode (str or ImageReadMode): The read mode used for optionally
-            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.
-            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
 
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
@@ -426,9 +422,9 @@ def _decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     Args:
         input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
             the raw bytes of the HEIC image.
-        mode (str or ImageReadMode): The read mode used for optionally
-            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.
-            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
 
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
