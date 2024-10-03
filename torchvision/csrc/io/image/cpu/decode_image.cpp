@@ -50,6 +50,12 @@ torch::Tensor decode_image(
     return decode_gif(data);
   }
 
+  // TODO: We have to remove the "avif" detection logic from here, since
+  // `decode_avif` doesn't exist in torchvision anymore. We can reimplement the
+  // signature detection logic in Python instead. Same for heic. Longer term, we
+  // can move the logic to the torchvision-extra-decoders repo and rely on
+  // libmagic for a more accurate signature check.
+
   // We assume the signature of an avif file is
   // 0000 0020 6674 7970 6176 6966
   // xxxx xxxx  f t  y p  a v  i f

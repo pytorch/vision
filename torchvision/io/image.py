@@ -377,6 +377,7 @@ def decode_webp(
     return torch.ops.image.decode_webp(input, mode.value)
 
 
+# TODO: remove this, and the associated avif decoder
 def _decode_avif(
     input: torch.Tensor,
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
@@ -408,6 +409,7 @@ def _decode_avif(
     return torch.ops.image.decode_avif(input, mode.value)
 
 
+# TODO: remove this, and the associated heic decoder
 def _decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """
     Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
@@ -434,3 +436,32 @@ def _decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     if isinstance(mode, str):
         mode = ImageReadMode[mode.upper()]
     return torch.ops.image.decode_heic(input, mode.value)
+
+
+_EXTRA_DECODERS_ALREADY_LOADED = False
+
+
+def _load_extra_decoders_once():
+    global _EXTRA_DECODERS_ALREADY_LOADED
+    if _EXTRA_DECODERS_ALREADY_LOADED:
+        return
+
+    try:
+        import torchvision_extra_decoders
+    except ImportError as e:
+        raise RuntimeError("You need to pip install torchvision-extra-decoders blah blah blah") from e
+
+    # This will expose torch.ops.extra_decoders_ns.decode_avif and torch.ops.extra_decoders_ns.decode_heic
+    torchvision_extra_decoders.expose_extra_decoders()
+
+    _EXTRA_DECODERS_ALREADY_LOADED = True
+
+
+def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+    _load_extra_decoders_once()
+    return torch.ops.extra_decoders_ns.decode_avif(input, mode.value)
+
+
+def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+    _load_extra_decoders_once()
+    return torch.ops.extra_decoders_ns.decode_heic(input, mode.value)
