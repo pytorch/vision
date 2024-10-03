@@ -6169,3 +6169,52 @@ class TestJPEG:
     def test_transform_invalid_quality_error(self, quality):
         with pytest.raises(ValueError, match="quality must be an integer from 1 to 100"):
             transforms.JPEG(quality=quality)
+
+
+class TestQuerySize:
+    @pytest.mark.parametrize(
+        "make_input, input_name",
+        [
+            (lambda: torch.rand(3, 32, 64), "pure_tensor"),
+            (lambda: tv_tensors.Image(torch.rand(3, 32, 64)), "tv_tensor_image"),
+            (lambda: PIL.Image.new("RGB", (64, 32)), "pil_image"),
+            (lambda: tv_tensors.Video(torch.rand(1, 3, 32, 64)), "tv_tensor_video"),
+            (lambda: tv_tensors.Mask(torch.randint(0, 2, (32, 64))), "tv_tensor_mask"),
+        ],
+        ids=["pure_tensor", "tv_tensor_image", "pil_image", "tv_tensor_video", "tv_tensor_mask"],
+    )
+    def test_functional(self, make_input, input_name):
+        input1 = make_input()
+        input2 = make_input()
+        # Both inputs should have the same size (32, 64)
+        assert transforms.query_size([input1, input2]) == (32, 64)
+
+    @pytest.mark.parametrize(
+        "make_input, input_name",
+        [
+            (lambda: torch.rand(3, 32, 64), "pure_tensor"),
+            (lambda: tv_tensors.Image(torch.rand(3, 32, 64)), "tv_tensor_image"),
+            (lambda: PIL.Image.new("RGB", (64, 32)), "pil_image"),
+            (lambda: tv_tensors.Video(torch.rand(1, 3, 32, 64)), "tv_tensor_video"),
+            (lambda: tv_tensors.Mask(torch.randint(0, 2, (32, 64))), "tv_tensor_mask"),
+        ],
+        ids=["pure_tensor", "tv_tensor_image", "pil_image", "tv_tensor_video", "tv_tensor_mask"],
+    )
+    def test_functional_mixed_types(self, make_input, input_name):
+        input1 = make_input()
+        input2 = make_input()
+        # Both inputs should have the same size (32, 64)
+        assert transforms.query_size([input1, input2]) == (32, 64)
+
+    def test_different_sizes(self):
+        img_tensor = torch.rand(3, 32, 64)  # (C, H, W)
+        img_tensor_different_size = torch.rand(3, 48, 96)  # (C, H, W)
+        # Should raise ValueError for different sizes
+        with pytest.raises(ValueError, match="Found multiple HxW dimensions"):
+            transforms.query_size([img_tensor, img_tensor_different_size])
+
+    def test_no_valid_image(self):
+        invalid_input = torch.rand(1, 10)  # Non-image tensor
+        # Should raise TypeError for invalid input
+        with pytest.raises(TypeError, match="No image, video, mask or bounding box was found"):
+            transforms.query_size([invalid_input])
