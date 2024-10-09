@@ -110,7 +110,7 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
 
     np_h = np.array(h, dtype=np.uint8)
     # This will over/underflow, as desired
-    np_h += np.array(hue_factor * 255).astype(np.uint8)
+    np_h += np.int32(hue_factor * 255).astype(np.uint8)
 
     h = Image.fromarray(np_h, "L")
 
