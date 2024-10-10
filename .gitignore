@@ -1,3 +1,9 @@
+# CMAKE
+# CmakePresets.json
+
+# MacOS
+**/.DS_Store
+
 build/
 dist/
 torchvision.egg-info/
