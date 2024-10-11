@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+0534b6e) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+3146a74) &#x25BC</a>
     </div>
     
 
@@ -457,7 +457,12 @@
     <span class="n">audio_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Writes a 4d tensor in [T, H, W, C] format in a video file</span>
+<span class="sd">    Writes a 4d tensor in [T, H, W, C] format in a video file.</span>
+
+<span class="sd">    This function relies on PyAV (therefore, ultimately FFmpeg) to encode</span>
+<span class="sd">    videos, you can get more fine-grained control by referring to the other</span>
+<span class="sd">    options at your disposal within `the FFMpeg wiki</span>
+<span class="sd">    &lt;http://trac.ffmpeg.org/wiki#Encoding&gt;`_.</span>
 
 <span class="sd">    .. warning::</span>
 
@@ -473,12 +478,25 @@
 <span class="sd">            as a uint8 tensor in [T, H, W, C] format</span>
 <span class="sd">        fps (Number): video frames per second</span>
 <span class="sd">        video_codec (str): the name of the video codec, i.e. &quot;libx264&quot;, &quot;h264&quot;, etc.</span>
-<span class="sd">        options (Dict): dictionary containing options to be passed into the PyAV video stream</span>
+<span class="sd">        options (Dict): dictionary containing options to be passed into the PyAV video stream.</span>
+<span class="sd">            The list of options is codec-dependent and can all</span>
+<span class="sd">            be found from `the FFMpeg wiki &lt;http://trac.ffmpeg.org/wiki#Encoding&gt;`_.</span>
 <span class="sd">        audio_array (Tensor[C, N]): tensor containing the audio, where C is the number of channels</span>
 <span class="sd">            and N is the number of samples</span>
 <span class="sd">        audio_fps (Number): audio sample rate, typically 44100 or 48000</span>
 <span class="sd">        audio_codec (str): the name of the audio codec, i.e. &quot;mp3&quot;, &quot;aac&quot;, etc.</span>
-<span class="sd">        audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream</span>
+<span class="sd">        audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream.</span>
+<span class="sd">            The list of options is codec-dependent and can all</span>
+<span class="sd">            be found from `the FFMpeg wiki &lt;http://trac.ffmpeg.org/wiki#Encoding&gt;`_.</span>
+
+<span class="sd">    Examples::</span>
+<span class="sd">        &gt;&gt;&gt; # Creating libx264 video with CRF 17, for visually lossless footage:</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; from torchvision.io import write_video</span>
+<span class="sd">        &gt;&gt;&gt; # 1000 frames of 100x100, 3-channel image.</span>
+<span class="sd">        &gt;&gt;&gt; vid = torch.randn(1000, 100, 100, 3, dtype = torch.uint8)</span>
+<span class="sd">        &gt;&gt;&gt; write_video(&quot;video.mp4&quot;, options = {&quot;crf&quot;: &quot;17&quot;})</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">write_video</span><span class="p">)</span>
