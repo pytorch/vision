@@ -226,10 +226,10 @@ Here is an example of how to use the pre-trained image classification models:
 
 .. code:: python
 
-    from torchvision.io import read_image
+    from torchvision.io import decode_image
     from torchvision.models import resnet50, ResNet50_Weights
 
-    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
+    img = decode_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
 
     # Step 1: Initialize model with the best available weights
     weights = ResNet50_Weights.DEFAULT
@@ -283,10 +283,10 @@ Here is an example of how to use the pre-trained quantized image classification 
 
 .. code:: python
 
-    from torchvision.io import read_image
+    from torchvision.io import decode_image
     from torchvision.models.quantization import resnet50, ResNet50_QuantizedWeights
 
-    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
+    img = decode_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
 
     # Step 1: Initialize model with the best available weights
     weights = ResNet50_QuantizedWeights.DEFAULT
@@ -339,11 +339,11 @@ Here is an example of how to use the pre-trained semantic segmentation models:
 
 .. code:: python
 
-    from torchvision.io.image import read_image
+    from torchvision.io.image import decode_image
     from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
     from torchvision.transforms.functional import to_pil_image
 
-    img = read_image("gallery/assets/dog1.jpg")
+    img = decode_image("gallery/assets/dog1.jpg")
 
     # Step 1: Initialize model with the best available weights
     weights = FCN_ResNet50_Weights.DEFAULT
@@ -411,12 +411,12 @@ Here is an example of how to use the pre-trained object detection models:
 .. code:: python
 
 
-    from torchvision.io.image import read_image
+    from torchvision.io.image import decode_image
     from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
     from torchvision.utils import draw_bounding_boxes
     from torchvision.transforms.functional import to_pil_image
 
-    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
+    img = decode_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
 
     # Step 1: Initialize model with the best available weights
     weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
