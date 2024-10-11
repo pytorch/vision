@@ -64,6 +64,14 @@ def write_video(
     """
     Writes a 4d tensor in [T, H, W, C] format in a video file
 
+    .. warning::
+
+        In the near future, we intend to centralize PyTorch's video decoding
+        capabilities within the `torchcodec
+        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        try it out and share your feedback, as the torchvision video decoders
+        will eventually be deprecated.
+
     Args:
         filename (str): path where the video will be saved
         video_array (Tensor[T, H, W, C]): tensor containing the individual frames,
@@ -243,6 +251,14 @@ def read_video(
     """
     Reads a video from a file, returning both the video frames and the audio frames
 
+    .. warning::
+
+        In the near future, we intend to centralize PyTorch's video decoding
+        capabilities within the `torchcodec
+        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        try it out and share your feedback, as the torchvision video decoders
+        will eventually be deprecated.
+
     Args:
         filename (str): path to the video file. If using the pyav backend, this can be whatever ``av.open`` accepts.
         start_pts (int if pts_unit = 'pts', float / Fraction if pts_unit = 'sec', optional):
@@ -366,6 +382,14 @@ def _decode_video_timestamps(container: "av.container.Container") -> List[int]:
 def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[float]]:
     """
     List the video frames timestamps.
+
+    .. warning::
+
+        In the near future, we intend to centralize PyTorch's video decoding
+        capabilities within the `torchcodec
+        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        try it out and share your feedback, as the torchvision video decoders
+        will eventually be deprecated.
 
     Note that the function decodes the whole video frame-by-frame.
 
