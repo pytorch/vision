@@ -6,6 +6,7 @@ from torch.hub import _get_torch_home
 
 _HOME = os.path.join(_get_torch_home(), "datasets", "vision")
 _USE_SHARDED_DATASETS = False
+IN_FBCODE = False
 
 
 def _download_file_from_remote_location(fpath: str, url: str) -> None:

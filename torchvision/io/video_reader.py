@@ -7,9 +7,9 @@ import torch
 
 from ..utils import _log_api_usage_once
 
-from ._video_opt import _HAS_VIDEO_OPT
+from ._video_opt import _HAS_CPU_VIDEO_DECODER
 
-if _HAS_VIDEO_OPT:
+if _HAS_CPU_VIDEO_DECODER:
 
     def _has_video_opt() -> bool:
         return True
@@ -51,6 +51,14 @@ class VideoReader:
     container. Much like previous video_reader API it supports the following
     backends: video_reader, pyav, and cuda.
     Backends can be set via `torchvision.set_video_backend` function.
+
+    .. warning::
+
+        In the near future, we intend to centralize PyTorch's video decoding
+        capabilities within the `torchcodec
+        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        try it out and share your feedback, as the torchvision video decoders
+        will eventually be deprecated.
 
     .. betastatus:: VideoReader class
 

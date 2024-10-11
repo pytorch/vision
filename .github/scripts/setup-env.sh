@@ -30,10 +30,11 @@ conda create \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \
+  libwebp \
   'ffmpeg<4.3'
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
-pip install --progress-bar=off --upgrade setuptools
+pip install --progress-bar=off --upgrade setuptools==72.1.0
 
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then

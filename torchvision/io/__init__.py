@@ -10,6 +10,7 @@ except ModuleNotFoundError:
     _HAS_GPU_VIDEO_DECODER = False
 
 from ._video_opt import (
+    _HAS_CPU_VIDEO_DECODER,
     _HAS_VIDEO_OPT,
     _probe_video_from_file,
     _probe_video_from_memory,
@@ -25,6 +26,7 @@ from .image import (
     decode_image,
     decode_jpeg,
     decode_png,
+    decode_webp,
     encode_jpeg,
     encode_png,
     ImageReadMode,
@@ -48,6 +50,7 @@ __all__ = [
     "_read_video_from_memory",
     "_read_video_timestamps_from_memory",
     "_probe_video_from_memory",
+    "_HAS_CPU_VIDEO_DECODER",
     "_HAS_VIDEO_OPT",
     "_HAS_GPU_VIDEO_DECODER",
     "_read_video_clip_from_memory",
@@ -58,6 +61,9 @@ __all__ = [
     "decode_image",
     "decode_jpeg",
     "decode_png",
+    "decode_heic",
+    "decode_webp",
+    "decode_gif",
     "encode_jpeg",
     "encode_png",
     "read_file",
@@ -68,3 +74,10 @@ __all__ = [
     "Video",
     "VideoReader",
 ]
+
+from .._internally_replaced_utils import IN_FBCODE
+
+if IN_FBCODE:
+    from .image import _decode_avif as decode_avif, _decode_heic as decode_heic
+
+    __all__ += ["decode_avif", "decode_heic"]

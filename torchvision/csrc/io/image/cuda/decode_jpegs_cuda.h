@@ -1,7 +1,7 @@
 #pragma once
 #include <torch/types.h>
 #include <vector>
-#include "../image_read_mode.h"
+#include "../common.h"
 
 #if NVJPEG_FOUND
 #include <c10/cuda/CUDAStream.h>
