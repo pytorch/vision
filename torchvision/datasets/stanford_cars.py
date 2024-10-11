@@ -33,7 +33,7 @@ class StanfordCars(VisionDataset):
             seems to be available on Kaggle so you can try to manually download and configure it using
             `these instructions <https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616>`_,
             or use an integrated
-            `dataset on Kaggle <https://www.kaggle.com/datasets/rickyyyyyyy/torchvision-stanford-cars>`_.
+            `dataset on Kaggle <https://github.com/pytorch/vision/issues/7545#issuecomment-2282674373>`_.
             In both cases, first download and configure the dataset locally, and use the dataset with
             ``"download=False"``.
     """
