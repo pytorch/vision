@@ -74,7 +74,6 @@ class _LFW(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
         url = f"{self.download_url_prefix}{self.filename}"
         download_and_extract_archive(url, self.root, filename=self.filename, md5=self.md5)

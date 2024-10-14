@@ -154,7 +154,6 @@ class STL10(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
         download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.tgz_md5)
         self._check_integrity()
