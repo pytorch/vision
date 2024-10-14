@@ -130,7 +130,6 @@ class Caltech101(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
 
         download_and_extract_archive(
@@ -231,7 +230,6 @@ class Caltech256(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
 
         download_and_extract_archive(

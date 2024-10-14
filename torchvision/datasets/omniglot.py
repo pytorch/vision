@@ -91,7 +91,6 @@ class Omniglot(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
 
         filename = self._get_target_folder()
