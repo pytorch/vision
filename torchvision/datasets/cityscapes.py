@@ -192,7 +192,7 @@ class Cityscapes(VisionDataset):
 
             targets.append(target)
 
-        target = tuple(targets) if len(targets) > 1 else targets[0]
+        target = tuple(targets) if len(targets) > 1 else targets[0]  # type: ignore[assignment]
 
         if self.transforms is not None:
             image, target = self.transforms(image, target)
