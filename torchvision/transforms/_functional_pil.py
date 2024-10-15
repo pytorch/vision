@@ -145,7 +145,7 @@ def pad(
     img: Image.Image,
     padding: Union[int, List[int], Tuple[int, ...]],
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
-    padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
+    padding_mode: Literal["constant", "edge", "reflect", "symmetric", "circular"] = "constant",
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -168,8 +168,8 @@ def pad(
         # Compatibility with `functional_tensor.pad`
         padding = padding[0]
 
-    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
-        raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
+    if padding_mode not in ["constant", "edge", "reflect", "symmetric", "circular"]:
+        raise ValueError("Padding mode should be either constant, edge, reflect, symmetric, or circular")
 
     if padding_mode == "constant":
         opts = _parse_fill(fill, img, name="fill")
@@ -200,6 +200,10 @@ def pad(
             img = img.crop((crop_left, crop_top, img.width - crop_right, img.height - crop_bottom))
 
         pad_left, pad_top, pad_right, pad_bottom = np.maximum(p, 0)
+
+        if padding_mode == "circular":
+            # Compatibility with np.pad
+            padding_mode = "wrap"
 
         if img.mode == "P":
             palette = img.getpalette()
