@@ -192,8 +192,8 @@ class MNIST(VisionDataset):
                 break
             else:
                 s = f"Error downloading {filename}:\n"
-                for mirror, e in zip(self.mirrors, errors):
-                    s += f"Tried {mirror}, got:\n{str(e)}\n"
+                for mirror, err in zip(self.mirrors, errors):
+                    s += f"Tried {mirror}, got:\n{str(err)}\n"
                 raise RuntimeError(s)
 
     def extra_repr(self) -> str:
