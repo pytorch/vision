@@ -1329,9 +1329,15 @@ class RandomShortestSize(Transform):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         orig_height, orig_width = query_size(flat_inputs)
+        min_o_size = min(orig_height, orig_width)
 
-        min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
-        r = min_size / min(orig_height, orig_width)
+        if len(self.min_size) == 1:
+            min_size = self.min_size[0]
+            assert min_size <= min_o_size
+            min_size = torch.empty(1).uniform_(min_size, min_o_size).int()
+        else:
+            min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
+        r = min_size / min_o_size
         if self.max_size is not None:
             r = min(r, self.max_size / max(orig_height, orig_width))
 
