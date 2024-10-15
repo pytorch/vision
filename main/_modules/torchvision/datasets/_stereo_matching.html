@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+f68bac9) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+945bdad) &#x25BC</a>
     </div>
     
 
@@ -983,7 +983,6 @@
                 <span class="k">for</span> <span class="n">calibration</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;perfect&quot;</span><span class="p">,</span> <span class="s2">&quot;imperfect&quot;</span><span class="p">]:</span>
                     <span class="n">scene_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">split_scene</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">calibration</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="n">scene_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">scene_name</span><span class="si">}</span><span class="s2">.zip&quot;</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading </span><span class="si">{</span><span class="n">scene_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="c1"># download the scene only if it doesn&#39;t exist</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">split_root</span> <span class="o">/</span> <span class="n">scene_name</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                         <span class="n">download_and_extract_archive</span><span class="p">(</span>

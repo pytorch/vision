@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+f68bac9) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+945bdad) &#x25BC</a>
     </div>
     
 
@@ -395,7 +395,6 @@
   <h1>Source code for torchvision.datasets.kinetics</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">csv</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">urllib</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
@@ -516,7 +515,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_legacy</span> <span class="o">=</span> <span class="n">_legacy</span>
 
         <span class="k">if</span> <span class="n">_legacy</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using legacy structure&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span> <span class="o">=</span> <span class="n">root</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">split</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
             <span class="n">output_format</span> <span class="o">=</span> <span class="s2">&quot;THWC&quot;</span>
@@ -552,14 +550,8 @@
 
     <span class="k">def</span> <span class="nf">download_and_process_videos</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Downloads all the videos to the _root_ folder in the expected format.&quot;&quot;&quot;</span>
-        <span class="n">tic</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_download_videos</span><span class="p">()</span>
-        <span class="n">toc</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Elapsed time for downloading in mins &quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">toc</span> <span class="o">-</span> <span class="n">tic</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_make_ds_structure</span><span class="p">()</span>
-        <span class="n">toc2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Elapsed time for processing in mins &quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">toc2</span> <span class="o">-</span> <span class="n">toc</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Elapsed time overall in mins &quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">toc2</span> <span class="o">-</span> <span class="n">tic</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_download_videos</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;download tarballs containing the video to &quot;tars&quot; folder and extract them into the _split_ folder where</span>
