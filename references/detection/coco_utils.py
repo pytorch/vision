@@ -232,3 +232,185 @@ def get_coco(root, image_set, transforms, mode="instances", use_v2=False, with_m
     # dataset = torch.utils.data.Subset(dataset, [i for i in range(500)])
 
     return dataset
+
+class CostumCocoDataset():
+    """If you create your own annotaion from different site or application
+    and have it in json format you can use this class to export 
+    segmented images, segmented images with bboxes, masks and 
+    output file for yolo model in .txt format
+
+    first of all you need create instance with:
+    `annotation_path`: path to you annotation directory
+    `image_dir`: path to you image directory
+
+    after creat instance of class call `display_image()`
+    
+    image_id='random'    if need specific image mention image_id in json file
+                        if you have many images with json file loop throw them all
+                        and then save them in folder for train/val/test
+                        save masks in numpy format for better exprience
+    show_polys=True    show image with annotation
+    show_mask=True    show mask in grayscale
+    show_bbox=True    show images with segments and bboxes
+    show_crowds=True
+    yolo_txt=True --> save txt file in "/content/dataset/labels"
+    
+    
+    """
+    def __init__(self, annotation_path, image_dir):
+        self.annotation_path = annotation_path
+        self.image_dir = image_dir
+        self.colors = [(255, 0, 255), (255, 255, 0), (255, 100, 100),
+                        (0, 255, 255), (100, 100, 200), (255, 0, 0),
+                        (0, 255, 0), (0, 0, 255), (180, 100, 120)]
+
+        json_file = open(self.annotation_path)
+        self.coco = json.load(json_file)
+        json_file.close()
+
+        self.process_info()
+        self.process_images()
+        self.process_segmentations()
+
+
+    def display_info(self):
+        print('Dataset Info:')
+        print('=============')
+        for key, item in self.info.items():
+            print(f'  {key}: {item}')
+
+    def display_image(self, image_id='random', show_polys=True,
+                      show_mask=True, show_bbox=True, show_crowds=True, yolo_txt=True):
+        print('Image:')
+        print('======')
+        if image_id == 'random':
+            image_id = random.choice(list(self.images.keys()))
+
+        # Print the image info
+        image_info = self.images[image_id]
+        for key, val in image_info.items():
+            print(f'  {key}: {val}')
+
+        image_path = os.path.join(self.image_dir, image_info['file_name'])
+        image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # Calculate the size and adjusted display size
+        image_width, image_height = image.shape[0], image.shape[1]
+        adjusted_width = 128
+        adjusted_ratio = 1
+        adjusted_height = int(adjusted_ratio * adjusted_width)
+
+
+        # Create list of polygons to be drawn
+        polygons = {}
+        bbox_polygons = {}
+        rle_regions = {}
+        poly_colors = {}
+        for i, segm in enumerate(self.segmentations[image_id]):
+            polygons_list = []
+
+            # Add the polygon segmentation
+            for segmentation_points in segm['segmentation']:
+                polygons_list.append(np.array(segmentation_points).astype(int))
+
+            polygons[segm['id']] = polygons_list
+
+            # extract bbox as int for use in opencv
+            bbox = [int(x) for x in segm['bbox']]
+            bbox[2], bbox[3] = bbox[0] + bbox[2], bbox[1] + bbox[3]
+            bbox_polygons[segm['id']] = bbox
+
+            # extract point for use in opencv
+            points= []
+            for seg_id, points_list in polygons.items():
+
+                pnts = []
+                idx = []
+                for item in points_list:
+                    idx.append(len(item))
+                    i = 0
+                    while i < (len(item) - 1):
+                        pnts.append(item[i:i+2].tolist())
+                        i += 2
+                    points.append(pnts)
+
+            yolo_points = points_list
+
+            # segment the orginal image
+            overlay = image.copy()
+            for i in range(len(polygons)):
+                pts = np.array(points[i]).reshape((-1, 1, 2))
+                cv2.fillPoly(overlay, [pts], self.colors[i])
+
+            alpha = 0.4
+            segmented_image = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
+            segmented_image_resize = cv2.resize(segmented_image, (adjusted_width, adjusted_height))
+
+            # extract the mask of segmented images
+            mask = np.zeros((image_width, image_height ), dtype=np.uint8)
+            for i in range(len(polygons)):
+                pts = np.array(points[i]).reshape((-1, 1, 2))
+                cv2.fillPoly(mask, [pts], (i+1,0, 0))
+
+            mask = cv2.resize(mask, (adjusted_width, adjusted_height))
+
+        if show_polys:
+            plt.imshow(segmented_image_resize)
+            plt.show()
+
+        if show_mask:
+            plt.imshow(mask)
+            plt.show()
+
+        if show_bbox:
+            for i, (seg_id, points) in enumerate(bbox_polygons.items()):
+                pnt1 = (points[0], points[1])
+                pnt2 = points[2], points[3]
+                img_with_bbox = cv2.rectangle(segmented_image, pnt1, pnt2, self.colors[i], 3)
+            img_with_bbox = cv2.resize(img_with_bbox, (adjusted_width, adjusted_height))
+            plt.imshow(img_with_bbox)
+            plt.show()
+
+        # extract point items as txt file for yolo8 segmentation
+        if yolo_txt:
+            yolo_ann_path = "/content/dataset/labels"
+            os.makedirs(yolo_ann_path)
+            file_name = image_info['file_name'][:-4]
+            for item in yolo_points:
+                with open(f"{yolo_ann_path}/{file_name}.txt", 'a') as f:
+                        f.write("\n0 ")
+                        for i, data in enumerate(item):
+                            if i % 2 == 0:
+                                data /= image_height
+                            else:
+                                data/= image_width
+
+                            f.write(f"{str(data)} ")
+
+        image = cv2.resize(image, (adjusted_width, adjusted_height))
+        print(np.unique(image))
+        return image, segmented_image_resize, mask, img_with_bbox, image_info['file_name']
+
+
+
+    def process_info(self):
+        self.info = self.coco['info']
+
+    def process_images(self):
+        self.images = {}
+        for image in self.coco['images']:
+            image_id = image['id']
+            if image_id in self.images:
+                print(f"ERROR: Skipping duplicate image id: {image}")
+            else:
+                self.images[image_id] = image
+
+    def process_segmentations(self):
+        self.segmentations = {}
+        for segmentation in self.coco['annotations']:
+            image_id = segmentation['image_id']
+            if image_id not in self.segmentations:
+                self.segmentations[image_id] = []
+            self.segmentations[image_id].append(segmentation)
+
