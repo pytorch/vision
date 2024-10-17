@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.io
+
+
+write_jpeg
+==========
+
+.. autofunction:: write_jpeg

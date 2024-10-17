@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Kitti2015Stereo
+===============
+
+.. autoclass:: Kitti2015Stereo
+    :members:
+        __getitem__,
+        
+    :special-members:
