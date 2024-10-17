@@ -239,4 +239,3 @@ class INaturalist(VisionDataset):
         if not os.path.exists(orig_dir_name):
             raise RuntimeError(f"Unable to find downloaded files at {orig_dir_name}")
         os.rename(orig_dir_name, self.root)
-        print(f"Dataset version '{self.version}' has been downloaded and prepared for use")
