@@ -40,7 +40,7 @@ def _make_block_input_shapes(input_size: Tuple[int, int], n_blocks: int) -> List
 
 
 def _get_relative_position_index(height: int, width: int) -> torch.Tensor:
-    coords = torch.stack(torch.meshgrid([torch.arange(height), torch.arange(width)]))
+    coords = torch.stack(torch.meshgrid([torch.arange(height), torch.arange(width)], indexing="ij"))
     coords_flat = torch.flatten(coords, 1)
     relative_coords = coords_flat[:, :, None] - coords_flat[:, None, :]
     relative_coords = relative_coords.permute(1, 2, 0).contiguous()
