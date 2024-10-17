@@ -1,6 +1,5 @@
 import csv
 import os
-import time
 import urllib
 from functools import partial
 from multiprocessing import Pool
@@ -121,7 +120,6 @@ class Kinetics(VisionDataset):
         self._legacy = _legacy
 
         if _legacy:
-            print("Using legacy structure")
             self.split_folder = root
             self.split = "unknown"
             output_format = "THWC"
@@ -157,14 +155,8 @@ class Kinetics(VisionDataset):
 
     def download_and_process_videos(self) -> None:
         """Downloads all the videos to the _root_ folder in the expected format."""
-        tic = time.time()
         self._download_videos()
-        toc = time.time()
-        print("Elapsed time for downloading in mins ", (toc - tic) / 60)
         self._make_ds_structure()
-        toc2 = time.time()
-        print("Elapsed time for processing in mins ", (toc2 - toc) / 60)
-        print("Elapsed time overall in mins ", (toc2 - tic) / 60)
 
     def _download_videos(self) -> None:
         """download tarballs containing the video to "tars" folder and extract them into the _split_ folder where
