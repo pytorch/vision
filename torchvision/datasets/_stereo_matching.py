@@ -588,7 +588,6 @@ class Middlebury2014Stereo(StereoMatchingDataset):
                 for calibration in ["perfect", "imperfect"]:
                     scene_name = f"{split_scene}-{calibration}"
                     scene_url = f"{base_url}/{scene_name}.zip"
-                    print(f"Downloading {scene_url}")
                     # download the scene only if it doesn't exist
                     if not (split_root / scene_name).exists():
                         download_and_extract_archive(
