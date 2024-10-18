@@ -62,7 +62,20 @@ def write_video(
     audio_options: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
-    Writes a 4d tensor in [T, H, W, C] format in a video file
+    Writes a 4d tensor in [T, H, W, C] format in a video file.
+
+    This function relies on PyAV (therefore, ultimately FFmpeg) to encode
+    videos, you can get more fine-grained control by referring to the other
+    options at your disposal within `the FFMpeg wiki
+    <http://trac.ffmpeg.org/wiki#Encoding>`_.
+
+    .. warning::
+
+        In the near future, we intend to centralize PyTorch's video decoding
+        capabilities within the `torchcodec
+        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        try it out and share your feedback, as the torchvision video decoders
+        will eventually be deprecated.
 
     Args:
         filename (str): path where the video will be saved
@@ -70,12 +83,25 @@ def write_video(
             as a uint8 tensor in [T, H, W, C] format
         fps (Number): video frames per second
         video_codec (str): the name of the video codec, i.e. "libx264", "h264", etc.
-        options (Dict): dictionary containing options to be passed into the PyAV video stream
+        options (Dict): dictionary containing options to be passed into the PyAV video stream.
+            The list of options is codec-dependent and can all
+            be found from `the FFMpeg wiki <http://trac.ffmpeg.org/wiki#Encoding>`_.
         audio_array (Tensor[C, N]): tensor containing the audio, where C is the number of channels
             and N is the number of samples
         audio_fps (Number): audio sample rate, typically 44100 or 48000
         audio_codec (str): the name of the audio codec, i.e. "mp3", "aac", etc.
-        audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream
+        audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream.
+            The list of options is codec-dependent and can all
+            be found from `the FFMpeg wiki <http://trac.ffmpeg.org/wiki#Encoding>`_.
+
+    Examples::
+        >>> # Creating libx264 video with CRF 17, for visually lossless footage:
+        >>>
+        >>> from torchvision.io import write_video
+        >>> # 1000 frames of 100x100, 3-channel image.
+        >>> vid = torch.randn(1000, 100, 100, 3, dtype = torch.uint8)
+        >>> write_video("video.mp4", options = {"crf": "17"})
+
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_video)
@@ -243,6 +269,14 @@ def read_video(
     """
     Reads a video from a file, returning both the video frames and the audio frames
 
+    .. warning::
+
+        In the near future, we intend to centralize PyTorch's video decoding
+        capabilities within the `torchcodec
+        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        try it out and share your feedback, as the torchvision video decoders
+        will eventually be deprecated.
+
     Args:
         filename (str): path to the video file. If using the pyav backend, this can be whatever ``av.open`` accepts.
         start_pts (int if pts_unit = 'pts', float / Fraction if pts_unit = 'sec', optional):
@@ -366,6 +400,14 @@ def _decode_video_timestamps(container: "av.container.Container") -> List[int]:
 def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[float]]:
     """
     List the video frames timestamps.
+
+    .. warning::
+
+        In the near future, we intend to centralize PyTorch's video decoding
+        capabilities within the `torchcodec
+        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        try it out and share your feedback, as the torchvision video decoders
+        will eventually be deprecated.
 
     Note that the function decodes the whole video frame-by-frame.
 

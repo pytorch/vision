@@ -105,7 +105,7 @@ class CelebA(VisionDataset):
         if mask == slice(None):  # if split == "all"
             self.filename = splits.index
         else:
-            self.filename = [splits.index[i] for i in torch.squeeze(torch.nonzero(mask))]
+            self.filename = [splits.index[i] for i in torch.squeeze(torch.nonzero(mask))]  # type: ignore[arg-type]
         self.identity = identity.data[mask]
         self.bbox = bbox.data[mask]
         self.landmarks_align = landmarks_align.data[mask]
@@ -148,7 +148,6 @@ class CelebA(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
 
         for (file_id, md5, filename) in self.file_list:

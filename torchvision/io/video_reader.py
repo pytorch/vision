@@ -52,6 +52,14 @@ class VideoReader:
     backends: video_reader, pyav, and cuda.
     Backends can be set via `torchvision.set_video_backend` function.
 
+    .. warning::
+
+        In the near future, we intend to centralize PyTorch's video decoding
+        capabilities within the `torchcodec
+        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        try it out and share your feedback, as the torchvision video decoders
+        will eventually be deprecated.
+
     .. betastatus:: VideoReader class
 
     Example:
