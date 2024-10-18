@@ -127,7 +127,7 @@ def get_macros_and_flags():
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
-                nvcc_flags = nvcc_flags.split(" ")
+                nvcc_flags = NVCC_FLAGS.split(" ")
         extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == "win32":
