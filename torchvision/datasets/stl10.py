@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, cast, Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 from PIL import Image
 
 from .utils import check_integrity, download_and_extract_archive, verify_str_arg
@@ -63,7 +64,7 @@ class STL10(VisionDataset):
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         # now load the picked numpy arrays
-        self.labels: Optional[np.ndarray]
+        self.labels: Optional[npt.NDArray]
         if self.split == "train":
             self.data, self.labels = self.__loadfile(self.train_list[0][0], self.train_list[1][0])
             self.labels = cast(np.ndarray, self.labels)
@@ -129,7 +130,7 @@ class STL10(VisionDataset):
     def __len__(self) -> int:
         return self.data.shape[0]
 
-    def __loadfile(self, data_file: str, labels_file: Optional[str] = None) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    def __loadfile(self, data_file: str, labels_file: Optional[str] = None) -> Tuple[npt.NDArray, Optional[npt.NDArray]]:
         labels = None
         if labels_file:
             path_to_labels = os.path.join(self.root, self.base_folder, labels_file)

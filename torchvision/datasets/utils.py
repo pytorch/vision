@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, IO, Iterable, List, Optional, Tuple, Typ
 from urllib.parse import urlparse
 
 import numpy as np
+import numpy.typing as npt
 import torch
 from torch.utils.model_zoo import tqdm
 
@@ -434,7 +435,7 @@ def verify_str_arg(
     return value
 
 
-def _read_pfm(file_name: Union[str, pathlib.Path], slice_channels: int = 2) -> np.ndarray:
+def _read_pfm(file_name: Union[str, pathlib.Path], slice_channels: int = 2) -> npt.NDArray:
     """Read file in .pfm format. Might contain either 1 or 3 channels of data.
 
     Args:
