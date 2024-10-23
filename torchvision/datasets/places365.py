@@ -145,10 +145,7 @@ class Places365(VisionDataset):
 
     def download_images(self) -> None:
         if path.exists(self.images_dir):
-            raise RuntimeError(
-                f"The directory {self.images_dir} already exists. If you want to re-download or re-extract the images, "
-                f"delete the directory."
-            )
+            return
 
         file, md5 = self._IMAGES_META[(self.split, self.small)]
         download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
