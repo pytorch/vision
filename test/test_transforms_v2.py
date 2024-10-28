@@ -3928,6 +3928,44 @@ class TestPad:
         assert_equal(actual, expected)
 
 
+class TestPadToSquare:
+    @pytest.mark.parametrize(
+        "image",
+        [
+            (make_image((3, 10), device="cpu", dtype=torch.uint8)),
+            (make_image((10, 3), device="cpu", dtype=torch.uint8)),
+            (make_image((10, 10), device="cpu", dtype=torch.uint8)),
+        ],
+    )
+    def test__get_params(self, image):
+        transform = transforms.PadToSquare()
+        params = transform._get_params([image])
+
+        assert "padding" in params
+        padding = params["padding"]
+
+        assert len(padding) == 4
+        assert all(p >= 0 for p in padding)
+
+        height, width = F.get_size(image)
+        assert max(height, width) == height + padding[1] + padding[3]
+        assert max(height, width) == width + padding[0] + padding[2]
+
+    @pytest.mark.parametrize(
+        "image, expected_output_shape",
+        [
+            (make_image((3, 10), device="cpu", dtype=torch.uint8), [10, 10]),
+            (make_image((10, 3), device="cpu", dtype=torch.uint8), [10, 10]),
+            (make_image((10, 10), device="cpu", dtype=torch.uint8), [10, 10]),
+        ],
+    )
+    def test_pad_square_correctness(self, image, expected_output_shape):
+        transform = transforms.PadToSquare()
+        output = transform(image)
+
+        assert F.get_size(output) == expected_output_shape
+
+
 class TestCenterCrop:
     INPUT_SIZE = (17, 11)
     OUTPUT_SIZES = [(3, 5), (5, 3), (4, 4), (21, 9), (13, 15), (19, 14), 3, (4,), [5], INPUT_SIZE]

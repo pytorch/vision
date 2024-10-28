@@ -26,6 +26,7 @@ from ._geometry import (
     ElasticTransform,
     FiveCrop,
     Pad,
+    PadToSquare,
     RandomAffine,
     RandomCrop,
     RandomHorizontalFlip,
