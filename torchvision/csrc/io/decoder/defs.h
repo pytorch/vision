@@ -220,7 +220,8 @@ struct DecoderParameters {
   // integer not lesser than 32. It is 5000000 by default.
   int64_t probeSize{5000000};
 
-  // Expected duration of the video to be decoded, mainly used with uniform sampling
+  // Expected duration of the video to be decoded, mainly used with uniform
+  // sampling
   float expectedDuration{0.0f};
 
   // Sample N key-frames from the video roughly uniformly across the timeline

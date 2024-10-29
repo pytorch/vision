@@ -21,10 +21,8 @@ struct Video : torch::CustomClassHolder {
       std::string videoPath = std::string(),
       std::string stream = std::string("video"),
       int64_t numThreads = 0);
-  void initFromFile(
-      std::string videoPath,
-      std::string stream,
-      int64_t numThreads);
+  void
+  initFromFile(std::string videoPath, std::string stream, int64_t numThreads);
   void initFromMemory(
       torch::Tensor videoTensor,
       std::string stream,

@@ -387,16 +387,21 @@ bool Decoder::init(
   for (unsigned int i = 0; i < inputCtx_->nb_streams; i++) {
     if (
 #if LIBAVUTIL_VERSION_MAJOR < 56 // Before FFMPEG 4.0
-      inputCtx_->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO
+        inputCtx_->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO
 #else // FFMPEG 4.0+
-      inputCtx_->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO
+        inputCtx_->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO
 #endif
-      && inputCtx_->streams[i]->duration > 0
-    ) {
-      // There is at least two 1/r_frame_rates from the frame before the last one until the video duration,
-      // let's prefer to set duration after the frame before the last one, but as early as possible
-      double correction = 2 * inputCtx_->streams[i]->r_frame_rate.den / (double) inputCtx_->streams[i]->r_frame_rate.num - 1 / (double) AV_TIME_BASE;
-      videoDurationMs_ = 1000 * inputCtx_->streams[i]->duration * inputCtx_->streams[i]->time_base.num / (double) inputCtx_->streams[i]->time_base.den - 1000 * correction;
+        && inputCtx_->streams[i]->duration > 0) {
+      // There is at least two 1/r_frame_rates from the frame before the last
+      // one until the video duration, let's prefer to set duration after the
+      // frame before the last one, but as early as possible
+      double correction = 2 * inputCtx_->streams[i]->r_frame_rate.den /
+              (double)inputCtx_->streams[i]->r_frame_rate.num -
+          1 / (double)AV_TIME_BASE;
+      videoDurationMs_ = 1000 * inputCtx_->streams[i]->duration *
+              inputCtx_->streams[i]->time_base.num /
+              (double)inputCtx_->streams[i]->time_base.den -
+          1000 * correction;
       break;
     }
   }
@@ -568,7 +573,6 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       continue;
     }
 
-
     size_t numConsecutiveNoBytes = 0;
     // it can be only partial decoding of the package bytes
     do {
@@ -614,9 +618,17 @@ int Decoder::getFrame(size_t workingTimeInMs) {
 
     if (params_.uniformSampling > 1) {
       if (doSeek_) {
-        double duration = videoDurationMs_ > 0 ? videoDurationMs_ : params_.expectedDuration;
-        double step = (duration * AV_TIME_BASE) / (1000 * (params_.uniformSampling - 1));
-        avformat_seek_file(inputCtx_, -1, static_cast<int64_t>(step * kFramesDecoded_) + 1, static_cast<int64_t>(step * (kFramesDecoded_ + 1)), static_cast<int64_t>(step * (kFramesDecoded_ + 1)), 0);
+        double duration =
+            videoDurationMs_ > 0 ? videoDurationMs_ : params_.expectedDuration;
+        double step =
+            (duration * AV_TIME_BASE) / (1000 * (params_.uniformSampling - 1));
+        avformat_seek_file(
+            inputCtx_,
+            -1,
+            static_cast<int64_t>(step * kFramesDecoded_) + 1,
+            static_cast<int64_t>(step * (kFramesDecoded_ + 1)),
+            static_cast<int64_t>(step * (kFramesDecoded_ + 1)),
+            0);
         ++kFramesDecoded_;
         doSeek_ = false;
       }
@@ -624,10 +636,9 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   }
 
   av_packet_free(&avPacket);
-  VLOG(2) << "Interrupted loop"
-          << ", interrupted_ " << interrupted_ << ", inRange_.any() "
-          << inRange_.any() << ", decodedFrame " << decodedFrame << ", result "
-          << result;
+  VLOG(2) << "Interrupted loop" << ", interrupted_ " << interrupted_
+          << ", inRange_.any() " << inRange_.any() << ", decodedFrame "
+          << decodedFrame << ", result " << result;
 
   // loop can be terminated, either by:
   // 1. explicitly interrupted
@@ -691,7 +702,7 @@ int Decoder::processPacket(
       startCondition = msg.header.pts >= params_.startOffset;
     }
     if (endInRange && startCondition) {
-        *hasMsg = pushMsg(std::move(msg));
+      *hasMsg = pushMsg(std::move(msg));
     }
   }
   return result;
@@ -706,9 +717,12 @@ bool Decoder::pushMsg(DecoderOutputMessage&& msg) {
     return true;
   }
 
-  double duration = videoDurationMs_ > 0 ? videoDurationMs_ : params_.expectedDuration;
-  double step = (duration * AV_TIME_BASE) / (1000 * (params_.uniformSampling - 1));
-  if (pastDecodedPTS_ < step * kFramesDecoded_ && step * kFramesDecoded_ <= currentDecodedPTS_) {
+  double duration =
+      videoDurationMs_ > 0 ? videoDurationMs_ : params_.expectedDuration;
+  double step =
+      (duration * AV_TIME_BASE) / (1000 * (params_.uniformSampling - 1));
+  if (pastDecodedPTS_ < step * kFramesDecoded_ &&
+      step * kFramesDecoded_ <= currentDecodedPTS_) {
     push(std::move(msg));
     doSeek_ = true;
     return true;

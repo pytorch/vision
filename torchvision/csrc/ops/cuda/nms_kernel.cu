@@ -14,10 +14,8 @@ namespace {
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
 template <typename T>
-__device__ inline bool devIoU(
-    T const* const a,
-    T const* const b,
-    const float threshold) {
+__device__ inline bool
+devIoU(T const* const a, T const* const b, const float threshold) {
   T left = max(a[0], b[0]), right = min(a[2], b[2]);
   T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
   T width = max(right - left, (T)0), height = max(bottom - top, (T)0);

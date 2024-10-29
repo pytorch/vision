@@ -77,11 +77,11 @@ class Decoder : public MediaDecoder {
       bool fastSeek = false);
   void flushStreams();
   void cleanUp();
-  bool pushMsg(DecoderOutputMessage&& msg); // returns whether frame is passed to downstream
+  bool pushMsg(DecoderOutputMessage&&
+                   msg); // returns whether frame is passed to downstream
 
  protected:
   DecoderParameters params_;
-
 
  private:
   SeekableBuffer seekableBuffer_;
