@@ -1032,7 +1032,9 @@ REGISTER_PS_ROI_POOL_BACKWARD_OP(half, int64_t);
 
 )VISION_METAL");
 
-static id<MTLComputePipelineState> visionPipelineState(id<MTLDevice> device, const std::string& kernel) {
+static id<MTLComputePipelineState> visionPipelineState(
+    id<MTLDevice> device,
+    const std::string& kernel) {
   return lib.getPipelineStateForFunc(kernel);
 }
 
