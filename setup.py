@@ -42,7 +42,7 @@ CSRS_DIR = ROOT_DIR / "torchvision/csrc"
 IS_ROCM = (torch.version.hip is not None) and (ROCM_HOME is not None)
 BUILD_CUDA_SOURCES = (torch.cuda.is_available() and ((CUDA_HOME is not None) or IS_ROCM)) or FORCE_CUDA
 
-PACKAGE_NAME = "torchvision"
+package_name = os.getenv("TORCHVISION_PACKAGE_NAME", "torchvision")
 
 print("Torchvision build configuration:")
 print(f"{FORCE_CUDA = }")
@@ -98,7 +98,7 @@ def get_requirements():
         except DistributionNotFound:
             return None
 
-    pytorch_dep = "torch"
+    pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
     if os.getenv("PYTORCH_VERSION"):
         pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
@@ -127,7 +127,7 @@ def get_macros_and_flags():
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
-                nvcc_flags = nvcc_flags.split(" ")
+                nvcc_flags = NVCC_FLAGS.split(" ")
         extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == "win32":
@@ -561,7 +561,7 @@ if __name__ == "__main__":
     version, sha = get_version()
     write_version_file(version, sha)
 
-    print(f"Building wheel {PACKAGE_NAME}-{version}")
+    print(f"Building wheel {package_name}-{version}")
 
     with open("README.md") as f:
         readme = f.read()
@@ -573,7 +573,7 @@ if __name__ == "__main__":
     ]
 
     setup(
-        name=PACKAGE_NAME,
+        name=package_name,
         version=version,
         author="PyTorch Core Team",
         author_email="soumith@pytorch.org",
@@ -583,7 +583,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         license="BSD",
         packages=find_packages(exclude=("test",)),
-        package_data={PACKAGE_NAME: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
+        package_data={package_name: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
         zip_safe=False,
         install_requires=get_requirements(),
         extras_require={
