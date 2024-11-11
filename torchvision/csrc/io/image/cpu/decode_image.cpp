@@ -1,8 +1,6 @@
 #include "decode_image.h"
 
-#include "decode_avif.h"
 #include "decode_gif.h"
-#include "decode_heic.h"
 #include "decode_jpeg.h"
 #include "decode_png.h"
 #include "decode_webp.h"
@@ -48,35 +46,6 @@ torch::Tensor decode_image(
   if (memcmp(gif_signature_1, datap, 6) == 0 ||
       memcmp(gif_signature_2, datap, 6) == 0) {
     return decode_gif(data);
-  }
-
-  // TODO: We have to remove the "avif" detection logic from here, since
-  // `decode_avif` doesn't exist in torchvision anymore. We can reimplement the
-  // signature detection logic in Python instead. Same for heic. Longer term, we
-  // can move the logic to the torchvision-extra-decoders repo and rely on
-  // libmagic for a more accurate signature check.
-
-  // We assume the signature of an avif file is
-  // 0000 0020 6674 7970 6176 6966
-  // xxxx xxxx  f t  y p  a v  i f
-  // We only check for the "ftyp avif" part.
-  // This is probably not perfect, but hopefully this should cover most files.
-  const uint8_t avif_signature[8] = {
-      0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66}; // == "ftypavif"
-  TORCH_CHECK(data.numel() >= 12, err_msg);
-  if ((memcmp(avif_signature, datap + 4, 8) == 0)) {
-    return decode_avif(data, mode);
-  }
-
-  // Similarly for heic we assume the signature is "ftypeheic" but some files
-  // may come as "ftypmif1" where the "heic" part is defined later in the file.
-  // We can't be re-inventing libmagic here. We might need to start relying on
-  // it though...
-  const uint8_t heic_signature[8] = {
-      0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63}; // == "ftypheic"
-  TORCH_CHECK(data.numel() >= 12, err_msg);
-  if ((memcmp(heic_signature, datap + 4, 8) == 0)) {
-    return decode_heic(data, mode);
   }
 
   const uint8_t webp_signature_begin[4] = {0x52, 0x49, 0x46, 0x46}; // == "RIFF"
