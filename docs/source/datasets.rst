@@ -27,6 +27,15 @@ All the datasets have almost similar API. They all have two common arguments:
 ``transform`` and  ``target_transform`` to transform the input and target respectively.
 You can also create your own datasets using the provided :ref:`base classes <base_classes_datasets>`.
 
+.. warning::
+
+    When a dataset object is created with ``download=True``, the files are first
+    downloaded and extracted in the root directory. This download logic is not
+    multi-process safe, so it may lead to conflicts / race conditions if it is
+    run within a distributed setting. In distributed mode, we recommend creating
+    a dummy dataset object to trigger the download logic *before* setting up
+    distributed mode.
+
 Image classification
 ~~~~~~~~~~~~~~~~~~~~
 
