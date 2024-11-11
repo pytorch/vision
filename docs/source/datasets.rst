@@ -29,12 +29,12 @@ You can also create your own datasets using the provided :ref:`base classes <bas
 
 .. warning::
 
-    When built-in datasets are created at the given root directory for the first time,
-    the main process has to download and extract the files in serial. This step is not
-    safe to execute in parallel and will break when multiple processes are launched for
-    distributed training. As a workaround, launch a single process to create the dataset
-    at the given root directory first, terminate it once it is done downloading and
-    extracting the files, and then launch the distributed training.
+    When a dataset object is created with ``download=True``, the files are first
+    downloaded and extracted in the root directory. This download logic is not
+    multi-process safe, so it may lead to conflicts / race conditions if it is
+    run within a distributed setting. In distributed mode, we recommend creating
+    a dummy dataset object to trigger the download logic *before* setting up
+    distributed mode.
 
 Image classification
 ~~~~~~~~~~~~~~~~~~~~
