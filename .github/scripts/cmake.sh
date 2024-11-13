@@ -42,6 +42,8 @@ if [[ "${GPU_ARCH_TYPE}" == "cuda" ]]; then
 else
   WITH_CUDA=0
 fi
+# Not sure why its needed
+LD_LIBRARY_PATH="/opt/conda/envs/ci/lib/:${LD_LIBRARY_PATH}"
 
 echo '::group::Prepare CMake builds'
 mkdir -p cpp_build
@@ -82,9 +84,6 @@ echo '::endgroup::'
 
 echo '::group::Build and run C++ example'
 pushd examples/cpp/build
-
-LD_LIBRARY_PATH="/opt/conda/envs/ci/lib/:${LD_LIBRARY_PATH}"
-ldd /opt/conda/envs/ci/lib/libpng16.so.16
 
 cmake .. -DTorch_DIR="${Torch_DIR}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \

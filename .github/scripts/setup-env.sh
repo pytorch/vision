@@ -31,6 +31,7 @@ conda create \
   ninja cmake \
   libpng \
   libwebp \
+  numpy \
   'ffmpeg<4.3'
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
