@@ -83,7 +83,7 @@ echo '::endgroup::'
 echo '::group::Build and run C++ example'
 pushd examples/cpp/build
 
-PATH="/opt/conda/envs/ci/lib/:${PATH}"
+LD_LIBRARY_PATH="/opt/conda/envs/ci/lib/:${LD_LIBRARY_PATH}"
 ldd /opt/conda/envs/ci/lib/libpng16.so.16
 
 cmake .. -DTorch_DIR="${Torch_DIR}" \
