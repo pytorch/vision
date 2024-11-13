@@ -42,8 +42,6 @@ if [[ "${GPU_ARCH_TYPE}" == "cuda" ]]; then
 else
   WITH_CUDA=0
 fi
-# Not sure why its needed
-LD_LIBRARY_PATH="/opt/conda/envs/ci/lib/:${LD_LIBRARY_PATH}"
 
 echo '::group::Prepare CMake builds'
 mkdir -p cpp_build

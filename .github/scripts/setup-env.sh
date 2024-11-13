@@ -37,6 +37,9 @@ conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools==72.1.0
 
+# set ld_library_path - make sure so libraries are loaded from there
+export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
+
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
   pip install --progress-bar=off av!=10.0.0
@@ -81,7 +84,7 @@ PYTORCH_WHEEL_INDEX="https://download.pytorch.org/whl/${CHANNEL}/${GPU_ARCH_ID}"
 #pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
 
 #install torch built with manylinux 2.28
-pip install --progress-bar=off --pre torch==2.6.0.dev20241106 --index-url=https://download.pytorch.org/whl/nightly/cpu --force-reinstall
+pip install --progress-bar=off --pre torch==2.6.0.dev20241106 --index-url="${PYTORCH_WHEEL_INDEX}" --force-reinstall
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python -c "import torch; exit(not torch.cuda.is_available())"
