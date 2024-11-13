@@ -83,6 +83,9 @@ echo '::endgroup::'
 echo '::group::Build and run C++ example'
 pushd examples/cpp/build
 
+ls -las /opt/conda/envs/ci/lib/
+ldd /opt/conda/envs/ci/lib/libpng.so
+
 cmake .. -DTorch_DIR="${Torch_DIR}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
   -DCMAKE_FIND_FRAMEWORK=NEVER \
