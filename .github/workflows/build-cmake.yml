@@ -33,10 +33,6 @@ jobs:
         export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-
-        #install torch built with manylinux 2.28
-        pip install --progress-bar=off --pre torch==2.6.0.dev20241106 --index-url=https://download.pytorch.org/whl/nightly/cpu --force-reinstall
-
         ./.github/scripts/cmake.sh
 
   macos:

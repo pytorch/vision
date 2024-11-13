@@ -77,7 +77,10 @@ case $GPU_ARCH_TYPE in
     ;;
 esac
 PYTORCH_WHEEL_INDEX="https://download.pytorch.org/whl/${CHANNEL}/${GPU_ARCH_ID}"
-pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
+#pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
+
+#install torch built with manylinux 2.28
+pip install --progress-bar=off --pre torch==2.6.0.dev20241106 --index-url=https://download.pytorch.org/whl/nightly/cpu --force-reinstall
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python -c "import torch; exit(not torch.cuda.is_available())"
