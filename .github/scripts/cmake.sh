@@ -85,6 +85,7 @@ pushd examples/cpp/build
 
 ls -las /opt/conda/envs/ci/lib/
 ldd /opt/conda/envs/ci/lib/libpng.so
+ldconfig -p | grep libpng
 
 cmake .. -DTorch_DIR="${Torch_DIR}" \
   -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
