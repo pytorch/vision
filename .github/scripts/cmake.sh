@@ -46,6 +46,9 @@ fi
 echo '::group::Prepare CMake builds'
 mkdir -p cpp_build
 
+ldd /opt/conda/envs/ci/lib/python3.9/site-packages/torchvision/image.so
+ldd /opt/conda/envs/ci/lib/python3.9/site-packages/torch/lib/libtorch_cpu.so
+
 pushd examples/cpp
 python script_model.py
 mkdir -p build
