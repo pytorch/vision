@@ -33,6 +33,11 @@ jobs:
         export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        # Prepare conda
+        CONDA_PATH=$(which conda)
+        eval "$(${CONDA_PATH} shell.bash hook)"
+        conda activate ci
+        export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
         ./.github/scripts/cmake.sh
 
   macos:

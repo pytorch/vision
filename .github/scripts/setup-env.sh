@@ -37,10 +37,6 @@ conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools==72.1.0
 
-# set ld_library_path - make sure so libraries have precedence
-if [[ "${OS_TYPE}" == linux ]]; then
-  export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
-fi
 
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
