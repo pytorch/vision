@@ -46,8 +46,11 @@ fi
 echo '::group::Prepare CMake builds'
 mkdir -p cpp_build
 
-ldd /opt/conda/envs/ci/lib/python3.9/site-packages/torchvision/image.so
+python
+TORCHVISION_PATH=$(python -c "import pathlib, torch, torchvision; print(pathlib.Path(torchvision.__path__[0]))")
 ldd /opt/conda/envs/ci/lib/python3.9/site-packages/torch/lib/libtorch_cpu.so
+ldd "${TORCHVISION_PATH}/image.so"
+
 
 pushd examples/cpp
 python script_model.py
