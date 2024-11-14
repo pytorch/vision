@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       repository: pytorch/vision
       upload-artifact: docs
@@ -77,11 +77,11 @@ jobs:
 
   upload:
     needs: build
-    if: github.repository == 'pytorch/vision' && github.event_name == 'push' && 
+    if: github.repository == 'pytorch/vision' && github.event_name == 'push' &&
         ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
     permissions:
       contents: write
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       repository: pytorch/vision
       download-artifact: docs
