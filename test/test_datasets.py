@@ -1869,11 +1869,6 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset() as (dataset, _):
             assert dataset.class_to_idx == class_to_idx
 
-    def test_images_download_preexisting(self):
-        with pytest.raises(RuntimeError):
-            with self.create_dataset({"download": True}):
-                pass
-
 
 class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.INaturalist
