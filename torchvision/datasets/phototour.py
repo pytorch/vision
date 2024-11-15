@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 import torch
@@ -179,4 +179,3 @@ def read_info_file(data_dir: str, info_file: str) -> torch.Tensor:
     with open(os.path.join(data_dir, info_file)) as f:
         labels = [int(line.split()[0]) for line in f]
     return torch.LongTensor(labels)
-
