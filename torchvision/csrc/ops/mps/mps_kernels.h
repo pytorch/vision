@@ -1061,9 +1061,9 @@ kernel void ps_roi_pool_backward<DTYPE, INT_DTYPE>(          \
 template <typename scalar_t, typename integer_t>
 kernel void deformable_im2col(
     constant  int64_t  & n                [[buffer(0)]],
-    constant  scalar_t * input_ptr        [[buffer(1)]],
-    constant  scalar_t * offset_ptr       [[buffer(2)]],
-    constant  scalar_t * mask_ptr         [[buffer(3)]],
+    constant  scalar_t * input            [[buffer(1)]],
+    constant  scalar_t * offset           [[buffer(2)]],
+    constant  scalar_t * mask             [[buffer(3)]],
     constant  int64_t  & height           [[buffer(4)]],
     constant  int64_t  & width            [[buffer(5)]],
     constant  int64_t  & weight_h         [[buffer(6)]],
@@ -1080,7 +1080,7 @@ kernel void deformable_im2col(
     constant  int64_t  & out_h            [[buffer(17)]],
     constant  int64_t  & out_w            [[buffer(18)]],
     constant  bool     & use_mask         [[buffer(19)]],
-    device    scalar_t * columns_ptr      [[buffer(20)]],
+    device    scalar_t * columns          [[buffer(20)]],
     uint2     tgid   [[threadgroup_position_in_grid]],
     uint2     tptg   [[threads_per_threadgroup]],
     uint2     tid2   [[thread_position_in_threadgroup]]) {
@@ -1094,19 +1094,21 @@ kernel void deformable_im2col(
     integer_t c_per_offset_grp = n_in_channels / n_offset_grps;
     const integer_t grp_idx = in_c / c_per_offset_grp;
     
-    columns_ptr +=
-    (out_c * (batch_sz * out_h * out_w) + out_b * (out_h * out_w) +
-     out_y * out_w + out_x);
-    
-    input_ptr +=
-    (out_b * (n_in_channels * height * width) + in_c * (height * width));
-    
-    offset_ptr += (out_b * n_offset_grps + grp_idx) * 2 * weight_h * weight_w *
-    out_h * out_w;
-    
+    auto columns_ptr = columns +
+        (out_c * (batch_sz * out_h * out_w) + out_b * (out_h * out_w) +
+         out_y * out_w + out_x);
+
+    auto input_ptr = input +
+        (out_b * (n_in_channels * height * width) + in_c * (height * width));
+
+    auto offset_ptr = offset +
+        (out_b * n_offset_grps + grp_idx) * 2 * weight_h * weight_w * out_h *
+            out_w;
+
+    auto mask_ptr = mask;
     if (use_mask) {
-        mask_ptr += (out_b * n_offset_grps + grp_idx) * weight_h * weight_w *
-        out_h * out_w;
+      mask_ptr += (out_b * n_offset_grps + grp_idx) * weight_h * weight_w *
+          out_h * out_w;
     }
     
     for (int i = 0; i < weight_h; ++i) {
@@ -1117,19 +1119,19 @@ kernel void deformable_im2col(
         scalar_t mask_value = 1;
         if (use_mask) {
             mask_value =
-            mask_ptr[mask_idx * (out_h * out_w) + out_y * out_w + out_x];
+                mask_ptr[mask_idx * (out_h * out_w) + out_y * out_w + out_x];
         }
         
         const scalar_t offset_h =
-        offset_ptr[offset_idx * (out_h * out_w) + out_y * out_w + out_x];
-        const scalar_t offset_w = offset_ptr
-        [(offset_idx + 1) * (out_h * out_w) + out_y * out_w + out_x];
+            offset_ptr[offset_idx * (out_h * out_w) + out_y * out_w + out_x];
+        const scalar_t offset_w = 
+            offset_ptr[(offset_idx + 1) * (out_h * out_w) + out_y * out_w + out_x];
         const scalar_t y =
-        (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
+            (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
         const scalar_t x =
-        (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
+            (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
         *columns_ptr =
-        mask_value * bilinear_interpolate(input_ptr, height, width, y, x, index);
+            mask_value * bilinear_interpolate(input_ptr, height, width, y, x, index);
         columns_ptr += batch_sz * out_h * out_w;
       }
     }
@@ -1141,9 +1143,9 @@ template                                                    \
 [[host_name("deformable_im2col_" #DTYPE)]]                  \
 kernel void deformable_im2col<DTYPE, INT_DTYPE>(            \
     constant  int64_t    & n                [[buffer(0)]],  \
-    constant  DTYPE      * input_ptr        [[buffer(1)]],  \
-    constant  DTYPE      * offset_ptr       [[buffer(2)]],  \
-    constant  DTYPE      * mask_ptr         [[buffer(3)]],  \
+    constant  DTYPE      * input            [[buffer(1)]],  \
+    constant  DTYPE      * offset           [[buffer(2)]],  \
+    constant  DTYPE      * mask             [[buffer(3)]],  \
     constant  int64_t    & height           [[buffer(4)]],  \
     constant  int64_t    & width            [[buffer(5)]],  \
     constant  int64_t    & weight_h         [[buffer(6)]],  \
@@ -1162,7 +1164,7 @@ kernel void deformable_im2col<DTYPE, INT_DTYPE>(            \
     constant  bool       & use_mask         [[buffer(19)]], \
     device    DTYPE      * columns_ptr      [[buffer(20)]], \
     uint2     tgid   [[threadgroup_position_in_grid]],      \
-	uint2     tptg   [[threads_per_threadgroup]],           \
+	  uint2     tptg   [[threads_per_threadgroup]],           \
     uint2     tid2   [[thread_position_in_threadgroup]]);
                                              
 
