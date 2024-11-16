@@ -4,7 +4,6 @@
 
 #include <ATen/ATen.h>
 #include <torch/library.h>
-#include <ATen/ATen.h>
 #include <ATen/mps/MPSProfiler.h>
 #include <ATen/native/mps/OperationUtils.h>
 #include "mps_helpers.h"
