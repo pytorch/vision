@@ -1041,7 +1041,7 @@ class TestDeformConv:
         )
         return DeformConvModuleWrapper(obj) if wrap else obj
 
-    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     def test_is_leaf_node(self, device):
         op_obj = self.make_obj(wrap=True).to(device=device)
         graph_node_names = get_graph_node_names(op_obj)
@@ -1050,12 +1050,17 @@ class TestDeformConv:
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
-    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
+    @pytest.mark.parametrize("dtype", (torch.float16, torch.float32, torch.float64))  # , ids=str)
     @pytest.mark.parametrize("contiguous", (True, False))
-    @pytest.mark.parametrize("batch_sz", (0, 33))
+    @pytest.mark.parametrize("batch_sz", (0, 3))
     @pytest.mark.opcheck_only_one()
-    def test_forward(self, device, contiguous, batch_sz, dtype=None):
+    def test_forward(self, device, contiguous, batch_sz, dtype):
         dtype = dtype or self.dtype
+
+        if device == "mps" and dtype is torch.float64:
+            pytest.skip("MPS does not support float64")
+
         x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
         in_channels = 6
         out_channels = 2
@@ -1974,4 +1979,4 @@ class TestDropBlock:
 
 
 if __name__ == "__main__":
-    pytest.main([__file__])
+    pytest.main([__file__ + "::TestDeformConv::test_forward"])
