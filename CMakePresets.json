@@ -2,8 +2,8 @@
     "version": 6,
     "configurePresets": [
       {
-        "name": "TorchVision",
-        "displayName": "TorchVision",
+        "name": "ARM64_MACOS_DEBUG",
+        "displayName": "ARM64_MACOS_DEBUG",
         "description": "TorchVision build using make generator",
         "generator": "Unix Makefiles",
         "binaryDir": "${sourceDir}/build/default",
@@ -11,11 +11,11 @@
             "CMAKE_BUILD_TYPE":"Debug",
             "CMAKE_INSTALL_PREFIX": "/Users/thomas/Developer/projects/visionDev/vision/product",
             "TORCH_LIBRARY":
-            "/Users/thomas/Developer/projects/visionDev/libtorch/lib/libtorch.dylib",
-            "Torch_DIR": "/Users/thomas/Developer/projects/visionDev/libtorch/share/cmake/Torch",
-            "c10_LIBRARY": "/Users/thomas/Developer/projects/visionDev/libtorch/lib/libc10.dylib",
-            "kineto_LIBRARY": "/Users/thomas/Developer/projects/visionDev/libtorch/lib/libkineto.a",
-            "Caffe2_DIR": "/Users/thomas/Developer/projects/visionDev/libtorch/share/cmake/Caffe2",
+            "/Users/thomas/Developer/projects/pytorchDev/pytorch/torch/lib//libtorch.dylib",
+            "Torch_DIR": "/Users/thomas/Developer/projects/pytorchDev/pytorch/torch/share/cmake/Torch",
+            "c10_LIBRARY": "/Users/thomas/Developer/projects/pytorchDev/pytorch/torch/lib/libc10.dylib",
+            "kineto_LIBRARY": "/Users/thomas/Developer/projects/pytorchDev/pytorch/torch/lib/libkineto.a",
+            "Caffe2_DIR": "/Users/thomas/Developer/projects/pytorchDev/pytorch/torch/share/cmake/Caffe2",
             "PNG_LIBRARY_RELEASE": "/opt/homebrew/Cellar/libpng/1.6.43/lib/libpng.dylib",
             "PNG_PNG_INCLUDE_DIR": "/opt/homebrew/Cellar/libpng/1.6.43/include",
             "JPEG_LIBRARY_RELEASE": "/opt/homebrew/Cellar/jpeg-turbo/3.0.3/lib/libjpeg.dylib",
