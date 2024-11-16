@@ -83,7 +83,7 @@ class PhotoTour(VisionDataset):
             self.cache()
 
         # load the serialized data
-        self.data, self.labels = torch.load(self.data_file)
+        self.data, self.labels = torch.load(self.data_file, weights_only=True)
 
     def __getitem__(self, index: int) -> torch.Tensor:
         """
