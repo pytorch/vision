@@ -1,7 +1,8 @@
 // vision::ops::
-// deform_conv2d_kernal.mm
+// deform_conv2d_kernel.mm
 //
 
+#include <ATen/ATen.h>
 #include <torch/library.h>
 #include <ATen/ATen.h>
 #include <ATen/mps/MPSProfiler.h>
@@ -40,7 +41,7 @@ void deformable_im2col(const at::Tensor& input,
                        at::Tensor data_col) {
     using namespace at::native::mps;
     
-    // Validate tensors as of type mps.
+    // Validate tensors as of type mps.  
     TORCH_CHECK(input.is_mps(),         "input must be a MPS tensor");
     TORCH_CHECK(data_offset.is_mps(),   "data_offset must be a MPS tensor");
     TORCH_CHECK(data_mask.is_mps(),     "data_mask must be a MPS tensor");
