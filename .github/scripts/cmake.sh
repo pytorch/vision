@@ -30,6 +30,10 @@ else
   JOBS=$(nproc)
 fi
 
+if [[ $OS_TYPE == linux ]]; then
+  export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
+fi
+
 TORCH_PATH=$(python -c "import pathlib, torch; print(pathlib.Path(torch.__path__[0]))")
 if [[ $OS_TYPE == windows ]]; then
   PACKAGING_DIR="${PWD}/packaging"
