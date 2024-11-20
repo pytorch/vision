@@ -123,7 +123,6 @@ at::Tensor ps_roi_pool_backward_kernel(const at::Tensor& grad,
 
   float spatial_scale_f = static_cast<float>(spatial_scale);
 
-  auto num_rois = rois.size(0);
   auto grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
 
   if (grad.numel() == 0) {
