@@ -1,10 +1,5 @@
-import torch
-import torchvision.ops
 import triton
 import triton.language as tl
-from torch import Tensor
-from torch._decomp import register_decomposition
-from torchvision import ops
 
 
 @triton.jit
