@@ -37,7 +37,10 @@ def xpu_triton_nms(boxes: torch.Tensor, scores: torch.Tensor, threshold: float) 
     boxes = boxes[order]
     iou_keep_out_mask = torch.zeros(num_boxes, num_boxes, dtype=torch.bool, device=boxes.device)
 
-    grid = lambda meta: (triton.cdiv(num_boxes, meta["BLOCK_SIZE"]), triton.cdiv(num_boxes, meta["BLOCK_SIZE"]))
+    grid = lambda meta: (  # noqa: E731
+        triton.cdiv(num_boxes, meta["BLOCK_SIZE"]),
+        triton.cdiv(num_boxes, meta["BLOCK_SIZE"]),
+    )
     # TODO: We need to tune the config from different devices.
     triton_nms_IoU_kernel[grid](boxes, iou_keep_out_mask, threshold, num_boxes, BLOCK_SIZE=64, num_warps=8)
 
