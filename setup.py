@@ -320,7 +320,12 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without JPEG support")
 
-    if USE_WEBP:
+    if USE_WEBP and IS_ROCM:
+        warnings.warn(
+            "Cannot enable webp support on rocm. "
+            "See https://github.com/pytorch/vision/pull/8724#issuecomment-2503964558."
+        )
+    elif USE_WEBP:
         webp_found, webp_include_dir, webp_library_dir = find_library(header="webp/decode.h")
         if webp_found:
             print("Building torchvision with WEBP support")
