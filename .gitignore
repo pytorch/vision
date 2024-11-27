@@ -43,3 +43,5 @@ xcuserdata/
 # direnv
 .direnv
 .envrc
+
+scripts/release_notes/data.json
