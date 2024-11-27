@@ -460,9 +460,6 @@ def maskrcnn_resnet50_fpn(
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
-        >>>
-        >>> # optionally, if you want to export the model to ONNX:
-        >>> torch.onnx.export(model, x, "mask_rcnn.onnx", opset_version = 11)
 
     Args:
         weights (:class:`~torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights`, optional): The
