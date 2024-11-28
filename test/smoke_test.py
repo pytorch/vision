@@ -102,8 +102,9 @@ def main() -> None:
         smoke_test_torchvision_resnet50_classify("cuda")
 
         # TODO: remove once pytorch/pytorch#110436 is resolved
-        if sys.version_info < (3, 12, 0):
-            smoke_test_compile()
+        # Temporary Disabling compile test. Untill triton with Manylinux2014 is available
+        # if sys.version_info < (3, 12, 0):
+        #    smoke_test_compile()
 
     if torch.backends.mps.is_available():
         smoke_test_torchvision_resnet50_classify("mps")
