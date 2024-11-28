@@ -28,9 +28,10 @@ jobs:
       matrix:
         include:
           - repository: pytorch/vision
-            pre-script: packaging/pre_build_script.sh
-            env-script: packaging/windows/internal/vc_env_helper.bat
+            pre-script: ""
             post-script: ""
+            env-script: packaging/windows/internal/vc_env_helper.bat
+            conda-package-directory: packaging/torchvision
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}

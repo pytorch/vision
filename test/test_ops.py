@@ -507,6 +507,7 @@ class TestRoIAlign(RoIOpTester):
                 rois_dtype=rois_dtype,
             )
 
+    @pytest.mark.skip(reason="1/5000 flaky failure")
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("deterministic", (True, False))
     @pytest.mark.parametrize("x_dtype", (torch.float, torch.bfloat16))

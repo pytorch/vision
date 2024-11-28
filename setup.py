@@ -18,10 +18,19 @@ FORCE_MPS = os.getenv("FORCE_MPS", "0") == "1"
 DEBUG = os.getenv("DEBUG", "0") == "1"
 USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
+USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
+USE_HEIC = os.getenv("TORCHVISION_USE_HEIC", "0") == "1"  # TODO enable by default!
+USE_AVIF = os.getenv("TORCHVISION_USE_AVIF", "0") == "1"  # TODO enable by default!
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
-USE_FFMPEG = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
-USE_VIDEO_CODEC = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
+# Note: the GPU video decoding stuff used to be called "video codec", which
+# isn't an accurate or descriptive name considering there are at least 2 other
+# video deocding backends in torchvision. I'm renaming this to "gpu video
+# decoder" where possible, keeping user facing names (like the env var below) to
+# the old scheme for BC.
+USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
+# Same here: "use ffmpeg" was used to denote "use cpu video decoder".
+USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
@@ -33,7 +42,7 @@ CSRS_DIR = ROOT_DIR / "torchvision/csrc"
 IS_ROCM = (torch.version.hip is not None) and (ROCM_HOME is not None)
 BUILD_CUDA_SOURCES = (torch.cuda.is_available() and ((CUDA_HOME is not None) or IS_ROCM)) or FORCE_CUDA
 
-PACKAGE_NAME = "torchvision"
+package_name = os.getenv("TORCHVISION_PACKAGE_NAME", "torchvision")
 
 print("Torchvision build configuration:")
 print(f"{FORCE_CUDA = }")
@@ -41,10 +50,13 @@ print(f"{FORCE_MPS = }")
 print(f"{DEBUG = }")
 print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
+print(f"{USE_WEBP = }")
+print(f"{USE_HEIC = }")
+print(f"{USE_AVIF = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
-print(f"{USE_FFMPEG = }")
-print(f"{USE_VIDEO_CODEC = }")
+print(f"{USE_CPU_VIDEO_DECODER = }")
+print(f"{USE_GPU_VIDEO_DECODER = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
 print(f"{IS_ROCM = }")
@@ -86,13 +98,12 @@ def get_requirements():
         except DistributionNotFound:
             return None
 
-    pytorch_dep = "torch"
+    pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
     if os.getenv("PYTORCH_VERSION"):
         pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
     requirements = [
-        # TODO: Remove <2 constraint! https://github.com/pytorch/vision/issues/8531
-        "numpy<2" if sys.platform == "win32" else "numpy",
+        "numpy",
         pytorch_dep,
     ]
 
@@ -116,7 +127,7 @@ def get_macros_and_flags():
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
-                nvcc_flags = nvcc_flags.split(" ")
+                nvcc_flags = NVCC_FLAGS.split(" ")
         extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == "win32":
@@ -309,7 +320,53 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without JPEG support")
 
-    if USE_NVJPEG and torch.cuda.is_available():
+    if USE_WEBP:
+        webp_found, webp_include_dir, webp_library_dir = find_library(header="webp/decode.h")
+        if webp_found:
+            print("Building torchvision with WEBP support")
+            print(f"{webp_include_dir = }")
+            print(f"{webp_library_dir = }")
+            if webp_include_dir is not None and webp_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
+                include_dirs.append(webp_include_dir)
+                library_dirs.append(webp_library_dir)
+            webp_library = "libwebp" if sys.platform == "win32" else "webp"
+            libraries.append(webp_library)
+            define_macros += [("WEBP_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without WEBP support")
+
+    if USE_HEIC:
+        heic_found, heic_include_dir, heic_library_dir = find_library(header="libheif/heif.h")
+        if heic_found:
+            print("Building torchvision with HEIC support")
+            print(f"{heic_include_dir = }")
+            print(f"{heic_library_dir = }")
+            if heic_include_dir is not None and heic_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
+                include_dirs.append(heic_include_dir)
+                library_dirs.append(heic_library_dir)
+            libraries.append("heif")
+            define_macros += [("HEIC_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without HEIC support")
+
+    if USE_AVIF:
+        avif_found, avif_include_dir, avif_library_dir = find_library(header="avif/avif.h")
+        if avif_found:
+            print("Building torchvision with AVIF support")
+            print(f"{avif_include_dir = }")
+            print(f"{avif_library_dir = }")
+            if avif_include_dir is not None and avif_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
+                include_dirs.append(avif_include_dir)
+                library_dirs.append(avif_library_dir)
+            libraries.append("avif")
+            define_macros += [("AVIF_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without AVIF support")
+
+    if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
 
         if nvjpeg_found:
@@ -319,6 +376,8 @@ def make_image_extension():
             Extension = CUDAExtension
         else:
             warnings.warn("Building torchvision without NVJPEG support")
+    elif USE_NVJPEG:
+        warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
         name="torchvision.image",
@@ -334,28 +393,21 @@ def make_image_extension():
 def make_video_decoders_extensions():
     print("Building video decoder extensions")
 
-    # Locating ffmpeg
-    ffmpeg_exe = shutil.which("ffmpeg")
-    has_ffmpeg = ffmpeg_exe is not None
-    ffmpeg_version = None
-    # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
-    # FIXME: causes crash. See the following GitHub issues for more details.
-    # FIXME: https://github.com/pytorch/pytorch/issues/65000
-    # FIXME: https://github.com/pytorch/vision/issues/3367
+    build_without_extensions_msg = "Building without video decoders extensions."
     if sys.platform != "linux" or (sys.version_info.major == 3 and sys.version_info.minor == 9):
-        has_ffmpeg = False
-    if has_ffmpeg:
-        try:
-            # This is to check if ffmpeg is installed properly.
-            ffmpeg_version = subprocess.check_output(["ffmpeg", "-version"])
-        except subprocess.CalledProcessError:
-            print("Building torchvision without ffmpeg support")
-            print("  Error fetching ffmpeg version, ignoring ffmpeg.")
-            has_ffmpeg = False
+        # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
+        # FIXME: causes crash. See the following GitHub issues for more details.
+        # FIXME: https://github.com/pytorch/pytorch/issues/65000
+        # FIXME: https://github.com/pytorch/vision/issues/3367
+        print("Can only build video decoder extensions on linux and Python != 3.9")
+        return []
 
-    use_ffmpeg = USE_FFMPEG and has_ffmpeg
+    ffmpeg_exe = shutil.which("ffmpeg")
+    if ffmpeg_exe is None:
+        print(f"{build_without_extensions_msg} Couldn't find ffmpeg binary.")
+        return []
 
-    if use_ffmpeg:
+    def find_ffmpeg_libraries():
         ffmpeg_libraries = {"libavcodec", "libavformat", "libavutil", "libswresample", "libswscale"}
 
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
@@ -382,18 +434,23 @@ def make_video_decoders_extensions():
                 library_found |= len(glob.glob(full_path)) > 0
 
             if not library_found:
-                print("Building torchvision without ffmpeg support")
-                print(f"  {library} header files were not found, disabling ffmpeg support")
-                use_ffmpeg = False
-    else:
-        print("Building torchvision without ffmpeg support")
+                print(f"{build_without_extensions_msg}")
+                print(f"{library} header files were not found.")
+                return None, None
+
+        return ffmpeg_include_dir, ffmpeg_library_dir
+
+    ffmpeg_include_dir, ffmpeg_library_dir = find_ffmpeg_libraries()
+    if ffmpeg_include_dir is None or ffmpeg_library_dir is None:
+        return []
+
+    print("Found ffmpeg:")
+    print(f"  ffmpeg include path: {ffmpeg_include_dir}")
+    print(f"  ffmpeg library_dir: {ffmpeg_library_dir}")
 
     extensions = []
-    if use_ffmpeg:
-        print("Building torchvision with ffmpeg support")
-        print(f"  ffmpeg version: {ffmpeg_version}")
-        print(f"  ffmpeg include path: {ffmpeg_include_dir}")
-        print(f"  ffmpeg library_dir: {ffmpeg_library_dir}")
+    if USE_CPU_VIDEO_DECODER:
+        print("Building with CPU video decoder support")
 
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(ROOT_DIR, "torchvision", "csrc", "io", "video_reader")
@@ -410,6 +467,7 @@ def make_video_decoders_extensions():
 
         extensions.append(
             CppExtension(
+                # This is an aweful name. It should be "cpu_video_decoder". Keeping for BC.
                 "torchvision.video_reader",
                 combined_src,
                 include_dirs=[
@@ -433,25 +491,24 @@ def make_video_decoders_extensions():
             )
         )
 
-    # Locating video codec
-    # CUDA_HOME should be set to the cuda root directory.
-    # TORCHVISION_INCLUDE and TORCHVISION_LIBRARY should include the location to
-    # video codec header files and libraries respectively.
-    video_codec_found = (
-        BUILD_CUDA_SOURCES
-        and CUDA_HOME is not None
-        and any([os.path.exists(os.path.join(folder, "cuviddec.h")) for folder in TORCHVISION_INCLUDE])
-        and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in TORCHVISION_INCLUDE])
-        and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in TORCHVISION_LIBRARY])
-    )
+    if USE_GPU_VIDEO_DECODER:
+        # Locating GPU video decoder headers and libraries
+        # CUDA_HOME should be set to the cuda root directory.
+        # TORCHVISION_INCLUDE and TORCHVISION_LIBRARY should include the locations
+        # to the headers and libraries below
+        if not (
+            BUILD_CUDA_SOURCES
+            and CUDA_HOME is not None
+            and any([os.path.exists(os.path.join(folder, "cuviddec.h")) for folder in TORCHVISION_INCLUDE])
+            and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in TORCHVISION_INCLUDE])
+            and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in TORCHVISION_LIBRARY])
+            and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
+        ):
+            print("Could not find necessary dependencies. Refer the setup.py to check which ones are needed.")
+            print("Building without GPU video decoder support")
+            return extensions
+        print("Building torchvision with GPU video decoder support")
 
-    use_video_codec = USE_VIDEO_CODEC and video_codec_found
-    if (
-        use_video_codec
-        and use_ffmpeg
-        and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
-    ):
-        print("Building torchvision with video codec support")
         gpu_decoder_path = os.path.join(CSRS_DIR, "io", "decoder", "gpu")
         gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
         cuda_libs = os.path.join(CUDA_HOME, "lib64")
@@ -460,7 +517,7 @@ def make_video_decoders_extensions():
         _, extra_compile_args = get_macros_and_flags()
         extensions.append(
             CUDAExtension(
-                "torchvision.Decoder",
+                "torchvision.gpu_decoder",
                 gpu_decoder_src,
                 include_dirs=[CSRS_DIR] + TORCHVISION_INCLUDE + [gpu_decoder_path] + [cuda_inc] + ffmpeg_include_dir,
                 library_dirs=ffmpeg_library_dir + TORCHVISION_LIBRARY + [cuda_libs],
@@ -481,18 +538,6 @@ def make_video_decoders_extensions():
                 extra_compile_args=extra_compile_args,
             )
         )
-    else:
-        print("Building torchvision without video codec support")
-        if (
-            use_video_codec
-            and use_ffmpeg
-            and not any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
-        ):
-            print(
-                "  The installed version of ffmpeg is missing the header file 'bsf.h' which is "
-                "  required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
-                "   `conda install -c conda-forge ffmpeg`."
-            )
 
     return extensions
 
@@ -516,7 +561,7 @@ if __name__ == "__main__":
     version, sha = get_version()
     write_version_file(version, sha)
 
-    print(f"Building wheel {PACKAGE_NAME}-{version}")
+    print(f"Building wheel {package_name}-{version}")
 
     with open("README.md") as f:
         readme = f.read()
@@ -528,7 +573,7 @@ if __name__ == "__main__":
     ]
 
     setup(
-        name=PACKAGE_NAME,
+        name=package_name,
         version=version,
         author="PyTorch Core Team",
         author_email="soumith@pytorch.org",
@@ -538,7 +583,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         license="BSD",
         packages=find_packages(exclude=("test",)),
-        package_data={PACKAGE_NAME: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
+        package_data={package_name: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
         zip_safe=False,
         install_requires=get_requirements(),
         extras_require={
