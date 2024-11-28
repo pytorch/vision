@@ -11,7 +11,7 @@ on:
 
 jobs:
   python-source-and-configs:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       repository: pytorch/vision
       test-infra-ref: main
@@ -38,7 +38,7 @@ jobs:
         fi
 
   c-source:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       repository: pytorch/vision
       test-infra-ref: main
@@ -65,14 +65,14 @@ jobs:
 
 
   python-types:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       repository: pytorch/vision
       test-infra-ref: main
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.9
+        export PYTHON_VERSION=3.11
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
@@ -83,7 +83,7 @@ jobs:
         conda activate ci
 
         echo '::group::Install lint tools'
-        pip install --progress-bar=off mypy
+        pip install --progress-bar=off "mypy==1.13.0"
         echo '::endgroup::'
 
         echo '::group::Lint Python types'

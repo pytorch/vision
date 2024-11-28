@@ -16,6 +16,7 @@ docs/source/auto_examples/
 docs/source/gen_modules/
 docs/source/generated/
 docs/source/models/generated/
+docs/source/sg_execution_times.rst
 # pytorch-sphinx-theme gets installed here
 docs/src
 
@@ -42,3 +43,5 @@ xcuserdata/
 # direnv
 .direnv
 .envrc
+
+scripts/release_notes/data.json
