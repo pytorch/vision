@@ -119,8 +119,6 @@ def test_draw_boxes():
 @pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
 def test_draw_boxes_with_coloured_labels():
     img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
-    img_cp = img.clone()
-    boxes_cp = boxes.clone()
     labels = ["a", "b", "c", "d"]
     colors = ["green", "#FF00FF", (0, 255, 0), "red"]
     label_colors = ["green", "red", (0, 255, 0), "#FF00FF"]
