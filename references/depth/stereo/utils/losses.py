@@ -13,7 +13,7 @@ def make_gaussian_kernel(kernel_size: int, sigma: float) -> torch.Tensor:
     y = torch.arange(kernel_size, dtype=torch.float32)
     x = x - (kernel_size - 1) / 2
     y = y - (kernel_size - 1) / 2
-    x, y = torch.meshgrid(x, y)
+    x, y = torch.meshgrid(x, y, indexing="ij")
     grid = (x**2 + y**2) / (2 * sigma**2)
     kernel = torch.exp(-grid)
     kernel = kernel / kernel.sum()

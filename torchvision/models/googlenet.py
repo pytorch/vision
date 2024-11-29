@@ -171,7 +171,7 @@ class GoogLeNet(nn.Module):
 
     def forward(self, x: Tensor) -> GoogLeNetOutputs:
         x = self._transform_input(x)
-        x, aux1, aux2 = self._forward(x)
+        x, aux2, aux1 = self._forward(x)
         aux_defined = self.training and self.aux_logits
         if torch.jit.is_scripting():
             if not aux_defined:
