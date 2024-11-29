@@ -58,7 +58,7 @@ class RandomErasing(_RandomApplyTransform):
         p: float = 0.5,
         scale: Sequence[float] = (0.02, 0.33),
         ratio: Sequence[float] = (0.3, 3.3),
-        value: float = 0.0,
+        value: Union[float, Sequence[float]] = 0.0,
         inplace: bool = False,
     ):
         super().__init__(p=p)
