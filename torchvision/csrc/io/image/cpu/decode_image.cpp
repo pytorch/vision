@@ -2,6 +2,7 @@
 
 #include "decode_avif.h"
 #include "decode_gif.h"
+#include "decode_heic.h"
 #include "decode_jpeg.h"
 #include "decode_png.h"
 #include "decode_webp.h"
@@ -58,7 +59,18 @@ torch::Tensor decode_image(
       0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66}; // == "ftypavif"
   TORCH_CHECK(data.numel() >= 12, err_msg);
   if ((memcmp(avif_signature, datap + 4, 8) == 0)) {
-    return decode_avif(data);
+    return decode_avif(data, mode);
+  }
+
+  // Similarly for heic we assume the signature is "ftypeheic" but some files
+  // may come as "ftypmif1" where the "heic" part is defined later in the file.
+  // We can't be re-inventing libmagic here. We might need to start relying on
+  // it though...
+  const uint8_t heic_signature[8] = {
+      0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63}; // == "ftypheic"
+  TORCH_CHECK(data.numel() >= 12, err_msg);
+  if ((memcmp(heic_signature, datap + 4, 8) == 0)) {
+    return decode_heic(data, mode);
   }
 
   const uint8_t webp_signature_begin[4] = {0x52, 0x49, 0x46, 0x46}; // == "RIFF"
@@ -67,7 +79,7 @@ torch::Tensor decode_image(
   TORCH_CHECK(data.numel() >= 15, err_msg);
   if ((memcmp(webp_signature_begin, datap, 4) == 0) &&
       (memcmp(webp_signature_end, datap + 8, 7) == 0)) {
-    return decode_webp(data);
+    return decode_webp(data, mode);
   }
 
   TORCH_CHECK(false, err_msg);

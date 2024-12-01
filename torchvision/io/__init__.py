@@ -61,6 +61,7 @@ __all__ = [
     "decode_image",
     "decode_jpeg",
     "decode_png",
+    "decode_heic",
     "decode_webp",
     "decode_gif",
     "encode_jpeg",
@@ -73,3 +74,10 @@ __all__ = [
     "Video",
     "VideoReader",
 ]
+
+from .._internally_replaced_utils import IN_FBCODE
+
+if IN_FBCODE:
+    from .image import _decode_avif as decode_avif, _decode_heic as decode_heic
+
+    __all__ += ["decode_avif", "decode_heic"]

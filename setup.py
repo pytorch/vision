@@ -19,6 +19,7 @@ DEBUG = os.getenv("DEBUG", "0") == "1"
 USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
+USE_HEIC = os.getenv("TORCHVISION_USE_HEIC", "0") == "1"  # TODO enable by default!
 USE_AVIF = os.getenv("TORCHVISION_USE_AVIF", "0") == "1"  # TODO enable by default!
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
@@ -41,7 +42,7 @@ CSRS_DIR = ROOT_DIR / "torchvision/csrc"
 IS_ROCM = (torch.version.hip is not None) and (ROCM_HOME is not None)
 BUILD_CUDA_SOURCES = (torch.cuda.is_available() and ((CUDA_HOME is not None) or IS_ROCM)) or FORCE_CUDA
 
-PACKAGE_NAME = "torchvision"
+package_name = os.getenv("TORCHVISION_PACKAGE_NAME", "torchvision")
 
 print("Torchvision build configuration:")
 print(f"{FORCE_CUDA = }")
@@ -50,6 +51,7 @@ print(f"{DEBUG = }")
 print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
+print(f"{USE_HEIC = }")
 print(f"{USE_AVIF = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
@@ -96,7 +98,7 @@ def get_requirements():
         except DistributionNotFound:
             return None
 
-    pytorch_dep = "torch"
+    pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
     if os.getenv("PYTORCH_VERSION"):
         pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
@@ -125,7 +127,7 @@ def get_macros_and_flags():
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
-                nvcc_flags = nvcc_flags.split(" ")
+                nvcc_flags = NVCC_FLAGS.split(" ")
         extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == "win32":
@@ -334,6 +336,21 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without WEBP support")
 
+    if USE_HEIC:
+        heic_found, heic_include_dir, heic_library_dir = find_library(header="libheif/heif.h")
+        if heic_found:
+            print("Building torchvision with HEIC support")
+            print(f"{heic_include_dir = }")
+            print(f"{heic_library_dir = }")
+            if heic_include_dir is not None and heic_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
+                include_dirs.append(heic_include_dir)
+                library_dirs.append(heic_library_dir)
+            libraries.append("heif")
+            define_macros += [("HEIC_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without HEIC support")
+
     if USE_AVIF:
         avif_found, avif_include_dir, avif_library_dir = find_library(header="avif/avif.h")
         if avif_found:
@@ -349,7 +366,7 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without AVIF support")
 
-    if USE_NVJPEG and torch.cuda.is_available():
+    if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
 
         if nvjpeg_found:
@@ -359,6 +376,8 @@ def make_image_extension():
             Extension = CUDAExtension
         else:
             warnings.warn("Building torchvision without NVJPEG support")
+    elif USE_NVJPEG:
+        warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
         name="torchvision.image",
@@ -542,7 +561,7 @@ if __name__ == "__main__":
     version, sha = get_version()
     write_version_file(version, sha)
 
-    print(f"Building wheel {PACKAGE_NAME}-{version}")
+    print(f"Building wheel {package_name}-{version}")
 
     with open("README.md") as f:
         readme = f.read()
@@ -554,7 +573,7 @@ if __name__ == "__main__":
     ]
 
     setup(
-        name=PACKAGE_NAME,
+        name=package_name,
         version=version,
         author="PyTorch Core Team",
         author_email="soumith@pytorch.org",
@@ -564,7 +583,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         license="BSD",
         packages=find_packages(exclude=("test",)),
-        package_data={PACKAGE_NAME: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
+        package_data={package_name: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
         zip_safe=False,
         install_requires=get_requirements(),
         extras_require={

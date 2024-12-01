@@ -139,7 +139,7 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 }
 
 CUDAJpegDecoder::CUDAJpegDecoder(const torch::Device& target_device)
-    : original_device{torch::kCUDA, torch::cuda::current_device()},
+    : original_device{torch::kCUDA, c10::cuda::current_device()},
       target_device{target_device},
       stream{
           target_device.has_index()

@@ -93,7 +93,6 @@ class SBU(VisionDataset):
         """Download and extract the tarball, and download each individual photo."""
 
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
 
         download_and_extract_archive(self.url, self.root, self.root, self.filename, self.md5_checksum)
