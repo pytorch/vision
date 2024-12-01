@@ -4,8 +4,11 @@
 # MacOS
 **/.DS_Store
 
+build_xcode/
 build/
 dist/
+product/
+framework/
 torchvision.egg-info/
 torchvision/version.py
 */**/__pycache__
@@ -15,6 +18,9 @@ torchvision/version.py
 */**/**/*.pyc
 */**/*~
 *~
+
+#Misc
+collect_env.py
 
 docs/build
 # sphinx-gallery
