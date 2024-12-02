@@ -155,7 +155,13 @@ def write_video(
 
         for img in video_array:
             frame = av.VideoFrame.from_ndarray(img, format="rgb24")
-            frame.pict_type = "NONE"
+            try:
+                frame.pict_type = "NONE"
+            except TypeError:
+                from av.video.frame import PictureType  # noqa
+
+                frame.pict_type = PictureType.NONE
+
             for packet in stream.encode(frame):
                 container.mux(packet)
 
