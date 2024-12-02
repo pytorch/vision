@@ -1,3 +1,4 @@
+import copy
 import inspect
 import math
 import re
@@ -10,7 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import torch
 import torchvision
 from torch import fx, nn
-from torch.fx.graph_module import _copy_attr
+from torch.fx.graph_module import _CodeOnlyModule, _copy_attr, _USER_PRESERVED_ATTRIBUTES_KEY
 
 
 __all__ = ["create_feature_extractor", "get_graph_node_names"]
@@ -329,6 +330,40 @@ class DualGraphModule(fx.GraphModule):
         elif not mode and self.training:
             self.graph = self.eval_graph
         return super().train(mode=mode)
+
+    def _deepcopy_init(self):
+        # See __deepcopy__ below
+        return DualGraphModule.__init__
+
+    def __deepcopy__(self, memo):
+        # Same as the base class' __deepcopy__ from pytorch, with minor
+        # modification to account for train_graph and eval_graph
+        # https://github.com/pytorch/pytorch/blob/f684dbd0026f98f8fa291cab74dbc4d61ba30580/torch/fx/graph_module.py#L875
+        #
+        # This is using a bunch of private stuff from torch, so if that breaks,
+        # we'll likely have to remove this, along with the associated
+        # non-regression test.
+        res = type(self).__new__(type(self))
+        memo[id(self)] = res
+        fake_mod = _CodeOnlyModule(copy.deepcopy(self.__dict__, memo))
+        self._deepcopy_init()(res, fake_mod, fake_mod.__dict__["train_graph"], fake_mod.__dict__["eval_graph"])
+
+        extra_preserved_attrs = [
+            "_state_dict_hooks",
+            "_load_state_dict_pre_hooks",
+            "_load_state_dict_post_hooks",
+            "_replace_hook",
+            "_create_node_hooks",
+            "_erase_node_hooks",
+        ]
+        for attr in extra_preserved_attrs:
+            if attr in self.__dict__:
+                setattr(res, attr, copy.deepcopy(self.__dict__[attr], memo))
+        res.meta = copy.deepcopy(getattr(self, "meta", {}), memo)
+        if _USER_PRESERVED_ATTRIBUTES_KEY in res.meta:
+            for attr_name, attr in res.meta[_USER_PRESERVED_ATTRIBUTES_KEY].items():
+                setattr(res, attr_name, attr)
+        return res
 
 
 def create_feature_extractor(

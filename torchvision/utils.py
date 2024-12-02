@@ -161,6 +161,7 @@ def draw_bounding_boxes(
     width: int = 1,
     font: Optional[str] = None,
     font_size: Optional[int] = None,
+    label_colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
 ) -> torch.Tensor:
 
     """
@@ -184,9 +185,12 @@ def draw_bounding_boxes(
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
         font_size (int): The requested font size in points.
+        label_colors (color or list of colors, optional): Colors for the label text.  See the description of the
+            `colors` argument for details.  Defaults to the same colors used for the boxes.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
+
     """
     import torchvision.transforms.v2.functional as F  # noqa
 
@@ -219,6 +223,10 @@ def draw_bounding_boxes(
         )
 
     colors = _parse_colors(colors, num_objects=num_boxes)
+    if label_colors:
+        label_colors = _parse_colors(label_colors, num_objects=num_boxes)  # type: ignore[assignment]
+    else:
+        label_colors = colors.copy()  # type: ignore[assignment]
 
     if font is None:
         if font_size is not None:
@@ -243,7 +251,7 @@ def draw_bounding_boxes(
     else:
         draw = ImageDraw.Draw(img_to_draw)
 
-    for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
+    for bbox, color, label, label_color in zip(img_boxes, colors, labels, label_colors):  # type: ignore[arg-type]
         if fill:
             fill_color = color + (100,)
             draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
@@ -252,7 +260,7 @@ def draw_bounding_boxes(
 
         if label is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
+            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
     out = F.pil_to_tensor(img_to_draw)
     if original_dtype.is_floating_point:
