@@ -55,7 +55,7 @@ class LSUNClass(VisionDataset):
 
 
 class LSUN(VisionDataset):
-    """`LSUN <https://www.yf.io/p/lsun>`_ dataset.
+    """`LSUN <https://paperswithcode.com/dataset/lsun>`_ dataset.
 
     You will need to install the ``lmdb`` package to use this dataset: run
     ``pip install lmdb``
