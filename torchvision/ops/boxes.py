@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import torch
+import torch.nn.functional as F
 import torchvision
 from torch import Tensor
 from torchvision.extension import _assert_has_ops
@@ -379,7 +380,6 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
 
 
 def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Tensor, Tensor]:
-
     iou = box_iou(boxes1, boxes2)
     lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
     rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
@@ -397,6 +397,45 @@ def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Te
     # The distance IoU is the IoU penalized by a normalized
     # distance between boxes' centers squared.
     return iou - (centers_distance_squared / diagonal_distance_squared), iou
+
+
+def masks_to_boundaries(masks: torch.Tensor, kernel_size: int) -> torch.Tensor:
+    """
+    Compute the boundaries around the provided binary masks using morphological operations with a custom structuring element.
+    Enforces the use of an odd-sized kernel for the structuring element.
+
+    Parameters:
+    - masks: Input binary masks tensor of shape [N, H, W].
+    - kernel_size: Size of the kernel for the structuring element, must be odd.
+
+    Returns:
+    - Tensor representing the boundaries of the masks with shape [N, H, W].
+    """
+    if masks.numel() == 0:
+        return torch.zeros_like(masks)
+
+    # Ensure kernel_size is odd
+    if kernel_size % 2 == 0:
+        raise ValueError("kernel_size must be odd.")
+
+    # Define the structuring element based on kernel_size
+    selem = torch.ones((1, 1, kernel_size, kernel_size), dtype=torch.float32, device=masks.device)
+
+    masks_float = masks.float().unsqueeze(1)
+
+    # Apply convolution with the structuring element
+    padding = (kernel_size - 1) // 2
+    eroded_masks = F.conv2d(masks_float, selem, padding=padding, stride=1)
+    eroded_masks = eroded_masks.squeeze(1)  # Remove channel dimension after convolution
+
+    # Thresholding: a pixel in the eroded mask should be set if the convolution result
+    # is equal to the sum of the structuring element (i.e., all ones in the kernel)
+    threshold = torch.sum(selem).item()
+    eroded_masks = (eroded_masks == threshold).float()
+
+    contours = torch.logical_xor(masks, eroded_masks.bool())
+
+    return contours
 
 
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
