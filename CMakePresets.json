@@ -6,7 +6,7 @@
         "displayName": "ARM64_MACOS_DEBUG",
         "description": "TorchVision build using make generator",
         "generator": "Unix Makefiles",
-        "binaryDir": "${sourceDir}/build/default",
+        "binaryDir": "${sourceDir}/build",
         "cacheVariables": {
             "CMAKE_BUILD_TYPE":"Debug",
             "CMAKE_INSTALL_PREFIX": "/Users/thomas/Developer/projects/visionDev/vision/product",
