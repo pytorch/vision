@@ -45,7 +45,6 @@ IS_WINDOWS = sys.platform in ("win32", "cygwin")
 IS_MACOS = sys.platform == "darwin"
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 WEBP_TEST_IMAGES_DIR = os.environ.get("WEBP_TEST_IMAGES_DIR", "")
-IS_ROCM = torch.version.hip is not None
 # See https://github.com/pytorch/vision/pull/8724#issuecomment-2503964558
 ROCM_WEBP_MESSAGE = "ROCM not built with webp support."
 
@@ -872,7 +871,6 @@ decode_fun_and_match = [
     (decode_jpeg, "Not a JPEG file"),
     (decode_gif, re.escape("DGifOpenFileName() failed - 103")),
     (decode_webp, "WebPGetFeatures failed."),
-    pytest.param(decode_webp, "WebPGetFeatures failed.", marks=pytest.mark.skipif(IS_ROCM, reason=ROCM_WEBP_MESSAGE)),
 ]
 if DECODE_AVIF_ENABLED:
     decode_fun_and_match.append((_decode_avif, "BMFF parsing failed"))
@@ -893,7 +891,6 @@ def test_decode_bad_encoded_data(decode_fun, match):
         decode_fun(encoded_data)
 
 
-@pytest.mark.skipif(IS_ROCM, reason=ROCM_WEBP_MESSAGE)
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))
 def test_decode_webp(decode_fun, scripted):
@@ -910,7 +907,6 @@ def test_decode_webp(decode_fun, scripted):
 # including within the repo. The test images were downloaded manually from the
 # different pages of https://developers.google.com/speed/webp/gallery
 @pytest.mark.skipif(not WEBP_TEST_IMAGES_DIR, reason="WEBP_TEST_IMAGES_DIR is not set")
-@pytest.mark.skipif(IS_ROCM, reason=ROCM_WEBP_MESSAGE)
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
 @pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize(
