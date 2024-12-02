@@ -3,6 +3,7 @@
 
 #if WEBP_FOUND
 #include "webp/decode.h"
+#include "webp/types.h"
 #endif // WEBP_FOUND
 
 namespace vision {
