@@ -224,9 +224,9 @@ def draw_bounding_boxes(
 
     colors = _parse_colors(colors, num_objects=num_boxes)
     if label_colors:
-        label_colors = _parse_colors(label_colors, num_objects=num_boxes)
+        label_colors = _parse_colors(label_colors, num_objects=num_boxes)  # type: ignore[assignment]
     else:
-        label_colors = colors.copy()
+        label_colors = colors.copy()  # type: ignore[assignment]
 
     if font is None:
         if font_size is not None:
