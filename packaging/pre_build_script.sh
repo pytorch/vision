@@ -32,8 +32,9 @@ else
     conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
   fi
 
+  conda install libjpeg-turbo -yq
   conda install libwebp -yq
-  yum install -y libjpeg-turbo-devel freetype gnutls
+  yum install -y freetype gnutls
   pip install auditwheel
 fi
 
