@@ -37,7 +37,7 @@ jobs:
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
         ./.github/scripts/setup-env.sh
-        
+
         # Prepare conda
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"

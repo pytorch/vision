@@ -20,7 +20,7 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -33,7 +33,6 @@ jobs:
         export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-
         ./.github/scripts/cmake.sh
 
   macos:

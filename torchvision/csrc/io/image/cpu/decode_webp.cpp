@@ -3,6 +3,7 @@
 
 #if WEBP_FOUND
 #include "webp/decode.h"
+#include "webp/types.h"
 #endif // WEBP_FOUND
 
 namespace vision {
@@ -44,10 +45,12 @@ torch::Tensor decode_webp(
 
   auto decoded_data =
       decoding_func(encoded_data_p, encoded_data_size, &width, &height);
+
   TORCH_CHECK(decoded_data != nullptr, "WebPDecodeRGB[A] failed.");
 
+  auto deleter = [decoded_data](void*) { WebPFree(decoded_data); };
   auto out = torch::from_blob(
-      decoded_data, {height, width, num_channels}, torch::kUInt8);
+      decoded_data, {height, width, num_channels}, deleter, torch::kUInt8);
 
   return out.permute({2, 0, 1});
 }

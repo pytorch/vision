@@ -1,4 +1,5 @@
 import random
+from copy import deepcopy
 from itertools import chain
 from typing import Mapping, Sequence
 
@@ -322,3 +323,14 @@ class TestFxFeatureExtraction:
         out = model(self.inp)
         # And backward
         out["leaf_module"].float().mean().backward()
+
+    def test_deepcopy(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8634
+        model = models.efficientnet_b3(weights=None)
+        extractor = create_feature_extractor(model=model, return_nodes={"classifier.0": "out"})
+
+        extractor.eval()
+        extractor.train()
+        extractor = deepcopy(extractor)
+        extractor.eval()
+        extractor.train()
