@@ -7,7 +7,6 @@
 build_xcode/
 build/
 dist/
-product/
 framework/
 torchvision.egg-info/
 torchvision/version.py
