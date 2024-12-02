@@ -260,7 +260,7 @@ def draw_bounding_boxes(
 
         if label is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)
+            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
     out = F.pil_to_tensor(img_to_draw)
     if original_dtype.is_floating_point:
