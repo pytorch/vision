@@ -23,10 +23,6 @@ static auto registry =
             &decode_jpeg)
         .op("image::decode_webp(Tensor encoded_data, int mode) -> Tensor",
             &decode_webp)
-        .op("image::decode_heic(Tensor encoded_data, int mode) -> Tensor",
-            &decode_heic)
-        .op("image::decode_avif(Tensor encoded_data, int mode) -> Tensor",
-            &decode_avif)
         .op("image::encode_jpeg", &encode_jpeg)
         .op("image::read_file", &read_file)
         .op("image::write_file", &write_file)
