@@ -82,7 +82,6 @@ class RandomErasing(_RandomApplyTransform):
             value = None
         elif isinstance(value, (list, tuple)):
             value = [float(v) for v in value]
-        
         self.value: Optional[Sequence[float]] = value
         self.inplace = inplace
 
