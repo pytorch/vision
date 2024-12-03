@@ -77,13 +77,13 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         if isinstance(value, (int, float)):
-            self.value = [float(value)]
+            value = [float(value)]
         elif isinstance(value, str):
-            self.value = None
+            value = None
         elif isinstance(value, (list, tuple)):
-            self.value = [float(v) for v in value]
-        else:
-            self.value = value
+            value = [float(v) for v in value]
+        
+        self.value: Optional[Sequence[float]] = value
         self.inplace = inplace
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
