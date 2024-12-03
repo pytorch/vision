@@ -22,6 +22,8 @@ TORCH_LIBRARY_FRAGMENT(torchvision, m) {
   m.set_python_module("torchvision._meta_registrations");
   m.def(TORCH_SELECTIVE_SCHEMA(
       "torchvision::nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor"));
+  m.def(TORCH_SELECTIVE_SCHEMA(
+      "torchvision::nms_kernel_postprocess(Tensor order, Tensor iou_keep_out_mask, int num_boxes) -> Tensor"));
 }
 
 } // namespace ops

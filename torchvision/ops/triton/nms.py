@@ -3,7 +3,13 @@ import triton.language as tl
 
 
 @triton.jit
-def triton_nms_IoU_kernel(boxes, output_ptr, threshold, num_boxes, BLOCK_SIZE: tl.constexpr):
+def _combine_bits(val0, val1):
+    tl.static_assert(val0.dtype == tl.int32, "input must be int32")
+    tl.static_assert(val1.dtype == tl.int32, "input must be int32")
+    return val0 | val1
+
+
+def triton_nms_IoU_kernel(boxes, output_ptr, threshold, num_boxes, stride_i, stride_j, BLOCK_SIZE: tl.constexpr):
     """
     This nms_kernel computes the supressed mask of boxes [i, j].
     mask[i, j]==1 means if we choose box 1, the box j will be supressed.
@@ -14,6 +20,8 @@ def triton_nms_IoU_kernel(boxes, output_ptr, threshold, num_boxes, BLOCK_SIZE: t
         output_ptr (tl.pointer): A pointer to the output tensor where the mask will be stored.
         threshold (float): The IoU threshold for suppressing boxes.
         num_boxes (int): The total number of boxes.
+        stride_i (int): The stride of the output tensor along the first dimension.
+        stride_j (int): The stride of the output tensor along the second dimension.
         BLOCK_SIZE (tl.constexpr): The block size for the Triton kernel.
     """
 
@@ -59,14 +67,23 @@ def triton_nms_IoU_kernel(boxes, output_ptr, threshold, num_boxes, BLOCK_SIZE: t
     area_b = (col_block_x2 - col_block_x1) * (col_block_y2 - col_block_y1)
     union = area_a + area_b - intersection
 
-    iou_keep_out_mask = ((intersection / union) > threshold).to(tl.int8)
+    iou_keep_out_bit_mask = ((intersection / union) > threshold).to(tl.int32)
 
+    shift_offsets = tl.arange(0, BLOCK_SIZE) % 32
+    shift_offsets = tl.flip(shift_offsets, 0)[None, :]
+    shift_offsets = tl.broadcast_to(shift_offsets.to(tl.int32), [BLOCK_SIZE, BLOCK_SIZE])
+    iou_keep_out_bit_mask = iou_keep_out_bit_mask << shift_offsets
+
+    iou_keep_out_bit_mask = tl.reshape(iou_keep_out_bit_mask, (BLOCK_SIZE, (BLOCK_SIZE + 32 - 1) // 32, 32))
+    iou_keep_out_combined = tl.reduce(iou_keep_out_bit_mask, axis=2, combine_fn=_combine_bits)
+
+    iou_keep_out_combined = iou_keep_out_combined.to(tl.int64)
     output_block_ptr = tl.make_block_ptr(
         output_ptr,
-        shape=(num_boxes, num_boxes),
-        strides=(num_boxes, 1),
-        offsets=(row_block_start, col_block_start),
-        block_shape=(BLOCK_SIZE, BLOCK_SIZE),
+        shape=(num_boxes, (num_boxes + 32 - 1) // 32),
+        strides=(stride_i, stride_j),
+        offsets=(row_block_start, 0),
+        block_shape=(BLOCK_SIZE, (BLOCK_SIZE + 32 - 1) // 32),
         order=(0, 1),
     )
-    tl.store(output_block_ptr, iou_keep_out_mask, boundary_check=(0, 1))
+    tl.store(output_block_ptr, iou_keep_out_combined, boundary_check=(0, 1))

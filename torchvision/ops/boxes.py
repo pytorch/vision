@@ -41,6 +41,10 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 
+def nms_kernel_postprocess(order, iou_keep_out_mask, num_boxes) -> Tensor:
+    return torch.ops.torchvision.nms_kernel_postprocess(order, iou_keep_out_mask, num_boxes)
+
+
 def batched_nms(
     boxes: Tensor,
     scores: Tensor,
