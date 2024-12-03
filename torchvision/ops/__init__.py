@@ -10,6 +10,7 @@ from .boxes import (
     generalized_box_iou,
     masks_to_boxes,
     nms,
+    nms_kernel_postprocess,
     remove_small_boxes,
 )
 from .ciou_loss import complete_box_iou_loss
@@ -37,6 +38,7 @@ __all__ = [
     "DeformConv2d",
     "nms",
     "batched_nms",
+    "nms_kernel_postprocess",
     "remove_small_boxes",
     "clip_boxes_to_image",
     "box_convert",

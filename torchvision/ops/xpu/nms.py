@@ -1,5 +1,6 @@
 import torch
 import triton
+from torchvision.ops.boxes import nms_kernel_postprocess
 
 from torchvision.ops.triton.nms import triton_nms_IoU_kernel
 
@@ -35,21 +36,21 @@ def xpu_triton_nms(boxes: torch.Tensor, scores: torch.Tensor, threshold: float) 
     # Triton does not support argsort yet, thus it needs to fallback to ATen Calls
     order = torch.argsort(scores, descending=True)
     boxes = boxes[order]
-    iou_keep_out_mask = torch.zeros(num_boxes, num_boxes, dtype=torch.bool, device=boxes.device)
+    iou_keep_out_mask = torch.zeros(num_boxes, (num_boxes + 32 - 1) // 32, dtype=torch.int64, device=boxes.device)
 
     grid = lambda meta: (  # noqa: E731
         triton.cdiv(num_boxes, meta["BLOCK_SIZE"]),
         triton.cdiv(num_boxes, meta["BLOCK_SIZE"]),
     )
-    # TODO: We need to tune the config from different devices.
-    triton_nms_IoU_kernel[grid](boxes, iou_keep_out_mask, threshold, num_boxes, BLOCK_SIZE=64, num_warps=8)
+    triton_nms_IoU_kernel[grid](
+        boxes,
+        iou_keep_out_mask,
+        threshold,
+        num_boxes,
+        iou_keep_out_mask.stride(0),
+        iou_keep_out_mask.stride(1),
+        BLOCK_SIZE=64,
+        num_warps=4,
+    )
 
-    # # TODO: Need to improve performance for this reduction
-    picked = []
-    remove_box = torch.zeros(num_boxes, dtype=torch.bool, device=boxes.device)
-    for i in range(num_boxes):
-        if not (remove_box[i]):
-            picked.append(order[i])
-            remove_box[i:] |= iou_keep_out_mask[i][i:]
-
-    return torch.as_tensor(picked)
+    return nms_kernel_postprocess(order.cpu(), iou_keep_out_mask.cpu(), num_boxes).to(order.device)
