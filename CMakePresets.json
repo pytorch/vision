@@ -9,7 +9,7 @@
         "binaryDir": "${sourceDir}/build",
         "cacheVariables": {
             "CMAKE_BUILD_TYPE":"Debug",
-            "CMAKE_INSTALL_PREFIX": "/Users/thomas/Developer/projects/visionDev/vision/product",
+            "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/product",
             "TORCH_LIBRARY":
             "/Users/thomas/Developer/projects/pytorchDev/pytorch/torch/lib//libtorch.dylib",
             "Torch_DIR": "/Users/thomas/Developer/projects/pytorchDev/pytorch/torch/share/cmake/Torch",
