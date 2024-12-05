@@ -43,6 +43,8 @@ IS_WINDOWS = sys.platform in ("win32", "cygwin")
 IS_MACOS = sys.platform == "darwin"
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 WEBP_TEST_IMAGES_DIR = os.environ.get("WEBP_TEST_IMAGES_DIR", "")
+# See https://github.com/pytorch/vision/pull/8724#issuecomment-2503964558
+ROCM_WEBP_MESSAGE = "ROCM not built with webp support."
 
 
 def _get_safe_image_name(name):

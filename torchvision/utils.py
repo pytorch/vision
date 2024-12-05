@@ -224,9 +224,9 @@ def draw_bounding_boxes(
 
     colors = _parse_colors(colors, num_objects=num_boxes)
     if label_colors:
-        label_colors = _parse_colors(label_colors, num_objects=num_boxes)
+        label_colors = _parse_colors(label_colors, num_objects=num_boxes)  # type: ignore[assignment]
     else:
-        label_colors = colors.copy()
+        label_colors = colors.copy()  # type: ignore[assignment]
 
     if font is None:
         if font_size is not None:
@@ -260,7 +260,7 @@ def draw_bounding_boxes(
 
         if label is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)
+            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
     out = F.pil_to_tensor(img_to_draw)
     if original_dtype.is_floating_point:
