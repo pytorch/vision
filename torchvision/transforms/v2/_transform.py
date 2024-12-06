@@ -27,7 +27,15 @@ class Transform(nn.Module):
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         pass
 
+    # This exists for BC. When v2 was introduced, this method was private. Now
+    # it's publicly exposed as `make_params()`. It cannot be exposed as
+    # `get_params()` because there is already a `get_params()` methods for v2
+    # transforms: it's the v1's `get_params()` that we have  to keep in order to
+    # guarantee 100% BC with v1. (It's defined in __init_subclass__ below).
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        return self.make_params(flat_inputs)
+
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict()
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
@@ -43,7 +51,7 @@ class Transform(nn.Module):
         self._check_inputs(flat_inputs)
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
-        params = self._get_params(
+        params = self.make_params(
             [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
         )
 
@@ -164,7 +172,7 @@ class _RandomApplyTransform(Transform):
             return inputs
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
-        params = self._get_params(
+        params = self.make_params(
             [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
         )
 

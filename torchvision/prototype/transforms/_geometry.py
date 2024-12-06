@@ -53,7 +53,7 @@ class FixedSizeCrop(Transform):
                 f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
             )
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         height, width = query_size(flat_inputs)
         new_height = min(height, self.crop_height)
         new_width = min(width, self.crop_width)

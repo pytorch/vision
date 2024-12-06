@@ -46,7 +46,7 @@ class RandomGrayscale(_RandomApplyTransform):
     def __init__(self, p: float = 0.1) -> None:
         super().__init__(p=p)
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_input_channels, *_ = query_chw(flat_inputs)
         return dict(num_input_channels=num_input_channels)
 
@@ -142,7 +142,7 @@ class ColorJitter(Transform):
     def _generate_value(left: float, right: float) -> float:
         return torch.empty(1).uniform_(left, right).item()
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         fn_idx = torch.randperm(4)
 
         b = None if self.brightness is None else self._generate_value(self.brightness[0], self.brightness[1])
@@ -173,7 +173,7 @@ class ColorJitter(Transform):
 class RandomChannelPermutation(Transform):
     """Randomly permute the channels of an image or video"""
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
         return dict(permutation=torch.randperm(num_channels))
 
@@ -220,7 +220,7 @@ class RandomPhotometricDistort(Transform):
         self.saturation = saturation
         self.p = p
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
         params: Dict[str, Any] = {
             key: ColorJitter._generate_value(range[0], range[1]) if torch.rand(1) < self.p else None
