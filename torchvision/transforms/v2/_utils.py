@@ -159,6 +159,9 @@ def get_bounding_boxes(flat_inputs: List[Any]) -> tv_tensors.BoundingBoxes:
 
 
 def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
+    print("AEFAEFAE")
+    print(len(flat_inputs))
+    print([type(inpt) for inpt in flat_inputs])
     chws = {
         tuple(get_dimensions(inpt))
         for inpt in flat_inputs

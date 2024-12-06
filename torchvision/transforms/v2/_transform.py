@@ -15,6 +15,11 @@ from .functional._utils import _get_kernel
 
 
 class Transform(nn.Module):
+    """Base class to implement your own v2 transforms.
+
+    See  :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` for
+    more details.
+    """
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
