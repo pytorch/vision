@@ -1843,7 +1843,7 @@ class TestRotate:
 
 class TestContainerTransforms:
     class BuiltinTransform(transforms.Transform):
-        def _transform(self, inpt, params):
+        def transform(self, inpt, params):
             return inpt
 
     class PackedInputTransform(nn.Module):
@@ -5544,7 +5544,7 @@ def test_pure_tensor_heuristic(make_inputs):
         return pure_tensors[0] if pure_tensors else None, pure_tensors[1:], others
 
     class CopyCloneTransform(transforms.Transform):
-        def _transform(self, inpt, params):
+        def transform(self, inpt, params):
             return inpt.clone() if isinstance(inpt, torch.Tensor) else inpt.copy()
 
         @staticmethod

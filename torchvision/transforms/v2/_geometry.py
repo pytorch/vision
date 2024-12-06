@@ -44,7 +44,7 @@ class RandomHorizontalFlip(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomHorizontalFlip
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.horizontal_flip, inpt)
 
 
@@ -62,7 +62,7 @@ class RandomVerticalFlip(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomVerticalFlip
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.vertical_flip, inpt)
 
 
@@ -156,7 +156,7 @@ class Resize(Transform):
         self.max_size = max_size
         self.antialias = antialias
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize,
             inpt,
@@ -189,7 +189,7 @@ class CenterCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.center_crop, inpt, output_size=self.size)
 
 
@@ -306,7 +306,7 @@ class RandomResizedCrop(Transform):
 
         return dict(top=i, left=j, height=h, width=w)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resized_crop, inpt, **params, size=self.size, interpolation=self.interpolation, antialias=self.antialias
         )
@@ -363,7 +363,7 @@ class FiveCrop(Transform):
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.five_crop, inpt, self.size)
 
     def check_inputs(self, flat_inputs: List[Any]) -> None:
@@ -412,7 +412,7 @@ class TenCrop(Transform):
         if has_any(flat_inputs, tv_tensors.BoundingBoxes, tv_tensors.Mask):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.ten_crop, inpt, self.size, vertical_flip=self.vertical_flip)
 
 
@@ -483,7 +483,7 @@ class Pad(Transform):
         self._fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
@@ -551,7 +551,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
         return dict(padding=padding)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(F.pad, inpt, **params, fill=fill)
 
@@ -622,7 +622,7 @@ class RandomRotation(Transform):
         angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
         return dict(angle=angle)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
             F.rotate,
@@ -743,7 +743,7 @@ class RandomAffine(Transform):
         shear = (shear_x, shear_y)
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
             F.affine,
@@ -897,7 +897,7 @@ class RandomCrop(Transform):
             padding=padding,
         )
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
             fill = _get_fill(self._fill, type(inpt))
             inpt = self._call_kernel(F.pad, inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
@@ -982,7 +982,7 @@ class RandomPerspective(_RandomApplyTransform):
         perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
         return dict(coefficients=perspective_coeffs)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
             F.perspective,
@@ -1074,7 +1074,7 @@ class ElasticTransform(Transform):
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
         return dict(displacement=displacement)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
             F.elastic,
@@ -1194,7 +1194,7 @@ class RandomIoUCrop(Transform):
 
                 return dict(top=top, left=left, height=new_h, width=new_w, is_within_crop_area=is_within_crop_area)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
 
         if len(params) < 1:
             return inpt
@@ -1272,7 +1272,7 @@ class ScaleJitter(Transform):
 
         return dict(size=(new_height, new_width))
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize, inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
         )
@@ -1340,7 +1340,7 @@ class RandomShortestSize(Transform):
 
         return dict(size=(new_height, new_width))
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize, inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias
         )
@@ -1410,7 +1410,7 @@ class RandomResize(Transform):
         size = int(torch.randint(self.min_size, self.max_size, ()))
         return dict(size=[size])
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize, inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias
         )

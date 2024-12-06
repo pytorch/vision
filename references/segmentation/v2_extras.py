@@ -16,7 +16,7 @@ class PadIfSmaller(v2.Transform):
         needs_padding = any(padding)
         return dict(padding=padding, needs_padding=needs_padding)
 
-    def _transform(self, inpt, params):
+    def transform(self, inpt, params):
         if not params["needs_padding"]:
             return inpt
 

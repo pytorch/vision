@@ -107,7 +107,7 @@ class FixedSizeCrop(Transform):
             needs_pad=needs_pad,
         )
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_crop"]:
             inpt = self._call_kernel(
                 F.crop,

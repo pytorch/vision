@@ -40,7 +40,7 @@ class Transform(nn.Module):
         kernel = _get_kernel(functional, type(inpt), allow_passthrough=True)
         return kernel(inpt, *args, **kwargs)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         raise NotImplementedError
 
     def forward(self, *inputs: Any) -> Any:
@@ -54,7 +54,7 @@ class Transform(nn.Module):
         )
 
         flat_outputs = [
-            self._transform(inpt, params) if needs_transform else inpt
+            self.transform(inpt, params) if needs_transform else inpt
             for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
         ]
 
@@ -175,7 +175,7 @@ class _RandomApplyTransform(Transform):
         )
 
         flat_outputs = [
-            self._transform(inpt, params) if needs_transform else inpt
+            self.transform(inpt, params) if needs_transform else inpt
             for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
         ]
 
