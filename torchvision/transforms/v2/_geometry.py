@@ -366,7 +366,7 @@ class FiveCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.five_crop, inpt, self.size)
 
-    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+    def check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(flat_inputs, tv_tensors.BoundingBoxes, tv_tensors.Mask):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
@@ -408,7 +408,7 @@ class TenCrop(Transform):
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
-    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+    def check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(flat_inputs, tv_tensors.BoundingBoxes, tv_tensors.Mask):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
@@ -1132,7 +1132,7 @@ class RandomIoUCrop(Transform):
         self.options = sampler_options
         self.trials = trials
 
-    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+    def check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
             has_all(flat_inputs, tv_tensors.BoundingBoxes)
             and has_any(flat_inputs, PIL.Image.Image, tv_tensors.Image, is_pure_tensor)

@@ -35,7 +35,7 @@ class FixedSizeCrop(Transform):
 
         self.padding_mode = padding_mode
 
-    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+    def check_inputs(self, flat_inputs: List[Any]) -> None:
         if not has_any(
             flat_inputs,
             PIL.Image.Image,

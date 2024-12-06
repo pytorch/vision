@@ -24,17 +24,15 @@ class Transform(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
-    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+    def check_inputs(self, flat_inputs: List[Any]) -> None:
         pass
 
-    # This exists for BC. When v2 was introduced, this method was private. Now
-    # it's publicly exposed as `make_params()`. It cannot be exposed as
-    # `get_params()` because there is already a `get_params()` methods for v2
-    # transforms: it's the v1's `get_params()` that we have  to keep in order to
-    # guarantee 100% BC with v1. (It's defined in __init_subclass__ below).
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        return self.make_params(flat_inputs)
-
+    # When v2 was introduced, this method was private and called
+    # `_get_params()`. Now it's publicly exposed as `make_params()`. It cannot
+    # be exposed as `get_params()` because there is already a `get_params()`
+    # methods for v2 transforms: it's the v1's `get_params()` that we have  to
+    # keep in order to guarantee 100% BC with v1. (It's defined in
+    # __init_subclass__ below).
     def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict()
 
@@ -48,7 +46,7 @@ class Transform(nn.Module):
     def forward(self, *inputs: Any) -> Any:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
-        self._check_inputs(flat_inputs)
+        self.check_inputs(flat_inputs)
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
         params = self.make_params(
@@ -161,12 +159,12 @@ class _RandomApplyTransform(Transform):
     def forward(self, *inputs: Any) -> Any:
         # We need to almost duplicate `Transform.forward()` here since we always want to check the inputs, but return
         # early afterwards in case the random check triggers. The same result could be achieved by calling
-        # `super().forward()` after the random check, but that would call `self._check_inputs` twice.
+        # `super().forward()` after the random check, but that would call `self.check_inputs` twice.
 
         inputs = inputs if len(inputs) > 1 else inputs[0]
         flat_inputs, spec = tree_flatten(inputs)
 
-        self._check_inputs(flat_inputs)
+        self.check_inputs(flat_inputs)
 
         if torch.rand(1) >= self.p:
             return inputs
