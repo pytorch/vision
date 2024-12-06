@@ -510,6 +510,12 @@ Developer tools
 
 .. autosummary::
     :toctree: generated/
+    :template: class.rst
+
+    v2.Transform
+
+.. autosummary::
+    :toctree: generated/
     :template: function.rst
 
     v2.functional.register_kernel

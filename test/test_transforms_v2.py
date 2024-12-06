@@ -1355,7 +1355,7 @@ class TestAffine:
         transform = transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, center=center)
 
         torch.manual_seed(seed)
-        params = transform._get_params([bounding_boxes])
+        params = transform.make_params([bounding_boxes])
 
         torch.manual_seed(seed)
         actual = transform(bounding_boxes)
@@ -1369,14 +1369,14 @@ class TestAffine:
     @pytest.mark.parametrize("scale", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["scale"])
     @pytest.mark.parametrize("shear", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["shear"])
     @pytest.mark.parametrize("seed", list(range(10)))
-    def test_transform_get_params_bounds(self, degrees, translate, scale, shear, seed):
+    def test_transformmake_params_bounds(self, degrees, translate, scale, shear, seed):
         image = make_image()
         height, width = F.get_size(image)
 
         transform = transforms.RandomAffine(degrees=degrees, translate=translate, scale=scale, shear=shear)
 
         torch.manual_seed(seed)
-        params = transform._get_params([image])
+        params = transform.make_params([image])
 
         if isinstance(degrees, (int, float)):
             assert -degrees <= params["angle"] <= degrees
@@ -1783,7 +1783,7 @@ class TestRotate:
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
         torch.manual_seed(seed)
-        params = transform._get_params([bounding_boxes])
+        params = transform.make_params([bounding_boxes])
 
         torch.manual_seed(seed)
         actual = transform(bounding_boxes)
@@ -1795,11 +1795,11 @@ class TestRotate:
 
     @pytest.mark.parametrize("degrees", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["degrees"])
     @pytest.mark.parametrize("seed", list(range(10)))
-    def test_transform_get_params_bounds(self, degrees, seed):
+    def test_transformmake_params_bounds(self, degrees, seed):
         transform = transforms.RandomRotation(degrees=degrees)
 
         torch.manual_seed(seed)
-        params = transform._get_params([])
+        params = transform.make_params([])
 
         if isinstance(degrees, (int, float)):
             assert -degrees <= params["angle"] <= degrees
@@ -1843,7 +1843,7 @@ class TestRotate:
 
 class TestContainerTransforms:
     class BuiltinTransform(transforms.Transform):
-        def _transform(self, inpt, params):
+        def transform(self, inpt, params):
             return inpt
 
     class PackedInputTransform(nn.Module):
@@ -2996,7 +2996,7 @@ class TestCrop:
 
         with freeze_rng_state():
             torch.manual_seed(seed)
-            params = transform._get_params([bounding_boxes])
+            params = transform.make_params([bounding_boxes])
             assert not params.pop("needs_pad")
             del params["padding"]
             assert params.pop("needs_crop")
@@ -3129,9 +3129,9 @@ class TestErase:
 
         with freeze_rng_state():
             torch.manual_seed(seed)
-            # This emulates the random apply check that happens before _get_params is called
+            # This emulates the random apply check that happens before make_params is called
             torch.rand(1)
-            params = transform._get_params([image])
+            params = transform.make_params([image])
 
             torch.manual_seed(seed)
             actual = transform(image)
@@ -3159,7 +3159,7 @@ class TestErase:
         transform = transforms.RandomErasing(value=[1, 2, 3, 4])
 
         with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
-            transform._get_params([make_image()])
+            transform.make_params([make_image()])
 
 
 class TestGaussianBlur:
@@ -3244,9 +3244,9 @@ class TestGaussianBlur:
             transforms.GaussianBlur(3, sigma={})
 
     @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0], (10, 12.0), [10]])
-    def test__get_params(self, sigma):
+    def test_make_params(self, sigma):
         transform = transforms.GaussianBlur(3, sigma=sigma)
-        params = transform._get_params([])
+        params = transform.make_params([])
 
         if isinstance(sigma, float):
             assert params["sigma"][0] == params["sigma"][1] == sigma
@@ -5251,7 +5251,7 @@ class TestRandomZoomOut:
         input = make_input()
         height, width = F.get_size(input)
 
-        params = transform._get_params([input])
+        params = transform.make_params([input])
         assert "padding" in params
 
         padding = params["padding"]
@@ -5305,13 +5305,13 @@ class TestScaleJitter:
 
         check_transform(transforms.ScaleJitter(self.TARGET_SIZE), make_input(self.INPUT_SIZE, device=device))
 
-    def test__get_params(self):
+    def test_make_params(self):
         input_size = self.INPUT_SIZE
         target_size = self.TARGET_SIZE
         scale_range = (0.5, 1.5)
 
         transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
-        params = transform._get_params([make_image(input_size)])
+        params = transform.make_params([make_image(input_size)])
 
         assert "size" in params
         size = params["size"]
@@ -5544,7 +5544,7 @@ def test_pure_tensor_heuristic(make_inputs):
         return pure_tensors[0] if pure_tensors else None, pure_tensors[1:], others
 
     class CopyCloneTransform(transforms.Transform):
-        def _transform(self, inpt, params):
+        def transform(self, inpt, params):
             return inpt.clone() if isinstance(inpt, torch.Tensor) else inpt.copy()
 
         @staticmethod
@@ -5580,7 +5580,7 @@ def test_pure_tensor_heuristic(make_inputs):
 class TestRandomIoUCrop:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("options", [[0.5, 0.9], [2.0]])
-    def test__get_params(self, device, options):
+    def test_make_params(self, device, options):
         orig_h, orig_w = size = (24, 32)
         image = make_image(size)
         bboxes = tv_tensors.BoundingBoxes(
@@ -5596,7 +5596,7 @@ class TestRandomIoUCrop:
         n_samples = 5
         for _ in range(n_samples):
 
-            params = transform._get_params(sample)
+            params = transform.make_params(sample)
 
             if options == [2.0]:
                 assert len(params) == 0
@@ -5622,8 +5622,8 @@ class TestRandomIoUCrop:
         bboxes = tv_tensors.BoundingBoxes(torch.tensor([[1, 1, 2, 2]]), format="XYXY", canvas_size=(4, 4))
         label = torch.tensor([1])
         sample = [image, bboxes, label]
-        # Let's mock transform._get_params to control the output:
-        transform._get_params = mocker.MagicMock(return_value={})
+        # Let's mock transform.make_params to control the output:
+        transform.make_params = mocker.MagicMock(return_value={})
         output = transform(sample)
         torch.testing.assert_close(output, sample)
 
@@ -5648,7 +5648,7 @@ class TestRandomIoUCrop:
         is_within_crop_area = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.bool)
 
         params = dict(top=1, left=2, height=12, width=12, is_within_crop_area=is_within_crop_area)
-        transform._get_params = mocker.MagicMock(return_value=params)
+        transform.make_params = mocker.MagicMock(return_value=params)
         output = transform(sample)
 
         # check number of bboxes vs number of labels:
@@ -5662,13 +5662,13 @@ class TestRandomIoUCrop:
 
 class TestRandomShortestSize:
     @pytest.mark.parametrize("min_size,max_size", [([5, 9], 20), ([5, 9], None)])
-    def test__get_params(self, min_size, max_size):
+    def test_make_params(self, min_size, max_size):
         canvas_size = (3, 10)
 
         transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size, antialias=True)
 
         sample = make_image(canvas_size)
-        params = transform._get_params([sample])
+        params = transform.make_params([sample])
 
         assert "size" in params
         size = params["size"]
@@ -5685,14 +5685,14 @@ class TestRandomShortestSize:
 
 
 class TestRandomResize:
-    def test__get_params(self):
+    def test_make_params(self):
         min_size = 3
         max_size = 6
 
         transform = transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
 
         for _ in range(10):
-            params = transform._get_params([])
+            params = transform.make_params([])
 
             assert isinstance(params["size"], list) and len(params["size"]) == 1
             size = params["size"][0]
@@ -6148,12 +6148,12 @@ class TestJPEG:
 
     @pytest.mark.parametrize("quality", [5, (10, 20)])
     @pytest.mark.parametrize("seed", list(range(10)))
-    def test_transform_get_params_bounds(self, quality, seed):
+    def test_transformmake_params_bounds(self, quality, seed):
         transform = transforms.JPEG(quality=quality)
 
         with freeze_rng_state():
             torch.manual_seed(seed)
-            params = transform._get_params([])
+            params = transform.make_params([])
 
         if isinstance(quality, int):
             assert params["quality"] == quality
