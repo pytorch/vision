@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+b33aef4) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+48f01de) &#x25BC</a>
     </div>
     
 
@@ -556,6 +556,7 @@
     <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">font</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">font_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">label_colors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]],</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -579,9 +580,12 @@
 <span class="sd">            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,</span>
 <span class="sd">            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.</span>
 <span class="sd">        font_size (int): The requested font size in points.</span>
+<span class="sd">        label_colors (color or list of colors, optional): Colors for the label text.  See the description of the</span>
+<span class="sd">            `colors` argument for details.  Defaults to the same colors used for the boxes.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">torchvision.transforms.v2.functional</span> <span class="k">as</span> <span class="nn">F</span>  <span class="c1"># noqa</span>
 
@@ -614,6 +618,10 @@
         <span class="p">)</span>
 
     <span class="n">colors</span> <span class="o">=</span> <span class="n">_parse_colors</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span> <span class="n">num_objects</span><span class="o">=</span><span class="n">num_boxes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">label_colors</span><span class="p">:</span>
+        <span class="n">label_colors</span> <span class="o">=</span> <span class="n">_parse_colors</span><span class="p">(</span><span class="n">label_colors</span><span class="p">,</span> <span class="n">num_objects</span><span class="o">=</span><span class="n">num_boxes</span><span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">label_colors</span> <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># type: ignore[assignment]</span>
 
     <span class="k">if</span> <span class="n">font</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">font_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -638,7 +646,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">bbox</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">img_boxes</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>  <span class="c1"># type: ignore[arg-type]</span>
+    <span class="k">for</span> <span class="n">bbox</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">label_color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">img_boxes</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">label_colors</span><span class="p">):</span>  <span class="c1"># type: ignore[arg-type]</span>
         <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
             <span class="n">fill_color</span> <span class="o">=</span> <span class="n">color</span> <span class="o">+</span> <span class="p">(</span><span class="mi">100</span><span class="p">,)</span>
             <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">bbox</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill_color</span><span class="p">)</span>
@@ -647,7 +655,7 @@
 
         <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">margin</span> <span class="o">=</span> <span class="n">width</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="n">draw</span><span class="o">.</span><span class="n">text</span><span class="p">((</span><span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">margin</span><span class="p">,</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">margin</span><span class="p">),</span> <span class="n">label</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="n">txt_font</span><span class="p">)</span>
+            <span class="n">draw</span><span class="o">.</span><span class="n">text</span><span class="p">((</span><span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">margin</span><span class="p">,</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">margin</span><span class="p">),</span> <span class="n">label</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">label_color</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="n">txt_font</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pil_to_tensor</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">original_dtype</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">:</span>
