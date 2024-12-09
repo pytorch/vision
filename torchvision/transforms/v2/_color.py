@@ -25,7 +25,7 @@ class Grayscale(Transform):
         super().__init__()
         self.num_output_channels = num_output_channels
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.rgb_to_grayscale, inpt, num_output_channels=self.num_output_channels)
 
 
@@ -46,11 +46,11 @@ class RandomGrayscale(_RandomApplyTransform):
     def __init__(self, p: float = 0.1) -> None:
         super().__init__(p=p)
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_input_channels, *_ = query_chw(flat_inputs)
         return dict(num_input_channels=num_input_channels)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.rgb_to_grayscale, inpt, num_output_channels=params["num_input_channels"])
 
 
@@ -64,7 +64,7 @@ class RGB(Transform):
     def __init__(self):
         super().__init__()
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.grayscale_to_rgb, inpt)
 
 
@@ -142,7 +142,7 @@ class ColorJitter(Transform):
     def _generate_value(left: float, right: float) -> float:
         return torch.empty(1).uniform_(left, right).item()
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         fn_idx = torch.randperm(4)
 
         b = None if self.brightness is None else self._generate_value(self.brightness[0], self.brightness[1])
@@ -152,7 +152,7 @@ class ColorJitter(Transform):
 
         return dict(fn_idx=fn_idx, brightness_factor=b, contrast_factor=c, saturation_factor=s, hue_factor=h)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         output = inpt
         brightness_factor = params["brightness_factor"]
         contrast_factor = params["contrast_factor"]
@@ -173,11 +173,11 @@ class ColorJitter(Transform):
 class RandomChannelPermutation(Transform):
     """Randomly permute the channels of an image or video"""
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
         return dict(permutation=torch.randperm(num_channels))
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.permute_channels, inpt, params["permutation"])
 
 
@@ -220,7 +220,7 @@ class RandomPhotometricDistort(Transform):
         self.saturation = saturation
         self.p = p
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         num_channels, *_ = query_chw(flat_inputs)
         params: Dict[str, Any] = {
             key: ColorJitter._generate_value(range[0], range[1]) if torch.rand(1) < self.p else None
@@ -235,7 +235,7 @@ class RandomPhotometricDistort(Transform):
         params["channel_permutation"] = torch.randperm(num_channels) if torch.rand(1) < self.p else None
         return params
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["brightness_factor"] is not None:
             inpt = self._call_kernel(F.adjust_brightness, inpt, brightness_factor=params["brightness_factor"])
         if params["contrast_factor"] is not None and params["contrast_before"]:
@@ -264,7 +264,7 @@ class RandomEqualize(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomEqualize
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.equalize, inpt)
 
 
@@ -281,7 +281,7 @@ class RandomInvert(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomInvert
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.invert, inpt)
 
 
@@ -304,7 +304,7 @@ class RandomPosterize(_RandomApplyTransform):
         super().__init__(p=p)
         self.bits = bits
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.posterize, inpt, bits=self.bits)
 
 
@@ -332,7 +332,7 @@ class RandomSolarize(_RandomApplyTransform):
         super().__init__(p=p)
         self.threshold = threshold
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.solarize, inpt, threshold=self.threshold)
 
 
@@ -349,7 +349,7 @@ class RandomAutocontrast(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomAutocontrast
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.autocontrast, inpt)
 
 
@@ -372,5 +372,5 @@ class RandomAdjustSharpness(_RandomApplyTransform):
         super().__init__(p=p)
         self.sharpness_factor = sharpness_factor
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.adjust_sharpness, inpt, sharpness_factor=self.sharpness_factor)
