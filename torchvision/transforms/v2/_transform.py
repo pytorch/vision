@@ -39,6 +39,9 @@ class Transform(nn.Module):
     # keep in order to guarantee 100% BC with v1. (It's defined in
     # __init_subclass__ below).
     def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        """Method to override for custom transforms.
+
+        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`"""
         return dict()
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
@@ -46,9 +49,13 @@ class Transform(nn.Module):
         return kernel(inpt, *args, **kwargs)
 
     def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        """Method to override for custom transforms.
+
+        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`"""
         raise NotImplementedError
 
     def forward(self, *inputs: Any) -> Any:
+        """Do not override this! Use ``transform()`` instead."""
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
         self.check_inputs(flat_inputs)
