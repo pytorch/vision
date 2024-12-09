@@ -96,7 +96,7 @@ class RandomErasing(_RandomApplyTransform):
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(flat_inputs)
 
         if self.value is not None and not (len(self.value) in (1, img_c)):
@@ -134,7 +134,7 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["v"] is not None:
             inpt = self._call_kernel(F.erase, inpt, **params, inplace=self.inplace)
 
@@ -181,7 +181,7 @@ class _BaseMixUpCutMix(Transform):
         params = {
             "labels": labels,
             "batch_size": labels.shape[0],
-            **self._get_params(
+            **self.make_params(
                 [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
             ),
         }
@@ -190,7 +190,7 @@ class _BaseMixUpCutMix(Transform):
         # after an image or video. However, we need to handle them in _transform, so we make sure to set them to True
         needs_transform_list[next(idx for idx, inpt in enumerate(flat_inputs) if inpt is labels)] = True
         flat_outputs = [
-            self._transform(inpt, params) if needs_transform else inpt
+            self.transform(inpt, params) if needs_transform else inpt
             for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
         ]
 
@@ -243,10 +243,10 @@ class MixUp(_BaseMixUpCutMix):
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))  # type: ignore[arg-type]
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
 
         if inpt is params["labels"]:
@@ -292,7 +292,7 @@ class CutMix(_BaseMixUpCutMix):
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
         H, W = query_size(flat_inputs)
@@ -314,7 +314,7 @@ class CutMix(_BaseMixUpCutMix):
 
         return dict(box=box, lam_adjusted=lam_adjusted)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if inpt is params["labels"]:
             return self._mixup_label(inpt, lam=params["lam_adjusted"])
         elif isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)) or is_pure_tensor(inpt):
@@ -361,9 +361,9 @@ class JPEG(Transform):
 
         self.quality = quality
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         quality = torch.randint(self.quality[0], self.quality[1] + 1, ()).item()
         return dict(quality=quality)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.jpeg, inpt, quality=params["quality"])
