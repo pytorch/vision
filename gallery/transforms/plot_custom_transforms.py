@@ -144,7 +144,8 @@ print(f"The transformed bboxes are:\n{structured_output['annotations'][0]}")
 # transform each input, based on their type.
 #
 # If you're curious why the other tensor (``torch.arange()``) didn't get passed
-# to ``transform()``, see :ref:`passthrough_heuristic`.
+# to ``transform()``, see :ref:`this note <passthrough_heuristic>` for more
+# details.
 #
 # Advanced: The ``make_params()`` method
 # --------------------------------------
