@@ -270,7 +270,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+48f01de) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.20.0a0+a9a726a) &#x25BC</a>
     </div>
     
 
@@ -408,7 +408,9 @@ or <a class="reference internal" href="#sphx-glr-download-auto-examples-transfor
 </div>
 <p>This guide explains how to write transforms that are compatible with the
 torchvision transforms V2 API.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <a href="https://docs.python.org/3/library/typing.html#typing.Any" title="typing.Any" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-data"><span class="n">Any</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/typing.html#typing.Dict" title="typing.Dict" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Dict</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/typing.html#typing.List" title="typing.List" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">List</span></a>
+
+<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">v2</span>
 </pre></div>
@@ -493,37 +495,128 @@ this can be a bit limiting.</p>
 <p>A key feature of the builtin Torchvision V2 transforms is that they can accept
 arbitrary input structure and return the same structure as output (with
 transformed entries). For example, transforms can accept a single image, or a
-tuple of <code class="docutils literal notranslate"><span class="pre">(img,</span> <span class="pre">label)</span></code>, or an arbitrary nested dictionary as input:</p>
+tuple of <code class="docutils literal notranslate"><span class="pre">(img,</span> <span class="pre">label)</span></code>, or an arbitrary nested dictionary as input. Here’s
+an example on the built-in transform <a class="reference internal" href="../../generated/torchvision.transforms.v2.RandomHorizontalFlip.html#torchvision.transforms.v2.RandomHorizontalFlip" title="torchvision.transforms.v2.RandomHorizontalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomHorizontalFlip</span></code></a>:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_input</span></a> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;img&quot;</span><span class="p">:</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img</span></a><span class="p">,</span>
     <span class="s2">&quot;annotations&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">bboxes</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">label</span></a><span class="p">),</span>
-    <span class="s2">&quot;something_that_will_be_ignored&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+    <span class="s2">&quot;something that will be ignored&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;hello&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;another tensor that is ignored&quot;</span><span class="p">:</span> <a href="https://pytorch.org/docs/stable/generated/torch.arange.html#torch.arange" title="torch.arange" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">arange</span></a><span class="p">(</span><span class="mi">10</span><span class="p">),</span>
 <span class="p">}</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span></a><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mi">1</span><span class="p">)(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_input</span></a><span class="p">)</span>
 
 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-<span class="k">assert</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">[</span><span class="s2">&quot;something_that_will_be_ignored&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">[</span><span class="s2">&quot;something that will be ignored&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">[</span><span class="s2">&quot;another tensor that is ignored&quot;</span><span class="p">]</span> <span class="o">==</span> <a href="https://pytorch.org/docs/stable/generated/torch.arange.html#torch.arange" title="torch.arange" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">arange</span></a><span class="p">(</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The input bboxes are:</span><span class="se">\n</span><span class="si">{</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_input</span></a><span class="p">[</span><span class="s1">&#39;annotations&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The transformed bboxes are:</span><span class="se">\n</span><span class="si">{</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">[</span><span class="s1">&#39;annotations&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>The transformed bboxes are:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>The input bboxes are:
+BoundingBoxes([[ 0, 10, 10, 20],
+               [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256))
+The transformed bboxes are:
 BoundingBoxes([[246,  10, 256,  20],
                [186,  50, 206,  70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256))
 </pre></div>
 </div>
-<p>If you want to reproduce this behavior in your own transform, we invite you to
-look at our <a class="reference external" href="https://github.com/pytorch/vision/blob/main/torchvision/transforms/v2/_transform.py">code</a>
-and adapt it to your needs.</p>
-<p>In brief, the core logic is to unpack the input into a flat list using <a class="reference external" href="https://github.com/pytorch/pytorch/blob/main/torch/utils/_pytree.py">pytree</a>, and
-then transform only the entries that can be transformed (the decision is made
-based on the <strong>class</strong> of the entries, as all TVTensors are
-tensor-subclasses) plus some custom logic that is out of score here - check the
-code for details. The (potentially transformed) entries are then repacked and
-returned, in the same structure as the input.</p>
-<p>We do not provide public dev-facing tools to achieve that at this time, but if
-this is something that would be valuable to you, please let us know by opening
-an issue on our <a class="reference external" href="https://github.com/pytorch/vision/issues">GitHub repo</a>.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.006 seconds)</p>
+<section id="basics-override-the-transform-method">
+<h3>Basics: override the <cite>transform()</cite> method<a class="headerlink" href="#basics-override-the-transform-method" title="Permalink to this heading">¶</a></h3>
+<p>In order to support arbitrary inputs in your custom transform, you will need
+to inherit from <a class="reference internal" href="../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform" title="torchvision.transforms.v2.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a> and override the
+<cite>.transform()</cite> method (not the <cite>forward()</cite> method!). Below is a basic example:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyCustomTransform</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">Transform</span></a><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <a href="https://docs.python.org/3/library/typing.html#typing.Any" title="typing.Any" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-data"><span class="n">Any</span></a><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <a href="https://docs.python.org/3/library/typing.html#typing.Dict" title="typing.Dict" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Dict</span></a><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <a href="https://docs.python.org/3/library/typing.html#typing.Any" title="typing.Any" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-data"><span class="n">Any</span></a><span class="p">]):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span> <span class="o">==</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></a><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;I&#39;m transforming an image of shape </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">inpt</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># dummy transformation</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span></a><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;I&#39;m transforming bounding boxes! </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="w"> </span><span class="si">= }</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">inpt</span> <span class="o">+</span> <span class="mi">100</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>  <span class="c1"># dummy transformation</span>
+
+
+<span class="n">my_custom_transform</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">MyCustomTransform</span></a><span class="p">()</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a> <span class="o">=</span> <span class="n">my_custom_transform</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_input</span></a><span class="p">)</span>
+
+<span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+<span class="k">assert</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">[</span><span class="s2">&quot;something that will be ignored&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">[</span><span class="s2">&quot;another tensor that is ignored&quot;</span><span class="p">]</span> <span class="o">==</span> <a href="https://pytorch.org/docs/stable/generated/torch.arange.html#torch.arange" title="torch.arange" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">arange</span></a><span class="p">(</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The input bboxes are:</span><span class="se">\n</span><span class="si">{</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_input</span></a><span class="p">[</span><span class="s1">&#39;annotations&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The transformed bboxes are:</span><span class="se">\n</span><span class="si">{</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_output</span></a><span class="p">[</span><span class="s1">&#39;annotations&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>I&#39;m transforming an image of shape torch.Size([3, 256, 256])
+I&#39;m transforming bounding boxes! inpt.canvas_size = (256, 256)
+The input bboxes are:
+BoundingBoxes([[ 0, 10, 10, 20],
+               [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256))
+The transformed bboxes are:
+BoundingBoxes([[100, 110, 110, 120],
+               [150, 150, 170, 170]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256))
+</pre></div>
+</div>
+<p>An important thing to note is that when we call <code class="docutils literal notranslate"><span class="pre">my_custom_transform</span></code> on
+<code class="docutils literal notranslate"><span class="pre">structured_input</span></code>, the input is flattened and then each individual part is
+passed to <code class="docutils literal notranslate"><span class="pre">transform()</span></code>. That is, <code class="docutils literal notranslate"><span class="pre">transform()`</span></code> receives the input image,
+then the bounding boxes, etc. Within <code class="docutils literal notranslate"><span class="pre">transform()</span></code>, you can decide how to
+transform each input, based on their type.</p>
+<p>If you’re curious why the other tensor (<code class="docutils literal notranslate"><span class="pre">torch.arange()</span></code>) didn’t get passed
+to <code class="docutils literal notranslate"><span class="pre">transform()</span></code>, see <a class="reference internal" href="plot_transforms_getting_started.html#passthrough-heuristic"><span class="std std-ref">this note</span></a> for more
+details.</p>
+</section>
+<section id="advanced-the-make-params-method">
+<h3>Advanced: The <code class="docutils literal notranslate"><span class="pre">make_params()</span></code> method<a class="headerlink" href="#advanced-the-make-params-method" title="Permalink to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">make_params()</span></code> method is called internally before calling
+<code class="docutils literal notranslate"><span class="pre">transform()</span></code> on each input. This is typically useful to generate random
+parameter values. In the example below, we use it to randomly apply the
+transformation with a probability of 0.5</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyRandomTransform</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">MyCustomTransform</span></a><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">make_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <a href="https://docs.python.org/3/library/typing.html#typing.List" title="typing.List" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">List</span></a><span class="p">[</span><a href="https://docs.python.org/3/library/typing.html#typing.Any" title="typing.Any" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-data"><span class="n">Any</span></a><span class="p">])</span> <span class="o">-&gt;</span> <a href="https://docs.python.org/3/library/typing.html#typing.Dict" title="typing.Dict" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Dict</span></a><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <a href="https://docs.python.org/3/library/typing.html#typing.Any" title="typing.Any" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-data"><span class="n">Any</span></a><span class="p">]:</span>
+        <span class="n">apply_transform</span> <span class="o">=</span> <span class="p">(</span><a href="https://pytorch.org/docs/stable/generated/torch.rand.html#torch.rand" title="torch.rand" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">rand</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">apply_transform</span><span class="o">=</span><span class="n">apply_transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <a href="https://docs.python.org/3/library/typing.html#typing.Any" title="typing.Any" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-data"><span class="n">Any</span></a><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <a href="https://docs.python.org/3/library/typing.html#typing.Dict" title="typing.Dict" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Dict</span></a><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <a href="https://docs.python.org/3/library/typing.html#typing.Any" title="typing.Any" class="sphx-glr-backref-module-typing sphx-glr-backref-type-py-data"><span class="n">Any</span></a><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;apply_transform&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Not transforming anything!&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">inpt</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+
+
+<span class="n">my_random_transform</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">MyRandomTransform</span></a><span class="p">()</span>
+
+<a href="https://pytorch.org/docs/stable/generated/torch.manual_seed.html#torch.manual_seed" title="torch.manual_seed" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span></a><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">_</span></a> <span class="o">=</span> <span class="n">my_random_transform</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_input</span></a><span class="p">)</span>  <span class="c1"># transforms</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">_</span></a> <span class="o">=</span> <span class="n">my_random_transform</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">structured_input</span></a><span class="p">)</span>  <span class="c1"># doesn&#39;t transform</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>I&#39;m transforming an image of shape torch.Size([3, 256, 256])
+I&#39;m transforming bounding boxes! inpt.canvas_size = (256, 256)
+Not transforming anything!
+Not transforming anything!
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It’s important for such random parameter generation to happen within
+<code class="docutils literal notranslate"><span class="pre">make_params()</span></code> and not within <code class="docutils literal notranslate"><span class="pre">transform()</span></code>, so that for a given
+transform call, the same RNG applies to all the inputs in the same way. If
+we were to perform the RNG within <code class="docutils literal notranslate"><span class="pre">transform()</span></code>, we would risk e.g.
+transforming the image while <em>not</em> transforming the bounding boxes.</p>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">make_params()</span></code> method takes the list of all the inputs as parameter
+(each of the elements in this list will later be pased to <code class="docutils literal notranslate"><span class="pre">transform()</span></code>).
+You can use <code class="docutils literal notranslate"><span class="pre">flat_inputs</span></code> to e.g. figure out the dimensions on the input,
+using <a class="reference internal" href="../../generated/torchvision.transforms.v2.query_chw.html#torchvision.transforms.v2.query_chw" title="torchvision.transforms.v2.query_chw"><code class="xref py py-func docutils literal notranslate"><span class="pre">query_chw()</span></code></a> or
+<a class="reference internal" href="../../generated/torchvision.transforms.v2.query_size.html#torchvision.transforms.v2.query_size" title="torchvision.transforms.v2.query_size"><code class="xref py py-func docutils literal notranslate"><span class="pre">query_size()</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">make_params()</span></code> should return a dict (or actually, anything you want) that
+will then be passed to <code class="docutils literal notranslate"><span class="pre">transform()</span></code>.</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.009 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-custom-transforms-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/3f3cbe5cc8b5758610d0ab95995b0b8c/plot_custom_transforms.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_custom_transforms.ipynb</span></code></a></p>
@@ -536,6 +629,7 @@ an issue on our <a class="reference external" href="https://github.com/pytorch/v
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
 </section>
 </section>
 
@@ -584,7 +678,11 @@ an issue on our <a class="reference external" href="https://github.com/pytorch/v
               <ul>
 <li><a class="reference internal" href="#">How to write your own v2 transforms</a><ul>
 <li><a class="reference internal" href="#just-create-a-nn-module-and-override-the-forward-method">Just create a <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> and override the <code class="docutils literal notranslate"><span class="pre">forward</span></code> method</a></li>
-<li><a class="reference internal" href="#supporting-arbitrary-input-structures">Supporting arbitrary input structures</a></li>
+<li><a class="reference internal" href="#supporting-arbitrary-input-structures">Supporting arbitrary input structures</a><ul>
+<li><a class="reference internal" href="#basics-override-the-transform-method">Basics: override the <cite>transform()</cite> method</a></li>
+<li><a class="reference internal" href="#advanced-the-make-params-method">Advanced: The <code class="docutils literal notranslate"><span class="pre">make_params()</span></code> method</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
