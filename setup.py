@@ -83,7 +83,7 @@ def get_version():
 
 def write_version_file(version, sha):
     # Exists for BC, probably completely useless.
-    with open(os.path.join(ROOT_DIR, "torchvision", "version.py"), "w") as f:
+    with open(ROOT_DIR / "torchvision" / "version.py", "w") as f:
         f.write(f"__version__ = '{version}'\n")
         f.write(f"git_version = {repr(sha)}\n")
         f.write("from torchvision.extension import _check_cuda_version\n")
