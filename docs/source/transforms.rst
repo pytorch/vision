@@ -519,6 +519,9 @@ Developer tools
     :template: function.rst
 
     v2.functional.register_kernel
+    v2.query_size
+    v2.query_chw
+    v2.get_bounding_boxes
 
 
 V1 API Reference
