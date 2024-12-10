@@ -16,4 +16,4 @@ python test/smoke_test.py
 
 # We explicitly ignore the video tests until we resolve https://github.com/pytorch/vision/issues/8162
 # pytest --ignore-glob="*test_video*" --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25
-pytest --ignore-glob="*test_video*" --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_image.py -vv  -k "avif or heic"
+pytest --ignore-glob="*test_video*" --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_image.py
