@@ -387,7 +387,9 @@ def _load_extra_decoders_once():
 
     try:
         import torchvision_extra_decoders
-    except ImportError as e:
+
+        assert hasattr(torchvision_extra_decoders, "expose_extra_decoders")
+    except (AssertionError, ImportError) as e:
         raise RuntimeError("You need to pip install torchvision-extra-decoders blah blah blah") from e
 
     # This will expose torch.ops.extra_decoders_ns.decode_avif and torch.ops.extra_decoders_ns.decode_heic
