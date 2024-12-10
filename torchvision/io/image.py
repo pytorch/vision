@@ -398,9 +398,13 @@ def _load_extra_decoders_once():
 
 def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     _load_extra_decoders_once()
+    if input.dtype != torch.uint8:
+        raise RuntimeError(f"Input tensor must have uint8 data type, got {input.dtype}")
     return torch.ops.extra_decoders_ns.decode_avif(input, mode.value)
 
 
 def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     _load_extra_decoders_once()
+    if input.dtype != torch.uint8:
+        raise RuntimeError(f"Input tensor must have uint8 data type, got {input.dtype}")
     return torch.ops.extra_decoders_ns.decode_heic(input, mode.value)
