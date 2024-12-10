@@ -316,6 +316,7 @@ Others
     v2.RandomHorizontalFlip
     v2.RandomVerticalFlip
     v2.Pad
+    v2.PadToSquare
     v2.RandomZoomOut
     v2.RandomRotation
     v2.RandomAffine
