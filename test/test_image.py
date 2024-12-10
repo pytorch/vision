@@ -860,8 +860,14 @@ def test_decode_gif(tmpdir, name, scripted):
         (decode_jpeg, "Not a JPEG file"),
         (decode_gif, re.escape("DGifOpenFileName() failed - 103")),
         (decode_webp, "WebPGetFeatures failed."),
-        pytest.param(decode_avif, "BMFF parsing failed", marks=pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)),
-        pytest.param(decode_heic, "Invalid input: No 'ftyp' box", marks=pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)),
+        pytest.param(
+            decode_avif, "BMFF parsing failed", marks=pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
+        ),
+        pytest.param(
+            decode_heic,
+            "Invalid input: No 'ftyp' box",
+            marks=pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE),
+        ),
     ],
 )
 def test_decode_bad_encoded_data(decode_fun, match):
