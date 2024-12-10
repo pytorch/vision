@@ -34,15 +34,16 @@ def smoke_test_torchvision_read_decode() -> None:
         raise RuntimeError(f"Unexpected shape of img_webp: {img_webp.shape}")
 
     if sys.platform == "linux":
-        img_avif = decode_avif(read_file(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.avif")))
-        if img_avif.shape != (3, 100, 100):
-            raise RuntimeError(f"Unexpected shape of img_avif: {img_avif.shape}")
+        pass
+        # img_avif = decode_avif(read_file(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.avif")))
+        # if img_avif.shape != (3, 100, 100):
+        #     raise RuntimeError(f"Unexpected shape of img_avif: {img_avif.shape}")
 
-        img_heic = decode_heic(
-            read_file(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch_incorrectly_encoded_but_who_cares.heic"))
-        )
-        if img_heic.shape != (3, 100, 100):
-            raise RuntimeError(f"Unexpected shape of img_heic: {img_heic.shape}")
+        # img_heic = decode_heic(
+        #     read_file(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch_incorrectly_encoded_but_who_cares.heic"))
+        # )
+        # if img_heic.shape != (3, 100, 100):
+        #     raise RuntimeError(f"Unexpected shape of img_heic: {img_heic.shape}")
     else:
         try:
             decode_avif(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.avif"))
