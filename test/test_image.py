@@ -45,7 +45,7 @@ IS_LINUX = sys.platform == "linux"
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 WEBP_TEST_IMAGES_DIR = os.environ.get("WEBP_TEST_IMAGES_DIR", "")
 # See https://github.com/pytorch/vision/pull/8724#issuecomment-2503964558
-ROCM_WEBP_MESSAGE = "ROCM not built with webp support."
+HEIC_AVIF_MESSAGE = "AVIF and HEIF only available on linux."
 
 
 def _get_safe_image_name(name):
@@ -860,8 +860,8 @@ def test_decode_gif(tmpdir, name, scripted):
         (decode_jpeg, "Not a JPEG file"),
         (decode_gif, re.escape("DGifOpenFileName() failed - 103")),
         (decode_webp, "WebPGetFeatures failed."),
-        pytest.param(decode_avif, "BMFF parsing failed", marks=pytest.mark.skipif(not IS_LINUX)),
-        pytest.param(decode_heic, "Invalid input: No 'ftyp' box", marks=pytest.mark.skipif(not IS_LINUX)),
+        pytest.param(decode_avif, "BMFF parsing failed", marks=pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)),
+        pytest.param(decode_heic, "Invalid input: No 'ftyp' box", marks=pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)),
     ],
 )
 def test_decode_bad_encoded_data(decode_fun, match):
@@ -920,7 +920,7 @@ def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename)
 
 
 # TODO_AVIF_HEIC make decode_image work
-@pytest.mark.skipif(not IS_LINUX)
+@pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
 # @pytest.mark.parametrize("decode_fun", (decode_avif, decode_image))
 @pytest.mark.parametrize("decode_fun", (decode_avif,))
 def test_decode_avif(decode_fun):
@@ -933,7 +933,7 @@ def test_decode_avif(decode_fun):
 
 # Note: decode_image fails because some of these files have a (valid) signature
 # we don't recognize. We should probably use libmagic....
-@pytest.mark.skipif(not IS_LINUX)
+@pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
 @pytest.mark.parametrize("decode_fun", (decode_avif, decode_heic))
 @pytest.mark.parametrize(
     "mode, pil_mode",
@@ -1011,7 +1011,7 @@ def test_decode_avif_heic_against_pil(decode_fun, mode, pil_mode, filename):
 
 # TODO_AVIF_HEIC make decode_image work
 # @pytest.mark.parametrize("decode_fun", (decode_heic, decode_image))
-@pytest.mark.skipif(not IS_LINUX)
+@pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
 @pytest.mark.parametrize("decode_fun", (decode_heic,))
 def test_decode_heic(decode_fun):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".heic")))
