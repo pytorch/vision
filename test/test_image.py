@@ -925,9 +925,7 @@ def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename)
     img += 123  # make sure image buffer wasn't freed by underlying decoding lib
 
 
-# TODO_AVIF_HEIC make decode_image work
 @pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
-# @pytest.mark.parametrize("decode_fun", (decode_avif, decode_image))
 @pytest.mark.parametrize("decode_fun", (decode_avif,))
 def test_decode_avif(decode_fun):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".avif")))
@@ -1016,8 +1014,6 @@ def test_decode_avif_heic_against_pil(decode_fun, mode, pil_mode, filename):
     torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
 
 
-# TODO_AVIF_HEIC make decode_image work
-# @pytest.mark.parametrize("decode_fun", (decode_heic, decode_image))
 @pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
 @pytest.mark.parametrize("decode_fun", (decode_heic,))
 def test_decode_heic(decode_fun):
