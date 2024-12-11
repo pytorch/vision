@@ -974,6 +974,7 @@ def test_decode_avif_heic_against_pil(decode_fun, mode, pil_mode, filename):
                 "no 'ispe' property",
                 "'iref' has double references",
                 "Invalid image grid",
+                "decode_heif failed: Invalid input: No 'meta' box",
             )
         ):
             pytest.skip(reason="Expected failure, that's OK")
@@ -990,7 +991,7 @@ def test_decode_avif_heic_against_pil(decode_fun, mode, pil_mode, filename):
     try:
         from_pil = F.pil_to_tensor(Image.open(filename).convert(pil_mode))
     except RuntimeError as e:
-        if "Invalid image grid" in str(e):
+        if any(s in str(e) for s in ("Invalid image grid", "Failed to decode image: Not implemented")):
             pytest.skip(reason="PIL failure")
         else:
             raise e
