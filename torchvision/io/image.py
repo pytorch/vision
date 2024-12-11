@@ -377,6 +377,14 @@ def decode_webp(
     return torch.ops.image.decode_webp(input, mode.value)
 
 
+# TODO_AVIF_HEIC: Better support for torchscript. Scripting decode_avif of
+# decode_heic currently fails, mainly because of the logic
+# _load_extra_decoders_once() (using global variables, try/except statements,
+# etc.).
+# The ops (torch.ops.extra_decoders_ns.decode_*) are otherwise torchscript-able,
+# and users who need torchscript can always just wrap those.
+
+
 _EXTRA_DECODERS_ALREADY_LOADED = False
 
 
@@ -388,9 +396,23 @@ def _load_extra_decoders_once():
     try:
         import torchvision_extra_decoders
 
+        # torchvision-extra-decoders only supports linux for now. BUT, users on
+        # e.g. MacOS can still install it: they will get the pure-python
+        # 0.0.0.dev version:
+        # https://pypi.org/project/torchvision-extra-decoders/0.0.0.dev0, which
+        # is a dummy version that was created to reserve the namespace on PyPI.
+        # We have to check that expose_extra_decoders() exists for those users,
+        # so we can properly error on non-Linux archs.
         assert hasattr(torchvision_extra_decoders, "expose_extra_decoders")
     except (AssertionError, ImportError) as e:
-        raise RuntimeError("You need to pip install torchvision-extra-decoders blah blah blah") from e
+        raise RuntimeError(
+            "In order to enable the AVIF and HEIC decoding capabilities of "
+            "torchvision, you need to `pip install torchvision-extra-decoders`. "
+            "Just install the package, you don't need to update your code. "
+            "This is only supported on Linux, and this feature is still in BETA stage. "
+            "Please let us know of any issue: https://github.com/pytorch/vision/issues/new/choose. "
+            "Note that `torchvision-extra-decoders` is released under the LGPL license. "
+        ) from e
 
     # This will expose torch.ops.extra_decoders_ns.decode_avif and torch.ops.extra_decoders_ns.decode_heic
     torchvision_extra_decoders.expose_extra_decoders()
@@ -399,6 +421,25 @@ def _load_extra_decoders_once():
 
 
 def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+    """Decode an AVIF image into a 3 dimensional RGB[A] Tensor.
+
+    The values of the output tensor are in uint8 in [0, 255] for most images. If
+    the image has a bit-depth of more than 8, then the output tensor is uint16
+    in [0, 65535]. Since uint16 support is limited in pytorch, we recommend
+    calling :func:`torchvision.transforms.v2.functional.to_dtype()` with
+    ``scale=True`` after this function to convert the decoded image into a uint8
+    or float tensor.
+
+    Args:
+        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
+            the raw bytes of the AVIF image.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
+
+    Returns:
+        Decoded image (Tensor[image_channels, image_height, image_width])
+    """
     _load_extra_decoders_once()
     if input.dtype != torch.uint8:
         raise RuntimeError(f"Input tensor must have uint8 data type, got {input.dtype}")
@@ -406,6 +447,25 @@ def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
 
 
 def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+    """Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
+
+    The values of the output tensor are in uint8 in [0, 255] for most images. If
+    the image has a bit-depth of more than 8, then the output tensor is uint16
+    in [0, 65535]. Since uint16 support is limited in pytorch, we recommend
+    calling :func:`torchvision.transforms.v2.functional.to_dtype()` with
+    ``scale=True`` after this function to convert the decoded image into a uint8
+    or float tensor.
+
+    Args:
+        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
+            the raw bytes of the HEIC image.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
+
+    Returns:
+        Decoded image (Tensor[image_channels, image_height, image_width])
+    """
     _load_extra_decoders_once()
     if input.dtype != torch.uint8:
         raise RuntimeError(f"Input tensor must have uint8 data type, got {input.dtype}")

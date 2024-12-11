@@ -22,7 +22,7 @@ torch::Tensor decode_image(
       "Expected a non empty 1-dimensional tensor");
 
   auto err_msg =
-      "Unsupported image file. Only jpeg, png and gif are currently supported.";
+      "Unsupported image file. Only jpeg, png, webp and gif are currently supported. For avif and heic format, please rely on `decode_avif` and `decode_heic` directly.";
 
   auto datap = data.data_ptr<uint8_t>();
 

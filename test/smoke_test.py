@@ -39,7 +39,8 @@ def smoke_test_torchvision_read_decode() -> None:
             # support CUDA.
             # Strangely, on the CPU runners where this fails, the AVIF/HEIC
             # tests (ran with pytest) are passing. This is likely related to a
-            # libcxx symbol thing.
+            # libcxx symbol thing, and the proper libstdc++.so get loaded only
+            # with pytest? Ugh.
             img_avif = decode_avif(read_file(str(SCRIPT_DIR / "assets/fakedata/logos/rgb_pytorch.avif")))
             if img_avif.shape != (3, 100, 100):
                 raise RuntimeError(f"Unexpected shape of img_avif: {img_avif.shape}")

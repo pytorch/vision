@@ -41,8 +41,10 @@ encode/decode JPEGs on CUDA.
     decode_image
     decode_jpeg
     encode_png
-    decode_gif
     decode_webp
+    decode_avif
+    decode_heic
+    decode_gif
 
 .. autosummary::
     :toctree: generated/
