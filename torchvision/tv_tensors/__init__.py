@@ -6,6 +6,7 @@ from ._mask import Mask
 from ._torch_function_helpers import set_return_type
 from ._tv_tensor import TVTensor
 from ._video import Video
+from ._keypoints import KeyPoints
 
 
 # TODO: Fix this. We skip this method as it leads to
@@ -31,5 +32,7 @@ def wrap(wrappee, *, like, **kwargs):
             format=kwargs.get("format", like.format),
             canvas_size=kwargs.get("canvas_size", like.canvas_size),
         )
+    elif isinstance(like, KeyPoints):
+        return KeyPoints(wrappee, canvas_size=kwargs.get('canvas_size', like.canvas_size))
     else:
         return wrappee.as_subclass(type(like))
