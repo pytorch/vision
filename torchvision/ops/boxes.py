@@ -404,7 +404,13 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     Compute the bounding boxes around the provided masks.
 
     Returns a [N, 4] tensor containing bounding boxes. The boxes are in ``(x1, y1, x2, y2)`` format with
-    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+    ``0 <= x1 <= x2`` and ``0 <= y1 <= y2``.
+
+    .. warning::
+
+        In most cases the output will guarantee ``x1 < x2`` and ``y1 < y2``. But
+        if the input is degenerate, e.g. if a mask is a single row or a single
+        column, then the output may have x1 = x2 or y1 = y2.
 
     Args:
         masks (Tensor[N, H, W]): masks to transform where N is the number of masks
