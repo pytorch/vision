@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+c8d928b) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+f7b1cfa) &#x25BC</a>
     </div>
     
 
@@ -691,6 +691,12 @@
 <span class="sd">    after this function to convert the decoded image into a uint8 or float</span>
 <span class="sd">    tensor.</span>
 
+<span class="sd">    .. note::</span>
+
+<span class="sd">        ``decode_image()`` doesn&#39;t work yet on AVIF or HEIC images. For these</span>
+<span class="sd">        formats, directly call  :func:`~torchvision.io.decode_avif` or</span>
+<span class="sd">        :func:`~torchvision.io.decode_heic`.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor or str or ``pathlib.Path``): The image to decode. If a</span>
 <span class="sd">            tensor is passed, it must be one dimensional uint8 tensor containing</span>
@@ -772,12 +778,73 @@
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_webp</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_decode_avif</span><span class="p">(</span>
-    <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decode an AVIF image into a 3 dimensional RGB[A] Tensor.</span>
+<span class="c1"># TODO_AVIF_HEIC: Better support for torchscript. Scripting decode_avif of</span>
+<span class="c1"># decode_heic currently fails, mainly because of the logic</span>
+<span class="c1"># _load_extra_decoders_once() (using global variables, try/except statements,</span>
+<span class="c1"># etc.).</span>
+<span class="c1"># The ops (torch.ops.extra_decoders_ns.decode_*) are otherwise torchscript-able,</span>
+<span class="c1"># and users who need torchscript can always just wrap those.</span>
+
+<span class="c1"># TODO_AVIF_HEIC: decode_image() should work for those. The key technical issue</span>
+<span class="c1"># we have here is that the format detection logic of decode_image() is</span>
+<span class="c1"># implemented in torchvision, and torchvision has zero knowledge of</span>
+<span class="c1"># torchvision-extra-decoders, so we cannot call the AVIF/HEIC C++ decoders</span>
+<span class="c1"># (those in torchvision-extra-decoders) from there.</span>
+<span class="c1"># A trivial check that could be done within torchvision would be to check the</span>
+<span class="c1"># file extension, if a path was passed. We could also just implement the</span>
+<span class="c1"># AVIF/HEIC detection logic in Python as a fallback, if the file detection</span>
+<span class="c1"># didn&#39;t find any format. In any case: properly determining whether a file is</span>
+<span class="c1"># HEIC is far from trivial, and relying on libmagic would probably be best</span>
+
+
+<span class="n">_EXTRA_DECODERS_ALREADY_LOADED</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">_load_extra_decoders_once</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">_EXTRA_DECODERS_ALREADY_LOADED</span>
+    <span class="k">if</span> <span class="n">_EXTRA_DECODERS_ALREADY_LOADED</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">torchvision_extra_decoders</span>
+
+        <span class="c1"># torchvision-extra-decoders only supports linux for now. BUT, users on</span>
+        <span class="c1"># e.g. MacOS can still install it: they will get the pure-python</span>
+        <span class="c1"># 0.0.0.dev version:</span>
+        <span class="c1"># https://pypi.org/project/torchvision-extra-decoders/0.0.0.dev0, which</span>
+        <span class="c1"># is a dummy version that was created to reserve the namespace on PyPI.</span>
+        <span class="c1"># We have to check that expose_extra_decoders() exists for those users,</span>
+        <span class="c1"># so we can properly error on non-Linux archs.</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torchvision_extra_decoders</span><span class="p">,</span> <span class="s2">&quot;expose_extra_decoders&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">AssertionError</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;In order to enable the AVIF and HEIC decoding capabilities of &quot;</span>
+            <span class="s2">&quot;torchvision, you need to `pip install torchvision-extra-decoders`. &quot;</span>
+            <span class="s2">&quot;Just install the package, you don&#39;t need to update your code. &quot;</span>
+            <span class="s2">&quot;This is only supported on Linux, and this feature is still in BETA stage. &quot;</span>
+            <span class="s2">&quot;Please let us know of any issue: https://github.com/pytorch/vision/issues/new/choose. &quot;</span>
+            <span class="s2">&quot;Note that `torchvision-extra-decoders` is released under the LGPL license. &quot;</span>
+        <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+    <span class="c1"># This will expose torch.ops.extra_decoders_ns.decode_avif and torch.ops.extra_decoders_ns.decode_heic</span>
+    <span class="n">torchvision_extra_decoders</span><span class="o">.</span><span class="n">expose_extra_decoders</span><span class="p">()</span>
+
+    <span class="n">_EXTRA_DECODERS_ALREADY_LOADED</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+<div class="viewcode-block" id="decode_avif"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_avif.html#torchvision.io.decode_avif">[docs]</a><span class="k">def</span> <span class="nf">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode an AVIF image into a 3 dimensional RGB[A] Tensor.</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        In order to enable the AVIF decoding capabilities of torchvision, you</span>
+<span class="sd">        first need to run ``pip install torchvision-extra-decoders``. Just</span>
+<span class="sd">        install the package, you don&#39;t need to update your code. This is only</span>
+<span class="sd">        supported on Linux, and this feature is still in BETA stage. Please let</span>
+<span class="sd">        us know of any issue:</span>
+<span class="sd">        https://github.com/pytorch/vision/issues/new/choose. Note that</span>
+<span class="sd">        `torchvision-extra-decoders</span>
+<span class="sd">        &lt;https://github.com/pytorch-labs/torchvision-extra-decoders/&gt;`_ is</span>
+<span class="sd">        released under the LGPL license.</span>
 
 <span class="sd">    The values of the output tensor are in uint8 in [0, 255] for most images. If</span>
 <span class="sd">    the image has a bit-depth of more than 8, then the output tensor is uint16</span>
@@ -796,16 +863,25 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Decoded image (Tensor[image_channels, image_height, image_width])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
-        <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">_decode_avif</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">_load_extra_decoders_once</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor must have uint8 data type, got </span><span class="si">{</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">extra_decoders_ns</span><span class="o">.</span><span class="n">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decode an HEIC image into a 3 dimensional RGB[A] Tensor.</span>
+<div class="viewcode-block" id="decode_heic"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_heic.html#torchvision.io.decode_heic">[docs]</a><span class="k">def</span> <span class="nf">decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode an HEIC image into a 3 dimensional RGB[A] Tensor.</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        In order to enable the AVIF decoding capabilities of torchvision, you</span>
+<span class="sd">        first need to run ``pip install torchvision-extra-decoders``. Just</span>
+<span class="sd">        install the package, you don&#39;t need to update your code. This is only</span>
+<span class="sd">        supported on Linux, and this feature is still in BETA stage. Please let</span>
+<span class="sd">        us know of any issue:</span>
+<span class="sd">        https://github.com/pytorch/vision/issues/new/choose. Note that</span>
+<span class="sd">        `torchvision-extra-decoders</span>
+<span class="sd">        &lt;https://github.com/pytorch-labs/torchvision-extra-decoders/&gt;`_ is</span>
+<span class="sd">        released under the LGPL license.</span>
 
 <span class="sd">    The values of the output tensor are in uint8 in [0, 255] for most images. If</span>
 <span class="sd">    the image has a bit-depth of more than 8, then the output tensor is uint16</span>
@@ -824,11 +900,10 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Decoded image (Tensor[image_channels, image_height, image_width])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
-        <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">_decode_heic</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">_load_extra_decoders_once</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor must have uint8 data type, got </span><span class="si">{</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">extra_decoders_ns</span><span class="o">.</span><span class="n">decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 </pre></div>
 
              </article>
