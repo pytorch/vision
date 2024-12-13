@@ -31,6 +31,7 @@ from common_utils import (
     make_image,
     make_image_pil,
     make_image_tensor,
+    make_keypoints,
     make_segmentation_mask,
     make_video,
     make_video_tensor,
@@ -223,6 +224,7 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
         # explicitly passed to the kernel.
         explicit_metadata = {
             tv_tensors.BoundingBoxes: {"format", "canvas_size"},
+            tv_tensors.KeyPoints: {"canvas_size"}
         }
         kernel_params = [param for param in kernel_params if param.name not in explicit_metadata.get(input_type, set())]
 
@@ -326,6 +328,18 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
             format=tv_tensors.BoundingBoxFormat.CXCYWH,
             canvas_size=size,
             device=device,
+        ),
+        keypoints=make_keypoints(), keypoints_degenerate=tv_tensors.KeyPoints(
+            [
+                [0, 1],  # left edge
+                [1, 0],  # top edge
+                [0, 0],  # top left corner
+                [size[1], 1],  # right edge
+                [size[1], 0],  # top right corner
+                [1, size[0]],  # bottom edge
+                [0, size[0]],  # bottom left corner
+                [size[1], size[0]]  # bottom right corner
+            ], canvas_size=size, device=device
         ),
         detection_mask=make_detection_masks(size, device=device),
         segmentation_mask=make_segmentation_mask(size, device=device),
@@ -680,6 +694,7 @@ class TestResize:
             (F.resize_image, torch.Tensor),
             (F._geometry._resize_image_pil, PIL.Image.Image),
             (F.resize_image, tv_tensors.Image),
+            (F.resize_keypoints, tv_tensors.KeyPoints),
             (F.resize_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.resize_mask, tv_tensors.Mask),
             (F.resize_video, tv_tensors.Video),
@@ -1035,6 +1050,7 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image, torch.Tensor),
             (F._geometry._horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image, tv_tensors.Image),
+            (F.horizontal_flip_keypoints, tv_tensors.KeyPoints),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.horizontal_flip_mask, tv_tensors.Mask),
             (F.horizontal_flip_video, tv_tensors.Video),
@@ -1203,6 +1219,7 @@ class TestAffine:
             (F.affine_image, torch.Tensor),
             (F._geometry._affine_image_pil, PIL.Image.Image),
             (F.affine_image, tv_tensors.Image),
+            (F.affine_keypoints, tv_tensors.KeyPoints),
             (F.affine_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.affine_mask, tv_tensors.Mask),
             (F.affine_video, tv_tensors.Video),
@@ -1485,6 +1502,7 @@ class TestVerticalFlip:
             (F.vertical_flip_image, torch.Tensor),
             (F._geometry._vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image, tv_tensors.Image),
+            (F.vertical_flip_keypoints, tv_tensors.KeyPoints),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.vertical_flip_mask, tv_tensors.Mask),
             (F.vertical_flip_video, tv_tensors.Video),
@@ -1627,6 +1645,7 @@ class TestRotate:
             (F.rotate_image, torch.Tensor),
             (F._geometry._rotate_image_pil, PIL.Image.Image),
             (F.rotate_image, tv_tensors.Image),
+            (F.rotate_keypoints, tv_tensors.KeyPoints),
             (F.rotate_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.rotate_mask, tv_tensors.Mask),
             (F.rotate_video, tv_tensors.Video),
@@ -2332,6 +2351,7 @@ class TestCutMixMixUp:
             F.to_pil_image(imgs[0]),
             tv_tensors.Mask(torch.rand(12, 12)),
             tv_tensors.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
+            tv_tensors.KeyPoints(torch.rand(4, 2), canvas_size=(12, 12))
         ):
             with pytest.raises(ValueError, match="does not support PIL images, "):
                 cutmix_mixup(input_with_bad_type)
