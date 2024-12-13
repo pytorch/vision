@@ -9,7 +9,15 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get_all_keypoints, get_bounding_boxes, has_any, is_pure_tensor
+from ._utils import (
+    _parse_labels_getter,
+    _setup_number_or_seq,
+    _setup_size,
+    get_all_keypoints,
+    get_bounding_boxes,
+    has_any,
+    is_pure_tensor,
+)
 
 
 # TODO: do we want/need to expose this?

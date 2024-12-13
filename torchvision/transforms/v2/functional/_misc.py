@@ -329,8 +329,7 @@ def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: boo
 
 
 def sanitize_keypoints(
-    keypoints: torch.Tensor,
-    canvas_size: Optional[Tuple[int, int]] = None
+    keypoints: torch.Tensor, canvas_size: Optional[Tuple[int, int]] = None
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Removes degenerate/invalid keypoints and returns the corresponding indexing mask.
 
@@ -369,13 +368,15 @@ def sanitize_keypoints(
                 "Set that to appropriate values or pass keypoints as a tv_tensors.KeyPoints object."
             )
         valid = _get_sanitize_keypoints_mask(
-            keypoints, canvas_size=canvas_size,
+            keypoints,
+            canvas_size=canvas_size,
         )
         return keypoints[valid], valid
     if not isinstance(keypoints, tv_tensors.KeyPoints):
         raise ValueError("keypoints must be a tv_tensors.KeyPoints instance or a pure tensor.")
     valid = _get_sanitize_keypoints_mask(
-        keypoints, canvas_size=keypoints.canvas_size,
+        keypoints,
+        canvas_size=keypoints.canvas_size,
     )
     return tv_tensors.wrap(keypoints[valid], like=keypoints), valid
 

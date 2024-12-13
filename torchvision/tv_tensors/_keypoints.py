@@ -1,7 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Mapping, MutableSequence, Optional, Sequence, Tuple, Union
+
+from typing import Any, Mapping, MutableSequence, Optional, Sequence, Tuple, TYPE_CHECKING, Union
+
 import torch
 from torch.utils._pytree import tree_flatten
+
 from ._tv_tensor import TVTensor
 
 
@@ -24,9 +27,13 @@ class KeyPoints(TVTensor):
     canvas_size: Tuple[int, int]
 
     def __new__(
-        cls, data: Any, *, dtype: Optional[torch.dtype] = None,
+        cls,
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: Optional[bool] = None, canvas_size: Tuple[int, int]
+        requires_grad: Optional[bool] = None,
+        canvas_size: Tuple[int, int],
     ):
         tensor: torch.Tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if tensor.ndim == 1:
@@ -42,15 +49,22 @@ class KeyPoints(TVTensor):
         # Not read or defined at Runtime (only at linting time).
         # TODO: Add this to all TVTensors
         def __init__(
-            self, data: Any, *, dtype: Optional[torch.dtype] = None,
+            self,
+            data: Any,
+            *,
+            dtype: Optional[torch.dtype] = None,
             device: Optional[Union[torch.device, str, int]] = None,
-            requires_grad: Optional[bool] = None, canvas_size: Tuple[int, int]
+            requires_grad: Optional[bool] = None,
+            canvas_size: Tuple[int, int],
         ):
             ...
 
     @classmethod
     def _wrap_output(
-        cls, output: Any, args: Sequence[Any] = (), kwargs: Optional[Mapping[str, Any]] = None,
+        cls,
+        output: Any,
+        args: Sequence[Any] = (),
+        kwargs: Optional[Mapping[str, Any]] = None,
     ) -> Any:
         # Mostly copied over from the BoundingBoxes TVTensor, minor improvements.
         # This copies over the metadata.
@@ -65,10 +79,7 @@ class KeyPoints(TVTensor):
             # NB: output is checked against sequence because it has already been checked against Tensor
             # Since a Tensor is a sequence of Tensor, had it not been the case, we may have had silent
             # or complex errors
-            output = tuple(
-                KeyPoints(part, canvas_size=canvas_size)
-                for part in output
-            )
+            output = tuple(KeyPoints(part, canvas_size=canvas_size) for part in output)
         elif isinstance(output, MutableSequence):
             for i, part in enumerate(output):
                 output[i] = KeyPoints(part, canvas_size=canvas_size)

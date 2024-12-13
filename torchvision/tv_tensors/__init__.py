@@ -1,13 +1,14 @@
 from typing import TypeVar
+
 import torch
 
 from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
 from ._image import Image
+from ._keypoints import KeyPoints
 from ._mask import Mask
 from ._torch_function_helpers import set_return_type
 from ._tv_tensor import TVTensor
 from ._video import Video
-from ._keypoints import KeyPoints
 
 
 _WRAP_LIKE_T = TypeVar("_WRAP_LIKE_T", bound=TVTensor)
@@ -37,12 +38,19 @@ def wrap(wrappee: torch.Tensor, *, like: _WRAP_LIKE_T, **kwargs) -> _WRAP_LIKE_T
             canvas_size=kwargs.get("canvas_size", like.canvas_size),
         )
     elif isinstance(like, KeyPoints):
-        return KeyPoints(wrappee, canvas_size=kwargs.get('canvas_size', like.canvas_size))  # type:ignore
+        return KeyPoints(wrappee, canvas_size=kwargs.get("canvas_size", like.canvas_size))  # type:ignore
     else:
         return wrappee.as_subclass(type(like))
 
 
 __all__: list[str] = [
-    "wrap", "KeyPoints", "Video", "TVTensor", "set_return_type",
-    "Mask", "Image", "BoundingBoxFormat", "BoundingBoxes"
+    "wrap",
+    "KeyPoints",
+    "Video",
+    "TVTensor",
+    "set_return_type",
+    "Mask",
+    "Image",
+    "BoundingBoxFormat",
+    "BoundingBoxes",
 ]

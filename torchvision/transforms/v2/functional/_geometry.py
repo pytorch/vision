@@ -344,7 +344,8 @@ def _resize_mask_dispatch(
 
 
 def resize_keypoints(
-    kp: torch.Tensor, size: Optional[List[int]],
+    kp: torch.Tensor,
+    size: Optional[List[int]],
     canvas_size: Tuple[int, int],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
@@ -363,14 +364,19 @@ def resize_keypoints(
 
 @_register_kernel_internal(resize, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 def _resize_keypoints_dispatch(
-    kp: tv_tensors.KeyPoints, size: Optional[List[int]],
+    kp: tv_tensors.KeyPoints,
+    size: Optional[List[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
 ) -> tv_tensors.KeyPoints:
     out, canvas_size = resize_keypoints(
-        kp.as_subclass(torch.Tensor), size, canvas_size=kp.canvas_size, interpolation=interpolation,
-        max_size=max_size, antialias=antialias
+        kp.as_subclass(torch.Tensor),
+        size,
+        canvas_size=kp.canvas_size,
+        interpolation=interpolation,
+        max_size=max_size,
+        antialias=antialias,
     )
     return tv_tensors.wrap(out, like=kp, canvas_size=canvas_size)
 
@@ -856,8 +862,12 @@ def affine_keypoints(
     return _affine_keypoints_with_expand(
         keypoints=keypoints.as_subclass(torch.Tensor),
         canvas_size=keypoints.canvas_size,
-        angle=angle, translate=translate, scale=scale, shear=shear,
-        center=center, expand=False
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        center=center,
+        expand=False,
     )
 
 
@@ -1167,9 +1177,14 @@ def rotate_keypoints(
     fill: _FillTypeJIT = None,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     return _affine_keypoints_with_expand(
-        keypoints=keypoints.as_subclass(torch.Tensor), canvas_size=keypoints.canvas_size,
-        angle=-angle, translate=[0.0, 0.0], scale=1.0,
-        shear=[0.0, 0.0], center=center, expand=expand,
+        keypoints=keypoints.as_subclass(torch.Tensor),
+        canvas_size=keypoints.canvas_size,
+        angle=-angle,
+        translate=[0.0, 0.0],
+        scale=1.0,
+        shear=[0.0, 0.0],
+        center=center,
+        expand=expand,
     )
 
 
@@ -1445,10 +1460,7 @@ def pad_mask(
 
 
 def pad_keypoints(
-    keypoints: torch.Tensor,
-    canvas_size: Tuple[int, int],
-    padding: List[int],
-    padding_mode: str = "constant"
+    keypoints: torch.Tensor, canvas_size: Tuple[int, int], padding: List[int], padding_mode: str = "constant"
 ):
     SUPPORTED_MODES = ["constant"]
     if padding_mode not in SUPPORTED_MODES:
@@ -1468,8 +1480,10 @@ def _pad(
     keypoints: tv_tensors.KeyPoints, padding: List[int], padding_mode: str = "constant", **kwargs
 ) -> tv_tensors.KeyPoints:
     output, canvas_size = pad_keypoints(
-        keypoints.as_subclass(torch.Tensor), canvas_size=keypoints.canvas_size,
-        padding=padding, padding_mode=padding_mode
+        keypoints.as_subclass(torch.Tensor),
+        canvas_size=keypoints.canvas_size,
+        padding=padding,
+        padding_mode=padding_mode,
     )
     return tv_tensors.wrap(output, like=keypoints, canvas_size=canvas_size)
 
@@ -1575,7 +1589,9 @@ def crop_keypoints(
 
 
 @_register_kernel_internal(crop, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
-def crop_keypoints_dispatch(inpt: tv_tensors.KeyPoints, top: int, left: int, height: int, width: int) -> tv_tensors.KeyPoints:
+def crop_keypoints_dispatch(
+    inpt: tv_tensors.KeyPoints, top: int, left: int, height: int, width: int
+) -> tv_tensors.KeyPoints:
     out, canvas_size = crop_keypoints(inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width)
     return tv_tensors.wrap(out, like=inpt, canvas_size=canvas_size)
 
@@ -1792,8 +1808,10 @@ def _perspective_keypoints_dispatch(
 ) -> tv_tensors.BoundingBoxes:
     output = perspectice_keypoints(
         inpt.as_subclass(torch.Tensor),
-        canvas_size=inpt.canvas_size, startpoints=startpoints,
-        endpoints=endpoints, coefficients=coefficients,
+        canvas_size=inpt.canvas_size,
+        startpoints=startpoints,
+        endpoints=endpoints,
+        coefficients=coefficients,
     )
     return tv_tensors.wrap(output, like=inpt)
 
@@ -2060,11 +2078,7 @@ def _create_identity_grid(size: Tuple[int, int], device: torch.device, dtype: to
     return base_grid
 
 
-def elastic_keypoints(
-    kp: torch.Tensor,
-    canvas_size: Tuple[int, int],
-    displacement: torch.Tensor
-) -> torch.Tensor:
+def elastic_keypoints(kp: torch.Tensor, canvas_size: Tuple[int, int], displacement: torch.Tensor) -> torch.Tensor:
     expected_shape = (1, canvas_size[0], canvas_size[1], 2)
     if not isinstance(displacement, torch.Tensor):
         raise TypeError("Argument displacement should be a Tensor")
@@ -2093,12 +2107,8 @@ def elastic_keypoints(
 
 
 @_register_kernel_internal(elastic, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
-def _elastic_keypoints_dispatch(
-    inpt: tv_tensors.BoundingBoxes, displacement: torch.Tensor, **kwargs
-):
-    output = elastic_keypoints(
-        inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, displacement=displacement
-    )
+def _elastic_keypoints_dispatch(inpt: tv_tensors.BoundingBoxes, displacement: torch.Tensor, **kwargs):
+    output = elastic_keypoints(inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, displacement=displacement)
     return tv_tensors.wrap(output, like=inpt)
 
 
@@ -2282,20 +2292,14 @@ def _center_crop_image_pil(image: PIL.Image.Image, output_size: List[int]) -> PI
     return _crop_image_pil(image, crop_top, crop_left, crop_height, crop_width)
 
 
-def center_crop_keypoints(
-    inpt: torch.Tensor, canvas_size: Tuple[int, int], output_size: List[int]
-):
+def center_crop_keypoints(inpt: torch.Tensor, canvas_size: Tuple[int, int], output_size: List[int]):
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *canvas_size)
-    return crop_keypoints(
-        inpt, top=crop_top, left=crop_left, height=crop_height, width=crop_width
-    )
+    return crop_keypoints(inpt, top=crop_top, left=crop_left, height=crop_height, width=crop_width)
 
 
 @_register_kernel_internal(center_crop, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
-def _center_crop_keypoints_dispatch(
-    inpt: tv_tensors.KeyPoints, output_size: List[int]
-) -> tv_tensors.KeyPoints:
+def _center_crop_keypoints_dispatch(inpt: tv_tensors.KeyPoints, output_size: List[int]) -> tv_tensors.KeyPoints:
     output, canvas_size = center_crop_keypoints(
         inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, output_size=output_size
     )
@@ -2438,14 +2442,21 @@ def _resized_crop_image_pil_dispatch(
 
 
 def resized_crop_keypoints(
-    kp: torch.Tensor, top: int, left: int, height: int, width: int, size: List[int],
+    kp: torch.Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     kp, canvas_size = crop_keypoints(kp, top, left, height, width)
     return resize_keypoints(kp, size=size, canvas_size=canvas_size)
 
 
 @_register_kernel_internal(resized_crop, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
-def _resized_crop_dispatch(inpt: tv_tensors.BoundingBoxes, top: int, left: int, height: int, width: int, size: List[int], **kwargs):
+def _resized_crop_dispatch(
+    inpt: tv_tensors.BoundingBoxes, top: int, left: int, height: int, width: int, size: List[int], **kwargs
+):
     out, canvas_size = resized_crop_bounding_boxes(
         inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width, size=size
     )
