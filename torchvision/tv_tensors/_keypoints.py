@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Mapping, MutableSequence, Optional, Sequence, Tuple, Union
-from torch.utils._pytree import tree_flatten
 import torch
+from torch.utils._pytree import tree_flatten
 from ._tv_tensor import TVTensor
 
 
