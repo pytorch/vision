@@ -320,11 +320,75 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
     return to_dtype_image(video, dtype, scale=scale)
 
 
+@_register_kernel_internal(to_dtype, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, tv_tensors.Mask, tv_tensor_wrapper=False)
 def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
     # We don't need to unwrap and rewrap here, since TVTensor.to() preserves the type
     return inpt.to(dtype)
+
+
+def sanitize_keypoints(
+    keypoints: torch.Tensor,
+    canvas_size: Optional[Tuple[int, int]] = None
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Removes degenerate/invalid keypoints and returns the corresponding indexing mask.
+
+    This removes the keypoints that are outside of their corresponing image.
+    You may want to first call :func:`~torchvision.transforms.v2.functional.clam_keypoints`
+    first to avoid undesired removals.
+
+    .. note::
+        Points that touch the edge of the canvas are removed, unlike for :func:`sanitize_bounding_boxes`
+
+    Raises:
+        ValueError: If the keypoints are not passed as a two dimensional tensor.
+
+    Args:
+        keypoints (torch.Tensor or class:`~torchvision.tv_tensors.KeyPoints`): The Keypoints being removed
+        canvas_size (Optional[Tuple[int, int]], optional): The canvas_size of the bounding boxes
+            (size of the corresponding image/video).
+            Must be left to none if ``bounding_boxes`` is a :class:`~torchvision.tv_tensors.KeyPoints` object.
+
+    Returns:
+        out (tuple of Tensors): The subset of valid bounding boxes, and the corresponding indexing mask.
+        The mask can then be used to subset other tensors (e.g. labels) that are associated with the bounding boxes.
+    """
+    if not keypoints.ndim == 2:
+        if keypoints.ndim < 2:
+            raise ValueError("Cannot sanitize a single Keypoint")
+        raise ValueError(
+            "Cannot sanitize KeyPoints structure that are not 2D. "
+            f"Expected shape to be (N, 2), got {keypoints.shape} ({keypoints.ndim=}, not 2)"
+        )
+    if torch.jit.is_scripting() or is_pure_tensor(keypoints):
+        if canvas_size is None:
+            raise ValueError(
+                "canvas_size cannot be None if keypoints is a pure tensor. "
+                f"Got canvas_size={canvas_size}."
+                "Set that to appropriate values or pass keypoints as a tv_tensors.KeyPoints object."
+            )
+        valid = _get_sanitize_keypoints_mask(
+            keypoints, canvas_size=canvas_size,
+        )
+        return keypoints[valid], valid
+    if not isinstance(keypoints, tv_tensors.KeyPoints):
+        raise ValueError("keypoints must be a tv_tensors.KeyPoints instance or a pure tensor.")
+    valid = _get_sanitize_keypoints_mask(
+        keypoints, canvas_size=keypoints.canvas_size,
+    )
+    return tv_tensors.wrap(keypoints[valid], like=keypoints), valid
+
+
+def _get_sanitize_keypoints_mask(
+    keypoints: torch.Tensor,
+    canvas_size: Tuple[int, int],
+) -> torch.Tensor:
+    image_h, image_w = canvas_size
+    x = keypoints[:, 0]
+    y = keypoints[:, 1]
+
+    return (0 < x) & (x < image_w) & (0 < y) & (y < image_h)
 
 
 def sanitize_bounding_boxes(

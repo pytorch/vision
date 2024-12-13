@@ -176,6 +176,24 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxy
 
 
+def _xyxy_to_points(
+    bounding_boxes: torch.Tensor
+) -> torch.Tensor:
+    return bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
+
+
+def convert_box_to_points(
+    bounding_boxes: tv_tensors.BoundingBoxes
+) -> tv_tensors.KeyPoints:
+    bbox = _convert_bounding_box_format(
+        bounding_boxes.as_subclass(torch.Tensor),
+        old_format=bounding_boxes.format,
+        new_format=BoundingBoxFormat.XYXY,
+        inplace=False
+    )
+    return tv_tensors.KeyPoints(_xyxy_to_points(bbox), canvas_size=bounding_boxes.canvas_size)
+
+
 def _convert_bounding_box_format(
     bounding_boxes: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
@@ -252,6 +270,19 @@ def _clamp_bounding_boxes(
         xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True
     )
     return out_boxes.to(in_dtype)
+
+
+def clamp_keypoints(
+    inpt: torch.Tensor,
+    canvas_size: Tuple[int, int]
+) -> torch.Tensor:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(clamp_bounding_boxes)
+    dtype = inpt.dtype
+    inpt = inpt.float()
+    inpt[..., 0].clamp_(0, canvas_size[1])
+    inpt[..., 1].clamp_(0, canvas_size[0])
+    return inpt.to(dtype=dtype)
 
 
 def clamp_bounding_boxes(

@@ -4,7 +4,7 @@ import collections.abc
 import numbers
 from contextlib import suppress
 
-from typing import Any, Callable, Dict, List, Literal, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterable, List, Literal, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -160,6 +160,20 @@ def get_bounding_boxes(flat_inputs: List[Any]) -> tv_tensors.BoundingBoxes:
         return next(inpt for inpt in flat_inputs if isinstance(inpt, tv_tensors.BoundingBoxes))
     except StopIteration:
         raise ValueError("No bounding boxes were found in the sample")
+
+
+def get_all_keypoints(flat_inputs: List[Any]) -> Iterable[tv_tensors.KeyPoints]:
+    """Yields all KeyPoints in the input.
+
+    Raises:
+        ValueError: No KeyPoints can be found
+    """
+    generator = (inpt for inpt in flat_inputs if isinstance(inpt, tv_tensors.KeyPoints))
+    try:
+        yield next(generator)
+    except StopIteration:
+        raise ValueError("No Keypoints were found in the sample.")
+    return generator
 
 
 def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
