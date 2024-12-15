@@ -1,6 +1,6 @@
 import pathlib
 import re
-from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, cast, Optional, Union
 
 import numpy as np
 import torch
@@ -23,7 +23,7 @@ NAME = "sbd"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
@@ -48,7 +48,7 @@ class SBD(Dataset):
 
         super().__init__(root, dependencies=("scipy",), skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         resources = [
             HttpResource(
                 "https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz",
@@ -64,7 +64,7 @@ class SBD(Dataset):
             )
         return resources  # type: ignore[return-value]
 
-    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_archive(self, data: tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         parent, grandparent, *_ = path.parents
 
@@ -79,7 +79,7 @@ class SBD(Dataset):
 
         return None
 
-    def _prepare_sample(self, data: Tuple[Tuple[Any, Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[tuple[Any, tuple[str, BinaryIO]], tuple[str, BinaryIO]]) -> dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
         image_path, image_buffer = image_data
@@ -98,7 +98,7 @@ class SBD(Dataset):
             segmentation=torch.as_tensor(anns["Segmentation"].item()),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         if self._split == "train_noval":
             archive_dp, split_dp = resource_dps
             images_dp, anns_dp = Demultiplexer(
@@ -141,7 +141,7 @@ class SBD(Dataset):
             "train_noval": 5_623,
         }[self._split]
 
-    def _generate_categories(self) -> Tuple[str, ...]:
+    def _generate_categories(self) -> tuple[str, ...]:
         resources = self._resources()
 
         dp = resources[0].load(self._root)
@@ -152,7 +152,7 @@ class SBD(Dataset):
 
         pattern = re.compile(r"\s*'(?P<category>\w+)';\s*%(?P<label>\d+)")
         categories_and_labels = cast(
-            List[Tuple[str, ...]],
+            list[tuple[str, ...]],
             [
                 pattern.match(line).groups()  # type: ignore[union-attr]
                 # the first and last line contain no information

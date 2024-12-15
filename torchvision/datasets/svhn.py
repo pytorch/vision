@@ -1,6 +1,6 @@
 import os.path
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 from PIL import Image
@@ -91,7 +91,7 @@ class SVHN(VisionDataset):
         np.place(self.labels, self.labels == 10, 0)
         self.data = np.transpose(self.data, (3, 2, 0, 1))
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

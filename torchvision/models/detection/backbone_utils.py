@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Optional, Union
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
@@ -33,8 +33,8 @@ class BackboneWithFPN(nn.Module):
     def __init__(
         self,
         backbone: nn.Module,
-        return_layers: Dict[str, str],
-        in_channels_list: List[int],
+        return_layers: dict[str, str],
+        in_channels_list: list[int],
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
@@ -53,7 +53,7 @@ class BackboneWithFPN(nn.Module):
         )
         self.out_channels = out_channels
 
-    def forward(self, x: Tensor) -> Dict[str, Tensor]:
+    def forward(self, x: Tensor) -> dict[str, Tensor]:
         x = self.body(x)
         x = self.fpn(x)
         return x
@@ -71,7 +71,7 @@ def resnet_fpn_backbone(
     weights: Optional[WeightsEnum],
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 3,
-    returned_layers: Optional[List[int]] = None,
+    returned_layers: Optional[list[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> BackboneWithFPN:
     """
@@ -118,7 +118,7 @@ def resnet_fpn_backbone(
 def _resnet_fpn_extractor(
     backbone: resnet.ResNet,
     trainable_layers: int,
-    returned_layers: Optional[List[int]] = None,
+    returned_layers: Optional[list[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
     norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> BackboneWithFPN:
@@ -189,7 +189,7 @@ def mobilenet_backbone(
     fpn: bool,
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 2,
-    returned_layers: Optional[List[int]] = None,
+    returned_layers: Optional[list[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> nn.Module:
     backbone = mobilenet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
@@ -200,7 +200,7 @@ def _mobilenet_extractor(
     backbone: Union[mobilenet.MobileNetV2, mobilenet.MobileNetV3],
     fpn: bool,
     trainable_layers: int,
-    returned_layers: Optional[List[int]] = None,
+    returned_layers: Optional[list[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
     norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> nn.Module:

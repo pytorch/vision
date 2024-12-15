@@ -14,7 +14,7 @@ import string
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
-from typing import Callable, Tuple, Union
+from typing import Callable, Union
 
 import datasets_utils
 import numpy as np
@@ -3108,13 +3108,13 @@ class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     @staticmethod
-    def _make_dummy_depth_map(root: str, name: str, size: Tuple[int, int]):
+    def _make_dummy_depth_map(root: str, name: str, size: tuple[int, int]):
         file = pathlib.Path(root) / name
         image = np.ones((size[0], size[1]), dtype=np.uint8)
         PIL.Image.fromarray(image).save(file)
 
     @staticmethod
-    def _make_scene_folder(root: str, scene_name: str, size: Tuple[int, int]) -> None:
+    def _make_scene_folder(root: str, scene_name: str, size: tuple[int, int]) -> None:
         root = pathlib.Path(root) / scene_name
         os.makedirs(root, exist_ok=True)
         # jpg images
@@ -3185,7 +3185,7 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
 
     @staticmethod
     def _create_pfm_folder(
-        root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]
+        root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: tuple[int, int]
     ) -> None:
         root = pathlib.Path(root) / name
         os.makedirs(root, exist_ok=True)
@@ -3268,7 +3268,7 @@ class InStereo2k(datasets_utils.ImageDatasetTestCase):
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "test"))
 
     @staticmethod
-    def _make_scene_folder(root: str, name: str, size: Tuple[int, int]):
+    def _make_scene_folder(root: str, name: str, size: tuple[int, int]):
         root = pathlib.Path(root) / name
         os.makedirs(root, exist_ok=True)
 

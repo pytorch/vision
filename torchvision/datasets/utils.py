@@ -6,13 +6,13 @@ import os
 import os.path
 import pathlib
 import re
-import sys
 import tarfile
 import urllib
 import urllib.error
 import urllib.request
 import zipfile
-from typing import Any, Callable, Dict, IO, Iterable, List, Optional, Tuple, TypeVar, Union
+from collections.abc import Iterable
+from typing import Any, Callable, IO, Optional, TypeVar, Union
 from urllib.parse import urlparse
 
 import numpy as np
@@ -36,10 +36,7 @@ def calculate_md5(fpath: Union[str, pathlib.Path], chunk_size: int = 1024 * 1024
     # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
     # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
     # it torchvision.datasets is unusable in these environments since we perform a MD5 check everywhere.
-    if sys.version_info >= (3, 9):
-        md5 = hashlib.md5(usedforsecurity=False)
-    else:
-        md5 = hashlib.md5()
+    md5 = hashlib.md5(usedforsecurity=False)
     with open(fpath, "rb") as f:
         while chunk := f.read(chunk_size):
             md5.update(chunk)
@@ -140,7 +137,7 @@ def download_url(
         raise RuntimeError("File not found or corrupted.")
 
 
-def list_dir(root: Union[str, pathlib.Path], prefix: bool = False) -> List[str]:
+def list_dir(root: Union[str, pathlib.Path], prefix: bool = False) -> list[str]:
     """List all directories at a given root
 
     Args:
@@ -155,7 +152,7 @@ def list_dir(root: Union[str, pathlib.Path], prefix: bool = False) -> List[str]:
     return directories
 
 
-def list_files(root: Union[str, pathlib.Path], suffix: str, prefix: bool = False) -> List[str]:
+def list_files(root: Union[str, pathlib.Path], suffix: str, prefix: bool = False) -> list[str]:
     """List all files ending with a suffix at a given root
 
     Args:
@@ -216,7 +213,7 @@ def _extract_tar(
         tar.extractall(to_path)
 
 
-_ZIP_COMPRESSION_MAP: Dict[str, int] = {
+_ZIP_COMPRESSION_MAP: dict[str, int] = {
     ".bz2": zipfile.ZIP_BZIP2,
     ".xz": zipfile.ZIP_LZMA,
 }
@@ -231,23 +228,23 @@ def _extract_zip(
         zip.extractall(to_path)
 
 
-_ARCHIVE_EXTRACTORS: Dict[str, Callable[[Union[str, pathlib.Path], Union[str, pathlib.Path], Optional[str]], None]] = {
+_ARCHIVE_EXTRACTORS: dict[str, Callable[[Union[str, pathlib.Path], Union[str, pathlib.Path], Optional[str]], None]] = {
     ".tar": _extract_tar,
     ".zip": _extract_zip,
 }
-_COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {
+_COMPRESSED_FILE_OPENERS: dict[str, Callable[..., IO]] = {
     ".bz2": bz2.open,
     ".gz": gzip.open,
     ".xz": lzma.open,
 }
-_FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
+_FILE_TYPE_ALIASES: dict[str, tuple[Optional[str], Optional[str]]] = {
     ".tbz": (".tar", ".bz2"),
     ".tbz2": (".tar", ".bz2"),
     ".tgz": (".tar", ".gz"),
 }
 
 
-def _detect_file_type(file: Union[str, pathlib.Path]) -> Tuple[str, Optional[str], Optional[str]]:
+def _detect_file_type(file: Union[str, pathlib.Path]) -> tuple[str, Optional[str], Optional[str]]:
     """Detect the archive type and/or compression of a file.
 
     Args:

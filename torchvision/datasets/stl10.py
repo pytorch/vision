@@ -1,6 +1,6 @@
 import os.path
 from pathlib import Path
-from typing import Any, Callable, cast, Optional, Tuple, Union
+from typing import Any, Callable, cast, Optional, Union
 
 import numpy as np
 from PIL import Image
@@ -100,7 +100,7 @@ class STL10(VisionDataset):
             msg = "Expected type None or int for argument folds, but got type {}."
             raise ValueError(msg.format(type(folds)))
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -129,7 +129,7 @@ class STL10(VisionDataset):
     def __len__(self) -> int:
         return self.data.shape[0]
 
-    def __loadfile(self, data_file: str, labels_file: Optional[str] = None) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    def __loadfile(self, data_file: str, labels_file: Optional[str] = None) -> tuple[np.ndarray, Optional[np.ndarray]]:
         labels = None
         if labels_file:
             path_to_labels = os.path.join(self.root, self.base_folder, labels_file)

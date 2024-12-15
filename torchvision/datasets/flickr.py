@@ -3,7 +3,7 @@ import os
 from collections import defaultdict
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from .folder import default_loader
 from .vision import VisionDataset
@@ -18,14 +18,14 @@ class Flickr8kParser(HTMLParser):
         self.root = root
 
         # Data structure to store captions
-        self.annotations: Dict[str, List[str]] = {}
+        self.annotations: dict[str, list[str]] = {}
 
         # State variables
         self.in_table = False
         self.current_tag: Optional[str] = None
         self.current_img: Optional[str] = None
 
-    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
         self.current_tag = tag
 
         if tag == "table":
@@ -87,7 +87,7 @@ class Flickr8k(VisionDataset):
         self.ids = list(sorted(self.annotations.keys()))
         self.loader = loader
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -149,7 +149,7 @@ class Flickr30k(VisionDataset):
         self.ids = list(sorted(self.annotations.keys()))
         self.loader = loader
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

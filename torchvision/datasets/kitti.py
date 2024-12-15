@@ -1,7 +1,7 @@
 import csv
 import os
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -83,7 +83,7 @@ class Kitti(VisionDataset):
             if self.train:
                 self.targets.append(os.path.join(labels_dir, f"{img_file.split('.')[0]}.txt"))
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """Get item at a given index.
 
         Args:
@@ -108,7 +108,7 @@ class Kitti(VisionDataset):
             image, target = self.transforms(image, target)
         return image, target
 
-    def _parse_target(self, index: int) -> List:
+    def _parse_target(self, index: int) -> list:
         target = []
         with open(self.targets[index]) as inp:
             content = csv.reader(inp, delimiter=" ")

@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import torch
 import torch.nn.functional as F
@@ -310,9 +310,9 @@ class TwoMLPHead(nn.Module):
 class FastRCNNConvFCHead(nn.Sequential):
     def __init__(
         self,
-        input_size: Tuple[int, int, int],
-        conv_layers: List[int],
-        fc_layers: List[int],
+        input_size: tuple[int, int, int],
+        conv_layers: list[int],
+        fc_layers: list[int],
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ):
         """

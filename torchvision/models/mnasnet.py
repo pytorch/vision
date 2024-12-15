@@ -1,6 +1,6 @@
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -87,7 +87,7 @@ def _round_to_multiple_of(val: float, divisor: int, round_up_bias: float = 0.9) 
     return new_val if new_val >= round_up_bias * val else new_val + divisor
 
 
-def _get_depths(alpha: float) -> List[int]:
+def _get_depths(alpha: float) -> list[int]:
     """Scales tensor depths as in reference MobileNet code, prefers rounding up
     rather than down."""
     depths = [32, 16, 24, 40, 80, 96, 192, 320]
@@ -163,13 +163,13 @@ class MNASNet(torch.nn.Module):
 
     def _load_from_state_dict(
         self,
-        state_dict: Dict,
+        state_dict: dict,
         prefix: str,
-        local_metadata: Dict,
+        local_metadata: dict,
         strict: bool,
-        missing_keys: List[str],
-        unexpected_keys: List[str],
-        error_msgs: List[str],
+        missing_keys: list[str],
+        unexpected_keys: list[str],
+        error_msgs: list[str],
     ) -> None:
         version = local_metadata.get("version", None)
         if version not in [1, 2]:

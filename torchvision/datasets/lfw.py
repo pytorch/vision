@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from .folder import default_loader
 from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
@@ -48,7 +48,7 @@ class _LFW(VisionDataset):
         self.view = verify_str_arg(view.lower(), "view", ["people", "pairs"])
         self.split = verify_str_arg(split.lower(), "split", ["10fold", "train", "test"])
         self.labels_file = f"{self.view}{self.annot_file[self.split]}.txt"
-        self.data: List[Any] = []
+        self.data: list[Any] = []
 
         if download:
             self.download()
@@ -124,7 +124,7 @@ class LFWPeople(_LFW):
         self.class_to_idx = self._get_classes()
         self.data, self.targets = self._get_people()
 
-    def _get_people(self) -> Tuple[List[str], List[int]]:
+    def _get_people(self) -> tuple[list[str], list[int]]:
         data, targets = [], []
         with open(os.path.join(self.root, self.labels_file)) as f:
             lines = f.readlines()
@@ -142,14 +142,14 @@ class LFWPeople(_LFW):
 
         return data, targets
 
-    def _get_classes(self) -> Dict[str, int]:
+    def _get_classes(self) -> dict[str, int]:
         with open(os.path.join(self.root, self.names)) as f:
             lines = f.readlines()
             names = [line.strip().split()[0] for line in lines]
         class_to_idx = {name: i for i, name in enumerate(names)}
         return class_to_idx
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -209,7 +209,7 @@ class LFWPairs(_LFW):
 
         self.pair_names, self.data, self.targets = self._get_pairs(self.images_dir)
 
-    def _get_pairs(self, images_dir: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[int]]:
+    def _get_pairs(self, images_dir: str) -> tuple[list[tuple[str, str]], list[tuple[str, str]], list[int]]:
         pair_names, data, targets = [], [], []
         with open(os.path.join(self.root, self.labels_file)) as f:
             lines = f.readlines()
@@ -237,7 +237,7 @@ class LFWPairs(_LFW):
 
         return pair_names, data, targets
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any, int]:
+    def __getitem__(self, index: int) -> tuple[Any, Any, int]:
         """
         Args:
             index (int): Index

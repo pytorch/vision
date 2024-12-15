@@ -116,7 +116,7 @@ def get_models_from_module(module):
 )
 def test_list_models(module):
     a = set(get_models_from_module(module))
-    b = set(x.replace("quantized_", "") for x in models.list_models(module))
+    b = {x.replace("quantized_", "") for x in models.list_models(module)}
 
     assert len(b) > 0
     assert a == b
@@ -135,7 +135,7 @@ def test_list_models(module):
         ["*resnet*", "*alexnet*"],
         ["*resnet*", "*alexnet*", "*not-existing-model-for-test?"],
         ("*resnet*", "*alexnet*"),
-        set(["*resnet*", "*alexnet*"]),
+        {"*resnet*", "*alexnet*"},
     ],
 )
 @pytest.mark.parametrize(
@@ -151,7 +151,7 @@ def test_list_models(module):
         ["resnet34", "*not-existing-model-for-test?"],
         ["resnet34", "*resnet1*"],
         ("resnet34", "*resnet1*"),
-        set(["resnet34", "*resnet1*"]),
+        {"resnet34", "*resnet1*"},
     ],
 )
 def test_list_models_filters(include_filters, exclude_filters):
@@ -167,7 +167,7 @@ def test_list_models_filters(include_filters, exclude_filters):
         expected = set()
         for include_f in include_filters:
             include_f = include_f.strip("*?")
-            expected = expected | set(x for x in classification_models if include_f in x)
+            expected = expected | {x for x in classification_models if include_f in x}
     else:
         expected = classification_models
 
@@ -175,7 +175,7 @@ def test_list_models_filters(include_filters, exclude_filters):
         for exclude_f in exclude_filters:
             exclude_f = exclude_f.strip("*?")
             if exclude_f != "":
-                a_exclude = set(x for x in classification_models if exclude_f in x)
+                a_exclude = {x for x in classification_models if exclude_f in x}
                 expected = expected - a_exclude
 
     assert expected == actual
@@ -289,11 +289,11 @@ def test_schema_meta_validation(model_fn):
     bad_names = []
     for w in weights_enum:
         actual_fields = set(w.meta.keys())
-        actual_fields |= set(
+        actual_fields |= {
             ("_metrics", dataset, metric_key)
             for dataset in w.meta.get("_metrics", {}).keys()
             for metric_key in w.meta.get("_metrics", {}).get(dataset, {}).keys()
-        )
+        }
         missing_fields = expected_fields - actual_fields
         unsupported_fields = set(w.meta.keys()) - permitted_fields
         if missing_fields or unsupported_fields:
