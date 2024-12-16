@@ -26,7 +26,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
       cp "$bin_path/Library/bin/libjpeg.dll" torchvision
 
       # issue with Building torchvision on py3.13
-      if[[ "$PYTHON_VERSION" == 3.13 ]]; then
+      if [[ "$PYTHON_VERSION" == 3.13 ]]; then
         mkdir -p build\\temp.win-amd64-cpython-313\\Release
       fi
   fi
