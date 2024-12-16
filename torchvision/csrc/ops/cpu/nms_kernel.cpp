@@ -108,39 +108,49 @@ at::Tensor nms_kernel(
 }
 
 
+/**
+ * @brief Post-processes the results of the Non-Maximum Suppression (NMS) algorithm.
+ *
+ * This function iterates over the boxes and determines which ones to keep based on the IOU (Intersection Over Union) keep-out mask.
+ * It uses a 32-bitmask to efficiently track and suppress overlapping boxes.
+ *
+ * @param order A tensor containing the order of the boxes.
+ * @param iou_keep_out_mask A tensor containing the IOU keep-out mask. This mask has the shape (N, N//32), where N is the number of boxes.
+ * The datatype MUST be int32.
+ * @param num_boxes The total number of boxes.
+ * @return A tensor containing the indices of the boxes to keep.
+ */
+
 at::Tensor nms_kernel_postprocess(
     const at::Tensor& order,
     const at::Tensor& iou_keep_out_mask,
     const int64_t num_boxes) {
+    // Calculate the number of 32-bit blocks needed to cover all boxes
+    const int col_blocks = (num_boxes + 32 - 1) / 32;
+    std::vector<unsigned long> remove_box(col_blocks);
+    std::memset(&remove_box[0], 0, sizeof(unsigned long) * col_blocks);
 
-      // ceil div to 32. Which is the size of ulong type.
-      const int col_blocks = (num_boxes + 32 - 1) / 32;
-      std::vector<unsigned long> remove_box(col_blocks);
-      std::memset(&remove_box[0], 0, sizeof(unsigned long) * col_blocks);
 
+    at::Tensor keep = at::empty({num_boxes}, order.options().dtype(at::kLong).device(at::kCPU));
+    int64_t * keep_data_ptr = keep.data_ptr<int64_t>();
 
-      at::Tensor keep = at::empty({num_boxes}, order.options().dtype(at::kLong).device(at::kCPU));
-      int64_t * keep_data_ptr = keep.data_ptr<int64_t>();
+    unsigned long long* iou_keep_out_mask_data_ptr = (unsigned long long*)iou_keep_out_mask.data_ptr<int64_t>();
+    int num_to_keep = 0;
+    // Note that the iou_keep_out_mask has the shape of (N, N//32)
+    // The following function iterate over each box to check if it should be kept
+    for (int64_t i = 0; i < num_boxes; i++) {
+      int nblock = i / 32;
+      // This is equivalent to module: 31 - i % 32
+      int inblock = (31 - i) & (32 -1);
 
-      unsigned long long* iou_keep_out_mask_data_ptr = (unsigned long long*)iou_keep_out_mask.data_ptr<int64_t>();
-      int num_to_keep = 0;
-      unsigned long long* iou_keep_out_mask_data_ptr0 = (unsigned long long*)iou_keep_out_mask[0].data_ptr<int64_t>();
-      unsigned long long*iou_keep_out_mask_data_ptr1 = (unsigned long long*)iou_keep_out_mask[1].data_ptr<int64_t>();
-
-      // Note that the iou_keep_out_mask has the shape of (N, N//32)
-      for (int64_t i = 0; i < num_boxes; i++) {
-        int nblock = i / 32;
-        // module 32
-        int inblock = (31 - i) & (32 -1);
-
-        if (!(remove_box[nblock] & (1UL << inblock))){
-          keep_data_ptr[num_to_keep++]=i;
-          unsigned long long*p = iou_keep_out_mask_data_ptr + i*col_blocks;
-          for (int j = nblock; j < col_blocks; j++){
-            remove_box[j] |= p[j]; 
-          }
+      if (!(remove_box[nblock] & (1UL << inblock))){
+        keep_data_ptr[num_to_keep++]=i;
+        unsigned long long*p = iou_keep_out_mask_data_ptr + i*col_blocks;
+        for (int j = nblock; j < col_blocks; j++){
+          remove_box[j] |= p[j];
         }
       }
+    }
     return order.index({keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)});
 }
 

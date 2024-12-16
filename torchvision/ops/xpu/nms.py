@@ -1,6 +1,6 @@
 import torch
 import triton
-from torchvision.ops.boxes import nms_kernel_postprocess
+from torchvision.ops.boxes import _nms_kernel_postprocess
 
 from torchvision.ops.triton.nms import triton_nms_IoU_kernel
 
@@ -42,6 +42,10 @@ def xpu_triton_nms(boxes: torch.Tensor, scores: torch.Tensor, threshold: float) 
         triton.cdiv(num_boxes, meta["BLOCK_SIZE"]),
         triton.cdiv(num_boxes, meta["BLOCK_SIZE"]),
     )
+
+    # This triton kernel will calcualte the IoU matrix for all the input boxes (iou_keep_out_mask).
+    # The iou_keep_out_mask is defined as a 32-bit long bitmask matrix. So the matrix shape is [N, N//32].
+    # Each item [i, j] will be interpreted as whether we should keep box j when we choose box i.
     triton_nms_IoU_kernel[grid](
         boxes,
         iou_keep_out_mask,
@@ -53,4 +57,6 @@ def xpu_triton_nms(boxes: torch.Tensor, scores: torch.Tensor, threshold: float) 
         num_warps=4,
     )
 
-    return nms_kernel_postprocess(order.cpu(), iou_keep_out_mask.cpu(), num_boxes).to(order.device)
+    # The postprocess will calculate the final indices of the boxes that should be kept.
+    # It is a serialized process, and we choose to run it on CPU for more generalization.
+    return _nms_kernel_postprocess(order.cpu(), iou_keep_out_mask.cpu(), num_boxes).to(order.device)
