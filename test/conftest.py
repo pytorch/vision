@@ -11,6 +11,7 @@ from common_utils import (
     IN_RE_WORKER,
     MPS_NOT_AVAILABLE_MSG,
     OSS_CI_GPU_NO_CUDA_MSG,
+    XPU_NOT_AVAILABLE_MSG,
 )
 
 
@@ -18,6 +19,7 @@ def pytest_configure(config):
     # register an additional marker (see pytest_collection_modifyitems)
     config.addinivalue_line("markers", "needs_cuda: mark for tests that rely on a CUDA device")
     config.addinivalue_line("markers", "needs_mps: mark for tests that rely on a MPS device")
+    config.addinivalue_line("markers", "needs_xpu: mark for tests that rely on a XPU device")
     config.addinivalue_line("markers", "dont_collect: mark for tests that should not be collected")
     config.addinivalue_line("markers", "opcheck_only_one: only opcheck one parametrization")
 
@@ -43,11 +45,17 @@ def pytest_collection_modifyitems(items):
         # and the ones with device == 'cpu' won't have the mark.
         needs_cuda = item.get_closest_marker("needs_cuda") is not None
         needs_mps = item.get_closest_marker("needs_mps") is not None
+        needs_xpu = item.get_closest_marker("needs_xpu") is not None
 
         if needs_cuda and not torch.cuda.is_available():
             # In general, we skip cuda tests on machines without a GPU
             # There are special cases though, see below
             item.add_marker(pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG))
+
+        if needs_xpu and not torch.xpu.is_available():
+            # In general, we skip xpu tests on machines without a GPU
+            # There are special cases though, see below
+            item.add_marker(pytest.mark.skip(reason=XPU_NOT_AVAILABLE_MSG))
 
         if needs_mps and not torch.backends.mps.is_available():
             item.add_marker(pytest.mark.skip(reason=MPS_NOT_AVAILABLE_MSG))
