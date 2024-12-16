@@ -38,5 +38,5 @@ else
   pip install auditwheel
 fi
 
-pip install numpy pyyaml future ninja
+pip install numpy pyyaml future
 pip install --upgrade setuptools==72.1.0
