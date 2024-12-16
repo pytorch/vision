@@ -10,7 +10,6 @@ from .boxes import (
     generalized_box_iou,
     masks_to_boxes,
     nms,
-    nms_kernel_postprocess,
     remove_small_boxes,
 )
 from .ciou_loss import complete_box_iou_loss
@@ -27,10 +26,8 @@ from .ps_roi_pool import ps_roi_pool, PSRoIPool
 from .roi_align import roi_align, RoIAlign
 from .roi_pool import roi_pool, RoIPool
 from .stochastic_depth import stochastic_depth, StochasticDepth
-from .xpu import _register_xpu_ops
 
 _register_custom_op()
-_register_xpu_ops()
 
 __all__ = [
     "masks_to_boxes",
