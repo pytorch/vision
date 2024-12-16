@@ -9,6 +9,7 @@ def _combine_bits(val0, val1):
     return val0 | val1
 
 
+@triton.jit
 def triton_nms_IoU_kernel(boxes, output_ptr, threshold, num_boxes, stride_i, stride_j, BLOCK_SIZE: tl.constexpr):
     """
     This nms_kernel computes the supressed mask of boxes [i, j].
@@ -76,13 +77,16 @@ def triton_nms_IoU_kernel(boxes, output_ptr, threshold, num_boxes, stride_i, str
 
     iou_keep_out_bit_mask = tl.reshape(iou_keep_out_bit_mask, (BLOCK_SIZE, (BLOCK_SIZE + 32 - 1) // 32, 32))
     iou_keep_out_combined = tl.reduce(iou_keep_out_bit_mask, axis=2, combine_fn=_combine_bits)
-
     iou_keep_out_combined = iou_keep_out_combined.to(tl.int64)
+
+    # The bits are combined along the col, thus we need to change the col block offsets
+    # For the row offset, it will remain the same.
+    combined_col_blk_offsets = col_block_pid * ((BLOCK_SIZE + 31) // 32)
     output_block_ptr = tl.make_block_ptr(
         output_ptr,
         shape=(num_boxes, (num_boxes + 32 - 1) // 32),
         strides=(stride_i, stride_j),
-        offsets=(row_block_start, 0),
+        offsets=(row_block_start, combined_col_blk_offsets),
         block_shape=(BLOCK_SIZE, (BLOCK_SIZE + 32 - 1) // 32),
         order=(0, 1),
     )
