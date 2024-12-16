@@ -205,6 +205,7 @@ def query_size(flat_inputs: List[Any]) -> Tuple[int, int]:
                 tv_tensors.Video,
                 tv_tensors.Mask,
                 tv_tensors.BoundingBoxes,
+                tv_tensors.KeyPoints,
             ),
         )
     }

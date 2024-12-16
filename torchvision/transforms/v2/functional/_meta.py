@@ -121,6 +121,11 @@ def get_size_bounding_boxes(bounding_box: tv_tensors.BoundingBoxes) -> List[int]
     return list(bounding_box.canvas_size)
 
 
+@_register_kernel_internal(get_size, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
+def get_size_keypoints(keypoints: tv_tensors.KeyPoints) -> List[int]:
+    return list(keypoints.canvas_size)
+
+
 def get_num_frames(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_frames_video(inpt)

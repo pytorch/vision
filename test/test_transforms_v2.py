@@ -329,7 +329,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
             canvas_size=size,
             device=device,
         ),
-        keypoints=make_keypoints(), keypoints_degenerate=tv_tensors.KeyPoints(
+        keypoints=make_keypoints(canvas_size=size), keypoints_degenerate=tv_tensors.KeyPoints(
             [
                 [0, 1],  # left edge
                 [1, 0],  # top edge
@@ -2351,8 +2351,9 @@ class TestCutMixMixUp:
             F.to_pil_image(imgs[0]),
             tv_tensors.Mask(torch.rand(12, 12)),
             tv_tensors.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
-            tv_tensors.KeyPoints(torch.rand(4, 2), canvas_size=(12, 12))
+            tv_tensors.KeyPoints(torch.rand(2, 2), canvas_size=(12, 12))
         ):
+            print(type(input_with_bad_type), cutmix_mixup)
             with pytest.raises(ValueError, match="does not support PIL images, "):
                 cutmix_mixup(input_with_bad_type)
 
@@ -2760,8 +2761,9 @@ class TestElastic:
         check_functional_kernel_signature_match(F.elastic, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        "make_input", [
+            make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints
+        ],
     )
     def test_displacement_error(self, make_input):
         input = make_input()
@@ -2773,8 +2775,10 @@ class TestElastic:
             F.elastic(input, displacement=torch.rand(F.get_size(input)))
 
     @pytest.mark.parametrize(
-        "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        "make_input", [
+            make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video,
+            make_keypoints
+        ],
     )
     # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
     @pytest.mark.parametrize("size", [(163, 163), (72, 333), (313, 95)])

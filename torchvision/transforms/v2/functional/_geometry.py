@@ -65,9 +65,15 @@ def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image(mask)
 
 
+def horizontal_flip_keypoints(kp: torch.Tensor, canvas_size: Tuple[int, int]):
+    kp[0] = kp[0].sub_(canvas_size[1]).neg_()
+    return kp
+
+
 @_register_kernel_internal(horizontal_flip, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
-def horizontal_flip_keypoints(kp: tv_tensors.KeyPoints):
-    return kp.sub_(kp.canvas_size[1]).neg_()
+def _horizontal_flip_keypoints_dispatch(kp: tv_tensors.KeyPoints):
+    out = horizontal_flip_keypoints(kp.as_subclass(torch.Tensor), canvas_size=kp.canvas_size)
+    return tv_tensors.wrap(out, like=kp)
 
 
 def horizontal_flip_bounding_boxes(
@@ -127,9 +133,10 @@ def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image(mask)
 
 
-@_register_kernel_internal(horizontal_flip, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
+@_register_kernel_internal(vertical_flip, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 def vertical_flip_keypoints(kp: tv_tensors.KeyPoints):
-    return kp.sub_(kp.canvas_size[1]).neg_()
+    kp[1] = kp[1].sub_(kp.canvas_size[0]).neg_()
+    return kp
 
 
 def vertical_flip_bounding_boxes(
@@ -850,9 +857,9 @@ def _affine_keypoints_with_expand(
     return keypoints, canvas_size
 
 
-@_register_kernel_internal(affine, tv_tensors.KeyPoints)
 def affine_keypoints(
-    keypoints: tv_tensors.KeyPoints,
+    keypoints: torch.Tensor,
+    canvas_size: Tuple[int, int],
     angle: Union[int, float],
     translate: List[float],
     scale: float,
@@ -860,8 +867,8 @@ def affine_keypoints(
     center: Optional[List[float]] = None,
 ):
     return _affine_keypoints_with_expand(
-        keypoints=keypoints.as_subclass(torch.Tensor),
-        canvas_size=keypoints.canvas_size,
+        keypoints=keypoints,
+        canvas_size=canvas_size,
         angle=angle,
         translate=translate,
         scale=scale,
@@ -869,6 +876,28 @@ def affine_keypoints(
         center=center,
         expand=False,
     )
+
+
+@_register_kernel_internal(affine, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
+def _affine_keypoints_dispatch(
+    inpt: tv_tensors.BoundingBoxes,
+    angle: Union[int, float],
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    center: Optional[List[float]] = None,
+    **kwargs,
+) -> tv_tensors.BoundingBoxes:
+    output, canvas_size = affine_keypoints(
+        inpt.as_subclass(torch.Tensor),
+        canvas_size=inpt.canvas_size,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        center=center,
+    )
+    return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 def _affine_bounding_boxes_with_expand(
@@ -1188,7 +1217,7 @@ def rotate_keypoints(
     )
 
 
-@_register_kernel_internal(rotate, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
+@_register_kernel_internal(rotate, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 def _rotate_keypoints_dispatch(
     kp: tv_tensors.KeyPoints, angle: float, expand: bool = False, center: Optional[List[float]] = None, **kwargs
 ) -> tv_tensors.KeyPoints:
@@ -1475,8 +1504,8 @@ def pad_keypoints(
     return clamp_keypoints(keypoints + pad, canvas_size), canvas_size
 
 
-@_register_kernel_internal(pad, tv_tensors.KeyPoints, tv_tensors_wrapper=False)
-def _pad(
+@_register_kernel_internal(pad, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
+def _pad_keypoints_dispatch(
     keypoints: tv_tensors.KeyPoints, padding: List[int], padding_mode: str = "constant", **kwargs
 ) -> tv_tensors.KeyPoints:
     output, canvas_size = pad_keypoints(
@@ -1589,7 +1618,7 @@ def crop_keypoints(
 
 
 @_register_kernel_internal(crop, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
-def crop_keypoints_dispatch(
+def _crop_keypoints_dispatch(
     inpt: tv_tensors.KeyPoints, top: int, left: int, height: int, width: int
 ) -> tv_tensors.KeyPoints:
     out, canvas_size = crop_keypoints(inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width)
@@ -1786,11 +1815,12 @@ def perspectice_keypoints(
     denom = perspective_coeffs[0] * perspective_coeffs[4] - perspective_coeffs[1] * perspective_coeffs[3]
     if denom == 0:
         raise RuntimeError(
-            f"Provided perspective_coeffs {perspective_coeffs} can not be inverted to transform bounding boxes. "
+            f"Provided perspective_coeffs {perspective_coeffs} can not be inverted to transform keypoints. "
             f"Denominator is zero, denom={denom}"
         )
 
     theta1, theta2 = _compute_perspective_thetas(perspective_coeffs, dtype, device, denom)
+    kp = torch.cat([kp, torch.ones(kp.shape[0], 1, device=kp.device)], dim=-1)
 
     numer_points = torch.matmul(kp, theta1.T)
     denom_points = torch.matmul(kp, theta2.T)
@@ -1892,7 +1922,7 @@ def perspective_bounding_boxes(
 
 
 def _compute_perspective_thetas(
-    perspective_coeffs: List[float], dtype: torch.dtype, device: torch.device, denom: float, /
+    perspective_coeffs: List[float], dtype: torch.dtype, device: torch.device, denom: float,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     inv_coeffs = [
         (perspective_coeffs[4] - perspective_coeffs[5] * perspective_coeffs[7]) / denom,
@@ -2099,6 +2129,9 @@ def elastic_keypoints(kp: torch.Tensor, canvas_size: Tuple[int, int], displaceme
 
     index_xy = kp.to(dtype=torch.long)
     index_x, index_y = index_xy[:, 0], index_xy[:, 1]
+    # Unlike bounding boxes, this may not work well.
+    index_x.clamp_(0, inv_grid.shape[2] - 1)
+    index_y.clamp_(0, inv_grid.shape[1] - 1)
 
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
     transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
@@ -2457,8 +2490,8 @@ def resized_crop_keypoints(
 def _resized_crop_dispatch(
     inpt: tv_tensors.BoundingBoxes, top: int, left: int, height: int, width: int, size: List[int], **kwargs
 ):
-    out, canvas_size = resized_crop_bounding_boxes(
-        inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width, size=size
+    out, canvas_size = resized_crop_keypoints(
+        inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width, size=size
     )
     return tv_tensors.wrap(out, like=inpt, canvas_size=canvas_size)
 
