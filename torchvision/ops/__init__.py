@@ -29,13 +29,13 @@ from .stochastic_depth import stochastic_depth, StochasticDepth
 
 _register_custom_op()
 
+
 __all__ = [
     "masks_to_boxes",
     "deform_conv2d",
     "DeformConv2d",
     "nms",
     "batched_nms",
-    "nms_kernel_postprocess",
     "remove_small_boxes",
     "clip_boxes_to_image",
     "box_convert",
