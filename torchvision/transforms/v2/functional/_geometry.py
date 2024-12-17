@@ -1922,7 +1922,10 @@ def perspective_bounding_boxes(
 
 
 def _compute_perspective_thetas(
-    perspective_coeffs: List[float], dtype: torch.dtype, device: torch.device, denom: float,
+    perspective_coeffs: List[float],
+    dtype: torch.dtype,
+    device: torch.device,
+    denom: float,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     inv_coeffs = [
         (perspective_coeffs[4] - perspective_coeffs[5] * perspective_coeffs[7]) / denom,
