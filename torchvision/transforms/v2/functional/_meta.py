@@ -182,10 +182,18 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
 
 
 def _xyxy_to_points(bounding_boxes: torch.Tensor) -> torch.Tensor:
-    return bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
+    return bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
 
 
 def convert_box_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
+    """Converts a set of bounding boxes to its edge points.
+
+    Args:
+        bounding_boxes (tv_tensors.BoundingBoxes): A set of ``N`` bounding boxes (of shape ``[N, 4]``)
+
+    Returns:
+        tv_tensors.KeyPoints: The edges, of shape ``[N, 4, 2]``
+    """
     bbox = _convert_bounding_box_format(
         bounding_boxes.as_subclass(torch.Tensor),
         old_format=bounding_boxes.format,

@@ -13,6 +13,9 @@ class KeyPoints(TVTensor):
 
     Each point is represented by its XY coordinates.
 
+    KeyPoints can be converted from :class:`torchvision.tv_tensors.BoundingBoxes`
+    by :func:`torchvision.transforms.v2.functional.convert_box_to_points`.
+
     Args:
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         canvas_size (two-tuple of ints): Height and width of the corresponding image or video.
@@ -47,7 +50,7 @@ class KeyPoints(TVTensor):
     if TYPE_CHECKING:
         # EVIL: Just so that MYPY+PYLANCE+others stop shouting that everything is wrong when initializeing the TVTensor
         # Not read or defined at Runtime (only at linting time).
-        # TODO: Add this to all TVTensors
+        # TODO: BOUNDING BOXES needs something similar
         def __init__(
             self,
             data: Any,
