@@ -4,7 +4,6 @@ import io
 import os
 import re
 import sys
-from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -14,11 +13,10 @@ import torch
 import torchvision.transforms.v2.functional as F
 from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
-from torchvision._internally_replaced_utils import IN_FBCODE
 from torchvision.io.image import (
-    _decode_avif,
-    _decode_heic,
+    decode_avif,
     decode_gif,
+    decode_heic,
     decode_image,
     decode_jpeg,
     decode_png,
@@ -43,20 +41,11 @@ INTERLACED_PNG = os.path.join(IMAGE_ROOT, "interlaced_png")
 TOOSMALL_PNG = os.path.join(IMAGE_ROOT, "toosmall_png")
 IS_WINDOWS = sys.platform in ("win32", "cygwin")
 IS_MACOS = sys.platform == "darwin"
+IS_LINUX = sys.platform == "linux"
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 WEBP_TEST_IMAGES_DIR = os.environ.get("WEBP_TEST_IMAGES_DIR", "")
-
-# Hacky way of figuring out whether we compiled with libavif/libheif (those are
-# currenlty disabled by default)
-try:
-    _decode_avif(torch.arange(10, dtype=torch.uint8))
-except Exception as e:
-    DECODE_AVIF_ENABLED = "torchvision not compiled with libavif support" not in str(e)
-
-try:
-    _decode_heic(torch.arange(10, dtype=torch.uint8))
-except Exception as e:
-    DECODE_HEIC_ENABLED = "torchvision not compiled with libheif support" not in str(e)
+# See https://github.com/pytorch/vision/pull/8724#issuecomment-2503964558
+HEIC_AVIF_MESSAGE = "AVIF and HEIF only available on linux."
 
 
 def _get_safe_image_name(name):
@@ -864,19 +853,23 @@ def test_decode_gif(tmpdir, name, scripted):
             torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
 
 
-decode_fun_and_match = [
-    (decode_png, "Content is not png"),
-    (decode_jpeg, "Not a JPEG file"),
-    (decode_gif, re.escape("DGifOpenFileName() failed - 103")),
-    (decode_webp, "WebPGetFeatures failed."),
-]
-if DECODE_AVIF_ENABLED:
-    decode_fun_and_match.append((_decode_avif, "BMFF parsing failed"))
-if DECODE_HEIC_ENABLED:
-    decode_fun_and_match.append((_decode_heic, "Invalid input: No 'ftyp' box"))
-
-
-@pytest.mark.parametrize("decode_fun, match", decode_fun_and_match)
+@pytest.mark.parametrize(
+    "decode_fun, match",
+    [
+        (decode_png, "Content is not png"),
+        (decode_jpeg, "Not a JPEG file"),
+        (decode_gif, re.escape("DGifOpenFileName() failed - 103")),
+        (decode_webp, "WebPGetFeatures failed."),
+        pytest.param(
+            decode_avif, "BMFF parsing failed", marks=pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
+        ),
+        pytest.param(
+            decode_heic,
+            "Invalid input: No 'ftyp' box",
+            marks=pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE),
+        ),
+    ],
+)
 def test_decode_bad_encoded_data(decode_fun, match):
     encoded_data = torch.randint(0, 256, (100,), dtype=torch.uint8)
     with pytest.raises(RuntimeError, match="Input tensor must be 1-dimensional"):
@@ -932,13 +925,10 @@ def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename)
     img += 123  # make sure image buffer wasn't freed by underlying decoding lib
 
 
-@pytest.mark.skipif(not DECODE_AVIF_ENABLED, reason="AVIF support not enabled.")
-@pytest.mark.parametrize("decode_fun", (_decode_avif, decode_image))
-@pytest.mark.parametrize("scripted", (False, True))
-def test_decode_avif(decode_fun, scripted):
+@pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
+@pytest.mark.parametrize("decode_fun", (decode_avif,))
+def test_decode_avif(decode_fun):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".avif")))
-    if scripted:
-        decode_fun = torch.jit.script(decode_fun)
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
@@ -947,16 +937,8 @@ def test_decode_avif(decode_fun, scripted):
 
 # Note: decode_image fails because some of these files have a (valid) signature
 # we don't recognize. We should probably use libmagic....
-decode_funs = []
-if DECODE_AVIF_ENABLED:
-    decode_funs.append(_decode_avif)
-if DECODE_HEIC_ENABLED:
-    decode_funs.append(_decode_heic)
-
-
-@pytest.mark.skipif(not decode_funs, reason="Built without avif and heic support.")
-@pytest.mark.parametrize("decode_fun", decode_funs)
-@pytest.mark.parametrize("scripted", (False, True))
+@pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
+@pytest.mark.parametrize("decode_fun", (decode_avif, decode_heic))
 @pytest.mark.parametrize(
     "mode, pil_mode",
     (
@@ -968,7 +950,7 @@ if DECODE_HEIC_ENABLED:
 @pytest.mark.parametrize(
     "filename", Path("/home/nicolashug/dev/libavif/tests/data/").glob("*.avif"), ids=lambda p: p.name
 )
-def test_decode_avif_heic_against_pil(decode_fun, scripted, mode, pil_mode, filename):
+def test_decode_avif_heic_against_pil(decode_fun, mode, pil_mode, filename):
     if "reversed_dimg_order" in str(filename):
         # Pillow properly decodes this one, but we don't (order of parts of the
         # image is wrong). This is due to a bug that was recently fixed in
@@ -978,8 +960,6 @@ def test_decode_avif_heic_against_pil(decode_fun, scripted, mode, pil_mode, file
     import pillow_avif  # noqa
 
     encoded_bytes = read_file(filename)
-    if scripted:
-        decode_fun = torch.jit.script(decode_fun)
     try:
         img = decode_fun(encoded_bytes, mode=mode)
     except RuntimeError as e:
@@ -992,6 +972,7 @@ def test_decode_avif_heic_against_pil(decode_fun, scripted, mode, pil_mode, file
                 "no 'ispe' property",
                 "'iref' has double references",
                 "Invalid image grid",
+                "decode_heif failed: Invalid input: No 'meta' box",
             )
         ):
             pytest.skip(reason="Expected failure, that's OK")
@@ -1008,7 +989,7 @@ def test_decode_avif_heic_against_pil(decode_fun, scripted, mode, pil_mode, file
     try:
         from_pil = F.pil_to_tensor(Image.open(filename).convert(pil_mode))
     except RuntimeError as e:
-        if "Invalid image grid" in str(e):
+        if any(s in str(e) for s in ("Invalid image grid", "Failed to decode image: Not implemented")):
             pytest.skip(reason="PIL failure")
         else:
             raise e
@@ -1019,7 +1000,7 @@ def test_decode_avif_heic_against_pil(decode_fun, scripted, mode, pil_mode, file
         g = make_grid([img, from_pil])
         F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png"))
 
-    is_decode_heic = getattr(decode_fun, "__name__", getattr(decode_fun, "name", None)) == "_decode_heic"
+    is_decode_heic = getattr(decode_fun, "__name__", getattr(decode_fun, "name", None)) == "decode_heic"
     if mode == ImageReadMode.RGB and not is_decode_heic:
         # We don't compare torchvision's AVIF against PIL for RGB because
         # results look pretty different on RGBA images (other images are fine).
@@ -1033,13 +1014,10 @@ def test_decode_avif_heic_against_pil(decode_fun, scripted, mode, pil_mode, file
     torch.testing.assert_close(img, from_pil, rtol=0, atol=3)
 
 
-@pytest.mark.skipif(not DECODE_HEIC_ENABLED, reason="HEIC support not enabled yet.")
-@pytest.mark.parametrize("decode_fun", (_decode_heic, decode_image))
-@pytest.mark.parametrize("scripted", (False, True))
-def test_decode_heic(decode_fun, scripted):
+@pytest.mark.skipif(not IS_LINUX, reason=HEIC_AVIF_MESSAGE)
+@pytest.mark.parametrize("decode_fun", (decode_heic,))
+def test_decode_heic(decode_fun):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".heic")))
-    if scripted:
-        decode_fun = torch.jit.script(decode_fun)
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
@@ -1076,14 +1054,6 @@ def test_mode_str():
     assert decode_image(path, mode="rGb").shape[0] == 3
     assert decode_image(path, mode="GRAY").shape[0] == 1
     assert decode_image(path, mode="RGBA").shape[0] == 4
-
-
-def test_avif_heic_fbcode():
-    cm = nullcontext() if IN_FBCODE else pytest.raises(ImportError, match="cannot import")
-    with cm:
-        from torchvision.io import decode_heic  # noqa
-    with cm:
-        from torchvision.io import decode_avif  # noqa
 
 
 if __name__ == "__main__":
