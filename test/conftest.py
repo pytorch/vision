@@ -82,6 +82,10 @@ def pytest_collection_modifyitems(items):
     items[:] = out_items
 
 
+def pytest_addoption(parser):
+    parser.addoption("--debug-images", action="store_true", help="Enable debug mode for saving images.")
+
+
 def pytest_sessionfinish(session, exitstatus):
     # This hook is called after all tests have run, and just before returning an exit status.
     # We here change exit code 5 into 0.
