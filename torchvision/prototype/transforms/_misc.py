@@ -39,7 +39,7 @@ class PermuteDimensions(Transform):
             )
         self.dims = dims
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
             return inpt.as_subclass(torch.Tensor)
@@ -61,7 +61,7 @@ class TransposeDimensions(Transform):
             )
         self.dims = dims
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
             return inpt.as_subclass(torch.Tensor)
