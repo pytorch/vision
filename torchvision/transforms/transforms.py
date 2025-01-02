@@ -252,6 +252,14 @@ class Normalize(torch.nn.Module):
     .. note::
         This transform acts out of place, i.e., it does not mutate the input tensor.
 
+    Passing 0 as mean and 1 as std for a channel keeps the values in this channel unchanged.
+
+    As follows from the output formula above, to denormalize the tensor you can apply Normalize again with the following changes 
+    in the mean and std:
+    
+    * ``mean=[-m / s for m, s in zip(mean, std)]``
+    * ``std=[1.0 / s for s in std]``
+    
     Args:
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
