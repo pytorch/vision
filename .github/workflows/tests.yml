@@ -26,7 +26,7 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -104,7 +104,7 @@ jobs:
         ./.github/scripts/unittest.sh
 
   onnx:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       repository: pytorch/vision
       test-infra-ref: main
@@ -135,7 +135,7 @@ jobs:
         echo '::endgroup::'
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     if: contains(github.event.pull_request.labels.*.name, 'run-extended')
     with:
       repository: pytorch/vision
