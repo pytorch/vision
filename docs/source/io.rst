@@ -9,8 +9,8 @@ images and videos.
 Image Decoding
 --------------
 
-Torchvision currently supports decoding JPEG, PNG, WEBP and GIF images. JPEG
-decoding can also be done on CUDA GPUs.
+Torchvision currently supports decoding JPEG, PNG, WEBP, GIF, AVIF, and HEIC
+images. JPEG decoding can also be done on CUDA GPUs.
 
 The main entry point is the :func:`~torchvision.io.decode_image` function, which
 you can use as an alternative to ``PIL.Image.open()``. It will decode images
@@ -30,9 +30,10 @@ run transforms/preproc natively on tensors.
 
 
 :func:`~torchvision.io.decode_image` will automatically detect the image format,
-and call the corresponding decoder. You can also use the lower-level
-format-specific decoders which can be more powerful, e.g. if you want to
-encode/decode JPEGs on CUDA.
+and call the corresponding decoder (except for HEIC and AVIF images, see details
+in :func:`~torchvision.io.decode_avif` and :func:`~torchvision.io.decode_heic`).
+You can also use the lower-level format-specific decoders which can be more
+powerful, e.g. if you want to encode/decode JPEGs on CUDA.
 
 .. autosummary::
     :toctree: generated/
@@ -41,8 +42,10 @@ encode/decode JPEGs on CUDA.
     decode_image
     decode_jpeg
     encode_png
-    decode_gif
     decode_webp
+    decode_avif
+    decode_heic
+    decode_gif
 
 .. autosummary::
     :toctree: generated/
